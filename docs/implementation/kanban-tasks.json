@@ -1,0 +1,10 @@
+[
+  {"id":"CORE-01","title":"Tách route/page/component Web dùng chung","owner":"cong","scope":"shared","phase":"a","initial_status":"todo","reviewer":"Trí, Thịnh","section":"CORE-01 — Công","depends":[]},
+  {"id":"CAT-01","title":"API và danh sách sản phẩm của Store trên Seller Web","owner":"thinh","scope":"m1","phase":"a","initial_status":"todo","reviewer":"Công","section":"CAT-01 — Thịnh","depends":["CORE-01 (kết nối route Web)"]},
+  {"id":"CART-01","title":"Đọc, sửa số lượng và xóa item giỏ hàng","owner":"hoa","scope":"m2","phase":"a","initial_status":"todo","reviewer":"Công, Thịnh","section":"CART-01 — Hoa","depends":["CAT-QUOTE-01 (nghiệm thu tích hợp giá từ M1)"]},
+  {"id":"ID-01","title":"CRUD địa chỉ của Customer","owner":"tri","scope":"m3","phase":"a","initial_status":"todo","reviewer":"Công, Hoa","section":"ID-01 — Trí","depends":[]},
+  {"id":"WEB-01","title":"Danh sách sản phẩm Customer gọi API","owner":"hatsaphone","scope":"customer-web","phase":"a","initial_status":"todo","reviewer":"Công","section":"WEB-01 — Hatsaphone","depends":["CORE-01 (kết nối route Web)"]},
+  {"id":"FLOW-01","title":"Chốt interface checkout, Order/Payment và lookup M3","owner":"cong","scope":"shared","phase":"b","initial_status":"backlog","reviewer":"Hoa, Thịnh, Trí","section":"FLOW-01 — Công chủ trì, Hoa/Thịnh/Trí phối hợp","depends":["CORE-01"]},
+  {"id":"CAT-QUOTE-01","title":"M1 QuoteVariants: giá và snapshot Variant cho M2","owner":"thinh","scope":"m1","phase":"b","initial_status":"backlog","reviewer":"Hoa, Công","section":null,"depends":["CAT-01"]},
+  {"id":"CART-02","title":"Thêm item giỏ hàng và tích hợp M1","owner":"hoa","scope":"m2","phase":"b","initial_status":"backlog","reviewer":"Thịnh, Công","section":null,"depends":["CART-01","CAT-QUOTE-01"]}
+]

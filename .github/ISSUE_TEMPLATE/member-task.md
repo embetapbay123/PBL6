@@ -2,7 +2,7 @@
 name: Task thành viên
 about: Giao một chức năng trên khung PBL6 với đầu ra và nghiệm thu rõ ràng
 title: "[ID] Chức năng cần hoàn thiện"
-labels: ""
+labels: "task,status:backlog"
 assignees: ""
 ---
 
@@ -11,6 +11,8 @@ assignees: ""
 - Owner: một người; chọn Assignee tương ứng trên GitHub.
 - Reviewer / người hỗ trợ:
 - Branch dự kiến:
+- Label owner (chọn đúng một): owner:cong / owner:hoa / owner:tri / owner:thinh / owner:hatsaphone.
+- Label status mở (chọn đúng một): status:backlog / status:todo / status:in-progress / status:review / status:blocked.
 
 ## Phạm vi và đầu ra
 

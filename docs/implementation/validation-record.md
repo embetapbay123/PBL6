@@ -14,7 +14,7 @@ Ngày: 02/10/2026. Môi trường local Windows/Docker Desktop, Node22.15.1, Pyt
 | Migration/seed | PASS | 54 domain entity ở4 DB; migrate append-only + fake4 account/3 Product |
 | Backup/restore M1 | PASS | Dump4 DB; restore M1 vào restore_drill_m1_20261002; 3 Product,2 migration,0 inventory invariant violation |
 | OpenAPI | PASS | Swagger Parser validate87 public path/99 operation +8 internal path; types sinh được |
-| Documentation link/status check | PASS — 74 Markdown /99 public API | 70 file docs + README gốc/Web/Mobile + mẫu issue; requirements/traceability/link và contract ownership/status |
+| Documentation link/status check | PASS — 76 Markdown /99 public API | 72 file docs + README gốc/Web/Mobile + mẫu issue; requirements/traceability/link và contract ownership/status |
 | GitHub CI lần đầu (`c33f022`) | FAIL — 5/10 integration; Mobile PASS | [Run ban đầu](https://github.com/embetapbay123/PBL6/actions/runs/36961385925): năm test dừng ở login500; các bước docs/contract/Node/Web build trước đó đạt |
 | Android APK/device | NOT_RUN | Lệnh APK bị chặn do máy thiếu Android SDK; không có emulator/device result |
 | Tải100 user/soak | NOT_RUN | Có k6 Catalog script; không có latency/capacity claim |
@@ -35,3 +35,9 @@ README dẫn thẳng tới [task đầu tiên](task-assignment.md), phân công 
 Lượt CI đầu tiên phát hiện vấn đề môi trường Linux: khóa private được tạo mode0600 bởi tài khoản runner, M3 chạy UID1000 nên không đọc được khi UID khác. Setup nay ghi LOCAL_UID/LOCAL_GID, M3 dùng các ID đó để đọc khóa bind-mount; khóa vẫn không nằm trong Git và không mở quyền đọc cho mọi User. Kết quả CI gắn với từng commit; xem [Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml) hoặc badge README để biết bản mới nhất, không dùng lượt FAIL cũ làm trạng thái cố định của repo.
 
 Kiểm tra đợt cập nhật: docs74 file và cả hai OpenAPI PASS; setup chạy lại giữ nguyên cấu hình/khóa PASS; kiểm quyền mode0600 trong Linux container xác nhận UID khác bị EACCES và UID khớp đọc được PASS; Compose config hợp lệ và10 integration local chạy lại PASS. Kiểm quyền dùng file giả, không in nội dung khóa thật.
+
+## Kanban và task trên GitHub — 02/10/2026
+
+Đã tạo8 issue (#1–#8), cả8 Assignee tạm embetapbay123 theo yêu cầu; owner thực hiện theo label riêng. Board khởi đầu5 Todo +3 Backlog, chưa tự gắn task nào In progress/Done. Metadata/assignee được đọc lại từ GitHub để kiểm chứng.
+
+Kiểm sync: source API/snapshot cho cùng board và chạy lại không đổi file; status trùng được cảnh báo ở Blocked; task đóng not_planned không tính Done; PR bị loại; title được escape để không phá bảng/HTML. Các smoke check đạt; docs76 file đạt. Workflow dùng token repo để đọc issue và chỉ commit board sinh ra. GitHub Projects native chưa tạo: credential hiện thiếu scope project, tab trình duyệt trả504; board hiện là Issues + Markdown đồng bộ.

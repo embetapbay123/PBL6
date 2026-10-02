@@ -37,6 +37,8 @@ Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ c�
 
 ## Nhận việc
 
+Theo dõi tiến độ ở [Kanban](docs/implementation/kanban.md); [cách đổi trạng thái và nhận task](docs/implementation/kanban-guide.md). Task thực tế nằm trong GitHub Issues, owner theo label; Assignee tạm là embetapbay123 theo yêu cầu hiện tại.
+
 1. Mở [bảng giao task](docs/implementation/task-assignment.md), tìm tên mình và task đầu tiên. Bảng ghi điểm bắt đầu trong code, đầu ra, phụ thuộc và tiêu chí nghiệm thu.
 2. Đọc [phân công](docs/implementation/service-ownership.md) và [backlog tổng thể](docs/implementation/member-backlog.md) để biết phạm vi lâu dài.
 3. Tra [trạng thái endpoint](docs/implementation/endpoint-status.md), [OpenAPI công khai](docs/contracts/openapi.json) và [API nội bộ](docs/contracts/internal-api.json). Phân biệt mẫu, mock và stub 501.
