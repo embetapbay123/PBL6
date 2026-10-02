@@ -1,6 +1,6 @@
 # Danh mục tài liệu cần hoàn thiện cho PBL6
 
-**Trạng thái:** theo dõi hoàn thiện 2.1 Draft, 29/09/2026; chưa được nghiệm thu. Sơ đồ Use Case và ERD đã được vẽ và có hình nhúng; các đặc tả hiện cần reviewer kiểm chéo với triển khai khi code xuất hiện.
+**Cập nhật 02/10/2026:** thiết kế nghiệp vụ 2.1 vẫn Draft; [khung triển khai 2.2](implementation/README.md) đã có code/migration/luồng mẫu. Member nhận việc theo [bảng task](implementation/task-assignment.md); kết quả kiểm khung nằm ở [validation record](implementation/validation-record.md). Bộ tài liệu đủ để bắt đầu phát triển, chưa là nghiệm thu marketplace.
 
 ## Bộ tài liệu bàn giao
 
@@ -13,11 +13,11 @@
 | 5. Giao diện | [UI flows và screen catalog](ui-flows.md) | Đã có mã màn C/S/A và trạng thái lỗi | Đối chiếu với UI triển khai; wireframe có thể bổ sung sau nếu nhóm cần. |
 | 6. Kiến trúc | [Architecture](architecture.md), [sơ đồ Sequence/Activity/State](diagrams/) | Đã có context/container, ownership M1–M4, giao tiếp và bản sơ đồ nghiệp vụ/kỹ thuật | Reviewer đối chiếu ranh giới transaction, deployment view và lỗi xuyên service với code khi có triển khai. |
 | 7. Dữ liệu | [ERD và data dictionary](data-dictionary.md), [các sơ đồ ERD](diagrams/erd/) | 9 ERD và từ điển dữ liệu đã có | Rà cột/constraint/index, vòng đời dữ liệu, snapshot, audit/consent, và đối chiếu với UC/API. ID xuyên service chỉ là tham chiếu logic. |
-| 8. Giao diện phần mềm | [API specification](api-spec.md), [OpenAPI](contracts/openapi.json) | 96 operation đã có schema/scope thiết kế | Reviewer đối chiếu request/response/error với client/backend khi triển khai. |
+| 8. Giao diện phần mềm | [API specification](api-spec.md), [OpenAPI công khai](contracts/openapi.json), [API nội bộ](contracts/internal-api.json) | 99 public operation, 8 internal path; schema/scope/ownership/status đã có | Reviewer đối chiếu request/response/error với client/backend; cập nhật types và status khi hoàn thiện. |
 | 9. Tích hợp | [Event/integration contract](integration-contract.md) | Đã có command/event, envelope, retry/dedup và ca đối soát ở mức thiết kế | Reviewer chốt payload từng event và timeout thực tế theo code; thử callback, worker và đối soát khi có môi trường chạy. |
 | 10. AI | [AI design](ai-design.md), [AI evaluation](ai-evaluation.md) | Đã tách thiết kế và kế hoạch đánh giá | Chạy dataset/model/test thật, điền kết quả trung thực; giữ **chưa thực thi** trước khi có run. |
-| 11. Chất lượng | [Test plan/Test cases](test-plan.md), [requirements acceptance](requirements-acceptance.md), [traceability](traceability.md) | Đã có case thiết kế, chưa chạy | Soát phủ FR/UC/API, dữ liệu test, expected result, case lỗi và quyền; giữ kết quả thực thi trống đến khi có bằng chứng. |
-| 12. Bàn giao | [Deployment/demo](deployment.md), [project plan](project-plan.md) | Có env gợi ý, dependency, migration/seed dự kiến, health, kịch bản demo và owner/reviewer đề xuất | Thay lệnh/env giả định bằng cấu hình backend thật, chạy checklist và lưu bằng chứng; chưa ghi bước chưa chạy là đạt. |
+| 11. Chất lượng | [Test plan/Test cases](test-plan.md), [requirements acceptance](requirements-acceptance.md), [traceability](traceability.md), [validation record](implementation/validation-record.md) | Có case nghiệp vụ thiết kế và kết quả test khung riêng | Soát phủ FR/UC/API và failure/replay; chỉ ghi kết quả nghiệp vụ khi đã chạy đúng case. |
+| 12. Bàn giao | [README chạy hệ thống](../README.md), [bảng task](implementation/task-assignment.md), [development guide](implementation/development-guide.md), [project plan](project-plan.md) | Có Compose, setup, migration/seed, phân công và task đầu tiên | Member tái hiện môi trường, nhận task và bàn giao PR/test; đối chiếu checklist triển khai trước demo. |
 
 ## Tài liệu nên bổ sung thành file riêng
 

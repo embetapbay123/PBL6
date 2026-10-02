@@ -60,6 +60,8 @@ npm run infra:up
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
 ```
 
-M1/M2/M3/worker dùng image pbl6-node:local; rebuild m1 cập nhật image chung. Script dev:m1/m2/m3 có tsc trước để giữ metadata validation; cần env trỏ hạ tầng phù hợp. Với Vite local đặt WEB_ORIGIN=http://localhost:5173 rồi recreate container; dùng Web container/test thì trả origin về http://localhost:8080.
+M1/M2/M3/worker dùng image pbl6-node:local; rebuild m1 cập nhật image chung. Script dev:m1/m2/m3 có tsc trước để giữ metadata validation; cần env trỏ hạ tầng phù hợp. Vite chạy port3000 theo vite.config.ts: đặt WEB_ORIGIN=http://localhost:3000 rồi recreate container; dùng Web container/test thì trả origin về http://localhost:8080.
+
+Trên Linux, setup ghi LOCAL_UID/LOCAL_GID của người chạy vào cấu hình local để M3 đọc khóa private bind-mount có mode0600; Windows dùng1000:1000. Chạy setup bằng cùng tài khoản tạo cấu hình/khóa. Không commit khóa hoặc đổi private key thành world-readable để sửa lỗi quyền file.
 
 Member bàn giao module, migration, contract change, test result và lỗi chưa xử lý. Công review shared/infrastructure và luồng tích hợp. Xem [verification plan](verification-plan.md).

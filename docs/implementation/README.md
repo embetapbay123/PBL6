@@ -5,7 +5,7 @@ Chốt **4 service M1–M4**. Khung có code, migration, môi trường và lu�
 | Đọc để làm gì | Tài liệu |
 | --- | --- |
 | Chạy hệ thống | [README gốc](../../README.md), [development guide](development-guide.md) |
-| Biết ai làm gì | [ownership](service-ownership.md), [backlog](member-backlog.md) |
+| Biết ai làm gì | [ownership](service-ownership.md), [backlog](member-backlog.md), [bảng giao task](task-assignment.md) |
 | Biết API đã chạy tới đâu | [endpoint status](endpoint-status.md), [OpenAPI](../contracts/openapi.json) |
 | Hiểu quyết định kiến trúc | [ADR khung](scaffold-decisions.md), [architecture baseline](../architecture.md) |
 | Code quyền và phiên | [security](security.md), [RBAC](../rbac.md) |

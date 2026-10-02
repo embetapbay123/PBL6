@@ -9,6 +9,8 @@ ROOT=Path(__file__).resolve().parents[1]
 DOCS=ROOT/'docs'
 errors=[]
 files=list(DOCS.rglob('*.md'))
+files.extend([ROOT/'README.md',ROOT/'frontend'/'README.md',ROOT/'mobile'/'README.md'])
+files.extend((ROOT/'.github'/'ISSUE_TEMPLATE').glob('*.md'))
 for file in files:
     text=file.read_text(encoding='utf-8')
     if '\ufffd' in text: errors.append((file,'replacement character'))

@@ -14,8 +14,8 @@ Ngày: 02/10/2026. Môi trường local Windows/Docker Desktop, Node22.15.1, Pyt
 | Migration/seed | PASS | 54 domain entity ở4 DB; migrate append-only + fake4 account/3 Product |
 | Backup/restore M1 | PASS | Dump4 DB; restore M1 vào restore_drill_m1_20261002; 3 Product,2 migration,0 inventory invariant violation |
 | OpenAPI | PASS | Swagger Parser validate87 public path/99 operation +8 internal path; types sinh được |
-| Documentation link/status check | PASS — 69 Markdown /99 public API | Requirements/traceability/link và contract ownership/status |
-| GitHub CI | NOT_RUN | Workflow đã tạo, chưa chạy trên GitHub |
+| Documentation link/status check | PASS — 74 Markdown /99 public API | 70 file docs + README gốc/Web/Mobile + mẫu issue; requirements/traceability/link và contract ownership/status |
+| GitHub CI lần đầu (`c33f022`) | FAIL — 5/10 integration; Mobile PASS | [Run ban đầu](https://github.com/embetapbay123/PBL6/actions/runs/36961385925): năm test dừng ở login500; các bước docs/contract/Node/Web build trước đó đạt |
 | Android APK/device | NOT_RUN | Lệnh APK bị chặn do máy thiếu Android SDK; không có emulator/device result |
 | Tải100 user/soak | NOT_RUN | Có k6 Catalog script; không có latency/capacity claim |
 | AI evaluation/provider/payment/checkout recovery | NOT_RUN | Các nghiệp vụ chưa triển khai |
@@ -27,3 +27,11 @@ Lệnh tái hiện ở [README](../../README.md) và [verification plan](verific
 Các lỗi phát hiện khi dựng khung đã sửa: seed Inventory thiếu store_id; gateway cấu hình/DNS startup; refresh required rỗng sai OpenAPI3.0; response201 nội bộ lệch contract200; Product variant_values và AI payload thiếu field đích; unrouted event không được đánh dấu published. Kết quả trên chỉ áp dụng bản cuối đã sửa; không quy đổi thành PASS cho nghiệp vụ còn501.
 
 Python test có warning deprecation từ Starlette/AnyIO; không làm test thất bại. Nền framework/config là bản khởi đầu; owner giữ lockfile, kiểm dependencies, quyền/tải/retention theo môi trường trước deploy.
+
+## Rà soát bàn giao cho member — 02/10/2026
+
+README dẫn thẳng tới [task đầu tiên](task-assignment.md), phân công hiện hành, API nội bộ và mẫu issue. Project plan bỏ bảng owner AI cũ; roadmap ghi99 API; Web origin sửa thành port3000 theo vite.config.ts.
+
+Lượt CI đầu tiên phát hiện vấn đề môi trường Linux: khóa private được tạo mode0600 bởi tài khoản runner, M3 chạy UID1000 nên không đọc được khi UID khác. Setup nay ghi LOCAL_UID/LOCAL_GID, M3 dùng các ID đó để đọc khóa bind-mount; khóa vẫn không nằm trong Git và không mở quyền đọc cho mọi User. Kết quả CI gắn với từng commit; xem [Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml) hoặc badge README để biết bản mới nhất, không dùng lượt FAIL cũ làm trạng thái cố định của repo.
+
+Kiểm tra đợt cập nhật: docs74 file và cả hai OpenAPI PASS; setup chạy lại giữ nguyên cấu hình/khóa PASS; kiểm quyền mode0600 trong Linux container xác nhận UID khác bị EACCES và UID khớp đọc được PASS; Compose config hợp lệ và10 integration local chạy lại PASS. Kiểm quyền dùng file giả, không in nội dung khóa thật.

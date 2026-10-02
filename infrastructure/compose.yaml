@@ -56,6 +56,8 @@ services:
     command: [node, dist/commerce-service/src/main.js]
   m3:
     <<: *node
+    # Match the Linux owner of the mode-0600 private-key bind mount.
+    user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
     environment: {<<: *app-env, SERVICE_ID: M3, PORT: '3103', M3_DATABASE_URL: 'postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3', JWT_PRIVATE_KEY_FILE: /run/secrets/jwt-private.pem}
     volumes: [./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro, ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro]
     command: [node, dist/identity-store-service/src/main.js]

@@ -2,6 +2,8 @@
 
 Đây là việc **còn phải code**. Khung đã có migration/model, operation/DTO type, stub và mẫu; file tồn tại chưa có nghĩa nghiệp vụ hoàn thành. Giao từng nhóm nhỏ, hoàn thành contract và test rồi mở nhóm tiếp theo.
 
+Để giao việc ngay, dùng [bảng giao task](task-assignment.md): có task đầu tiên của từng member, tiêu chí nghiệm thu, phụ thuộc và mẫu issue. Bảng dưới là phạm vi tổng thể, không nên giao nguyên một ô thành một task.
+
 | Member | Nhóm 1: độc lập | Nhóm 2: tích hợp | Bằng chứng bàn giao |
 | --- | --- | --- | --- |
 | Thịnh | Taxonomy/Product/Variant/Image CRUD; Seller list/form; kho adjustment/movement; validation attribute/SKU | Reserve/consume/release theo operation ID; Review hậu mua; moderation; Seller gọi Order/Voucher/Store | Scope hai Store; version conflict; SKU unique; cạnh tranh SKU cuối; replay kho; upload sai; UI loading/error |

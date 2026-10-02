@@ -1,5 +1,7 @@
 # Decision log 2.1 Draft
 
+**Triển khai hiện hành 02/10/2026:** [ADR khung 2.2](implementation/scaffold-decisions.md) bổ sung stack, database, session và SePay Test Mode; [ownership](implementation/service-ownership.md) là phân công hiện hành. Baseline 2.1 bên dưới giữ quy tắc nghiệp vụ đích; đọc kèm ADR 2.2 khi code.
+
 Các quyết định dưới đây được ghi từ trao đổi về kế hoạch 2.0. `Confirmed` nghĩa là lựa chọn phạm vi đã được người dùng xác nhận; `Design default` là giá trị/cách triển khai cụ thể hóa kế hoạch, có thể thay đổi bằng quyết định mới trước khi Approved.
 
 | ID | Trạng thái | Quyết định | Hệ quả |
@@ -30,4 +32,4 @@ Các quyết định dưới đây được ghi từ trao đổi về kế hoạ
 
 **Đợt tài liệu 2.1:** SRS, đặc tả UC, hình nhúng, OpenAPI, security/privacy, AI evaluation và test/triển khai được mở rộng để dễ đọc khi nộp báo cáo. Đây là chỉnh sửa cách diễn đạt và contract thiết kế theo ADR-23, **không phải quyết định đổi nghiệp vụ**. Mọi quyết định nghiệp vụ mới phát hiện khi review phải có ADR riêng trước khi sửa baseline.
 
-**Chưa có bằng chứng ngoài bộ tài liệu:** Đề Cương.docx, code thực tế, ERD/API cũ hoặc kết quả kiểm thử. Khi các nguồn này được cung cấp, đối chiếu và bổ sung ADR nếu phát hiện khác biệt; không tự sửa quyết định đã Confirmed bằng suy đoán.
+**Bằng chứng triển khai đã có:** repo chứa khung code/migration/model và [kết quả kiểm khung](implementation/validation-record.md). Chưa có bằng chứng hoàn thành toàn marketplace/FR/NFR. Đối chiếu nguồn mới với baseline và bổ sung ADR nếu phát hiện khác biệt; không tự sửa quyết định đã Confirmed bằng suy đoán.

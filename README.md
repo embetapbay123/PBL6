@@ -1,5 +1,7 @@
 # PBL6 — khung triển khai SOA 4 service
 
+[![Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml)
+
 Đây là **khung có code mẫu chạy thật** để thành viên hoàn thiện. Chưa phải marketplace hoàn chỉnh. Thiết kế nghiệp vụ nằm trong [docs](docs/README.md), phần bàn giao code nằm trong [implementation](docs/implementation/README.md).
 
 | Phần | Công nghệ | Người hoàn thiện |
@@ -35,10 +37,28 @@ Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ c�
 
 ## Nhận việc
 
-1. Đọc [phân công](docs/implementation/service-ownership.md) và [backlog từng member](docs/implementation/member-backlog.md).
-2. Tra [trạng thái endpoint](docs/implementation/endpoint-status.md) và [OpenAPI](docs/contracts/openapi.json).
-3. Làm theo [hướng dẫn phát triển](docs/implementation/development-guide.md); lấy Auth/Catalog và test làm mẫu.
-4. Hoàn thiện nghiệp vụ trong module được giao; kiểm tra quyền/scope và lỗi trước khi đổi trạng thái endpoint.
+1. Mở [bảng giao task](docs/implementation/task-assignment.md), tìm tên mình và task đầu tiên. Bảng ghi điểm bắt đầu trong code, đầu ra, phụ thuộc và tiêu chí nghiệm thu.
+2. Đọc [phân công](docs/implementation/service-ownership.md) và [backlog tổng thể](docs/implementation/member-backlog.md) để biết phạm vi lâu dài.
+3. Tra [trạng thái endpoint](docs/implementation/endpoint-status.md), [OpenAPI công khai](docs/contracts/openapi.json) và [API nội bộ](docs/contracts/internal-api.json). Phân biệt mẫu, mock và stub 501.
+4. Làm theo [hướng dẫn phát triển](docs/implementation/development-guide.md); lấy Auth/Catalog và test làm mẫu. Dùng [mẫu issue](.github/ISSUE_TEMPLATE/member-task.md) để ghi task, branch riêng và PR về `main`.
+
+| Member | Task đầu tiên | Phạm vi lâu dài |
+| --- | --- | --- |
+| Công | CORE-01: tách route/page/component Web dùng chung, rồi FLOW-01: chốt giao tiếp checkout | Shared/hạ tầng/tích hợp; M2 Payment/Refund/COD; M4 AI |
+| Thịnh | CAT-01: API và danh sách sản phẩm của Store | M1 và Seller Web |
+| Hoa | CART-01: đọc/sửa số lượng/xóa item giỏ | M2 Cart/Order/Voucher/report và Customer Android |
+| Trí | ID-01: CRUD địa chỉ | M3 và Admin Web |
+| Hatsaphone | WEB-01: danh sách sản phẩm Customer | Customer Web theo từng màn và API bàn giao |
+
+Clone repo và tạo branch theo task, ví dụ cho ID-01:
+
+```powershell
+git clone https://github.com/embetapbay123/PBL6.git
+cd PBL6
+git switch -c feat/id-01-addresses
+```
+
+Chạy phần **Chạy lần đầu** phía trên; `.env`, khóa, dependencies và artifacts không có trong Git, script setup tạo cấu hình local. Làm xong demo theo tiêu chí task, ghi kết quả kiểm chứng vào PR; cập nhật contract/types/status/README khi có đổi. Không đổi cả endpoint sang `IMPLEMENTED` nếu mới hoàn thành một phần.
 
 ```powershell
 npm run generate:types
@@ -51,7 +71,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
 ```
 
-Web development: đặt `WEB_ORIGIN=http://localhost:5173` trong cấu hình local, chạy lại `npm run infra:up` rồi `npm run dev`; Vite proxy gọi gateway. Trả origin về localhost:8080 khi dùng Web container/test. Mobile: xem [mobile/README](mobile/README.md). Test giao diện: `npm --prefix frontend run test:e2e` khi gateway đã chạy; cần Playwright Chromium đã cài hoặc `PLAYWRIGHT_CHANNEL=msedge` trên máy có Edge.
+Web development: Vite cấu hình port **3000**. Đặt `WEB_ORIGIN=http://localhost:3000` trong `infrastructure/.env`, chạy lại `npm run infra:up` rồi `npm run dev`; mở http://localhost:3000, Vite proxy gọi gateway. Trả origin về http://localhost:8080 khi dùng Web container/test. Nếu Vite báo dùng port khác vì 3000 đang bận, giải phóng port hoặc cập nhật origin theo port thực. Mobile: xem [mobile/README](mobile/README.md). Test giao diện: `npm --prefix frontend run test:e2e` khi gateway đã chạy; cần Playwright Chromium đã cài hoặc `PLAYWRIGHT_CHANNEL=msedge` trên máy có Edge.
 
 Sau khi sửa backend: build image `m1` rồi `npm run infra:up`; M1/M2/M3/worker dùng chung image để tiện phát triển nhưng chạy riêng process. Thay schema bằng migration mới rồi chạy lại migrate. Không sửa migration đã áp dụng, không bật TypeORM `synchronize`.
 

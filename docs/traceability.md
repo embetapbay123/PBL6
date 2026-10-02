@@ -111,7 +111,7 @@ NFR có bảng riêng ở cuối tài liệu: NFR → technical task/UC → API 
 | --- | --- | --- | --- | --- |
 | NFR-AI-01 | TASK-NFR-AI-01: đánh giá RAG grounded | UC-CHAT-TALK | sendChatMessage | TC-NFR-AI-01 |
 | NFR-AI-02 | TASK-NFR-AI-02: so model/baseline cùng split | UC-REC-FOR-YOU | getForYou | TC-NFR-AI-02 |
-| NFR-API-01 | TASK-NFR-API-01: validate OpenAPI | — | 96 operation trong OpenAPI | TC-NFR-API-01 |
+| NFR-API-01 | TASK-NFR-API-01: validate OpenAPI | — | 99 operation trong OpenAPI hiện hành2.2 | TC-NFR-API-01 |
 | NFR-ARCH-01 | TASK-NFR-ARCH-01: kiểm ownership DB | — | integration-contract | TC-NFR-ARCH-01 |
 | NFR-ISO-01 | TASK-NFR-ISO-01: test scope Customer/Store | UC-ORDER-LIST, UC-SORDER-LIST | getOwnOrder, getStoreOrder | TC-NFR-ISO-01 |
 | NFR-PERF-01 | TASK-NFR-PERF-01: đo latency API | — | quoteCheckout, listProducts | TC-NFR-PERF-01 |

@@ -1,23 +1,29 @@
-# Kế hoạch deliverable 2.1 Draft
+# Kế hoạch triển khai và bàn giao nhóm — 2.2
 
-**Cập nhật 01/10/2026:** Phân công trong bảng dưới là bản lịch sử 2.1. Phân công làm việc mới nằm ở [service ownership](implementation/service-ownership.md): Công nhận AI/recommendation, Hoa nhận Cart/Order và Mobile, Hatsaphone tập trung User Web. Dùng bảng mới khi giao task; đã chốt 4 service và có [backlog từng member](implementation/member-backlog.md), [khung triển khai](implementation/README.md).
+Cập nhật 02/10/2026. Đây là phân công làm việc hiện hành theo [ownership](implementation/service-ownership.md), thay bảng đề xuất 2.1. Đã chốt bốn service M1–M4; mỗi service có DB riêng. Khung đã có code mẫu; member hoàn thiện nghiệp vụ theo [bảng giao task](implementation/task-assignment.md). Chưa đặt deadline vì chưa có lịch nộp.
 
-Đây là phân công tài liệu/điểm kiểm tra dựa trên [bảng nguồn](legacy/phan-cong.md), không thay đổi phân công nhân sự chính thức. Chưa gán deadline vì chưa có lịch nộp. Mỗi đầu ra được một người khác người làm rà lại.
+| Thành viên | Backend / tích hợp | Frontend | Đầu ra bàn giao |
+| --- | --- | --- | --- |
+| Công | Shared/gateway/CI; Payment/Refund/COD/reconciliation ở M2; toàn M4 AI; điều phối contract/tích hợp | Khung/client/component mẫu dùng chung | Interface giao dịch; SePay Test; RAG/recommendation/consent/evaluation; bằng chứng recovery/tải |
+| Hoa | M2 Cart/quote/checkout/Order/Voucher/report; phối hợp transaction với Công | Customer Android | API Commerce; Mobile; test giỏ/quote/đặt/hủy/report, kiểm thiết bị |
+| Trí | Toàn M3: auth/profile/address/Store/staff/RBAC/admin User/Store | Admin Web; gọi API moderation M1, voucher/report M2, metric M4 | API Identity/Store; Admin; test scope/quyền hiện hành và audit |
+| Thịnh | Toàn M1: taxonomy/product/variant/image/inventory/review/moderation | Seller Web; gọi Order/Voucher M2 và Store/staff M3 | API Catalog/kho; Seller; test cạnh tranh/replay/version và hai Store |
+| Hatsaphone | Không sở hữu BE/AI; tích hợp API theo mẫu bàn giao | Customer Web | Từng màn Customer với loading/empty/error, phân trang và số liệu từ API |
 
-| Đầu ra | Owner đề xuất | Reviewer | Phụ thuộc | Điều kiện hoàn thành |
-| --- | --- | --- | --- | --- |
-| Scope, Business Rules, state machine, kiến trúc và integration | Công | Thịnh | Quyết định MVP | Mâu thuẫn checkout/COD/hủy được giải quyết, M1–M4 ownership rõ |
-| FR/NFR, traceability, Test Plan và API | Công | Hoa/Trí | Scope + BR | Có mã FR→UC/API/TC, OpenAPI parse được |
-| Use Case Customer Web và UI flow | Hatsaphone | Hoa | FR/BR/RBAC | Luồng nhiều Store, voucher, COD, lỗi/RECOVERING có acceptance criteria |
-| Use Case và UI Mobile | Hoa | Hatsaphone | Cùng API Customer | Mobile có luồng Customer tương ứng, không có Seller/Admin |
-| Store/Owner/Seller Portal, voucher và kho | Thịnh | Công | RBAC + M1/M2 | Quyền Store, snapshot, kho và cập nhật đơn nhất quán |
-| Admin Portal, duyệt Store, taxonomy, kiểm duyệt | Trí | Công | M3 + RBAC | Các màn quản trị có lý do/audit, không cấp quyền vượt phạm vi |
-| AI design, evaluation và recommendation | Hatsaphone | Công | Event M1/M2/M3 | Dataset/version/model/metric và fallback có bằng chứng riêng |
-| ERD/từ điển dữ liệu, sơ đồ sequence | Công | Thịnh/Trí | BR/state/API | Cardinality, unique, FK nội bộ/REF xuyên service đúng |
-| Security/Privacy và audit | Trí | Công | RBAC + ERD + API | Token, consent, dữ liệu nhạy cảm và audit có test tương ứng |
-| AI evaluation độc lập | Hatsaphone | Công | AI design + dataset | Baseline/model cùng split, metric và trạng thái chưa thực thi trung thực |
-| Deployment và demo script | Công | Cả nhóm | Service contract + Test Plan | Seed, env, health và demo hai Store tái lập được |
+## Thứ tự mở việc
 
-Thứ tự: (1) quyết định và yêu cầu → (2) Use Case/RBAC → (3) ERD/contract/sequence → (4) Test Plan/UI/AI/deployment → (5) review chéo, ghi issue và freeze bản Approved. Mọi thay đổi phạm vi sau freeze cần quyết định có mã trong [decision log](decisions.md) và cập nhật FR, UC, ERD, API, TC chịu ảnh hưởng.
+1. Giao task đầu tiên có scope/đầu ra/tiêu chí trong [bảng task](implementation/task-assignment.md): CORE-01, CAT-01, CART-01, ID-01, WEB-01.
+2. Catalog/Cart/address/Store và quyền: ưu tiên API mở chặn người khác; Web/Mobile chuyển từng màn sang API đã kiểm chứng.
+3. Checkout/Order/Payment/kho: Công chốt FLOW-01; Hoa/Công/Thịnh review chung local transaction M2, command M1, idempotency và recovery.
+4. Review/voucher/report/AI và các màn còn lại; chạy [verification plan](implementation/verification-plan.md), lưu kết quả FR/NFR và [AI evaluation](ai-evaluation.md) theo run thật.
+5. Hoàn thiện checklist demo/triển khai, ghi rủi ro/chưa chạy; nghiệm thu theo [requirements acceptance](requirements-acceptance.md), không theo số file đã có.
 
-**Điểm duyệt 2.1 Draft:** owner rà nội dung, reviewer kiểm chéo sơ đồ–đặc tả–API–test; ghi phát hiện vào issue/review note trước khi sửa. Các tên trong bảng là phân công **đề xuất** theo tài liệu nguồn, chưa là xác nhận nhân sự. Không gán deadline khi chưa có lịch nộp. Chỉ chuyển tài liệu sang Approved sau khi nhóm xác nhận nội dung và có bằng chứng kiểm tra tương ứng; viết xong file không đồng nghĩa chức năng đã triển khai.
+## Trách nhiệm tài liệu và review
+
+Owner cập nhật code, migration, DTO/contract, README module, status và test của phần mình. Công review shared/infrastructure/contract và ảnh hưởng tích hợp; Trí phối hợp kiểm quyền; chủ service cung cấp ví dụ cho owner Web/Mobile. Task giao dịch nhiều service được review bởi các owner liên quan.
+
+Mỗi task có một branch/PR và một owner; reviewer ghi rõ ở issue. Chỉ đánh dấu Done khi demo/test đạt và PR được merge. Hoàn thành task nhỏ không đồng nghĩa endpoint đủ phạm vi hoặc toàn bộ service đã nghiệm thu. Các mốc ngày được bổ sung sau khi nhóm có lịch nộp và ước lượng task.
+
+## Phạm vi và nguồn
+
+Quy tắc đích theo SRS/FR/BR/UC/RBAC; lựa chọn khung/provider/session theo [ADR 2.2](implementation/scaffold-decisions.md). Đổi nghiệp vụ phải cập nhật [decision log](decisions.md), yêu cầu, API/dữ liệu/state và test chịu ảnh hưởng. [Phân công nguồn cũ](legacy/phan-cong.md) là lịch sử; AI/recommendation hiện do Công phụ trách.

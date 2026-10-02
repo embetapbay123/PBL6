@@ -27,7 +27,7 @@ M3 không khả dụng: request cần quyền trả dependency error, không dù
 
 DTO type aliases/generated types không bảo vệ runtime. Member phải validation trước service call, chặn mass assignment và kiểm state/version. Ảnh: đề xuất JPEG/PNG/WebP <=5 MiB, kiểm MIME/chữ ký/pixel, tên server cấp; chưa có upload pipeline. Không render Product/chat HTML tin cậy hoặc thêm fetch URL backend khi chưa chặn SSRF.
 
-`.env`, private/public key local và artifacts nằm ngoài Git. Script setup không ghi đè secret đã có. Shared container network phục vụ demo local; không expose port service/DB/broker. Chuyển demo HTTPS theo [recovery/deploy](observability-and-recovery.md), bật COOKIE_SECURE. Uvicorn tin forwarded header trong mạng Compose riêng; không publish trực tiếp M4 ra Internet với cấu hình đó.
+`.env`, private/public key local và artifacts nằm ngoài Git. Script setup không ghi đè secret đã có; chỉ bổ sung LOCAL_UID/LOCAL_GID nếu cấu hình cũ thiếu. Trên Linux private key tạo mode0600, M3 chạy UID/GID của người tạo khóa để đọc bind-mount; không cần mở private key cho mọi User. Shared container network phục vụ demo local; không expose port service/DB/broker. Chuyển demo HTTPS theo [recovery/deploy](observability-and-recovery.md), bật COOKIE_SECURE. Uvicorn tin forwarded header trong mạng Compose riêng; không publish trực tiếp M4 ra Internet với cấu hình đó.
 
 ## AI và quyền riêng tư
 
