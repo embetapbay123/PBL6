@@ -10,7 +10,7 @@ Từ thư mục gốc, làm phần setup/install trong [README](../../README.md)
 python scripts/setup_local.py
 npm run contracts:drift
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d postgres redis rabbitmq
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d --wait postgres redis rabbitmq
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
 npm run infra:up

@@ -29,7 +29,7 @@ npm ci
 npm --prefix backend ci
 npm --prefix frontend ci
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d postgres redis rabbitmq
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d --wait postgres redis rabbitmq
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
 npm run infra:up
