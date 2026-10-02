@@ -15,6 +15,6 @@ Ngày: 02/10/2026. Các quyết định này thay phần đề xuất sáu servi
 
 `schema_migration`, `outbox`, `inbox`, `operation_result`, `bootstrap_effect` là bảng kỹ thuật ở từng database. `family_id` giữ lịch sử token refresh để phát hiện replay và thu hồi cả phiên. Migration 002 đổi correlation_id outbox từ UUID sang text cho correlation header giới hạn 64 ký tự. Migrator chung và Alembic M4 dùng ledger tránh áp dụng trùng SQL.
 
-Mẫu `updateProduct` chỉ hỗ trợ title/description/expected_version. Chưa thực hiện đổi loại/variant/trạng thái hoặc toàn bộ ProductUpdate. Trường ngoài phạm vi mẫu trả 422; owner bổ sung DTO và logic trước khi hỗ trợ.
+Mẫu `updateProduct` chỉ hỗ trợ title/description/expected_version. Chưa thực hiện đổi loại/variant/trạng thái hoặc toàn bộ ProductUpdate. DTO đầy đủ đã có; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422. Owner bổ sung logic trước khi đổi IMPLEMENTED.
 
 Các sơ đồ ERD/sequence 2.1 là thiết kế đích, chưa mô tả đầy đủ runtime khung. Thuật ngữ sandbox trong baseline ánh xạ sang provider test cho mốc triển khai; Công đồng bộ state/test/payment schema chi tiết khi hoàn thiện SePay. Không đổi enum nghiệp vụ cũ tùy ý trong UI.

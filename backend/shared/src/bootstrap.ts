@@ -9,6 +9,8 @@ import { collectDefaultMetrics, Counter, Histogram, Registry } from 'prom-client
 import { config, ServiceId } from './config';
 import { database, initializeDatabase } from './database';
 import { ApiError, ErrorFilter } from './errors';
+import { RequestContractInterceptor } from './request-contract';
+import contractBundle from './contracts.runtime.generated.json';
 
 const registry = new Registry();
 collectDefaultMetrics({ register: registry });
@@ -60,8 +62,9 @@ export async function bootstrap(id: ServiceId, controllers: any[]) {
       next();
     } catch { res.status(503).json({code:'DEPENDENCY_UNAVAILABLE',message:'Bộ giới hạn truy cập chưa sẵn sàng.',correlation_id:req.correlationId,details:[]}); }
   });
-  app.setGlobalPrefix('api/v1', { exclude: ['health/live','health/ready','metrics','internal/context','internal/stores/active','internal/variants/quote','internal/inventory/reserve','internal/inventory/consume','internal/inventory/release','internal/inventory/restock','internal/reviews/eligibility'] });
+  app.setGlobalPrefix('api/v1', { exclude: ['health/live','health/ready','metrics',...Object.values(contractBundle.operations).filter(r=>r.internal && r.service===id).map(r=>r.route.slice(1))] });
   app.useGlobalFilters(new ErrorFilter());
+  app.useGlobalInterceptors(new RequestContractInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true,
     exceptionFactory: errors => new ApiError(422,'VALIDATION_FAILED','Dữ liệu không hợp lệ.',errors.map(e => ({field:e.property,reason:Object.values(e.constraints ?? {}).join(', ')}))) }));
   await app.listen(c.port, '0.0.0.0');

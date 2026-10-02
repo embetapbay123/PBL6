@@ -1,5 +1,7 @@
 # Bàn giao khung triển khai 2.2
 
+**Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
+
 **Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
 
 Chốt **4 service M1–M4**. Khung có code, migration, môi trường và luồng mẫu; thành viên viết phần nghiệp vụ theo hợp đồng. Không tách Cart/Order/Payment thành service riêng ở mốc này.

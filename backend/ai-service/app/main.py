@@ -11,6 +11,8 @@ from redis.exceptions import RedisError
 from sqlalchemy import create_engine, text
 from pydantic import ValidationError
 from .chat.schemas import ChatMessageInput
+from .runtime_contracts import validate_operation, MISSING
+from .internal_client import InternalClient, InternalError
 from .chat.service import MockChatService
 from .recommendation.service import MockRecommendationService
 
@@ -77,14 +79,10 @@ async def context(request: Request, roles: list[str]):
     if 'GUEST' in roles and not token: return None
     if not token.startswith('Bearer '): raise ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.')
     try:
-        async with httpx.AsyncClient(timeout=1) as client:
-            response=await client.post(os.environ['IDENTITY_URL']+'/internal/context',json={'token':token[7:]},headers={'X-Service-Id':'M4','X-Service-Key':os.environ['M4_INTERNAL_KEY'],'X-Correlation-Id':request.state.correlation_id})
-        if response.status_code==401: raise ApiError(401,'SESSION_REVOKED','Phiên không còn hiệu lực.')
-        if response.status_code!=200: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Không xác minh được quyền.')
-        result=response.json()
+        result=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']}).call('ResolveContext',{'token':token[7:]},request.state.correlation_id)
         if roles and 'GUEST' not in roles and not set(roles).intersection(result['roles']): raise ApiError(403,'FORBIDDEN','Không có quyền.')
         return result
-    except httpx.HTTPError: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Identity chưa sẵn sàng.')
+    except InternalError as error: raise ApiError(error.status,error.code,error.message)
 
 @app.get('/health/live')
 def live(): return {'status':'alive','service':'M4'}
@@ -105,6 +103,12 @@ def register(record):
     async def endpoint(request: Request):
         identity=await context(request,record['roles'])
         op=record['operation_id']
+        try:
+            raw=await request.body()
+            payload=json.loads(raw) if raw else MISSING
+            query={key:request.query_params.getlist(key) if len(request.query_params.getlist(key))>1 else value for key,value in request.query_params.items()}
+            request.state.contract=validate_operation(op,body=payload,path=request.path_params,query=query,headers=dict(request.headers))
+        except (ValueError,ValidationError): raise ApiError(422,'VALIDATION_FAILED','Dữ liệu không hợp lệ.')
         if op in ['getForYou','getRelatedProducts']:
             try:
                 async with httpx.AsyncClient(timeout=2) as client:

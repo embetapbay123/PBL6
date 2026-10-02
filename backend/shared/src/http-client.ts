@@ -5,11 +5,9 @@ export async function internalRequest<T>(url: string, caller: string, key: strin
       headers: { 'Content-Type': 'application/json', 'X-Service-Id': caller, 'X-Service-Key': key, 'X-Correlation-Id': correlationId },
       body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(timeout) });
     if (!response.ok) {
-      if (response.status === 401 && url.endsWith('/internal/context')) {
-        const error = await response.json() as {code?:string};
-        if (error.code === 'SESSION_REVOKED' || error.code === 'UNAUTHENTICATED') throw new ApiError(401,error.code,'Phiên đăng nhập đã bị thu hồi.');
-      }
-      if (response.status === 401 || response.status === 403) throw new ApiError(503, 'SERVICE_AUTH_FAILED', 'Không xác minh được kết nối nội bộ.');
+      const error = await response.json().catch(()=>({})) as {code?:string;message?:string;details?:unknown[]};
+      if ((response.status === 401 || response.status === 403) && (!error.code || ['INVALID_SERVICE_IDENTITY','SERVICE_AUTH_FAILED'].includes(error.code))) throw new ApiError(503, 'SERVICE_AUTH_FAILED', 'Không xác minh được kết nối nội bộ.');
+      if ([401,403,404,409,422,501].includes(response.status)) throw new ApiError(response.status,error.code ?? 'DEPENDENCY_REJECTED',error.message ?? 'Dịch vụ liên quan từ chối yêu cầu.',Array.isArray(error.details)?error.details:[]);
       throw new ApiError(503, 'DEPENDENCY_UNAVAILABLE', 'Dịch vụ liên quan chưa sẵn sàng.');
     }
     return await response.json() as T;

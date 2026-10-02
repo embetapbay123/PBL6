@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PBL6 Marketplace API",
-    "version": "2.2.0-skeleton",
+    "version": "2.2.1",
     "description": "Four-service SOA skeleton. See x-implementation-status; schema is not proof of business implementation."
   },
   "servers": [
@@ -669,7 +669,17 @@
         "x-service-owner": "M3",
         "x-module": "auth",
         "x-member-owner": "Trí",
-        "x-implementation-status": "IMPLEMENTED_SAMPLE"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/auth/reset-password": {
@@ -3798,7 +3808,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -3808,7 +3819,16 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
             }
           }
         ],
@@ -4064,7 +4084,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -4074,7 +4095,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -4198,7 +4220,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -4208,7 +4231,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -4469,14 +4493,6 @@
             "schema": {
               "type": "string",
               "format": "uuid"
-            }
-          },
-          {
-            "name": "If-Match",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -4905,7 +4921,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -4915,7 +4932,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -6792,7 +6810,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -6802,7 +6821,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -7195,7 +7215,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -7205,7 +7226,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -8017,7 +8039,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -8027,7 +8050,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -8428,7 +8452,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -8438,7 +8463,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -8848,7 +8874,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -8858,7 +8885,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -10076,7 +10104,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 1000000,
+              "default": 1
             }
           },
           {
@@ -10086,7 +10115,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "default": 20
             }
           }
         ],
@@ -12986,7 +13016,8 @@
                   },
                   "required": [
                     "success"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               }
             }
@@ -13038,47 +13069,61 @@
         "type": "object",
         "properties": {
           "code": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "correlation_id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "details": {
-            "type": "object",
-            "additionalProperties": true
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "maxItems": 100
           }
         },
         "required": [
           "code",
           "message",
-          "correlation_id"
-        ]
+          "correlation_id",
+          "details"
+        ],
+        "additionalProperties": false
       },
       "MoneyBreakdown": {
         "type": "object",
         "properties": {
           "goods_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "store_discount_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "platform_discount_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "shipping_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "payable_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -13087,7 +13132,8 @@
           "platform_discount_vnd",
           "shipping_vnd",
           "payable_vnd"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StoreQuote": {
         "type": "object",
@@ -13104,14 +13150,16 @@
             "items": {
               "type": "object",
               "additionalProperties": true
-            }
+            },
+            "maxItems": 100
           }
         },
         "required": [
           "store_id",
           "amounts",
           "items"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CheckoutRequest": {
         "type": "object",
@@ -13123,7 +13171,8 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "address_id": {
             "type": "string",
@@ -13137,23 +13186,28 @@
                 "SANDBOX",
                 "COD"
               ]
-            }
+            },
+            "x-key-format": "uuid"
           },
           "platform_voucher_code": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "store_vouchers": {
             "type": "object",
             "additionalProperties": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "x-key-format": "uuid"
           }
         },
         "required": [
           "cart_item_ids",
           "address_id",
           "payment_methods"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CheckoutConfirmRequest": {
         "type": "object",
@@ -13165,7 +13219,8 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "address_id": {
             "type": "string",
@@ -13179,16 +13234,20 @@
                 "SANDBOX",
                 "COD"
               ]
-            }
+            },
+            "x-key-format": "uuid"
           },
           "platform_voucher_code": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "store_vouchers": {
             "type": "object",
             "additionalProperties": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "x-key-format": "uuid"
           },
           "quote_id": {
             "type": "string",
@@ -13196,7 +13255,8 @@
           },
           "expected_payable_total_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -13205,7 +13265,8 @@
           "payment_methods",
           "quote_id",
           "expected_payable_total_vnd"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CheckoutQuote": {
         "type": "object",
@@ -13218,11 +13279,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StoreQuote"
-            }
+            },
+            "maxItems": 100
           },
           "payable_total_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "expires_at": {
             "type": "string",
@@ -13234,7 +13297,8 @@
           "stores",
           "payable_total_vnd",
           "expires_at"
-        ]
+        ],
+        "additionalProperties": false
       },
       "OrderBatch": {
         "type": "object",
@@ -13249,17 +13313,20 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "orders": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Order"
-            }
+            },
+            "maxItems": 100
           },
           "payable_total_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -13267,7 +13334,8 @@
           "order_ids",
           "orders",
           "payable_total_vnd"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Order": {
         "type": "object",
@@ -13300,7 +13368,8 @@
             ]
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "payment_method": {
             "type": "string",
@@ -13310,10 +13379,12 @@
             ]
           },
           "payment_status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "refund_status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "payment_expires_at": {
             "type": "string",
@@ -13327,7 +13398,8 @@
             "items": {
               "type": "object",
               "additionalProperties": true
-            }
+            },
+            "maxItems": 100
           }
         },
         "required": [
@@ -13338,7 +13410,8 @@
           "version",
           "payment_method",
           "amounts"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Payment": {
         "type": "object",
@@ -13359,23 +13432,28 @@
             ]
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "payable_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "collectible_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "collected_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "refunded_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -13385,18 +13463,21 @@
           "status",
           "payable_vnd",
           "collectible_vnd"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PaymentAttemptRequest": {
         "type": "object",
         "properties": {
           "expected_order_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_order_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PaymentAttempt": {
         "type": "object",
@@ -13406,14 +13487,17 @@
             "format": "uuid"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "redirect_url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "maxLength": 2048
           },
           "provider_reference": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "provider": {
             "type": "string",
@@ -13422,11 +13506,13 @@
             ]
           },
           "payment_code": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "qr_url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "maxLength": 2048
           },
           "expires_at": {
             "type": "string",
@@ -13436,16 +13522,19 @@
         "required": [
           "id",
           "status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PaymentCallback": {
         "type": "object",
         "properties": {
           "provider_event_id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "provider_reference": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "result": {
             "type": "string",
@@ -13456,7 +13545,8 @@
             ]
           },
           "signature": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
@@ -13464,7 +13554,8 @@
           "provider_reference",
           "result",
           "signature"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Refund": {
         "type": "object",
@@ -13483,7 +13574,8 @@
           },
           "amount_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "status": {
             "type": "string",
@@ -13501,7 +13593,8 @@
           "order_id",
           "amount_vnd",
           "status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "OrderTransition": {
         "type": "object",
@@ -13516,43 +13609,51 @@
             ]
           },
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "to_status",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CancelOrder": {
         "type": "object",
         "properties": {
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "reason": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CODCollection": {
         "type": "object",
         "properties": {
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "amount_collected_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version",
           "amount_collected_vnd"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Voucher": {
         "type": "object",
@@ -13562,7 +13663,8 @@
             "format": "uuid"
           },
           "code": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "scope": {
             "type": "string",
@@ -13583,13 +13685,16 @@
             ]
           },
           "discount_value": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "min_goods_vnd": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "max_discount_vnd": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "starts_at": {
             "type": "string",
@@ -13600,10 +13705,12 @@
             "format": "date-time"
           },
           "usage_limit": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "per_customer_limit": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "status": {
             "type": "string",
@@ -13615,7 +13722,8 @@
           "version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -13627,7 +13735,8 @@
           "ends_at",
           "usage_limit",
           "per_customer_limit"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Review": {
         "type": "object",
@@ -13650,21 +13759,25 @@
             "maximum": 5
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "order_item_id",
           "rating"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StoreApplication": {
         "type": "object",
@@ -13674,10 +13787,12 @@
             "format": "uuid"
           },
           "proposed_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "contact": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "status": {
             "type": "string",
@@ -13688,73 +13803,87 @@
             ]
           },
           "decision_reason": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "proposed_name",
           "contact"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PasswordResetRequest": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           }
         },
         "required": [
           "email"
-        ]
+        ],
+        "additionalProperties": false
       },
       "EmailVerificationConfirm": {
         "type": "object",
         "properties": {
           "token": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4096
           }
         },
         "required": [
           "token"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PasswordResetConfirm": {
         "type": "object",
         "properties": {
           "token": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4096
           },
           "new_password": {
             "type": "string",
-            "minLength": 8
+            "minLength": 8,
+            "maxLength": 72
           }
         },
         "required": [
           "token",
           "new_password"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PasswordChange": {
         "type": "object",
         "properties": {
           "current_password": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 1
           },
           "new_password": {
             "type": "string",
-            "minLength": 8
+            "minLength": 8,
+            "maxLength": 72
           }
         },
         "required": [
           "current_password",
           "new_password"
-        ]
+        ],
+        "additionalProperties": false
       },
       "AuthContext": {
         "type": "object",
@@ -13773,7 +13902,8 @@
                 "STORE_OWNER",
                 "ADMIN"
               ]
-            }
+            },
+            "maxItems": 100
           },
           "store_membership": {
             "type": "object",
@@ -13790,25 +13920,31 @@
                 ]
               },
               "status": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 200
               },
               "permissions": {
                 "type": "array",
                 "items": {
-                  "type": "string"
-                }
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "maxItems": 100
               }
-            }
+            },
+            "additionalProperties": false
           },
           "token_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "user_id",
           "roles",
           "token_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Address": {
         "type": "object",
@@ -13818,22 +13954,28 @@
             "format": "uuid"
           },
           "recipient_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "line1": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "ward": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "district": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "city": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "is_default": {
             "type": "boolean"
@@ -13846,7 +13988,8 @@
           "ward",
           "district",
           "city"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StaffInvitation": {
         "type": "object",
@@ -13861,13 +14004,16 @@
           },
           "invited_email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           },
           "permissions": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           },
           "status": {
             "type": "string",
@@ -13886,23 +14032,27 @@
         "required": [
           "invited_email",
           "permissions"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ModerationAction": {
         "type": "object",
         "properties": {
           "reason": {
             "type": "string",
-            "minLength": 1
+            "minLength": 1,
+            "maxLength": 200
           },
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "reason",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StaffMembershipUpdate": {
         "type": "object",
@@ -13918,18 +14068,22 @@
           "permissions": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           },
           "expected_version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProductVariant": {
         "type": "object",
@@ -13939,12 +14093,14 @@
             "format": "uuid"
           },
           "sku": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "price_vnd": {
             "type": "integer",
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "variant_values": {
             "type": "object",
@@ -13954,14 +14110,16 @@
             "type": "boolean"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
           "sku",
           "price_vnd",
           "variant_values"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Product": {
         "type": "object",
@@ -13979,10 +14137,14 @@
             "format": "uuid"
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10000
           },
           "attributes": {
             "type": "object",
@@ -13992,7 +14154,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductVariant"
-            }
+            },
+            "maxItems": 100
           },
           "status": {
             "type": "string",
@@ -14010,14 +14173,16 @@
             ]
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "product_type_id",
           "title",
           "attributes"
-        ]
+        ],
+        "additionalProperties": false
       },
       "InventoryAdjustment": {
         "type": "object",
@@ -14027,17 +14192,20 @@
             "format": "uuid"
           },
           "delta_quantity": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "reason": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "operation_id": {
             "type": "string",
             "format": "uuid"
           },
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14046,7 +14214,8 @@
           "reason",
           "operation_id",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "InventoryBalance": {
         "type": "object",
@@ -14057,18 +14226,22 @@
           },
           "quantity": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "reserved_quantity": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "available_quantity": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14077,7 +14250,8 @@
           "reserved_quantity",
           "available_quantity",
           "version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CartItem": {
         "type": "object",
@@ -14096,13 +14270,15 @@
           },
           "quantity": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "variant_id",
           "quantity"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StoreReport": {
         "type": "object",
@@ -14121,35 +14297,42 @@
           },
           "order_value_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "completed_goods_revenue_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "collected_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "refunded_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "shipping_fee_vnd": {
             "type": "integer",
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "order_count": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "best_selling_product_ids": {
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "low_stock_variant_ids": {
             "type": "array",
@@ -14157,7 +14340,8 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "M1 cung cấp qua contract; M2 không đọc DB M1."
+            "description": "M1 cung cấp qua contract; M2 không đọc DB M1.",
+            "maxItems": 100
           },
           "revenue_series": {
             "type": "array",
@@ -14171,14 +14355,17 @@
                 "completed_goods_revenue_vnd": {
                   "type": "integer",
                   "format": "int64",
-                  "minimum": 0
+                  "minimum": 0,
+                  "maximum": 9007199254740991
                 }
               },
               "required": [
                 "bucket_start",
                 "completed_goods_revenue_vnd"
-              ]
-            }
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 100
           }
         },
         "required": [
@@ -14194,7 +14381,8 @@
           "best_selling_product_ids",
           "low_stock_variant_ids",
           "revenue_series"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ChatMessage": {
         "type": "object",
@@ -14204,7 +14392,8 @@
             "format": "uuid"
           },
           "content": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "product_cards": {
             "type": "array",
@@ -14217,32 +14406,56 @@
                 },
                 "current_price_vnd": {
                   "type": "integer",
-                  "format": "int64"
+                  "format": "int64",
+                  "maximum": 9007199254740991
                 },
                 "status": {
-                  "type": "string"
+                  "type": "string",
+                  "maxLength": 200
                 }
               },
               "required": [
                 "product_id",
                 "current_price_vnd",
                 "status"
-              ]
-            }
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 100
           },
           "fallback": {
             "type": "boolean"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "mock"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ASSISTANT",
+              "USER",
+              "SYSTEM"
+            ]
           }
         },
         "required": [
           "content"
-        ]
+        ],
+        "additionalProperties": false
       },
       "RecommendationResult": {
         "type": "object",
         "properties": {
           "model_version": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "source": {
             "type": "string",
@@ -14257,7 +14470,8 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "recently_viewed_product_ids": {
             "type": "array",
@@ -14265,50 +14479,76 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "mock"
+            ]
+          },
+          "evaluation_status": {
+            "type": "string",
+            "enum": [
+              "NOT_RUN",
+              "RUNNING",
+              "COMPLETED",
+              "FAILED"
+            ]
           }
         },
         "required": [
           "source",
           "product_ids",
           "recently_viewed_product_ids"
-        ]
+        ],
+        "additionalProperties": false
       },
       "OperationResult": {
         "type": "object",
         "properties": {
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "correlation_id": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
           "status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "RegisterRequest": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           },
           "password": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 1
           },
           "display_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
           "email",
           "password"
-        ]
+        ],
+        "additionalProperties": false
       },
       "RegistrationResult": {
         "type": "object",
@@ -14321,23 +14561,28 @@
             "type": "boolean"
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
           "user_id",
           "email_verified"
-        ]
+        ],
+        "additionalProperties": false
       },
       "LoginRequest": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           },
           "password": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 1
           },
           "client_type": {
             "type": "string",
@@ -14351,25 +14596,31 @@
         "required": [
           "email",
           "password"
-        ]
+        ],
+        "additionalProperties": false
       },
       "RefreshRequest": {
         "type": "object",
         "properties": {
           "refresh_token": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 32
           }
         },
-        "description": "Web uses HttpOnly cookie + Origin/X-CSRF-Token. Mobile supplies refresh_token."
+        "description": "Web uses HttpOnly cookie + Origin/X-CSRF-Token. Mobile supplies refresh_token.",
+        "additionalProperties": false
       },
       "AuthTokens": {
         "type": "object",
         "properties": {
           "access_token": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 4096
           },
           "refresh_token": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 256
           },
           "expires_at": {
             "type": "string",
@@ -14382,7 +14633,8 @@
         "required": [
           "access_token",
           "expires_at"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Profile": {
         "type": "object",
@@ -14393,34 +14645,44 @@
           },
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           },
           "display_name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
           },
           "email_verified_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "nullable": true
           }
         },
         "required": [
           "user_id",
           "email"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProfileUpdate": {
         "type": "object",
         "properties": {
           "display_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
-        }
+        },
+        "additionalProperties": false
       },
       "Store": {
         "type": "object",
@@ -14434,64 +14696,77 @@
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "shipping_fee_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "name",
           "status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StoreUpdate": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "shipping_fee_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProductImageRequest": {
         "type": "object",
         "properties": {
           "image_url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "maxLength": 2048
           },
           "variant_id": {
             "type": "string",
             "format": "uuid"
           },
           "position": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "image_url"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProductImage": {
         "type": "object",
@@ -14506,36 +14781,43 @@
           },
           "image_url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "maxLength": 2048
           },
           "position": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "product_id",
           "image_url"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StateChangeRequest": {
         "type": "object",
         "properties": {
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "reason": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "status",
           "reason",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "RoleUpdate": {
         "type": "object",
@@ -14545,16 +14827,19 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "expected_version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "permission_ids",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Role": {
         "type": "object",
@@ -14564,35 +14849,42 @@
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "permission_ids": {
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
-            }
+            },
+            "maxItems": 100
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "name",
           "version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ChatSessionCreate": {
         "type": "object",
         "properties": {
           "anonymous_key": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "first_message": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           }
-        }
+        },
+        "additionalProperties": false
       },
       "ChatSession": {
         "type": "object",
@@ -14606,7 +14898,8 @@
             "format": "uuid"
           },
           "anonymous_key": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "created_at": {
             "type": "string",
@@ -14616,7 +14909,8 @@
         "required": [
           "id",
           "created_at"
-        ]
+        ],
+        "additionalProperties": false
       },
       "Category": {
         "type": "object",
@@ -14626,23 +14920,27 @@
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "parent_id": {
             "type": "string",
             "format": "uuid"
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "name"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProductType": {
         "type": "object",
@@ -14656,27 +14954,32 @@
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "attribute_definitions": {
             "type": "array",
             "description": "Định nghĩa trường động để client dựng form tạo/sửa Product cho ProductType này.",
             "items": {
               "$ref": "#/components/schemas/AttributeDefinition"
-            }
+            },
+            "maxItems": 100
           }
         },
         "required": [
           "id",
           "name",
           "attribute_definitions"
-        ]
+        ],
+        "additionalProperties": false
       },
       "AttributeDefinition": {
         "type": "object",
@@ -14690,16 +14993,19 @@
             "format": "uuid"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "data_type": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "required": {
             "type": "boolean"
           },
           "unit": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "variant_axis": {
             "type": "boolean"
@@ -14707,18 +15013,22 @@
           "allowed_values": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "name",
           "data_type"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StoreMembership": {
         "type": "object",
@@ -14736,19 +15046,24 @@
             "format": "uuid"
           },
           "role": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "permissions": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14757,7 +15072,8 @@
           "user_id",
           "role",
           "status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StockMovement": {
         "type": "object",
@@ -14775,10 +15091,12 @@
             "format": "uuid"
           },
           "delta_quantity": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "reason": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "occurred_at": {
             "type": "string",
@@ -14789,7 +15107,8 @@
           "id",
           "variant_id",
           "delta_quantity"
-        ]
+        ],
+        "additionalProperties": false
       },
       "UserSummary": {
         "type": "object",
@@ -14800,45 +15119,55 @@
           },
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "id",
           "email",
           "status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PlatformDashboard": {
         "type": "object",
         "properties": {
           "order_value_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "completed_goods_revenue_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "collected_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "refunded_vnd": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "maximum": 9007199254740991
           },
           "store_count": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "user_count": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14846,16 +15175,19 @@
           "completed_goods_revenue_vnd",
           "collected_vnd",
           "refunded_vnd"
-        ]
+        ],
+        "additionalProperties": false
       },
       "AiMetrics": {
         "type": "object",
         "properties": {
           "index_status": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "model_version": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "last_training_at": {
             "type": "string",
@@ -14873,12 +15205,19 @@
           "metrics": {
             "type": "object",
             "additionalProperties": true
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "mock"
+            ]
           }
         },
         "required": [
           "index_status",
           "evaluation_status"
-        ]
+        ],
+        "additionalProperties": false
       },
       "VoucherUsage": {
         "type": "object",
@@ -14888,19 +15227,23 @@
             "format": "uuid"
           },
           "reserved_count": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "redeemed_count": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "remaining_count": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "voucher_id",
           "redeemed_count"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageAddresses": {
         "type": "object",
@@ -14909,16 +15252,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Address"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14926,7 +15273,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageStoreApplications": {
         "type": "object",
@@ -14935,16 +15283,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StoreApplication"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14952,7 +15304,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageStoreStaff": {
         "type": "object",
@@ -14961,16 +15314,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StoreMembership"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -14978,7 +15335,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageStaffInvitations": {
         "type": "object",
@@ -14987,16 +15345,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StaffInvitation"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15004,7 +15366,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageCategories": {
         "type": "object",
@@ -15013,16 +15376,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Category"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15030,7 +15397,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageProductTypes": {
         "type": "object",
@@ -15039,16 +15407,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductType"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15056,7 +15428,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageProducts": {
         "type": "object",
@@ -15065,16 +15438,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Product"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15082,7 +15459,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageInventory": {
         "type": "object",
@@ -15091,16 +15469,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/InventoryBalance"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15108,7 +15490,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageStockMovements": {
         "type": "object",
@@ -15117,16 +15500,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/StockMovement"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15134,7 +15521,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageCartItems": {
         "type": "object",
@@ -15143,16 +15531,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CartItem"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15160,7 +15552,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageOrders": {
         "type": "object",
@@ -15169,16 +15562,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Order"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15186,7 +15583,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageVouchers": {
         "type": "object",
@@ -15195,16 +15593,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Voucher"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15212,7 +15614,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageReviews": {
         "type": "object",
@@ -15221,16 +15624,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Review"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15238,7 +15645,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageUsers": {
         "type": "object",
@@ -15247,16 +15655,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/UserSummary"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15264,7 +15676,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageStores": {
         "type": "object",
@@ -15273,16 +15686,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Store"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15290,7 +15707,8 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PageChatSessions": {
         "type": "object",
@@ -15299,16 +15717,20 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ChatSession"
-            }
+            },
+            "maxItems": 100
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "page": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "size": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15316,28 +15738,35 @@
           "total",
           "page",
           "size"
-        ]
+        ],
+        "additionalProperties": false
       },
       "AddressCreate": {
         "type": "object",
         "properties": {
           "recipient_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "line1": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "ward": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "district": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "city": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "is_default": {
             "type": "boolean"
@@ -15350,49 +15779,60 @@
           "ward",
           "district",
           "city"
-        ]
+        ],
+        "additionalProperties": false
       },
       "AddressUpdate": {
         "type": "object",
         "properties": {
           "recipient_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "line1": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "ward": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "district": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "city": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "is_default": {
             "type": "boolean"
           }
         },
-        "minProperties": 1
+        "minProperties": 1,
+        "additionalProperties": false
       },
       "StoreApplicationSubmit": {
         "type": "object",
         "properties": {
           "proposed_name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "contact": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
           "proposed_name",
           "contact"
-        ]
+        ],
+        "additionalProperties": false
       },
       "StoreApplicationDecision": {
         "type": "object",
@@ -15406,18 +15846,21 @@
           },
           "decision_reason": {
             "type": "string",
-            "description": "Bắt buộc khi từ chối."
+            "description": "Bắt buộc khi từ chối.",
+            "maxLength": 200
           },
           "expected_version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "status",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProductCreate": {
         "type": "object",
@@ -15427,10 +15870,13 @@
             "format": "uuid"
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "attributes": {
             "type": "object",
@@ -15440,7 +15886,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductVariant"
-            }
+            },
+            "maxItems": 100
           },
           "status": {
             "type": "string",
@@ -15455,7 +15902,8 @@
           "product_type_id",
           "title",
           "attributes"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ProductUpdate": {
         "type": "object",
@@ -15465,10 +15913,13 @@
             "format": "uuid"
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "attributes": {
             "type": "object",
@@ -15478,7 +15929,8 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ProductVariant"
-            }
+            },
+            "maxItems": 100
           },
           "status": {
             "type": "string",
@@ -15491,14 +15943,16 @@
           "expected_version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version"
         ],
         "description": "Gửi expected_version và ít nhất một trường cần thay đổi; ẩn/hiện do Admin dùng endpoint kiểm duyệt riêng.",
-        "minProperties": 2
+        "minProperties": 2,
+        "additionalProperties": false
       },
       "CartItemCreate": {
         "type": "object",
@@ -15509,25 +15963,29 @@
           },
           "quantity": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "variant_id",
           "quantity"
-        ]
+        ],
+        "additionalProperties": false
       },
       "CartItemUpdate": {
         "type": "object",
         "properties": {
           "quantity": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "quantity"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ReviewCreate": {
         "type": "object",
@@ -15542,13 +16000,15 @@
             "maximum": 5
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           }
         },
         "required": [
           "order_item_id",
           "rating"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ReviewUpdate": {
         "type": "object",
@@ -15559,25 +16019,29 @@
             "maximum": 5
           },
           "body": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "expected_version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version"
         ],
         "description": "Sửa điểm và/hoặc nội dung đánh giá; quyền sở hữu và Order Completed được kiểm tra lại.",
-        "minProperties": 2
+        "minProperties": 2,
+        "additionalProperties": false
       },
       "VoucherCreate": {
         "type": "object",
         "properties": {
           "code": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "scope": {
             "type": "string",
@@ -15598,13 +16062,16 @@
             ]
           },
           "discount_value": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "min_goods_vnd": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "max_discount_vnd": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "starts_at": {
             "type": "string",
@@ -15615,10 +16082,12 @@
             "format": "date-time"
           },
           "usage_limit": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "per_customer_limit": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15631,7 +16100,8 @@
           "usage_limit",
           "per_customer_limit"
         ],
-        "description": "Scope STORE/PLATFORM phải khớp endpoint và quyền của người gọi; store_id lấy từ membership hiện hành."
+        "description": "Scope STORE/PLATFORM phải khớp endpoint và quyền của người gọi; store_id lấy từ membership hiện hành.",
+        "additionalProperties": false
       },
       "VoucherUpdate": {
         "type": "object",
@@ -15644,13 +16114,16 @@
             ]
           },
           "discount_value": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "min_goods_vnd": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "max_discount_vnd": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "starts_at": {
             "type": "string",
@@ -15661,10 +16134,12 @@
             "format": "date-time"
           },
           "usage_limit": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "per_customer_limit": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "status": {
             "type": "string",
@@ -15676,20 +16151,23 @@
           "expected_version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version"
         ],
         "description": "Gửi expected_version và ít nhất một điều kiện được phép sửa. Không sửa lịch sử redemption.",
-        "minProperties": 2
+        "minProperties": 2,
+        "additionalProperties": false
       },
       "TaxonomyCreate": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "parent_id": {
             "type": "string",
@@ -15704,13 +16182,15 @@
             "format": "uuid"
           },
           "data_type": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "required": {
             "type": "boolean"
           },
           "unit": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "variant_axis": {
             "type": "boolean"
@@ -15718,19 +16198,23 @@
           "allowed_values": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           }
         },
         "required": [
           "name"
-        ]
+        ],
+        "additionalProperties": false
       },
       "TaxonomyUpdate": {
         "type": "object",
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "parent_id": {
             "type": "string",
@@ -15745,13 +16229,15 @@
             "format": "uuid"
           },
           "data_type": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "required": {
             "type": "boolean"
           },
           "unit": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "variant_axis": {
             "type": "boolean"
@@ -15759,50 +16245,60 @@
           "allowed_values": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           },
           "expected_version": {
             "type": "integer",
             "minimum": 0,
-            "description": "Phiên bản hiện tại mà client đã đọc."
+            "description": "Phiên bản hiện tại mà client đã đọc.",
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "expected_version"
         ],
-        "minProperties": 2
+        "minProperties": 2,
+        "additionalProperties": false
       },
       "StaffInvitationCreate": {
         "type": "object",
         "properties": {
           "invited_email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "maxLength": 254
           },
           "permissions": {
             "type": "array",
             "items": {
-              "type": "string"
-            }
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
           }
         },
         "required": [
           "invited_email",
           "permissions"
         ],
-        "description": "Owner mời email; Store, trạng thái và hạn mời do M3 xác định."
+        "description": "Owner mời email; Store, trạng thái và hạn mời do M3 xác định.",
+        "additionalProperties": false
       },
       "ProductVariantCreate": {
         "type": "object",
         "properties": {
           "sku": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "price_vnd": {
             "type": "integer",
             "format": "int64",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "variant_values": {
             "type": "object",
@@ -15816,19 +16312,23 @@
           "sku",
           "price_vnd",
           "variant_values"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ChatMessageCreate": {
         "type": "object",
         "properties": {
           "content": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
           }
         },
         "required": [
           "content"
         ],
-        "description": "Client gửi câu hỏi; product_cards và fallback là kết quả do M4 tạo."
+        "description": "Client gửi câu hỏi; product_cards và fallback là kết quả do M4 tạo.",
+        "additionalProperties": false
       },
       "PersonalizationConsentView": {
         "type": "object",
@@ -15841,7 +16341,8 @@
             ]
           },
           "version": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "changed_at": {
             "type": "string",
@@ -15851,7 +16352,8 @@
         "required": [
           "status",
           "version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "PersonalizationConsentUpdate": {
         "type": "object",
@@ -15865,19 +16367,22 @@
           },
           "expected_version": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "required": [
           "status",
           "expected_version"
-        ]
+        ],
+        "additionalProperties": false
       },
       "SePayWebhook": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "integer"
+            "type": "integer",
+            "maximum": 9007199254740991
           },
           "transferType": {
             "type": "string",
@@ -15888,20 +16393,25 @@
           },
           "transferAmount": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 9007199254740991
           },
           "accountNumber": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           },
           "code": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 200
           },
           "content": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "referenceCode": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
@@ -15910,7 +16420,8 @@
           "transferAmount",
           "accountNumber",
           "content"
-        ]
+        ],
+        "additionalProperties": false
       }
     }
   }

@@ -44,7 +44,7 @@ test('sample product write checks role, version and commits audit/outbox atomica
  const owner=await login('owner@pbl6.test'),customer=await login();
  const patch=(token:string,body:unknown,id=product.id)=>fetch(base+'/store/products/'+id,{method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json','X-Correlation-Id':'integration-product-write'},body:JSON.stringify(body)});
  expect((await patch(customer.access_token,{title:product.title,expected_version:product.version})).status).toBe(403);
- expect((await patch(owner.access_token,{status:'STOPPED',expected_version:product.version})).status).toBe(422);
+ expect((await patch(owner.access_token,{status:'STOPPED',expected_version:product.version})).status).toBe(501);
  expect((await patch(owner.access_token,{title:product.title,expected_version:product.version},randomUUID())).status).toBe(404);
  const result=await patch(owner.access_token,{title:product.title,expected_version:product.version});expect(result.status).toBe(200);
  expect((await result.json() as any).version).toBe(product.version+1);
@@ -93,7 +93,7 @@ test('M4 recommendations identify mock mode and return current catalog product I
 });
 test('internal inventory contract admits only M2 and is hidden from gateway',async()=>{
  const call=(id:string)=>fetch('http://m1:3101/internal/inventory/reserve',{method:'POST',headers:{'Content-Type':'application/json','X-Service-Id':id,'X-Service-Key':process.env[`${id}_INTERNAL_KEY`]!},body:'{}'});
- expect((await call('M4')).status).toBe(401);expect((await call('M2')).status).toBe(501);
+ expect((await call('M4')).status).toBe(401);expect((await call('M2')).status).toBe(422);
  const external=await fetch(new URL('/internal/inventory/reserve',base),{method:'POST',body:'{}'});
  expect(external.status).not.toBe(501);
  expect((await fetch('http://m1:3101/health/ready')).status).toBe(200);

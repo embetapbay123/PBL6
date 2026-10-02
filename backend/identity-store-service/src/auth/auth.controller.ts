@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, HttpCode, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { AuthGuard, Public, verifyService } from '../../../shared/src/auth';
+import { AuthGuard, Public, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
 import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
@@ -52,13 +52,13 @@ export class AuthController {
     const [row] = await database.query('SELECT u.id AS user_id,u.email,u.email_verified_at,p.display_name,p.phone FROM "user" u LEFT JOIN customer_profile p ON p.user_id=u.id WHERE u.id=$1',[req.auth.user_id]);
     return row;
   }
-  @Post('internal/context') @HttpCode(200) @Public()
+  @Post('internal/context') @HttpCode(200) @Public() @UseGuards(ServiceGuard) @ServiceCallers('M1','M2','M3','M4')
   async internalContext(@Req() req: Request,@Body() body: {token:string}) {
     const c = config('M3'); verifyService(req.headers,c.internalKeys,['M1','M2','M3','M4']);
     if (typeof body.token !== 'string') throw new ApiError(422,'VALIDATION_FAILED','Thiếu token.');
     return this.service.resolve(body.token);
   }
-  @Get('internal/stores/active') @Public()
+  @Get('internal/stores/active') @Public() @UseGuards(ServiceGuard) @ServiceCallers('M1','M2','M4')
   async activeStores(@Req() req: Request) {
     verifyService(req.headers,config('M3').internalKeys,['M1','M2','M4']);
     return {ids:(await database.query('SELECT id FROM store WHERE status=\'ACTIVE\'')).map((r:any)=>r.id)};

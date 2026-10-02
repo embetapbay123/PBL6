@@ -12,7 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: npm ci && npm --prefix backend ci && npm --prefix frontend ci
-      - run: npm run docs:check && npm run contracts:check && npm run generate:types
+      - run: npm run docs:check && npm run contracts:check && npm run contracts:drift && npm run generate:types
+      - run: git diff --exit-code -- frontend/src/api/generated.d.ts backend/shared/src/contracts.generated.d.ts backend/shared/src/contracts.internal.generated.d.ts
       - run: npm run build:backend && npm run test:backend && npm run build
       - run: python scripts/setup_local.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build

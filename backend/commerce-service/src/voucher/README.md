@@ -12,4 +12,4 @@ Owner: Hoa
 - `GET /store/vouchers/{id}/usage` — getStoreVoucherUsage: **NOT_IMPLEMENTED**
 - `GET /admin/vouchers/{id}/usage` — getPlatformVoucherUsage: **NOT_IMPLEMENTED**
 
-Xem [backlog](../../../../docs/implementation/member-backlog.md). Hoàn thiện DTO runtime, service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
+Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.

@@ -52,7 +52,7 @@ services:
     command: [node, dist/catalog-service/src/main.js]
   m2:
     <<: *node
-    environment: {<<: *app-env, SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}'}
+    environment: {<<: *app-env, SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}', SANDBOX_WEBHOOK_SECRET: '${SANDBOX_WEBHOOK_SECRET:-}'}
     command: [node, dist/commerce-service/src/main.js]
   m3:
     <<: *node

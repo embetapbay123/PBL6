@@ -1,5 +1,7 @@
 # PBL6 — khung triển khai SOA 4 service
 
+**Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](docs/implementation/foundation-handoff.md).
+
 **Schema đã chốt:** [database baseline 2.2](docs/implementation/database-schema.md) — thành viên code theo migration và contract hiện có.
 
 [![Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml)

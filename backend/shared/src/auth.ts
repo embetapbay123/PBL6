@@ -7,7 +7,7 @@ import { ApiError } from './errors';
 import { internalRequest } from './http-client';
 export const Public = () => SetMetadata('public', true);
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
-export const ServiceCallers = (...ids: ServiceId[]) => SetMetadata('service_callers', ids);
+export const ServiceCallers = (...ids: (ServiceId | 'M4')[]) => SetMetadata('service_callers', ids);
 export function verifyToken(token: string, publicKey: string) {
   try {
     const claims = jwt.verify(token, publicKey, { algorithms: ['RS256'], issuer: 'pbl6-identity', audience: 'pbl6-clients' });

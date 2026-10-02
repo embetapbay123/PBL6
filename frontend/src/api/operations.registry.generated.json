@@ -1,0 +1,552 @@
+{
+  "register": {
+    "method": "POST",
+    "path": "/auth/register",
+    "internal": false
+  },
+  "verifyEmail": {
+    "method": "POST",
+    "path": "/auth/verify-email",
+    "internal": false
+  },
+  "login": {
+    "method": "POST",
+    "path": "/auth/login",
+    "internal": false
+  },
+  "refresh": {
+    "method": "POST",
+    "path": "/auth/refresh",
+    "internal": false
+  },
+  "logout": {
+    "method": "POST",
+    "path": "/auth/logout",
+    "internal": false
+  },
+  "resetPassword": {
+    "method": "POST",
+    "path": "/auth/reset-password",
+    "internal": false
+  },
+  "confirmResetPassword": {
+    "method": "POST",
+    "path": "/auth/reset-password/confirm",
+    "internal": false
+  },
+  "changePassword": {
+    "method": "POST",
+    "path": "/auth/change-password",
+    "internal": false
+  },
+  "getAuthContext": {
+    "method": "GET",
+    "path": "/me/context",
+    "internal": false
+  },
+  "getProfile": {
+    "method": "GET",
+    "path": "/me",
+    "internal": false
+  },
+  "updateProfile": {
+    "method": "PATCH",
+    "path": "/me",
+    "internal": false
+  },
+  "listAddresses": {
+    "method": "GET",
+    "path": "/me/addresses",
+    "internal": false
+  },
+  "createAddress": {
+    "method": "POST",
+    "path": "/me/addresses",
+    "internal": false
+  },
+  "updateAddress": {
+    "method": "PATCH",
+    "path": "/me/addresses/{id}",
+    "internal": false
+  },
+  "deleteAddress": {
+    "method": "DELETE",
+    "path": "/me/addresses/{id}",
+    "internal": false
+  },
+  "submitStoreApplication": {
+    "method": "POST",
+    "path": "/me/store-applications",
+    "internal": false
+  },
+  "listOwnStoreApplications": {
+    "method": "GET",
+    "path": "/me/store-applications",
+    "internal": false
+  },
+  "listStoreApplications": {
+    "method": "GET",
+    "path": "/admin/store-applications",
+    "internal": false
+  },
+  "reviewStoreApplication": {
+    "method": "PATCH",
+    "path": "/admin/store-applications/{id}",
+    "internal": false
+  },
+  "getOwnStore": {
+    "method": "GET",
+    "path": "/store",
+    "internal": false
+  },
+  "updateOwnStore": {
+    "method": "PATCH",
+    "path": "/store",
+    "internal": false
+  },
+  "listStoreStaff": {
+    "method": "GET",
+    "path": "/store/staff",
+    "internal": false
+  },
+  "listStaffInvitations": {
+    "method": "GET",
+    "path": "/store/staff/invitations",
+    "internal": false
+  },
+  "inviteStaff": {
+    "method": "POST",
+    "path": "/store/staff/invitations",
+    "internal": false
+  },
+  "revokeStaffInvitation": {
+    "method": "POST",
+    "path": "/store/staff/invitations/{id}/revoke",
+    "internal": false
+  },
+  "listOwnInvitations": {
+    "method": "GET",
+    "path": "/me/invitations",
+    "internal": false
+  },
+  "acceptInvitation": {
+    "method": "POST",
+    "path": "/me/invitations/{id}/accept",
+    "internal": false
+  },
+  "listCategories": {
+    "method": "GET",
+    "path": "/categories",
+    "internal": false
+  },
+  "listProductTypes": {
+    "method": "GET",
+    "path": "/product-types",
+    "internal": false
+  },
+  "listProducts": {
+    "method": "GET",
+    "path": "/products",
+    "internal": false
+  },
+  "getProduct": {
+    "method": "GET",
+    "path": "/products/{id}",
+    "internal": false
+  },
+  "listStoreProducts": {
+    "method": "GET",
+    "path": "/stores/{id}/products",
+    "internal": false
+  },
+  "listOwnStoreProducts": {
+    "method": "GET",
+    "path": "/store/products",
+    "internal": false
+  },
+  "createProduct": {
+    "method": "POST",
+    "path": "/store/products",
+    "internal": false
+  },
+  "updateProduct": {
+    "method": "PATCH",
+    "path": "/store/products/{id}",
+    "internal": false
+  },
+  "createVariant": {
+    "method": "POST",
+    "path": "/store/products/{id}/variants",
+    "internal": false
+  },
+  "addProductImage": {
+    "method": "POST",
+    "path": "/store/products/{id}/images",
+    "internal": false
+  },
+  "listStoreInventory": {
+    "method": "GET",
+    "path": "/store/inventory",
+    "internal": false
+  },
+  "adjustInventory": {
+    "method": "POST",
+    "path": "/store/inventory/adjustments",
+    "internal": false
+  },
+  "listStockMovements": {
+    "method": "GET",
+    "path": "/store/inventory/movements",
+    "internal": false
+  },
+  "listCartItems": {
+    "method": "GET",
+    "path": "/cart/items",
+    "internal": false
+  },
+  "addCartItem": {
+    "method": "POST",
+    "path": "/cart/items",
+    "internal": false
+  },
+  "updateCartItem": {
+    "method": "PATCH",
+    "path": "/cart/items/{id}",
+    "internal": false
+  },
+  "removeCartItem": {
+    "method": "DELETE",
+    "path": "/cart/items/{id}",
+    "internal": false
+  },
+  "quoteCheckout": {
+    "method": "POST",
+    "path": "/checkout/quotes",
+    "internal": false
+  },
+  "confirmCheckout": {
+    "method": "POST",
+    "path": "/orders/batches",
+    "internal": false
+  },
+  "getPurchaseGroupOrders": {
+    "method": "GET",
+    "path": "/orders/batches/{id}",
+    "internal": false
+  },
+  "createPaymentAttempt": {
+    "method": "POST",
+    "path": "/orders/{id}/payment-attempts",
+    "internal": false
+  },
+  "getPayment": {
+    "method": "GET",
+    "path": "/payments/{id}",
+    "internal": false
+  },
+  "sandboxCallback": {
+    "method": "POST",
+    "path": "/payment-callbacks/sandbox",
+    "internal": false
+  },
+  "getOrderRefund": {
+    "method": "GET",
+    "path": "/orders/{id}/refund",
+    "internal": false
+  },
+  "listOwnOrders": {
+    "method": "GET",
+    "path": "/me/orders",
+    "internal": false
+  },
+  "getOwnOrder": {
+    "method": "GET",
+    "path": "/me/orders/{id}",
+    "internal": false
+  },
+  "cancelOwnOrder": {
+    "method": "POST",
+    "path": "/me/orders/{id}/cancel",
+    "internal": false
+  },
+  "listStoreOrders": {
+    "method": "GET",
+    "path": "/store/orders",
+    "internal": false
+  },
+  "getStoreOrder": {
+    "method": "GET",
+    "path": "/store/orders/{id}",
+    "internal": false
+  },
+  "transitionStoreOrder": {
+    "method": "PATCH",
+    "path": "/store/orders/{id}/status",
+    "internal": false
+  },
+  "cancelStoreOrder": {
+    "method": "POST",
+    "path": "/store/orders/{id}/cancel",
+    "internal": false
+  },
+  "collectCod": {
+    "method": "POST",
+    "path": "/store/orders/{id}/cod-collection",
+    "internal": false
+  },
+  "validateVouchers": {
+    "method": "POST",
+    "path": "/vouchers/validate",
+    "internal": false
+  },
+  "listStoreVouchers": {
+    "method": "GET",
+    "path": "/store/vouchers",
+    "internal": false
+  },
+  "createStoreVoucher": {
+    "method": "POST",
+    "path": "/store/vouchers",
+    "internal": false
+  },
+  "updateStoreVoucher": {
+    "method": "PATCH",
+    "path": "/store/vouchers/{id}",
+    "internal": false
+  },
+  "listPlatformVouchers": {
+    "method": "GET",
+    "path": "/admin/vouchers",
+    "internal": false
+  },
+  "createPlatformVoucher": {
+    "method": "POST",
+    "path": "/admin/vouchers",
+    "internal": false
+  },
+  "updatePlatformVoucher": {
+    "method": "PATCH",
+    "path": "/admin/vouchers/{id}",
+    "internal": false
+  },
+  "listProductReviews": {
+    "method": "GET",
+    "path": "/products/{id}/reviews",
+    "internal": false
+  },
+  "createReview": {
+    "method": "POST",
+    "path": "/me/reviews",
+    "internal": false
+  },
+  "updateReview": {
+    "method": "PATCH",
+    "path": "/me/reviews/{id}",
+    "internal": false
+  },
+  "hideReview": {
+    "method": "POST",
+    "path": "/admin/reviews/{id}/hide",
+    "internal": false
+  },
+  "restoreReview": {
+    "method": "POST",
+    "path": "/admin/reviews/{id}/restore",
+    "internal": false
+  },
+  "listUsers": {
+    "method": "GET",
+    "path": "/admin/users",
+    "internal": false
+  },
+  "updateUserState": {
+    "method": "PATCH",
+    "path": "/admin/users/{id}",
+    "internal": false
+  },
+  "listStores": {
+    "method": "GET",
+    "path": "/admin/stores",
+    "internal": false
+  },
+  "updateStoreState": {
+    "method": "PATCH",
+    "path": "/admin/stores/{id}",
+    "internal": false
+  },
+  "listAllOrders": {
+    "method": "GET",
+    "path": "/admin/orders",
+    "internal": false
+  },
+  "getPlatformDashboard": {
+    "method": "GET",
+    "path": "/admin/dashboard",
+    "internal": false
+  },
+  "updateRole": {
+    "method": "PATCH",
+    "path": "/admin/roles/{id}",
+    "internal": false
+  },
+  "createChatSession": {
+    "method": "POST",
+    "path": "/chat/sessions",
+    "internal": false
+  },
+  "sendChatMessage": {
+    "method": "POST",
+    "path": "/chat/sessions/{id}/messages",
+    "internal": false
+  },
+  "listOwnChatSessions": {
+    "method": "GET",
+    "path": "/me/chat/sessions",
+    "internal": false
+  },
+  "getForYou": {
+    "method": "GET",
+    "path": "/recommendations/for-you",
+    "internal": false
+  },
+  "getRelatedProducts": {
+    "method": "GET",
+    "path": "/products/{id}/related",
+    "internal": false
+  },
+  "updateStaff": {
+    "method": "PATCH",
+    "path": "/store/staff/{id}",
+    "internal": false
+  },
+  "getStoreReport": {
+    "method": "GET",
+    "path": "/store/reports",
+    "internal": false
+  },
+  "getStoreVoucherUsage": {
+    "method": "GET",
+    "path": "/store/vouchers/{id}/usage",
+    "internal": false
+  },
+  "getPlatformVoucherUsage": {
+    "method": "GET",
+    "path": "/admin/vouchers/{id}/usage",
+    "internal": false
+  },
+  "createCategory": {
+    "method": "POST",
+    "path": "/admin/categories",
+    "internal": false
+  },
+  "updateCategory": {
+    "method": "PATCH",
+    "path": "/admin/categories/{id}",
+    "internal": false
+  },
+  "createProductType": {
+    "method": "POST",
+    "path": "/admin/product-types",
+    "internal": false
+  },
+  "updateProductType": {
+    "method": "PATCH",
+    "path": "/admin/product-types/{id}",
+    "internal": false
+  },
+  "createAttributeDefinition": {
+    "method": "POST",
+    "path": "/admin/attribute-definitions",
+    "internal": false
+  },
+  "updateAttributeDefinition": {
+    "method": "PATCH",
+    "path": "/admin/attribute-definitions/{id}",
+    "internal": false
+  },
+  "hideProduct": {
+    "method": "POST",
+    "path": "/admin/products/{id}/hide",
+    "internal": false
+  },
+  "restoreProduct": {
+    "method": "POST",
+    "path": "/admin/products/{id}/restore",
+    "internal": false
+  },
+  "getAiMetrics": {
+    "method": "GET",
+    "path": "/ai/metrics",
+    "internal": false
+  },
+  "getPersonalizationConsent": {
+    "method": "GET",
+    "path": "/me/personalization-consent",
+    "internal": false
+  },
+  "updatePersonalizationConsent": {
+    "method": "PATCH",
+    "path": "/me/personalization-consent",
+    "internal": false
+  },
+  "sepayCallback": {
+    "method": "POST",
+    "path": "/payment-callbacks/sepay",
+    "internal": false
+  },
+  "ResolveContext": {
+    "method": "POST",
+    "path": "/internal/context",
+    "internal": true
+  },
+  "ActiveStores": {
+    "method": "GET",
+    "path": "/internal/stores/active",
+    "internal": true
+  },
+  "QuoteVariants": {
+    "method": "POST",
+    "path": "/internal/variants/quote",
+    "internal": true
+  },
+  "ReserveInventory": {
+    "method": "POST",
+    "path": "/internal/inventory/reserve",
+    "internal": true
+  },
+  "ConsumeReservation": {
+    "method": "POST",
+    "path": "/internal/inventory/consume",
+    "internal": true
+  },
+  "ReleaseReservation": {
+    "method": "POST",
+    "path": "/internal/inventory/release",
+    "internal": true
+  },
+  "RestockOrder": {
+    "method": "POST",
+    "path": "/internal/inventory/restock",
+    "internal": true
+  },
+  "VerifyReviewEligibility": {
+    "method": "POST",
+    "path": "/internal/reviews/eligibility",
+    "internal": true
+  },
+  "ResolveCheckoutContext": {
+    "method": "POST",
+    "path": "/internal/checkout/context",
+    "internal": true
+  },
+  "ListLowStockVariants": {
+    "method": "POST",
+    "path": "/internal/inventory/low-stock",
+    "internal": true
+  },
+  "ResolveAiMetricsScope": {
+    "method": "POST",
+    "path": "/internal/ai/metrics-scope",
+    "internal": true
+  }
+}

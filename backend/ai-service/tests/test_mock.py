@@ -35,9 +35,9 @@ def test_rate_limit_returns_consistent_error(monkeypatch):
 
 def test_mock_chat_validates_input_and_discloses_mock():
     client=TestClient(app)
-    response=client.post('/api/v1/chat/sessions/fixture/messages',json={})
+    response=client.post('/api/v1/chat/sessions/11111111-1111-4111-8111-111111111111/messages',json={})
     assert response.status_code==422
-    response=client.post('/api/v1/chat/sessions/fixture/messages',json={'content':'hello'})
+    response=client.post('/api/v1/chat/sessions/11111111-1111-4111-8111-111111111111/messages',json={'content':'hello'})
     assert response.status_code==200
     assert response.json()['mode']=='mock'
     assert response.json()['fallback'] is True

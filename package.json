@@ -12,7 +12,9 @@
     "docs:check": "python scripts/check_docs.py",
     "infra:up": "docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d",
     "infra:down": "docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml down",
-    "contracts:check": "node scripts/check_openapi.mjs"
+    "contracts:check": "node scripts/check_openapi.mjs",
+    "generate:contracts": "python scripts/generate_runtime_contracts.py",
+    "contracts:drift": "python scripts/generate_runtime_contracts.py --check"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "^13.0.0",

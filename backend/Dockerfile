@@ -17,7 +17,9 @@ COPY backend/tests ./tests
 COPY backend/jest*.cjs ./
 COPY backend/tsconfig.json ./
 COPY backend/shared/src ./shared/src
-COPY backend/commerce-service/src/payment/sepay.adapter.ts ./commerce-service/src/payment/sepay.adapter.ts
+COPY backend/catalog-service/src ./catalog-service/src
+COPY backend/commerce-service/src ./commerce-service/src
+COPY backend/identity-store-service/src ./identity-store-service/src
 COPY backend/package.json ./
 USER node
 CMD ["node","dist/catalog-service/src/main.js"]

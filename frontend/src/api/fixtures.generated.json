@@ -1,0 +1,2295 @@
+{
+  "register": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "email": "fixture@example.invalid",
+        "password": "fixture-value",
+        "display_name": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "email_verified": false,
+      "message": "fixture-value"
+    },
+    "status": 201
+  },
+  "verifyEmail": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "login": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "email": "fixture@example.invalid",
+        "password": "fixture-value",
+        "client_type": "MOBILE"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "access_token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "refresh_token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "context": {
+        "user_id": "11111111-1111-4111-8111-111111111111",
+        "roles": [],
+        "store_membership": {
+          "store_id": "11111111-1111-4111-8111-111111111111",
+          "role": "SELLER",
+          "status": "fixture-value",
+          "permissions": []
+        },
+        "token_version": 0
+      }
+    },
+    "status": 200
+  },
+  "refresh": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "refresh_token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "access_token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "refresh_token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "context": {
+        "user_id": "11111111-1111-4111-8111-111111111111",
+        "roles": [],
+        "store_membership": {
+          "store_id": "11111111-1111-4111-8111-111111111111",
+          "role": "SELLER",
+          "status": "fixture-value",
+          "permissions": []
+        },
+        "token_version": 0
+      }
+    },
+    "status": 200
+  },
+  "logout": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "refresh_token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "resetPassword": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "email": "fixture@example.invalid"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "confirmResetPassword": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "token": "fixture-token-not-valid-for-authentication-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "new_password": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "changePassword": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "current_password": "fixture-value",
+        "new_password": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "getAuthContext": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "roles": [],
+      "store_membership": {
+        "store_id": "11111111-1111-4111-8111-111111111111",
+        "role": "SELLER",
+        "status": "fixture-value",
+        "permissions": []
+      },
+      "token_version": 0
+    },
+    "status": 200
+  },
+  "getProfile": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "email": "fixture@example.invalid",
+      "display_name": "fixture-value",
+      "phone": "fixture-value",
+      "email_verified_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "updateProfile": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "display_name": "fixture-value",
+        "phone": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "email": "fixture@example.invalid",
+      "display_name": "fixture-value",
+      "phone": "fixture-value",
+      "email_verified_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "listAddresses": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "createAddress": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "recipient_name": "fixture-value",
+        "phone": "fixture-value",
+        "line1": "fixture-value",
+        "ward": "fixture-value",
+        "district": "fixture-value",
+        "city": "fixture-value",
+        "is_default": false
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "recipient_name": "fixture-value",
+      "phone": "fixture-value",
+      "line1": "fixture-value",
+      "ward": "fixture-value",
+      "district": "fixture-value",
+      "city": "fixture-value",
+      "is_default": false
+    },
+    "status": 201
+  },
+  "updateAddress": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "recipient_name": "fixture-value",
+        "phone": "fixture-value",
+        "line1": "fixture-value",
+        "ward": "fixture-value",
+        "district": "fixture-value",
+        "city": "fixture-value",
+        "is_default": false
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "recipient_name": "fixture-value",
+      "phone": "fixture-value",
+      "line1": "fixture-value",
+      "ward": "fixture-value",
+      "district": "fixture-value",
+      "city": "fixture-value",
+      "is_default": false
+    },
+    "status": 200
+  },
+  "deleteAddress": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "submitStoreApplication": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "proposed_name": "fixture-value",
+        "contact": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "proposed_name": "fixture-value",
+      "contact": "fixture-value",
+      "status": "PENDING",
+      "decision_reason": "fixture-value",
+      "version": 0
+    },
+    "status": 201
+  },
+  "listOwnStoreApplications": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "listStoreApplications": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "reviewStoreApplication": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "status": "APPROVED",
+        "decision_reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "proposed_name": "fixture-value",
+      "contact": "fixture-value",
+      "status": "PENDING",
+      "decision_reason": "fixture-value",
+      "version": 0
+    },
+    "status": 200
+  },
+  "getOwnStore": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "status": "fixture-value",
+      "shipping_fee_vnd": 0,
+      "version": 0
+    },
+    "status": 200
+  },
+  "updateOwnStore": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "description": "fixture-value",
+        "shipping_fee_vnd": 0,
+        "expected_version": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "status": "fixture-value",
+      "shipping_fee_vnd": 0,
+      "version": 0
+    },
+    "status": 200
+  },
+  "listStoreStaff": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "listStaffInvitations": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "inviteStaff": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "invited_email": "fixture@example.invalid",
+        "permissions": []
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "invited_email": "fixture@example.invalid",
+      "permissions": [],
+      "status": "PENDING",
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 201
+  },
+  "revokeStaffInvitation": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "invited_email": "fixture@example.invalid",
+      "permissions": [],
+      "status": "PENDING",
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "listOwnInvitations": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "acceptInvitation": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "invited_email": "fixture@example.invalid",
+      "permissions": [],
+      "status": "PENDING",
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "listCategories": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "listProductTypes": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "listProducts": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20,
+        "q": "fixture-value"
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "getProduct": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "title": "fixture-value",
+      "description": "fixture-value",
+      "attributes": {},
+      "variants": [],
+      "status": "DRAFT",
+      "moderation_status": "VISIBLE",
+      "version": 0
+    },
+    "status": 200
+  },
+  "listStoreProducts": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "listOwnStoreProducts": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "createProduct": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "title": "fixture-value",
+        "description": "fixture-value",
+        "attributes": {},
+        "variants": [],
+        "status": "DRAFT"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "title": "fixture-value",
+      "description": "fixture-value",
+      "attributes": {},
+      "variants": [],
+      "status": "DRAFT",
+      "moderation_status": "VISIBLE",
+      "version": 0
+    },
+    "status": 201
+  },
+  "updateProduct": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "title": "fixture-value",
+        "description": "fixture-value",
+        "attributes": {},
+        "variants": [],
+        "status": "DRAFT",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "title": "fixture-value",
+      "description": "fixture-value",
+      "attributes": {},
+      "variants": [],
+      "status": "DRAFT",
+      "moderation_status": "VISIBLE",
+      "version": 0
+    },
+    "status": 200
+  },
+  "createVariant": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "sku": "fixture-value",
+        "price_vnd": 0,
+        "variant_values": {},
+        "is_default": false
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "sku": "fixture-value",
+      "price_vnd": 0,
+      "variant_values": {},
+      "is_default": false,
+      "status": "fixture-value"
+    },
+    "status": 201
+  },
+  "addProductImage": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "image_url": "https://example.invalid/fixture",
+        "variant_id": "11111111-1111-4111-8111-111111111111",
+        "position": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "image_url": "https://example.invalid/fixture",
+      "position": 0
+    },
+    "status": 201
+  },
+  "listStoreInventory": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "adjustInventory": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "variant_id": "11111111-1111-4111-8111-111111111111",
+        "delta_quantity": 0,
+        "reason": "fixture-value",
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "expected_version": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "quantity": 1,
+      "reserved_quantity": 0,
+      "available_quantity": 0,
+      "version": 0
+    },
+    "status": 201
+  },
+  "listStockMovements": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "listCartItems": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "addCartItem": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "variant_id": "11111111-1111-4111-8111-111111111111",
+        "quantity": 1
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "quantity": 1
+    },
+    "status": 201
+  },
+  "updateCartItem": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "quantity": 1
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "quantity": 1
+    },
+    "status": 200
+  },
+  "removeCartItem": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "quoteCheckout": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "cart_item_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "address_id": "11111111-1111-4111-8111-111111111111",
+        "payment_methods": {},
+        "platform_voucher_code": "fixture-value",
+        "store_vouchers": {}
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "quote_id": "11111111-1111-4111-8111-111111111111",
+      "stores": [],
+      "payable_total_vnd": 0,
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "confirmCheckout": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "cart_item_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "address_id": "11111111-1111-4111-8111-111111111111",
+        "payment_methods": {},
+        "platform_voucher_code": "fixture-value",
+        "store_vouchers": {},
+        "quote_id": "11111111-1111-4111-8111-111111111111",
+        "expected_payable_total_vnd": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {
+        "idempotency-key": "fixture-value"
+      }
+    },
+    "response": {
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "order_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ],
+      "orders": [],
+      "payable_total_vnd": 0
+    },
+    "status": 201
+  },
+  "getPurchaseGroupOrders": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "order_ids": [
+        "11111111-1111-4111-8111-111111111111"
+      ],
+      "orders": [],
+      "payable_total_vnd": 0
+    },
+    "status": 200
+  },
+  "createPaymentAttempt": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "expected_order_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "status": "PENDING",
+      "redirect_url": "https://example.invalid/fixture",
+      "provider_reference": "fixture-value",
+      "provider": "SEPAY_TEST",
+      "payment_code": "fixture-value",
+      "qr_url": "https://example.invalid/fixture",
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 201
+  },
+  "getPayment": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "order_id": "11111111-1111-4111-8111-111111111111",
+      "method": "SANDBOX",
+      "status": "PENDING",
+      "payable_vnd": 0,
+      "collectible_vnd": 0,
+      "collected_vnd": 0,
+      "refunded_vnd": 0
+    },
+    "status": 200
+  },
+  "sandboxCallback": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "provider_event_id": "fixture-value",
+        "provider_reference": "fixture-value",
+        "result": "SUCCESS",
+        "signature": "fixture-signature-not-valid"
+      },
+      "path": {},
+      "query": {},
+      "headers": {
+        "x-sandbox-signature": "fixture-signature-not-valid"
+      }
+    },
+    "response": {
+      "status": "fixture-value",
+      "message": "fixture-value",
+      "correlation_id": "fixture-value"
+    },
+    "status": 200
+  },
+  "getOrderRefund": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "payment_id": "11111111-1111-4111-8111-111111111111",
+      "order_id": "11111111-1111-4111-8111-111111111111",
+      "amount_vnd": 0,
+      "status": "REQUESTED"
+    },
+    "status": 200
+  },
+  "listOwnOrders": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "getOwnOrder": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": []
+    },
+    "status": 200
+  },
+  "cancelOwnOrder": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "expected_version": 0,
+        "reason": "fixture-value"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": []
+    },
+    "status": 200
+  },
+  "listStoreOrders": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "getStoreOrder": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": []
+    },
+    "status": 200
+  },
+  "transitionStoreOrder": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "to_status": "CONFIRMED",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": []
+    },
+    "status": 200
+  },
+  "cancelStoreOrder": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "expected_version": 0,
+        "reason": "fixture-value"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": []
+    },
+    "status": 200
+  },
+  "collectCod": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "expected_version": 0,
+        "amount_collected_vnd": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PENDING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": []
+    },
+    "status": 200
+  },
+  "validateVouchers": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "cart_item_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "address_id": "11111111-1111-4111-8111-111111111111",
+        "payment_methods": {},
+        "platform_voucher_code": "fixture-value",
+        "store_vouchers": {}
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "quote_id": "11111111-1111-4111-8111-111111111111",
+      "stores": [],
+      "payable_total_vnd": 0,
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "listStoreVouchers": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "createStoreVoucher": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "code": "fixture-value",
+        "scope": "STORE",
+        "store_id": "11111111-1111-4111-8111-111111111111",
+        "discount_type": "FIXED",
+        "discount_value": 0,
+        "min_goods_vnd": 0,
+        "max_discount_vnd": 0,
+        "starts_at": "2026-10-02T00:00:00Z",
+        "ends_at": "2026-10-02T00:00:00Z",
+        "usage_limit": 0,
+        "per_customer_limit": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "code": "fixture-value",
+      "scope": "STORE",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "discount_type": "FIXED",
+      "discount_value": 0,
+      "min_goods_vnd": 0,
+      "max_discount_vnd": 0,
+      "starts_at": "2026-10-02T00:00:00Z",
+      "ends_at": "2026-10-02T00:00:00Z",
+      "usage_limit": 0,
+      "per_customer_limit": 0,
+      "status": "ACTIVE",
+      "version": 0
+    },
+    "status": 201
+  },
+  "updateStoreVoucher": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "discount_type": "FIXED",
+        "discount_value": 0,
+        "min_goods_vnd": 0,
+        "max_discount_vnd": 0,
+        "starts_at": "2026-10-02T00:00:00Z",
+        "ends_at": "2026-10-02T00:00:00Z",
+        "usage_limit": 0,
+        "per_customer_limit": 0,
+        "status": "ACTIVE",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "code": "fixture-value",
+      "scope": "STORE",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "discount_type": "FIXED",
+      "discount_value": 0,
+      "min_goods_vnd": 0,
+      "max_discount_vnd": 0,
+      "starts_at": "2026-10-02T00:00:00Z",
+      "ends_at": "2026-10-02T00:00:00Z",
+      "usage_limit": 0,
+      "per_customer_limit": 0,
+      "status": "ACTIVE",
+      "version": 0
+    },
+    "status": 200
+  },
+  "listPlatformVouchers": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "createPlatformVoucher": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "code": "fixture-value",
+        "scope": "STORE",
+        "store_id": "11111111-1111-4111-8111-111111111111",
+        "discount_type": "FIXED",
+        "discount_value": 0,
+        "min_goods_vnd": 0,
+        "max_discount_vnd": 0,
+        "starts_at": "2026-10-02T00:00:00Z",
+        "ends_at": "2026-10-02T00:00:00Z",
+        "usage_limit": 0,
+        "per_customer_limit": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "code": "fixture-value",
+      "scope": "STORE",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "discount_type": "FIXED",
+      "discount_value": 0,
+      "min_goods_vnd": 0,
+      "max_discount_vnd": 0,
+      "starts_at": "2026-10-02T00:00:00Z",
+      "ends_at": "2026-10-02T00:00:00Z",
+      "usage_limit": 0,
+      "per_customer_limit": 0,
+      "status": "ACTIVE",
+      "version": 0
+    },
+    "status": 201
+  },
+  "updatePlatformVoucher": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "discount_type": "FIXED",
+        "discount_value": 0,
+        "min_goods_vnd": 0,
+        "max_discount_vnd": 0,
+        "starts_at": "2026-10-02T00:00:00Z",
+        "ends_at": "2026-10-02T00:00:00Z",
+        "usage_limit": 0,
+        "per_customer_limit": 0,
+        "status": "ACTIVE",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "code": "fixture-value",
+      "scope": "STORE",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "discount_type": "FIXED",
+      "discount_value": 0,
+      "min_goods_vnd": 0,
+      "max_discount_vnd": 0,
+      "starts_at": "2026-10-02T00:00:00Z",
+      "ends_at": "2026-10-02T00:00:00Z",
+      "usage_limit": 0,
+      "per_customer_limit": 0,
+      "status": "ACTIVE",
+      "version": 0
+    },
+    "status": 200
+  },
+  "listProductReviews": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "createReview": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "order_item_id": "11111111-1111-4111-8111-111111111111",
+        "rating": 1,
+        "body": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "order_item_id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "rating": 1,
+      "body": "fixture-value",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 201
+  },
+  "updateReview": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "rating": 1,
+        "body": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "order_item_id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "rating": 1,
+      "body": "fixture-value",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 200
+  },
+  "hideReview": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "order_item_id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "rating": 1,
+      "body": "fixture-value",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 200
+  },
+  "restoreReview": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "order_item_id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "rating": 1,
+      "body": "fixture-value",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 200
+  },
+  "listUsers": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "updateUserState": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "status": "fixture-value",
+        "reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "email": "fixture@example.invalid",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 200
+  },
+  "listStores": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "updateStoreState": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "status": "fixture-value",
+        "reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "owner_user_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "status": "fixture-value",
+      "shipping_fee_vnd": 0,
+      "version": 0
+    },
+    "status": 200
+  },
+  "listAllOrders": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "getPlatformDashboard": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "order_value_vnd": 0,
+      "completed_goods_revenue_vnd": 0,
+      "collected_vnd": 0,
+      "refunded_vnd": 0,
+      "store_count": 0,
+      "user_count": 0
+    },
+    "status": 200
+  },
+  "updateRole": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "permission_ids": [],
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "permission_ids": [],
+      "version": 0
+    },
+    "status": 200
+  },
+  "createChatSession": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "anonymous_key": "fixture-value",
+        "first_message": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "anonymous_key": "fixture-value",
+      "created_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 201
+  },
+  "sendChatMessage": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "content": "fixture-value"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "session_id": "11111111-1111-4111-8111-111111111111",
+      "content": "fixture-value",
+      "product_cards": [],
+      "fallback": false,
+      "mode": "mock",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "role": "ASSISTANT"
+    },
+    "status": 200
+  },
+  "listOwnChatSessions": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "getForYou": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "model_version": "fixture-value",
+      "source": "MODEL",
+      "product_ids": [],
+      "recently_viewed_product_ids": [],
+      "mode": "mock",
+      "evaluation_status": "NOT_RUN"
+    },
+    "status": 200
+  },
+  "getRelatedProducts": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "updateStaff": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "status": "ACTIVE",
+        "permissions": [],
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "ACTIVE",
+      "permissions": [],
+      "expected_version": 0
+    },
+    "status": 200
+  },
+  "getStoreReport": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "from": "2026-10-02T00:00:00Z",
+        "to": "2026-10-02T00:00:00Z",
+        "granularity": "DAY"
+      },
+      "headers": {}
+    },
+    "response": {
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "period_start": "2026-10-02T00:00:00Z",
+      "period_end": "2026-10-02T00:00:00Z",
+      "order_value_vnd": 0,
+      "completed_goods_revenue_vnd": 0,
+      "collected_vnd": 0,
+      "refunded_vnd": 0,
+      "shipping_fee_vnd": 0,
+      "order_count": 0,
+      "best_selling_product_ids": [],
+      "low_stock_variant_ids": [],
+      "revenue_series": []
+    },
+    "status": 200
+  },
+  "getStoreVoucherUsage": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "voucher_id": "11111111-1111-4111-8111-111111111111",
+      "reserved_count": 0,
+      "redeemed_count": 0,
+      "remaining_count": 0
+    },
+    "status": 200
+  },
+  "getPlatformVoucherUsage": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "voucher_id": "11111111-1111-4111-8111-111111111111",
+      "reserved_count": 0,
+      "redeemed_count": 0,
+      "remaining_count": 0
+    },
+    "status": 200
+  },
+  "createCategory": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "parent_id": "11111111-1111-4111-8111-111111111111",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "data_type": "fixture-value",
+        "required": false,
+        "unit": "fixture-value",
+        "variant_axis": false,
+        "allowed_values": []
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "parent_id": "11111111-1111-4111-8111-111111111111",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 201
+  },
+  "updateCategory": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "parent_id": "11111111-1111-4111-8111-111111111111",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "data_type": "fixture-value",
+        "required": false,
+        "unit": "fixture-value",
+        "variant_axis": false,
+        "allowed_values": [],
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "parent_id": "11111111-1111-4111-8111-111111111111",
+      "status": "fixture-value",
+      "version": 0
+    },
+    "status": 200
+  },
+  "createProductType": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "parent_id": "11111111-1111-4111-8111-111111111111",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "data_type": "fixture-value",
+        "required": false,
+        "unit": "fixture-value",
+        "variant_axis": false,
+        "allowed_values": []
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "category_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "status": "fixture-value",
+      "version": 0,
+      "attribute_definitions": []
+    },
+    "status": 201
+  },
+  "updateProductType": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "parent_id": "11111111-1111-4111-8111-111111111111",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "data_type": "fixture-value",
+        "required": false,
+        "unit": "fixture-value",
+        "variant_axis": false,
+        "allowed_values": [],
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "category_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "status": "fixture-value",
+      "version": 0,
+      "attribute_definitions": []
+    },
+    "status": 200
+  },
+  "createAttributeDefinition": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "parent_id": "11111111-1111-4111-8111-111111111111",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "data_type": "fixture-value",
+        "required": false,
+        "unit": "fixture-value",
+        "variant_axis": false,
+        "allowed_values": []
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "data_type": "fixture-value",
+      "required": false,
+      "unit": "fixture-value",
+      "variant_axis": false,
+      "allowed_values": [],
+      "version": 0
+    },
+    "status": 201
+  },
+  "updateAttributeDefinition": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "name": "fixture-value",
+        "parent_id": "11111111-1111-4111-8111-111111111111",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "data_type": "fixture-value",
+        "required": false,
+        "unit": "fixture-value",
+        "variant_axis": false,
+        "allowed_values": [],
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "name": "fixture-value",
+      "data_type": "fixture-value",
+      "required": false,
+      "unit": "fixture-value",
+      "variant_axis": false,
+      "allowed_values": [],
+      "version": 0
+    },
+    "status": 200
+  },
+  "hideProduct": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "title": "fixture-value",
+      "description": "fixture-value",
+      "attributes": {},
+      "variants": [],
+      "status": "DRAFT",
+      "moderation_status": "VISIBLE",
+      "version": 0
+    },
+    "status": 200
+  },
+  "restoreProduct": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "reason": "fixture-value",
+        "expected_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "title": "fixture-value",
+      "description": "fixture-value",
+      "attributes": {},
+      "variants": [],
+      "status": "DRAFT",
+      "moderation_status": "VISIBLE",
+      "version": 0
+    },
+    "status": 200
+  },
+  "getAiMetrics": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "store_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "headers": {}
+    },
+    "response": {
+      "index_status": "fixture-value",
+      "model_version": "fixture-value",
+      "last_training_at": "2026-10-02T00:00:00Z",
+      "evaluation_status": "NOT_RUN",
+      "metrics": {},
+      "mode": "mock"
+    },
+    "status": 200
+  },
+  "getPersonalizationConsent": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "GRANTED",
+      "version": 0,
+      "changed_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "updatePersonalizationConsent": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "status": "GRANTED",
+        "expected_version": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "status": "GRANTED",
+      "version": 0,
+      "changed_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "sepayCallback": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "id": 0,
+        "transferType": "in",
+        "transferAmount": 0,
+        "accountNumber": "fixture-value",
+        "code": "fixture-value",
+        "content": "fixture-value",
+        "referenceCode": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {
+        "x-sepay-signature": "fixture-signature-not-valid",
+        "x-sepay-timestamp": "fixture-value"
+      }
+    },
+    "response": {
+      "success": false
+    },
+    "status": 200
+  }
+}

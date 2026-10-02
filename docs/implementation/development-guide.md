@@ -19,14 +19,14 @@ mobile/lib/core/   # Dio + secure token + refresh một lần
 infrastructure/    # Compose, gateway, config/key local
 ```
 
-Mỗi module có README operation, controller stub, service/repository điểm mở rộng, DTO type alias. Alias TypeScript **không validation runtime**. Khi triển khai phải tạo DTO class-validator cho Node hoặc Pydantic cho M4. ORM model không tự migration và không tự kiểm quyền.
+DTO runtime cho toàn bộ API đã sinh từ OpenAPI: class-validator cho Node, Pydantic cho M4; registry kiểm body/path/query/header sau guard. Xem [foundation handoff](foundation-handoff.md) để import class, dùng adapter/fixture và mẫu Catalog. Type alias vẫn là compile-time; ORM không tự migration hoặc kiểm quyền.
 
 Mẫu đọc: CatalogController → CatalogService → CatalogRepository; lấy Store active qua M3 rồi query M1. Mẫu ghi: ProductUpdateSample → guard → membership/Store/resource → transaction/lock → version → update + audit + outbox. Mẫu phiên: `identity-store-service/src/auth/`.
 
 ## Hoàn thiện một endpoint
 
 1. Nhận task từ [phân công đầy đủ](task-assignment.md)/Kanban, không chờ giao từng đợt; đọc FR/BR/state/RBAC và OpenAPI. Viết module với seed/adapter fixture khi dependency chưa chạy thật; nghiệm thu tích hợp sau khi đủ API cần dùng.
-2. Viết DTO allowlist, validation query/body/UUID; giới hạn page/body/chuỗi. Controller parse, guard và gọi service.
+2. Dùng DTO runtime generated, kiểm query/body/UUID theo contract. Khi đổi field/limit, sửa OpenAPI rồi generate contracts/types; controller dùng guard, request.contract và gọi service.
 3. Service kiểm scope hiện hành, state transition, version/idempotency; không tin user_id/store_id/giá/tổng tiền client.
 4. Repository dùng DB sở hữu và parameter query. Truyền đúng EntityManager trong transaction; tránh repository global trong transaction.
 5. Thêm migration số mới. Không sửa `001_initial.sql` trên DB đã chạy; không dùng synchronize.
@@ -39,6 +39,8 @@ Mẫu đọc: CatalogController → CatalogService → CatalogRepository; lấy 
 OpenAPI là hợp đồng công khai. Giữ snake_case payload, integer VND, lỗi `{code,message,correlation_id,details}`. BIGINT ORM là string; chỉ chuyển Number sau kiểm tra giới hạn an toàn, không tính tiền bằng float.
 
 ```powershell
+npm run generate:contracts
+npm run contracts:drift
 python scripts/sync_contract_status.py
 npm run generate:types
 npm run docs:check
@@ -46,7 +48,7 @@ npm run docs:check
 
 Sync script tạo index/README từ metadata, không ghi controller. `scaffold_contracts.py` chỉ tạo khung ban đầu, chặn chạy lại vì có thể ghi đè controller/migration. Script docs 2.1 cũ không phải công cụ cập nhật thường ngày.
 
-[Internal OpenAPI](../contracts/internal-api.json) và contracts.internal.generated.d.ts có payload/caller chuẩn. Sáu command nội bộ có stub guard/501; context/Store lookup đã chạy thật. DTO runtime command còn phải bổ sung.
+[Internal OpenAPI](../contracts/internal-api.json) và contracts.internal.generated.d.ts có payload/caller chuẩn. 11 internal operation có caller/DTO/fixture: hai lookup context/Store là sample, sáu command và ba lookup checkout/low-stock/AI scope có guard/validation/501. DTO runtime đã có, owner hoàn thiện service/repository.
 
 HTTP nội bộ dùng internalRequest, service allowlist/key và correlation; scope còn phải kiểm tại service nhận. Command kho dùng `once(manager, caller, operationId, payload, effect)` trong transaction. Event gồm event_id, event_type, schema_version, producer, occurred_at, correlation_id, payload. Binding/consumer mẫu không thay ProductChanged/OrderCompleted.
 

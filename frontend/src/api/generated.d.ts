@@ -1794,9 +1794,9 @@ export interface components {
             code: string;
             message: string;
             correlation_id: string;
-            details?: {
+            details: {
                 [key: string]: unknown;
-            };
+            }[];
         };
         MoneyBreakdown: {
             /** Format: int64 */
@@ -2084,7 +2084,7 @@ export interface components {
             /** Format: uuid */
             product_type_id: string;
             title: string;
-            description?: string;
+            description?: string | null;
             attributes: {
                 [key: string]: unknown;
             };
@@ -2161,6 +2161,12 @@ export interface components {
                 status: string;
             }[];
             fallback?: boolean;
+            /** @enum {string} */
+            mode?: "mock";
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            role?: "ASSISTANT" | "USER" | "SYSTEM";
         };
         RecommendationResult: {
             model_version?: string;
@@ -2169,6 +2175,10 @@ export interface components {
             product_ids: string[];
             /** @description ID Product đã xem gần đây, chỉ khi Customer có consent; luôn lọc trạng thái Product/Store hiện hành, không có consent thì mảng rỗng. */
             recently_viewed_product_ids: string[];
+            /** @enum {string} */
+            mode?: "mock";
+            /** @enum {string} */
+            evaluation_status?: "NOT_RUN" | "RUNNING" | "COMPLETED" | "FAILED";
         };
         OperationResult: {
             status: string;
@@ -2213,10 +2223,10 @@ export interface components {
             user_id: string;
             /** Format: email */
             email: string;
-            display_name?: string;
-            phone?: string;
+            display_name?: string | null;
+            phone?: string | null;
             /** Format: date-time */
-            email_verified_at?: string;
+            email_verified_at?: string | null;
         };
         ProfileUpdate: {
             display_name?: string;
@@ -2372,6 +2382,8 @@ export interface components {
             metrics?: {
                 [key: string]: unknown;
             };
+            /** @enum {string} */
+            mode?: "mock";
         };
         VoucherUsage: {
             /** Format: uuid */
@@ -3069,7 +3081,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RefreshRequest"];
+            };
+        };
         responses: {
             /** @description Thành công: đăng xuất và thu hồi phiên */
             200: {
@@ -5463,6 +5479,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -5948,9 +5965,7 @@ export interface operations {
     updateProduct: {
         parameters: {
             query?: never;
-            header?: {
-                "If-Match"?: string;
-            };
+            header?: never;
             path: {
                 id: string;
             };

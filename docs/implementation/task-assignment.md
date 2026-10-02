@@ -1,5 +1,7 @@
 # Phân công toàn bộ phạm vi triển khai 2.2
 
+**Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
+
 **Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
 
 [Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
@@ -150,7 +152,7 @@ Mở issue để đọc cách bắt đầu, API/path, tiêu chí riêng, reviewe
 
 ## Độ phủ và quy tắc code
 
-Đối chiếu khi giao: **99/99 public operation** có đúng một task BE chịu trách nhiệm, **8/8 internal operation** có task phụ trách. Sample/mock cũng có task hoàn thiện; UI gọi API đó nhưng không đổi owner service. Lookup M3/low-stock/scope AI còn thiếu được chốt contract ở FLOW-01 và triển khai ở ID-LOOKUP-01/INV-01/AI-04. Tracking search/view/cart/purchase có ingress/producer/caller được chốt ở FLOW-01, triển khai ở AI-01/CAT-04/CART-02/ORDER-04; không chỉ dùng event giả. Chat Guest/Customer cần scope phiên đúng; Seller xem metric M4 đúng Store trong SELL-03.
+Đối chiếu khi giao: **99/99 public operation** có đúng một task BE chịu trách nhiệm, **11/11 internal operation** có task phụ trách. Sample/mock cũng có task hoàn thiện; UI gọi API đó nhưng không đổi owner service. Lookup M3/low-stock/scope AI đã chốt contract trong nền 2.2.1 và triển khai ở ID-LOOKUP-01/INV-01/AI-04. Tracking search/view/cart/purchase có ingress/producer/caller được chốt ở FLOW-01, triển khai ở AI-01/CAT-04/CART-02/ORDER-04; không chỉ dùng event giả. Chat Guest/Customer cần scope phiên đúng; Seller xem metric M4 đúng Store trong SELL-03.
 
 - Hoa sở hữu controller/permission/Order flow của ORDER-05 (`collectCod`); Công sở hữu domain ghi nhận tiền ở PAY-04, cùng transaction M2. Không viết hai logic COD.
 - M1/M2/M3/M4 giữ DB riêng; không join/FK/ghi DB service khác. M2 Order/Payment dùng chung EntityManager khi cần nguyên tử; tích hợp nhiều service dùng operation ID/outbox/inbox/recovery.

@@ -63,3 +63,12 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - `python scripts/check_database_schema.py`: cả 4 bộ migration mới và 12 kiểm tra vi phạm invariant đạt; dữ liệu fixture hợp lệ ghi được; schema test rollback hoàn toàn.
 - Kiểm tra được đưa vào CI; kết quả local không thay thế kết quả CI trên commit mới hoặc kiểm thử nghiệp vụ của member.
 - Sau khi áp dụng migration 003: build backend thành công, 10 integration test hiện có đạt; `docs:check` đạt 76 Markdown / 99 API.
+
+## Nền DTO/contract bàn giao 2.2.1 — 02/10/2026
+
+- Public: 99 operation giữ 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 87 NOT_IMPLEMENTED; Internal: 11 operation, 2 sample / 9 stub. Không hoàn thành nghiệp vụ thay member.
+- Generated DTO/runtime registry, typed inputs/outputs và fixture bao phủ 110 operation; 7 event có schema, typed envelope và fixture. CI kiểm drift và generated types.
+- Local: contract/parser và docs check đạt; backend/Web build đạt; 19 Node unit, 14 integration, 13 Python, 7 Web e2e và 2 Flutter test đạt; Flutter analyze không có lỗi. Web local chạy Playwright với Microsoft Edge.
+- Schema invariant kiểm tra lại trên schema transaction tách biệt: 4 bộ migration và 12 tình huống vi phạm được chặn. Migration 001–003 không sửa.
+- Demo Owner sửa tên/mô tả Product thật, reload đọc lại, sau test khôi phục tên; 409/422/501 form hiển thị lỗi. Order/Payment rollback và Catalog write/audit/outbox rollback được kiểm trên PostgreSQL.
+- Không chạy APK/device, tải 100 user, provider thanh toán thật hoặc AI thật; các phần này giữ trong task owner. CI trên GitHub phải xem theo commit mới, không suy từ kết quả local.
