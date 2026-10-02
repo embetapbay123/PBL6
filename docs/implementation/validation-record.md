@@ -38,10 +38,20 @@ Kiểm tra đợt cập nhật: docs74 file và cả hai OpenAPI PASS; setup ch�
 
 ## Kanban GitHub Projects — 02/10/2026
 
-[PBL6 — Team Kanban](https://github.com/users/embetapbay123/projects/1/views/2) là nguồn tiến độ duy nhất. Readback xác nhận8 issue,5 Todo +3 Backlog, đủ6 Status option và view BOARD_LAYOUT dùng Status làm cột. Issue chứa scope/tiêu chí; Owner và Assignee ghi người thực hiện/tài khoản.
+[PBL6 — Team Kanban](https://github.com/users/embetapbay123/projects/1/views/2) là nguồn tiến độ duy nhất. Readback sau khi giao toàn bộ phạm vi xác nhận71 issue/card,24 Todo +47 Backlog, đủ6 Status option; view tổng nhóm theo Owner và dùng Status làm cột. Issue chứa scope/tiêu chí; Owner và Assignee ghi người thực hiện/tài khoản.
 
-Thịnh=QT-2005 (#2/#7), Hoa=mimidangeiu (#3/#8). Mutation cấu hình cả hai với role WRITER trên Project thành công. Lời mời repo Write vẫn pending; assignee tạm embetapbay123 trong lúc chờ nhận lời mời.
+Username đã xác nhận: Công=embetapbay123, Thịnh=QT-2005, Hoa=mimidangeiu, Trí=phantri1912, Hatsaphone=HATSAPHONE. Cả4 member đã được cấu hình WRITER trên Project; Owner của toàn bộ task đã đọc lại đúng người. Trí đã nhận lời mời repo Write;14 task gán trực tiếp phantri1912 được đọc lại đúng. Hoa/Thịnh/Hatsaphone còn pending; các task đó vẫn tạm embetapbay123 nhưng Owner đúng người.
 
 Đã bỏ board Markdown, workflow đồng bộ, hai script sync và hai file metadata trùng. Workflow cũ được disable trước khi bỏ label trạng thái; repo không còn label status:*. README/mẫu issue/hướng dẫn dùng kéo thẻ trực tiếp, thêm issue mới vào Project và nghiệm thu trước Done. View mặc định không sử dụng đã bỏ; task/nội dung issue giữ nguyên. Không lưu token cá nhân trong Git.
 
 Kiểm tra docs75 Markdown và git diff --check đạt. Không thay code nghiệp vụ trong đợt này.
+
+## Giao toàn bộ phạm vi — 02/10/2026
+
+Đã giữ8 issue cũ và bổ sung63 issue, tổng71 task có owner, priority, scope, cách bắt đầu, dependency tích hợp, tiêu chí riêng và bằng chứng. Phân công: Công14, Thịnh14, Hoa18, Trí14, Hatsaphone11. Task được công bố trước toàn bộ; không mở issue từng đợt hoặc bắt UI/module chờ tất cả API thật để bắt đầu phần độc lập.
+
+Đối chiếu99/99 public operation (mỗi operation một task BE chính),8/8 internal operation; cả API sample/mock cũng có task hoàn thiện. Readback71 issue/card, Owner/Priority đúng mapping, dependency URL đúng issue, không có task trùng/label status cũ. Priority ban đầu29 P0 +38 P1 +4 P2;24 Todo và47 Backlog, chưa tự gắn In progress/Done.
+
+[Mở bảng tổng](https://github.com/users/embetapbay123/projects/1/views/3): BOARD_LAYOUT, group theo Owner single-select, cột theo Status. [View tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) hiển thị Owner/Priority. Tài liệu scope được cập nhật một lần; không thêm bảng Markdown trạng thái, metadata task hay workflow/script đồng bộ vào repo. Status sống trên Project, nội dung task sống trong issue.
+
+Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài mapping operation. FLOW-01 chốt contract bổ sung; fixture chỉ để phát triển/test, nghiệm thu cần nguồn dữ liệu/API thật. Kiểm docs75 Markdown và git diff --check đạt; đây là giao kế hoạch, không nghiệm thu nghiệp vụ hoặc hứa deadline từ số task.

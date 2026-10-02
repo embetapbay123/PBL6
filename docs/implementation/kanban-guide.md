@@ -1,6 +1,6 @@
 # Cách dùng Kanban của nhóm
 
-[Mở Kanban PBL6](https://github.com/users/embetapbay123/projects/1/views/2). **Status trên Project là nguồn tiến độ duy nhất.** Kéo thẻ để đổi cột; mở issue trên thẻ để đọc phạm vi, dependency, reviewer và tiêu chí nghiệm thu.
+[Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) hoặc [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2). Toàn bộ71 task đã giao trước; xem [bảng scope đầy đủ](task-assignment.md). **Status trên Project là nguồn tiến độ duy nhất.** Kéo thẻ để đổi cột; mở issue trên thẻ để đọc phạm vi, dependency, reviewer và tiêu chí nghiệm thu.
 
 ## Các cột
 
@@ -13,21 +13,23 @@
 | Blocked | Ghi API/task đang chờ, người phụ trách và điều kiện mở chặn trong issue |
 | Done | Đủ nghiệm thu, PR đã merge và issue đóng hoàn thành |
 
-Task có thể làm phần độc lập bằng fixture đúng contract khi đã ghi rõ; tích hợp thật vẫn cần nghiệm thu. Không chuyển cả task sang Blocked nếu vẫn còn phần độc lập có thể làm. Status Done không thay bằng chứng triển khai API.
+BE có thể làm repository/state machine bằng seed/adapter fixture, UI có thể làm page riêng theo contract/component mẫu trước API thật; tích hợp thật vẫn cần nghiệm thu. Không chuyển cả task sang Blocked nếu vẫn còn phần độc lập có thể làm. Status Done không thay bằng chứng triển khai API.
 
 ## Nhận và tạo task
 
-| Member | GitHub | Task hiện có |
+| Member | GitHub | Số task theo scope |
 | --- | --- | --- |
-| Công | embetapbay123 | #1, #6 |
-| Thịnh | QT-2005 | #2, #7 |
-| Hoa | mimidangeiu | #3, #8 |
-| Trí | Chưa có username | #4 |
-| Hatsaphone | Chưa có username | #5 |
+| Công | embetapbay123 | 14 |
+| Thịnh | QT-2005 | 14 |
+| Hoa | mimidangeiu | 18 |
+| Trí | phantri1912 | 14 |
+| Hatsaphone | HATSAPHONE | 11 |
 
-- Hoa/Thịnh đã được mời repo Write; cần [chấp nhận lời mời](https://github.com/embetapbay123/PBL6/invitations) để nhận Assignee và push branch. Trong lúc chờ, Assignee tạm là embetapbay123; Owner trên thẻ ghi người thực hiện. Sau khi chấp nhận, chuyển Assignee #2/#7 cho QT-2005 và #3/#8 cho mimidangeiu.
-- Quyền Write của Project cho phép member đổi Status; quyền repo quản lý việc code/issue. Công quản lý Project và cấp quyền cho Trí/Hatsaphone khi có username.
-- Tạo task bằng [mẫu issue](../../.github/ISSUE_TEMPLATE/member-task.md), thêm vào **PBL6 — Team Kanban** ở mục Projects của issue, chọn Status và ghi Owner. Chọn đúng một Assignee khi có tài khoản; reviewer/phối hợp ghi trong body. Label `task`, `owner:*`, `scope:*`, `phase:*` dùng để lọc việc.
+- Bảng tổng nhóm theo **Owner**, cột theo **Status**. Owner là người thực hiện; Assignee là tài khoản GitHub. Cả4 member có quyền Write trên Project để tự kéo thẻ.
+- Trí đã nhận lời mời repo và được gán14 task cho phantri1912. Hoa/Thịnh/Hatsaphone còn chờ nhận; đăng nhập đúng tài khoản và [chấp nhận lời mời](https://github.com/embetapbay123/PBL6/invitations) để push branch/nhận Assignee; trong lúc chờ, issue tạm giao embetapbay123 nhưng Owner vẫn là member. Sau khi nhận, chuyển các issue của Owner đó sang tài khoản tương ứng.
+- Tất cả task đã có issue, cách bắt đầu và dependency nghiệm thu. Không chờ Công giao tiếp. Chọn task Todo phù hợp; có thể đưa task Backlog lên Todo khi đã hiểu scope và có đầu vào/fixture đủ để làm phần độc lập. Mỗi người tối đa một task In progress.
+- **P0** ưu tiên contract/nền và luồng mua cốt lõi, **P1** nghiệp vụ/UI, **P2** nghiệm thu thiết bị/tải/recovery/demo. Priority không bắt cả nhóm làm tuần tự.
+- Task mới ngoài scope hiện có dùng [mẫu issue](../../.github/ISSUE_TEMPLATE/member-task.md), thêm vào **PBL6 — Team Kanban**, chọn Owner/Status/Priority và Assignee. Reviewer/phối hợp ghi trong body; labels `task`, `owner:*`, `scope:*`, `phase:*` để lọc.
 
 ## Code và bàn giao
 

@@ -1,8 +1,8 @@
 # Backlog để chia member
 
-Đây là việc **còn phải code**. Khung đã có migration/model, operation/DTO type, stub và mẫu; file tồn tại chưa có nghĩa nghiệp vụ hoàn thành. Giao từng nhóm nhỏ, hoàn thành contract và test rồi mở nhóm tiếp theo.
+Đây là việc **còn phải code**. Khung đã có migration/model, operation/DTO type, stub và mẫu; file tồn tại chưa có nghĩa nghiệp vụ hoàn thành. Toàn bộ phạm vi đã được tách thành71 task và giao trước trên [Kanban tổng](https://github.com/users/embetapbay123/projects/1/views/3); member không cần chờ mở từng nhóm tiếp theo.
 
-Để giao việc ngay, dùng [bảng giao task](task-assignment.md): có task đầu tiên của từng member, tiêu chí nghiệm thu, phụ thuộc và mẫu issue. Bảng dưới là phạm vi tổng thể, không nên giao nguyên một ô thành một task.
+Để nhận việc, dùng [bảng phân công đầy đủ](task-assignment.md): có toàn bộ issue của từng member, ưu tiên, đầu ra và handoff để nghiệm thu tích hợp. Mỗi issue ghi cách làm bằng seed/fixture khi API phụ thuộc chưa xong. Bảng dưới là phạm vi tổng thể; không giao nguyên một ô thành một task.
 
 | Member | Nhóm 1: độc lập | Nhóm 2: tích hợp | Bằng chứng bàn giao |
 | --- | --- | --- | --- |
@@ -18,10 +18,10 @@
 - Trí → các member: context hiện hành, Store/membership/address lookup và trạng thái khóa; email flow thật chưa có.
 - Hoa ↔ Công: Order/Payment/Refund cùng M2; dùng EntityManager chung khi transaction cần nguyên tử, thống nhất state/event trước khi viết.
 - Thịnh/Hoa → Công: ProductChanged/OrderCompleted có schema version/outbox; AI consumer kiểm consent.
-- Backend → Hatsaphone: bàn giao từng API có test/ví dụ; thứ tự màn theo API sẵn sàng.
+- Backend → Hatsaphone: bàn giao contract/component/fixture sớm để UI làm song song; nghiệm thu tích hợp từng màn bằng API thật khi bàn giao.
 
 ## Thứ tự tích hợp
 
-A: auth/profile/Store/catalog CRUD, client API, quyền/validation. B: Cart/address/kho/voucher/quote. C: checkout/Order/COD/SePay test/refund/recovery. D: review/report/AI, kiểm tải/demo. UI làm song song bằng fixture có nhãn mock; chuyển từng luồng sang API thật khi backend bàn giao.
+A: auth/profile/Store/catalog CRUD, client API, quyền/validation. B: Cart/address/kho/voucher/quote. C: checkout/Order/COD/SePay test/refund/recovery. D: review/report/AI, kiểm tải/demo. Đây là mốc ghép luồng, không phải đợt công bố task hay cổng chờ cả nhóm. Module/UI làm song song bằng seed/fixture có nhãn mock; chuyển từng luồng sang API thật khi backend bàn giao.
 
 Operation hoàn thành khi phạm vi OpenAPI được hỗ trợ đủ, test đạt, quyền/error/recovery được kiểm và README bỏ cảnh báo stub. IMPLEMENTED_SAMPLE giữ nhãn mẫu đến khi hoàn thiện nghiệp vụ đích.

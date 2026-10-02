@@ -1,101 +1,159 @@
-# Bảng giao task trên khung 2.2
+# Phân công toàn bộ phạm vi triển khai 2.2
 
-Giao theo **chức năng có thể demo và nghiệm thu**, dùng [ownership](service-ownership.md) để giữ phạm vi từng người và [backlog](member-backlog.md) để chọn việc tiếp theo. Mỗi người có một task đang làm; một task có một owner, người hỗ trợ/review được ghi riêng. Các task dưới đây mới là kế hoạch giao việc, chưa phải bằng chứng đã triển khai.
+[Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
 
-Task nằm trong GitHub Issues; tiến độ quản lý trực tiếp trên [Kanban GitHub Projects](https://github.com/users/embetapbay123/projects/1/views/2). Kéo thẻ để đổi trạng thái theo [hướng dẫn board](kanban-guide.md). Thịnh dùng `QT-2005` (#2/#7), Hoa dùng `mimidangeiu` (#3/#8); đã mời Write vào repo, assignee tạm vẫn embetapbay123 trong lúc chờ chấp nhận. Trí/Hatsaphone chưa có username. Tài liệu này ghi phạm vi và tiêu chí; trạng thái hiện hành xem trên Kanban.
+**Đã giao trước toàn bộ71 task của5 người.** Tài liệu này là bảng scope và đường dẫn tới issue; **Status trên Project là nguồn tiến độ duy nhất**. Không đợi Công mở từng task hoặc đợi cả nhóm kết thúc một đợt. Mỗi người chọn một task phù hợp, làm phần độc lập với contract/seed/fixture, rồi tích hợp khi dependency bàn giao API thật.
 
-## Đợt đầu: giao ngay
+Task chưa làm không có nghĩa nghiệp vụ đã hoàn thành. Khung vẫn có sample/mock/501; chỉ cập nhật endpoint-status sau nghiệm thu đúng phạm vi. Không dùng fixture để báo thanh toán/Order thành công thật.
 
-| ID | Owner | Task đầu tiên | Phụ thuộc và đầu ra |
+## Bảng tổng theo người
+
+| Member | GitHub | Phạm vi đầy đủ | Số task |
 | --- | --- | --- | --- |
-| CORE-01 | Công | Tách điểm mở rộng Customer/Seller/Admin của Web và component trạng thái dùng chung | Refactor khung API hiện có; bàn giao route, thư mục, mẫu gọi API cho ba người làm Web |
-| CAT-01 | Thịnh | Danh sách sản phẩm của Store trên Seller Web | M3 context/Store mẫu đã có; bàn giao `listOwnStoreProducts`, `listStoreProducts` và màn danh sách Seller |
-| CART-01 | Hoa | Đọc, sửa số lượng và xóa item trong giỏ của mình | Bàn giao `listCartItems`, `updateCartItem`, `removeCartItem`; dùng dữ liệu giỏ trong test. Thêm item và tích hợp giá hiện hành làm ở CART-02 |
-| ID-01 | Trí | CRUD địa chỉ của Customer | Bàn giao `listAddresses`, `createAddress`, `updateAddress`, `deleteAddress`; mở đường cho checkout/Web/Mobile |
-| WEB-01 | Hatsaphone | Trang danh sách sản phẩm Customer | Dùng `listProducts` mẫu đã chạy; bàn giao danh sách, tìm kiếm, phân trang và trạng thái loading/empty/error |
+| Công | [embetapbay123](https://github.com/embetapbay123) | Shared/gateway/CI, contract tích hợp, Payment/Refund/COD, toàn M4, security/load/recovery/demo | 14 |
+| Thịnh | [QT-2005](https://github.com/QT-2005) | Catalog/Taxonomy/Inventory/Review/Moderation M1 và toàn Seller Web | 14 |
+| Hoa | [mimidangeiu](https://github.com/mimidangeiu) | Cart/Order/Voucher/Report M2, review eligibility và Customer Android | 18 |
+| Trí | [phantri1912](https://github.com/phantri1912) | Auth/Profile/Address/Store/Staff/RBAC M3 và toàn Admin Web | 14 |
+| Hatsaphone | [HATSAPHONE](https://github.com/HATSAPHONE) | Customer Web theo màn; chỉ UI/API theo mẫu, không BE/AI | 11 |
 
-Backend bắt đầu song song. Người làm Web có thể tạo page riêng trước; kết nối route sau khi CORE-01 được merge. Không yêu cầu Thịnh/Trí/Hatsaphone cùng sửa `BootstrapApp.tsx`. Không giao lại login/catalog mẫu như thể đã hoàn thành toàn bộ nghiệp vụ.
+Cả4 member đã có username và quyền Write trên Project. Trí đã nhận lời mời repo Write và14 task đã gán trực tiếp phantri1912. Hoa/Thịnh/Hatsaphone còn chờ nhận; Assignee của các task đó tạm embetapbay123 trong lúc GitHub chưa cho gán. Sau khi member nhận lời mời, chuyển các issue có Owner tương ứng sang tài khoản đó. Tên Owner và body issue đã xác định người thực hiện, không hiểu Assignee tạm là Công phải code toàn bộ.
 
-### CORE-01 — Công
+Số task không là số giờ: Công giữ giao dịch/AI/tích hợp nặng; Hatsaphone nhận các màn theo component/contract mẫu, Công hỗ trợ adapter. Hoa có cả M2 và Android; khi chọn việc cần ưu tiên handoff BE trước phần UI dùng API đó.
 
-- Điểm bắt đầu: [BootstrapApp](../../frontend/src/bootstrap/BootstrapApp.tsx), [API client](../../frontend/src/api/client.ts), [auth provider](../../frontend/src/api/auth-context.tsx).
-- Tách các page API thật vào thư mục dự kiến `frontend/src/features/customer/`, `seller/`, `admin/`; component dùng chung có ErrorView/loading/empty. Đây là cấu trúc cần tạo, chưa có sẵn trong khung.
-- Bàn giao một page mẫu dùng generated types/API client và quy tắc đăng ký route. Giữ một AuthProvider/QueryClient cho app; client và refresh được dùng chung.
-- Nghiệm thu: catalog, login, profile và route demo mock vẫn hoạt động; Web build và các bài kiểm tra Web hiện có đạt. Ba owner có thể thêm page trong thư mục riêng.
+## Cách bắt đầu song song
 
-### CAT-01 — Thịnh
+| Người | Ưu tiên lấy việc đầu | Phần khác có thể làm với seed/fixture |
+| --- | --- | --- |
+| Công | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [CORE-02 · #50](https://github.com/embetapbay123/PBL6/issues/50) | Payment adapter/consent/event consumer theo payload đã chốt |
+| Thịnh | [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7), [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2), [INV-01 · #13](https://github.com/embetapbay123/PBL6/issues/13) | Product/Variant/Image, taxonomy, kho và Seller page riêng |
+| Hoa | [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3), [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27), [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28) | Order read/report từ seed; orchestration/Android từ adapter fixture |
+| Trí | [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39), [AUTH-01 · #37](https://github.com/embetapbay123/PBL6/issues/37) | Store application, staff/permission, admin list/form từ seed/fixture |
+| Hatsaphone | [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [WEB-03 · #63](https://github.com/embetapbay123/PBL6/issues/63) | Tạo component từng màn trong thư mục riêng; ráp route/API thật sau |
 
-- Điểm bắt đầu: [catalog module](../../backend/catalog-service/src/catalog/README.md); Seller page sau CORE-01.
-- Triển khai `GET /store/products` và `GET /stores/{id}/products` đúng schema/filter/phân trang của OpenAPI. Dùng catalog mẫu làm điểm xuất phát.
-- Nghiệm thu: Seller chỉ xem danh sách quản lý của Store thuộc membership hiện hành; trang công khai chỉ trả sản phẩm đủ điều kiện hiển thị. Kiểm bằng hai Store và một User không có quyền.
-- Seller page có loading/empty/error/phân trang và dữ liệu API; bàn giao request/response mẫu cho Hatsaphone. Form tạo/sửa sản phẩm là task tiếp theo.
+- FLOW-01 chốt sớm M1 quote/kho, lookup M3, low-stock/report, scope AI và EntityManager Order/Payment; không cần chờ CORE-01.
+- API client/types/fixture là điểm xuất phát; generic client hiện có và seed cho phép viết module/page riêng. Không để mọi page chờ Công viết toàn bộ adapter.
+- Dependency trong bảng là đầu vào để **nghiệm thu tích hợp**, không là điều kiện để công bố/giao task. Nếu còn phần độc lập, tiếp tục làm phần đó.
+- Mỗi người tối đa một task In progress. Các task còn lại đã nằm trên board; owner tự chọn task Todo phù hợp và cập nhật tiến độ.
+- P0: contract/nền và luồng mua cốt lõi; P1: nghiệp vụ/UI; P2: nghiệm thu thiết bị/tải/recovery/demo. Ưu tiên không bắt cả nhóm làm tuần tự.
+- Không chốt deadline chỉ từ số thẻ. Khi có hạn demo, nhóm chọn scope/mốc theo đầu ra, không tự bỏ các FR/NFR còn thiếu.
 
-### CART-01 — Hoa
+## Toàn bộ task và đầu ra
 
-- Điểm bắt đầu: [cart module](../../backend/commerce-service/src/cart/README.md); database M2.
-- Triển khai `GET /cart/items`, `PATCH /cart/items/{id}`, `DELETE /cart/items/{id}` với DTO runtime, ownership và version theo contract. Tạo dữ liệu giỏ bằng fixture test để kiểm độc lập.
-- Nghiệm thu: Customer A không đọc/sửa/xóa item của B; số lượng sai bị từ chối; version cũ không ghi đè; response đúng schema. Không nhận giá/tổng tiền do client gửi để ghi thành dữ liệu nguồn.
-- Phần response cần giá/snapshot từ M1 được kiểm bằng adapter fixture đúng internal contract trong test. Chỉ nghiệm thu tích hợp thật sau khi M1 bàn giao API cần dùng; 501/timeout phải hiển thị là lỗi phụ thuộc.
-- Giao `POST /cart/items` và kết nối M1 ở CART-02. Mobile Cart nối sau khi API giỏ tích hợp đạt, để Hoa không phải hoàn thành nhiều phần cùng lúc.
+Mở issue để đọc cách bắt đầu, API/path, tiêu chí riêng, reviewer và checklist bằng chứng. Dependency được link tới issue, không cần xin giao thêm việc.
 
-### ID-01 — Trí
+### Công — 14 task
 
-- Điểm bắt đầu: [profile module](../../backend/identity-store-service/src/profile/README.md); bốn operation địa chỉ trong OpenAPI.
-- Triển khai danh sách/thêm/sửa/xóa, DTO runtime và các quy tắc địa chỉ trong [business rules](../business-rules.md)/schema. Chỉ sử dụng User từ context xác thực.
-- Nghiệm thu: A không dùng ID địa chỉ của B; input sai bị từ chối; thay đổi được lưu trên M3 và đọc lại đúng; xử lý địa chỉ mặc định theo contract. Không ghi địa chỉ trực tiếp từ M2.
-- Bàn giao request/response và lỗi cho Hoa/Hatsaphone. Lookup nội bộ để M2 lấy snapshot địa chỉ là phần cần chốt ở FLOW-01, không mặc định đã có trong khung.
+| Task | Đầu ra / scope | Ưu tiên ban đầu | Handoff cần cho tích hợp |
+| --- | --- | --- | --- |
+| [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1) | Tách route/page/component Web dùng chung | P0 | Khung/contract/seed hiện có |
+| [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) | Chốt contract tích hợp và interface Order/Payment | P0 | Khung/contract/seed hiện có |
+| [CORE-02 · #50](https://github.com/embetapbay123/PBL6/issues/50) | API adapter/fixture mẫu, codegen và chuẩn bàn giao | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51) | PaymentAttempt, Payment read và provider adapter<br>`createPaymentAttempt`, `getPayment` | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [PAY-02 · #52](https://github.com/embetapbay123/PBL6/issues/52) | Webhook SePay Test và callback tương thích<br>`sepayCallback`, `sandboxCallback` | P1 | [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [INV-02 · #14](https://github.com/embetapbay123/PBL6/issues/14), [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22) |
+| [PAY-03 · #53](https://github.com/embetapbay123/PBL6/issues/53) | Refund, reconciliation và Payment recovery<br>`getOrderRefund` | P1 | [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-02 · #52](https://github.com/embetapbay123/PBL6/issues/52), [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [PAY-04 · #54](https://github.com/embetapbay123/PBL6/issues/54) | Domain COD collection cùng transaction Order | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51) |
+| [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55) | Consent, tracking và consumer sự kiện có dedup<br>`getPersonalizationConsent`, `updatePersonalizationConsent` | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [AI-02 · #56](https://github.com/embetapbay123/PBL6/issues/56) | Recommendation ALS, related, fallback và index<br>`getForYou`, `getRelatedProducts` | P1 | [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55), [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [AI-03 · #57](https://github.com/embetapbay123/PBL6/issues/57) | Chat session/history và RAG theo dữ liệu Catalog<br>`createChatSession`, `sendChatMessage`, `listOwnChatSessions` | P1 | [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55), [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [AI-04 · #58](https://github.com/embetapbay123/PBL6/issues/58) | AI metrics, evaluation dataset và báo cáo chất lượng<br>`getAiMetrics` | P1 | [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55), [AI-02 · #56](https://github.com/embetapbay123/PBL6/issues/56), [AI-03 · #57](https://github.com/embetapbay123/PBL6/issues/57), [ID-LOOKUP-01 · #45](https://github.com/embetapbay123/PBL6/issues/45) |
+| [OPS-01 · #59](https://github.com/embetapbay123/PBL6/issues/59) | Kiểm bảo mật, permission và chịu tải mục tiêu | P2 | [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39), [AI-03 · #57](https://github.com/embetapbay123/PBL6/issues/57) |
+| [OPS-02 · #60](https://github.com/embetapbay123/PBL6/issues/60) | Tích hợp checkout/payment/kho và phục hồi lỗi | P2 | [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22), [ORDER-04 · #24](https://github.com/embetapbay123/PBL6/issues/24), [PAY-02 · #52](https://github.com/embetapbay123/PBL6/issues/52), [PAY-03 · #53](https://github.com/embetapbay123/PBL6/issues/53), [INV-03 · #15](https://github.com/embetapbay123/PBL6/issues/15), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) |
+| [DEMO-01 · #61](https://github.com/embetapbay123/PBL6/issues/61) | Nghiệm thu FR/NFR, tài liệu và demo toàn hệ thống | P2 | [OPS-01 · #59](https://github.com/embetapbay123/PBL6/issues/59), [OPS-02 · #60](https://github.com/embetapbay123/PBL6/issues/60), [MOB-06 · #36](https://github.com/embetapbay123/PBL6/issues/36), [ADMIN-04 · #49](https://github.com/embetapbay123/PBL6/issues/49), [SELL-03 · #20](https://github.com/embetapbay123/PBL6/issues/20), [WEB-11 · #71](https://github.com/embetapbay123/PBL6/issues/71) |
 
-### WEB-01 — Hatsaphone
+### Thịnh — 14 task
 
-- Điểm bắt đầu: Products trong [BootstrapApp](../../frontend/src/bootstrap/BootstrapApp.tsx), `api.products` và mẫu component Công bàn giao. Chỉ nhận một màn ở task này.
-- Tạo trang danh sách Customer bằng API: thẻ sản phẩm, nhập tìm kiếm, phân trang; dùng ID/giá do backend trả. Không yêu cầu tự thiết kế contract hoặc viết BE.
-- Nghiệm thu: có loading, không có kết quả, lỗi API kèm correlation ID và danh sách bình thường; thao tác tìm kiếm/phân trang đúng request; dùng được ở chiều rộng điện thoại.
-- Nếu API client thiếu tham số phân trang, đề nghị Công bổ sung phương thức dùng chung. Chi tiết sản phẩm/login/profile/address là các task riêng kế tiếp.
+| Task | Đầu ra / scope | Ưu tiên ban đầu | Handoff cần cho tích hợp |
+| --- | --- | --- | --- |
+| [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2) | API và danh sách sản phẩm Store trên Seller Web<br>`listOwnStoreProducts`, `listStoreProducts` | P0 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1) |
+| [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7) | M1 QuoteVariants: giá và snapshot cho M2<br>Internal: `QuoteVariants` | P0 | [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2) |
+| [CAT-02 · #9](https://github.com/embetapbay123/PBL6/issues/9) | Tạo/sửa Product đầy đủ và form Seller<br>`createProduct`, `updateProduct` | P0 | [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2) |
+| [CAT-03 · #10](https://github.com/embetapbay123/PBL6/issues/10) | Variant, SKU, ảnh Product và form Seller<br>`createVariant`, `addProductImage` | P1 | [CAT-02 · #9](https://github.com/embetapbay123/PBL6/issues/9) |
+| [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11) | Hoàn thiện public Catalog, taxonomy lookup và detail<br>`listCategories`, `listProductTypes`, `listProducts`, `getProduct` | P0 | Khung/contract/seed hiện có |
+| [TAX-01 · #12](https://github.com/embetapbay123/PBL6/issues/12) | CRUD taxonomy và attribute definition của Admin<br>`createCategory`, `updateCategory`, `createProductType`, `updateProductType`, `createAttributeDefinition`, `updateAttributeDefinition` | P0 | Khung/contract/seed hiện có |
+| [INV-01 · #13](https://github.com/embetapbay123/PBL6/issues/13) | Tồn kho, adjustment, movement và Seller UI<br>`listStoreInventory`, `adjustInventory`, `listStockMovements` | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [INV-02 · #14](https://github.com/embetapbay123/PBL6/issues/14) | Reserve, consume, release tồn kho chống lặp<br>Internal: `ReserveInventory`, `ConsumeReservation`, `ReleaseReservation` | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [INV-01 · #13](https://github.com/embetapbay123/PBL6/issues/13) |
+| [INV-03 · #15](https://github.com/embetapbay123/PBL6/issues/15) | Restock Order và phục hồi reservation hết hạn<br>Internal: `RestockOrder` | P1 | [INV-02 · #14](https://github.com/embetapbay123/PBL6/issues/14), [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [REV-01 · #16](https://github.com/embetapbay123/PBL6/issues/16) | Review sau mua và danh sách đánh giá Product<br>`listProductReviews`, `createReview`, `updateReview` | P1 | [REVIEW-ELIG-01 · #26](https://github.com/embetapbay123/PBL6/issues/26) |
+| [MOD-01 · #17](https://github.com/embetapbay123/PBL6/issues/17) | Ẩn/khôi phục Product và Review<br>`hideProduct`, `restoreProduct`, `hideReview`, `restoreReview` | P1 | [CAT-02 · #9](https://github.com/embetapbay123/PBL6/issues/9), [REV-01 · #16](https://github.com/embetapbay123/PBL6/issues/16) |
+| [SELL-01 · #18](https://github.com/embetapbay123/PBL6/issues/18) | Seller quản lý Store và staff/invitation | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [STORE-02 · #41](https://github.com/embetapbay123/PBL6/issues/41), [STAFF-01 · #42](https://github.com/embetapbay123/PBL6/issues/42), [STAFF-02 · #43](https://github.com/embetapbay123/PBL6/issues/43) |
+| [SELL-02 · #19](https://github.com/embetapbay123/PBL6/issues/19) | Seller list/detail/xử lý Order và thu COD | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23), [ORDER-04 · #24](https://github.com/embetapbay123/PBL6/issues/24), [ORDER-05 · #25](https://github.com/embetapbay123/PBL6/issues/25) |
+| [SELL-03 · #20](https://github.com/embetapbay123/PBL6/issues/20) | Seller Voucher và báo cáo Store | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29), [REPORT-01 · #30](https://github.com/embetapbay123/PBL6/issues/30) |
 
-## Đợt tiếp theo và mốc tích hợp
+### Hoa — 18 task
 
-Đây là thứ tự mở backlog, không phải lịch cam kết theo ngày. Khi giao từng dòng, tách thành task nhỏ như đợt đầu; API/phụ thuộc phải ghi cụ thể. Hoàn thành task thì giao việc tiếp theo cho người đó, không cần chờ cả nhóm nếu phụ thuộc đã sẵn sàng.
+| Task | Đầu ra / scope | Ưu tiên ban đầu | Handoff cần cho tích hợp |
+| --- | --- | --- | --- |
+| [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3) | Đọc, sửa số lượng và xóa item giỏ hàng<br>`listCartItems`, `updateCartItem`, `removeCartItem` | P0 | [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7) |
+| [CART-02 · #8](https://github.com/embetapbay123/PBL6/issues/8) | Thêm item giỏ hàng và tích hợp M1<br>`addCartItem` | P0 | [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3), [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7) |
+| [ORDER-01 · #21](https://github.com/embetapbay123/PBL6/issues/21) | Quote checkout nhiều Store và snapshot<br>`quoteCheckout` | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [CART-02 · #8](https://github.com/embetapbay123/PBL6/issues/8), [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7), [ID-LOOKUP-01 · #45](https://github.com/embetapbay123/PBL6/issues/45), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) |
+| [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22) | Confirm checkout tạo purchase group và Order nguyên tử<br>`confirmCheckout`, `getPurchaseGroupOrders` | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [ORDER-01 · #21](https://github.com/embetapbay123/PBL6/issues/21), [INV-02 · #14](https://github.com/embetapbay123/PBL6/issues/14), [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-04 · #54](https://github.com/embetapbay123/PBL6/issues/54), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) |
+| [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23) | API đọc Order của Customer và Seller<br>`listOwnOrders`, `getOwnOrder`, `listStoreOrders`, `getStoreOrder` | P1 | Khung/contract/seed hiện có |
+| [ORDER-04 · #24](https://github.com/embetapbay123/PBL6/issues/24) | Chuyển trạng thái và hủy Order hai phía<br>`transitionStoreOrder`, `cancelOwnOrder`, `cancelStoreOrder` | P1 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23), [INV-03 · #15](https://github.com/embetapbay123/PBL6/issues/15), [PAY-03 · #53](https://github.com/embetapbay123/PBL6/issues/53), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) |
+| [ORDER-05 · #25](https://github.com/embetapbay123/PBL6/issues/25) | Endpoint Seller ghi nhận COD phối hợp Payment<br>`collectCod` | P1 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23), [PAY-04 · #54](https://github.com/embetapbay123/PBL6/issues/54) |
+| [REVIEW-ELIG-01 · #26](https://github.com/embetapbay123/PBL6/issues/26) | M2 xác minh OrderItem đủ điều kiện Review<br>Internal: `VerifyReviewEligibility` | P1 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23) |
+| [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27) | CRUD Voucher của Store<br>`listStoreVouchers`, `createStoreVoucher`, `updateStoreVoucher` | P0 | Khung/contract/seed hiện có |
+| [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28) | CRUD Voucher toàn sàn của Admin<br>`listPlatformVouchers`, `createPlatformVoucher`, `updatePlatformVoucher` | P0 | Khung/contract/seed hiện có |
+| [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) | Validate, quota, redemption và usage Voucher<br>`validateVouchers`, `getStoreVoucherUsage`, `getPlatformVoucherUsage` | P1 | [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27), [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28), [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6) |
+| [REPORT-01 · #30](https://github.com/embetapbay123/PBL6/issues/30) | API Order quản trị, dashboard và report Store<br>`listAllOrders`, `getPlatformDashboard`, `getStoreReport` | P1 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [INV-01 · #13](https://github.com/embetapbay123/PBL6/issues/13), [AI-04 · #58](https://github.com/embetapbay123/PBL6/issues/58) |
+| [MOB-01 · #31](https://github.com/embetapbay123/PBL6/issues/31) | Android Auth, profile, địa chỉ và phiên | P1 | [AUTH-01 · #37](https://github.com/embetapbay123/PBL6/issues/37), [AUTH-02 · #38](https://github.com/embetapbay123/PBL6/issues/38), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39), [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4) |
+| [MOB-02 · #32](https://github.com/embetapbay123/PBL6/issues/32) | Android Catalog/search/detail và recommendation | P1 | [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), [AI-02 · #56](https://github.com/embetapbay123/PBL6/issues/56) |
+| [MOB-03 · #33](https://github.com/embetapbay123/PBL6/issues/33) | Android Cart, Voucher và checkout | P1 | [MOB-01 · #31](https://github.com/embetapbay123/PBL6/issues/31), [MOB-02 · #32](https://github.com/embetapbay123/PBL6/issues/32), [CART-02 · #8](https://github.com/embetapbay123/PBL6/issues/8), [ORDER-01 · #21](https://github.com/embetapbay123/PBL6/issues/21), [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) |
+| [MOB-04 · #34](https://github.com/embetapbay123/PBL6/issues/34) | Android Order, Payment/Refund và Review | P1 | [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23), [ORDER-04 · #24](https://github.com/embetapbay123/PBL6/issues/24), [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-02 · #52](https://github.com/embetapbay123/PBL6/issues/52), [PAY-03 · #53](https://github.com/embetapbay123/PBL6/issues/53), [REV-01 · #16](https://github.com/embetapbay123/PBL6/issues/16) |
+| [MOB-05 · #35](https://github.com/embetapbay123/PBL6/issues/35) | Android Chat, consent và luồng tài khoản Store | P1 | [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55), [AI-03 · #57](https://github.com/embetapbay123/PBL6/issues/57), [STORE-01 · #40](https://github.com/embetapbay123/PBL6/issues/40), [STAFF-01 · #42](https://github.com/embetapbay123/PBL6/issues/42) |
+| [MOB-06 · #36](https://github.com/embetapbay123/PBL6/issues/36) | Build APK và nghiệm thu Android thiết bị | P2 | [MOB-01 · #31](https://github.com/embetapbay123/PBL6/issues/31), [MOB-02 · #32](https://github.com/embetapbay123/PBL6/issues/32), [MOB-03 · #33](https://github.com/embetapbay123/PBL6/issues/33), [MOB-04 · #34](https://github.com/embetapbay123/PBL6/issues/34), [MOB-05 · #35](https://github.com/embetapbay123/PBL6/issues/35) |
 
-| Đợt | Thịnh | Hoa | Trí | Công | Hatsaphone | Mốc nghiệm thu chung |
-| --- | --- | --- | --- | --- | --- | --- |
-| B: Catalog, Cart, tài khoản | Product/Variant/Image; taxonomy; kho adjustment/movement; ưu tiên `QuoteVariants` để mở CART-02 | CART-02 thêm item + gọi M1; Mobile auth/catalog/cart/address; voucher CRUD/validate | Hoàn thiện auth/profile; StoreApplication/review/Store; Admin User/Store/application | FLOW-01 chốt giao tiếp checkout và Order/Payment; tích hợp nền Payment/COD; hỗ trợ shared | Detail, login/profile, rồi address; từng màn nối API đã nghiệm thu | Customer có giỏ và địa chỉ thật; Seller quản lý được sản phẩm; Admin duyệt Store |
-| C: Mua hàng | Reserve/consume/release/restock; kiểm cạnh tranh/replay; Seller Order UI gọi M2 | Quote/checkout nhiều Store; tạo nhóm Order; xem/chuyển trạng thái/hủy; Mobile Order | Staff/invitation/RBAC; khóa User/Store; lookup địa chỉ/Store cho M2 theo FLOW-01 | Payment attempt + SePay Test callback; COD/Refund; recovery và review transaction M2 | Cart → checkout → Order/history/payment; mỗi màn chỉ mở khi API sẵn sàng | Một lượt mua hai Store, Payment riêng từng Order; không trừ kho/thu tiền hai lần |
-| D: Hoàn thiện | Review hậu mua/moderation; Seller Voucher/Store/staff | Report/voucher usage; Mobile review, hoàn thiện lỗi và thiết bị | Admin moderation/taxonomy gọi M1; voucher/report gọi M2; metric gọi M4 | Consent/tracking; RAG; recommendation/evaluation; recovery/load/demo | Review, recommendation/chat theo mẫu và API Công bàn giao | Luồng đầy đủ, quyền/ownership, lỗi/retry và nghiệm thu FR/NFR |
+### Trí — 14 task
 
-### FLOW-01 — Công chủ trì, Hoa/Thịnh/Trí phối hợp
+| Task | Đầu ra / scope | Ưu tiên ban đầu | Handoff cần cho tích hợp |
+| --- | --- | --- | --- |
+| [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4) | CRUD địa chỉ Customer<br>`listAddresses`, `createAddress`, `updateAddress`, `deleteAddress` | P0 | Khung/contract/seed hiện có |
+| [AUTH-01 · #37](https://github.com/embetapbay123/PBL6/issues/37) | Đăng ký và xác minh email<br>`register`, `verifyEmail` | P0 | Khung/contract/seed hiện có |
+| [AUTH-02 · #38](https://github.com/embetapbay123/PBL6/issues/38) | Reset và đổi mật khẩu, thu hồi phiên<br>`resetPassword`, `confirmResetPassword`, `changePassword` | P0 | Khung/contract/seed hiện có |
+| [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) | Hoàn thiện phiên, context hiện hành và profile<br>`login`, `refresh`, `logout`, `getAuthContext`, `getProfile`, `updateProfile`<br>Internal: `ResolveContext` | P0 | Khung/contract/seed hiện có |
+| [STORE-01 · #40](https://github.com/embetapbay123/PBL6/issues/40) | StoreApplication, duyệt Store và Admin UI<br>`submitStoreApplication`, `listOwnStoreApplications`, `listStoreApplications`, `reviewStoreApplication` | P0 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1) |
+| [STORE-02 · #41](https://github.com/embetapbay123/PBL6/issues/41) | Thông tin Store và active Store lookup<br>`getOwnStore`, `updateOwnStore`<br>Internal: `ActiveStores` | P1 | [STORE-01 · #40](https://github.com/embetapbay123/PBL6/issues/40) |
+| [STAFF-01 · #42](https://github.com/embetapbay123/PBL6/issues/42) | Invitation staff: mời, thu hồi, nhận và danh sách<br>`listStaffInvitations`, `inviteStaff`, `revokeStaffInvitation`, `listOwnInvitations`, `acceptInvitation` | P1 | [STORE-02 · #41](https://github.com/embetapbay123/PBL6/issues/41) |
+| [STAFF-02 · #43](https://github.com/embetapbay123/PBL6/issues/43) | Danh sách staff và cập nhật permission hiệu lực<br>`listStoreStaff`, `updateStaff` | P1 | [STORE-02 · #41](https://github.com/embetapbay123/PBL6/issues/41), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) |
+| [RBAC-01 · #44](https://github.com/embetapbay123/PBL6/issues/44) | Quản trị User, Store, role và thu hồi quyền<br>`listUsers`, `updateUserState`, `listStores`, `updateStoreState`, `updateRole` | P0 | [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) |
+| [ID-LOOKUP-01 · #45](https://github.com/embetapbay123/PBL6/issues/45) | Lookup nội bộ địa chỉ/Store và scope AI cho tích hợp | P0 | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4), [STORE-02 · #41](https://github.com/embetapbay123/PBL6/issues/41), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) |
+| [ADMIN-01 · #46](https://github.com/embetapbay123/PBL6/issues/46) | Admin Web quản trị User, Store, role | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [RBAC-01 · #44](https://github.com/embetapbay123/PBL6/issues/44) |
+| [ADMIN-02 · #47](https://github.com/embetapbay123/PBL6/issues/47) | Admin Web taxonomy và moderation Product/Review | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [TAX-01 · #12](https://github.com/embetapbay123/PBL6/issues/12), [MOD-01 · #17](https://github.com/embetapbay123/PBL6/issues/17) |
+| [ADMIN-03 · #48](https://github.com/embetapbay123/PBL6/issues/48) | Admin Web Voucher, Orders, dashboard | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29), [REPORT-01 · #30](https://github.com/embetapbay123/PBL6/issues/30) |
+| [ADMIN-04 · #49](https://github.com/embetapbay123/PBL6/issues/49) | Admin Web AI metrics và trạng thái vận hành | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [AI-04 · #58](https://github.com/embetapbay123/PBL6/issues/58) |
 
-Làm sau CORE-01 và trước khi Hoa triển khai checkout. Đầu ra là contract/ví dụ, interface trong code và danh sách case tích hợp; không phải viết hết nghiệp vụ của người khác.
+### Hatsaphone — 11 task
 
-- M1 ↔ M2: dùng [internal OpenAPI](../contracts/internal-api.json) đã có cho quote/reserve/consume/release/restock; chốt error, timeout, operation ID và recovery theo [integration contract](../integration-contract.md).
-- M3 ↔ M2: bổ sung contract lookup địa chỉ/Store mà checkout cần; kiểm ownership ở M3, lấy snapshot ở M2. Khung hiện chỉ có context và danh sách Store active chạy mẫu, không có lookup địa chỉ nội bộ.
-- Trong M2: chốt interface Order gọi Payment/COD/Refund và truyền cùng EntityManager khi phải nguyên tử. Hoa sở hữu luồng Order; Công sở hữu ghi nhận tiền và state Payment/Refund. Không để hai người cùng viết một logic tiền.
-- `collectCod` hiện nằm ở module Order và metadata owner Hoa: Hoa giữ endpoint/kiểm quyền/luồng Order; Công triển khai nghiệp vụ COD collection/Payment dùng chung transaction. Nếu chuyển owner/controller, cập nhật contract/status trong PR đó.
-- Chốt event nghiệp vụ có version/outbox và bên tiêu thụ; event bootstrap đang có chỉ là mẫu. Fixture hỗ trợ phát triển độc lập, không thay bằng chứng tích hợp thật.
+| Task | Đầu ra / scope | Ưu tiên ban đầu | Handoff cần cho tích hợp |
+| --- | --- | --- | --- |
+| [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5) | Danh sách sản phẩm Customer gọi API | P0 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11) |
+| [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62) | Customer chi tiết Product và chọn Variant | P0 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11) |
+| [WEB-03 · #63](https://github.com/embetapbay123/PBL6/issues/63) | Customer đăng nhập, đăng ký và password forms | P0 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [AUTH-01 · #37](https://github.com/embetapbay123/PBL6/issues/37), [AUTH-02 · #38](https://github.com/embetapbay123/PBL6/issues/38), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) |
+| [WEB-04 · #64](https://github.com/embetapbay123/PBL6/issues/64) | Customer profile và CRUD địa chỉ | P1 | [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39), [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4) |
+| [WEB-05 · #65](https://github.com/embetapbay123/PBL6/issues/65) | Customer Cart: xem/sửa/xóa/thêm item | P1 | [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3), [CART-02 · #8](https://github.com/embetapbay123/PBL6/issues/8) |
+| [WEB-06 · #66](https://github.com/embetapbay123/PBL6/issues/66) | Customer checkout và xác nhận quote nhiều Store | P1 | [WEB-04 · #64](https://github.com/embetapbay123/PBL6/issues/64), [WEB-05 · #65](https://github.com/embetapbay123/PBL6/issues/65), [ORDER-01 · #21](https://github.com/embetapbay123/PBL6/issues/21), [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22), [VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) |
+| [WEB-07 · #67](https://github.com/embetapbay123/PBL6/issues/67) | Customer lịch sử và chi tiết Order, hủy đơn | P1 | [ORDER-03 · #23](https://github.com/embetapbay123/PBL6/issues/23), [ORDER-04 · #24](https://github.com/embetapbay123/PBL6/issues/24) |
+| [WEB-08 · #68](https://github.com/embetapbay123/PBL6/issues/68) | Customer QR Payment, polling và Refund status | P1 | [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-02 · #52](https://github.com/embetapbay123/PBL6/issues/52), [PAY-03 · #53](https://github.com/embetapbay123/PBL6/issues/53), [WEB-07 · #67](https://github.com/embetapbay123/PBL6/issues/67) |
+| [WEB-09 · #69](https://github.com/embetapbay123/PBL6/issues/69) | Customer đọc/viết/sửa Review sau mua | P1 | [REV-01 · #16](https://github.com/embetapbay123/PBL6/issues/16), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [WEB-07 · #67](https://github.com/embetapbay123/PBL6/issues/67) |
+| [WEB-10 · #70](https://github.com/embetapbay123/PBL6/issues/70) | Customer recommendation và Chat UI | P1 | [AI-02 · #56](https://github.com/embetapbay123/PBL6/issues/56), [AI-03 · #57](https://github.com/embetapbay123/PBL6/issues/57), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62) |
+| [WEB-11 · #71](https://github.com/embetapbay123/PBL6/issues/71) | Customer consent, đăng ký Store và nhận invitation | P1 | [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55), [STORE-01 · #40](https://github.com/embetapbay123/PBL6/issues/40), [STAFF-01 · #42](https://github.com/embetapbay123/PBL6/issues/42) |
 
-## Mẫu task dùng khi giao
+## Mốc nghiệm thu, không phải đợt mở task
 
-Dùng [GitHub issue template](../../.github/ISSUE_TEMPLATE/member-task.md) hoặc copy mẫu dưới đây vào board nhóm. Không giao nguyên một service bằng một issue.
+| Mốc | Kết quả cần demo |
+| --- | --- |
+| Nền và CRUD | Auth/quyền hiện hành, địa chỉ/Store, Catalog/kho/Cart/Voucher, ba Web/Android nối các API đã bàn giao |
+| Mua hàng | Quote nhiều Store → reserve → Order/Payment riêng Store; COD/SePay Test, hủy/refund, voucher và kho không lặp hiệu ứng |
+| Hoàn chỉnh chức năng | Staff/RBAC, Review/moderation, reports, consent/recommendation/RAG, các màn Web/Android tích hợp thật |
+| Bằng chứng cuối | Thiết bị/APK, security/100-user load, restart/recovery/backup-restore và FR/NFR có PASS/FAIL/NOT_RUN |
 
-```text
-Tiêu đề: [ID] Chức năng và kết quả quan sát được
-Owner: một người
-Reviewer / người hỗ trợ: ...
-Phạm vi: module/file chính, operationId hoặc màn hình
-Đầu ra: endpoint/page/migration/ví dụ cần bàn giao
-Phụ thuộc: API/task nào; đang có, stub hay cần bổ sung?
-Tiêu chí nghiệm thu: thành công + quyền/input/lỗi có liên quan
-Kiểm chứng: lệnh chạy, dữ liệu và kết quả
-Ngoài phạm vi: phần tách sang task tiếp theo
-```
+## Độ phủ và quy tắc code
 
-Ưu tiên task có thể demo sau khoảng 1–3 ngày làm việc; đây là mục tiêu chia nhỏ, không phải ước lượng chắc chắn. Nếu một task chứa nhiều màn hoặc nhiều luồng giao dịch, tách tiếp. Hatsaphone nhận từng màn và được Công bàn giao mẫu/API rõ ràng.
+Đối chiếu khi giao: **99/99 public operation** có đúng một task BE chịu trách nhiệm, **8/8 internal operation** có task phụ trách. Sample/mock cũng có task hoàn thiện; UI gọi API đó nhưng không đổi owner service. Lookup M3/low-stock/scope AI còn thiếu được chốt contract ở FLOW-01 và triển khai ở ID-LOOKUP-01/INV-01/AI-04. Tracking search/view/cart/purchase có ingress/producer/caller được chốt ở FLOW-01, triển khai ở AI-01/CAT-04/CART-02/ORDER-04; không chỉ dùng event giả. Chat Guest/Customer cần scope phiên đúng; Seller xem metric M4 đúng Store trong SELL-03.
 
-## Theo dõi và merge
+- Hoa sở hữu controller/permission/Order flow của ORDER-05 (`collectCod`); Công sở hữu domain ghi nhận tiền ở PAY-04, cùng transaction M2. Không viết hai logic COD.
+- M1/M2/M3/M4 giữ DB riêng; không join/FK/ghi DB service khác. M2 Order/Payment dùng chung EntityManager khi cần nguyên tử; tích hợp nhiều service dùng operation ID/outbox/inbox/recovery.
+- Branch theo task, PR nhỏ về main, test/bằng chứng rõ. Member cần1 approval và CI đạt theo [rule Protect main](https://github.com/embetapbay123/PBL6/rules/24367668); embetapbay123 có ngoại lệ bypass.
+- Migration append-only; báo owner khi sửa file shared/contract/types/route registration. Reviewer không thay owner phải code task.
+- Done cần demo/test đạt, phần tích hợp thật đủ, PR merge và issue completed. Không gắn IMPLEMENTED cho cả endpoint nếu mới hoàn thành một phần.
 
-- Board: `Backlog → Todo → In progress → Review → Done`; task thiếu API dùng trạng thái `Blocked` kèm tên API, owner và cách mở chặn. Kéo thẻ trực tiếp trên Kanban theo [hướng dẫn](kanban-guide.md). UI có fixture chưa được gọi là tích hợp hoàn thành.
-- Mỗi task dùng một branch, ví dụ `feat/id-01-addresses`; PR về `main`, ghi ID task, scope, cách chạy và bằng chứng nghiệm thu. Tránh gom toàn bộ service vào một PR.
-- Chủ module review phần mình sở hữu; Công review shared/infrastructure/contract và tích hợp. Order/Payment/Inventory cần Hoa/Công/Thịnh cùng xem ranh giới tác động.
-- Khung Web đang có nhiều route chung một file; CORE-01 là việc cần làm trước để giảm xung đột. Đổi API client/auth provider, generated types, migration/contract hoặc registration `main.ts` thì báo các owner dùng chung.
-- Hoa/Công cùng M2: phối hợp số migration và entity/interface dùng chung trước khi merge. Mỗi service thêm migration mới, không sửa migration đã áp dụng, không truy cập DB service khác.
-- Mỗi ngày cập nhật ngắn: đã demo được gì, tiếp theo làm gì, đang chờ ai/API nào. Công tích hợp ngay khi có một luồng đủ các phần, không chờ đến cuối dự án.
-- `Done`: owner demo đạt tiêu chí; PR được review/merge; contract/types/status/README đồng bộ nếu có đổi; test phù hợp đạt theo [verification plan](verification-plan.md). Task hoàn thành một phần endpoint không được đổi cả endpoint sang `IMPLEMENTED`.
+Tài liệu nền: [ownership](service-ownership.md), [backlog nghiệp vụ](member-backlog.md), [code guide](development-guide.md), [verification](verification-plan.md), [security](security.md), [resilience](error-handling-and-resilience.md), [OpenAPI](../contracts/openapi.json), [internal contract](../contracts/internal-api.json), [FR/NFR acceptance](../requirements-acceptance.md).

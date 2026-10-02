@@ -23,7 +23,7 @@ Mẫu đọc: CatalogController → CatalogService → CatalogRepository; lấy 
 
 ## Hoàn thiện một endpoint
 
-1. Chọn operation trong [backlog](member-backlog.md); đọc FR/BR/state/RBAC và OpenAPI.
+1. Nhận task từ [phân công đầy đủ](task-assignment.md)/Kanban, không chờ giao từng đợt; đọc FR/BR/state/RBAC và OpenAPI. Viết module với seed/adapter fixture khi dependency chưa chạy thật; nghiệm thu tích hợp sau khi đủ API cần dùng.
 2. Viết DTO allowlist, validation query/body/UUID; giới hạn page/body/chuỗi. Controller parse, guard và gọi service.
 3. Service kiểm scope hiện hành, state transition, version/idempotency; không tin user_id/store_id/giá/tổng tiền client.
 4. Repository dùng DB sở hữu và parameter query. Truyền đúng EntityManager trong transaction; tránh repository global trong transaction.

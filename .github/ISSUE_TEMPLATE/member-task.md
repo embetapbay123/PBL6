@@ -13,6 +13,7 @@ assignees: ""
 - Branch dự kiến:
 - Label owner (chọn đúng một): owner:cong / owner:hoa / owner:tri / owner:thinh / owner:hatsaphone.
 - Project: PBL6 — Team Kanban; thêm issue vào Project và chọn Status = Backlog hoặc Todo.
+- Owner trên Project: tên member; Priority: P0 (nền/luồng cốt lõi), P1 (nghiệp vụ/UI), P2 (nghiệm thu).
 
 ## Phạm vi và đầu ra
 
@@ -27,6 +28,7 @@ assignees: ""
 - API / task phụ thuộc và owner:
 - Trạng thái: đã nghiệm thu / sample / stub / chưa có contract.
 - Cách phát triển trong lúc chờ: fixture đúng contract trong test hoặc môi trường mock có nhãn.
+- Phần độc lập có thể bắt đầu ngay; không chờ công bố/giao các task khác:
 - Điều kiện để nghiệm thu tích hợp thật:
 
 ## Tiêu chí nghiệm thu
