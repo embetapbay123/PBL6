@@ -1,0 +1,83 @@
+erDiagram
+  ChatSession {
+    uuid id PK
+    uuid user_id
+    varchar anonymous_key
+    varchar status
+    timestamptz created_at
+  }
+  ChatMessage {
+    uuid id PK
+    uuid session_id FK
+    varchar role
+    text content
+    jsonb product_refs
+    timestamptz created_at
+  }
+  SearchHistory {
+    uuid id PK
+    uuid user_id
+    text query
+    timestamptz created_at
+  }
+  RecommendationInteraction {
+    uuid id PK
+    uuid user_id
+    uuid product_id
+    varchar event_id
+    varchar event_type
+    int weight
+    timestamptz occurred_at
+  }
+  PersonalizationConsent {
+    uuid id PK
+    uuid user_id
+    varchar status
+    varchar source
+    timestamptz changed_at
+    int version
+  }
+  UserPreference {
+    uuid id PK
+    uuid user_id
+    jsonb profile_json
+    timestamptz updated_at
+  }
+  ProductEmbedding {
+    uuid id PK
+    uuid product_id
+    int source_version
+    vector vector
+    varchar status
+    timestamptz updated_at
+  }
+  ModelVersion {
+    uuid id PK
+    varchar algorithm
+    varchar version
+    varchar artifact_uri
+    varchar status
+    timestamptz trained_at
+  }
+  TrainingRun {
+    uuid id PK
+    uuid model_version_id FK
+    varchar dataset_version
+    jsonb split_spec
+    varchar status
+    timestamptz started_at
+    timestamptz finished_at
+  }
+  ModelEvaluation {
+    uuid id PK
+    uuid training_run_id FK
+    varchar baseline_name
+    int k
+    numeric precision_at_k
+    numeric recall_at_k
+    numeric ndcg_at_k
+    timestamptz evaluated_at
+  }
+  ChatSession ||--o{ ChatMessage : "chứa tin nhắn"
+  ModelVersion ||--o{ TrainingRun : "được huấn luyện qua"
+  TrainingRun ||--o{ ModelEvaluation : "được đánh giá bằng"

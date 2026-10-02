@@ -1,0 +1,33 @@
+@startuml
+title Chatbot RAG và recommendation offline
+caption Guest chat cơ bản; Customer có thể nhận gợi ý khi đã đồng ý cá nhân hóa.
+actor Guest
+actor Customer
+participant "M4 AI" as M4
+participant "M1 Catalog" as M1
+participant "LLM API" as LLM
+participant "Training worker" as Train
+alt Guest chat cơ bản
+  Guest -> M4 : Gửi nhu cầu mua sắm
+  M4 -> M4 : ChatSession.anonymous_key, không dùng cá nhân hóa
+else Customer đã đăng nhập
+  Customer -> M4 : Gửi nhu cầu mua sắm
+  M4 -> M4 : ChatSession.user_id; kiểm tra consent cá nhân hóa
+end
+M4 -> M4 : Query embedding, Top-K context
+M4 -> M1 : Kiểm tra Product/giá/trạng thái hiện hành
+M1 --> M4 : Context hợp lệ
+M4 -> LLM : Prompt đã lọc PII + Product context
+LLM --> M4 : Câu trả lời
+alt Guest
+  M4 --> Guest : Grounded answer + card công khai hợp lệ
+else Customer
+  M4 --> Customer : Grounded answer + card hợp lệ
+end
+== Sau cuộc chat: huấn luyện offline, không chặn câu trả lời ==
+M4 -->> Train : Event Customer được phép view/search/cart/purchase
+Train -> Train : Split theo thời gian, train CF/MF, so baseline
+Train -->> M4 : ModelVersion + metrics Top-K
+Customer -> M4 : Mở mục Dành cho bạn ở lần truy cập sau
+M4 --> Customer : Gợi ý theo model hoặc fallback
+@enduml

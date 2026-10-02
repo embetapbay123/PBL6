@@ -1,0 +1,7 @@
+@startuml
+title InventoryReservation — theo Order
+[*] --> ACTIVE : reserve SKU cho order_id dự kiến
+ACTIVE --> CONSUMED : COD tạo xong / sandbox Payment Success
+ACTIVE --> RELEASED : lỗi tạo Order / hủy / sandbox hết hạn
+ACTIVE --> EXPIRED : timeout sau đối soát Payment chưa Success
+@enduml

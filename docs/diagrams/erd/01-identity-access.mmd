@@ -1,0 +1,86 @@
+erDiagram
+  User {
+    uuid id PK
+    varchar email
+    timestamptz email_verified_at
+    varchar password_hash
+    varchar status
+    timestamptz created_at
+    int version
+  }
+  CustomerProfile {
+    uuid id PK
+    uuid user_id FK
+    varchar display_name
+    varchar phone
+    timestamptz updated_at
+  }
+  Address {
+    uuid id PK
+    uuid customer_user_id FK
+    varchar recipient_name
+    varchar phone
+    varchar line1
+    varchar ward
+    varchar district
+    varchar city
+    boolean is_default
+    varchar status
+  }
+  Role {
+    uuid id PK
+    varchar code
+    varchar scope
+    varchar status
+  }
+  Permission {
+    uuid id PK
+    varchar code
+    varchar resource
+    varchar action
+  }
+  RolePermission {
+    uuid role_id PK
+    uuid permission_id PK
+  }
+  UserRole {
+    uuid user_id PK
+    uuid role_id PK
+    timestamptz granted_at
+  }
+  RefreshSession {
+    uuid id PK
+    uuid user_id FK
+    varchar token_hash
+    timestamptz expires_at
+    timestamptz revoked_at
+  }
+  OneTimeToken {
+    uuid id PK
+    uuid user_id FK
+    varchar purpose
+    varchar token_hash
+    timestamptz expires_at
+    timestamptz consumed_at
+    timestamptz created_at
+  }
+  M3Audit {
+    uuid id PK
+    uuid actor_user_id FK
+    varchar target_type
+    uuid target_id
+    varchar action
+    text reason
+    varchar request_id
+    jsonb before_json
+    jsonb after_json
+    timestamptz created_at
+  }
+  User ||--o| CustomerProfile : "có hồ sơ"
+  User ||--o{ Address : "lưu địa chỉ"
+  User ||--o{ RefreshSession : "mở phiên"
+  User ||--o{ OneTimeToken : "yêu cầu mã"
+  User ||--o{ UserRole : "được gán vai trò"
+  Role ||--o{ UserRole : "được gán cho"
+  Role ||--o{ RolePermission : "gồm quyền"
+  Permission ||--o{ RolePermission : "được cấp qua"

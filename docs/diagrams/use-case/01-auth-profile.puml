@@ -1,0 +1,37 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Xác thực và hồ sơ
+actor "Khách vãng lai" as Guest
+actor "Người dùng đã đăng nhập" as Authenticated
+actor "Khách hàng" as Customer
+actor "Nhân viên" as Seller
+actor "Chủ Store" as Owner
+actor "Quản trị viên" as Admin
+Customer --|> Authenticated
+Seller --|> Authenticated
+Admin --|> Authenticated
+Owner --|> Seller
+rectangle "PBL6 Marketplace" {
+  usecase "Đăng ký Customer\n[UC-AUTH-REGISTER]" as UC_AUTH_REGISTER
+  usecase "Đăng nhập\n[UC-AUTH-LOGIN]" as UC_AUTH_LOGIN
+  usecase "Đăng xuất\n[UC-AUTH-LOGOUT]" as UC_AUTH_LOGOUT
+  usecase "Đặt lại mật khẩu đã quên\n[UC-AUTH-RESET]" as UC_AUTH_RESET
+  usecase "Đổi mật khẩu khi đã đăng nhập\n[UC-AUTH-CHANGE]" as UC_AUTH_CHANGE
+  usecase "Xem và sửa hồ sơ cá nhân\n[UC-PROFILE-EDIT]" as UC_PROFILE_EDIT
+  usecase "Thêm, sửa, xóa và chọn địa chỉ\n[UC-ADDR-MANAGE]" as UC_ADDR_MANAGE
+}
+Guest -- UC_AUTH_REGISTER
+Guest -- UC_AUTH_LOGIN
+Authenticated -- UC_AUTH_LOGOUT
+Guest -- UC_AUTH_RESET
+Authenticated -- UC_AUTH_CHANGE
+Authenticated -- UC_PROFILE_EDIT
+Customer -- UC_ADDR_MANAGE
+note right of Authenticated
+  Một User có thể mang Customer và Seller/Owner context.
+  Quyền tính theo context của từng request.
+end note
+@enduml

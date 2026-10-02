@@ -1,0 +1,37 @@
+@startuml
+title Một nhóm Order có COD và sandbox độc lập
+caption COD của A được giao và thu riêng khi B vẫn chờ trả online.
+actor Customer
+actor Seller
+participant "Web/Mobile" as UI
+participant "Seller Portal" as Portal
+participant "M2 Order & Payment" as M2
+participant "M1 Inventory" as M1
+Customer -> UI : Xác nhận giỏ A=COD, B=SANDBOX
+UI -> M2 : Tạo nhóm Order + Idempotency-Key
+M2 -> M1 : Reserve SKU A/B bằng Order IDs dự kiến
+alt Reserve đủ
+  M2 -> M2 : Transaction tạo Order A/B và Payment A/B
+  M2 -> M1 : Consume reservation A (COD)
+  alt Consume A thành công
+    M2 -> M2 : A PENDING; B AWAITING_PAYMENT
+    M2 --> UI : Trả hai Order và group_id
+    UI --> Customer : Hiển thị payable/trạng thái từng Order
+    Seller -> Portal : Chuyển A qua Confirmed, Processing, Shipped
+    Portal -> M2 : Cập nhật trạng thái A(expected_version)
+    Seller -> Portal : Xác nhận giao và thu đủ COD A
+    Portal -> M2 : Ghi thu COD A(expected_version)
+    M2 -> M2 : A Completed; Payment A SUCCEEDED
+    M2 --> UI : B vẫn chưa trả, trạng thái riêng
+    UI --> Customer : Hiển thị trạng thái A/B riêng
+  else Consume A tạm lỗi
+    M2 -> M2 : A PREPARING; worker retry cùng operation_id
+    M2 --> UI : Trả A PREPARING, B AWAITING_PAYMENT
+    UI --> Customer : A đang xử lý, Seller chưa được cập nhật A
+  end
+else Reserve lỗi
+  M2 -> M1 : Release toàn bộ phần đã giữ
+  M2 --> UI : Không Order nào được tạo
+  UI --> Customer : Hiển thị lỗi và yêu cầu xác nhận lại
+end
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Khám phá sản phẩm
+actor "Người truy cập" as Visitor
+actor "Khách vãng lai" as Guest
+actor "Khách hàng" as Customer
+Guest --|> Visitor
+Customer --|> Visitor
+rectangle "PBL6 Marketplace" {
+  usecase "Duyệt danh mục\n[UC-CAT-BROWSE]" as UC_CAT_BROWSE
+  usecase "Tìm sản phẩm theo từ khóa\n[UC-SEARCH-QUERY]" as UC_SEARCH_QUERY
+  usecase "Lọc và sắp xếp theo thuộc tính động\n[UC-SEARCH-FILTER]" as UC_SEARCH_FILTER
+  usecase "Xem chi tiết sản phẩm\n[UC-PROD-DETAIL]" as UC_PROD_DETAIL
+  usecase "Xem gian hàng công khai\n[UC-STORE-BROWSE]" as UC_STORE_BROWSE
+}
+Visitor -- UC_CAT_BROWSE
+Visitor -- UC_SEARCH_QUERY
+Visitor -- UC_SEARCH_FILTER
+Visitor -- UC_PROD_DETAIL
+Visitor -- UC_STORE_BROWSE
+UC_SEARCH_FILTER ..> UC_SEARCH_QUERY : <<extend>> [có bộ lọc]
+@enduml

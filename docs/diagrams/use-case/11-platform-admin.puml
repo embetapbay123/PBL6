@@ -1,0 +1,22 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Quản trị nền tảng
+actor "Quản trị viên" as Admin
+rectangle "PBL6 Marketplace" {
+  usecase "Khóa hoặc mở tài khoản\n[UC-ADMIN-ACCOUNT]" as UC_ADMIN_ACCOUNT
+  usecase "Khóa hoặc mở Store\n[UC-ADMIN-STORE]" as UC_ADMIN_STORE
+  usecase "Quản lý Category, ProductType, AttributeKey\n[UC-ADMIN-TAX]" as UC_ADMIN_TAX
+  usecase "Quản lý Role và Permission\n[UC-ADMIN-RBAC]" as UC_ADMIN_RBAC
+  usecase "Ẩn hoặc bỏ ẩn Product\n[UC-ADMIN-PRODUCT]" as UC_ADMIN_PRODUCT
+  usecase "Giám sát đơn và nền tảng\n[UC-ADMIN-MONITOR]" as UC_ADMIN_MONITOR
+}
+Admin -- UC_ADMIN_ACCOUNT
+Admin -- UC_ADMIN_STORE
+Admin -- UC_ADMIN_TAX
+Admin -- UC_ADMIN_RBAC
+Admin -- UC_ADMIN_PRODUCT
+Admin -- UC_ADMIN_MONITOR
+@enduml

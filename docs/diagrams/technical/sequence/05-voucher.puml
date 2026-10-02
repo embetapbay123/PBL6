@@ -1,0 +1,21 @@
+@startuml
+title Voucher sàn phân bổ xuống Order
+caption Giảm giá Store trước, giảm giá sàn sau; chốt số giảm trên từng đơn.
+actor Customer
+participant "M2 Voucher & Order" as M2
+Customer -> M2 : Quote item Store A/B và voucher
+M2 -> M2 : Kiểm tra thời hạn, min, cap, usage
+M2 -> M2 : Giảm Store trước; giảm sàn sau
+M2 -> M2 : Phân bổ sàn theo tỷ lệ/phần dư cố định
+M2 --> Customer : Payable riêng A/B và tổng tham khảo
+Customer -> M2 : Xác nhận quote + Idempotency-Key
+M2 -> M2 : Giữ lượt trong lúc reserve/tạo Order
+alt Nguyên tập Order tạo thành công
+  M2 -> M2 : Redemption theo Order; sàn đếm 1 lượt/group_id
+else Lỗi trước transaction Order
+  M2 -> M2 : Release lượt và tồn; không Order
+end
+note over M2
+  Hủy/hết hạn B sau tạo không đổi giảm giá A.
+end note
+@enduml

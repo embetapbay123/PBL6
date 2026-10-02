@@ -1,0 +1,46 @@
+@startuml
+title Khi đã thu tiền nhưng đơn chưa hoàn tất
+caption Hệ thống tự xử lý tiếp; nếu đơn đã hết hạn thì hoàn tiền, không bắt khách trả lại.
+actor "Khách hàng" as Customer
+participant "Cổng thanh toán" as Gateway
+participant "Hệ thống mua hàng" as System
+participant "Kho" as Stock
+participant "Xử lý tự động" as Recovery
+
+Gateway -> System : Báo đã thu tiền của đơn A
+activate System
+System -> System : Kiểm tra đơn A còn hiệu lực không
+alt A còn hiệu lực và hàng vẫn được giữ
+  System -> Stock : Chốt số hàng của A
+  activate Stock
+  alt Kho tạm thời gặp lỗi
+    Stock --> System : Chưa chốt được
+    deactivate Stock
+    System --> Customer : A đang hoàn tất, không cần trả tiền lại
+    deactivate System
+    Recovery -> Stock : Tự thử chốt hàng A
+    activate Stock
+    Stock --> Recovery : Đã chốt
+    deactivate Stock
+    Recovery -> System : A sẵn sàng xử lý
+    activate System
+    System --> Recovery : Đã ghi nhận
+    deactivate System
+  else Chốt hàng thành công
+    Stock --> System : Đã chốt
+    deactivate Stock
+    System --> Customer : A đã thanh toán, sẵn sàng xử lý
+    deactivate System
+  end
+else A đã hết hạn và hàng không còn được giữ
+  System -> Gateway : Hoàn số tiền đã thu của A
+  activate Gateway
+  Gateway --> System : Báo trạng thái hoàn tiền
+  deactivate Gateway
+  System --> Customer : A vẫn hết hạn; theo dõi hoàn tiền riêng
+  deactivate System
+end
+note over System
+  Đơn B cùng lần mua không bị thay đổi.
+end note
+@enduml

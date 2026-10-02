@@ -1,0 +1,8 @@
+import os
+from alembic import context
+from sqlalchemy import create_engine
+from app.models import Base
+engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1))
+with engine.connect() as connection:
+    context.configure(connection=connection,target_metadata=Base.metadata)
+    with context.begin_transaction(): context.run_migrations()

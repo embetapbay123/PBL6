@@ -1,0 +1,30 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Store và nhân viên
+actor "Khách hàng" as Customer
+actor "Chủ Store" as Owner
+actor "Quản trị viên" as Admin
+rectangle "PBL6 Marketplace" {
+  usecase "Đăng ký mở Store\n[UC-STORE-APPLY]" as UC_STORE_APPLY
+  usecase "Duyệt hoặc từ chối Store\n[UC-STORE-REVIEW]" as UC_STORE_REVIEW
+  usecase "Cập nhật thông tin Store\n[UC-STORE-EDIT]" as UC_STORE_EDIT
+  usecase "Mời Seller và cấp quyền\n[UC-STAFF-INVITE]" as UC_STAFF_INVITE
+  usecase "Chấp nhận lời mời Seller\n[UC-STAFF-ACCEPT]" as UC_STAFF_ACCEPT
+  usecase "Xem lời mời tham gia Store của tôi\n[UC-STAFF-INBOX]" as UC_STAFF_INBOX
+  usecase "Xem danh sách Seller và lời mời của Store\n[UC-STAFF-LIST]" as UC_STAFF_LIST
+  usecase "Cập nhật quyền Seller\n[UC-STAFF-PERMISSIONS]" as UC_STAFF_PERMISSIONS
+  usecase "Khóa hoặc mở quyền nhân viên\n[UC-STAFF-LOCK]" as UC_STAFF_LOCK
+}
+Customer -- UC_STORE_APPLY
+Admin -- UC_STORE_REVIEW
+Owner -- UC_STORE_EDIT
+Owner -- UC_STAFF_INVITE
+Customer -- UC_STAFF_ACCEPT
+Customer -- UC_STAFF_INBOX
+Owner -- UC_STAFF_LIST
+Owner -- UC_STAFF_PERMISSIONS
+Owner -- UC_STAFF_LOCK
+@enduml

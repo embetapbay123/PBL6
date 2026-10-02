@@ -1,0 +1,27 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Xử lý đơn và báo cáo Store
+actor "Nhân viên" as Seller
+actor "Chủ Store" as Owner
+Owner --|> Seller
+rectangle "PBL6 Marketplace" {
+  usecase "Xem danh sách và chi tiết đơn của Store\n[UC-SORDER-LIST]" as UC_SORDER_LIST
+  usecase "Chuyển trạng thái và xác nhận giao đơn\n[UC-SORDER-STATUS]" as UC_SORDER_STATUS
+  usecase "Hủy đơn chưa xử lý có lý do\n[UC-SORDER-CANCEL]" as UC_SORDER_CANCEL
+  usecase "Ghi nhận thu đủ COD theo Order\n[UC-SORDER-COD]" as UC_SORDER_COD
+  usecase "Xem báo cáo Store\n[UC-REP-STORE]" as UC_REP_STORE
+}
+Seller -- UC_SORDER_LIST
+Seller -- UC_SORDER_STATUS
+Seller -- UC_SORDER_CANCEL
+Seller -- UC_SORDER_COD
+Owner -- UC_REP_STORE
+note bottom of UC_SORDER_STATUS
+  Seller cần order.store.* hiệu lực.
+  Seller/Owner xác nhận giao thành công cho sandbox.
+  COD cần cod.store.collect khi hoàn tất từng Order.
+end note
+@enduml

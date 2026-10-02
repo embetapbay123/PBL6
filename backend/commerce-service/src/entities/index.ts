@@ -1,0 +1,17 @@
+import { CODCollection } from './c_o_d_collection.entity';
+import { Cart } from './cart.entity';
+import { CartItem } from './cart_item.entity';
+import { IdempotencyRecord } from './idempotency_record.entity';
+import { M2Audit } from './m2_audit.entity';
+import { Order } from './order.entity';
+import { OrderItem } from './order_item.entity';
+import { OrderStatusHistory } from './order_status_history.entity';
+import { Payment } from './payment.entity';
+import { PaymentAttempt } from './payment_attempt.entity';
+import { PaymentEvent } from './payment_event.entity';
+import { Refund } from './refund.entity';
+import { Shipment } from './shipment.entity';
+import { Voucher } from './voucher.entity';
+import { VoucherRedemption } from './voucher_redemption.entity';
+import { VoucherReservation } from './voucher_reservation.entity';
+export const entities = [CODCollection,Cart,CartItem,IdempotencyRecord,M2Audit,Order,OrderItem,OrderStatusHistory,Payment,PaymentAttempt,PaymentEvent,Refund,Shipment,Voucher,VoucherRedemption,VoucherReservation];

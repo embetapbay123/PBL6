@@ -1,0 +1,16 @@
+@startuml
+title Cập nhật Product và đồng bộ AI index
+caption AI kiểm tra lại Product hiện hành trước khi giới thiệu cho khách.
+actor Seller
+participant "M1 Catalog" as M1
+participant "M4 AI worker" as M4
+Seller -> M1 : Sửa Product/Variant(expected_version)
+M1 -> M1 : Kiểm tra Store, Attribute, SKU, lưu + outbox
+M1 --> Seller : Product mới, version tăng
+M1 -->> M4 : ProductChanged(event_id, product_id, version)
+M4 -> M4 : Dedup và upsert embedding theo version
+== Khi AI phục vụ card về sau ==
+M4 -> M1 : Xác minh trạng thái/giá khi phục vụ card
+M1 --> M4 : Product hiện hành hoặc không khả dụng
+M4 -> M4 : Loại Product ẩn/Store bị khóa
+@enduml

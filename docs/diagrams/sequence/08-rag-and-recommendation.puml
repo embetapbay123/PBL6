@@ -1,0 +1,43 @@
+@startuml
+title Chatbot và gợi ý sản phẩm
+caption Chat trả lời từ sản phẩm hiện có; gợi ý cá nhân chỉ dành cho khách đã đồng ý.
+actor "Khách vãng lai" as Guest
+actor "Khách đã đăng nhập" as Customer
+participant "Chatbot và gợi ý" as AI
+participant "Danh mục sản phẩm" as Catalog
+participant "Dịch vụ tạo câu trả lời" as LLM
+
+alt Khách vãng lai
+  Guest -> AI : Hỏi về sản phẩm
+else Khách đã đăng nhập
+  Customer -> AI : Hỏi về sản phẩm
+end
+activate AI
+AI -> Catalog : Tìm và kiểm tra sản phẩm còn bán, giá mới nhất
+activate Catalog
+Catalog --> AI : Thông tin sản phẩm hợp lệ
+deactivate Catalog
+AI -> LLM : Nhờ diễn đạt câu trả lời từ thông tin đó
+activate LLM
+LLM --> AI : Câu trả lời
+deactivate LLM
+alt Khách vãng lai
+  AI --> Guest : Trả lời và sản phẩm công khai phù hợp
+else Khách đã đăng nhập
+  AI --> Customer : Trả lời và sản phẩm phù hợp
+end
+deactivate AI
+== Một lần truy cập khác: mục Dành cho bạn ==
+Customer -> AI : Xem gợi ý cá nhân
+activate AI
+alt Đã đồng ý cá nhân hóa
+  AI -> Catalog : Kiểm tra sản phẩm gợi ý còn bán
+  activate Catalog
+  Catalog --> AI : Trạng thái và giá hiện tại
+  deactivate Catalog
+  AI --> Customer : Gợi ý theo model hoặc phương án dự phòng
+else Chưa đồng ý
+  AI --> Customer : Chỉ hiện gợi ý chung, không dùng hành vi cá nhân
+end
+deactivate AI
+@enduml

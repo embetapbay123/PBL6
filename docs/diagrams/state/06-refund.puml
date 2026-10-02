@@ -1,0 +1,8 @@
+@startuml
+title Refund — hoàn tiền mock
+[*] --> REQUESTED : hủy Order hoặc callback muộn
+REQUESTED --> PROCESSING : worker gửi mock gateway
+PROCESSING --> SUCCEEDED : đã hoàn
+PROCESSING --> FAILED : hoàn lỗi
+FAILED --> PROCESSING : retry sau đối soát
+@enduml

@@ -1,0 +1,10 @@
+@startuml
+title Order — xử lý sau khi sẵn sàng
+[*] --> PENDING : sandbox đã trả / COD consume xong
+PENDING --> CONFIRMED : Seller/Owner xác nhận
+CONFIRMED --> PROCESSING : bắt đầu xử lý
+PROCESSING --> SHIPPED : giao mô phỏng
+SHIPPED --> COMPLETED : sandbox giao / COD thu đủ Order
+PENDING --> CANCELLED : Customer/Seller/Owner hủy
+CONFIRMED --> CANCELLED : Customer/Seller/Owner hủy
+@enduml

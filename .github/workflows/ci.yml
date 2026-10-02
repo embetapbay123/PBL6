@@ -1,0 +1,36 @@
+name: Scaffold checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  contracts-and-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm, cache-dependency-path: '**/package-lock.json'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: npm ci && npm --prefix backend ci && npm --prefix frontend ci
+      - run: npm run docs:check && npm run contracts:check && npm run generate:types
+      - run: npm run build:backend && npm run test:backend && npm run build
+      - run: python scripts/setup_local.py
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d postgres redis rabbitmq
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
+      - run: npm run infra:up && python scripts/wait_local.py
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
+      - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
+      - run: npm --prefix frontend run test:e2e
+      - if: always()
+        run: npm run infra:down
+  mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: {flutter-version: '3.41.4', channel: stable, cache: true}
+      - working-directory: mobile
+        run: flutter pub get && flutter analyze && flutter test

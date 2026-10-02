@@ -1,0 +1,16 @@
+import { Address } from './address.entity';
+import { CustomerProfile } from './customer_profile.entity';
+import { M3Audit } from './m3_audit.entity';
+import { MembershipPermission } from './membership_permission.entity';
+import { OneTimeToken } from './one_time_token.entity';
+import { Permission } from './permission.entity';
+import { RefreshSession } from './refresh_session.entity';
+import { Role } from './role.entity';
+import { RolePermission } from './role_permission.entity';
+import { StaffInvitation } from './staff_invitation.entity';
+import { Store } from './store.entity';
+import { StoreApplication } from './store_application.entity';
+import { StoreMembership } from './store_membership.entity';
+import { User } from './user.entity';
+import { UserRole } from './user_role.entity';
+export const entities = [Address,CustomerProfile,M3Audit,MembershipPermission,OneTimeToken,Permission,RefreshSession,Role,RolePermission,StaffInvitation,Store,StoreApplication,StoreMembership,User,UserRole];

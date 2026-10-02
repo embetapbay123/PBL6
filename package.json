@@ -1,0 +1,21 @@
+{
+  "name": "pbl6-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "build:backend": "npm --prefix backend run build",
+    "test:backend": "npm --prefix backend test",
+    "generate:types": "node node_modules/openapi-typescript/bin/cli.js docs/contracts/openapi.json --output frontend/src/api/generated.d.ts && node node_modules/openapi-typescript/bin/cli.js docs/contracts/openapi.json --output backend/shared/src/contracts.generated.d.ts && node node_modules/openapi-typescript/bin/cli.js docs/contracts/internal-api.json --output backend/shared/src/contracts.internal.generated.d.ts",
+    "docs:check": "python scripts/check_docs.py",
+    "infra:up": "docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d",
+    "infra:down": "docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml down",
+    "contracts:check": "node scripts/check_openapi.mjs"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.0.0",
+    "openapi-typescript": "^7.13.0"
+  }
+}

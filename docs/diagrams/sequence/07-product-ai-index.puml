@@ -1,0 +1,32 @@
+@startuml
+title Sản phẩm đổi, AI không được giới thiệu thông tin cũ
+caption Giá và trạng thái trên gian hàng là nguồn hiện hành; AI phải kiểm tra lại trước khi gợi ý.
+actor "Nhân viên Store" as Seller
+actor "Khách hàng" as Customer
+participant "Hệ thống sản phẩm" as Catalog
+participant "Hệ thống gợi ý" as AI
+
+Seller -> Catalog : Đổi giá hoặc ẩn sản phẩm
+activate Catalog
+Catalog --> Seller : Đã lưu thay đổi
+deactivate Catalog
+Catalog -->> AI : Báo sản phẩm đã đổi
+activate AI
+AI -> AI : Cập nhật dữ liệu gợi ý khi có thể
+deactivate AI
+== Khi khách xem gợi ý sau đó ==
+Customer -> AI : Xem sản phẩm gợi ý
+activate AI
+AI -> Catalog : Sản phẩm này còn hiển thị? Giá hiện tại?
+activate Catalog
+alt Còn bán
+  Catalog --> AI : Trả thông tin mới nhất
+  deactivate Catalog
+  AI --> Customer : Hiện sản phẩm với giá hiện tại
+else Đã ẩn hoặc Store bị khóa
+  Catalog --> AI : Không còn khả dụng
+  deactivate Catalog
+  AI --> Customer : Không giới thiệu sản phẩm này
+end
+deactivate AI
+@enduml

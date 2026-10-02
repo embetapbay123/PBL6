@@ -1,0 +1,38 @@
+@startuml
+title Tạo hai Order trước, thanh toán sandbox từng Order
+caption Khách đặt A/B thành hai đơn; trả A không bắt B trả cùng lúc.
+actor Customer
+participant "Web/Mobile" as UI
+participant "M2 Order & Payment" as M2
+participant "M3 Identity & Store" as M3
+participant "M1 Catalog & Inventory" as M1
+participant "Gateway sandbox" as GW
+Customer -> UI : Chọn item A/B, địa chỉ, phương thức từng Store
+UI -> M2 : Xác nhận quote + Idempotency-Key + payload
+M2 -> M2 : Khóa (customer_user_id, key), so payload_hash
+alt Key đã có, cùng payload
+  M2 -> M2 : Đợi request đang chạy nếu cần; đọc kết quả cũ
+  M2 --> UI : Trả cùng group_id và danh sách Order, không tạo lại
+else Key đã có, payload khác
+  M2 --> UI : 409 IDEMPOTENCY_CONFLICT, không tạo Order
+else Key mới
+  M2 -> M3 : Kiểm tra User, Store và phí
+  M2 -> M1 : Tính lại Variant, giá và tồn hiện hành
+  M2 -> M2 : Tính voucher, cấp group_id và Order IDs
+  M2 -> M1 : ReserveInventory(order_ids, operation_ids)
+  alt Không đủ tồn/giá đổi
+    M2 -> M1 : Release mọi phần đã giữ
+    M2 --> UI : Quote mới hoặc lỗi, không có Order
+  else Reserve đủ
+    M2 -> M2 : Transaction tạo Order/Payment A/B, snapshot, voucher, IdempotencyRecord
+    M2 --> UI : 201 group_id, Order A/B, payable riêng
+    Customer -> UI : Trả Order A
+    UI -> M2 : Tạo Attempt cho Order A
+    M2 -> GW : Thanh toán đúng payable A
+    GW -->> M2 : Callback Success A đã ký
+    M2 -> M1 : ConsumeReservation(order A)
+    M2 -> M2 : Payment A SUCCEEDED, Order A PENDING
+    M2 --> UI : Order B vẫn AWAITING_PAYMENT hoặc COD
+  end
+end
+@enduml

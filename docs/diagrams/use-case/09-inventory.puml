@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Tồn kho
+actor "Nhân viên" as Seller
+actor "Chủ Store" as Owner
+Owner --|> Seller
+rectangle "PBL6 Marketplace" {
+  usecase "Xem tồn khả dụng và đang giữ\n[UC-INV-VIEW]" as UC_INV_VIEW
+  usecase "Nhập, xuất hoặc điều chỉnh tồn có lý do\n[UC-INV-ADJUST]" as UC_INV_ADJUST
+  usecase "Xem lịch sử biến động kho\n[UC-INV-HISTORY]" as UC_INV_HISTORY
+}
+Seller -- UC_INV_VIEW
+Seller -- UC_INV_ADJUST
+Seller -- UC_INV_HISTORY
+note bottom of UC_INV_ADJUST
+  Seller cần inventory.store.* hiệu lực.
+end note
+@enduml

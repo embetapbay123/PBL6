@@ -1,0 +1,26 @@
+@startuml
+title Hủy một Order — activity
+caption Hủy một đơn, trả lại hàng và xử lý tiền; các đơn khác giữ nguyên.
+start
+:Customer hoặc Seller/Owner gửi hủy kèm version;
+:M2 kiểm tra ownership, trạng thái và version;
+if (AWAITING_PAYMENT/PENDING/CONFIRMED và có quyền?) then (Có)
+  :Order CANCELLED, ghi lịch sử;
+  if (Tồn đã consume?) then (Có)
+    :M1 restock theo order_id và operation_id;
+  else (Chưa)
+    :M1 release reservation Order;
+  endif
+  if (Sandbox đã thu tiền?) then (Có)
+    :M2 tạo Refund của Payment/Order;
+    :Worker hoàn mock, trạng thái Refund độc lập;
+  else (Chưa thu/COD)
+    :Payment/CODCollection bỏ nghĩa vụ thu;
+  endif
+  :Các Order cùng purchase_group_id giữ nguyên;
+  stop
+else (Không)
+  :Trả 403/404/409, không đổi dữ liệu;
+  stop
+endif
+@enduml

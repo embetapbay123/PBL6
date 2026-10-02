@@ -1,0 +1,23 @@
+@startuml
+title Từ giỏ hàng đến các đơn riêng
+caption Một lần xác nhận giỏ tạo một đơn cho mỗi Store; mỗi đơn thanh toán theo cách đã chọn.
+start
+:Khách chọn món từ một hoặc nhiều Store;
+:Chọn địa chỉ và cách trả tiền cho từng Store;
+:Hệ thống kiểm tra lại giá, ưu đãi và số lượng;
+if (Có thay đổi hoặc hết hàng?) then (Có)
+  :Báo khách xem lại trước khi đặt;
+  stop
+else (Không)
+  :Tạo một đơn riêng cho mỗi Store;
+  :Hiển thị số tiền và trạng thái từng đơn;
+  :Xét riêng từng đơn đã tạo;
+  if (Đơn này trả khi nhận hàng?) then (Có)
+    :Store giao hàng và thu tiền của đơn này;
+  else (Không)
+    :Khách trả online cho đơn này khi sẵn sàng;
+  endif
+  :Các đơn khác tiếp tục độc lập;
+  stop
+endif
+@enduml

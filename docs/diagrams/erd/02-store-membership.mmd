@@ -1,0 +1,55 @@
+erDiagram
+  StoreApplication {
+    uuid id PK
+    uuid applicant_user_id FK
+    varchar proposed_name
+    varchar contact
+    varchar status
+    text decision_reason
+    uuid decided_by_user_id FK
+    timestamptz submitted_at
+    timestamptz decided_at
+    int version
+  }
+  Store {
+    uuid id PK
+    uuid application_id FK
+    varchar name
+    varchar slug
+    text description
+    varchar logo_url
+    varchar contact
+    bigint shipping_fee_vnd
+    varchar status
+    int version
+  }
+  StoreMembership {
+    uuid id PK
+    uuid store_id FK
+    uuid user_id FK
+    varchar role
+    varchar status
+    timestamptz joined_at
+    int version
+  }
+  StaffInvitation {
+    uuid id PK
+    uuid store_id FK
+    varchar invited_email
+    uuid invited_user_id FK
+    uuid invited_by_user_id FK
+    varchar status
+    varchar token_hash
+    timestamptz expires_at
+    int version
+  }
+  MembershipPermission {
+    uuid membership_id PK
+    uuid permission_id PK
+    timestamptz granted_at
+    int version
+  }
+  StoreApplication ||--o| Store : "được duyệt thành"
+  Store ||--o{ StoreMembership : "có thành viên"
+  Store ||--o{ StaffInvitation : "gửi lời mời"
+  StoreMembership ||--o{ MembershipPermission : "được cấp quyền"

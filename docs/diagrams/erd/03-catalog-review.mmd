@@ -1,0 +1,96 @@
+erDiagram
+  Category {
+    uuid id PK
+    uuid parent_id FK
+    varchar name
+    varchar slug
+    varchar status
+  }
+  ProductType {
+    uuid id PK
+    uuid category_id FK
+    varchar name
+    varchar status
+  }
+  AttributeDefinition {
+    uuid id PK
+    uuid product_type_id FK
+    varchar code
+    varchar name
+    varchar data_type
+    boolean required
+    boolean variant_factor
+    jsonb allowed_values
+    varchar unit
+  }
+  Product {
+    uuid id PK
+    uuid store_id
+    uuid product_type_id FK
+    varchar title
+    text description
+    jsonb attributes_json
+    varchar status
+    varchar moderation_status
+    int version
+  }
+  ProductVariant {
+    uuid id PK
+    uuid product_id FK
+    uuid store_id
+    varchar sku
+    bigint price_vnd
+    jsonb variant_values_json
+    varchar variant_signature
+    boolean is_default
+    varchar status
+  }
+  ProductImage {
+    uuid id PK
+    uuid product_id FK
+    uuid variant_id FK
+    varchar url
+    int position
+    varchar status
+  }
+  Review {
+    uuid id PK
+    uuid product_id FK
+    uuid order_item_id
+    uuid customer_user_id
+    int rating
+    text body
+    varchar status
+    text hidden_reason
+    timestamptz created_at
+    timestamptz updated_at
+    int version
+  }
+  ReviewAudit {
+    uuid id PK
+    uuid review_id FK
+    uuid actor_user_id
+    varchar action
+    text reason
+    timestamptz created_at
+  }
+  M1Audit {
+    uuid id PK
+    uuid actor_user_id
+    varchar target_type
+    uuid target_id
+    varchar action
+    text reason
+    varchar request_id
+    jsonb before_json
+    jsonb after_json
+    timestamptz created_at
+  }
+  Category ||--o{ ProductType : "phân loại"
+  ProductType ||--o{ AttributeDefinition : "định nghĩa thuộc tính"
+  ProductType ||--o{ Product : "là kiểu của"
+  Product ||--o{ ProductVariant : "có biến thể"
+  Product ||--o{ ProductImage : "có ảnh"
+  ProductVariant ||--o{ ProductImage : "có ảnh riêng"
+  Product ||--o{ Review : "nhận đánh giá"
+  Review ||--o{ ReviewAudit : "có lịch sử kiểm duyệt"

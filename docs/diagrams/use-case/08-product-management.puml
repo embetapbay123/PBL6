@@ -1,0 +1,28 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Quản lý sản phẩm
+actor "Nhân viên" as Seller
+actor "Chủ Store" as Owner
+Owner --|> Seller
+rectangle "PBL6 Marketplace" {
+  usecase "Xem, tìm và lọc Product của Store\n[UC-SPROD-LIST]" as UC_SPROD_LIST
+  usecase "Tạo Product theo ProductType\n[UC-SPROD-CREATE]" as UC_SPROD_CREATE
+  usecase "Sửa và đăng bán lại Product\n[UC-SPROD-EDIT]" as UC_SPROD_EDIT
+  usecase "Tạo Variant/SKU mặc định hoặc có lựa chọn\n[UC-SPROD-VARIANT]" as UC_SPROD_VARIANT
+  usecase "Quản lý ảnh Product và Variant\n[UC-SPROD-IMAGE]" as UC_SPROD_IMAGE
+  usecase "Ngừng bán Product\n[UC-SPROD-HIDE]" as UC_SPROD_HIDE
+}
+Seller -- UC_SPROD_LIST
+Seller -- UC_SPROD_CREATE
+Seller -- UC_SPROD_EDIT
+Seller -- UC_SPROD_VARIANT
+Seller -- UC_SPROD_IMAGE
+Seller -- UC_SPROD_HIDE
+note bottom of UC_SPROD_EDIT
+  Seller cần product.store.* hiệu lực.
+  DRAFT/STOPPED -> ACTIVE qua chức năng này.
+end note
+@enduml

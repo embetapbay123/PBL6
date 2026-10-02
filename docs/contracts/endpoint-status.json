@@ -1,0 +1,1219 @@
+[
+  {
+    "method": "POST",
+    "path": "/auth/register",
+    "operation_id": "register",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/verify-email",
+    "operation_id": "verifyEmail",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "operation_id": "login",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/refresh",
+    "operation_id": "refresh",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "AUTHENTICATED"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/logout",
+    "operation_id": "logout",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "AUTHENTICATED"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/reset-password",
+    "operation_id": "resetPassword",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/reset-password/confirm",
+    "operation_id": "confirmResetPassword",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/change-password",
+    "operation_id": "changePassword",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "AUTHENTICATED"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/context",
+    "operation_id": "getAuthContext",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "AUTHENTICATED"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me",
+    "operation_id": "getProfile",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "AUTHENTICATED"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/me",
+    "operation_id": "updateProfile",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "AUTHENTICATED"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/addresses",
+    "operation_id": "listAddresses",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/addresses",
+    "operation_id": "createAddress",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/addresses/{id}",
+    "operation_id": "updateAddress",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/addresses/{id}",
+    "operation_id": "deleteAddress",
+    "service": "M3",
+    "module": "profile",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/store-applications",
+    "operation_id": "submitStoreApplication",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/store-applications",
+    "operation_id": "listOwnStoreApplications",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/store-applications",
+    "operation_id": "listStoreApplications",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/store-applications/{id}",
+    "operation_id": "reviewStoreApplication",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store",
+    "operation_id": "getOwnStore",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store",
+    "operation_id": "updateOwnStore",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/staff",
+    "operation_id": "listStoreStaff",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/staff/invitations",
+    "operation_id": "listStaffInvitations",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/staff/invitations",
+    "operation_id": "inviteStaff",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/staff/invitations/{id}/revoke",
+    "operation_id": "revokeStaffInvitation",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/invitations",
+    "operation_id": "listOwnInvitations",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/invitations/{id}/accept",
+    "operation_id": "acceptInvitation",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/categories",
+    "operation_id": "listCategories",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/product-types",
+    "operation_id": "listProductTypes",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/products",
+    "operation_id": "listProducts",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/products/{id}",
+    "operation_id": "getProduct",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/stores/{id}/products",
+    "operation_id": "listStoreProducts",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/products",
+    "operation_id": "listOwnStoreProducts",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/products",
+    "operation_id": "createProduct",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/products/{id}",
+    "operation_id": "updateProduct",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED_SAMPLE",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/products/{id}/variants",
+    "operation_id": "createVariant",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/products/{id}/images",
+    "operation_id": "addProductImage",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/inventory",
+    "operation_id": "listStoreInventory",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/inventory/adjustments",
+    "operation_id": "adjustInventory",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/inventory/movements",
+    "operation_id": "listStockMovements",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/cart/items",
+    "operation_id": "listCartItems",
+    "service": "M2",
+    "module": "cart",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/cart/items",
+    "operation_id": "addCartItem",
+    "service": "M2",
+    "module": "cart",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/cart/items/{id}",
+    "operation_id": "updateCartItem",
+    "service": "M2",
+    "module": "cart",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/cart/items/{id}",
+    "operation_id": "removeCartItem",
+    "service": "M2",
+    "module": "cart",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/checkout/quotes",
+    "operation_id": "quoteCheckout",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/orders/batches",
+    "operation_id": "confirmCheckout",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/orders/batches/{id}",
+    "operation_id": "getPurchaseGroupOrders",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/orders/{id}/payment-attempts",
+    "operation_id": "createPaymentAttempt",
+    "service": "M2",
+    "module": "payment",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/payments/{id}",
+    "operation_id": "getPayment",
+    "service": "M2",
+    "module": "payment",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/payment-callbacks/sandbox",
+    "operation_id": "sandboxCallback",
+    "service": "M2",
+    "module": "payment",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SANDBOX_PROVIDER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/orders/{id}/refund",
+    "operation_id": "getOrderRefund",
+    "service": "M2",
+    "module": "payment",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/orders",
+    "operation_id": "listOwnOrders",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/orders/{id}",
+    "operation_id": "getOwnOrder",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/orders/{id}/cancel",
+    "operation_id": "cancelOwnOrder",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/orders",
+    "operation_id": "listStoreOrders",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/orders/{id}",
+    "operation_id": "getStoreOrder",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/orders/{id}/status",
+    "operation_id": "transitionStoreOrder",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/cancel",
+    "operation_id": "cancelStoreOrder",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/cod-collection",
+    "operation_id": "collectCod",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/vouchers/validate",
+    "operation_id": "validateVouchers",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/vouchers",
+    "operation_id": "listStoreVouchers",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/vouchers",
+    "operation_id": "createStoreVoucher",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/vouchers/{id}",
+    "operation_id": "updateStoreVoucher",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/vouchers",
+    "operation_id": "listPlatformVouchers",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/vouchers",
+    "operation_id": "createPlatformVoucher",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/vouchers/{id}",
+    "operation_id": "updatePlatformVoucher",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/products/{id}/reviews",
+    "operation_id": "listProductReviews",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/reviews",
+    "operation_id": "createReview",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/reviews/{id}",
+    "operation_id": "updateReview",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/reviews/{id}/hide",
+    "operation_id": "hideReview",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/reviews/{id}/restore",
+    "operation_id": "restoreReview",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/users",
+    "operation_id": "listUsers",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/users/{id}",
+    "operation_id": "updateUserState",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/stores",
+    "operation_id": "listStores",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/stores/{id}",
+    "operation_id": "updateStoreState",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/orders",
+    "operation_id": "listAllOrders",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/dashboard",
+    "operation_id": "getPlatformDashboard",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/roles/{id}",
+    "operation_id": "updateRole",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/chat/sessions",
+    "operation_id": "createChatSession",
+    "service": "M4",
+    "module": "chat",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/chat/sessions/{id}/messages",
+    "operation_id": "sendChatMessage",
+    "service": "M4",
+    "module": "chat",
+    "owner": "Công",
+    "status": "MOCK_ONLY",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/chat/sessions",
+    "operation_id": "listOwnChatSessions",
+    "service": "M4",
+    "module": "chat",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/recommendations/for-you",
+    "operation_id": "getForYou",
+    "service": "M4",
+    "module": "recommendation",
+    "owner": "Công",
+    "status": "MOCK_ONLY",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/products/{id}/related",
+    "operation_id": "getRelatedProducts",
+    "service": "M4",
+    "module": "recommendation",
+    "owner": "Công",
+    "status": "MOCK_ONLY",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/staff/{id}",
+    "operation_id": "updateStaff",
+    "service": "M3",
+    "module": "staff",
+    "owner": "Trí",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/reports",
+    "operation_id": "getStoreReport",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/vouchers/{id}/usage",
+    "operation_id": "getStoreVoucherUsage",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/vouchers/{id}/usage",
+    "operation_id": "getPlatformVoucherUsage",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/categories",
+    "operation_id": "createCategory",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/categories/{id}",
+    "operation_id": "updateCategory",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/product-types",
+    "operation_id": "createProductType",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/product-types/{id}",
+    "operation_id": "updateProductType",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/attribute-definitions",
+    "operation_id": "createAttributeDefinition",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/attribute-definitions/{id}",
+    "operation_id": "updateAttributeDefinition",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/products/{id}/hide",
+    "operation_id": "hideProduct",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/products/{id}/restore",
+    "operation_id": "restoreProduct",
+    "service": "M1",
+    "module": "moderation",
+    "owner": "Thịnh",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/ai/metrics",
+    "operation_id": "getAiMetrics",
+    "service": "M4",
+    "module": "evaluation",
+    "owner": "Công",
+    "status": "MOCK_ONLY",
+    "roles": [
+      "STORE_OWNER",
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/personalization-consent",
+    "operation_id": "getPersonalizationConsent",
+    "service": "M4",
+    "module": "consent",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/me/personalization-consent",
+    "operation_id": "updatePersonalizationConsent",
+    "service": "M4",
+    "module": "consent",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/payment-callbacks/sepay",
+    "operation_id": "sepayCallback",
+    "service": "M2",
+    "module": "payment",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SEPAY_TEST"
+    ]
+  }
+]

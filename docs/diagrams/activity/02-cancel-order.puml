@@ -1,0 +1,21 @@
+@startuml
+title Hủy một đơn hàng
+caption Chỉ đơn được chọn bị hủy; hàng và tiền của đơn đó được xử lý riêng.
+start
+:Khách hoặc Store yêu cầu hủy một đơn;
+if (Có quyền và đơn còn được hủy?) then (Không)
+  :Từ chối, đơn giữ nguyên;
+  stop
+else (Có)
+  :Đánh dấu đơn đã hủy;
+  :Trả lại phần hàng đã giữ hoặc đã trừ;
+  if (Đã thu tiền online?) then (Có)
+    :Bắt đầu hoàn tiền của đơn này;
+    :Cho khách theo dõi trạng thái hoàn;
+  else (Chưa thu hoặc COD)
+    :Không còn khoản tiền cần thu;
+  endif
+  :Các đơn khác trong cùng lần mua giữ nguyên;
+  stop
+endif
+@enduml

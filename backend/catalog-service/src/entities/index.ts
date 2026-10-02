@@ -1,0 +1,14 @@
+import { AttributeDefinition } from './attribute_definition.entity';
+import { Category } from './category.entity';
+import { Inventory } from './inventory.entity';
+import { InventoryReservation } from './inventory_reservation.entity';
+import { M1Audit } from './m1_audit.entity';
+import { Product } from './product.entity';
+import { ProductImage } from './product_image.entity';
+import { ProductType } from './product_type.entity';
+import { ProductVariant } from './product_variant.entity';
+import { ReservationItem } from './reservation_item.entity';
+import { Review } from './review.entity';
+import { ReviewAudit } from './review_audit.entity';
+import { StockMovement } from './stock_movement.entity';
+export const entities = [AttributeDefinition,Category,Inventory,InventoryReservation,M1Audit,Product,ProductImage,ProductType,ProductVariant,ReservationItem,Review,ReviewAudit,StockMovement];

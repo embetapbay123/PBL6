@@ -1,0 +1,24 @@
+erDiagram
+  Cart {
+    uuid id PK
+    uuid customer_user_id
+    timestamptz updated_at
+  }
+  CartItem {
+    uuid id PK
+    uuid cart_id FK
+    uuid variant_id
+    uuid store_id
+    int quantity
+    timestamptz added_at
+  }
+  IdempotencyRecord {
+    uuid id PK
+    uuid customer_user_id
+    varchar key
+    varchar payload_hash
+    uuid purchase_group_id
+    jsonb response_json
+    timestamptz expires_at
+  }
+  Cart ||--o{ CartItem : "chứa dòng hàng"

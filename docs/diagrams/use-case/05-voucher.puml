@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Voucher
+actor "Khách hàng" as Customer
+actor "Chủ Store" as Owner
+actor "Quản trị viên" as Admin
+rectangle "PBL6 Marketplace" {
+  usecase "Quản lý voucher Store\n[UC-VCH-STORE]" as UC_VCH_STORE
+  usecase "Quản lý voucher toàn sàn\n[UC-VCH-PLATFORM]" as UC_VCH_PLATFORM
+  usecase "Áp voucher Store và toàn sàn\n[UC-VCH-APPLY]" as UC_VCH_APPLY
+  usecase "Xem lượt sử dụng voucher\n[UC-VCH-USAGE]" as UC_VCH_USAGE
+}
+Owner -- UC_VCH_STORE
+Admin -- UC_VCH_PLATFORM
+Customer -- UC_VCH_APPLY
+Owner -- UC_VCH_USAGE
+Admin -- UC_VCH_USAGE
+@enduml

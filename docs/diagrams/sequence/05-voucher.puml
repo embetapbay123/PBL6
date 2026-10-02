@@ -1,0 +1,41 @@
+@startuml
+title Hai loại voucher trong một lần đặt hàng
+caption Khách thấy tiền từng đơn trước khi xác nhận; giảm giá đã chốt không đổi về sau.
+actor "Khách hàng" as Customer
+participant "Ứng dụng" as App
+participant "Hệ thống ưu đãi và đơn hàng" as System
+
+Customer -> App : Chọn hàng A/B, mã Store và mã toàn sàn
+activate App
+App -> System : Hỏi giá sau giảm
+activate System
+System -> System : Kiểm tra mã còn hạn và đủ điều kiện
+alt Mã không dùng được
+  System --> App : Giải thích mã nào không hợp lệ
+else Mã hợp lệ
+  System -> System : Giảm theo Store trước, toàn sàn sau
+  System --> App : Hiện tiền phải trả riêng A/B
+end
+deactivate System
+App --> Customer : Hiển thị kết quả kiểm tra mã và tiền từng đơn
+deactivate App
+
+== Nếu khách đồng ý với giá hiển thị ==
+opt Khách xác nhận đặt hàng
+  Customer -> App : Xác nhận đặt hàng
+  activate App
+  App -> System : Tạo các đơn với giá vừa xác nhận
+  activate System
+  alt Đặt hàng thành công
+    System --> App : Lưu số giảm trên từng đơn
+  else Đặt hàng thất bại
+    System --> App : Không tạo đơn; lượt voucher chưa bị dùng
+  end
+  deactivate System
+  App --> Customer : Hiển thị kết quả đặt hàng
+  deactivate App
+end
+note over System
+  Hủy B sau này không làm đổi số tiền của A.
+end note
+@enduml

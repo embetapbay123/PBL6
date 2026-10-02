@@ -1,0 +1,35 @@
+@startuml
+title Một đơn COD, một đơn trả online
+caption Store A có thể giao và thu tiền dù đơn Store B vẫn chờ khách trả online.
+actor "Khách hàng" as Customer
+actor "Nhân viên Store A" as Seller
+participant "Ứng dụng" as App
+participant "Hệ thống mua hàng" as System
+
+Customer -> App : Chọn A trả khi nhận hàng, B trả online
+activate App
+App -> System : Xác nhận đặt hàng
+activate System
+alt Hàng hoặc giá không còn hợp lệ
+  System --> App : Báo để khách xem lại, chưa tạo đơn
+else Hợp lệ
+  System --> App : Tạo đơn A và B với số tiền riêng
+end
+deactivate System
+App --> Customer : Hiển thị kết quả đặt hàng
+deactivate App
+
+== Sau đó: Store xử lý đơn A theo trạng thái riêng ==
+alt A đã sẵn sàng để Store xử lý
+  Seller -> System : Xác nhận, chuẩn bị và giao đơn A
+  activate System
+  System --> Seller : Đã cập nhật hành trình đơn A
+  deactivate System
+  Seller -> System : Xác nhận đã thu đủ tiền A
+  activate System
+  System --> Seller : A hoàn tất; B vẫn chờ trả online
+  deactivate System
+else A đang chờ hệ thống hoàn tất
+  System --> Seller : A tạm chưa thể giao; hệ thống tự xử lý tiếp
+end
+@enduml

@@ -1,0 +1,104 @@
+name: pbl6
+x-app-env: &app-env
+  M1_INTERNAL_KEY: ${M1_INTERNAL_KEY}
+  M2_INTERNAL_KEY: ${M2_INTERNAL_KEY}
+  M3_INTERNAL_KEY: ${M3_INTERNAL_KEY}
+  M4_INTERNAL_KEY: ${M4_INTERNAL_KEY}
+  REDIS_URL: redis://redis:6379
+  RABBITMQ_URL: amqp://pbl6:${RABBIT_PASSWORD}@rabbitmq:5672
+  IDENTITY_URL: http://m3:3103
+  CATALOG_URL: http://m1:3101
+  JWT_PUBLIC_KEY_FILE: /run/secrets/jwt-public.pem
+  WEB_ORIGIN: ${WEB_ORIGIN}
+  COOKIE_SECURE: ${COOKIE_SECURE}
+  SEED_PASSWORD: ${SEED_PASSWORD}
+  NODE_ENV: development
+x-node: &node
+  image: pbl6-node:local
+  build: {context: .., dockerfile: backend/Dockerfile}
+  restart: unless-stopped
+  volumes: [./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro]
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      M1_DB_PASSWORD: ${M1_DB_PASSWORD}
+      M2_DB_PASSWORD: ${M2_DB_PASSWORD}
+      M3_DB_PASSWORD: ${M3_DB_PASSWORD}
+      M4_DB_PASSWORD: ${M4_DB_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data, ./init-databases.sh:/docker-entrypoint-initdb.d/01-databases.sh:ro]
+    healthcheck: {test: [CMD-SHELL, 'pg_isready -U postgres'], interval: 3s, timeout: 3s, retries: 20}
+    restart: unless-stopped
+  redis:
+    image: redis:7.4.2-alpine
+    command: [redis-server, --appendonly, 'yes']
+    volumes: [redisdata:/data]
+    healthcheck: {test: [CMD, redis-cli, ping], interval: 3s, timeout: 3s, retries: 20}
+    restart: unless-stopped
+  rabbitmq:
+    image: rabbitmq:4.1.0-management
+    environment: {RABBITMQ_DEFAULT_USER: pbl6, RABBITMQ_DEFAULT_PASS: '${RABBIT_PASSWORD}'}
+    volumes: [rabbitdata:/var/lib/rabbitmq]
+    healthcheck: {test: [CMD, rabbitmq-diagnostics, -q, ping], interval: 5s, timeout: 5s, retries: 30}
+    restart: unless-stopped
+  m1:
+    <<: *node
+    environment: {<<: *app-env, SERVICE_ID: M1, PORT: '3101', M1_DATABASE_URL: 'postgresql://m1:${M1_DB_PASSWORD}@postgres:5432/m1'}
+    command: [node, dist/catalog-service/src/main.js]
+  m2:
+    <<: *node
+    environment: {<<: *app-env, SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}'}
+    command: [node, dist/commerce-service/src/main.js]
+  m3:
+    <<: *node
+    environment: {<<: *app-env, SERVICE_ID: M3, PORT: '3103', M3_DATABASE_URL: 'postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3', JWT_PRIVATE_KEY_FILE: /run/secrets/jwt-private.pem}
+    volumes: [./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro, ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro]
+    command: [node, dist/identity-store-service/src/main.js]
+  m4:
+    build: {context: .., dockerfile: backend/ai-service/Dockerfile}
+    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}'}
+    depends_on: {postgres: {condition: service_healthy}}
+    restart: unless-stopped
+  worker-m1:
+    <<: *node
+    environment: {<<: *app-env, SERVICE_ID: M1, M1_DATABASE_URL: 'postgresql://m1:${M1_DB_PASSWORD}@postgres:5432/m1'}
+    command: [node, dist/shared/src/worker.js]
+    depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
+  worker-m2:
+    <<: *node
+    environment: {<<: *app-env, SERVICE_ID: M2, M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2'}
+    command: [node, dist/shared/src/worker.js]
+    depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
+  web:
+    build: {context: .., dockerfile: frontend/Dockerfile}
+    restart: unless-stopped
+  gateway:
+    image: caddy:2.10.0-alpine
+    environment: {SITE_ADDRESS: '${SITE_ADDRESS}'}
+    ports: ['${GATEWAY_HTTP_BIND}:80', '443:443']
+    volumes: [./Caddyfile:/etc/caddy/Caddyfile:ro, caddydata:/data, caddyconfig:/config]
+    depends_on: [web, m1, m2, m3, m4]
+    restart: unless-stopped
+  tools:
+    <<: *node
+    profiles: [tools]
+    environment:
+      <<: *app-env
+      SERVICE_ID: M3
+      M1_DATABASE_URL: postgresql://m1:${M1_DB_PASSWORD}@postgres:5432/m1
+      M2_DATABASE_URL: postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2
+      M3_DATABASE_URL: postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3
+      M4_DATABASE_URL: postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4
+    restart: 'no'
+    command: [node, dist/shared/src/migrate.js]
+volumes:
+  pgdata:
+  redisdata:
+  rabbitdata:
+  caddydata:
+  caddyconfig:

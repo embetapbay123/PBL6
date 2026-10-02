@@ -1,0 +1,99 @@
+erDiagram
+  Payment {
+    uuid id PK
+    uuid order_id FK
+    varchar method
+    varchar status
+    bigint payable_vnd
+    bigint collectible_vnd
+    bigint collected_vnd
+    bigint refunded_vnd
+    int version
+  }
+  PaymentAttempt {
+    uuid id PK
+    uuid payment_id FK
+    varchar provider_reference
+    varchar status
+    bigint amount_vnd
+    timestamptz created_at
+  }
+  PaymentEvent {
+    uuid id PK
+    uuid attempt_id FK
+    varchar provider_event_id
+    varchar event_type
+    varchar payload_hash
+    timestamptz received_at
+  }
+  Refund {
+    uuid id PK
+    uuid payment_id FK
+    uuid order_id FK
+    bigint amount_vnd
+    varchar status
+    uuid operation_id
+    timestamptz created_at
+  }
+  CODCollection {
+    uuid id PK
+    uuid order_id FK
+    bigint amount_due_vnd
+    bigint amount_collected_vnd
+    varchar status
+    uuid operation_id
+    timestamptz collected_at
+  }
+  Voucher {
+    uuid id PK
+    varchar code
+    varchar scope
+    uuid store_id
+    uuid owner_user_id
+    varchar discount_type
+    bigint discount_value
+    bigint max_discount_vnd
+    bigint min_goods_vnd
+    timestamptz starts_at
+    timestamptz ends_at
+    int usage_limit
+    int per_customer_limit
+    varchar status
+    int version
+  }
+  VoucherReservation {
+    uuid id PK
+    uuid voucher_id FK
+    uuid purchase_group_id
+    uuid customer_user_id
+    uuid store_id
+    varchar status
+    bigint discount_vnd
+    timestamptz expires_at
+  }
+  VoucherRedemption {
+    uuid id PK
+    uuid voucher_id FK
+    uuid purchase_group_id
+    uuid order_id FK
+    uuid customer_user_id
+    bigint discount_vnd
+    timestamptz redeemed_at
+  }
+  M2Audit {
+    uuid id PK
+    uuid actor_user_id
+    varchar target_type
+    uuid target_id
+    varchar action
+    text reason
+    varchar request_id
+    jsonb before_json
+    jsonb after_json
+    timestamptz created_at
+  }
+  Payment ||--o{ PaymentAttempt : "có lần thử"
+  PaymentAttempt ||--o{ PaymentEvent : "nhận sự kiện"
+  Payment ||--o{ Refund : "có hoàn tiền"
+  Voucher ||--o{ VoucherReservation : "được giữ lượt"
+  Voucher ||--o{ VoucherRedemption : "được sử dụng"

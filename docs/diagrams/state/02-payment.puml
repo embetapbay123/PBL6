@@ -1,0 +1,13 @@
+@startuml
+title Payment — riêng từng Order
+[*] --> PENDING : tạo cùng Order
+PENDING --> SUCCEEDED : sandbox Success / COD thu đủ Order
+PENDING --> FAILED : sandbox Failed
+FAILED --> PENDING : Customer thử lại trước khi Order hết hạn
+PENDING --> CANCELLED : Order hết hạn/hủy trước thu
+CANCELLED --> SUCCEEDED : provider xác nhận Success muộn
+SUCCEEDED --> REFUND_PENDING : Order hủy hoặc callback muộn
+REFUND_PENDING --> REFUNDED : hoàn mock thành công
+REFUND_PENDING --> REFUND_FAILED : hoàn lỗi
+REFUND_FAILED --> REFUND_PENDING : retry cùng operation ID
+@enduml

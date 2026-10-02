@@ -1,0 +1,49 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case tổng quan PBL6
+actor "Người truy cập" as Visitor
+actor "Khách vãng lai" as Guest
+actor "Khách hàng" as Customer
+actor "Nhân viên" as Seller
+actor "Chủ Store" as Owner
+actor "Quản trị viên" as Admin
+Guest --|> Visitor
+Customer --|> Visitor
+Owner --|> Seller
+rectangle "PBL6 Marketplace" {
+  usecase "Xác thực và hồ sơ\n[OV-AUTH]" as OV_AUTH
+  usecase "Khám phá sản phẩm\n[OV-DISCOVER]" as OV_DISCOVER
+  usecase "Mua hàng đa Store\nvà thanh toán\n[OV-CHECKOUT]" as OV_CHECKOUT
+  usecase "Theo dõi, hủy đơn\nvà đánh giá\n[OV-POST]" as OV_POST
+  usecase "Đăng ký mở Store\nvà nhận lời mời\n[OV-APPLY]" as OV_APPLY
+  usecase "Quản lý sản phẩm\nvà tồn kho\n[OV-CATALOG]" as OV_CATALOG
+  usecase "Xử lý đơn\nvà thu COD\n[OV-FULFILL]" as OV_FULFILL
+  usecase "Quản lý Store, nhân viên,\nvoucher và báo cáo\n[OV-STORE]" as OV_STORE
+  usecase "Duyệt Store, voucher sàn,\nkiểm duyệt và giám sát\n[OV-ADMIN]" as OV_ADMIN
+  usecase "Chat và gợi ý\ncá nhân hóa\n[OV-AI]" as OV_AI
+}
+Guest -- OV_AUTH
+Customer -- OV_AUTH
+Seller -- OV_AUTH
+Admin -- OV_AUTH
+Visitor -- OV_DISCOVER
+Customer -- OV_CHECKOUT
+Customer -- OV_POST
+Customer -- OV_APPLY
+Seller -- OV_CATALOG
+Seller -- OV_FULFILL
+Owner -- OV_STORE
+Admin -- OV_ADMIN
+Visitor -- OV_AI
+actor "Cổng thanh toán sandbox" as Gateway
+actor "Dịch vụ LLM" as LLM
+Gateway -- OV_CHECKOUT
+LLM -- OV_AI
+note right of Customer
+  Một User có thể dùng Customer và Seller/Owner
+  theo ngữ cảnh request; catalog công khai cho mọi vai.
+end note
+@enduml

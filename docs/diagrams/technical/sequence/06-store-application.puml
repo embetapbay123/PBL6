@@ -1,0 +1,18 @@
+@startuml
+title Customer mở Store và Admin duyệt
+caption Khách nộp đơn; Admin duyệt mới tạo Store và cấp quyền Owner.
+actor Customer
+actor Administrator as Admin
+participant "M3 Identity & Store" as M3
+Customer -> M3 : Nộp StoreApplication
+M3 -> M3 : Kiểm tra membership active/đơn Pending
+M3 --> Customer : Application PENDING
+Admin -> M3 : Duyệt Application
+alt Duyệt
+  M3 -> M3 : Transaction Store + OwnerMembership + audit
+  M3 --> Customer : APPROVED, Store ID
+else Từ chối
+  M3 -> M3 : Lưu lý do, audit
+  M3 --> Customer : REJECTED; có thể nộp đơn mới
+end
+@enduml

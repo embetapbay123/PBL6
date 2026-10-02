@@ -1,0 +1,40 @@
+@startuml
+title Đặt hàng nhiều Store, trả tiền từng đơn
+caption Một lần đặt hàng tạo một đơn cho mỗi Store; khách chọn trả đơn nào trước.
+actor "Khách hàng" as Customer
+participant "Ứng dụng" as App
+participant "Hệ thống mua hàng" as System
+participant "Cổng thanh toán" as Gateway
+
+Customer -> App : Chọn hàng Store A/B, địa chỉ và cách trả từng Store
+activate App
+App -> System : Xác nhận đặt hàng
+activate System
+alt Đã bấm đặt trước đó với cùng nội dung
+  System --> App : Trả lại đúng các đơn đã tạo, không đặt trùng
+else Giá đổi hoặc có món hết hàng
+  System --> App : Báo giá/tồn mới, yêu cầu khách xem lại
+else Mọi thứ hợp lệ
+  System -> System : Tạo đơn A và đơn B, tiền từng đơn
+  System --> App : Hiển thị hai đơn riêng
+end
+deactivate System
+App --> Customer : Hiển thị kết quả đặt hàng
+deactivate App
+
+== Sau khi đặt hàng: khách chọn một đơn để trả ==
+opt Khách chọn trả online đơn A
+  Customer -> App : Trả tiền đơn A
+  activate App
+  App -> System : Yêu cầu trả đơn A
+  activate System
+  System -> Gateway : Thu đúng số tiền đơn A
+  activate Gateway
+  Gateway --> System : Báo thanh toán thành công
+  deactivate Gateway
+  System --> App : A đã trả; B giữ trạng thái riêng
+  deactivate System
+  App --> Customer : Hiển thị kết quả trả tiền A
+  deactivate App
+end
+@enduml

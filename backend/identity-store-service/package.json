@@ -1,0 +1,9 @@
+{
+  "name": "pbl6-m3",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix .. run build",
+    "dev": "npm --prefix .. run dev:m3",
+    "test": "npm --prefix .. test"
+  }
+}

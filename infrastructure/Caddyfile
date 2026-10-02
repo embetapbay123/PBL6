@@ -1,0 +1,21 @@
+{$SITE_ADDRESS:80} {
+  @identity path /api/v1/auth/* /api/v1/me /api/v1/me/context /api/v1/me/addresses* /api/v1/me/store-applications* /api/v1/me/invitations* /api/v1/store /api/v1/store/staff* /api/v1/admin/users* /api/v1/admin/stores* /api/v1/admin/roles* /api/v1/admin/store-applications*
+  handle @identity {
+    reverse_proxy m3:3103
+  }
+  @ai path /api/v1/chat/* /api/v1/me/chat/* /api/v1/recommendations/* /api/v1/products/*/related /api/v1/ai/* /api/v1/me/personalization-consent
+  handle @ai {
+    reverse_proxy m4:3104
+  }
+  @catalog path /api/v1/products* /api/v1/categories* /api/v1/product-types* /api/v1/stores/*/products /api/v1/store/products* /api/v1/store/inventory* /api/v1/me/reviews* /api/v1/admin/reviews* /api/v1/admin/products* /api/v1/admin/categories* /api/v1/admin/product-types* /api/v1/admin/attribute-definitions*
+  handle @catalog {
+    reverse_proxy m1:3101
+  }
+  handle /api/v1/* {
+    reverse_proxy m2:3102
+  }
+  # Internal endpoints, metrics and health have no public route.
+  handle {
+    reverse_proxy web:3000
+  }
+}

@@ -1,0 +1,23 @@
+@startuml
+title Hủy riêng một Order
+caption Chỉ hủy A; hàng và tiền của A được xử lý theo tình trạng đã thu/chưa thu.
+actor Customer
+participant "M2 Order & Payment" as M2
+participant "M1 Inventory" as M1
+participant "Gateway sandbox" as GW
+Customer -> M2 : Hủy Order A(expected_version)
+M2 -> M2 : Kiểm tra sở hữu và trạng thái
+alt A chưa trả, reservation ACTIVE
+  M2 -> M2 : A CANCELLED; Payment A CANCELLED
+  M2 -> M1 : ReleaseReservation(A, operation_id)
+else A COD chưa thu
+  M2 -> M2 : A CANCELLED; CODCollection hủy nghĩa vụ
+  M2 -> M1 : RestockOrder(A, operation_id)
+else A sandbox đã trả
+  M2 -> M2 : A CANCELLED; Refund A REQUESTED
+  M2 -> M1 : RestockOrder(A, operation_id)
+  M2 -> GW : Refund mock Payment A, payable A
+  GW --> M2 : Refund status riêng
+end
+M2 --> Customer : Order B cùng group_id không đổi
+@enduml

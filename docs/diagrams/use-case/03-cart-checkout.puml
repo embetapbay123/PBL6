@@ -1,0 +1,31 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Giỏ hàng, checkout và thanh toán
+actor "Khách hàng" as Customer
+actor "Cổng thanh toán sandbox" as Gateway
+rectangle "PBL6 Marketplace" {
+  usecase "Thêm Variant vào giỏ\n[UC-CART-ADD]" as UC_CART_ADD
+  usecase "Đổi số lượng hoặc xóa item\n[UC-CART-EDIT]" as UC_CART_EDIT
+  usecase "Chọn item của nhiều Store\n[UC-CART-SELECT]" as UC_CART_SELECT
+  usecase "Xem giá, voucher và phí theo Store\n[UC-CHECKOUT-QUOTE]" as UC_CHECKOUT_QUOTE
+  usecase "Tạo Order riêng cho từng Store\n[UC-CHECKOUT-CONFIRM]" as UC_CHECKOUT_CONFIRM
+  usecase "Thanh toán sandbox cho một Order\n[UC-PAY-SANDBOX]" as UC_PAY_SANDBOX
+  usecase "Chọn COD cho Order của Store\n[UC-PAY-COD]" as UC_PAY_COD
+}
+Customer -- UC_CART_ADD
+Customer -- UC_CART_EDIT
+Customer -- UC_CART_SELECT
+Customer -- UC_CHECKOUT_QUOTE
+Customer -- UC_CHECKOUT_CONFIRM
+Customer -- UC_PAY_SANDBOX
+Customer -- UC_PAY_COD
+Gateway -- UC_PAY_SANDBOX
+note bottom of UC_CHECKOUT_CONFIRM
+  Tạo một Order cho mỗi Store trong cùng transaction.
+  Mỗi Order chọn SANDBOX hoặc COD riêng.
+  purchase_group_id chỉ liên kết các Order.
+end note
+@enduml

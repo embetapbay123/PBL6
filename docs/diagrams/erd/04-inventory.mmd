@@ -1,0 +1,40 @@
+erDiagram
+  Inventory {
+    uuid id PK
+    uuid variant_id FK
+    uuid store_id
+    int quantity
+    int reserved_quantity
+    int version
+  }
+  InventoryReservation {
+    uuid id PK
+    uuid order_id
+    uuid purchase_group_id
+    varchar status
+    timestamptz expires_at
+    timestamptz created_at
+  }
+  ReservationItem {
+    uuid id PK
+    uuid reservation_id FK
+    uuid inventory_id FK
+    int quantity
+    varchar status
+  }
+  StockMovement {
+    uuid id PK
+    uuid inventory_id FK
+    uuid reservation_item_id FK
+    uuid order_id
+    uuid operation_id
+    int delta_quantity
+    int delta_reserved
+    varchar reason
+    uuid actor_user_id
+    timestamptz created_at
+  }
+  InventoryReservation ||--|{ ReservationItem : "gồm hàng giữ"
+  Inventory ||--o{ ReservationItem : "được giữ bởi"
+  Inventory ||--o{ StockMovement : "có biến động"
+  ReservationItem ||--o{ StockMovement : "phát sinh biến động"

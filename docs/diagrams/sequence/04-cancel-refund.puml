@@ -1,0 +1,42 @@
+@startuml
+title Hủy một đơn trong lần mua nhiều Store
+caption Chỉ đơn được chọn bị hủy; đơn khác không đổi.
+actor "Khách hàng" as Customer
+participant "Ứng dụng" as App
+participant "Hệ thống mua hàng" as System
+participant "Kho" as Stock
+participant "Cổng thanh toán" as Gateway
+
+Customer -> App : Yêu cầu hủy đơn A
+activate App
+App -> System : Gửi yêu cầu hủy A
+activate System
+alt A không thuộc khách hoặc đã bắt đầu xử lý
+  System --> App : Từ chối hủy, nêu lý do phù hợp
+else A chưa trả tiền
+  System -> Stock : Trả lại phần hàng của A
+  activate Stock
+  Stock --> System : Đã cập nhật số lượng
+  deactivate Stock
+  System --> App : A đã hủy, không có tiền cần hoàn
+else A là COD chưa thu tiền
+  System -> Stock : Hoàn lại hàng của A
+  activate Stock
+  Stock --> System : Đã cập nhật số lượng
+  deactivate Stock
+  System --> App : A đã hủy, không còn khoản COD cần thu
+else A đã trả online
+  System -> Stock : Hoàn lại hàng của A
+  activate Stock
+  Stock --> System : Đã cập nhật số lượng
+  deactivate Stock
+  System -> Gateway : Yêu cầu hoàn đúng tiền đã trả của A
+  activate Gateway
+  Gateway --> System : Trạng thái hoàn tiền
+  deactivate Gateway
+  System --> App : A đã hủy; tiền hoàn được theo dõi riêng
+end
+deactivate System
+App --> Customer : Đơn B vẫn giữ nguyên; hiện kết quả hủy A
+deactivate App
+@enduml

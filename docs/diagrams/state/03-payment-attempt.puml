@@ -1,0 +1,9 @@
+@startuml
+title PaymentAttempt — một lần sandbox
+[*] --> CREATED : tạo lần thử
+CREATED --> PENDING : gateway nhận
+PENDING --> SUCCEEDED : callback Success hợp lệ
+PENDING --> FAILED : callback Failed
+PENDING --> EXPIRED : timeout sau đối soát
+EXPIRED --> SUCCEEDED : provider xác nhận thu muộn
+@enduml

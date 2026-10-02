@@ -1,0 +1,32 @@
+@startuml
+title Phục hồi thanh toán sandbox theo một Order
+caption Đã thu tiền nhưng chốt hàng lỗi thì tự thử lại; đơn hết hạn thì hoàn tiền.
+participant "Gateway sandbox" as GW
+participant "M2 Order & Payment" as M2
+participant "M1 Inventory" as M1
+participant "Recovery worker" as Worker
+GW -> M2 : Callback Success(order A, event_id)
+M2 -> M2 : Xác thực/dedup, đọc Order và reservation A
+alt Reservation A còn ACTIVE
+  M2 -> M2 : Payment A SUCCEEDED
+  M2 -> M1 : ConsumeReservation(order A, operation_id)
+  alt M1 tạm lỗi
+    M2 -> M2 : Order A RECOVERING
+    Worker -> M1 : Retry cùng operation_id
+    M1 --> Worker : Consume đúng một lần
+    Worker -> M2 : Order A PENDING
+  else Consume thành công
+    M2 -> M2 : Order A PENDING
+  end
+else A đã EXPIRED và reservation RELEASED
+  M2 -> M2 : Order A đã AWAITING_PAYMENT -> EXPIRED do timeout/đối soát
+  M2 -> M2 : Payment A CANCELLED -> SUCCEEDED -> REFUND_PENDING
+  M2 -> M2 : Refund A REQUESTED do Success muộn
+  M2 -> GW : Refund mock Payment A(operation_id)
+  GW --> M2 : Kết quả Refund A
+  M2 -> M2 : Order A vẫn EXPIRED, không mở lại Order
+end
+note over M2
+  Order B cùng purchase_group_id không đổi.
+end note
+@enduml

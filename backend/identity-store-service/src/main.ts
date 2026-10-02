@@ -1,0 +1,9 @@
+process.env.SERVICE_ID = 'M3';
+import { bootstrap } from '../../shared/src/bootstrap';
+import { AuthSkeletonController } from './auth/auth.skeleton.controller';
+import { ProfileSkeletonController } from './profile/profile.skeleton.controller';
+import { StoreSkeletonController } from './store/store.skeleton.controller';
+import { StaffSkeletonController } from './staff/staff.skeleton.controller';
+import { AdministrationSkeletonController } from './administration/administration.skeleton.controller';
+import { AuthController } from './auth/auth.controller';
+bootstrap('M3',[AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StaffSkeletonController,AdministrationSkeletonController]).catch(()=>{ console.error('Startup failed: check service configuration and dependencies.'); process.exit(1); });

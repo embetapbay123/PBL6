@@ -1,0 +1,50 @@
+erDiagram
+  Order {
+    uuid id PK
+    uuid purchase_group_id
+    uuid customer_user_id
+    uuid store_id
+    jsonb address_snapshot
+    varchar status
+    varchar payment_method
+    timestamptz payment_expires_at
+    bigint goods_vnd
+    bigint store_discount_vnd
+    bigint platform_discount_vnd
+    bigint shipping_vnd
+    bigint payable_vnd
+    int version
+    timestamptz created_at
+  }
+  OrderItem {
+    uuid id PK
+    uuid order_id FK
+    uuid product_id
+    uuid variant_id
+    jsonb product_snapshot
+    varchar sku_snapshot
+    bigint unit_price_vnd
+    int quantity
+    bigint line_total_vnd
+  }
+  OrderStatusHistory {
+    uuid id PK
+    uuid order_id FK
+    varchar from_status
+    varchar to_status
+    uuid actor_user_id
+    text reason
+    uuid operation_id
+    timestamptz created_at
+  }
+  Shipment {
+    uuid id PK
+    uuid order_id FK
+    varchar status
+    varchar tracking_code
+    timestamptz shipped_at
+    timestamptz delivered_at
+  }
+  Order ||--|{ OrderItem : "gồm dòng hàng"
+  Order ||--o{ OrderStatusHistory : "ghi lịch sử trạng thái"
+  Order ||--o| Shipment : "có giao hàng"

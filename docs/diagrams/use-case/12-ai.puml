@@ -1,0 +1,29 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecaseBackgroundColor #F5F9FF
+skinparam usecaseBorderColor #4774A5
+title Use Case PBL6 — Chatbot và recommendation
+actor "Người truy cập" as Visitor
+actor "Khách vãng lai" as Guest
+actor "Khách hàng" as Customer
+actor "Chủ cửa hàng" as Owner
+actor "Quản trị viên" as Admin
+actor "Dịch vụ LLM" as LLM
+Guest --|> Visitor
+Customer --|> Visitor
+rectangle "PBL6 Marketplace" {
+  usecase "Hội thoại RAG và xem card sản phẩm\n[UC-CHAT-TALK]" as UC_CHAT_TALK
+  usecase "Xem lại phiên chat của mình\n[UC-CHAT-HISTORY]" as UC_CHAT_HISTORY
+  usecase "Xem Dành cho bạn và fallback\n[UC-REC-FOR-YOU]" as UC_REC_FOR_YOU
+  usecase "Xem gợi ý liên quan\n[UC-REC-RELATED]" as UC_REC_RELATED
+  usecase "Giám sát log, model và index AI\n[UC-AIMON-VIEW]" as UC_AIMON_VIEW
+}
+Visitor -- UC_CHAT_TALK
+Customer -- UC_CHAT_HISTORY
+Customer -- UC_REC_FOR_YOU
+Visitor -- UC_REC_RELATED
+Admin -- UC_AIMON_VIEW
+Owner -- UC_AIMON_VIEW
+LLM -- UC_CHAT_TALK
+@enduml

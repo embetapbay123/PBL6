@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.dart_tool
+**/build
+infrastructure/secrets
+infrastructure/.env
+artifacts
+docs_old

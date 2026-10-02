@@ -1,0 +1,25 @@
+@startuml
+title Khách đăng ký mở Store
+caption Nộp đơn chưa tạo Store; chỉ khi Admin duyệt mới có Store và quyền Owner.
+actor "Khách hàng" as Customer
+actor "Quản trị viên" as Admin
+participant "Hệ thống" as System
+
+Customer -> System : Nộp đơn mở Store
+activate System
+System --> Customer : Đã nhận đơn, đang chờ duyệt
+deactivate System
+
+== Sau đó: Admin xem đơn ==
+Admin -> System : Xem đơn và quyết định
+activate System
+alt Duyệt
+  System -> System : Tạo Store, gán khách làm Owner
+  System --> Customer : Đơn được duyệt, có thể quản lý Store
+else Từ chối
+  System -> System : Lưu lý do và giữ lịch sử đơn cũ
+  System --> Customer : Thông báo lý do, có thể gửi đơn mới
+end
+System --> Admin : Đã lưu quyết định
+deactivate System
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+title Xác nhận giỏ và thanh toán riêng Order
+caption Kiểm tra giá và hàng rồi tạo một đơn cho mỗi Store; mỗi đơn đi tiếp riêng.
+start
+:Chọn item nhiều Store, địa chỉ, phương thức từng Store;
+:M2 tính lại giá, tồn, voucher, phí;
+if (Quote hợp lệ?) then (Có)
+  :Cấp purchase_group_id và Order IDs;
+  :Giữ lượt voucher, reserve toàn bộ SKU;
+  if (Reserve đủ?) then (Có)
+    :M2 transaction tạo nguyên tập Order/Payment;
+    :Chốt voucher và xóa CartItem đã mua;
+    fork
+      :Order COD PREPARING;
+      :Consume tồn COD;
+      :Order COD PENDING;
+    fork again
+      :Order sandbox AWAITING_PAYMENT;
+      :Customer trả riêng từng Order;
+      if (Payment Success?) then (Có)
+        :Consume tồn; Order PENDING;
+      else (Không/hết hạn)
+        :Đối soát rồi release tồn hoặc Refund muộn;
+      endif
+    end fork
+    stop
+  else (Không)
+    :Release mọi reservation/voucher, không tạo Order;
+    stop
+  endif
+else (Không)
+  :Trả quote mới/lỗi cụ thể;
+  stop
+endif
+@enduml

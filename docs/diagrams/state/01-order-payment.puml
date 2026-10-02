@@ -1,0 +1,18 @@
+@startuml
+title Order — trước và sau thanh toán riêng
+[*] --> PREPARING : tạo nhóm Order
+PREPARING --> AWAITING_PAYMENT : SANDBOX, reserve ACTIVE
+PREPARING --> PENDING : COD, consume thành công
+AWAITING_PAYMENT --> PENDING : Payment Success, consume
+AWAITING_PAYMENT --> RECOVERING : Payment Success, consume lỗi
+RECOVERING --> PENDING : retry consume thành công
+RECOVERING --> EXPIRED : hoàn mock nếu không thể phục hồi
+AWAITING_PAYMENT --> EXPIRED : timeout và provider chưa thu
+AWAITING_PAYMENT --> CANCELLED : Customer/Seller hủy
+PENDING --> CONFIRMED : Seller xác nhận
+PENDING --> CANCELLED : hủy
+CONFIRMED --> PROCESSING : Seller xử lý
+CONFIRMED --> CANCELLED : hủy
+PROCESSING --> SHIPPED : giao mô phỏng
+SHIPPED --> COMPLETED : sandbox giao / COD thu đủ
+@enduml
