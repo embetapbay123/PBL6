@@ -37,7 +37,7 @@ Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ c�
 
 ## Nhận việc
 
-Theo dõi tiến độ ở [GitHub Projects](https://github.com/users/embetapbay123/projects/1/views/2), [Kanban Markdown](docs/implementation/kanban.md) và [cách đổi trạng thái/nhận task](docs/implementation/kanban-guide.md). Task thực tế nằm trong GitHub Issues, owner theo label. Thịnh: `QT-2005`; Hoa: `mimidangeiu`. Đã mời cả hai với quyền Write; chờ chấp nhận để chuyển assignee tạm từ `embetapbay123`.
+Theo dõi tiến độ trực tiếp trên [Kanban GitHub Projects](https://github.com/users/embetapbay123/projects/1/views/2): kéo thẻ để đổi trạng thái. Issue chứa scope/tiêu chí, Assignee là người nhận việc; [hướng dẫn nhận task và mở PR](docs/implementation/kanban-guide.md). Thịnh: `QT-2005`; Hoa: `mimidangeiu`. Lời mời repo Write đang chờ chấp nhận để chuyển assignee tạm từ `embetapbay123`.
 
 1. Mở [bảng giao task](docs/implementation/task-assignment.md), tìm tên mình và task đầu tiên. Bảng ghi điểm bắt đầu trong code, đầu ra, phụ thuộc và tiêu chí nghiệm thu.
 2. Đọc [phân công](docs/implementation/service-ownership.md) và [backlog tổng thể](docs/implementation/member-backlog.md) để biết phạm vi lâu dài.

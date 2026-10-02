@@ -2,7 +2,7 @@
 name: Task thành viên
 about: Giao một chức năng trên khung PBL6 với đầu ra và nghiệm thu rõ ràng
 title: "[ID] Chức năng cần hoàn thiện"
-labels: "task,status:backlog"
+labels: "task"
 assignees: ""
 ---
 
@@ -12,7 +12,7 @@ assignees: ""
 - Reviewer / người hỗ trợ:
 - Branch dự kiến:
 - Label owner (chọn đúng một): owner:cong / owner:hoa / owner:tri / owner:thinh / owner:hatsaphone.
-- Label status mở (chọn đúng một): status:backlog / status:todo / status:in-progress / status:review / status:blocked.
+- Project: PBL6 — Team Kanban; thêm issue vào Project và chọn Status = Backlog hoặc Todo.
 
 ## Phạm vi và đầu ra
 

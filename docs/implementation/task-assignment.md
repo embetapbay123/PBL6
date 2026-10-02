@@ -2,7 +2,7 @@
 
 Giao theo **chức năng có thể demo và nghiệm thu**, dùng [ownership](service-ownership.md) để giữ phạm vi từng người và [backlog](member-backlog.md) để chọn việc tiếp theo. Mỗi người có một task đang làm; một task có một owner, người hỗ trợ/review được ghi riêng. Các task dưới đây mới là kế hoạch giao việc, chưa phải bằng chứng đã triển khai.
 
-Task được tạo trên GitHub Issues và hiển thị ở [GitHub Projects](https://github.com/users/embetapbay123/projects/1/views/2)/[Kanban Markdown](kanban.md); [hướng dẫn board](kanban-guide.md) ghi cột/label/PR và cách đồng bộ. Thịnh dùng `QT-2005` (#2/#7), Hoa dùng `mimidangeiu` (#3/#8); đã mời Write vào repo, assignee tạm vẫn embetapbay123 trong lúc chờ chấp nhận. Trí/Hatsaphone chưa có username. Danh sách mở việc ở [kanban-tasks.json](kanban-tasks.json); issue/label là nguồn trạng thái sau khi giao.
+Task nằm trong GitHub Issues; tiến độ quản lý trực tiếp trên [Kanban GitHub Projects](https://github.com/users/embetapbay123/projects/1/views/2). Kéo thẻ để đổi trạng thái theo [hướng dẫn board](kanban-guide.md). Thịnh dùng `QT-2005` (#2/#7), Hoa dùng `mimidangeiu` (#3/#8); đã mời Write vào repo, assignee tạm vẫn embetapbay123 trong lúc chờ chấp nhận. Trí/Hatsaphone chưa có username. Tài liệu này ghi phạm vi và tiêu chí; trạng thái hiện hành xem trên Kanban.
 
 ## Đợt đầu: giao ngay
 
@@ -92,7 +92,7 @@ Ngoài phạm vi: phần tách sang task tiếp theo
 
 ## Theo dõi và merge
 
-- Board: `Backlog → Todo → In progress → Review → Done`; task thiếu API dùng trạng thái `Blocked` kèm tên API, owner và cách mở chặn. Trạng thái lấy từ issue/label theo [Kanban guide](kanban-guide.md). UI có fixture chưa được gọi là tích hợp hoàn thành.
+- Board: `Backlog → Todo → In progress → Review → Done`; task thiếu API dùng trạng thái `Blocked` kèm tên API, owner và cách mở chặn. Kéo thẻ trực tiếp trên Kanban theo [hướng dẫn](kanban-guide.md). UI có fixture chưa được gọi là tích hợp hoàn thành.
 - Mỗi task dùng một branch, ví dụ `feat/id-01-addresses`; PR về `main`, ghi ID task, scope, cách chạy và bằng chứng nghiệm thu. Tránh gom toàn bộ service vào một PR.
 - Chủ module review phần mình sở hữu; Công review shared/infrastructure/contract và tích hợp. Order/Payment/Inventory cần Hoa/Công/Thịnh cùng xem ranh giới tác động.
 - Khung Web đang có nhiều route chung một file; CORE-01 là việc cần làm trước để giảm xung đột. Đổi API client/auth provider, generated types, migration/contract hoặc registration `main.ts` thì báo các owner dùng chung.
