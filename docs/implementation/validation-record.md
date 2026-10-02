@@ -55,3 +55,11 @@ Kiểm tra docs75 Markdown và git diff --check đạt. Không thay code nghiệ
 [Mở bảng tổng](https://github.com/users/embetapbay123/projects/1/views/3): BOARD_LAYOUT, group theo Owner single-select, cột theo Status. [View tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) hiển thị Owner/Priority. Tài liệu scope được cập nhật một lần; không thêm bảng Markdown trạng thái, metadata task hay workflow/script đồng bộ vào repo. Status sống trên Project, nội dung task sống trong issue.
 
 Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài mapping operation. FLOW-01 chốt contract bổ sung; fixture chỉ để phát triển/test, nghiệm thu cần nguồn dữ liệu/API thật. Kiểm docs75 Markdown và git diff --check đạt; đây là giao kế hoạch, không nghiệm thu nghiệp vụ hoặc hứa deadline từ số task.
+
+## Schema baseline đã chốt — 02/10/2026
+
+- [Database schema](database-schema.md) chốt ownership, danh mục cột 54 entity, snapshot, transaction và chính sách đổi schema.
+- Migration 003 bổ sung unique/FK/CHECK/index ở M1–M4; đã áp dụng trên database local có dữ liệu. M4 có revision Alembic tương ứng, dùng chung ledger với migrator Node.
+- `python scripts/check_database_schema.py`: cả 4 bộ migration mới và 12 kiểm tra vi phạm invariant đạt; dữ liệu fixture hợp lệ ghi được; schema test rollback hoàn toàn.
+- Kiểm tra được đưa vào CI; kết quả local không thay thế kết quả CI trên commit mới hoặc kiểm thử nghiệp vụ của member.
+- Sau khi áp dụng migration 003: build backend thành công, 10 integration test hiện có đạt; `docs:check` đạt 76 Markdown / 99 API.

@@ -1,6 +1,6 @@
-# Từ điển dữ liệu và ERD 2.1 Draft
+# Từ điển dữ liệu và ERD — baseline nghiệp vụ 2.1 / schema chốt 2.2
 
-**Khung 2.2:** migration/model 54 entity đã có; technical tables và refresh_session.family_id bổ sung ở [ADR](implementation/scaffold-decisions.md). Không tạo FK xuyên database; không bật synchronize. Migration là nguồn schema runtime, ERD là thiết kế đích.
+**Schema chốt 2.2:** xem [schema để code](implementation/database-schema.md), bao gồm constraint/index migration 003. **Khung 2.2:** migration/model 54 entity đã có; technical tables và refresh_session.family_id bổ sung ở [ADR](implementation/scaffold-decisions.md). Không tạo FK xuyên database; không bật synchronize. Migration là nguồn schema runtime, ERD là thiết kế đích.
 
 [ERD tổng quan](diagrams/erd/00-overview.mmd) chỉ thể hiện thực thể nghiệp vụ; tám ERD chi tiết ở dưới. [Hướng dẫn đọc riêng từng sơ đồ](diagrams/erd/README.md) giải thích luồng và quan hệ bằng ví dụ. Nhãn quan hệ trên sơ đồ viết bằng tiếng Việt; tên entity/cột giữ nguyên theo schema để đối chiếu API. Checkout là quy trình tạo Order, không có bảng Checkout/Purchase. Các Order cùng lần xác nhận chia sẻ purchase_group_id UUID; IdempotencyRecord là bảng kỹ thuật có TTL, không là lịch sử mua hàng. Dấu -- là FK cùng database, dấu .. là tham chiếu logic xuyên service.
 

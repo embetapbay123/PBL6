@@ -1,0 +1,26 @@
+-- Schema baseline 2.2 frozen 2026-10-02. Additive; do not rewrite applied migrations.
+CREATE UNIQUE INDEX cart_variant_unique ON cart_item(cart_id,variant_id);
+CREATE UNIQUE INDEX checkout_key_unique ON idempotency_record(customer_user_id,key);
+CREATE UNIQUE INDEX shipment_order_unique ON shipment(order_id);
+CREATE UNIQUE INDEX cod_order_unique ON c_o_d_collection(order_id);
+CREATE UNIQUE INDEX cod_operation_unique ON c_o_d_collection(operation_id);
+CREATE UNIQUE INDEX order_history_operation_unique ON order_status_history(order_id,operation_id);
+CREATE UNIQUE INDEX voucher_code_unique ON voucher(upper(code));
+CREATE UNIQUE INDEX voucher_reservation_group_unique ON voucher_reservation(voucher_id,purchase_group_id);
+CREATE UNIQUE INDEX voucher_redemption_order_unique ON voucher_redemption(voucher_id,order_id);
+ALTER TABLE payment ADD CONSTRAINT payment_id_order_unique UNIQUE(id,order_id);
+ALTER TABLE refund ADD CONSTRAINT refund_payment_order_matches FOREIGN KEY(payment_id,order_id) REFERENCES payment(id,order_id);
+CREATE INDEX order_store_created ON "order"(store_id,created_at DESC,id);
+CREATE INDEX order_customer_created ON "order"(customer_user_id,created_at DESC,id);
+CREATE INDEX voucher_usage_customer ON voucher_redemption(voucher_id,customer_user_id,purchase_group_id);
+CREATE INDEX idempotency_expiry ON idempotency_record(expires_at);
+ALTER TABLE "cart_item" ADD CONSTRAINT cart_item_baseline_check CHECK (quantity>0);
+ALTER TABLE "order" ADD CONSTRAINT order_baseline_check CHECK (goods_vnd>=0 AND store_discount_vnd>=0 AND platform_discount_vnd>=0 AND shipping_vnd>=0 AND payable_vnd>=0 AND store_discount_vnd+platform_discount_vnd<=goods_vnd AND payable_vnd=goods_vnd-store_discount_vnd-platform_discount_vnd+shipping_vnd AND version>=0);
+ALTER TABLE "order_item" ADD CONSTRAINT order_item_baseline_check CHECK (quantity>0 AND unit_price_vnd>=0 AND line_total_vnd=unit_price_vnd*quantity);
+ALTER TABLE "payment" ADD CONSTRAINT payment_baseline_check CHECK (payable_vnd>=0 AND collectible_vnd>=0 AND collectible_vnd<=payable_vnd AND collected_vnd>=0 AND refunded_vnd>=0 AND refunded_vnd<=collected_vnd AND version>=0);
+ALTER TABLE "payment_attempt" ADD CONSTRAINT payment_attempt_baseline_check CHECK (amount_vnd>0);
+ALTER TABLE "refund" ADD CONSTRAINT refund_baseline_check CHECK (amount_vnd>0);
+ALTER TABLE "c_o_d_collection" ADD CONSTRAINT c_o_d_collection_baseline_check CHECK (amount_due_vnd>=0 AND amount_collected_vnd>=0 AND amount_collected_vnd<=amount_due_vnd);
+ALTER TABLE "voucher" ADD CONSTRAINT voucher_baseline_check CHECK (discount_value>0 AND min_goods_vnd>=0 AND (max_discount_vnd IS NULL OR max_discount_vnd>=0) AND ends_at>starts_at AND usage_limit>0 AND per_customer_limit>0 AND version>=0);
+ALTER TABLE "voucher_reservation" ADD CONSTRAINT voucher_reservation_baseline_check CHECK (discount_vnd>=0);
+ALTER TABLE "voucher_redemption" ADD CONSTRAINT voucher_redemption_baseline_check CHECK (discount_vnd>=0);

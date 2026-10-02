@@ -16,4 +16,4 @@ Mỗi sơ đồ có một trang giải thích riêng, **hình SVG nhúng ngay đ
 
 Trong Mermaid, `||` nghĩa là đúng một, `o|` là không hoặc một, `o{` là không hoặc nhiều, `|{` là một hoặc nhiều. **Nét liền** (`--`) thể hiện quan hệ vật lý trong cùng database; **nét chấm** (`..`) thể hiện tham chiếu logic sang service khác, không tạo khóa ngoại xuyên database. `PK` là khóa chính, `FK` là khóa ngoại nội bộ. Một số ID tham chiếu logic không mang nhãn `FK` trong hình; xem [từ điển dữ liệu](../../data-dictionary.md) để biết service sở hữu và ràng buộc đầy đủ.
 
-Đây là sơ đồ **thiết kế 2.1 Draft**, chưa phải schema đã migration. Khi sửa entity hoặc quan hệ, cập nhật cả mã `.mmd`, SVG, trang giải thích tương ứng, [từ điển dữ liệu](../../data-dictionary.md) và contract liên quan.
+Đây là sơ đồ nghiệp vụ 2.1. **Schema triển khai đã chốt 2.2** tại [database schema](../../implementation/database-schema.md), migration 001→002→003 là nguồn runtime; sơ đồ không mô tả hết bảng kỹ thuật và constraint mới. Khi sửa entity hoặc quan hệ, cập nhật cả mã `.mmd`, SVG, trang giải thích tương ứng, [từ điển dữ liệu](../../data-dictionary.md) và contract liên quan.

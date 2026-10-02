@@ -11,7 +11,7 @@ Ngày: 02/10/2026. Các quyết định này thay phần đề xuất sáu servi
 | S-05 | Provider đích: QR + SePay bank webhook Test Mode | Không dùng SePay payment gateway checkout; adapter chữ ký đã có, xử lý tiền chưa có |
 | S-06 | Giữ `/payment-callbacks/sandbox` cũ là stub tương thích | Member dùng `/payment-callbacks/sepay`; return URL/stub không là bằng chứng thu tiền |
 | S-07 | M4 mặc định mock, không gọi API trả phí | RAG OpenAI và implicit ALS là backlog; không tuyên bố đạt chất lượng AI |
-| S-08 | 54 entity đích làm nền migration/model | Technical table và refresh_session.family_id bổ sung cho khung; constraint nghiệp vụ còn phải hoàn thiện |
+| S-08 | 54 entity đích làm nền migration/model | Technical table và refresh_session.family_id bổ sung cho khung; constraint/index baseline đã bổ sung migration 003; kiểm quyền, cạnh chuyển trạng thái và bất biến liên bảng do service thực thi |
 
 `schema_migration`, `outbox`, `inbox`, `operation_result`, `bootstrap_effect` là bảng kỹ thuật ở từng database. `family_id` giữ lịch sử token refresh để phát hiện replay và thu hồi cả phiên. Migration 002 đổi correlation_id outbox từ UUID sang text cho correlation header giới hạn 64 ký tự. Migrator chung và Alembic M4 dùng ledger tránh áp dụng trùng SQL.
 

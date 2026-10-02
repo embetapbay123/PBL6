@@ -1,5 +1,7 @@
 # PBL6 — khung triển khai SOA 4 service
 
+**Schema đã chốt:** [database baseline 2.2](docs/implementation/database-schema.md) — thành viên code theo migration và contract hiện có.
+
 [![Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml)
 
 Đây là **khung có code mẫu chạy thật** để thành viên hoàn thiện. Chưa phải marketplace hoàn chỉnh. Thiết kế nghiệp vụ nằm trong [docs](docs/README.md), phần bàn giao code nằm trong [implementation](docs/implementation/README.md).

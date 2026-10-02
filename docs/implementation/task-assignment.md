@@ -1,5 +1,7 @@
 # Phân công toàn bộ phạm vi triển khai 2.2
 
+**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
+
 [Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
 
 **Đã giao trước toàn bộ71 task của5 người.** Tài liệu này là bảng scope và đường dẫn tới issue; **Status trên Project là nguồn tiến độ duy nhất**. Không đợi Công mở từng task hoặc đợi cả nhóm kết thúc một đợt. Mỗi người chọn một task phù hợp, làm phần độc lập với contract/seed/fixture, rồi tích hợp khi dependency bàn giao API thật.
