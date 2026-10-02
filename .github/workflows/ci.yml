@@ -17,7 +17,7 @@ jobs:
       - run: npm run build:backend && npm run test:backend && npm run build
       - run: python scripts/setup_local.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build
-      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d postgres redis rabbitmq
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d --wait postgres redis rabbitmq
       - run: python scripts/check_database_schema.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
