@@ -2,7 +2,7 @@
 
 Giao theo **chức năng có thể demo và nghiệm thu**, dùng [ownership](service-ownership.md) để giữ phạm vi từng người và [backlog](member-backlog.md) để chọn việc tiếp theo. Mỗi người có một task đang làm; một task có một owner, người hỗ trợ/review được ghi riêng. Các task dưới đây mới là kế hoạch giao việc, chưa phải bằng chứng đã triển khai.
 
-Task được tạo trên GitHub Issues và hiển thị ở [Kanban](kanban.md); [hướng dẫn board](kanban-guide.md) ghi cột/label/PR. Assignee tạm thời là embetapbay123, owner thực hiện vẫn theo từng member. Danh sách mở việc ở [kanban-tasks.json](kanban-tasks.json); issue/label là nguồn trạng thái sau khi giao.
+Task được tạo trên GitHub Issues và hiển thị ở [GitHub Projects](https://github.com/users/embetapbay123/projects/1/views/2)/[Kanban Markdown](kanban.md); [hướng dẫn board](kanban-guide.md) ghi cột/label/PR và cách đồng bộ. Thịnh dùng `QT-2005` (#2/#7), Hoa dùng `mimidangeiu` (#3/#8); đã mời Write vào repo, assignee tạm vẫn embetapbay123 trong lúc chờ chấp nhận. Trí/Hatsaphone chưa có username. Danh sách mở việc ở [kanban-tasks.json](kanban-tasks.json); issue/label là nguồn trạng thái sau khi giao.
 
 ## Đợt đầu: giao ngay
 

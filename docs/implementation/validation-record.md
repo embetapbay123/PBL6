@@ -40,4 +40,12 @@ Kiểm tra đợt cập nhật: docs74 file và cả hai OpenAPI PASS; setup ch�
 
 Đã tạo8 issue (#1–#8), cả8 Assignee tạm embetapbay123 theo yêu cầu; owner thực hiện theo label riêng. Board khởi đầu5 Todo +3 Backlog, chưa tự gắn task nào In progress/Done. Metadata/assignee được đọc lại từ GitHub để kiểm chứng.
 
-Kiểm sync: source API/snapshot cho cùng board và chạy lại không đổi file; status trùng được cảnh báo ở Blocked; task đóng not_planned không tính Done; PR bị loại; title được escape để không phá bảng/HTML. Các smoke check đạt; docs76 file đạt. Workflow dùng token repo để đọc issue và chỉ commit board sinh ra. GitHub Projects native chưa tạo: credential hiện thiếu scope project, tab trình duyệt trả504; board hiện là Issues + Markdown đồng bộ.
+Kiểm sync ban đầu: source API/snapshot cho cùng board và chạy lại không đổi file; status trùng được cảnh báo ở Blocked; task đóng not_planned không tính Done; PR bị loại; title được escape để không phá bảng/HTML. Các smoke check đạt; docs76 file đạt. Workflow dùng token repo để đọc issue và chỉ commit board sinh ra. Lúc tạo bản đầu, GitHub Projects chưa có vì thiếu scope project; vấn đề này đã được giải quyết ở lượt cập nhật dưới.
+
+## GitHub Projects và tài khoản member — 02/10/2026
+
+Người dùng đã cấp OAuth scope project cho GitHub CLI. Đã tạo [PBL6 — Team Kanban](https://github.com/users/embetapbay123/projects/1/views/2), công khai cùng repo, liên kết với embetapbay123/PBL6. Readback GraphQL xác nhận8 issue,5 Todo +3 Backlog, đủ6 Status option và view BOARD_LAYOUT dùng Status làm cột. Field Owner ghi tên/username; Assignee lấy trực tiếp từ issue.
+
+Đã xác nhận profile Thịnh=QT-2005, Hoa=mimidangeiu và cập nhật mapping/tài liệu/body #2/#7 và #3/#8. Theo phê duyệt của người dùng, đã gửi hai lời mời repo Write; readback invitations xác nhận quyền write, còn pending. API assignees hiện chỉ có embetapbay123 nên chưa chuyển Assignee. Member cần nhận lời mời trước; không báo đã giao trực tiếp khi GitHub chưa cho phép.
+
+Đồng bộ Projects lần đầu thêm8 issue/ghi16 field; lượt dry-run đọc lại cần0 thay đổi. Lệnh đồng bộ không tạo lời mời/thay Assignee, không cất token vào Git. Actions chỉ tự cập nhật bản Markdown từ Issues; sync Project chạy thủ công qua gh auth. Kiểm docs76 file và git diff --check đạt; không thay code nghiệp vụ trong đợt này.

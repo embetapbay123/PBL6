@@ -4,7 +4,9 @@
 
 Nguồn trạng thái: [GitHub Issues](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20label%3Atask). Bảng được cập nhật khi task/label/assignee thay đổi; cách dùng ở [Kanban guide](kanban-guide.md).
 
-**Assignee ban đầu:** `embetapbay123`. **Owner thực hiện:** label `owner:*` theo tên member. Xem Assignee trong từng issue để biết tài khoản hiện được giao; đổi sang member khi có username.
+**Owner thực hiện:** label `owner:*` theo tên member. **Assignee:** xem tài khoản hiện được giao trong từng issue. Có username chưa đồng nghĩa đã nhận lời mời cộng tác.
+
+[GitHub Projects kéo thả](https://github.com/users/embetapbay123/projects/1/views/2) được đồng bộ thủ công từ issue bằng `python scripts/sync_project.py`; xem hướng dẫn trước khi đổi trạng thái.
 
 | Backlog (3) | Todo (5) | In progress (0) | Review (0) | Blocked (0) | Done (0) |
 | --- | --- | --- | --- | --- | --- |
@@ -16,13 +18,13 @@ Nguồn trạng thái: [GitHub Issues](https://github.com/embetapbay123/PBL6/iss
 
 ## Lọc nhanh theo người
 
-| Owner | Task |
-| --- | --- |
-| Công | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Acong) |
-| Hoa | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Ahoa) |
-| Trí | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Atri) |
-| Thịnh | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Athinh) |
-| Hatsaphone | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Ahatsaphone) |
+| Owner | GitHub | Task |
+| --- | --- | --- |
+| Công | [@embetapbay123](https://github.com/embetapbay123) | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Acong) |
+| Hoa | [@mimidangeiu](https://github.com/mimidangeiu) | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Ahoa) |
+| Trí | Chưa có username | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Atri) |
+| Thịnh | [@QT-2005](https://github.com/QT-2005) | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Athinh) |
+| Hatsaphone | Chưa có username | [Xem task mở](https://github.com/embetapbay123/PBL6/issues?q=is%3Aissue%20is%3Aopen%20label%3Atask%20label%3Aowner%3Ahatsaphone) |
 
 ## Lọc theo trạng thái
 
