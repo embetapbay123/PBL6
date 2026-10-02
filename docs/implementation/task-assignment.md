@@ -2,6 +2,8 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
+**Việc cần làm tuần 1:** [kế hoạch 5 ngày, link issue và chi tiết theo từng người](week1.md). Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, Công bắt đầu Payment/M4.
+
 **Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
 
 [Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
@@ -28,13 +30,13 @@ Số task không là số giờ: Công giữ giao dịch/AI/tích hợp nặng; 
 
 | Người | Ưu tiên lấy việc đầu | Phần khác có thể làm với seed/fixture |
 | --- | --- | --- |
-| Công | [FLOW-01 · #6](https://github.com/embetapbay123/PBL6/issues/6), [CORE-01 · #1](https://github.com/embetapbay123/PBL6/issues/1), [CORE-02 · #50](https://github.com/embetapbay123/PBL6/issues/50) | Payment adapter/consent/event consumer theo payload đã chốt |
-| Thịnh | [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7), [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2), [INV-01 · #13](https://github.com/embetapbay123/PBL6/issues/13) | Product/Variant/Image, taxonomy, kho và Seller page riêng |
+| Công | [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-04 · #54](https://github.com/embetapbay123/PBL6/issues/54), [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55) | Review CORE/FLOW đã có; callback/recommendation theo payload đã chốt |
+| Thịnh | [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7), [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2) | Inventory, Product/Variant/Image, taxonomy và Seller page riêng |
 | Hoa | [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3), [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27), [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28) | Order read/report từ seed; orchestration/Android từ adapter fixture |
-| Trí | [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39), [AUTH-01 · #37](https://github.com/embetapbay123/PBL6/issues/37) | Store application, staff/permission, admin list/form từ seed/fixture |
-| Hatsaphone | [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [WEB-03 · #63](https://github.com/embetapbay123/PBL6/issues/63) | Tạo component từng màn trong thư mục riêng; ráp route/API thật sau |
+| Trí | [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4), [ID-LOOKUP-01 · #45](https://github.com/embetapbay123/PBL6/issues/45), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) | Store, register/reset, staff/permission, admin list/form từ seed/fixture |
+| Hatsaphone | [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [WEB-04 · #64](https://github.com/embetapbay123/PBL6/issues/64) | Dùng login/client nền; làm component và ráp API thật theo Week 1 |
 
-- FLOW-01 chốt sớm M1 quote/kho, lookup M3, low-stock/report, scope AI và EntityManager Order/Payment; không cần chờ CORE-01.
+- FLOW-01 đã chốt M1 quote/kho, lookup M3, low-stock/report, scope AI và EntityManager Order/Payment trong [foundation handoff](foundation-handoff.md); member dùng điểm nối này để triển khai.
 - API client/types/fixture là điểm xuất phát; generic client hiện có và seed cho phép viết module/page riêng. Không để mọi page chờ Công viết toàn bộ adapter.
 - Dependency trong bảng là đầu vào để **nghiệm thu tích hợp**, không là điều kiện để công bố/giao task. Nếu còn phần độc lập, tiếp tục làm phần đó.
 - Mỗi người tối đa một task In progress. Các task còn lại đã nằm trên board; owner tự chọn task Todo phù hợp và cập nhật tiến độ.

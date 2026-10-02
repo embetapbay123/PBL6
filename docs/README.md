@@ -2,7 +2,7 @@
 
 **Bàn giao 02/10/2026:** [Khung triển khai 2.2](implementation/README.md) chốt 4 service M1–M4, có code/migration/luồng mẫu và backlog từng member. [ADR](implementation/scaffold-decisions.md) ghi session/provider và [trạng thái 99 API](implementation/endpoint-status.md) phân biệt mẫu/mock/501.
 
-**Member nhận việc:** bắt đầu ở [bảng giao task](implementation/task-assignment.md) → [hướng dẫn chạy và code](implementation/development-guide.md) → README module/API của task. [Ownership](implementation/service-ownership.md) và [backlog](implementation/member-backlog.md) là phân công hiện hành; phần `legacy` chỉ dùng tham khảo lịch sử.
+**Member nhận việc tuần 1:** bắt đầu ở [Week 1: task, link và chi tiết từng người](implementation/week1.md) → [nền code/DTO/client/fixture](implementation/foundation-handoff.md) → README module/API của task. [Bảng giao toàn bộ task](implementation/task-assignment.md), [ownership](implementation/service-ownership.md) và [backlog](implementation/member-backlog.md) là phạm vi lâu dài; phần `legacy` chỉ dùng tham khảo lịch sử.
 
 **Nguồn hiện hành:** tài liệu 2.1 mô tả nghiệp vụ đích; [ADR khung 2.2](implementation/scaffold-decisions.md) bổ sung quyết định runtime/provider/session; OpenAPI là contract, endpoint-status là trạng thái triển khai. Các Test Case nghiệp vụ còn chờ thực thi; kết quả kiểm khung đã chạy được ghi riêng ở [validation record](implementation/validation-record.md). Khi thay contract phải cập nhật tài liệu/test chịu ảnh hưởng, không suy ra chức năng hoàn thành chỉ từ thiết kế.
 

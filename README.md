@@ -2,6 +2,8 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](docs/implementation/foundation-handoff.md).
 
+**Nhận việc tuần 1:** [task theo từng người, link issue, lịch 5 ngày và tiêu chí demo](docs/implementation/week1.md).
+
 **Schema đã chốt:** [database baseline 2.2](docs/implementation/database-schema.md) — thành viên code theo migration và contract hiện có.
 
 [![Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml)
@@ -43,15 +45,15 @@ Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ c�
 
 Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kanban](https://github.com/users/embetapbay123/projects/1/views/3); [bảng phân công đầy đủ](docs/implementation/task-assignment.md) dẫn tới scope/ưu tiên/dependency của từng issue. Member tự chọn việc phù hợp, code bằng contract/seed/fixture trong lúc chờ API tích hợp, không đợi mở task từng đợt. Kéo thẻ để cập nhật tiến độ theo [hướng dẫn](docs/implementation/kanban-guide.md). Username: Công `embetapbay123`, Thịnh `QT-2005`, Hoa `mimidangeiu`, Trí `phantri1912`, Hatsaphone `HATSAPHONE`. Trí đã nhận lời mời repo và được gán14 task; Hoa/Thịnh/Hatsaphone đang chờ nhận, Assignee tạm Công nhưng Owner vẫn là người thực hiện.
 
-1. Mở [bảng giao task](docs/implementation/task-assignment.md), tìm tên mình và task đầu tiên. Bảng ghi điểm bắt đầu trong code, đầu ra, phụ thuộc và tiêu chí nghiệm thu.
+1. Mở [Week 1](docs/implementation/week1.md), tìm tên mình và task đầu tiên; tra [bảng giao toàn bộ task](docs/implementation/task-assignment.md) khi cần phạm vi lâu dài. Week 1 ghi link issue, việc cụ thể, thứ tự bàn giao và tiêu chí demo.
 2. Đọc [phân công](docs/implementation/service-ownership.md) và [backlog tổng thể](docs/implementation/member-backlog.md) để biết phạm vi lâu dài.
 3. Tra [trạng thái endpoint](docs/implementation/endpoint-status.md), [OpenAPI công khai](docs/contracts/openapi.json) và [API nội bộ](docs/contracts/internal-api.json). Phân biệt mẫu, mock và stub 501.
 4. Làm theo [hướng dẫn phát triển](docs/implementation/development-guide.md); lấy Auth/Catalog và test làm mẫu. Dùng [mẫu issue](.github/ISSUE_TEMPLATE/member-task.md) để ghi task, branch riêng và PR về `main`.
 
 | Member | Task đầu tiên | Phạm vi lâu dài |
 | --- | --- | --- |
-| Công | CORE-01: tách route/page/component Web dùng chung, rồi FLOW-01: chốt giao tiếp checkout | Shared/hạ tầng/tích hợp; M2 Payment/Refund/COD; M4 AI |
-| Thịnh | CAT-01: API và danh sách sản phẩm của Store | M1 và Seller Web |
+| Công | PAY-01: Payment/attempt/port; review nền CORE/FLOW đã có | Shared/hạ tầng/tích hợp; M2 Payment/Refund/COD; M4 AI |
+| Thịnh | CAT-QUOTE-01: quote cho M2, rồi CAT-04: public Catalog | M1 và Seller Web |
 | Hoa | CART-01: đọc/sửa số lượng/xóa item giỏ | M2 Cart/Order/Voucher/report và Customer Android |
 | Trí | ID-01: CRUD địa chỉ | M3 và Admin Web |
 | Hatsaphone | WEB-01: danh sách sản phẩm Customer | Customer Web theo từng màn và API bàn giao |
