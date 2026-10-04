@@ -3,6 +3,7 @@ import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { config } from '../../../shared/src/config';
 import { InternalClients } from '../../../shared/src/internal-clients';
+import { emitEvent } from '../../../shared/src/events';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
@@ -96,6 +97,32 @@ export class OrderService {
       return result;
     } catch {
       return { reservations: [] };
+    }
+  }
+
+  async releaseOrRestockInventory(
+    orderId: string,
+    items: Array<{ variant_id: string; product_id?: string; quantity: number }>,
+    correlation: string
+  ) {
+    const client = this.getInternalClients();
+    if (!client || !items.length) return;
+    try {
+      await client.call(
+        'RestockOrder',
+        {
+          operation_id: randomUUID(),
+          order_id: orderId,
+          items: items.map(it => ({
+            variant_id: it.variant_id,
+            store_id: '11111111-1111-4111-8111-111111111111',
+            quantity: it.quantity,
+          })),
+        },
+        correlation
+      );
+    } catch {
+      // Best-effort internal restock/release call
     }
   }
 
@@ -782,4 +809,280 @@ export class OrderService {
 
     return this.mapOrderRowToDto(order);
   }
+
+  // --- ORDER-04: Order State Machine & Cancellation ---
+
+  async transitionStoreOrder(
+    id: string,
+    input: OperationInputs['transitionStoreOrder']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['transitionStoreOrder']> {
+    const storeId = auth?.store_membership?.store_id;
+    if (!storeId) {
+      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thao tác đơn hàng của cửa hàng.');
+    }
+
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
+    }
+
+    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
+    }
+
+    const toStatus = input?.to_status;
+    const validTargetStatuses = ['CONFIRMED', 'PROCESSING', 'SHIPPED', 'COMPLETED'];
+    if (!validTargetStatuses.includes(toStatus)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', `to_status không hợp lệ: ${toStatus}`);
+    }
+
+    return database.transaction(async manager => {
+      const repo = new OrderRepository(manager);
+      const order = await repo.findStoreOrderById(id, storeId);
+      if (!order) {
+        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
+      }
+
+      if (order.version !== input.expected_version) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
+      }
+
+      // Legal state transitions:
+      // PREPARING / PENDING -> CONFIRMED
+      // CONFIRMED -> PROCESSING
+      // PROCESSING -> SHIPPED
+      // SHIPPED -> COMPLETED
+      const legalTransitions: Record<string, string[]> = {
+        PREPARING: ['CONFIRMED'],
+        PENDING: ['CONFIRMED'],
+        CONFIRMED: ['PROCESSING'],
+        PROCESSING: ['SHIPPED'],
+        SHIPPED: ['COMPLETED'],
+      };
+
+      const allowedNext = legalTransitions[order.status] ?? [];
+      if (!allowedNext.includes(toStatus)) {
+        throw new ApiError(
+          409,
+          'INVALID_STATE_TRANSITION',
+          `Không thể chuyển trạng thái đơn hàng từ "${order.status}" sang "${toStatus}".`
+        );
+      }
+
+      const updated = await repo.updateOrderStatusWithHistory({
+        order_id: id,
+        from_status: order.status,
+        to_status: toStatus,
+        expected_version: input.expected_version,
+        actor_user_id: auth.user_id,
+      });
+
+      if (!updated) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
+      }
+
+      // If transition to COMPLETED: emit OrderCompleted outbox event (BR: OrderCompleted outbox cùng transaction)
+      if (toStatus === 'COMPLETED') {
+        await emitEvent(
+          manager,
+          'OrderCompleted',
+          {
+            order_id: id,
+            store_id: storeId,
+            user_id: order.customer_user_id,
+            version: updated.version,
+            items: order.items.map(it => ({
+              product_id: it.product_id,
+              variant_id: it.variant_id,
+              quantity: it.quantity,
+            })),
+          },
+          correlation
+        );
+      }
+
+      return this.mapOrderRowToDto({
+        ...updated,
+        items: order.items,
+        payment_status: order.payment_status,
+        refund_status: order.refund_status,
+      });
+    });
+  }
+
+  async cancelOwnOrder(
+    id: string,
+    input: OperationInputs['cancelOwnOrder']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['cancelOwnOrder']> {
+    const userId = auth?.user_id;
+    if (!userId) {
+      throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    }
+
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
+    }
+
+    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
+    }
+
+    return database.transaction(async manager => {
+      const repo = new OrderRepository(manager);
+      const order = await repo.findCustomerOrderById(id, userId);
+      if (!order) {
+        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng hoặc đơn hàng không thuộc quyền sở hữu của bạn.');
+      }
+
+      if (order.version !== input.expected_version) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
+      }
+
+      // BR-24: Customer hủy Order AWAITING_PAYMENT / PENDING / CONFIRMED; PROCESSING trở đi từ chối.
+      const cancellableStatuses = ['AWAITING_PAYMENT', 'PREPARING', 'PENDING', 'CONFIRMED'];
+      if (!cancellableStatuses.includes(order.status)) {
+        throw new ApiError(
+          409,
+          'ORDER_CANNOT_BE_CANCELLED',
+          `Đơn hàng đang ở trạng thái "${order.status}", không thể hủy.`
+        );
+      }
+
+      const updated = await repo.updateOrderStatusWithHistory({
+        order_id: id,
+        from_status: order.status,
+        to_status: 'CANCELLED',
+        expected_version: input.expected_version,
+        actor_user_id: userId,
+        reason: input.reason ?? 'Khách hàng hủy đơn',
+      });
+
+      if (!updated) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
+      }
+
+      let paymentStatus = order.payment_status;
+      let refundStatus = order.refund_status;
+
+      // BR-25: Order sandbox đã trả tiền bị hủy tạo Refund đúng payable snapshot; Order chưa trả hoặc COD hủy không tạo Refund.
+      const payment = await repo.findPaymentByOrderId(id);
+      if (payment) {
+        if (payment.method === 'SANDBOX' && (payment.status === 'PAID' || payment.status === 'SUCCEEDED')) {
+          await repo.createRefundRecord({
+            payment_id: payment.id,
+            order_id: id,
+            amount_vnd: Number(order.payable_vnd),
+            status: 'REQUESTED',
+          });
+          await repo.updatePaymentStatus(id, 'REFUND_PENDING');
+          paymentStatus = 'REFUND_PENDING';
+          refundStatus = 'REQUESTED';
+        } else {
+          await repo.updatePaymentStatus(id, 'CANCELLED');
+          paymentStatus = 'CANCELLED';
+        }
+      }
+
+      // Restock / release inventory compensation
+      await this.releaseOrRestockInventory(id, order.items, correlation);
+
+      return this.mapOrderRowToDto({
+        ...updated,
+        items: order.items,
+        payment_status: paymentStatus,
+        refund_status: refundStatus,
+      });
+    });
+  }
+
+  async cancelStoreOrder(
+    id: string,
+    input: OperationInputs['cancelStoreOrder']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['cancelStoreOrder']> {
+    const storeId = auth?.store_membership?.store_id;
+    if (!storeId) {
+      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thao tác đơn hàng của cửa hàng.');
+    }
+
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
+    }
+
+    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
+    }
+
+    return database.transaction(async manager => {
+      const repo = new OrderRepository(manager);
+      const order = await repo.findStoreOrderById(id, storeId);
+      if (!order) {
+        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
+      }
+
+      if (order.version !== input.expected_version) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
+      }
+
+      // BR-24: Seller/Owner cũng được hủy khi chưa PROCESSING.
+      const cancellableStatuses = ['AWAITING_PAYMENT', 'PREPARING', 'PENDING', 'CONFIRMED'];
+      if (!cancellableStatuses.includes(order.status)) {
+        throw new ApiError(
+          409,
+          'ORDER_CANNOT_BE_CANCELLED',
+          `Đơn hàng đang ở trạng thái "${order.status}", không thể hủy.`
+        );
+      }
+
+      const updated = await repo.updateOrderStatusWithHistory({
+        order_id: id,
+        from_status: order.status,
+        to_status: 'CANCELLED',
+        expected_version: input.expected_version,
+        actor_user_id: auth.user_id,
+        reason: input.reason ?? 'Cửa hàng hủy đơn',
+      });
+
+      if (!updated) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
+      }
+
+      let paymentStatus = order.payment_status;
+      let refundStatus = order.refund_status;
+
+      // BR-25: Order sandbox đã trả tiền bị hủy tạo Refund đúng payable snapshot.
+      const payment = await repo.findPaymentByOrderId(id);
+      if (payment) {
+        if (payment.method === 'SANDBOX' && (payment.status === 'PAID' || payment.status === 'SUCCEEDED')) {
+          await repo.createRefundRecord({
+            payment_id: payment.id,
+            order_id: id,
+            amount_vnd: Number(order.payable_vnd),
+            status: 'REQUESTED',
+          });
+          await repo.updatePaymentStatus(id, 'REFUND_PENDING');
+          paymentStatus = 'REFUND_PENDING';
+          refundStatus = 'REQUESTED';
+        } else {
+          await repo.updatePaymentStatus(id, 'CANCELLED');
+          paymentStatus = 'CANCELLED';
+        }
+      }
+
+      // Restock / release inventory compensation
+      await this.releaseOrRestockInventory(id, order.items, correlation);
+
+      return this.mapOrderRowToDto({
+        ...updated,
+        items: order.items,
+        payment_status: paymentStatus,
+        refund_status: refundStatus,
+      });
+    });
+  }
 }
+

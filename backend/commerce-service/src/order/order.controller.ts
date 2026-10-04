@@ -1,6 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query, Headers, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Headers, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
-import { QuoteCheckoutBodyDto, ConfirmCheckoutBodyDto } from '../../../shared/src/dtos.generated';
+import {
+  QuoteCheckoutBodyDto,
+  ConfirmCheckoutBodyDto,
+  TransitionStoreOrderBodyDto,
+  CancelOwnOrderBodyDto,
+  CancelStoreOrderBodyDto,
+} from '../../../shared/src/dtos.generated';
 import { OrderService } from './order.service';
 
 @Controller()
@@ -54,6 +60,12 @@ export class OrderController {
     return this.service.getOwnOrder(id, req.auth, req.correlationId);
   }
 
+  @Post('me/orders/:id/cancel')
+  @Roles('CUSTOMER')
+  cancelOwnOrder(@Param('id') id: string, @Body() dto: CancelOwnOrderBodyDto, @Req() req: any) {
+    return this.service.cancelOwnOrder(id, dto, req.auth, req.correlationId);
+  }
+
   @Get('store/orders')
   @Roles('SELLER', 'STORE_OWNER')
   listStoreOrders(
@@ -76,5 +88,26 @@ export class OrderController {
   getStoreOrder(@Param('id') id: string, @Req() req: any) {
     return this.service.getStoreOrder(id, req.auth, req.correlationId);
   }
+
+  @Patch('store/orders/:id/status')
+  @Roles('SELLER', 'STORE_OWNER')
+  transitionStoreOrder(
+    @Param('id') id: string,
+    @Body() dto: TransitionStoreOrderBodyDto,
+    @Req() req: any
+  ) {
+    return this.service.transitionStoreOrder(id, dto, req.auth, req.correlationId);
+  }
+
+  @Post('store/orders/:id/cancel')
+  @Roles('SELLER', 'STORE_OWNER')
+  cancelStoreOrder(
+    @Param('id') id: string,
+    @Body() dto: CancelStoreOrderBodyDto,
+    @Req() req: any
+  ) {
+    return this.service.cancelStoreOrder(id, dto, req.auth, req.correlationId);
+  }
 }
+
 

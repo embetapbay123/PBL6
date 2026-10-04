@@ -197,6 +197,50 @@ describe('Order Contract and DTO Validation (ORDER-01, ORDER-02 & ORDER-03)', ()
       })
     ).toThrow();
   });
+
+  test('cancelOwnOrder accepts valid payload and path', () => {
+    expect(() =>
+      validateOperation('cancelOwnOrder', {
+        path: { id: '44444444-4444-4444-8444-444444444444' },
+        body: { expected_version: 1, reason: 'Không còn nhu cầu' },
+        query: {},
+        headers: {},
+      })
+    ).not.toThrow();
+  });
+
+  test('transitionStoreOrder accepts valid payload and path', () => {
+    expect(() =>
+      validateOperation('transitionStoreOrder', {
+        path: { id: '44444444-4444-4444-8444-444444444444' },
+        body: { to_status: 'CONFIRMED', expected_version: 1 },
+        query: {},
+        headers: {},
+      })
+    ).not.toThrow();
+  });
+
+  test('transitionStoreOrder rejects invalid to_status', () => {
+    expect(() =>
+      validateOperation('transitionStoreOrder', {
+        path: { id: '44444444-4444-4444-8444-444444444444' },
+        body: { to_status: 'INVALID_STATUS' as any, expected_version: 1 },
+        query: {},
+        headers: {},
+      })
+    ).toThrow();
+  });
+
+  test('cancelStoreOrder accepts valid payload and path', () => {
+    expect(() =>
+      validateOperation('cancelStoreOrder', {
+        path: { id: '44444444-4444-4444-8444-444444444444' },
+        body: { expected_version: 2, reason: 'Hết hàng' },
+        query: {},
+        headers: {},
+      })
+    ).not.toThrow();
+  });
 });
 
 describe('OrderService.quoteCheckout Business Logic (ORDER-01)', () => {
@@ -1355,4 +1399,446 @@ describe('OrderService.listStoreOrders & getStoreOrder Business Logic (ORDER-03)
     });
   });
 });
+
+describe('OrderService.transitionStoreOrder & Cancellation Business Logic (ORDER-04)', () => {
+  let service: OrderService;
+  const storeId = '22222222-2222-4222-8222-222222222222';
+  const mockSellerAuth = {
+    user_id: 'user-seller-uuid-1',
+    roles: ['SELLER'],
+    store_membership: { store_id: storeId, role: 'SELLER' },
+  };
+  const mockCustomerAuth = { user_id: 'user-customer-uuid-1', roles: ['CUSTOMER'] };
+  const correlation = 'test-corr-order-04';
+  const orderId = '44444444-4444-4444-8444-444444444444';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new OrderService();
+  });
+
+  describe('transitionStoreOrder', () => {
+    test('throws 403 when user has no store membership', async () => {
+      const authWithoutStore = { user_id: 'user-no-store', roles: ['CUSTOMER'] };
+      await expect(
+        service.transitionStoreOrder(orderId, { to_status: 'CONFIRMED', expected_version: 1 }, authWithoutStore, correlation)
+      ).rejects.toMatchObject({
+        status: 403,
+        response: { code: 'FORBIDDEN' },
+      });
+    });
+
+    test('throws 404 when order does not belong to store', async () => {
+      mockQuery.mockResolvedValueOnce([]); // Order not found
+
+      await expect(
+        service.transitionStoreOrder(orderId, { to_status: 'CONFIRMED', expected_version: 1 }, mockSellerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 404,
+        response: { code: 'NOT_FOUND' },
+      });
+    });
+
+    test('throws 409 when expected_version does not match (Optimistic locking BR-39)', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: 'cust-1',
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'PENDING',
+        payment_method: 'SANDBOX',
+        goods_vnd: '100000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '100000',
+        version: 2, // actual version is 2
+        created_at: new Date(),
+      };
+
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+
+      await expect(
+        service.transitionStoreOrder(orderId, { to_status: 'CONFIRMED', expected_version: 1 }, mockSellerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 409,
+        response: { code: 'VERSION_CONFLICT' },
+      });
+    });
+
+    test('throws 409 when transition is invalid (e.g. PENDING to SHIPPED)', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: 'cust-1',
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'PENDING',
+        payment_method: 'SANDBOX',
+        goods_vnd: '100000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '100000',
+        version: 1,
+        created_at: new Date(),
+      };
+
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+
+      await expect(
+        service.transitionStoreOrder(orderId, { to_status: 'SHIPPED', expected_version: 1 }, mockSellerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 409,
+        response: { code: 'INVALID_STATE_TRANSITION' },
+      });
+    });
+
+    test('successfully transitions PENDING to CONFIRMED and increments version', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: 'cust-1',
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'PENDING',
+        payment_method: 'SANDBOX',
+        goods_vnd: '100000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '100000',
+        version: 1,
+        created_at: new Date(),
+      };
+
+      const updatedOrderFromDb = {
+        ...orderFromDb,
+        status: 'CONFIRMED',
+        version: 2,
+      };
+
+      // 1. findStoreOrderById
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+      // 2. update order query
+      mockQuery.mockResolvedValueOnce([updatedOrderFromDb]);
+      // 3. insert order_status_history query
+      mockQuery.mockResolvedValueOnce([]);
+
+      const result = await service.transitionStoreOrder(
+        orderId,
+        { to_status: 'CONFIRMED', expected_version: 1 },
+        mockSellerAuth,
+        correlation
+      );
+
+      expect(result.id).toBe(orderId);
+      expect(result.status).toBe('CONFIRMED');
+      expect(result.version).toBe(2);
+    });
+
+    test('successfully transitions SHIPPED to COMPLETED and logs OrderCompleted outbox event', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: 'cust-1',
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'SHIPPED',
+        payment_method: 'SANDBOX',
+        goods_vnd: '100000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '100000',
+        version: 3,
+        created_at: new Date(),
+      };
+
+      const itemsFromDb = [
+        {
+          id: 'item-1',
+          order_id: orderId,
+          product_id: 'prod-1',
+          variant_id: 'var-1',
+          product_snapshot: { title: 'Áo' },
+          sku_snapshot: 'SKU-01',
+          unit_price_vnd: '100000',
+          quantity: 1,
+          line_total_vnd: '100000',
+        },
+      ];
+
+      const updatedOrderFromDb = {
+        ...orderFromDb,
+        status: 'COMPLETED',
+        version: 4,
+      };
+
+      // 1. findStoreOrderById
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce(itemsFromDb);
+      // 2. update order query
+      mockQuery.mockResolvedValueOnce([updatedOrderFromDb]);
+      // 3. insert order_status_history query
+      mockQuery.mockResolvedValueOnce([]);
+      // 4. outbox insert query for OrderCompleted
+      mockQuery.mockResolvedValueOnce([]);
+
+      const result = await service.transitionStoreOrder(
+        orderId,
+        { to_status: 'COMPLETED', expected_version: 3 },
+        mockSellerAuth,
+        correlation
+      );
+
+      expect(result.status).toBe('COMPLETED');
+      expect(result.version).toBe(4);
+    });
+  });
+
+  describe('cancelOwnOrder', () => {
+    test('throws 401 when unauthenticated', async () => {
+      await expect(
+        service.cancelOwnOrder(orderId, { expected_version: 1 }, null, correlation)
+      ).rejects.toMatchObject({
+        status: 401,
+        response: { code: 'UNAUTHENTICATED' },
+      });
+    });
+
+    test('throws 409 when order is in non-cancellable status (BR-24: PROCESSING onwards rejects)', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: mockCustomerAuth.user_id,
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'PROCESSING',
+        payment_method: 'SANDBOX',
+        goods_vnd: '100000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '100000',
+        version: 2,
+        created_at: new Date(),
+      };
+
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+
+      await expect(
+        service.cancelOwnOrder(orderId, { expected_version: 2 }, mockCustomerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 409,
+        response: { code: 'ORDER_CANNOT_BE_CANCELLED' },
+      });
+    });
+
+    test('cancels unpaid/COD order and marks payment CANCELLED without refund (BR-25)', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: mockCustomerAuth.user_id,
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'PENDING',
+        payment_method: 'COD',
+        goods_vnd: '150000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '150000',
+        version: 1,
+        created_at: new Date(),
+      };
+
+      const updatedOrderFromDb = {
+        ...orderFromDb,
+        status: 'CANCELLED',
+        version: 2,
+      };
+
+      const paymentFromDb = {
+        id: 'payment-1',
+        order_id: orderId,
+        method: 'COD',
+        status: 'PENDING',
+        payable_vnd: '150000',
+        collectible_vnd: '150000',
+        collected_vnd: '0',
+        refunded_vnd: '0',
+        version: 1,
+      };
+
+      // 1. findCustomerOrderById
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+      // 2. update order status query
+      mockQuery.mockResolvedValueOnce([updatedOrderFromDb]);
+      // 3. insert order_status_history
+      mockQuery.mockResolvedValueOnce([]);
+      // 4. findPaymentByOrderId
+      mockQuery.mockResolvedValueOnce([paymentFromDb]);
+      // 5. update payment status to CANCELLED
+      mockQuery.mockResolvedValueOnce([]);
+
+      const result = await service.cancelOwnOrder(
+        orderId,
+        { expected_version: 1, reason: 'Đặt nhầm sản phẩm' },
+        mockCustomerAuth,
+        correlation
+      );
+
+      expect(result.id).toBe(orderId);
+      expect(result.status).toBe('CANCELLED');
+      expect(result.payment_status).toBe('CANCELLED');
+      expect(result.refund_status).toBeUndefined();
+    });
+
+    test('cancels paid SANDBOX order and creates REFUND record (BR-25, BR-26)', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: mockCustomerAuth.user_id,
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'CONFIRMED',
+        payment_method: 'SANDBOX',
+        goods_vnd: '200000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '15000',
+        payable_vnd: '215000',
+        version: 2,
+        created_at: new Date(),
+      };
+
+      const updatedOrderFromDb = {
+        ...orderFromDb,
+        status: 'CANCELLED',
+        version: 3,
+      };
+
+      const paymentFromDb = {
+        id: 'payment-sb-1',
+        order_id: orderId,
+        method: 'SANDBOX',
+        status: 'PAID',
+        payable_vnd: '215000',
+        collectible_vnd: '215000',
+        collected_vnd: '215000',
+        refunded_vnd: '0',
+        version: 2,
+      };
+
+      // 1. findCustomerOrderById
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+      // 2. update order status query
+      mockQuery.mockResolvedValueOnce([updatedOrderFromDb]);
+      // 3. insert order_status_history
+      mockQuery.mockResolvedValueOnce([]);
+      // 4. findPaymentByOrderId
+      mockQuery.mockResolvedValueOnce([paymentFromDb]);
+      // 5. insert refund query
+      mockQuery.mockResolvedValueOnce([]);
+      // 6. update payment status to REFUND_PENDING
+      mockQuery.mockResolvedValueOnce([]);
+
+      const result = await service.cancelOwnOrder(
+        orderId,
+        { expected_version: 2, reason: 'Muốn đổi địa chỉ giao hàng' },
+        mockCustomerAuth,
+        correlation
+      );
+
+      expect(result.id).toBe(orderId);
+      expect(result.status).toBe('CANCELLED');
+      expect(result.payment_status).toBe('REFUND_PENDING');
+      expect(result.refund_status).toBe('REQUESTED');
+    });
+  });
+
+  describe('cancelStoreOrder', () => {
+    test('throws 403 when user has no store membership', async () => {
+      const authWithoutStore = { user_id: 'user-no-store', roles: ['CUSTOMER'] };
+      await expect(
+        service.cancelStoreOrder(orderId, { expected_version: 1 }, authWithoutStore, correlation)
+      ).rejects.toMatchObject({
+        status: 403,
+        response: { code: 'FORBIDDEN' },
+      });
+    });
+
+    test('cancels store order and creates refund if paid SANDBOX (BR-24, BR-25)', async () => {
+      const orderFromDb = {
+        id: orderId,
+        purchase_group_id: 'pg-1',
+        customer_user_id: 'cust-1',
+        store_id: storeId,
+        address_snapshot: {},
+        status: 'CONFIRMED',
+        payment_method: 'SANDBOX',
+        goods_vnd: '120000',
+        store_discount_vnd: '0',
+        platform_discount_vnd: '0',
+        shipping_vnd: '0',
+        payable_vnd: '120000',
+        version: 1,
+        created_at: new Date(),
+      };
+
+      const updatedOrderFromDb = {
+        ...orderFromDb,
+        status: 'CANCELLED',
+        version: 2,
+      };
+
+      const paymentFromDb = {
+        id: 'payment-sb-2',
+        order_id: orderId,
+        method: 'SANDBOX',
+        status: 'SUCCEEDED',
+        payable_vnd: '120000',
+        collectible_vnd: '120000',
+        collected_vnd: '120000',
+        refunded_vnd: '0',
+        version: 1,
+      };
+
+      // 1. findStoreOrderById
+      mockQuery.mockResolvedValueOnce([orderFromDb]);
+      mockQuery.mockResolvedValueOnce([]);
+      // 2. update order status query
+      mockQuery.mockResolvedValueOnce([updatedOrderFromDb]);
+      // 3. insert order_status_history
+      mockQuery.mockResolvedValueOnce([]);
+      // 4. findPaymentByOrderId
+      mockQuery.mockResolvedValueOnce([paymentFromDb]);
+      // 5. insert refund query
+      mockQuery.mockResolvedValueOnce([]);
+      // 6. update payment status to REFUND_PENDING
+      mockQuery.mockResolvedValueOnce([]);
+
+      const result = await service.cancelStoreOrder(
+        orderId,
+        { expected_version: 1, reason: 'Sản phẩm tạm thời hết hàng' },
+        mockSellerAuth,
+        correlation
+      );
+
+      expect(result.id).toBe(orderId);
+      expect(result.status).toBe('CANCELLED');
+      expect(result.payment_status).toBe('REFUND_PENDING');
+      expect(result.refund_status).toBe('REQUESTED');
+    });
+  });
+});
+
 

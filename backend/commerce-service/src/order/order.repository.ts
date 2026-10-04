@@ -69,6 +69,18 @@ export interface OrderItemRow {
   line_total_vnd: string;
 }
 
+export interface PaymentRow {
+  id: string;
+  order_id: string;
+  method: string;
+  status: string;
+  payable_vnd: string;
+  collectible_vnd: string;
+  collected_vnd: string;
+  refunded_vnd: string;
+  version: number;
+}
+
 export class OrderRepository extends OwnedRepository {
   constructor(manager: EntityManager) {
     super(manager);
@@ -533,4 +545,83 @@ export class OrderRepository extends OwnedRepository {
       items,
     };
   }
+
+  async findPaymentByOrderId(orderId: string): Promise<PaymentRow | undefined> {
+    const [row] = await this.manager.query(
+      `SELECT id, order_id, method, status, payable_vnd, collectible_vnd, collected_vnd, refunded_vnd, version
+       FROM payment
+       WHERE order_id = $1`,
+      [orderId]
+    );
+    return row;
+  }
+
+  async updateOrderStatusWithHistory(data: {
+    order_id: string;
+    from_status: string;
+    to_status: string;
+    expected_version: number;
+    actor_user_id: string;
+    reason?: string;
+  }): Promise<OrderRow | null> {
+    const [updated] = await this.manager.query(
+      `UPDATE "order"
+       SET status = $1, version = version + 1
+       WHERE id = $2 AND version = $3
+       RETURNING id, purchase_group_id, customer_user_id, store_id, address_snapshot,
+                 status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
+                 platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at`,
+      [data.to_status, data.order_id, data.expected_version]
+    );
+
+    if (!updated) return null;
+
+    await this.manager.query(
+      `INSERT INTO order_status_history (
+         id, order_id, from_status, to_status, actor_user_id, reason, operation_id, created_at
+       ) VALUES (
+         gen_random_uuid(), $1, $2, $3, $4, $5, gen_random_uuid(), NOW()
+       )`,
+      [
+        data.order_id,
+        data.from_status,
+        data.to_status,
+        data.actor_user_id,
+        data.reason ?? null,
+      ]
+    );
+
+    return updated;
+  }
+
+  async createRefundRecord(data: {
+    payment_id: string;
+    order_id: string;
+    amount_vnd: number;
+    status?: string;
+  }): Promise<void> {
+    await this.manager.query(
+      `INSERT INTO refund (
+         id, payment_id, order_id, amount_vnd, status, operation_id, created_at
+       ) VALUES (
+         gen_random_uuid(), $1, $2, $3, $4, gen_random_uuid(), NOW()
+       )`,
+      [
+        data.payment_id,
+        data.order_id,
+        data.amount_vnd,
+        data.status ?? 'REQUESTED',
+      ]
+    );
+  }
+
+  async updatePaymentStatus(orderId: string, status: string): Promise<void> {
+    await this.manager.query(
+      `UPDATE payment
+       SET status = $1, version = version + 1
+       WHERE order_id = $2`,
+      [status, orderId]
+    );
+  }
 }
+
