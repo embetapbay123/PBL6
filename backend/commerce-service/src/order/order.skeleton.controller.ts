@@ -4,14 +4,10 @@ import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
 import { notImplemented } from '../../../shared/src/errors';
 @Controller() @UseGuards(AuthGuard)
 export class OrderSkeletonController {
-  @Post('orders/batches') @Roles("CUSTOMER")
-  confirmCheckout(): never { return notImplemented('confirmCheckout'); }
   @Get('me/orders') @Roles("CUSTOMER")
   listOwnOrders(): never { return notImplemented('listOwnOrders'); }
   @Get('store/orders') @Roles("SELLER","STORE_OWNER")
   listStoreOrders(): never { return notImplemented('listStoreOrders'); }
-  @Get('orders/batches/:id') @Roles("CUSTOMER")
-  getPurchaseGroupOrders(): never { return notImplemented('getPurchaseGroupOrders'); }
   @Get('me/orders/:id') @Roles("CUSTOMER")
   getOwnOrder(): never { return notImplemented('getOwnOrder'); }
   @Post('me/orders/:id/cancel') @Roles("CUSTOMER")

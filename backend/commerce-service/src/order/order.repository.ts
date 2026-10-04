@@ -27,6 +27,46 @@ export interface VoucherCheckoutRow {
   version: number;
 }
 
+export interface IdempotencyRecordRow {
+  id: string;
+  customer_user_id: string;
+  key: string;
+  payload_hash: string;
+  purchase_group_id: string;
+  response_json: Record<string, unknown> | null;
+  expires_at: Date;
+}
+
+export interface OrderRow {
+  id: string;
+  purchase_group_id: string;
+  customer_user_id: string;
+  store_id: string;
+  address_snapshot: Record<string, unknown>;
+  status: string;
+  payment_method: string;
+  payment_expires_at: Date | null;
+  goods_vnd: string;
+  store_discount_vnd: string;
+  platform_discount_vnd: string;
+  shipping_vnd: string;
+  payable_vnd: string;
+  version: number;
+  created_at: Date;
+}
+
+export interface OrderItemRow {
+  id: string;
+  order_id: string;
+  product_id: string;
+  variant_id: string;
+  product_snapshot: Record<string, unknown>;
+  sku_snapshot: string;
+  unit_price_vnd: string;
+  quantity: number;
+  line_total_vnd: string;
+}
+
 export class OrderRepository extends OwnedRepository {
   constructor(manager: EntityManager) {
     super(manager);
@@ -65,5 +105,234 @@ export class OrderRepository extends OwnedRepository {
       [code.trim()]
     );
     return row;
+  }
+
+  async findIdempotencyRecord(key: string, customerUserId: string): Promise<IdempotencyRecordRow | undefined> {
+    const [row] = await this.manager.query(
+      `SELECT id, customer_user_id, key, payload_hash, purchase_group_id, response_json, expires_at
+       FROM idempotency_record
+       WHERE key = $1 AND customer_user_id = $2`,
+      [key, customerUserId]
+    );
+    return row;
+  }
+
+  async saveIdempotencyRecord(data: {
+    id?: string;
+    customer_user_id: string;
+    key: string;
+    payload_hash: string;
+    purchase_group_id: string;
+    response_json: Record<string, unknown>;
+    expires_at: Date;
+  }): Promise<void> {
+    await this.manager.query(
+      `INSERT INTO idempotency_record (id, customer_user_id, key, payload_hash, purchase_group_id, response_json, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (id) DO UPDATE SET response_json = EXCLUDED.response_json`,
+      [
+        data.id ?? undefined,
+        data.customer_user_id,
+        data.key,
+        data.payload_hash,
+        data.purchase_group_id,
+        JSON.stringify(data.response_json),
+        data.expires_at,
+      ]
+    );
+  }
+
+  async createOrder(data: {
+    id: string;
+    purchase_group_id: string;
+    customer_user_id: string;
+    store_id: string;
+    address_snapshot: Record<string, unknown>;
+    status: string;
+    payment_method: string;
+    payment_expires_at?: Date | null;
+    goods_vnd: number;
+    store_discount_vnd: number;
+    platform_discount_vnd: number;
+    shipping_vnd: number;
+    payable_vnd: number;
+    version?: number;
+  }): Promise<OrderRow> {
+    const [created] = await this.manager.query(
+      `INSERT INTO "order" (
+         id, purchase_group_id, customer_user_id, store_id, address_snapshot,
+         status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
+         platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at
+       ) VALUES (
+         $1, $2, $3, $4, $5,
+         $6, $7, $8, $9, $10,
+         $11, $12, $13, $14, NOW()
+       ) RETURNING id, purchase_group_id, customer_user_id, store_id, address_snapshot,
+                   status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
+                   platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at`,
+      [
+        data.id,
+        data.purchase_group_id,
+        data.customer_user_id,
+        data.store_id,
+        JSON.stringify(data.address_snapshot),
+        data.status,
+        data.payment_method,
+        data.payment_expires_at ?? null,
+        data.goods_vnd,
+        data.store_discount_vnd,
+        data.platform_discount_vnd,
+        data.shipping_vnd,
+        data.payable_vnd,
+        data.version ?? 0,
+      ]
+    );
+    return created;
+  }
+
+  async createOrderItem(data: {
+    id?: string;
+    order_id: string;
+    product_id: string;
+    variant_id: string;
+    product_snapshot?: Record<string, unknown>;
+    sku_snapshot?: string;
+    unit_price_vnd: number;
+    quantity: number;
+    line_total_vnd: number;
+  }): Promise<OrderItemRow> {
+    const [created] = await this.manager.query(
+      `INSERT INTO order_item (
+         id, order_id, product_id, variant_id, product_snapshot,
+         sku_snapshot, unit_price_vnd, quantity, line_total_vnd
+       ) VALUES (
+         COALESCE($1, gen_random_uuid()), $2, $3, $4, $5,
+         $6, $7, $8, $9
+       ) RETURNING id, order_id, product_id, variant_id, product_snapshot,
+                   sku_snapshot, unit_price_vnd, quantity, line_total_vnd`,
+      [
+        data.id ?? null,
+        data.order_id,
+        data.product_id,
+        data.variant_id,
+        JSON.stringify(data.product_snapshot ?? {}),
+        data.sku_snapshot ?? '',
+        data.unit_price_vnd,
+        data.quantity,
+        data.line_total_vnd,
+      ]
+    );
+    return created;
+  }
+
+  async createPayment(data: {
+    id?: string;
+    order_id: string;
+    method: string;
+    status: string;
+    payable_vnd: number;
+    collectible_vnd: number;
+  }): Promise<void> {
+    await this.manager.query(
+      `INSERT INTO payment (
+         id, order_id, method, status, payable_vnd, collectible_vnd,
+         collected_vnd, refunded_vnd, version
+       ) VALUES (
+         COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6,
+         0, 0, 0
+       )`,
+      [
+        data.id ?? null,
+        data.order_id,
+        data.method,
+        data.status,
+        data.payable_vnd,
+        data.collectible_vnd,
+      ]
+    );
+  }
+
+  async recordVoucherRedemption(data: {
+    voucher_id: string;
+    purchase_group_id: string;
+    order_id: string;
+    customer_user_id: string;
+    discount_vnd: number;
+  }): Promise<void> {
+    await this.manager.query(
+      `INSERT INTO voucher_redemption (
+         id, voucher_id, purchase_group_id, order_id, customer_user_id,
+         discount_vnd, redeemed_at
+       ) VALUES (
+         gen_random_uuid(), $1, $2, $3, $4, $5, NOW()
+       )`,
+      [
+        data.voucher_id,
+        data.purchase_group_id,
+        data.order_id,
+        data.customer_user_id,
+        data.discount_vnd,
+      ]
+    );
+  }
+
+  async decrementVoucherUsage(voucherId: string): Promise<void> {
+    await this.manager.query(
+      `UPDATE voucher
+       SET usage_limit = GREATEST(0, usage_limit - 1),
+           version = version + 1
+       WHERE id = $1`,
+      [voucherId]
+    );
+  }
+
+  async removeCartItems(cartItemIds: string[], customerUserId: string): Promise<void> {
+    if (!cartItemIds.length) return;
+    await this.manager.query(
+      `DELETE FROM cart_item ci
+       USING cart c
+       WHERE ci.cart_id = c.id AND ci.id = ANY($1::uuid[]) AND c.customer_user_id = $2`,
+      [cartItemIds, customerUserId]
+    );
+  }
+
+  async findOrdersByPurchaseGroupId(
+    purchaseGroupId: string,
+    customerUserId: string
+  ): Promise<Array<OrderRow & { items: OrderItemRow[] }>> {
+    const orders: OrderRow[] = await this.manager.query(
+      `SELECT id, purchase_group_id, customer_user_id, store_id, address_snapshot,
+              status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
+              platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at
+       FROM "order"
+       WHERE purchase_group_id = $1 AND customer_user_id = $2
+       ORDER BY created_at ASC, id ASC`,
+      [purchaseGroupId, customerUserId]
+    );
+
+    if (!orders.length) return [];
+
+    const orderIds = orders.map(o => o.id);
+    const allItems: OrderItemRow[] = await this.manager.query(
+      `SELECT id, order_id, product_id, variant_id, product_snapshot,
+              sku_snapshot, unit_price_vnd, quantity, line_total_vnd
+       FROM order_item
+       WHERE order_id = ANY($1::uuid[])
+       ORDER BY id ASC`,
+      [orderIds]
+    );
+
+    const itemsMap = new Map<string, OrderItemRow[]>();
+    for (const item of allItems) {
+      if (!itemsMap.has(item.order_id)) {
+        itemsMap.set(item.order_id, []);
+      }
+      itemsMap.get(item.order_id)!.push(item);
+    }
+
+    return orders.map(order => ({
+      ...order,
+      items: itemsMap.get(order.id) ?? [],
+    }));
   }
 }

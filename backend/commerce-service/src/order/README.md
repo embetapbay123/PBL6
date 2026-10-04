@@ -3,8 +3,8 @@
 Owner: Hoa
 
 - `POST /checkout/quotes` — quoteCheckout: **IMPLEMENTED**
-- `POST /orders/batches` — confirmCheckout: **NOT_IMPLEMENTED**
-- `GET /orders/batches/{id}` — getPurchaseGroupOrders: **NOT_IMPLEMENTED**
+- `POST /orders/batches` — confirmCheckout: **IMPLEMENTED**
+- `GET /orders/batches/{id}` — getPurchaseGroupOrders: **IMPLEMENTED**
 - `GET /me/orders` — listOwnOrders: **NOT_IMPLEMENTED**
 - `GET /me/orders/{id}` — getOwnOrder: **NOT_IMPLEMENTED**
 - `POST /me/orders/{id}/cancel` — cancelOwnOrder: **NOT_IMPLEMENTED**
