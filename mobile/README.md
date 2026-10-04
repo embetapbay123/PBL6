@@ -16,10 +16,11 @@ Flutter / Riverpod / Dio ứng dụng Customer Android. Đã hoàn thiện toàn
 - `lib/features/profile/`
   - `profile_page.dart`: Xem thông tin cá nhân (`GET /me`) & điều hướng.
   - `edit_profile_page.dart`: Cập nhật thông tin cá nhân (`PATCH /me`).
-- `lib/features/address/`
-  - `address_list_page.dart`: Danh sách địa chỉ nhận hàng (`GET /me/addresses`), đặt mặc định (`PATCH /me/addresses/{id}/default`), xóa (`DELETE /me/addresses/{id}`).
-  - `address_form_page.dart`: Thêm mới & chỉnh sửa địa chỉ (`POST /me/addresses`, `PATCH /me/addresses/{id}`).
-- `lib/main.dart`: Thiết lập Routing, Drawer navigation, Riverpod Providers, Theme Material 3.
+- `lib/features/catalog/`
+  - `catalog_page.dart`: Trang danh mục sản phẩm, tìm kiếm từ khóa với debounce, lọc theo danh mục sản phẩm (`GET /products?q=&page=&size=`, `GET /categories`), mục "Dành riêng cho bạn" hiển thị nhãn `[AI Cá nhân hóa]` / `[Gợi ý Baseline / Mock]`, cơ chế fallback không chặn tải danh mục khi service AI hoặc endpoint lỗi.
+  - `product_detail_page.dart`: Chi tiết sản phẩm (`GET /products/{id}`), bộ chọn biến thể (SKU, giá cập nhật theo biến thể đã chọn), bộ đếm số lượng mua, thông số kỹ thuật, đánh giá khách hàng (`GET /products/{id}/reviews`), sản phẩm tương tự (`GET /products/{id}/related`), hành động "Thêm vào giỏ" (`POST /cart/items`) và "Mua ngay".
+  - `consent_dialog.dart`: Hộp thoại quản lý quyền cá nhân hóa & gợi ý AI (`GET /me/consent`, `PATCH /me/consent`).
+- `lib/main.dart`: Thiết lập Routing, Drawer navigation, Riverpod Providers (`catalogProductsProvider`, `categoriesProvider`, `recommendationProvider`, `profileProvider`, `addressListProvider`), Theme Material 3.
 
 ## Lệnh kiểm thử và chạy
 

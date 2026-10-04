@@ -302,4 +302,133 @@ class ApiClient {
     final res = await patch('/me/addresses/$id/default');
     return Map<String, dynamic>.from(res as Map);
   }
+
+  // --- Catalog & Products Endpoints (MOB-02) ---
+  Future<Map<String, dynamic>> getProducts({
+    String? q,
+    int page = 1,
+    int size = 20,
+  }) async {
+    final query = <String, dynamic>{
+      'page': page,
+      'size': size,
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+    };
+    final res = await get('/products', query: query);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> getProduct(String id) async {
+    final res = await get('/products/$id');
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<List<Map<String, dynamic>>> getCategories({
+    int page = 1,
+    int size = 50,
+  }) async {
+    try {
+      final res = await get('/categories', query: {'page': page, 'size': size});
+      if (res is Map && res['items'] is List) {
+        return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (res is List) {
+        return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (_) {
+      // Return empty list if categories endpoint is unavailable
+    }
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> getProductReviews(
+    String productId, {
+    int page = 1,
+    int size = 20,
+  }) async {
+    try {
+      final res = await get(
+        '/products/$productId/reviews',
+        query: {'page': page, 'size': size},
+      );
+      if (res is Map && res['items'] is List) {
+        return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (_) {
+      // Return empty list if reviews are not found or unavailable
+    }
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> getRelatedProducts(
+    String productId, {
+    int page = 1,
+    int size = 10,
+  }) async {
+    try {
+      final res = await get(
+        '/products/$productId/related',
+        query: {'page': page, 'size': size},
+      );
+      if (res is Map && res['items'] is List) {
+        return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+    } catch (_) {
+      // Fallback to empty if endpoint not yet ready
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> getRecommendations() async {
+    try {
+      final res = await get('/recommendations/for-you');
+      if (res is Map) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (_) {
+      // Fallback baseline recommendation response without blocking catalog
+    }
+    return {
+      'model_version': 'baseline-mobile-v1',
+      'source': 'BASELINE',
+      'product_ids': <String>[],
+      'recently_viewed_product_ids': <String>[],
+      'mode': 'mock',
+    };
+  }
+
+  Future<Map<String, dynamic>> getPersonalizationConsent() async {
+    try {
+      final res = await get('/me/consent');
+      if (res is Map) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (_) {
+      // Fallback consent state
+    }
+    return {'status': 'GRANTED', 'version': 1};
+  }
+
+  Future<Map<String, dynamic>> updatePersonalizationConsent(
+    String status,
+    int expectedVersion,
+  ) async {
+    final res = await patch('/me/consent', data: {
+      'status': status,
+      'expected_version': expectedVersion,
+    });
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> addToCart({
+    required String variantId,
+    int quantity = 1,
+  }) async {
+    final res = await post('/cart/items', data: {
+      'variant_id': variantId,
+      'quantity': quantity,
+    });
+    return (res is Map) ? Map<String, dynamic>.from(res) : {'status': 'success'};
+  }
 }
+
