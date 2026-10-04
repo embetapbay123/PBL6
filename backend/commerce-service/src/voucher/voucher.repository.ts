@@ -284,4 +284,20 @@ export class VoucherRepository extends OwnedRepository {
     );
     return updated;
   }
+
+  async getVoucherUsageCounts(
+    voucherId: string
+  ): Promise<{ redeemed_count: number; reserved_count: number }> {
+    const [row] = await this.manager.query(
+      `SELECT 
+         (SELECT count(*)::int FROM voucher_redemption WHERE voucher_id = $1) AS redeemed_count,
+         (SELECT count(*)::int FROM voucher_reservation WHERE voucher_id = $1 AND status = 'RESERVED' AND expires_at > NOW()) AS reserved_count`,
+      [voucherId]
+    );
+    return {
+      redeemed_count: Number(row?.redeemed_count ?? 0),
+      reserved_count: Number(row?.reserved_count ?? 0),
+    };
+  }
 }
+

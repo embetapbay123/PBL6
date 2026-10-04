@@ -3,7 +3,11 @@ import { ApiError } from '../../../shared/src/errors';
 import { audit } from '../../../shared/src/audit';
 import { moneyNumber } from '../../../shared/src/money';
 import { VoucherRepository, VoucherRow } from './voucher.repository';
+import { OrderService } from '../order/order.service';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 
 export function voucherResponse(row: VoucherRow): OperationOutputs['createStoreVoucher'] {
   return {
@@ -371,4 +375,67 @@ export class VoucherService {
       return afterResponse;
     });
   }
+
+  // ================= VOUCHER-03 METHODS =================
+  async validateVouchers(
+    input: OperationInputs['validateVouchers']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['validateVouchers']> {
+    const orderService = new OrderService();
+    return orderService.quoteCheckout(input, auth, correlation);
+  }
+
+  async getStoreVoucherUsage(
+    id: string,
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['getStoreVoucherUsage']> {
+    const storeId = this.verifyStoreOwner(auth);
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã voucher id không hợp lệ.');
+    }
+
+    const repo = new VoucherRepository(database.manager);
+    const voucher = await repo.findStoreVoucherById(id, storeId);
+    if (!voucher) {
+      throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy voucher cửa hàng.');
+    }
+
+    const counts = await repo.getVoucherUsageCounts(id);
+
+    return {
+      voucher_id: voucher.id,
+      reserved_count: counts.reserved_count,
+      redeemed_count: counts.redeemed_count,
+      remaining_count: voucher.usage_limit,
+    };
+  }
+
+  async getPlatformVoucherUsage(
+    id: string,
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['getPlatformVoucherUsage']> {
+    this.verifyAdmin(auth);
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã voucher id không hợp lệ.');
+    }
+
+    const repo = new VoucherRepository(database.manager);
+    const voucher = await repo.findPlatformVoucherById(id);
+    if (!voucher) {
+      throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy voucher toàn sàn.');
+    }
+
+    const counts = await repo.getVoucherUsageCounts(id);
+
+    return {
+      voucher_id: voucher.id,
+      reserved_count: counts.reserved_count,
+      redeemed_count: counts.redeemed_count,
+      remaining_count: voucher.usage_limit,
+    };
+  }
 }
+

@@ -5,6 +5,7 @@ import {
   UpdateStoreVoucherBodyDto,
   CreatePlatformVoucherBodyDto,
   UpdatePlatformVoucherBodyDto,
+  ValidateVouchersBodyDto,
 } from '../../../shared/src/dtos.generated';
 import { VoucherService } from './voucher.service';
 
@@ -12,6 +13,13 @@ import { VoucherService } from './voucher.service';
 @UseGuards(AuthGuard)
 export class VoucherController {
   private readonly service = new VoucherService();
+
+  // --- Customer Voucher Validation ---
+  @Post('vouchers/validate')
+  @Roles('CUSTOMER')
+  validateVouchers(@Body() dto: ValidateVouchersBodyDto, @Req() req: any) {
+    return this.service.validateVouchers(dto, req.auth, req.correlationId);
+  }
 
   // --- Store Voucher Endpoints ---
   @Get('store/vouchers')
@@ -32,6 +40,12 @@ export class VoucherController {
     return this.service.updateStoreVoucher(id, dto, req.auth, req.correlationId);
   }
 
+  @Get('store/vouchers/:id/usage')
+  @Roles('STORE_OWNER')
+  getStoreVoucherUsage(@Param('id') id: string, @Req() req: any) {
+    return this.service.getStoreVoucherUsage(id, req.auth, req.correlationId);
+  }
+
   // --- Platform Voucher Endpoints ---
   @Get('admin/vouchers')
   @Roles('ADMIN')
@@ -49,5 +63,11 @@ export class VoucherController {
   @Roles('ADMIN')
   updatePlatformVoucher(@Param('id') id: string, @Body() dto: UpdatePlatformVoucherBodyDto, @Req() req: any) {
     return this.service.updatePlatformVoucher(id, dto, req.auth, req.correlationId);
+  }
+
+  @Get('admin/vouchers/:id/usage')
+  @Roles('ADMIN')
+  getPlatformVoucherUsage(@Param('id') id: string, @Req() req: any) {
+    return this.service.getPlatformVoucherUsage(id, req.auth, req.correlationId);
   }
 }

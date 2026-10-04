@@ -1,6 +1,8 @@
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import { validateOperation } from '../../shared/src/request-contract';
 import { VoucherService } from '../../commerce-service/src/voucher/voucher.service';
+import { VoucherController } from '../../commerce-service/src/voucher/voucher.controller';
+
 
 const mockQuery = jest.fn<any>();
 
@@ -605,3 +607,274 @@ describe('VoucherService Business Logic & Store Isolation (BR-04, BR-06)', () =>
     expect(result.version).toBe(1);
   });
 });
+
+describe('VOUCHER-03: validateVouchers, getStoreVoucherUsage & getPlatformVoucherUsage', () => {
+  let service: VoucherService;
+  let controller: VoucherController;
+
+  const storeId = '11111111-1111-4111-8111-111111111111';
+  const voucherId = '22222222-2222-4222-8222-222222222222';
+  const platformVoucherId = '33333333-3333-4333-8333-333333333333';
+  const customerUser = { user_id: 'cust-uuid-1', roles: ['CUSTOMER'] };
+  const storeOwnerUser = {
+    user_id: 'store-owner-1',
+    roles: ['STORE_OWNER'],
+    store_membership: { store_id: storeId, role: 'OWNER' },
+  };
+  const adminUser = { user_id: 'admin-uuid-1', roles: ['ADMIN'] };
+  const correlation = 'test-voucher-03-corr';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new VoucherService();
+    controller = new VoucherController();
+  });
+
+  describe('Contract and DTO Validation', () => {
+    test('validateVouchers accepts valid checkout request and rejects invalid', () => {
+      const valid = {
+        body: {
+          cart_item_ids: ['11111111-1111-4111-8111-111111111111'],
+          address_id: '22222222-2222-4222-8222-222222222222',
+          payment_methods: {
+            '11111111-1111-4111-8111-111111111111': 'COD' as const,
+          },
+          platform_voucher_code: 'PLATFORM10',
+          store_vouchers: {
+            '11111111-1111-4111-8111-111111111111': 'STORE10',
+          },
+        },
+        path: {},
+        query: {},
+        headers: {},
+      };
+      expect(() => validateOperation('validateVouchers', valid)).not.toThrow();
+
+      expect(() =>
+        validateOperation('validateVouchers', {
+          ...valid,
+          body: { ...valid.body, cart_item_ids: [] },
+        })
+      ).toThrow();
+    });
+
+    test('getStoreVoucherUsage accepts valid path UUID', () => {
+      expect(() =>
+        validateOperation('getStoreVoucherUsage', {
+          path: { id: voucherId },
+          query: {},
+          headers: {},
+        })
+      ).not.toThrow();
+    });
+
+    test('getPlatformVoucherUsage accepts valid path UUID', () => {
+      expect(() =>
+        validateOperation('getPlatformVoucherUsage', {
+          path: { id: platformVoucherId },
+          query: {},
+          headers: {},
+        })
+      ).not.toThrow();
+    });
+  });
+
+  describe('validateVouchers Business Logic', () => {
+    test('successfully calculates quote for valid basket and vouchers', async () => {
+      const cartItemId = '11111111-1111-4111-8111-111111111111';
+      const addressId = '22222222-2222-4222-8222-222222222222';
+
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: cartItemId,
+          cart_id: 'cart-1',
+          variant_id: 'var-1',
+          store_id: storeId,
+          quantity: 2,
+        },
+      ]);
+
+      const result = await service.validateVouchers(
+        {
+          cart_item_ids: [cartItemId],
+          address_id: addressId,
+          payment_methods: { [storeId]: 'COD' },
+        },
+        customerUser,
+        correlation
+      );
+
+      expect(result.quote_id).toBeDefined();
+      expect(result.stores).toHaveLength(1);
+      expect(result.stores[0].store_id).toBe(storeId);
+      expect(result.stores[0].amounts.goods_vnd).toBe(200000);
+      expect(result.payable_total_vnd).toBeGreaterThan(0);
+    });
+  });
+
+  describe('getStoreVoucherUsage Business Logic', () => {
+    test('throws 403 when caller is not store owner', async () => {
+      const regularUser = { user_id: 'regular-user', roles: ['CUSTOMER'] };
+      await expect(
+        service.getStoreVoucherUsage(voucherId, regularUser, correlation)
+      ).rejects.toMatchObject({
+        status: 403,
+        response: { code: 'FORBIDDEN' },
+      });
+    });
+
+    test('throws 422 for invalid voucher UUID', async () => {
+      await expect(
+        service.getStoreVoucherUsage('invalid-uuid', storeOwnerUser, correlation)
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VALIDATION_FAILED' },
+      });
+    });
+
+    test('throws 404 when voucher does not exist or does not belong to the store', async () => {
+      mockQuery.mockResolvedValueOnce([]); // findStoreVoucherById returns nothing
+
+      await expect(
+        service.getStoreVoucherUsage(voucherId, storeOwnerUser, correlation)
+      ).rejects.toMatchObject({
+        status: 404,
+        response: { code: 'NOT_FOUND' },
+      });
+    });
+
+    test('returns correct voucher usage info for store owner', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          code: 'STORE20K',
+          scope: 'STORE',
+          store_id: storeId,
+          owner_user_id: storeOwnerUser.user_id,
+          discount_type: 'FIXED',
+          discount_value: '20000',
+          max_discount_vnd: null,
+          min_goods_vnd: '100000',
+          starts_at: new Date('2026-10-01T00:00:00.000Z'),
+          ends_at: new Date('2026-10-31T00:00:00.000Z'),
+          usage_limit: 85,
+          per_customer_limit: 1,
+          status: 'ACTIVE',
+          version: 1,
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([
+        {
+          redeemed_count: 15,
+          reserved_count: 5,
+        },
+      ]);
+
+      const result = await service.getStoreVoucherUsage(voucherId, storeOwnerUser, correlation);
+
+      expect(result.voucher_id).toBe(voucherId);
+      expect(result.redeemed_count).toBe(15);
+      expect(result.reserved_count).toBe(5);
+      expect(result.remaining_count).toBe(85);
+    });
+  });
+
+  describe('getPlatformVoucherUsage Business Logic', () => {
+    test('throws 403 when caller is not admin', async () => {
+      await expect(
+        service.getPlatformVoucherUsage(platformVoucherId, storeOwnerUser, correlation)
+      ).rejects.toMatchObject({
+        status: 403,
+        response: { code: 'FORBIDDEN' },
+      });
+    });
+
+    test('throws 422 for invalid platform voucher UUID', async () => {
+      await expect(
+        service.getPlatformVoucherUsage('not-a-uuid', adminUser, correlation)
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VALIDATION_FAILED' },
+      });
+    });
+
+    test('throws 404 when platform voucher is not found', async () => {
+      mockQuery.mockResolvedValueOnce([]); // findPlatformVoucherById returns nothing
+
+      await expect(
+        service.getPlatformVoucherUsage(platformVoucherId, adminUser, correlation)
+      ).rejects.toMatchObject({
+        status: 404,
+        response: { code: 'NOT_FOUND' },
+      });
+    });
+
+    test('returns correct platform voucher usage info for admin', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: platformVoucherId,
+          code: 'ALLPLATFORM',
+          scope: 'PLATFORM',
+          store_id: null,
+          owner_user_id: adminUser.user_id,
+          discount_type: 'PERCENT',
+          discount_value: '10',
+          max_discount_vnd: '50000',
+          min_goods_vnd: '200000',
+          starts_at: new Date('2026-10-01T00:00:00.000Z'),
+          ends_at: new Date('2026-10-31T00:00:00.000Z'),
+          usage_limit: 450,
+          per_customer_limit: 2,
+          status: 'ACTIVE',
+          version: 2,
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([
+        {
+          redeemed_count: 50,
+          reserved_count: 10,
+        },
+      ]);
+
+      const result = await service.getPlatformVoucherUsage(platformVoucherId, adminUser, correlation);
+
+      expect(result.voucher_id).toBe(platformVoucherId);
+      expect(result.redeemed_count).toBe(50);
+      expect(result.reserved_count).toBe(10);
+      expect(result.remaining_count).toBe(450);
+    });
+  });
+
+  describe('VoucherController Integration', () => {
+    test('controller delegates getStoreVoucherUsage and getPlatformVoucherUsage', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          code: 'STORE20K',
+          scope: 'STORE',
+          store_id: storeId,
+          owner_user_id: storeOwnerUser.user_id,
+          discount_type: 'FIXED',
+          discount_value: '20000',
+          max_discount_vnd: null,
+          min_goods_vnd: '100000',
+          starts_at: new Date('2026-10-01T00:00:00.000Z'),
+          ends_at: new Date('2026-10-31T00:00:00.000Z'),
+          usage_limit: 100,
+          per_customer_limit: 1,
+          status: 'ACTIVE',
+          version: 1,
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([{ redeemed_count: 0, reserved_count: 0 }]);
+
+      const storeUsage = await controller.getStoreVoucherUsage(voucherId, {
+        auth: storeOwnerUser,
+        correlationId: correlation,
+      });
+      expect(storeUsage.voucher_id).toBe(voucherId);
+      expect(storeUsage.remaining_count).toBe(100);
+    });
+  });
+});
+
