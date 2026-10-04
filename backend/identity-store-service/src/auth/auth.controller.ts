@@ -7,10 +7,12 @@ import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { AuthService } from './auth.service';
 import { LoginDto, RefreshDto } from './auth.dto';
+import { ProfileService } from '../profile/profile.service';
 
 @Controller() @UseGuards(AuthGuard)
 export class AuthController {
   private readonly service = new AuthService();
+  private readonly profiles = new ProfileService();
   private deliver(tokens: any, res: Response, web: boolean) {
     if (!web) return tokens;
     const secure = config('M3').secureCookie;
@@ -49,8 +51,7 @@ export class AuthController {
   }
   @Get('me/context') context(@Req() req: any) { return req.auth; }
   @Get('me') async profile(@Req() req: any) {
-    const [row] = await database.query('SELECT u.id AS user_id,u.email,u.email_verified_at,p.display_name,p.phone FROM "user" u LEFT JOIN customer_profile p ON p.user_id=u.id WHERE u.id=$1',[req.auth.user_id]);
-    return row;
+    return this.profiles.getProfile(req.auth.user_id);
   }
   @Post('internal/context') @HttpCode(200) @Public() @UseGuards(ServiceGuard) @ServiceCallers('M1','M2','M3','M4')
   async internalContext(@Req() req: Request,@Body() body: {token:string}) {
