@@ -1168,6 +1168,60 @@ export class OrderService {
       });
     });
   }
+
+  async verifyReviewEligibility(
+    input: OperationInputs['VerifyReviewEligibility']['body']
+  ): Promise<OperationOutputs['VerifyReviewEligibility']> {
+    const orderItemId = input?.order_item_id;
+    const customerUserId = input?.customer_user_id;
+    const productId = input?.product_id;
+
+    if (!orderItemId || !UUID_REGEX.test(orderItemId)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'order_item_id không hợp lệ.');
+    }
+    if (!customerUserId || !UUID_REGEX.test(customerUserId)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'customer_user_id không hợp lệ.');
+    }
+    if (!productId || !UUID_REGEX.test(productId)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'product_id không hợp lệ.');
+    }
+
+    const repo = new OrderRepository(database.manager);
+    const item = await repo.findOrderItemEligibility(orderItemId);
+
+    if (!item) {
+      return {
+        eligible: false,
+        reason: 'Không tìm thấy mục đơn hàng tương ứng.',
+      };
+    }
+
+    if (item.customer_user_id !== customerUserId) {
+      return {
+        eligible: false,
+        reason: 'Mục đơn hàng không thuộc về khách hàng này.',
+      };
+    }
+
+    if (item.product_id !== productId) {
+      return {
+        eligible: false,
+        reason: 'Sản phẩm không khớp với mục đơn hàng.',
+      };
+    }
+
+    if (item.order_status !== 'COMPLETED') {
+      return {
+        eligible: false,
+        reason: `Đơn hàng chưa hoàn thành (trạng thái: ${item.order_status}).`,
+      };
+    }
+
+    return {
+      eligible: true,
+    };
+  }
 }
+
 
 

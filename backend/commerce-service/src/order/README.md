@@ -13,5 +13,7 @@ Owner: Hoa
 - `PATCH /store/orders/{id}/status` — transitionStoreOrder: **IMPLEMENTED**
 - `POST /store/orders/{id}/cancel` — cancelStoreOrder: **IMPLEMENTED**
 - `POST /store/orders/{id}/cod-collection` — collectCod: **IMPLEMENTED**
+- `POST /internal/reviews/eligibility` — VerifyReviewEligibility: **IMPLEMENTED**
 
 Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
+

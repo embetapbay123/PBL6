@@ -81,6 +81,14 @@ export interface PaymentRow {
   version: number;
 }
 
+export interface OrderItemEligibilityRow {
+  order_item_id: string;
+  order_id: string;
+  product_id: string;
+  customer_user_id: string;
+  order_status: string;
+}
+
 export class OrderRepository extends OwnedRepository {
   constructor(manager: EntityManager) {
     super(manager);
@@ -668,6 +676,18 @@ export class OrderRepository extends OwnedRepository {
     );
     return updated ?? null;
   }
+
+  async findOrderItemEligibility(orderItemId: string): Promise<OrderItemEligibilityRow | undefined> {
+    const [row] = await this.manager.query(
+      `SELECT oi.id AS order_item_id, oi.order_id, oi.product_id, o.customer_user_id, o.status AS order_status
+       FROM order_item oi
+       INNER JOIN "order" o ON o.id = oi.order_id
+       WHERE oi.id = $1`,
+      [orderItemId]
+    );
+    return row;
+  }
 }
+
 
 

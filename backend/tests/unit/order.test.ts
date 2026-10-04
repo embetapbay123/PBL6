@@ -17,6 +17,8 @@ jest.mock('../../shared/src/database', () => {
 });
 
 import { OrderService } from '../../commerce-service/src/order/order.service';
+import { ReviewEligibilityInternalController } from '../../commerce-service/src/order/review-eligibility.internal.controller';
+
 
 describe('Order Contract and DTO Validation (ORDER-01, ORDER-02 & ORDER-03)', () => {
   const validQuotePayload = {
@@ -2136,6 +2138,213 @@ describe('OrderService.collectCod Business Logic (ORDER-05)', () => {
     expect(result.items![0].sku_snapshot).toBe('SKU-BAG-01');
   });
 });
+
+describe('OrderService.verifyReviewEligibility (REVIEW-ELIG-01 & BR-37)', () => {
+  let service: OrderService;
+  let controller: ReviewEligibilityInternalController;
+
+  const validOrderItemId = '11111111-1111-4111-8111-111111111111';
+  const validCustomerId = '22222222-2222-4222-8222-222222222222';
+  const validProductId = '33333333-3333-4333-8333-333333333333';
+  const validOrderId = '44444444-4444-4444-8444-444444444444';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new OrderService();
+    controller = new ReviewEligibilityInternalController();
+  });
+
+  test('throws 422 VALIDATION_FAILED when order_item_id is missing or not a valid UUID', async () => {
+    await expect(
+      service.verifyReviewEligibility({
+        order_item_id: 'invalid-uuid',
+        customer_user_id: validCustomerId,
+        product_id: validProductId,
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'VALIDATION_FAILED' },
+    });
+  });
+
+  test('throws 422 VALIDATION_FAILED when customer_user_id is missing or not a valid UUID', async () => {
+    await expect(
+      service.verifyReviewEligibility({
+        order_item_id: validOrderItemId,
+        customer_user_id: 'not-a-uuid',
+        product_id: validProductId,
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'VALIDATION_FAILED' },
+    });
+  });
+
+  test('throws 422 VALIDATION_FAILED when product_id is missing or not a valid UUID', async () => {
+    await expect(
+      service.verifyReviewEligibility({
+        order_item_id: validOrderItemId,
+        customer_user_id: validCustomerId,
+        product_id: 'bad-uuid',
+      })
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'VALIDATION_FAILED' },
+    });
+  });
+
+  test('returns eligible: false when order item is not found in database', async () => {
+    mockQuery.mockResolvedValueOnce([]); // No row found
+
+    const result = await service.verifyReviewEligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: false,
+      reason: 'Không tìm thấy mục đơn hàng tương ứng.',
+    });
+  });
+
+  test('returns eligible: false when customer_user_id does not match the order owner', async () => {
+    mockQuery.mockResolvedValueOnce([
+      {
+        order_item_id: validOrderItemId,
+        order_id: validOrderId,
+        product_id: validProductId,
+        customer_user_id: '99999999-9999-4999-8999-999999999999', // Different customer
+        order_status: 'COMPLETED',
+      },
+    ]);
+
+    const result = await service.verifyReviewEligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: false,
+      reason: 'Mục đơn hàng không thuộc về khách hàng này.',
+    });
+  });
+
+  test('returns eligible: false when product_id does not match the order item product', async () => {
+    mockQuery.mockResolvedValueOnce([
+      {
+        order_item_id: validOrderItemId,
+        order_id: validOrderId,
+        product_id: '88888888-8888-4888-8888-888888888888', // Different product
+        customer_user_id: validCustomerId,
+        order_status: 'COMPLETED',
+      },
+    ]);
+
+    const result = await service.verifyReviewEligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: false,
+      reason: 'Sản phẩm không khớp với mục đơn hàng.',
+    });
+  });
+
+  test('returns eligible: false when order status is not COMPLETED (e.g. SHIPPED)', async () => {
+    mockQuery.mockResolvedValueOnce([
+      {
+        order_item_id: validOrderItemId,
+        order_id: validOrderId,
+        product_id: validProductId,
+        customer_user_id: validCustomerId,
+        order_status: 'SHIPPED',
+      },
+    ]);
+
+    const result = await service.verifyReviewEligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: false,
+      reason: 'Đơn hàng chưa hoàn thành (trạng thái: SHIPPED).',
+    });
+  });
+
+  test('returns eligible: false when order status is CANCELLED or PROCESSING', async () => {
+    mockQuery.mockResolvedValueOnce([
+      {
+        order_item_id: validOrderItemId,
+        order_id: validOrderId,
+        product_id: validProductId,
+        customer_user_id: validCustomerId,
+        order_status: 'CANCELLED',
+      },
+    ]);
+
+    const result = await service.verifyReviewEligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: false,
+      reason: 'Đơn hàng chưa hoàn thành (trạng thái: CANCELLED).',
+    });
+  });
+
+  test('returns eligible: true when order is COMPLETED and ownership and product match', async () => {
+    mockQuery.mockResolvedValueOnce([
+      {
+        order_item_id: validOrderItemId,
+        order_id: validOrderId,
+        product_id: validProductId,
+        customer_user_id: validCustomerId,
+        order_status: 'COMPLETED',
+      },
+    ]);
+
+    const result = await service.verifyReviewEligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: true,
+    });
+  });
+
+  test('ReviewEligibilityInternalController delegates to verifyReviewEligibility', async () => {
+    mockQuery.mockResolvedValueOnce([
+      {
+        order_item_id: validOrderItemId,
+        order_id: validOrderId,
+        product_id: validProductId,
+        customer_user_id: validCustomerId,
+        order_status: 'COMPLETED',
+      },
+    ]);
+
+    const result = await controller.eligibility({
+      order_item_id: validOrderItemId,
+      customer_user_id: validCustomerId,
+      product_id: validProductId,
+    });
+
+    expect(result).toEqual({
+      eligible: true,
+    });
+  });
+});
+
 
 
 
