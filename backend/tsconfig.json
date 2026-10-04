@@ -2,7 +2,8 @@
   "compilerOptions": {
     "target": "ES2022", "module": "commonjs", "moduleResolution": "node", "outDir": "dist", "rootDir": ".",
     "strict": true, "esModuleInterop": true, "experimentalDecorators": true, "emitDecoratorMetadata": true,
-    "skipLibCheck": true, "resolveJsonModule": true, "sourceMap": true
+    "skipLibCheck": true, "resolveJsonModule": true, "sourceMap": true,
+    "types": ["jest", "node"]
   },
-  "include": ["*-service/src/**/*.ts", "shared/src/**/*.ts"], "exclude": ["ai-service", "node_modules", "dist"]
+  "include": ["*-service/src/**/*.ts", "shared/src/**/*.ts", "tests/**/*.ts"], "exclude": ["ai-service", "node_modules", "dist"]
 }
