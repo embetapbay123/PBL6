@@ -6,6 +6,7 @@ import {
   TransitionStoreOrderBodyDto,
   CancelOwnOrderBodyDto,
   CancelStoreOrderBodyDto,
+  CollectCodBodyDto,
 } from '../../../shared/src/dtos.generated';
 import { OrderService } from './order.service';
 
@@ -108,6 +109,17 @@ export class OrderController {
   ) {
     return this.service.cancelStoreOrder(id, dto, req.auth, req.correlationId);
   }
+
+  @Post('store/orders/:id/cod-collection')
+  @Roles('SELLER', 'STORE_OWNER')
+  collectCod(
+    @Param('id') id: string,
+    @Body() dto: CollectCodBodyDto,
+    @Req() req: any
+  ) {
+    return this.service.collectCod(id, dto, req.auth, req.correlationId);
+  }
 }
+
 
 

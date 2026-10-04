@@ -1084,5 +1084,90 @@ export class OrderService {
       });
     });
   }
+
+  // --- ORDER-05: COD Collection ---
+
+  async collectCod(
+    id: string,
+    input: OperationInputs['collectCod']['body'],
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['collectCod']> {
+    const storeId = auth?.store_membership?.store_id;
+    if (!storeId) {
+      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thao tác đơn hàng của cửa hàng.');
+    }
+
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
+    }
+
+    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
+    }
+
+    if (input?.amount_collected_vnd === undefined || typeof input.amount_collected_vnd !== 'number' || input.amount_collected_vnd <= 0) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'amount_collected_vnd phải là số tiền dương.');
+    }
+
+    return database.transaction(async manager => {
+      const repo = new OrderRepository(manager);
+      const order = await repo.findStoreOrderById(id, storeId);
+      if (!order) {
+        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
+      }
+
+      if (order.version !== input.expected_version) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
+      }
+
+      if (order.payment_method !== 'COD') {
+        throw new ApiError(422, 'INVALID_PAYMENT_METHOD', 'Đơn hàng này không sử dụng phương thức thanh toán COD.');
+      }
+
+      const payment = await repo.findPaymentByOrderId(id);
+      if (!payment) {
+        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy thông tin thanh toán của đơn hàng.');
+      }
+
+      if (payment.status === 'SUCCEEDED') {
+        throw new ApiError(409, 'ALREADY_COLLECTED', 'Tiền COD của đơn hàng này đã được thu trước đó.');
+      }
+
+      const payableAmount = Number(order.payable_vnd);
+      if (input.amount_collected_vnd !== payableAmount) {
+        throw new ApiError(
+          422,
+          'INVALID_COLLECTED_AMOUNT',
+          `Số tiền thu (${input.amount_collected_vnd.toLocaleString('vi-VN')} VND) không khớp với số tiền cần thu (${payableAmount.toLocaleString('vi-VN')} VND).`
+        );
+      }
+
+      // Record COD Collection
+      await repo.recordCodCollection({
+        order_id: id,
+        amount_due_vnd: payableAmount,
+        amount_collected_vnd: input.amount_collected_vnd,
+        status: 'COLLECTED',
+      });
+
+      // Update payment status to SUCCEEDED and collected_vnd
+      await repo.markPaymentCollected(id, input.amount_collected_vnd);
+
+      // Increment order version
+      const updated = await repo.incrementOrderVersion(id, input.expected_version);
+      if (!updated) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
+      }
+
+      return this.mapOrderRowToDto({
+        ...updated,
+        items: order.items,
+        payment_status: 'SUCCEEDED',
+        refund_status: order.refund_status,
+      });
+    });
+  }
 }
+
 

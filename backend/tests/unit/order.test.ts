@@ -241,7 +241,30 @@ describe('Order Contract and DTO Validation (ORDER-01, ORDER-02 & ORDER-03)', ()
       })
     ).not.toThrow();
   });
+
+  test('collectCod accepts valid payload and path', () => {
+    expect(() =>
+      validateOperation('collectCod', {
+        path: { id: '44444444-4444-4444-8444-444444444444' },
+        body: { expected_version: 3, amount_collected_vnd: 150000 },
+        query: {},
+        headers: {},
+      })
+    ).not.toThrow();
+  });
+
+  test('collectCod rejects invalid UUID path', () => {
+    expect(() =>
+      validateOperation('collectCod', {
+        path: { id: 'invalid-uuid' },
+        body: { expected_version: 3, amount_collected_vnd: 150000 },
+        query: {},
+        headers: {},
+      })
+    ).toThrow();
+  });
 });
+
 
 describe('OrderService.quoteCheckout Business Logic (ORDER-01)', () => {
   let service: OrderService;
@@ -1840,5 +1863,279 @@ describe('OrderService.transitionStoreOrder & Cancellation Business Logic (ORDER
     });
   });
 });
+
+describe('OrderService.collectCod Business Logic (ORDER-05)', () => {
+  let service: OrderService;
+  const storeId = '22222222-2222-4222-8222-222222222222';
+  const mockSellerAuth = {
+    user_id: 'user-seller-uuid-1',
+    roles: ['SELLER'],
+    store_membership: { store_id: storeId, role: 'SELLER' },
+  };
+  const correlation = 'test-corr-order-05';
+  const orderId = '44444444-4444-4444-8444-444444444444';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new OrderService();
+  });
+
+  test('throws 403 when user has no store membership', async () => {
+    const authWithoutStore = { user_id: 'user-no-store', roles: ['CUSTOMER'] };
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 100000 }, authWithoutStore, correlation)
+    ).rejects.toMatchObject({
+      status: 403,
+      response: { code: 'FORBIDDEN' },
+    });
+  });
+
+  test('throws 422 when order id is not a valid UUID', async () => {
+    await expect(
+      service.collectCod('invalid-order-id', { expected_version: 1, amount_collected_vnd: 100000 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'VALIDATION_FAILED' },
+    });
+  });
+
+  test('throws 422 when amount_collected_vnd is negative or zero', async () => {
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 0 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'VALIDATION_FAILED' },
+    });
+  });
+
+  test('throws 404 when order is not found in store', async () => {
+    mockQuery.mockResolvedValueOnce([]); // Order not found
+
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 100000 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 404,
+      response: { code: 'NOT_FOUND' },
+    });
+  });
+
+  test('throws 409 when expected_version does not match (BR-39)', async () => {
+    const orderFromDb = {
+      id: orderId,
+      purchase_group_id: 'pg-1',
+      customer_user_id: 'cust-1',
+      store_id: storeId,
+      address_snapshot: {},
+      status: 'SHIPPED',
+      payment_method: 'COD',
+      goods_vnd: '100000',
+      store_discount_vnd: '0',
+      platform_discount_vnd: '0',
+      shipping_vnd: '0',
+      payable_vnd: '100000',
+      version: 3, // actual version is 3
+      created_at: new Date(),
+    };
+
+    mockQuery.mockResolvedValueOnce([orderFromDb]);
+    mockQuery.mockResolvedValueOnce([]);
+
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 100000 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 409,
+      response: { code: 'VERSION_CONFLICT' },
+    });
+  });
+
+  test('throws 422 when payment_method is not COD (e.g. SANDBOX)', async () => {
+    const orderFromDb = {
+      id: orderId,
+      purchase_group_id: 'pg-1',
+      customer_user_id: 'cust-1',
+      store_id: storeId,
+      address_snapshot: {},
+      status: 'SHIPPED',
+      payment_method: 'SANDBOX',
+      goods_vnd: '100000',
+      store_discount_vnd: '0',
+      platform_discount_vnd: '0',
+      shipping_vnd: '0',
+      payable_vnd: '100000',
+      version: 1,
+      created_at: new Date(),
+    };
+
+    mockQuery.mockResolvedValueOnce([orderFromDb]);
+    mockQuery.mockResolvedValueOnce([]);
+
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 100000 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'INVALID_PAYMENT_METHOD' },
+    });
+  });
+
+  test('throws 409 when payment is already collected (status SUCCEEDED)', async () => {
+    const orderFromDb = {
+      id: orderId,
+      purchase_group_id: 'pg-1',
+      customer_user_id: 'cust-1',
+      store_id: storeId,
+      address_snapshot: {},
+      status: 'SHIPPED',
+      payment_method: 'COD',
+      goods_vnd: '100000',
+      store_discount_vnd: '0',
+      platform_discount_vnd: '0',
+      shipping_vnd: '0',
+      payable_vnd: '100000',
+      version: 1,
+      created_at: new Date(),
+    };
+
+    const paymentFromDb = {
+      id: 'payment-cod-1',
+      order_id: orderId,
+      method: 'COD',
+      status: 'SUCCEEDED',
+      payable_vnd: '100000',
+      collectible_vnd: '100000',
+      collected_vnd: '100000',
+      refunded_vnd: '0',
+      version: 2,
+    };
+
+    mockQuery.mockResolvedValueOnce([orderFromDb]);
+    mockQuery.mockResolvedValueOnce([]);
+    mockQuery.mockResolvedValueOnce([paymentFromDb]);
+
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 100000 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 409,
+      response: { code: 'ALREADY_COLLECTED' },
+    });
+  });
+
+  test('throws 422 when amount_collected_vnd does not match order payable_vnd', async () => {
+    const orderFromDb = {
+      id: orderId,
+      purchase_group_id: 'pg-1',
+      customer_user_id: 'cust-1',
+      store_id: storeId,
+      address_snapshot: {},
+      status: 'SHIPPED',
+      payment_method: 'COD',
+      goods_vnd: '100000',
+      store_discount_vnd: '0',
+      platform_discount_vnd: '0',
+      shipping_vnd: '0',
+      payable_vnd: '100000',
+      version: 1,
+      created_at: new Date(),
+    };
+
+    const paymentFromDb = {
+      id: 'payment-cod-1',
+      order_id: orderId,
+      method: 'COD',
+      status: 'PENDING',
+      payable_vnd: '100000',
+      collectible_vnd: '100000',
+      collected_vnd: '0',
+      refunded_vnd: '0',
+      version: 1,
+    };
+
+    mockQuery.mockResolvedValueOnce([orderFromDb]);
+    mockQuery.mockResolvedValueOnce([]);
+    mockQuery.mockResolvedValueOnce([paymentFromDb]);
+
+    await expect(
+      service.collectCod(orderId, { expected_version: 1, amount_collected_vnd: 80000 }, mockSellerAuth, correlation)
+    ).rejects.toMatchObject({
+      status: 422,
+      response: { code: 'INVALID_COLLECTED_AMOUNT' },
+    });
+  });
+
+  test('successfully collects COD, updates payment to SUCCEEDED and increments order version', async () => {
+    const orderFromDb = {
+      id: orderId,
+      purchase_group_id: 'pg-1',
+      customer_user_id: 'cust-1',
+      store_id: storeId,
+      address_snapshot: {},
+      status: 'SHIPPED',
+      payment_method: 'COD',
+      goods_vnd: '150000',
+      store_discount_vnd: '10000',
+      platform_discount_vnd: '5000',
+      shipping_vnd: '15000',
+      payable_vnd: '150000',
+      version: 2,
+      created_at: new Date(),
+    };
+
+    const itemsFromDb = [
+      {
+        id: 'item-cod-1',
+        order_id: orderId,
+        product_id: 'prod-cod-1',
+        variant_id: 'var-cod-1',
+        product_snapshot: { title: 'Balo laptop' },
+        sku_snapshot: 'SKU-BAG-01',
+        unit_price_vnd: '150000',
+        quantity: 1,
+        line_total_vnd: '150000',
+      },
+    ];
+
+    const paymentFromDb = {
+      id: 'payment-cod-1',
+      order_id: orderId,
+      method: 'COD',
+      status: 'PENDING',
+      payable_vnd: '150000',
+      collectible_vnd: '150000',
+      collected_vnd: '0',
+      refunded_vnd: '0',
+      version: 1,
+    };
+
+    const updatedOrderFromDb = {
+      ...orderFromDb,
+      version: 3,
+    };
+
+    // 1. findStoreOrderById
+    mockQuery.mockResolvedValueOnce([orderFromDb]);
+    mockQuery.mockResolvedValueOnce(itemsFromDb);
+    // 2. findPaymentByOrderId
+    mockQuery.mockResolvedValueOnce([paymentFromDb]);
+    // 3. recordCodCollection insert
+    mockQuery.mockResolvedValueOnce([]);
+    // 4. markPaymentCollected update
+    mockQuery.mockResolvedValueOnce([]);
+    // 5. incrementOrderVersion update
+    mockQuery.mockResolvedValueOnce([updatedOrderFromDb]);
+
+    const result = await service.collectCod(
+      orderId,
+      { expected_version: 2, amount_collected_vnd: 150000 },
+      mockSellerAuth,
+      correlation
+    );
+
+    expect(result.id).toBe(orderId);
+    expect(result.version).toBe(3);
+    expect(result.payment_status).toBe('SUCCEEDED');
+    expect(result.items).toHaveLength(1);
+    expect(result.items![0].sku_snapshot).toBe('SKU-BAG-01');
+  });
+});
+
 
 

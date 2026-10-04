@@ -623,5 +623,51 @@ export class OrderRepository extends OwnedRepository {
       [status, orderId]
     );
   }
+
+  async recordCodCollection(data: {
+    order_id: string;
+    amount_due_vnd: number;
+    amount_collected_vnd: number;
+    status?: string;
+  }): Promise<void> {
+    await this.manager.query(
+      `INSERT INTO c_o_d_collection (
+         id, order_id, amount_due_vnd, amount_collected_vnd, status, operation_id, collected_at
+       ) VALUES (
+         gen_random_uuid(), $1, $2, $3, $4, gen_random_uuid(), NOW()
+       )`,
+      [
+        data.order_id,
+        data.amount_due_vnd,
+        data.amount_collected_vnd,
+        data.status ?? 'COLLECTED',
+      ]
+    );
+  }
+
+  async markPaymentCollected(orderId: string, collectedAmountVnd: number): Promise<void> {
+    await this.manager.query(
+      `UPDATE payment
+       SET status = 'SUCCEEDED',
+           collected_vnd = $1,
+           version = version + 1
+       WHERE order_id = $2`,
+      [collectedAmountVnd, orderId]
+    );
+  }
+
+  async incrementOrderVersion(orderId: string, expectedVersion: number): Promise<OrderRow | null> {
+    const [updated] = await this.manager.query(
+      `UPDATE "order"
+       SET version = version + 1
+       WHERE id = $1 AND version = $2
+       RETURNING id, purchase_group_id, customer_user_id, store_id, address_snapshot,
+                 status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
+                 platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at`,
+      [orderId, expectedVersion]
+    );
+    return updated ?? null;
+  }
 }
+
 
