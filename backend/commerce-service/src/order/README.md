@@ -2,7 +2,7 @@
 
 Owner: Hoa
 
-- `POST /checkout/quotes` — quoteCheckout: **NOT_IMPLEMENTED**
+- `POST /checkout/quotes` — quoteCheckout: **IMPLEMENTED**
 - `POST /orders/batches` — confirmCheckout: **NOT_IMPLEMENTED**
 - `GET /orders/batches/{id}` — getPurchaseGroupOrders: **NOT_IMPLEMENTED**
 - `GET /me/orders` — listOwnOrders: **NOT_IMPLEMENTED**

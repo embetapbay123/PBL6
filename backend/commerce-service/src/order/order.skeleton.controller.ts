@@ -4,8 +4,6 @@ import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
 import { notImplemented } from '../../../shared/src/errors';
 @Controller() @UseGuards(AuthGuard)
 export class OrderSkeletonController {
-  @Post('checkout/quotes') @Roles("CUSTOMER")
-  quoteCheckout(): never { return notImplemented('quoteCheckout'); }
   @Post('orders/batches') @Roles("CUSTOMER")
   confirmCheckout(): never { return notImplemented('confirmCheckout'); }
   @Get('me/orders') @Roles("CUSTOMER")

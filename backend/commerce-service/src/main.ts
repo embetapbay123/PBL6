@@ -3,6 +3,7 @@ import { bootstrap } from '../../shared/src/bootstrap';
 import { CartController } from './cart/cart.controller';
 import { VoucherController } from './voucher/voucher.controller';
 import { ReportController } from './report/report.controller';
+import { OrderController } from './order/order.controller';
 import { CartSkeletonController } from './cart/cart.skeleton.controller';
 import { OrderSkeletonController } from './order/order.skeleton.controller';
 import { VoucherSkeletonController } from './voucher/voucher.skeleton.controller';
@@ -17,6 +18,7 @@ bootstrap('M2', [
   CartController,
   VoucherController,
   ReportController,
+  OrderController,
   CartSkeletonController,
   OrderSkeletonController,
   VoucherSkeletonController,
