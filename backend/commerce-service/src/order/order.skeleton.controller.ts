@@ -4,16 +4,8 @@ import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
 import { notImplemented } from '../../../shared/src/errors';
 @Controller() @UseGuards(AuthGuard)
 export class OrderSkeletonController {
-  @Get('me/orders') @Roles("CUSTOMER")
-  listOwnOrders(): never { return notImplemented('listOwnOrders'); }
-  @Get('store/orders') @Roles("SELLER","STORE_OWNER")
-  listStoreOrders(): never { return notImplemented('listStoreOrders'); }
-  @Get('me/orders/:id') @Roles("CUSTOMER")
-  getOwnOrder(): never { return notImplemented('getOwnOrder'); }
   @Post('me/orders/:id/cancel') @Roles("CUSTOMER")
   cancelOwnOrder(): never { return notImplemented('cancelOwnOrder'); }
-  @Get('store/orders/:id') @Roles("SELLER","STORE_OWNER")
-  getStoreOrder(): never { return notImplemented('getStoreOrder'); }
   @Patch('store/orders/:id/status') @Roles("SELLER","STORE_OWNER")
   transitionStoreOrder(): never { return notImplemented('transitionStoreOrder'); }
   @Post('store/orders/:id/cancel') @Roles("SELLER","STORE_OWNER")
@@ -21,3 +13,4 @@ export class OrderSkeletonController {
   @Post('store/orders/:id/cod-collection') @Roles("SELLER","STORE_OWNER")
   collectCod(): never { return notImplemented('collectCod'); }
 }
+

@@ -3,7 +3,7 @@ import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { config } from '../../../shared/src/config';
 import { InternalClients } from '../../../shared/src/internal-clients';
-import { OrderRepository } from './order.repository';
+import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -97,6 +97,38 @@ export class OrderService {
     } catch {
       return { reservations: [] };
     }
+  }
+
+  private mapOrderRowToDto(order: OrderRow & { items: OrderItemRow[] }): OperationOutputs['getOwnOrder'] {
+    return {
+      id: order.id,
+      purchase_group_id: order.purchase_group_id,
+      store_id: order.store_id,
+      status: order.status as any,
+      version: order.version,
+      payment_method: order.payment_method as any,
+      payment_status: order.payment_status ?? undefined,
+      refund_status: order.refund_status ?? undefined,
+      payment_expires_at: order.payment_expires_at ? new Date(order.payment_expires_at).toISOString() : undefined,
+      amounts: {
+        goods_vnd: Number(order.goods_vnd),
+        store_discount_vnd: Number(order.store_discount_vnd),
+        platform_discount_vnd: Number(order.platform_discount_vnd),
+        shipping_vnd: Number(order.shipping_vnd),
+        payable_vnd: Number(order.payable_vnd),
+      },
+      items: order.items.map(it => ({
+        id: it.id,
+        order_id: it.order_id,
+        product_id: it.product_id,
+        variant_id: it.variant_id,
+        product_snapshot: it.product_snapshot,
+        sku_snapshot: it.sku_snapshot,
+        unit_price_vnd: Number(it.unit_price_vnd),
+        quantity: it.quantity,
+        line_total_vnd: Number(it.line_total_vnd),
+      })),
+    };
   }
 
   private async calculateQuote(
@@ -657,5 +689,97 @@ export class OrderService {
       orders,
       payable_total_vnd: payableTotalVnd,
     };
+  }
+
+  // --- ORDER-03: Order Read Endpoints ---
+
+  async listOwnOrders(
+    query: { page?: number; size?: number },
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['listOwnOrders']> {
+    const userId = auth?.user_id;
+    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+
+    const page = Math.max(1, Number(query?.page ?? 1));
+    const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
+
+    const repo = new OrderRepository(database.manager);
+    const { items, total } = await repo.pageCustomerOrders(userId, page, size);
+
+    return {
+      items: items.map(this.mapOrderRowToDto),
+      total,
+      page,
+      size,
+    };
+  }
+
+  async getOwnOrder(
+    id: string,
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['getOwnOrder']> {
+    const userId = auth?.user_id;
+    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
+    }
+
+    const repo = new OrderRepository(database.manager);
+    const order = await repo.findCustomerOrderById(id, userId);
+    if (!order) {
+      throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng hoặc đơn hàng không thuộc quyền sở hữu của bạn.');
+    }
+
+    return this.mapOrderRowToDto(order);
+  }
+
+  async listStoreOrders(
+    query: { page?: number; size?: number },
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['listStoreOrders']> {
+    const storeId = auth?.store_membership?.store_id;
+    if (!storeId) {
+      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền truy cập đơn hàng của cửa hàng.');
+    }
+
+    const page = Math.max(1, Number(query?.page ?? 1));
+    const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
+
+    const repo = new OrderRepository(database.manager);
+    const { items, total } = await repo.pageStoreOrders(storeId, page, size);
+
+    return {
+      items: items.map(this.mapOrderRowToDto),
+      total,
+      page,
+      size,
+    };
+  }
+
+  async getStoreOrder(
+    id: string,
+    auth: any,
+    _correlation: string
+  ): Promise<OperationOutputs['getStoreOrder']> {
+    const storeId = auth?.store_membership?.store_id;
+    if (!storeId) {
+      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền truy cập đơn hàng của cửa hàng.');
+    }
+
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
+    }
+
+    const repo = new OrderRepository(database.manager);
+    const order = await repo.findStoreOrderById(id, storeId);
+    if (!order) {
+      throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
+    }
+
+    return this.mapOrderRowToDto(order);
   }
 }

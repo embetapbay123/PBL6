@@ -53,6 +53,8 @@ export interface OrderRow {
   payable_vnd: string;
   version: number;
   created_at: Date;
+  payment_status?: string | null;
+  refund_status?: string | null;
 }
 
 export interface OrderItemRow {
@@ -301,12 +303,18 @@ export class OrderRepository extends OwnedRepository {
     customerUserId: string
   ): Promise<Array<OrderRow & { items: OrderItemRow[] }>> {
     const orders: OrderRow[] = await this.manager.query(
-      `SELECT id, purchase_group_id, customer_user_id, store_id, address_snapshot,
-              status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
-              platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at
-       FROM "order"
-       WHERE purchase_group_id = $1 AND customer_user_id = $2
-       ORDER BY created_at ASC, id ASC`,
+      `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
+              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
+              p.status AS payment_status,
+              r.status AS refund_status
+       FROM "order" o
+       LEFT JOIN payment p ON p.order_id = o.id
+       LEFT JOIN LATERAL (
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+       ) r ON true
+       WHERE o.purchase_group_id = $1 AND o.customer_user_id = $2
+       ORDER BY o.created_at ASC, o.id ASC`,
       [purchaseGroupId, customerUserId]
     );
 
@@ -334,5 +342,195 @@ export class OrderRepository extends OwnedRepository {
       ...order,
       items: itemsMap.get(order.id) ?? [],
     }));
+  }
+
+  // --- ORDER-03: Order Read methods ---
+
+  async pageCustomerOrders(
+    customerUserId: string,
+    page: number,
+    size: number
+  ): Promise<{ items: Array<OrderRow & { items: OrderItemRow[] }>; total: number }> {
+    const [countRow] = await this.manager.query(
+      `SELECT count(*)::int AS total FROM "order" WHERE customer_user_id = $1`,
+      [customerUserId]
+    );
+    const offset = (page - 1) * size;
+    const orders: OrderRow[] = await this.manager.query(
+      `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
+              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
+              p.status AS payment_status,
+              r.status AS refund_status
+       FROM "order" o
+       LEFT JOIN payment p ON p.order_id = o.id
+       LEFT JOIN LATERAL (
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+       ) r ON true
+       WHERE o.customer_user_id = $1
+       ORDER BY o.created_at DESC, o.id ASC
+       LIMIT $2 OFFSET $3`,
+      [customerUserId, size, offset]
+    );
+
+    if (!orders.length) {
+      return { items: [], total: countRow?.total ?? 0 };
+    }
+
+    const orderIds = orders.map(o => o.id);
+    const allItems: OrderItemRow[] = await this.manager.query(
+      `SELECT id, order_id, product_id, variant_id, product_snapshot,
+              sku_snapshot, unit_price_vnd, quantity, line_total_vnd
+       FROM order_item
+       WHERE order_id = ANY($1::uuid[])
+       ORDER BY id ASC`,
+      [orderIds]
+    );
+
+    const itemsMap = new Map<string, OrderItemRow[]>();
+    for (const item of allItems) {
+      if (!itemsMap.has(item.order_id)) {
+        itemsMap.set(item.order_id, []);
+      }
+      itemsMap.get(item.order_id)!.push(item);
+    }
+
+    return {
+      items: orders.map(order => ({
+        ...order,
+        items: itemsMap.get(order.id) ?? [],
+      })),
+      total: countRow?.total ?? 0,
+    };
+  }
+
+  async findCustomerOrderById(
+    orderId: string,
+    customerUserId: string
+  ): Promise<(OrderRow & { items: OrderItemRow[] }) | undefined> {
+    const [order]: OrderRow[] = await this.manager.query(
+      `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
+              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
+              p.status AS payment_status,
+              r.status AS refund_status
+       FROM "order" o
+       LEFT JOIN payment p ON p.order_id = o.id
+       LEFT JOIN LATERAL (
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+       ) r ON true
+       WHERE o.id = $1 AND o.customer_user_id = $2`,
+      [orderId, customerUserId]
+    );
+
+    if (!order) return undefined;
+
+    const items: OrderItemRow[] = await this.manager.query(
+      `SELECT id, order_id, product_id, variant_id, product_snapshot,
+              sku_snapshot, unit_price_vnd, quantity, line_total_vnd
+       FROM order_item
+       WHERE order_id = $1
+       ORDER BY id ASC`,
+      [orderId]
+    );
+
+    return {
+      ...order,
+      items,
+    };
+  }
+
+  async pageStoreOrders(
+    storeId: string,
+    page: number,
+    size: number
+  ): Promise<{ items: Array<OrderRow & { items: OrderItemRow[] }>; total: number }> {
+    const [countRow] = await this.manager.query(
+      `SELECT count(*)::int AS total FROM "order" WHERE store_id = $1`,
+      [storeId]
+    );
+    const offset = (page - 1) * size;
+    const orders: OrderRow[] = await this.manager.query(
+      `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
+              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
+              p.status AS payment_status,
+              r.status AS refund_status
+       FROM "order" o
+       LEFT JOIN payment p ON p.order_id = o.id
+       LEFT JOIN LATERAL (
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+       ) r ON true
+       WHERE o.store_id = $1
+       ORDER BY o.created_at DESC, o.id ASC
+       LIMIT $2 OFFSET $3`,
+      [storeId, size, offset]
+    );
+
+    if (!orders.length) {
+      return { items: [], total: countRow?.total ?? 0 };
+    }
+
+    const orderIds = orders.map(o => o.id);
+    const allItems: OrderItemRow[] = await this.manager.query(
+      `SELECT id, order_id, product_id, variant_id, product_snapshot,
+              sku_snapshot, unit_price_vnd, quantity, line_total_vnd
+       FROM order_item
+       WHERE order_id = ANY($1::uuid[])
+       ORDER BY id ASC`,
+      [orderIds]
+    );
+
+    const itemsMap = new Map<string, OrderItemRow[]>();
+    for (const item of allItems) {
+      if (!itemsMap.has(item.order_id)) {
+        itemsMap.set(item.order_id, []);
+      }
+      itemsMap.get(item.order_id)!.push(item);
+    }
+
+    return {
+      items: orders.map(order => ({
+        ...order,
+        items: itemsMap.get(order.id) ?? [],
+      })),
+      total: countRow?.total ?? 0,
+    };
+  }
+
+  async findStoreOrderById(
+    orderId: string,
+    storeId: string
+  ): Promise<(OrderRow & { items: OrderItemRow[] }) | undefined> {
+    const [order]: OrderRow[] = await this.manager.query(
+      `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
+              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
+              p.status AS payment_status,
+              r.status AS refund_status
+       FROM "order" o
+       LEFT JOIN payment p ON p.order_id = o.id
+       LEFT JOIN LATERAL (
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+       ) r ON true
+       WHERE o.id = $1 AND o.store_id = $2`,
+      [orderId, storeId]
+    );
+
+    if (!order) return undefined;
+
+    const items: OrderItemRow[] = await this.manager.query(
+      `SELECT id, order_id, product_id, variant_id, product_snapshot,
+              sku_snapshot, unit_price_vnd, quantity, line_total_vnd
+       FROM order_item
+       WHERE order_id = $1
+       ORDER BY id ASC`,
+      [orderId]
+    );
+
+    return {
+      ...order,
+      items,
+    };
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Headers, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Headers, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import { QuoteCheckoutBodyDto, ConfirmCheckoutBodyDto } from '../../../shared/src/dtos.generated';
 import { OrderService } from './order.service';
@@ -30,4 +30,51 @@ export class OrderController {
   getPurchaseGroupOrders(@Param('id') id: string, @Req() req: any) {
     return this.service.getPurchaseGroupOrders(id, req.auth, req.correlationId);
   }
+
+  @Get('me/orders')
+  @Roles('CUSTOMER')
+  listOwnOrders(
+    @Query('page') page: string | undefined,
+    @Query('size') size: string | undefined,
+    @Req() req: any
+  ) {
+    return this.service.listOwnOrders(
+      {
+        page: page !== undefined ? Number(page) : undefined,
+        size: size !== undefined ? Number(size) : undefined,
+      },
+      req.auth,
+      req.correlationId
+    );
+  }
+
+  @Get('me/orders/:id')
+  @Roles('CUSTOMER')
+  getOwnOrder(@Param('id') id: string, @Req() req: any) {
+    return this.service.getOwnOrder(id, req.auth, req.correlationId);
+  }
+
+  @Get('store/orders')
+  @Roles('SELLER', 'STORE_OWNER')
+  listStoreOrders(
+    @Query('page') page: string | undefined,
+    @Query('size') size: string | undefined,
+    @Req() req: any
+  ) {
+    return this.service.listStoreOrders(
+      {
+        page: page !== undefined ? Number(page) : undefined,
+        size: size !== undefined ? Number(size) : undefined,
+      },
+      req.auth,
+      req.correlationId
+    );
+  }
+
+  @Get('store/orders/:id')
+  @Roles('SELLER', 'STORE_OWNER')
+  getStoreOrder(@Param('id') id: string, @Req() req: any) {
+    return this.service.getStoreOrder(id, req.auth, req.correlationId);
+  }
 }
+
