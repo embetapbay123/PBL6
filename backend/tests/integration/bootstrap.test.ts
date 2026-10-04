@@ -15,7 +15,9 @@ test('sample product list/detail, validation and explicit placeholders',async()=
  expect((await fetch(base+'/products?unexpected=1')).status).toBe(422);
  expect((await fetch(base+'/products/'+list.items[0].id)).status).toBe(200);
  expect((await fetch(base+'/cart/items')).status).toBe(401);
- const session=await login();const stub=await fetch(base+'/cart/items',{headers:{Authorization:'Bearer '+session.access_token}});
+ const session=await login();const cart=await fetch(base+'/cart/items',{headers:{Authorization:'Bearer '+session.access_token}});
+ expect(cart.status).toBe(200);expect(Array.isArray((await cart.json() as any).items)).toBe(true);
+ const stub=await fetch(base+'/categories');
  expect(stub.status).toBe(501);expect((await stub.json() as any).code).toBe('FEATURE_NOT_IMPLEMENTED');
 });
 test('profiles reflect token ownership; logout and refresh replay revoke session',async()=>{
