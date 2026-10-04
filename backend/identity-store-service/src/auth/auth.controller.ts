@@ -6,7 +6,7 @@ import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto } from './auth.dto';
+import { LoginDto, RefreshDto, RegisterDto } from './auth.dto';
 import { ProfileService } from '../profile/profile.service';
 
 @Controller() @UseGuards(AuthGuard)
@@ -31,6 +31,22 @@ export class AuthController {
     }
     if (!dto.refresh_token) throw new ApiError(401,'UNAUTHENTICATED','Thiếu refresh token.');
     return {token:dto.refresh_token,web:false};
+  }
+  @Post('auth/register') @HttpCode(200) @Public()
+  async register(@Body() dto: RegisterDto, @Req() req: Request) {
+    const web = dto.client_type === 'WEB';
+    if (web && req.headers.origin !== config('M3').origin) {
+        throw new ApiError(403, 'CSRF_REJECTED', 'Origin không hợp lệ.');
+    }
+    await this.service.register(dto.email, dto.password);
+    return {
+      message: 'Nếu email chưa được đăng ký, một liên kết xác thực đã được gửi.'
+    };
+  }
+  @Post('auth/verify-email') @HttpCode(200) @Public()
+  async verify(@Body() dto: RefreshDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {
+    const session = this.getRefresh(req,dto);
+    return this.deliver(await this.service.verify(session.token),res,session.web);
   }
   @Post('auth/login') @HttpCode(200) @Public()
   async login(@Body() dto: LoginDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {

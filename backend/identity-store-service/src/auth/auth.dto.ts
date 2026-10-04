@@ -9,3 +9,8 @@ export class LoginDto {
 export class RefreshDto {
   @IsOptional() @IsString() @Length(32,256) refresh_token?: string;
 }
+export class RegisterDto extends LoginDto {}
+export class VerifyEmailDto {
+  @IsString() token!: string;
+  @IsOptional() @IsIn(['WEB','MOBILE']) client_type?: 'WEB' | 'MOBILE';
+}

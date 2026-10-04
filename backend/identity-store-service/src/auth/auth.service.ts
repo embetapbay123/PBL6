@@ -7,7 +7,20 @@ import { config, required } from '../../../shared/src/config';
 import { ApiError } from '../../../shared/src/errors';
 import { verifyToken } from '../../../shared/src/auth';
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex');
+export interface IEmailAdapter {
+  sendVerificationEmail(email: string, token: string): Promise<void>;
+}
+export class MockEmailAdapter implements IEmailAdapter {
+  async sendVerificationEmail(email: string, token: string): Promise<void> {
+    console.log(`[FIXTURE - MOCK EMAIL] DEV ONLY`);
+    console.log(`[FIXTURE - MOCK EMAIL] Đang gửi email xác thực tới: ${email}`);
+    console.log(`[FIXTURE - MOCK EMAIL] Link: https://m3-domain.com/verify?token=${token}`);
+  }
+}
 export class AuthService {
+  constructor(
+    private readonly emailAdapter: IEmailAdapter = new MockEmailAdapter()
+  ) {}
   async context(userId: string) {
     const [user] = await database.query('SELECT id,email,status,version FROM "user" WHERE id=$1',[userId]);
     if (!user || user.status !== 'ACTIVE') throw new ApiError(401,'SESSION_REVOKED','Phiên đăng nhập đã bị thu hồi.');
@@ -48,9 +61,58 @@ export class AuthService {
   private issueAccess(userId: string, sid: string) {
     return jwt.sign({sid},readFileSync(required('JWT_PRIVATE_KEY_FILE'),'utf8'),{algorithm:'RS256',subject:userId,issuer:'pbl6-identity',audience:'pbl6-clients',expiresIn:'15m'});
   }
+  private issueVerificationToken(userId: string): string {
+    const privateKey = readFileSync(required('JWT_PRIVATE_KEY_FILE'),'utf8');
+    return jwt.sign({}, privateKey, { algorithm: 'RS256', subject: userId, expiresIn: '15m' });
+  }
+
+  async register(email: string, password: string) {
+    const [existing] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
+    if (existing) {
+      if (existing.status === 'PENDING') {
+         const token = this.issueVerificationToken(existing.id);
+         await this.emailAdapter.sendVerificationEmail(email, token);
+      }
+      return; 
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    const userId = randomUUID();
+    
+    await database.query(
+      'INSERT INTO "user"(id, email, password_hash, status, version) VALUES($1, $2, $3, \'PENDING\', 0)', 
+      [userId, email, hash]
+    );
+
+    const token = this.issueVerificationToken(userId);
+    await this.emailAdapter.sendVerificationEmail(email, token);
+  }
+
+  async verify(token: string) {
+    let claims;
+    try {
+      claims = verifyToken(token, config('M3').publicKey);
+    } catch (e) {
+      throw new ApiError(400, 'INVALID_OR_EXPIRED_TOKEN', 'Token không hợp lệ hoặc đã hết hạn.');
+    }
+    if (!claims.sub) {
+      throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ.');
+    }
+    const result = await database.query(
+      `UPDATE "user"
+       SET status = 'ACTIVE', version = version + 1
+       WHERE id = $1 AND status = 'PENDING'
+       RETURNING id`,
+      [claims.sub]
+    );
+    if (result.length === 0) {
+      throw new ApiError(400, 'VERIFICATION_FAILED', 'Xác thực thất bại. Token đã được sử dụng hoặc tài khoản không tồn tại.');
+    }
+    return this.context(claims.sub);
+  }
+
   async login(email: string,password: string) {
     const [user] = await database.query('SELECT id,password_hash,status FROM "user" WHERE lower(email)=lower($1)',[email]);
-    // Fixed dummy hash prevents an obvious early-return account enumeration path.
     const dummy = '$2b$10$8hVpt.bXmhHRfERkH5eDyOlEE8rfOySwvmXsMbSJDvjgeRcoDOkGq';
     const valid = await bcrypt.compare(password,user?.password_hash ?? dummy);
     if (!user || !valid || user.status !== 'ACTIVE') throw new ApiError(401,'INVALID_CREDENTIALS','Email hoặc mật khẩu không hợp lệ.');
@@ -73,7 +135,6 @@ export class AuthService {
       }
       const replacement = randomBytes(48).toString('base64url');
       await manager.query('UPDATE refresh_session SET token_hash=$1 WHERE id=$2',[digest(replacement),session.id]);
-      // Retired token retained in family: replay revokes current session too.
       await manager.query('INSERT INTO refresh_session(id,user_id,token_hash,expires_at,revoked_at,family_id) VALUES($1,$2,$3,$4,now(),$5)',[randomUUID(),session.user_id,digest(token),session.expires_at,session.family_id]);
       return {sid:session.id,userId:session.user_id,token:replacement};
     });
