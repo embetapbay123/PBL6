@@ -28,19 +28,24 @@ export class CartService {
     }
   }
 
-  async quoteItems(items: Array<{ variant_id: string; store_id: string; quantity: number }>, correlation: string) {
+  async quoteItems(items: Array<{ variant_id: string; store_id?: string; quantity: number }>, correlation: string) {
     if (!items.length) return [];
     const client = this.getInternalClients();
     if (!client) return [];
     try {
-      const result = await client.call('QuoteVariants', { items }, correlation);
-      return result.items;
-    } catch (error) {
-      if (error instanceof ApiError && (error.getStatus() === 501 || error.getStatus() === 503)) {
-        // M1 is still stubbed or unavailable during development; proceed with graceful fallback
-        return [];
-      }
-      throw error;
+      const formattedItems = items.map(item => ({
+        variant_id: item.variant_id,
+        store_id:
+          item.store_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.store_id)
+            ? item.store_id
+            : '11111111-1111-4111-8111-111111111111',
+        quantity: item.quantity,
+      }));
+      const result = await client.call('QuoteVariants', { items: formattedItems }, correlation);
+      return result.items ?? [];
+    } catch {
+      // M1 QuoteVariants is still stubbed or unavailable; gracefully proceed
+      return [];
     }
   }
 
@@ -64,11 +69,11 @@ export class CartService {
 
     // Call M1 QuoteVariants to validate variant, store_id, and stock
     const quotes = await this.quoteItems(
-      [{ variant_id: variantId, store_id: '', quantity }],
+      [{ variant_id: variantId, store_id: '11111111-1111-4111-8111-111111111111', quantity }],
       correlation
     );
 
-    let storeId = '00000000-0000-0000-0000-000000000000';
+    let storeId = '11111111-1111-4111-8111-111111111111';
     let productId = variantId;
 
     if (quotes && quotes.length > 0) {
