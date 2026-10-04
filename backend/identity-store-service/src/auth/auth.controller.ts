@@ -6,7 +6,7 @@ import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto, RegisterDto } from './auth.dto';
+import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordDto, ResetPasswordDto ,ChangePasswordDto} from './auth.dto';
 import { ProfileService } from '../profile/profile.service';
 
 @Controller() @UseGuards(AuthGuard)
@@ -42,6 +42,22 @@ export class AuthController {
     return {
       message: 'Nếu email chưa được đăng ký, một liên kết xác thực đã được gửi.'
     };
+  }
+  @Post('auth/reset-password') @HttpCode(200) @Public()
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.service.resetPassword(dto.email);
+    return { message: 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.' };
+  }
+  @Post('auth/reset-password/confirm') @HttpCode(200) @Public()
+  async confirmResetPassword(@Body() dto: ConfirmResetPasswordDto) {
+    await this.service.confirmResetPassword(dto.token, dto.new_password);
+    return { message: 'Mật khẩu đã được khôi phục thành công.' };
+  }
+  @Post('auth/change-password') @HttpCode(200) @Public()
+  async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
+    const userId = req.user.sub; // Lấy từ claims của Access Token
+    await this.service.changePassword(userId, dto.current_password, dto.new_password);
+    return { message: 'Đổi mật khẩu thành công.' };
   }
   @Post('auth/verify-email') @HttpCode(200) @Public()
   async verify(@Body() dto: RefreshDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {

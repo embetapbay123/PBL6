@@ -9,12 +9,17 @@ import { verifyToken } from '../../../shared/src/auth';
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 export interface IEmailAdapter {
   sendVerificationEmail(email: string, token: string): Promise<void>;
+  sendPasswordResetEmail(email: string, token: string): Promise<void>;
 }
 export class MockEmailAdapter implements IEmailAdapter {
   async sendVerificationEmail(email: string, token: string): Promise<void> {
     console.log(`[FIXTURE - MOCK EMAIL] DEV ONLY`);
     console.log(`[FIXTURE - MOCK EMAIL] Đang gửi email xác thực tới: ${email}`);
     console.log(`[FIXTURE - MOCK EMAIL] Link: https://m3-domain.com/verify?token=${token}`);
+  }
+  async sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    console.log(`[FIXTURE - MOCK EMAIL] Gửi link khôi phục mật khẩu tới: ${email}`);
+    console.log(`[FIXTURE - MOCK EMAIL] Link: https://m3-domain.com/reset-password/confirm?token=${token}`);
   }
 }
 export class AuthService {
@@ -75,10 +80,8 @@ export class AuthService {
       }
       return; 
     }
-
     const hash = await bcrypt.hash(password, 10);
     const userId = randomUUID();
-    
     await database.query(
       'INSERT INTO "user"(id, email, password_hash, status, version) VALUES($1, $2, $3, \'PENDING\', 0)', 
       [userId, email, hash]
@@ -143,5 +146,86 @@ export class AuthService {
   }
   async logout(token: string) {
     await database.query('UPDATE refresh_session SET revoked_at=coalesce(revoked_at,now()) WHERE family_id IN (SELECT family_id FROM refresh_session WHERE token_hash=$1)',[digest(token)]);
+  }
+  async resetPassword(email: string) {
+    const [user] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
+    
+    // Nếu user không tồn tại hoặc chưa ACTIVE thì ngầm bỏ qua, nhưng không throw lỗi.
+    if (!user || user.status !== 'ACTIVE') return;
+
+    // YÊU CẦU: Token hash & expiry
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = digest(rawToken);
+    
+    // Lưu vào Database với thời hạn 15 phút
+    await database.query(
+      `INSERT INTO password_reset_request(id, user_id, token_hash, expires_at) 
+       VALUES($1, $2, $3, now() + interval '15 minutes')`,
+      [randomUUID(), user.id, tokenHash]
+    );
+
+    await this.emailAdapter.sendPasswordResetEmail(email, rawToken);
+  }
+
+  async confirmResetPassword(rawToken: string, newPassword: string) {
+    const tokenHash = digest(rawToken);
+
+    await database.transaction(async manager => {
+      // FOR UPDATE để block các request đồng thời (Chặn Race condition / Replay)
+      const [request] = await manager.query(
+        'SELECT id, user_id, expires_at, used_at FROM password_reset_request WHERE token_hash=$1 FOR UPDATE',
+        [tokenHash]
+      );
+
+      // Validate logic theo yêu cầu
+      if (!request) throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ.');
+      if (request.used_at) throw new ApiError(400, 'TOKEN_USED', 'Token đã được sử dụng.');
+      if (new Date(request.expires_at).getTime() <= Date.now()) throw new ApiError(400, 'TOKEN_EXPIRED', 'Token đã hết hạn.');
+
+      const hash = await bcrypt.hash(newPassword, 10);
+
+      // Cập nhật mật khẩu và tăng version (Để invalidate Access Token hiện hành)
+      await manager.query(
+        'UPDATE "user" SET password_hash=$1, version=version+1 WHERE id=$2',
+        [hash, request.user_id]
+      );
+
+      // YÊU CẦU: One-time -> Đánh dấu token đã sử dụng
+      await manager.query(
+        'UPDATE password_reset_request SET used_at=now() WHERE id=$1',
+        [request.id]
+      );
+
+      // YÊU CẦU: Password thay đổi thu hồi phiên đúng BR
+      await manager.query(
+        'UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
+        [request.user_id]
+      );
+    });
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const [user] = await database.query('SELECT password_hash FROM "user" WHERE id=$1', [userId]);
+    if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ.');
+
+    // YÊU CẦU: Kiểm credential hiện hành
+    const valid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!valid) throw new ApiError(400, 'INVALID_CREDENTIALS', 'Mật khẩu hiện tại không chính xác.');
+
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    await database.transaction(async manager => {
+      // Cập nhật mật khẩu và tăng version
+      await manager.query(
+        'UPDATE "user" SET password_hash=$1, version=version+1 WHERE id=$2',
+        [hash, userId]
+      );
+
+      // YÊU CẦU: Thu hồi tất cả các phiên hiện tại (Bao gồm cả phiên đang gọi API này)
+      await manager.query(
+        'UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
+        [userId]
+      );
+    });
   }
 }
