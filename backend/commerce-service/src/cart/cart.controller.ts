@@ -1,6 +1,6 @@
-import { Controller, Get, Patch, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
-import { UpdateCartItemBodyDto } from '../../../shared/src/dtos.generated';
+import { AddCartItemBodyDto, UpdateCartItemBodyDto } from '../../../shared/src/dtos.generated';
 import { CartService } from './cart.service';
 
 @Controller()
@@ -12,6 +12,12 @@ export class CartController {
   @Roles('CUSTOMER')
   listCartItems(@Req() req: any) {
     return this.service.list(req.contract?.query ?? req.query ?? {}, req.auth, req.correlationId);
+  }
+
+  @Post('cart/items')
+  @Roles('CUSTOMER')
+  addCartItem(@Body() dto: AddCartItemBodyDto, @Req() req: any) {
+    return this.service.add(dto, req.auth, req.correlationId);
   }
 
   @Patch('cart/items/:id')

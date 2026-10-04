@@ -86,6 +86,41 @@ export class CartRepository extends OwnedRepository {
     return row;
   }
 
+  async findItemByVariant(cartId: string, variantId: string): Promise<CartItemRow | undefined> {
+    const [row] = await this.manager.query(
+      `SELECT id, cart_id, variant_id, store_id, quantity, added_at
+       FROM cart_item
+       WHERE cart_id = $1 AND variant_id = $2`,
+      [cartId, variantId]
+    );
+    return row;
+  }
+
+  async lockItemByVariant(cartId: string, variantId: string): Promise<CartItemRow | undefined> {
+    const [row] = await this.manager.query(
+      `SELECT id, cart_id, variant_id, store_id, quantity, added_at
+       FROM cart_item
+       WHERE cart_id = $1 AND variant_id = $2
+       FOR UPDATE`,
+      [cartId, variantId]
+    );
+    return row;
+  }
+
+  async addItem(cartId: string, variantId: string, storeId: string, quantity: number): Promise<CartItemRow> {
+    const [created] = await this.manager.query(
+      `INSERT INTO cart_item (id, cart_id, variant_id, store_id, quantity, added_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
+       RETURNING id, cart_id, variant_id, store_id, quantity, added_at`,
+      [cartId, variantId, storeId, quantity]
+    );
+    await this.manager.query(
+      `UPDATE cart SET updated_at = NOW() WHERE id = $1`,
+      [cartId]
+    );
+    return created;
+  }
+
   async updateItemQuantity(itemId: string, quantity: number, cartId: string): Promise<CartItemRow> {
     const [updated] = await this.manager.query(
       `UPDATE cart_item

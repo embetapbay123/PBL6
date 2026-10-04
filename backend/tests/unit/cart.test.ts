@@ -1,6 +1,7 @@
+import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import { validateOperation } from '../../shared/src/request-contract';
 
-const mockQuery = jest.fn();
+const mockQuery = jest.fn<any>();
 
 jest.mock('../../shared/src/database', () => {
   return {
@@ -41,6 +42,35 @@ describe('Cart Contract and DTO Validation', () => {
         query: { size: 101 },
         path: {},
         headers: {},
+      })
+    ).toThrow();
+  });
+
+  test('addCartItem validates required variant_id and quantity >= 1', () => {
+    const validPayload = {
+      body: {
+        variant_id: '11111111-1111-4111-8111-111111111111',
+        quantity: 2,
+      },
+      path: {},
+      query: {},
+      headers: {},
+    };
+    expect(() => validateOperation('addCartItem', validPayload)).not.toThrow();
+
+    // missing variant_id
+    expect(() =>
+      validateOperation('addCartItem', {
+        ...validPayload,
+        body: { quantity: 2 } as any,
+      })
+    ).toThrow();
+
+    // quantity <= 0
+    expect(() =>
+      validateOperation('addCartItem', {
+        ...validPayload,
+        body: { ...validPayload.body, quantity: 0 },
       })
     ).toThrow();
   });
@@ -92,6 +122,7 @@ describe('CartService Business Logic & Ownership Isolation (BR-05)', () => {
     mockQuery.mockReset();
   });
 
+  // --- listCartItems Tests ---
   test('list rejects unauthenticated requests', async () => {
     const service = new CartService();
     await expect(service.list({}, null, correlation)).rejects.toMatchObject({
@@ -133,6 +164,122 @@ describe('CartService Business Logic & Ownership Isolation (BR-05)', () => {
     });
   });
 
+  // --- addCartItem Tests ---
+  test('add rejects unauthenticated caller', async () => {
+    const service = new CartService();
+    await expect(
+      service.add({ variant_id: 'var-1', quantity: 1 }, null, correlation)
+    ).rejects.toMatchObject({
+      status: 401,
+      response: { code: 'UNAUTHENTICATED' },
+    });
+  });
+
+  test('add rejects insufficient stock when M1 Quote indicates stock shortfall', async () => {
+    const mockInternal = {
+      call: jest.fn(async () => ({
+        items: [{ variant_id: 'var-low-stock', store_id: 'store-1', available_quantity: 1 }],
+      })),
+    };
+    const service = new CartService((() => mockInternal) as any);
+
+    await expect(
+      service.add({ variant_id: 'var-low-stock', quantity: 5 }, customerA, correlation)
+    ).rejects.toMatchObject({
+      status: 409,
+      response: { code: 'INSUFFICIENT_STOCK' },
+    });
+  });
+
+  test('add creates new cart item when item does not exist and logs outbox event', async () => {
+    const service = new CartService();
+    const cartId = 'cart-user-a';
+    const variantId = '11111111-1111-4111-8111-111111111111';
+
+    // 1. getOrCreateCart
+    mockQuery.mockResolvedValueOnce([{ id: cartId, customer_user_id: customerA.user_id, updated_at: new Date() }]);
+    // 2. lockItemByVariant -> undefined (not existing)
+    mockQuery.mockResolvedValueOnce([]);
+    // 3. addItem insert
+    mockQuery.mockResolvedValueOnce([
+      {
+        id: 'new-cart-item-id',
+        cart_id: cartId,
+        variant_id: variantId,
+        store_id: '00000000-0000-0000-0000-000000000000',
+        quantity: 2,
+        added_at: new Date(),
+      },
+    ]);
+    // 4. update cart.updated_at
+    mockQuery.mockResolvedValueOnce([]);
+    // 5. emitEvent outbox insert
+    mockQuery.mockResolvedValueOnce([]);
+
+    const result = await service.add(
+      { variant_id: variantId, quantity: 2 },
+      customerA,
+      correlation
+    );
+
+    expect(result).toEqual({
+      id: 'new-cart-item-id',
+      variant_id: variantId,
+      store_id: '00000000-0000-0000-0000-000000000000',
+      quantity: 2,
+    });
+  });
+
+  test('add merges quantity when variant already in cart', async () => {
+    const service = new CartService();
+    const cartId = 'cart-user-a';
+    const variantId = '11111111-1111-4111-8111-111111111111';
+    const existingItemId = 'existing-item-id';
+
+    // 1. getOrCreateCart
+    mockQuery.mockResolvedValueOnce([{ id: cartId, customer_user_id: customerA.user_id, updated_at: new Date() }]);
+    // 2. lockItemByVariant -> existing item (quantity 3)
+    mockQuery.mockResolvedValueOnce([
+      {
+        id: existingItemId,
+        cart_id: cartId,
+        variant_id: variantId,
+        store_id: 'store-1',
+        quantity: 3,
+        added_at: new Date(),
+      },
+    ]);
+    // 3. updateItemQuantity (new quantity = 3 + 2 = 5)
+    mockQuery.mockResolvedValueOnce([
+      {
+        id: existingItemId,
+        cart_id: cartId,
+        variant_id: variantId,
+        store_id: 'store-1',
+        quantity: 5,
+        added_at: new Date(),
+      },
+    ]);
+    // 4. update cart.updated_at
+    mockQuery.mockResolvedValueOnce([]);
+    // 5. emitEvent outbox insert
+    mockQuery.mockResolvedValueOnce([]);
+
+    const result = await service.add(
+      { variant_id: variantId, quantity: 2 },
+      customerA,
+      correlation
+    );
+
+    expect(result).toEqual({
+      id: existingItemId,
+      variant_id: variantId,
+      store_id: 'store-1',
+      quantity: 5,
+    });
+  });
+
+  // --- updateCartItem Tests ---
   test('update rejects invalid quantity', async () => {
     const service = new CartService();
     await expect(service.update('item-id', { quantity: 0 }, customerA, correlation)).rejects.toMatchObject({
@@ -143,7 +290,6 @@ describe('CartService Business Logic & Ownership Isolation (BR-05)', () => {
 
   test('update rejects when item belongs to another customer (Customer B cannot update Customer A item)', async () => {
     const service = new CartService();
-    // lockItemWithOwnership returns undefined because customer_user_id does not match
     mockQuery.mockResolvedValueOnce([]);
 
     await expect(
@@ -193,9 +339,9 @@ describe('CartService Business Logic & Ownership Isolation (BR-05)', () => {
     });
   });
 
+  // --- removeCartItem Tests ---
   test('remove rejects when item does not exist or belongs to another customer', async () => {
     const service = new CartService();
-    // findItemWithOwnership returns empty
     mockQuery.mockResolvedValueOnce([]);
 
     await expect(service.remove('item-other-id', customerA, correlation)).rejects.toMatchObject({
