@@ -14,6 +14,9 @@ import 'features/address/address_form_page.dart';
 
 import 'features/catalog/catalog_page.dart';
 import 'features/catalog/product_detail_page.dart';
+import 'features/cart/cart_page.dart';
+import 'features/checkout/checkout_page.dart';
+import 'features/checkout/order_success_page.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
 
@@ -27,6 +30,10 @@ final categoriesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asyn
 
 final recommendationProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).getRecommendations();
+});
+
+final cartItemsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  return await ref.read(apiProvider).getCartItems();
 });
 
 final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
@@ -69,6 +76,23 @@ class BootstrapApp extends StatelessWidget {
                 initialProduct: args,
               ),
             );
+          case '/cart':
+            return MaterialPageRoute(builder: (_) => const CartPage());
+          case '/checkout':
+            final args = settings.arguments as Map<String, dynamic>?;
+            final itemIds = (args?['cart_item_ids'] as List?)?.map((e) => e.toString()).toList() ?? [];
+            final items = (args?['items'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+            return MaterialPageRoute(
+              builder: (_) => CheckoutPage(
+                cartItemIds: itemIds,
+                initialSelectedItems: items,
+              ),
+            );
+          case '/order-success':
+            final args = settings.arguments as Map<String, dynamic>? ?? {};
+            return MaterialPageRoute(
+              builder: (_) => OrderSuccessPage(orderBatch: args),
+            );
           case '/login':
             return MaterialPageRoute(builder: (_) => const LoginPage());
           case '/register':
@@ -93,8 +117,6 @@ class BootstrapApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (_) => AddressFormPage(initialAddress: args),
             );
-          case '/cart':
-            return MaterialPageRoute(builder: (_) => const PendingPage('Giỏ hàng (Cart)'));
           case '/orders':
             return MaterialPageRoute(builder: (_) => const PendingPage('Đơn hàng (Orders)'));
           case '/chat':

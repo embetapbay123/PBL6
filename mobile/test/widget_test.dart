@@ -16,6 +16,10 @@ import 'package:pbl6_mobile/features/profile/edit_profile_page.dart';
 import 'package:pbl6_mobile/features/profile/profile_page.dart';
 import 'package:pbl6_mobile/main.dart';
 
+import 'package:pbl6_mobile/features/cart/cart_page.dart';
+import 'package:pbl6_mobile/features/checkout/checkout_page.dart';
+import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
+
 class MockApiClient extends ApiClient {
   @override
   Future<Map<String, dynamic>> getPersonalizationConsent() async => {'status': 'GRANTED', 'version': 1};
@@ -48,6 +52,131 @@ class MockApiClient extends ApiClient {
 
   @override
   Future<Map<String, dynamic>> addToCart({required String variantId, int quantity = 1}) async => {'status': 'success'};
+
+  @override
+  Future<Map<String, dynamic>> getCartItems({int page = 1, int size = 50}) async => {
+        'items': [
+          {
+            'id': 'ci-01',
+            'store_id': 'store-tech',
+            'store_name': 'PBL Tech Store',
+            'product_id': 'prod-01',
+            'title': 'Chuột Gaming không dây',
+            'sku': 'MOUSE-RGB',
+            'unit_price_vnd': 350000,
+            'quantity': 1,
+          },
+          {
+            'id': 'ci-02',
+            'store_id': 'store-fashion',
+            'store_name': 'PBL Fashion Hub',
+            'product_id': 'prod-02',
+            'title': 'Áo hoodie Unisex',
+            'sku': 'HOODIE-BLACK-L',
+            'unit_price_vnd': 450000,
+            'quantity': 2,
+          },
+        ],
+        'total': 2,
+      };
+
+  @override
+  Future<Map<String, dynamic>> updateCartItem(String id, {required int quantity}) async => {
+        'id': id,
+        'quantity': quantity,
+      };
+
+  @override
+  Future<void> removeCartItem(String id) async {}
+
+  @override
+  Future<List<Map<String, dynamic>>> getAddresses() async => [
+        {
+          'id': 'addr-01',
+          'recipient_name': 'Nguyễn Văn A',
+          'phone': '0901234567',
+          'street': '123 Nguyễn Huệ',
+          'ward': 'Bến Nghé',
+          'district': 'Quận 1',
+          'province': 'Hồ Chí Minh',
+          'is_default': true,
+        },
+      ];
+
+  @override
+  Future<Map<String, dynamic>> quoteCheckout({
+    required List<String> cartItemIds,
+    required String addressId,
+    Map<String, String>? paymentMethods,
+    Map<String, String>? storeVouchers,
+    String? platformVoucherCode,
+  }) async => {
+        'quote_id': 'quote-uuid-1234',
+        'expires_at': DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
+        'payable_total_vnd': 1250000,
+        'stores': [
+          {
+            'store_id': 'store-tech',
+            'items_subtotal_vnd': 350000,
+            'shipping_fee_vnd': 25000,
+            'store_voucher_discount_vnd': 0,
+            'platform_voucher_discount_vnd': 25000,
+            'store_payable_total_vnd': 350000,
+          },
+          {
+            'store_id': 'store-fashion',
+            'items_subtotal_vnd': 900000,
+            'shipping_fee_vnd': 30000,
+            'store_voucher_discount_vnd': 30000,
+            'platform_voucher_discount_vnd': 0,
+            'store_payable_total_vnd': 900000,
+          },
+        ],
+      };
+
+  @override
+  Future<Map<String, dynamic>> confirmCheckout({
+    required List<String> cartItemIds,
+    required String addressId,
+    required Map<String, String> paymentMethods,
+    Map<String, String>? storeVouchers,
+    String? platformVoucherCode,
+    required String quoteId,
+    required int expectedPayableTotalVnd,
+    required String idempotencyKey,
+  }) async => {
+        'purchase_group_id': 'pg-uuid-9999',
+        'order_ids': ['order-tech-1', 'order-fashion-2'],
+        'payable_total_vnd': expectedPayableTotalVnd,
+        'orders': [
+          {
+            'id': 'order-tech-1',
+            'purchase_group_id': 'pg-uuid-9999',
+            'store_id': 'store-tech',
+            'status': 'PENDING',
+            'version': 1,
+            'payment_method': paymentMethods['store-tech'] ?? 'COD',
+            'amounts': {'payable_vnd': 350000},
+          },
+          {
+            'id': 'order-fashion-2',
+            'purchase_group_id': 'pg-uuid-9999',
+            'store_id': 'store-fashion',
+            'status': 'PENDING',
+            'version': 1,
+            'payment_method': paymentMethods['store-fashion'] ?? 'COD',
+            'amounts': {'payable_vnd': 900000},
+          },
+        ],
+      };
+
+  @override
+  Future<Map<String, dynamic>> getPurchaseGroupOrders(String batchId) async => {
+        'purchase_group_id': batchId,
+        'order_ids': ['order-1'],
+        'payable_total_vnd': 500000,
+        'orders': [],
+      };
 }
 
 void main() {
@@ -397,6 +526,206 @@ void main() {
       expect(find.text('Cá nhân hóa & Gợi ý AI'), findsOneWidget);
       expect(find.text('Bật gợi ý thông minh'), findsOneWidget);
       expect(find.text('Đóng'), findsOneWidget);
+    });
+  });
+
+  group('MOB-03 Cart, Multi-Store Checkout & Order Screen Tests', () {
+    testWidgets('CartPage displays grouped items by store, handles selection and updates subtotal', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          cartItemsProvider.overrideWith((ref) async => {
+                'items': [
+                  {
+                    'id': 'ci-01',
+                    'store_id': 'store-tech',
+                    'store_name': 'PBL Tech Store',
+                    'product_id': 'prod-01',
+                    'title': 'Chuột Gaming không dây',
+                    'sku': 'MOUSE-RGB',
+                    'unit_price_vnd': 350000,
+                    'quantity': 1,
+                  },
+                  {
+                    'id': 'ci-02',
+                    'store_id': 'store-fashion',
+                    'store_name': 'PBL Fashion Hub',
+                    'product_id': 'prod-02',
+                    'title': 'Áo hoodie Unisex',
+                    'sku': 'HOODIE-BLACK-L',
+                    'unit_price_vnd': 450000,
+                    'quantity': 2,
+                  },
+                ],
+                'total': 2,
+              }),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CartPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Giỏ hàng của bạn'), findsOneWidget);
+      expect(find.text('PBL Tech Store'), findsOneWidget);
+      expect(find.text('PBL Fashion Hub'), findsOneWidget);
+      expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+      expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+      expect(find.text('Mua hàng (0)'), findsOneWidget);
+
+      // Select All items
+      await tester.tap(find.text('Chọn tất cả sản phẩm'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mua hàng (2)'), findsOneWidget);
+      expect(find.text('1250000 ₫'), findsOneWidget);
+    });
+
+    testWidgets('CartPage displays empty state when cart is empty', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          cartItemsProvider.overrideWith((ref) async => {
+                'items': [],
+                'total': 0,
+              }),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CartPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Giỏ hàng của bạn đang trống'), findsOneWidget);
+      expect(find.text('Tiếp tục mua sắm'), findsOneWidget);
+    });
+
+    testWidgets('CheckoutPage renders addresses, multi-store items, vouchers, and quote breakdown', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+          ],
+          child: MaterialApp(
+            home: CheckoutPage(
+              cartItemIds: const ['ci-01', 'ci-02'],
+              initialSelectedItems: [
+                {
+                  'id': 'ci-01',
+                  'store_id': 'store-tech',
+                  'store_name': 'PBL Tech Store',
+                  'title': 'Chuột Gaming không dây',
+                  'sku': 'MOUSE-RGB',
+                  'unit_price_vnd': 350000,
+                  'quantity': 1,
+                },
+                {
+                  'id': 'ci-02',
+                  'store_id': 'store-fashion',
+                  'store_name': 'PBL Fashion Hub',
+                  'title': 'Áo hoodie Unisex',
+                  'sku': 'HOODIE-BLACK-L',
+                  'unit_price_vnd': 450000,
+                  'quantity': 2,
+                },
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Xác nhận & Báo giá đơn hàng'), findsOneWidget);
+      expect(find.text('Địa chỉ nhận hàng'), findsOneWidget);
+      expect(find.text('Nguyễn Văn A (0901234567)'), findsOneWidget);
+      expect(find.text('PBL Tech Store'), findsOneWidget);
+      expect(find.text('PBL Fashion Hub'), findsOneWidget);
+      expect(find.text('Voucher toàn sàn PBL6'), findsOneWidget);
+      expect(find.text('Chi tiết báo giá'), findsOneWidget);
+      expect(find.text('1250000 ₫'), findsWidgets);
+      expect(find.text('Đặt hàng'), findsOneWidget);
+    });
+
+    testWidgets('CheckoutPage confirms order and navigates to OrderSuccessPage', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+          ],
+          child: MaterialApp(
+            home: CheckoutPage(
+              cartItemIds: const ['ci-01'],
+              initialSelectedItems: [
+                {
+                  'id': 'ci-01',
+                  'store_id': 'store-tech',
+                  'store_name': 'PBL Tech Store',
+                  'title': 'Chuột Gaming không dây',
+                  'sku': 'MOUSE-RGB',
+                  'unit_price_vnd': 350000,
+                  'quantity': 1,
+                },
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Đặt hàng'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Đặt hàng thành công'), findsOneWidget);
+      expect(find.text('Cảm ơn bạn đã đặt hàng!'), findsOneWidget);
+      expect(find.text('pg-uuid-9999'), findsOneWidget);
+      expect(find.textContaining('order-tech-1'), findsOneWidget);
+      expect(find.textContaining('order-fashion-2'), findsOneWidget);
+      expect(find.text('Xem đơn hàng của tôi'), findsOneWidget);
+    });
+
+    testWidgets('OrderSuccessPage renders complete batch details', (tester) async {
+      final mockBatch = {
+        'purchase_group_id': 'pg-123456',
+        'payable_total_vnd': 750000,
+        'order_ids': ['order-1', 'order-2'],
+        'orders': [
+          {
+            'id': 'order-1',
+            'store_id': 'store-a',
+            'status': 'CONFIRMED',
+            'payment_method': 'COD',
+            'amounts': {'payable_vnd': 300000},
+          },
+          {
+            'id': 'order-2',
+            'store_id': 'store-b',
+            'status': 'PENDING',
+            'payment_method': 'SANDBOX',
+            'amounts': {'payable_vnd': 450000},
+          },
+        ],
+      };
+
+      await tester.pumpWidget(
+        MaterialApp(home: OrderSuccessPage(orderBatch: mockBatch)),
+      );
+      await tester.pump();
+
+      expect(find.text('Đặt hàng thành công'), findsOneWidget);
+      expect(find.text('pg-123456'), findsOneWidget);
+      expect(find.text('750000 ₫'), findsOneWidget);
+      expect(find.text('Store: store-a'), findsOneWidget);
+      expect(find.text('Store: store-b'), findsOneWidget);
+      expect(find.text('CONFIRMED'), findsOneWidget);
+      expect(find.text('PENDING'), findsOneWidget);
     });
   });
 

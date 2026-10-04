@@ -420,7 +420,16 @@ class ApiClient {
     return Map<String, dynamic>.from(res as Map);
   }
 
-  Future<Map<String, dynamic>> addToCart({
+  // --- Cart & Checkout Endpoints (MOB-03) ---
+  Future<Map<String, dynamic>> getCartItems({
+    int page = 1,
+    int size = 50,
+  }) async {
+    final res = await get('/cart/items', query: {'page': page, 'size': size});
+    return (res is Map) ? Map<String, dynamic>.from(res) : {'items': <dynamic>[], 'total': 0};
+  }
+
+  Future<Map<String, dynamic>> addCartItem({
     required String variantId,
     int quantity = 1,
   }) async {
@@ -429,6 +438,101 @@ class ApiClient {
       'quantity': quantity,
     });
     return (res is Map) ? Map<String, dynamic>.from(res) : {'status': 'success'};
+  }
+
+  Future<Map<String, dynamic>> addToCart({
+    required String variantId,
+    int quantity = 1,
+  }) async {
+    return addCartItem(variantId: variantId, quantity: quantity);
+  }
+
+  Future<Map<String, dynamic>> updateCartItem(
+    String id, {
+    required int quantity,
+  }) async {
+    final res = await patch('/cart/items/$id', data: {
+      'quantity': quantity,
+    });
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<void> removeCartItem(String id) async {
+    await delete('/cart/items/$id');
+  }
+
+  Future<Map<String, dynamic>> quoteCheckout({
+    required List<String> cartItemIds,
+    required String addressId,
+    Map<String, String>? paymentMethods,
+    Map<String, String>? storeVouchers,
+    String? platformVoucherCode,
+  }) async {
+    final body = <String, dynamic>{
+      'cart_item_ids': cartItemIds,
+      'address_id': addressId,
+      if (paymentMethods != null && paymentMethods.isNotEmpty)
+        'payment_methods': paymentMethods,
+      if (storeVouchers != null && storeVouchers.isNotEmpty)
+        'store_vouchers': storeVouchers,
+      if (platformVoucherCode != null && platformVoucherCode.trim().isNotEmpty)
+        'platform_voucher_code': platformVoucherCode.trim(),
+    };
+    final res = await post('/checkout/quotes', data: body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> confirmCheckout({
+    required List<String> cartItemIds,
+    required String addressId,
+    required Map<String, String> paymentMethods,
+    Map<String, String>? storeVouchers,
+    String? platformVoucherCode,
+    required String quoteId,
+    required int expectedPayableTotalVnd,
+    required String idempotencyKey,
+  }) async {
+    final body = <String, dynamic>{
+      'cart_item_ids': cartItemIds,
+      'address_id': addressId,
+      'payment_methods': paymentMethods,
+      if (storeVouchers != null && storeVouchers.isNotEmpty)
+        'store_vouchers': storeVouchers,
+      if (platformVoucherCode != null && platformVoucherCode.trim().isNotEmpty)
+        'platform_voucher_code': platformVoucherCode.trim(),
+      'quote_id': quoteId,
+      'expected_payable_total_vnd': expectedPayableTotalVnd,
+    };
+
+    final response = await _requestWithRetry(
+      () => dio.post<dynamic>(
+        '/orders/batches',
+        data: body,
+        options: Options(
+          headers: {
+            if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+            'Idempotency-Key': idempotencyKey,
+          },
+        ),
+      ),
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<Map<String, dynamic>> getPurchaseGroupOrders(String batchId) async {
+    final res = await get('/orders/batches/$batchId');
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> validateVouchers({
+    required List<String> codes,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    final res = await post('/vouchers/validate', data: {
+      'codes': codes,
+      'items': items,
+    });
+    return (res is Map) ? Map<String, dynamic>.from(res) : {};
   }
 }
 

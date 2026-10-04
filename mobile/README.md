@@ -20,7 +20,12 @@ Flutter / Riverpod / Dio ứng dụng Customer Android. Đã hoàn thiện toàn
   - `catalog_page.dart`: Trang danh mục sản phẩm, tìm kiếm từ khóa với debounce, lọc theo danh mục sản phẩm (`GET /products?q=&page=&size=`, `GET /categories`), mục "Dành riêng cho bạn" hiển thị nhãn `[AI Cá nhân hóa]` / `[Gợi ý Baseline / Mock]`, cơ chế fallback không chặn tải danh mục khi service AI hoặc endpoint lỗi.
   - `product_detail_page.dart`: Chi tiết sản phẩm (`GET /products/{id}`), bộ chọn biến thể (SKU, giá cập nhật theo biến thể đã chọn), bộ đếm số lượng mua, thông số kỹ thuật, đánh giá khách hàng (`GET /products/{id}/reviews`), sản phẩm tương tự (`GET /products/{id}/related`), hành động "Thêm vào giỏ" (`POST /cart/items`) và "Mua ngay".
   - `consent_dialog.dart`: Hộp thoại quản lý quyền cá nhân hóa & gợi ý AI (`GET /me/consent`, `PATCH /me/consent`).
-- `lib/main.dart`: Thiết lập Routing, Drawer navigation, Riverpod Providers (`catalogProductsProvider`, `categoriesProvider`, `recommendationProvider`, `profileProvider`, `addressListProvider`), Theme Material 3.
+- `lib/features/cart/`
+  - `cart_page.dart`: Trang giỏ hàng (`GET /cart/items`), gom nhóm sản phẩm theo từng Store, chọn từng item hoặc chọn cả shop/toàn bộ giỏ, tăng giảm số lượng (`PATCH /cart/items/{id}`), xóa item (`DELETE /cart/items/{id}`), thanh toán các item đã chọn.
+- `lib/features/checkout/`
+  - `checkout_page.dart`: Báo giá đa Store (`POST /checkout/quotes`), chọn địa chỉ giao hàng (`GET /me/addresses`), chọn phương thức thanh toán từng Store (`COD` / `SANDBOX`), áp dụng voucher Store và voucher toàn sàn, đếm ngược hạn báo giá, xử lý biến động giá (`PRICE_CHANGED`) / hết hàng (`OUT_OF_STOCK`), chống click đúp bằng `Idempotency-Key` khi tạo đơn hàng (`POST /orders/batches`).
+  - `order_success_page.dart`: Màn hình thông báo đặt hàng thành công (`OrderBatch`), hiển thị mã nhóm mua sắm `purchase_group_id` và danh sách Order chi tiết theo từng Store.
+- `lib/main.dart`: Thiết lập Routing, Drawer navigation, Riverpod Providers (`catalogProductsProvider`, `categoriesProvider`, `recommendationProvider`, `cartItemsProvider`, `profileProvider`, `addressListProvider`), Theme Material 3.
 
 ## Lệnh kiểm thử và chạy
 
