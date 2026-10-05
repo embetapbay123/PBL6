@@ -2,6 +2,8 @@
 
 OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` trả 501 sau kiểm tra quyền. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
 
+Internal API có 11 operation: 2 sample, QuoteVariants `IMPLEMENTED`, 8 stub. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; các API Cart/checkout và command kho bên dưới chưa được hoàn thành bởi PR này. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
+
 | API | Operation | Service / module | Owner | Trạng thái |
 | --- | --- | --- | --- | --- |
 | `POST /auth/register` | register | M3 / auth | Trí | NOT_IMPLEMENTED |

@@ -53,7 +53,7 @@ Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kan
 | Member | Task đầu tiên | Phạm vi lâu dài |
 | --- | --- | --- |
 | Công | PAY-01: Payment/attempt/port; review nền CORE/FLOW đã có | Shared/hạ tầng/tích hợp; M2 Payment/Refund/COD; M4 AI |
-| Thịnh | CAT-QUOTE-01: quote cho M2, rồi CAT-04: public Catalog | M1 và Seller Web |
+| Thịnh | CAT-04: public Catalog; QuoteVariants đã merge ở [PR #86](https://github.com/embetapbay123/PBL6/pull/86) | M1 và Seller Web |
 | Hoa | CART-01: đọc/sửa số lượng/xóa item giỏ | M2 Cart/Order/Voucher/report và Customer Android |
 | Trí | ID-01: CRUD địa chỉ | M3 và Admin Web |
 | Hatsaphone | WEB-01: danh sách sản phẩm Customer | Customer Web theo từng màn và API bàn giao |

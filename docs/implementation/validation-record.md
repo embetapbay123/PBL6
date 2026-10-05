@@ -73,3 +73,12 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Demo Owner sửa tên/mô tả Product thật, reload đọc lại, sau test khôi phục tên; 409/422/501 form hiển thị lỗi. Order/Payment rollback và Catalog write/audit/outbox rollback được kiểm trên PostgreSQL.
 - GitHub CI trên commit `03f89fc` đạt cả contracts-and-node và mobile: [run 37031999009](https://github.com/embetapbay123/PBL6/actions/runs/37031999009). Runner Linux kiểm setup, schema, migration/seed, integration, Python, Playwright Chromium và Flutter từ checkout mới. Compose chờ healthcheck PostgreSQL TCP trước khi kiểm schema/migrate để tránh chạy trong giai đoạn init database.
 - Không chạy APK/device, tải 100 user, provider thanh toán thật hoặc AI thật; các phần này giữ trong task owner. CI trên GitHub phải xem theo commit mới, không suy từ kết quả local.
+
+## Bàn giao M1 QuoteVariants — 05/10/2026
+
+- [PR #86](https://github.com/embetapbay123/PBL6/pull/86) của Thịnh đã merge vào `main` tại commit `f4e49dba155b63ebe251d2c8a45d75e07a93d6ba`. QuoteVariants là `IMPLEMENTED`; internal hiện có 11 operation: 2 sample, 1 implemented, 8 stub. Public API giữ nguyên trạng thái.
+- [CI trên merge commit](https://github.com/embetapbay123/PBL6/actions/runs/37282746278) đạt cả contracts-and-node/mobile, bao gồm schema, migration/seed, integration PostgreSQL/HTTP, Python, Web và Flutter. Đây là bằng chứng CI; đợt cập nhật docs không chạy lại integration local vì Docker chưa chạy.
+- Chạy lại local riêng `tests/unit/quote-variants.test.ts`: 4 test đạt, kiểm lỗi dependency/service identity và mapper tiền an toàn. Contract parser, runtime drift và docs/link check đạt sau cập nhật tài liệu.
+- [Issue #7](https://github.com/embetapbay123/PBL6/issues/7) đóng completed, thẻ Kanban Done; body có bằng chứng PR/CI, payload và tiêu chí đã đạt. Thịnh tiếp tục [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11), vẫn Todo đến khi bắt đầu code.
+- [CART-01 #3](https://github.com/embetapbay123/PBL6/issues/3), [CART-02 #8](https://github.com/embetapbay123/PBL6/issues/8), [ORDER-01 #21](https://github.com/embetapbay123/PBL6/issues/21) có đầu vào M1 thật để tích hợp; không chuyển Done chỉ vì dependency #7 đã merge. M2 phải gửi Store thật, không tự thêm field Product vào quote response và không dùng fallback giá/Store khi lỗi.
+- ActiveStores của M3 vẫn là sample; kho reservation/consume/release/restock và luồng checkout xuyên service còn nghiệm thu theo issue owner. Không thêm migration hoặc đổi contract response trong đợt cập nhật docs này.
