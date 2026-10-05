@@ -6,7 +6,7 @@ import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { AuthService } from './auth.service';
-import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordDto, ResetPasswordDto ,ChangePasswordDto} from './auth.dto';
+import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordDto ,ChangePasswordDto} from './auth.dto';
 import { ProfileService } from '../profile/profile.service';
 
 @Controller() @UseGuards(AuthGuard)
