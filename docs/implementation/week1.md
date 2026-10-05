@@ -11,7 +11,7 @@ Tuần 1 gồm **5 ngày làm việc kể từ lúc nhóm bắt đầu**. Mục 
 | Người | Việc bắt đầu ngay | Đầu ra chính của tuần | Chi tiết |
 | --- | --- | --- | --- |
 | Công — `embetapbay123` | Review điểm nối với member, rồi [PAY-01 #51](https://github.com/embetapbay123/PBL6/issues/51) | Payment port/attempt/read, domain COD, consent và consumer tracking | [Task Công](#cong) |
-| Thịnh — `QT-2005` | [CAT-QUOTE-01 #7](https://github.com/embetapbay123/PBL6/issues/7), rồi [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11) | Quote M1, public Catalog, Seller list, kho và command reservation | [Task Thịnh](#thinh) |
+| Thịnh — `QT-2005` | [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11); QuoteVariants đã vào `main` qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) | Public Catalog, Seller list, kho và command reservation | [Task Thịnh](#thinh) |
 | Hoa — `mimidangeiu` | [CART-01 #3](https://github.com/embetapbay123/PBL6/issues/3) | Cart đọc/ghi thật, Voucher CRUD, Order read; Android auth/catalog theo lát cắt | [Task Hoa](#hoa) |
 | Trí — `phantri1912` | [ID-01 #4](https://github.com/embetapbay123/PBL6/issues/4) | Địa chỉ, phiên/quyền hiện hành, Store và 2 lookup mới M3 | [Task Trí](#tri) |
 | Hatsaphone — `HATSAPHONE` | [WEB-01 #5](https://github.com/embetapbay123/PBL6/issues/5) | Danh sách, chi tiết Product và profile/địa chỉ Customer | [Task Hatsaphone](#hatsaphone) |
@@ -34,13 +34,13 @@ Các mốc dưới đây là mục tiêu phối hợp. Nếu chưa đạt, ghi r
 
 | Ngày | Công | Thịnh | Hoa | Trí | Hatsaphone |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Review 3 task nền; triển khai Payment bằng manager M2; test rollback | QuoteVariants; hoàn thiện truy vấn Catalog từ seed | Cart read/update/remove, quyền Customer | CRUD Address, default address và ownership | List Product, search/pagination/loading/error |
-| 2 | Payment read/attempt và adapter; bàn giao port cho Hoa | Bàn giao QuoteVariants thật; public list/detail/taxonomy | Nối quote M1, add/merge Cart; bàn giao Cart API | Bàn giao Address; ResolveCheckoutContext và scope AI | Nối Catalog thật, chi tiết Product/chọn Variant |
+| 1 | Review 3 task nền; triển khai Payment bằng manager M2; test rollback | CAT-04 từ Catalog sample/seed; dùng QuoteVariants đã merge | Cart read/update/remove, quyền Customer | CRUD Address, default address và ownership | List Product, search/pagination/loading/error |
+| 2 | Payment read/attempt và adapter; bàn giao port cho Hoa | Public list/detail/taxonomy; hỗ trợ Hoa nối QuoteVariants thật | Nối quote M1, add/merge Cart; bàn giao Cart API | Bàn giao Address; ResolveCheckoutContext và scope AI | Nối Catalog thật, chi tiết Product/chọn Variant |
 | 3 | Domain COD, replay/concurrency; consent GET/PATCH | Seller list; inventory read/adjust/movement và low-stock | Voucher Store/Platform CRUD | Hoàn thiện Store và kiểm phiên/quyền hiện hành | Profile/Address form nối M3, login/logout dùng client chung |
 | 4 | Consumer search/view/cart; kiểm consent/inbox/retention | Reserve/consume/release và test tranh SKU | Order read; lát cắt Android login/profile/address/catalog | Kiểm mất quyền/Store khóa và integration M2/M4; phần Admin độc lập nếu còn thời gian | Ráp ba màn, kiểm lỗi/điện thoại/reload; Cart UI nếu còn thời gian |
 | 5 | Review PR, kiểm điểm nối và ghi phần chưa tích hợp | Demo Catalog/quote/kho + Seller list; sửa lỗi | Demo Cart/Voucher/Order read; demo Android đã làm | Demo Address/Store/lookup; sửa lỗi quyền | Demo Customer bằng API thật; sửa lỗi UX |
 
-**Handoff cần sớm:** QuoteVariants của Thịnh và Address/ResolveCheckoutContext của Trí đặt mục tiêu bàn giao ngày 2. Hoa bàn giao Cart cho Hatsaphone sau khi nối M1 thật. Công bàn giao PaymentPort cho Hoa trước lúc Hoa bắt đầu ORDER-02. Không ai đọc hoặc ghi database của service khác để vượt dependency.
+**Handoff:** QuoteVariants đã merge ngày 05/10/2026 qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86); Hoa dùng [payload, lỗi và dữ liệu seed đã bàn giao](../../backend/catalog-service/src/inventory/README.md) để nối M1 thật. Address/ResolveCheckoutContext của Trí vẫn là đầu vào cần bàn giao ngày 2. Hoa bàn giao Cart cho Hatsaphone sau khi nối M1 thật. Công bàn giao PaymentPort cho Hoa trước lúc Hoa bắt đầu ORDER-02. Không ai đọc hoặc ghi database của service khác để vượt dependency.
 
 <a id="cong"></a>
 
@@ -98,11 +98,13 @@ Các mốc dưới đây là mục tiêu phối hợp. Nếu chưa đạt, ghi r
 
 **Issue:** [CAT-QUOTE-01 #7](https://github.com/embetapbay123/PBL6/issues/7). **Internal operation:** `QuoteVariants`.
 
-- Đọc Product/Variant/Store hiện hành và trả snapshot đúng schema: IDs, giá, dữ liệu mô tả và số lượng theo contract. Kiểm caller M2 và Store còn được bán qua M3.
+**Đã bàn giao:** [PR #86](https://github.com/embetapbay123/PBL6/pull/86) đã merge vào `main` ngày 05/10/2026; operation là `IMPLEMENTED`. Thịnh chuyển sang CAT-04 bên dưới; việc tích hợp Cart/checkout thuộc Hoa và giữ tiêu chí nghiệm thu tại các issue M2.
+
+- Đọc Product/Variant/Store hiện hành và trả `variant_id`, `store_id`, `quantity`, `price_vnd`, `available_quantity`, `version`. Response không có Product ID, tên hoặc SKU. Kiểm caller M2 và Store còn được bán qua M3.
 - Kiểm Variant tồn tại/thuộc Product đúng, Product bị ẩn, Store bị khóa và quantity sai. Lỗi M3 giữ correlation và fail closed.
 - Quote không reserve, không trừ tồn. Tiền BIGINT giữ string trong ORM, mapper chuyển thành số nguyên an toàn.
 
-**Nghiệm thu:** M2 gọi được từ typed client; test caller sai, Variant thiếu, Product/Store không hợp lệ, dependency timeout và tồn kho không đổi sau quote. Bàn giao Hoa trước các phần Seller nâng cao.
+**Bằng chứng M1:** CI trên merge commit đã đạt; unit/integration test có trong PR cho caller sai, input sai, Variant thiếu, Product/Store không hợp lệ, dependency lỗi và tồn kho không đổi sau quote. Xem [README inventory](../../backend/catalog-service/src/inventory/README.md) để chạy lại. Tích hợp M2 thật chưa được nghiệm thu: Hoa phải gửi Store ID thật, giữ lỗi 404/409/422/503 và không dùng giá/Store ID giả khi M1 lỗi.
 
 ### 2. CAT-04 — public Catalog hoàn chỉnh
 

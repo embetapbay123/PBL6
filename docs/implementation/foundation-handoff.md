@@ -1,6 +1,6 @@
 # Nền code đã bàn giao — 2.2.1
 
-Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 87 NOT_IMPLEMENTED ở public API; internal có 2 sample và 9 stub.
+Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 87 NOT_IMPLEMENTED ở public API; internal có 2 sample, 1 IMPLEMENTED (QuoteVariants) và 8 stub.
 
 ## Chạy và kiểm tra nền
 
@@ -57,7 +57,7 @@ Validation chỉ kiểm shape. Owner vẫn phải kiểm quyền hiện hành, o
 | --- | --- | --- |
 | ResolveContext | M1/M2/M3/M4 → M3 | Sample hiện có; Auth Trí hoàn thiện |
 | ActiveStores | M1/M2/M4 → M3 | Sample hiện có; Store Trí hoàn thiện |
-| QuoteVariants | M2 → M1 | Thịnh: dữ liệu hiện hành, không giữ tồn |
+| QuoteVariants | M2 → M1 | IMPLEMENTED qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86); Hoa nối Cart/checkout bằng Store ID thật, không giữ tồn |
 | ReserveInventory | M2 → M1 | Thịnh: giữ toàn bộ SKU đủ hoặc rollback, theo Order ID cấp trước |
 | ConsumeReservation / ReleaseReservation / RestockOrder | M2 → M1 | Thịnh: operation_result + hiệu ứng cùng transaction, không trừ/hoàn hai lần |
 | VerifyReviewEligibility | M1 → M2 | Hoa: đúng Customer/Product và OrderItem COMPLETED |
@@ -65,7 +65,9 @@ Validation chỉ kiểm shape. Owner vẫn phải kiểm quyền hiện hành, o
 | ListLowStockVariants | M2 → M1 | Thịnh: resolve token M3, membership/quyền report đúng Store; trả tồn khả dụng và phân trang, không biến lỗi thành danh sách rỗng |
 | ResolveAiMetricsScope | M4 → M3 | Trí: resolve phiên hiện hành; Admin PLATFORM hoặc Store filter, Owner STORE đúng membership; Store khác trả 403 |
 
-Schema/path/caller/error đầy đủ trong [internal API](../contracts/internal-api.json). Ba lookup mới và sáu command cũ có guard/validation/501, chưa có nghiệp vụ. Khi thêm handler thật, bỏ đúng handler stub để không trùng method/path; cập nhật status đúng owner. Gateway không chuyển tiếp `/internal/*` đến backend.
+Schema/path/caller/error đầy đủ trong [internal API](../contracts/internal-api.json). Ba lookup mới và năm command còn lại của nhóm cũ có guard/validation/501, chưa có nghiệp vụ; QuoteVariants đã triển khai ở CAT-QUOTE-01. Khi thêm handler thật, bỏ đúng handler stub để không trùng method/path; cập nhật status đúng owner. Gateway không chuyển tiếp `/internal/*` đến backend.
+
+QuoteVariants bàn giao ngày 05/10/2026: [README inventory](../../backend/catalog-service/src/inventory/README.md) ghi payload/seed/test; [integration contract](../integration-contract.md) ghi nghĩa lỗi và giới hạn snapshot. Response không có Product ID/title/SKU; M2 không dùng Store giả, giá mặc định hoặc đổi Variant ID thành Product ID. CART-01/CART-02/ORDER-01 giữ task tích hợp riêng; có API M1 thật chưa đồng nghĩa checkout hoàn thành.
 
 Nest dùng `InternalClients.call(operation, body, correlation)` với generated input/output; M4 dùng InternalClient và Pydantic input. Timeout 1 giây, không retry trong HTTP request. Caller sai hoặc service credentials sai là lỗi vận hành 503; 404/409/422/501 nghiệp vụ được giữ. Response sai contract hoặc lỗi kết nối trả 503. Không log token/key. Command retry ở worker giữ nguyên ID/payload; đổi payload cùng ID là 409. Các service không đọc DB nhau.
 

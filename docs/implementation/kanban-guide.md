@@ -26,7 +26,7 @@ BE có thể làm repository/state machine bằng seed/adapter fixture, UI có t
 | Hatsaphone | HATSAPHONE | 11 |
 
 - Bảng tổng nhóm theo **Owner**, cột theo **Status**. Owner là người thực hiện; Assignee là tài khoản GitHub. Cả4 member có quyền Write trên Project để tự kéo thẻ.
-- Trí đã nhận lời mời repo và được gán14 task cho phantri1912. Hoa/Thịnh/Hatsaphone còn chờ nhận; đăng nhập đúng tài khoản và [chấp nhận lời mời](https://github.com/embetapbay123/PBL6/invitations) để push branch/nhận Assignee; trong lúc chờ, issue tạm giao embetapbay123 nhưng Owner vẫn là member. Sau khi nhận, chuyển các issue của Owner đó sang tài khoản tương ứng.
+- Trí đã nhận lời mời repo và được gán14 task cho phantri1912. Thịnh đã có quyền Write; CAT-QUOTE-01 và CAT-04 gán QT-2005. Member chưa nhận lời mời cần đăng nhập đúng tài khoản và [chấp nhận lời mời](https://github.com/embetapbay123/PBL6/invitations); issue còn tạm giao embetapbay123 vẫn dùng Owner để xác định người làm. Sau khi nhận, chuyển Assignee sang tài khoản tương ứng.
 - Tất cả task đã có issue, cách bắt đầu và dependency nghiệm thu. Không chờ Công giao tiếp. Chọn task Todo phù hợp; có thể đưa task Backlog lên Todo khi đã hiểu scope và có đầu vào/fixture đủ để làm phần độc lập. Mỗi người tối đa một task In progress.
 - **P0** ưu tiên contract/nền và luồng mua cốt lõi, **P1** nghiệp vụ/UI, **P2** nghiệm thu thiết bị/tải/recovery/demo. Priority không bắt cả nhóm làm tuần tự.
 - Task mới ngoài scope hiện có dùng [mẫu issue](../../.github/ISSUE_TEMPLATE/member-task.md), thêm vào **PBL6 — Team Kanban**, chọn Owner/Status/Priority và Assignee. Reviewer/phối hợp ghi trong body; labels `task`, `owner:*`, `scope:*`, `phase:*` để lọc.
