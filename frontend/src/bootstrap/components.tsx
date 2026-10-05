@@ -2,10 +2,10 @@ import { FormEvent, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { useAuth } from '../api/auth-context';
-export function ErrorView({error}:{error:unknown}) {
+export function ErrorView({error,onRetry}:{error:unknown;onRetry?:()=>void}) {
   const value=error instanceof ApiError?error:undefined;
-  return <p role="alert" className="boot-error">{value?.message ?? 'Có lỗi xảy ra.'}{value?.correlationId && <small>Mã yêu cầu: {value.correlationId}</small>}</p>;
-}
+  return <p role="alert" className="boot-error">{value?.message ?? 'Có lỗi xảy ra.'}{value?.correlationId && <small>Mã yêu cầu: {value.correlationId}</small>}{onRetry && <button type="button" onClick={onRetry}>Thử lại</button>}</p>;
+  }
 export function Loading(){return <p role="status">Đang tải…</p>;}
 export function Empty({children}:{children:ReactNode}){return <p>{children}</p>;}
 export function Pagination({page,size,total,onPage}:{page:number;size:number;total:number;onPage:(p:number)=>void}) {
