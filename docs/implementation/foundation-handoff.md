@@ -1,6 +1,6 @@
 # Nền code đã bàn giao — 2.2.1
 
-Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 87 NOT_IMPLEMENTED ở public API; internal có 2 sample và 9 stub.
+Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 87 NOT_IMPLEMENTED ở public API; internal có 2 sample, 1 IMPLEMENTED (QuoteVariants) và 8 stub.
 
 ## Chạy và kiểm tra nền
 
@@ -65,7 +65,7 @@ Validation chỉ kiểm shape. Owner vẫn phải kiểm quyền hiện hành, o
 | ListLowStockVariants | M2 → M1 | Thịnh: resolve token M3, membership/quyền report đúng Store; trả tồn khả dụng và phân trang, không biến lỗi thành danh sách rỗng |
 | ResolveAiMetricsScope | M4 → M3 | Trí: resolve phiên hiện hành; Admin PLATFORM hoặc Store filter, Owner STORE đúng membership; Store khác trả 403 |
 
-Schema/path/caller/error đầy đủ trong [internal API](../contracts/internal-api.json). Ba lookup mới và sáu command cũ có guard/validation/501, chưa có nghiệp vụ. Khi thêm handler thật, bỏ đúng handler stub để không trùng method/path; cập nhật status đúng owner. Gateway không chuyển tiếp `/internal/*` đến backend.
+Schema/path/caller/error đầy đủ trong [internal API](../contracts/internal-api.json). Ba lookup mới và năm command còn lại của nhóm cũ có guard/validation/501, chưa có nghiệp vụ; QuoteVariants đã triển khai ở CAT-QUOTE-01. Khi thêm handler thật, bỏ đúng handler stub để không trùng method/path; cập nhật status đúng owner. Gateway không chuyển tiếp `/internal/*` đến backend.
 
 Nest dùng `InternalClients.call(operation, body, correlation)` với generated input/output; M4 dùng InternalClient và Pydantic input. Timeout 1 giây, không retry trong HTTP request. Caller sai hoặc service credentials sai là lỗi vận hành 503; 404/409/422/501 nghiệp vụ được giữ. Response sai contract hoặc lỗi kết nối trả 503. Không log token/key. Command retry ở worker giữ nguyên ID/payload; đổi payload cùng ID là 409. Các service không đọc DB nhau.
 
