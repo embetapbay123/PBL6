@@ -24,18 +24,31 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
   bool _busy = false;
   String? _errorMessage;
 
-  bool get _isEditMode => widget.initialAddress != null && widget.initialAddress!['id'] != null;
+  bool get _isEditMode =>
+      widget.initialAddress != null && widget.initialAddress!['id'] != null;
 
   @override
   void initState() {
     super.initState();
     final addr = widget.initialAddress;
-    _recipientController = TextEditingController(text: addr?['recipient_name']?.toString() ?? '');
-    _phoneController = TextEditingController(text: addr?['phone']?.toString() ?? '');
-    _provinceController = TextEditingController(text: addr?['province']?.toString() ?? 'Đà Nẵng');
-    _districtController = TextEditingController(text: addr?['district']?.toString() ?? 'Hải Châu');
-    _wardController = TextEditingController(text: addr?['ward']?.toString() ?? 'Thạch Thang');
-    _streetController = TextEditingController(text: addr?['street']?.toString() ?? '');
+    _recipientController = TextEditingController(
+      text: addr?['recipient_name']?.toString() ?? '',
+    );
+    _phoneController = TextEditingController(
+      text: addr?['phone']?.toString() ?? '',
+    );
+    _provinceController = TextEditingController(
+      text: addr?['city']?.toString() ?? 'Đà Nẵng',
+    );
+    _districtController = TextEditingController(
+      text: addr?['district']?.toString() ?? 'Hải Châu',
+    );
+    _wardController = TextEditingController(
+      text: addr?['ward']?.toString() ?? 'Thạch Thang',
+    );
+    _streetController = TextEditingController(
+      text: addr?['line1']?.toString() ?? '',
+    );
     _isDefault = addr?['is_default'] == true;
   }
 
@@ -60,10 +73,10 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
     final payload = {
       'recipient_name': _recipientController.text.trim(),
       'phone': _phoneController.text.trim(),
-      'province': _provinceController.text.trim(),
+      'city': _provinceController.text.trim(),
       'district': _districtController.text.trim(),
       'ward': _wardController.text.trim(),
-      'street': _streetController.text.trim(),
+      'line1': _streetController.text.trim(),
       'is_default': _isDefault,
     };
 
@@ -79,7 +92,11 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditMode ? 'Cập nhật địa chỉ thành công!' : 'Thêm địa chỉ mới thành công!'),
+            content: Text(
+              _isEditMode
+                  ? 'Cập nhật địa chỉ thành công!'
+                  : 'Thêm địa chỉ mới thành công!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -153,7 +170,10 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                         labelText: 'Tỉnh/Thành phố *',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) => (value == null || value.trim().isEmpty) ? 'Bắt buộc' : null,
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Bắt buộc'
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -164,7 +184,10 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                         labelText: 'Quận/Huyện *',
                         border: OutlineInputBorder(),
                       ),
-                      validator: (value) => (value == null || value.trim().isEmpty) ? 'Bắt buộc' : null,
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Bắt buộc'
+                          : null,
                     ),
                   ),
                 ],
@@ -176,7 +199,9 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                   labelText: 'Phường/Xã *',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => (value == null || value.trim().isEmpty) ? 'Vui lòng nhập phường/xã.' : null,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? 'Vui lòng nhập phường/xã.'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -236,7 +261,10 @@ class _AddressFormPageState extends ConsumerState<AddressFormPage> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(_isEditMode ? 'Lưu cập nhật' : 'Tạo địa chỉ', style: const TextStyle(fontSize: 16)),
+                    : Text(
+                        _isEditMode ? 'Lưu cập nhật' : 'Tạo địa chỉ',
+                        style: const TextStyle(fontSize: 16),
+                      ),
               ),
             ],
           ),

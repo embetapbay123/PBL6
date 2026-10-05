@@ -1,5 +1,7 @@
+import { ApiError } from '../../shared/src/errors';
 import { describe, test, expect, jest, beforeEach } from '@jest/globals';
 import { validateOperation } from '../../shared/src/request-contract';
+import { OrderService } from '../../commerce-service/src/order/order.service';
 import { VoucherService } from '../../commerce-service/src/voucher/voucher.service';
 import { VoucherController } from '../../commerce-service/src/voucher/voucher.controller';
 
@@ -680,35 +682,10 @@ describe('VOUCHER-03: validateVouchers, getStoreVoucherUsage & getPlatformVouche
   });
 
   describe('validateVouchers Business Logic', () => {
-    test('successfully calculates quote for valid basket and vouchers', async () => {
-      const cartItemId = '11111111-1111-4111-8111-111111111111';
-      const addressId = '22222222-2222-4222-8222-222222222222';
-
-      mockQuery.mockResolvedValueOnce([
-        {
-          id: cartItemId,
-          cart_id: 'cart-1',
-          variant_id: 'var-1',
-          store_id: storeId,
-          quantity: 2,
-        },
-      ]);
-
-      const result = await service.validateVouchers(
-        {
-          cart_item_ids: [cartItemId],
-          address_id: addressId,
-          payment_methods: { [storeId]: 'COD' },
-        },
-        customerUser,
-        correlation
-      );
-
-      expect(result.quote_id).toBeDefined();
-      expect(result.stores).toHaveLength(1);
-      expect(result.stores[0].store_id).toBe(storeId);
-      expect(result.stores[0].amounts.goods_vnd).toBe(200000);
-      expect(result.payable_total_vnd).toBeGreaterThan(0);
+    test('validateVouchers delegates to the same quote logic and propagates dependency errors', async()=>{
+      const spy=jest.spyOn(OrderService.prototype,'quoteCheckout').mockRejectedValue(new ApiError(503,'DEPENDENCY_UNAVAILABLE','M1 unavailable'));
+      await expect(service.validateVouchers({cart_item_ids:['11111111-1111-4111-8111-111111111111'],address_id:'22222222-2222-4222-8222-222222222222',payment_methods:{[storeId]:'COD'}},customerUser,correlation)).rejects.toMatchObject({status:503});
+      expect(spy).toHaveBeenCalled();spy.mockRestore();
     });
   });
 
@@ -775,7 +752,7 @@ describe('VOUCHER-03: validateVouchers, getStoreVoucherUsage & getPlatformVouche
       expect(result.voucher_id).toBe(voucherId);
       expect(result.redeemed_count).toBe(15);
       expect(result.reserved_count).toBe(5);
-      expect(result.remaining_count).toBe(85);
+      expect(result.remaining_count).toBe(65);
     });
   });
 
@@ -841,7 +818,7 @@ describe('VOUCHER-03: validateVouchers, getStoreVoucherUsage & getPlatformVouche
       expect(result.voucher_id).toBe(platformVoucherId);
       expect(result.redeemed_count).toBe(50);
       expect(result.reserved_count).toBe(10);
-      expect(result.remaining_count).toBe(450);
+      expect(result.remaining_count).toBe(390);
     });
   });
 

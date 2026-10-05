@@ -82,3 +82,12 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - [Issue #7](https://github.com/embetapbay123/PBL6/issues/7) đóng completed, thẻ Kanban Done; body có bằng chứng PR/CI, payload và tiêu chí đã đạt. Thịnh tiếp tục [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11), vẫn Todo đến khi bắt đầu code.
 - [CART-01 #3](https://github.com/embetapbay123/PBL6/issues/3), [CART-02 #8](https://github.com/embetapbay123/PBL6/issues/8), [ORDER-01 #21](https://github.com/embetapbay123/PBL6/issues/21) có đầu vào M1 thật để tích hợp; không chuyển Done chỉ vì dependency #7 đã merge. M2 phải gửi Store thật, không tự thêm field Product vào quote response và không dùng fallback giá/Store khi lỗi.
 - ActiveStores của M3 vẫn là sample; kho reservation/consume/release/restock và luồng checkout xuyên service còn nghiệm thu theo issue owner. Không thêm migration hoặc đổi contract response trong đợt cập nhật docs này.
+
+## 05/10/2026 — bản tổng Hoa trên feat/mob-03
+
+- Đồng bộ Cart product_id và migration M2 004; migration 001–003 không đổi. 99 public + 11 internal operation, 7 event có DTO/fixture và drift check đạt. Public hiện 18 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 69 NOT_IMPLEMENTED; internal 2 sample / 2 IMPLEMENTED / 7 stub. Trạng thái là code trong nhánh, issue chưa Done trước review/merge/nghiệm thu.
+- Backend build và 155 unit test đạt. 26 integration test qua HTTP/PostgreSQL đạt: concurrent Cart, UPDATE RETURNING Cart/Voucher/Order, stale version, Order/COD state, review ownership/HTTP 200, quota và công thức doanh thu.
+- Schema fresh migration/constraint check của 4 DB và 12 negative invariant check đạt. Không query DB xuyên service, không tự backfill Product ID cho Cart legacy.
+- Flutter analyze sạch, 31 test đạt (widget + Dio request contract). Web build và 7 Playwright test đạt qua Chrome trên Windows; 13 Python test M4 đạt. CI vẫn phải kiểm trên Ubuntu và Flutter 3.41.4.
+- Phạm vi chưa hoàn thành: quote/validate cần M3 ResolveCheckoutContext; confirm/cancel/confirm-state/ship-state còn 501 trước ghi; COD cần PaymentService; report cần low-stock và số liệu User/Store thật. Không dùng mock success trong test để nghiệm thu checkout/payment/Android thiết bị.
+- Chi tiết tiếp tục: [bàn giao Hoa](hoa-consolidated-handoff.md). PR cũ bị thay thế chỉ là dọn chuỗi branch trùng; không đóng các issue nghiệp vụ một phần.

@@ -1,8 +1,16 @@
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { database } from '../../../shared/src/database';
-import { ApiError } from '../../../shared/src/errors';
+import { ApiError, notImplemented } from '../../../shared/src/errors';
 import { config } from '../../../shared/src/config';
 import { InternalClients } from '../../../shared/src/internal-clients';
+import { moneyNumber } from '../../../shared/src/money';
+import { fingerprint } from '../../../shared/src/idempotency';
+import { CatalogClient, CatalogDirectory } from '../catalog-client';
+import { requireStorePermission, accessToken } from '../scope';
+import { PaymentService } from '../payment/payment.service';
+import { PaymentPort } from '../payment/payment.port';
+import { EntityManager } from 'typeorm';
+import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
@@ -10,6 +18,7 @@ import type { OperationOutputs, OperationInputs } from '../../../shared/src/oper
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ProcessedItem {
+  product_id: string;
   variant_id: string;
   product_title?: string;
   variant_title?: string;
@@ -38,92 +47,29 @@ export class OrderService {
       caller: 'M2',
       key: string,
       urls: Record<'M1' | 'M2' | 'M3', string>
-    ) => InternalClients
-  ) {}
+    ) => InternalClients,
+    private readonly dependencies: {catalog?:CatalogDirectory;quotes?:QuoteStore;payments?:(manager:EntityManager)=>PaymentPort} = {},
+  ) {this.quoteStore=dependencies.quotes ?? new RedisQuoteStore();this.catalog=dependencies.catalog ?? new CatalogClient();}
 
-  private getInternalClients(): InternalClients | null {
-    if (this.internalClientsFactory) {
-      return this.internalClientsFactory('M2', 'mock-key', {
-        M1: 'http://localhost:3101',
-        M2: '',
-        M3: 'http://localhost:3103',
-      });
-    }
-    try {
-      const c = config('M2');
-      return new InternalClients('M2', c.internalKeys.M2, {
-        M1: c.catalogUrl,
-        M2: '',
-        M3: c.identityUrl,
-      });
-    } catch {
-      return null;
-    }
+  private readonly quoteStore:QuoteStore;
+  private readonly catalog:CatalogDirectory;
+  private payments(manager:EntityManager):PaymentPort {
+    const port=this.dependencies.payments?.(manager) ?? new PaymentService(manager);
+    if(port.manager!==manager) throw new Error('TRANSACTION_MANAGER_MISMATCH');
+    return port;
   }
 
-  async quoteVariants(
-    items: Array<{ variant_id: string; store_id: string; quantity: number }>,
-    correlation: string
-  ) {
+  private getInternalClients(): InternalClients {
+    if (this.internalClientsFactory) return this.internalClientsFactory('M2','test',{M1:'',M2:'',M3:''});
+    const c=config('M2');return new InternalClients('M2',c.internalKeys.M2,{M1:c.catalogUrl,M2:'',M3:c.identityUrl});
+  }
+  async quoteVariants(items:Array<{variant_id:string;store_id:string;quantity:number}>,correlation:string) {
     if (!items.length) return [];
-    const client = this.getInternalClients();
-    if (!client) return [];
-    try {
-      const formattedItems = items.map(item => ({
-        variant_id: item.variant_id,
-        store_id: UUID_REGEX.test(item.store_id) ? item.store_id : '11111111-1111-4111-8111-111111111111',
-        quantity: item.quantity,
-      }));
-      const result = await client.call('QuoteVariants', { items: formattedItems }, correlation);
-      return result.items ?? [];
-    } catch {
-      return [];
-    }
+    return (await this.getInternalClients().call('QuoteVariants',{items},correlation)).items;
   }
-
-  async reserveInventory(
-    data: {
-      operation_id: string;
-      purchase_group_id: string;
-      items: Array<{ variant_id: string; store_id: string; order_id: string; quantity: number }>;
-      expires_at: string;
-    },
-    correlation: string
-  ) {
-    const client = this.getInternalClients();
-    if (!client) return { reservations: [] };
-    try {
-      const result = await client.call('ReserveInventory', data, correlation);
-      return result;
-    } catch {
-      return { reservations: [] };
-    }
-  }
-
-  async releaseOrRestockInventory(
-    orderId: string,
-    items: Array<{ variant_id: string; product_id?: string; quantity: number }>,
-    correlation: string
-  ) {
-    const client = this.getInternalClients();
-    if (!client || !items.length) return;
-    try {
-      await client.call(
-        'RestockOrder',
-        {
-          operation_id: randomUUID(),
-          order_id: orderId,
-          items: items.map(it => ({
-            variant_id: it.variant_id,
-            store_id: '11111111-1111-4111-8111-111111111111',
-            quantity: it.quantity,
-          })),
-        },
-        correlation
-      );
-    } catch {
-      // Best-effort internal restock/release call
-    }
+  private quoteInput(input:OperationInputs['quoteCheckout']['body']) {
+    return {cart_item_ids:[...input.cart_item_ids].sort(),address_id:input.address_id,
+      payment_methods:input.payment_methods,store_vouchers:input.store_vouchers,platform_voucher_code:input.platform_voucher_code};
   }
 
   private mapOrderRowToDto(order: OrderRow & { items: OrderItemRow[] }): OperationOutputs['getOwnOrder'] {
@@ -138,11 +84,11 @@ export class OrderService {
       refund_status: order.refund_status ?? undefined,
       payment_expires_at: order.payment_expires_at ? new Date(order.payment_expires_at).toISOString() : undefined,
       amounts: {
-        goods_vnd: Number(order.goods_vnd),
-        store_discount_vnd: Number(order.store_discount_vnd),
-        platform_discount_vnd: Number(order.platform_discount_vnd),
-        shipping_vnd: Number(order.shipping_vnd),
-        payable_vnd: Number(order.payable_vnd),
+        goods_vnd: moneyNumber(order.goods_vnd),
+        store_discount_vnd: moneyNumber(order.store_discount_vnd),
+        platform_discount_vnd: moneyNumber(order.platform_discount_vnd),
+        shipping_vnd: moneyNumber(order.shipping_vnd),
+        payable_vnd: moneyNumber(order.payable_vnd),
       },
       items: order.items.map(it => ({
         id: it.id,
@@ -151,9 +97,9 @@ export class OrderService {
         variant_id: it.variant_id,
         product_snapshot: it.product_snapshot,
         sku_snapshot: it.sku_snapshot,
-        unit_price_vnd: Number(it.unit_price_vnd),
+        unit_price_vnd: moneyNumber(it.unit_price_vnd),
         quantity: it.quantity,
-        line_total_vnd: Number(it.line_total_vnd),
+        line_total_vnd: moneyNumber(it.line_total_vnd),
       })),
     };
   }
@@ -171,7 +117,7 @@ export class OrderService {
     platformVoucherId?: string;
   }> {
     const cartItems = await orderRepo.findCartItemsWithOwnership(cartItemIds, userId);
-    if (cartItems.length !== cartItemIds.length) {
+    if (new Set(cartItemIds).size!==cartItemIds.length || cartItems.length !== cartItemIds.length) {
       throw new ApiError(
         404,
         'NOT_FOUND',
@@ -192,9 +138,15 @@ export class OrderService {
     }
 
     const storeMap = new Map<string, StoreCalculation>();
+    const products=new Map<string,Awaited<ReturnType<CatalogDirectory['product']>>>();
+    for (const item of cartItems) {
+      if (!item.product_id) throw new ApiError(409,'CART_MAPPING_REQUIRED','Item cũ chưa có Product; hãy xóa và thêm lại.');
+      if (!products.has(item.product_id)) products.set(item.product_id,await this.catalog.product(item.product_id,correlation));
+    }
 
     for (const ci of cartItems) {
       const m1Quote = m1QuotesMap.get(ci.variant_id);
+      if (!m1Quote || m1Quote.store_id!==ci.store_id) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Quote không khớp Cart.');
       if (m1Quote) {
         if (m1Quote.available_quantity !== undefined && m1Quote.available_quantity < ci.quantity) {
           throw new ApiError(
@@ -205,9 +157,12 @@ export class OrderService {
         }
       }
 
-      const unitPriceVnd = m1Quote?.price_vnd !== undefined ? Number(m1Quote.price_vnd) : 100000;
-      const lineTotalVnd = unitPriceVnd * ci.quantity;
-      const storeId = m1Quote?.store_id || ci.store_id;
+      const unitPriceVnd = moneyNumber(m1Quote.price_vnd);
+      const lineTotalVnd = moneyNumber(BigInt(unitPriceVnd) * BigInt(ci.quantity));
+      const storeId = m1Quote.store_id;
+      const product=products.get(ci.product_id!)!;
+      const variant=product.variants.find(v=>v.id===ci.variant_id);
+      if (!variant || product.store_id!==storeId) throw new ApiError(409,'CART_PRODUCT_CHANGED','Product/Variant/Store không còn khớp.');
 
       if (!storeMap.has(storeId)) {
         storeMap.set(storeId, {
@@ -224,12 +179,13 @@ export class OrderService {
 
       const storeCalc = storeMap.get(storeId)!;
       storeCalc.items.push({
+        product_id:product.id,product_title:product.title,sku:variant.sku,
         variant_id: ci.variant_id,
         unit_price_vnd: unitPriceVnd,
         quantity: ci.quantity,
         line_total_vnd: lineTotalVnd,
       });
-      storeCalc.goods_vnd += lineTotalVnd;
+      storeCalc.goods_vnd = moneyNumber(BigInt(storeCalc.goods_vnd)+BigInt(lineTotalVnd));
     }
 
     const now = new Date();
@@ -254,11 +210,11 @@ export class OrderService {
         if (now < startsAt || now > endsAt) {
           throw new ApiError(422, 'VOUCHER_EXPIRED', `Voucher cửa hàng "${storeVoucherCode}" đã hết hạn hoặc chưa có hiệu lực.`);
         }
-        if (voucher.usage_limit <= 0) {
+        if (!(await orderRepo.voucherAvailable(voucher,userId))) {
           throw new ApiError(422, 'VOUCHER_OUT_OF_QUOTA', `Voucher cửa hàng "${storeVoucherCode}" đã hết lượt sử dụng.`);
         }
 
-        const minGoodsVnd = Number(voucher.min_goods_vnd);
+        const minGoodsVnd = moneyNumber(voucher.min_goods_vnd);
         if (storeCalc.goods_vnd < minGoodsVnd) {
           throw new ApiError(
             422,
@@ -269,12 +225,12 @@ export class OrderService {
 
         let calculatedDiscount = 0;
         if (voucher.discount_type === 'PERCENT') {
-          calculatedDiscount = Math.floor((storeCalc.goods_vnd * Number(voucher.discount_value)) / 100);
+          calculatedDiscount = moneyNumber(BigInt(storeCalc.goods_vnd)*BigInt(voucher.discount_value)/100n);
           if (voucher.max_discount_vnd) {
-            calculatedDiscount = Math.min(calculatedDiscount, Number(voucher.max_discount_vnd));
+            calculatedDiscount = Math.min(calculatedDiscount, moneyNumber(voucher.max_discount_vnd));
           }
         } else {
-          calculatedDiscount = Number(voucher.discount_value);
+          calculatedDiscount = moneyNumber(voucher.discount_value);
         }
 
         storeCalc.store_discount_vnd = Math.min(storeCalc.goods_vnd, Math.max(0, calculatedDiscount));
@@ -288,7 +244,7 @@ export class OrderService {
 
     // Platform voucher
     const storeList = Array.from(storeMap.values());
-    const totalNetGoodsVnd = storeList.reduce((acc, s) => acc + s.net_goods_vnd, 0);
+    const totalNetGoodsVnd = moneyNumber(storeList.reduce((acc,s)=>acc+BigInt(s.net_goods_vnd),0n));
     let platformVoucherId: string | undefined;
 
     if (platformVoucherCodeInput) {
@@ -304,11 +260,11 @@ export class OrderService {
       if (now < startsAt || now > endsAt) {
         throw new ApiError(422, 'VOUCHER_EXPIRED', `Voucher sàn "${platformVoucherCodeInput}" đã hết hạn hoặc chưa có hiệu lực.`);
       }
-      if (voucher.usage_limit <= 0) {
+      if (!(await orderRepo.voucherAvailable(voucher,userId))) {
         throw new ApiError(422, 'VOUCHER_OUT_OF_QUOTA', `Voucher sàn "${platformVoucherCodeInput}" đã hết lượt sử dụng.`);
       }
 
-      const minGoodsVnd = Number(voucher.min_goods_vnd);
+      const minGoodsVnd = moneyNumber(voucher.min_goods_vnd);
       if (totalNetGoodsVnd < minGoodsVnd) {
         throw new ApiError(
           422,
@@ -319,12 +275,12 @@ export class OrderService {
 
       let totalPlatformDiscountVnd = 0;
       if (voucher.discount_type === 'PERCENT') {
-        totalPlatformDiscountVnd = Math.floor((totalNetGoodsVnd * Number(voucher.discount_value)) / 100);
+        totalPlatformDiscountVnd = moneyNumber(BigInt(totalNetGoodsVnd)*BigInt(voucher.discount_value)/100n);
         if (voucher.max_discount_vnd) {
-          totalPlatformDiscountVnd = Math.min(totalPlatformDiscountVnd, Number(voucher.max_discount_vnd));
+          totalPlatformDiscountVnd = Math.min(totalPlatformDiscountVnd, moneyNumber(voucher.max_discount_vnd));
         }
       } else {
-        totalPlatformDiscountVnd = Number(voucher.discount_value);
+        totalPlatformDiscountVnd = moneyNumber(voucher.discount_value);
       }
       totalPlatformDiscountVnd = Math.min(totalNetGoodsVnd, Math.max(0, totalPlatformDiscountVnd));
 
@@ -332,9 +288,9 @@ export class OrderService {
 
       if (totalNetGoodsVnd > 0 && totalPlatformDiscountVnd > 0) {
         const shareItems = storeList.map(store => {
-          const exactShare = totalPlatformDiscountVnd * (store.net_goods_vnd / totalNetGoodsVnd);
-          const baseShare = Math.floor(exactShare);
-          const remainder = exactShare - baseShare;
+          const numerator = BigInt(totalPlatformDiscountVnd) * BigInt(store.net_goods_vnd);
+          const baseShare = moneyNumber(numerator / BigInt(totalNetGoodsVnd));
+          const remainder = numerator % BigInt(totalNetGoodsVnd);
           return { store, baseShare, remainder };
         });
 
@@ -343,7 +299,7 @@ export class OrderService {
 
         shareItems.sort((a, b) => {
           if (b.remainder !== a.remainder) {
-            return b.remainder - a.remainder;
+            return b.remainder > a.remainder ? 1 : -1;
           }
           return a.store.store_id.localeCompare(b.store.store_id);
         });
@@ -408,9 +364,20 @@ export class OrderService {
       orderRepo
     );
 
-    const quoteId = randomUUID();
+    const context=await this.getInternalClients().call('ResolveCheckoutContext',{
+      token:accessToken(auth),address_id:addressId,store_ids:storeList.map(s=>s.store_id),
+    },correlation);
+    for(const store of storeList) {
+      const snapshot=context.stores.find(s=>s.id===store.store_id);
+      if(!snapshot) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Lookup thiếu Store.');
+      store.shipping_vnd=moneyNumber(snapshot.shipping_fee_vnd);
+      store.payable_vnd=moneyNumber(BigInt(store.goods_vnd)-BigInt(store.store_discount_vnd)-BigInt(store.platform_discount_vnd)+BigInt(store.shipping_vnd));
+    }
+    const payable=moneyNumber(storeList.reduce((sum,s)=>sum+BigInt(s.payable_vnd),0n));
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
+    const quoteId=randomUUID();
+    await this.quoteStore.put(quoteId,{user_id:userId,request_hash:fingerprint(this.quoteInput(input)),snapshot_hash:fingerprint({storeList,context}),expires_at:expiresAt});
     return {
       quote_id: quoteId,
       stores: storeList.map(store => ({
@@ -424,237 +391,20 @@ export class OrderService {
         },
         items: store.items,
       })),
-      payable_total_vnd: totalPayableVnd,
+      payable_total_vnd: payable,
       expires_at: expiresAt,
     };
   }
 
-  async confirmCheckout(
-    input: OperationInputs['confirmCheckout']['body'],
-    idempotencyKey: string | undefined,
-    auth: any,
-    correlation: string
-  ): Promise<OperationOutputs['confirmCheckout']> {
-    const userId = auth?.user_id;
-    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
-
-    if (!idempotencyKey || typeof idempotencyKey !== 'string' || !idempotencyKey.trim()) {
-      throw new ApiError(400, 'BAD_REQUEST', 'Thiếu Idempotency-Key trong header.');
-    }
-
-    const cartItemIds = input?.cart_item_ids;
-    if (!Array.isArray(cartItemIds) || cartItemIds.length === 0) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'cart_item_ids không được rỗng.');
-    }
-    for (const id of cartItemIds) {
-      if (!UUID_REGEX.test(id)) {
-        throw new ApiError(422, 'VALIDATION_FAILED', `cart_item_id không hợp lệ: ${id}`);
-      }
-    }
-
-    const addressId = input?.address_id;
-    if (!addressId || !UUID_REGEX.test(addressId)) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'address_id không hợp lệ.');
-    }
-
-    const quoteId = input?.quote_id;
-    if (!quoteId || !UUID_REGEX.test(quoteId)) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'quote_id không hợp lệ.');
-    }
-
-    // 1. Check Idempotency Record (BR-19)
-    const payloadHash = createHash('sha256').update(JSON.stringify(input)).digest('hex');
-    const rootRepo = new OrderRepository(database.manager);
-    const existingIdempotency = await rootRepo.findIdempotencyRecord(idempotencyKey, userId);
-
-    if (existingIdempotency) {
-      if (existingIdempotency.payload_hash === payloadHash && existingIdempotency.response_json) {
-        return existingIdempotency.response_json as unknown as OperationOutputs['confirmCheckout'];
-      }
-      throw new ApiError(409, 'IDEMPOTENCY_CONFLICT', 'Khóa Idempotency-Key đã được sử dụng với nội dung yêu cầu khác.');
-    }
-
-    // 2. Recalculate quote to ensure price & stock integrity (BR-18, BR-31)
-    const { storeList, totalPayableVnd, platformVoucherId } = await this.calculateQuote(
-      cartItemIds,
-      userId,
-      input.store_vouchers,
-      input.platform_voucher_code,
-      correlation,
-      rootRepo
-    );
-
-    if (totalPayableVnd !== input.expected_payable_total_vnd) {
-      throw new ApiError(
-        409,
-        'PRICE_CHANGED',
-        `Tổng số tiền thanh toán đã thay đổi (mong đợi: ${input.expected_payable_total_vnd.toLocaleString('vi-VN')} VND, thực tế: ${totalPayableVnd.toLocaleString('vi-VN')} VND). Vui lòng xác nhận lại quote mới.`
-      );
-    }
-
-    const purchaseGroupId = randomUUID();
-    const storeOrderMap = new Map<string, string>();
-    for (const store of storeList) {
-      storeOrderMap.set(store.store_id, randomUUID());
-    }
-
-    // 3. M1 Inventory Reservation (BR-10, BR-41)
-    const reservationItems: Array<{ variant_id: string; store_id: string; order_id: string; quantity: number }> = [];
-    for (const store of storeList) {
-      const orderId = storeOrderMap.get(store.store_id)!;
-      for (const item of store.items) {
-        reservationItems.push({
-          variant_id: item.variant_id,
-          store_id: store.store_id,
-          order_id: orderId,
-          quantity: item.quantity,
-        });
-      }
-    }
-
-    await this.reserveInventory(
-      {
-        operation_id: randomUUID(),
-        purchase_group_id: purchaseGroupId,
-        items: reservationItems,
-        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      },
-      correlation
-    );
-
-    // 4. Atomic Transaction in M2 DB (BR-02, BR-16, BR-17, BR-21, BR-30)
-    return database.transaction(async manager => {
-      const repo = new OrderRepository(manager);
-
-      const createdOrders: Array<OperationOutputs['confirmCheckout']['orders'][0]> = [];
-
-      for (const store of storeList) {
-        const orderId = storeOrderMap.get(store.store_id)!;
-        const paymentMethod = input.payment_methods?.[store.store_id] || 'COD';
-        const isSandbox = paymentMethod === 'SANDBOX';
-        const initialStatus = isSandbox ? 'AWAITING_PAYMENT' : 'PREPARING';
-        const paymentExpiresAt = isSandbox ? new Date(Date.now() + 15 * 60 * 1000) : null;
-
-        const addressSnapshot = {
-          address_id: input.address_id,
-          recipient_name: 'Khách hàng',
-          phone: '0900000000',
-          line1: 'Địa chỉ giao hàng',
-          ward: 'Phường',
-          district: 'Quận',
-          city: 'Thành phố',
-        };
-
-        const createdOrder = await repo.createOrder({
-          id: orderId,
-          purchase_group_id: purchaseGroupId,
-          customer_user_id: userId,
-          store_id: store.store_id,
-          address_snapshot: addressSnapshot,
-          status: initialStatus,
-          payment_method: paymentMethod,
-          payment_expires_at: paymentExpiresAt,
-          goods_vnd: store.goods_vnd,
-          store_discount_vnd: store.store_discount_vnd,
-          platform_discount_vnd: store.platform_discount_vnd,
-          shipping_vnd: store.shipping_vnd,
-          payable_vnd: store.payable_vnd,
-          version: 1,
-        });
-
-        // Insert Order Items
-        for (const item of store.items) {
-          await repo.createOrderItem({
-            order_id: orderId,
-            product_id: item.variant_id,
-            variant_id: item.variant_id,
-            product_snapshot: { title: item.product_title ?? 'Sản phẩm' },
-            sku_snapshot: item.sku ?? 'SKU-DEFAULT',
-            unit_price_vnd: item.unit_price_vnd,
-            quantity: item.quantity,
-            line_total_vnd: item.line_total_vnd,
-          });
-        }
-
-        // Insert Payment
-        await repo.createPayment({
-          order_id: orderId,
-          method: paymentMethod,
-          status: 'PENDING',
-          payable_vnd: store.payable_vnd,
-          collectible_vnd: store.payable_vnd,
-        });
-
-        // Record Store Voucher Redemption if used
-        if (store.voucher_id && store.store_discount_vnd > 0) {
-          await repo.recordVoucherRedemption({
-            voucher_id: store.voucher_id,
-            purchase_group_id: purchaseGroupId,
-            order_id: orderId,
-            customer_user_id: userId,
-            discount_vnd: store.store_discount_vnd,
-          });
-          await repo.decrementVoucherUsage(store.voucher_id);
-        }
-
-        createdOrders.push({
-          id: createdOrder.id,
-          purchase_group_id: createdOrder.purchase_group_id,
-          store_id: createdOrder.store_id,
-          status: createdOrder.status as any,
-          version: createdOrder.version,
-          payment_method: createdOrder.payment_method as any,
-          payment_expires_at: createdOrder.payment_expires_at ? new Date(createdOrder.payment_expires_at).toISOString() : undefined,
-          amounts: {
-            goods_vnd: Number(createdOrder.goods_vnd),
-            store_discount_vnd: Number(createdOrder.store_discount_vnd),
-            platform_discount_vnd: Number(createdOrder.platform_discount_vnd),
-            shipping_vnd: Number(createdOrder.shipping_vnd),
-            payable_vnd: Number(createdOrder.payable_vnd),
-          },
-          items: store.items,
-        });
-      }
-
-      // Record Platform Voucher Redemption if used
-      if (platformVoucherId) {
-        const totalPlatformDiscount = storeList.reduce((acc, s) => acc + s.platform_discount_vnd, 0);
-        if (totalPlatformDiscount > 0) {
-          const firstOrderId = createdOrders[0]?.id || purchaseGroupId;
-          await repo.recordVoucherRedemption({
-            voucher_id: platformVoucherId,
-            purchase_group_id: purchaseGroupId,
-            order_id: firstOrderId,
-            customer_user_id: userId,
-            discount_vnd: totalPlatformDiscount,
-          });
-          await repo.decrementVoucherUsage(platformVoucherId);
-        }
-      }
-
-      // Remove purchased items from customer's cart
-      await repo.removeCartItems(cartItemIds, userId);
-
-      const resultPayload: OperationOutputs['confirmCheckout'] = {
-        purchase_group_id: purchaseGroupId,
-        order_ids: createdOrders.map(o => o.id),
-        orders: createdOrders,
-        payable_total_vnd: totalPayableVnd,
-      };
-
-      // Save Idempotency Record (24 hours TTL)
-      await repo.saveIdempotencyRecord({
-        id: randomUUID(),
-        customer_user_id: userId,
-        key: idempotencyKey,
-        payload_hash: payloadHash,
-        purchase_group_id: purchaseGroupId,
-        response_json: resultPayload as any,
-        expires_at: new Date(Date.now() + 24 * 3600 * 1000),
-      });
-
-      return resultPayload;
-    });
+  async confirmCheckout(input:OperationInputs['confirmCheckout']['body'],key:string|undefined,auth:any,_correlation:string):Promise<OperationOutputs['confirmCheckout']> {
+    if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
+    if(!key?.trim()) throw new ApiError(422,'VALIDATION_FAILED','Thiếu Idempotency-Key.');
+    const quote=await this.quoteStore.get(input.quote_id);
+    if(!quote || quote.user_id!==auth.user_id) throw new ApiError(404,'QUOTE_NOT_FOUND','Không tìm thấy quote của Customer.');
+    if(Date.parse(quote.expires_at)<=Date.now()) throw new ApiError(409,'QUOTE_EXPIRED','Quote đã hết hạn.');
+    if(quote.request_hash!==fingerprint(this.quoteInput(input))) throw new ApiError(409,'QUOTE_CHANGED','Nội dung khác quote.');
+    // Reject before reserve/DB writes until the Payment port and durable inventory orchestration are implemented.
+    return notImplemented('confirmCheckout: cần PaymentPort và orchestration kho bền vững');
   }
 
   async getPurchaseGroupOrders(
@@ -689,11 +439,11 @@ export class OrderService {
       payment_method: o.payment_method as any,
       payment_expires_at: o.payment_expires_at ? new Date(o.payment_expires_at).toISOString() : undefined,
       amounts: {
-        goods_vnd: Number(o.goods_vnd),
-        store_discount_vnd: Number(o.store_discount_vnd),
-        platform_discount_vnd: Number(o.platform_discount_vnd),
-        shipping_vnd: Number(o.shipping_vnd),
-        payable_vnd: Number(o.payable_vnd),
+        goods_vnd: moneyNumber(o.goods_vnd),
+        store_discount_vnd: moneyNumber(o.store_discount_vnd),
+        platform_discount_vnd: moneyNumber(o.platform_discount_vnd),
+        shipping_vnd: moneyNumber(o.shipping_vnd),
+        payable_vnd: moneyNumber(o.payable_vnd),
       },
       items: o.items.map(it => ({
         id: it.id,
@@ -702,9 +452,9 @@ export class OrderService {
         variant_id: it.variant_id,
         product_snapshot: it.product_snapshot,
         sku_snapshot: it.sku_snapshot,
-        unit_price_vnd: Number(it.unit_price_vnd),
+        unit_price_vnd: moneyNumber(it.unit_price_vnd),
         quantity: it.quantity,
-        line_total_vnd: Number(it.line_total_vnd),
+        line_total_vnd: moneyNumber(it.line_total_vnd),
       })),
     }));
 
@@ -768,7 +518,7 @@ export class OrderService {
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['listStoreOrders']> {
-    const storeId = auth?.store_membership?.store_id;
+    const storeId = requireStorePermission(auth,'order.store.read_status_cancel');
     if (!storeId) {
       throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền truy cập đơn hàng của cửa hàng.');
     }
@@ -792,7 +542,7 @@ export class OrderService {
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['getStoreOrder']> {
-    const storeId = auth?.store_membership?.store_id;
+    const storeId = requireStorePermission(auth,'order.store.read_status_cancel');
     if (!storeId) {
       throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền truy cập đơn hàng của cửa hàng.');
     }
@@ -818,7 +568,7 @@ export class OrderService {
     auth: any,
     correlation: string
   ): Promise<OperationOutputs['transitionStoreOrder']> {
-    const storeId = auth?.store_membership?.store_id;
+    const storeId = requireStorePermission(auth,'order.store.read_status_cancel');
     if (!storeId) {
       throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thao tác đơn hàng của cửa hàng.');
     }
@@ -839,7 +589,7 @@ export class OrderService {
 
     return database.transaction(async manager => {
       const repo = new OrderRepository(manager);
-      const order = await repo.findStoreOrderById(id, storeId);
+      const order = await repo.lockStoreOrderById(id, storeId);
       if (!order) {
         throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
       }
@@ -854,7 +604,6 @@ export class OrderService {
       // PROCESSING -> SHIPPED
       // SHIPPED -> COMPLETED
       const legalTransitions: Record<string, string[]> = {
-        PREPARING: ['CONFIRMED'],
         PENDING: ['CONFIRMED'],
         CONFIRMED: ['PROCESSING'],
         PROCESSING: ['SHIPPED'],
@@ -870,6 +619,14 @@ export class OrderService {
         );
       }
 
+      if(toStatus==='CONFIRMED' || toStatus==='SHIPPED') {
+        return notImplemented('transitionStoreOrder: cần consume reservation/shipment bền vững trước cập nhật trạng thái');
+      }
+
+      if(toStatus==='COMPLETED') {
+        const payment=await repo.lockPaymentByOrderId(id);
+        if(!payment || payment.status!=='SUCCEEDED' || BigInt(payment.collected_vnd)<BigInt(order.payable_vnd)) throw new ApiError(409,'PAYMENT_NOT_COLLECTED','Chưa thu đủ tiền.');
+      }
       const updated = await repo.updateOrderStatusWithHistory({
         order_id: id,
         from_status: order.status,
@@ -911,261 +668,45 @@ export class OrderService {
     });
   }
 
-  async cancelOwnOrder(
-    id: string,
-    input: OperationInputs['cancelOwnOrder']['body'],
-    auth: any,
-    correlation: string
-  ): Promise<OperationOutputs['cancelOwnOrder']> {
-    const userId = auth?.user_id;
-    if (!userId) {
-      throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
-    }
-
-    if (!id || !UUID_REGEX.test(id)) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
-    }
-
-    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
-    }
-
-    return database.transaction(async manager => {
-      const repo = new OrderRepository(manager);
-      const order = await repo.findCustomerOrderById(id, userId);
-      if (!order) {
-        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng hoặc đơn hàng không thuộc quyền sở hữu của bạn.');
-      }
-
-      if (order.version !== input.expected_version) {
-        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
-      }
-
-      // BR-24: Customer hủy Order AWAITING_PAYMENT / PENDING / CONFIRMED; PROCESSING trở đi từ chối.
-      const cancellableStatuses = ['AWAITING_PAYMENT', 'PREPARING', 'PENDING', 'CONFIRMED'];
-      if (!cancellableStatuses.includes(order.status)) {
-        throw new ApiError(
-          409,
-          'ORDER_CANNOT_BE_CANCELLED',
-          `Đơn hàng đang ở trạng thái "${order.status}", không thể hủy.`
-        );
-      }
-
-      const updated = await repo.updateOrderStatusWithHistory({
-        order_id: id,
-        from_status: order.status,
-        to_status: 'CANCELLED',
-        expected_version: input.expected_version,
-        actor_user_id: userId,
-        reason: input.reason ?? 'Khách hàng hủy đơn',
-      });
-
-      if (!updated) {
-        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
-      }
-
-      let paymentStatus = order.payment_status;
-      let refundStatus = order.refund_status;
-
-      // BR-25: Order sandbox đã trả tiền bị hủy tạo Refund đúng payable snapshot; Order chưa trả hoặc COD hủy không tạo Refund.
-      const payment = await repo.findPaymentByOrderId(id);
-      if (payment) {
-        if (payment.method === 'SANDBOX' && (payment.status === 'PAID' || payment.status === 'SUCCEEDED')) {
-          await repo.createRefundRecord({
-            payment_id: payment.id,
-            order_id: id,
-            amount_vnd: Number(order.payable_vnd),
-            status: 'REQUESTED',
-          });
-          await repo.updatePaymentStatus(id, 'REFUND_PENDING');
-          paymentStatus = 'REFUND_PENDING';
-          refundStatus = 'REQUESTED';
-        } else {
-          await repo.updatePaymentStatus(id, 'CANCELLED');
-          paymentStatus = 'CANCELLED';
-        }
-      }
-
-      // Restock / release inventory compensation
-      await this.releaseOrRestockInventory(id, order.items, correlation);
-
-      return this.mapOrderRowToDto({
-        ...updated,
-        items: order.items,
-        payment_status: paymentStatus,
-        refund_status: refundStatus,
-      });
+  async cancelOwnOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelOwnOrder']> {
+    if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
+    return database.transaction(async manager=>{
+      const order=await new OrderRepository(manager).lockCustomerOrderById(id,auth.user_id);
+      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
+      this.checkCancellation(order,input.expected_version);
+      return notImplemented('cancelOwnOrder: cần worker release/restock/refund bền vững');
     });
   }
 
-  async cancelStoreOrder(
-    id: string,
-    input: OperationInputs['cancelStoreOrder']['body'],
-    auth: any,
-    correlation: string
-  ): Promise<OperationOutputs['cancelStoreOrder']> {
-    const storeId = auth?.store_membership?.store_id;
-    if (!storeId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thao tác đơn hàng của cửa hàng.');
-    }
-
-    if (!id || !UUID_REGEX.test(id)) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
-    }
-
-    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
-    }
-
-    return database.transaction(async manager => {
-      const repo = new OrderRepository(manager);
-      const order = await repo.findStoreOrderById(id, storeId);
-      if (!order) {
-        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
-      }
-
-      if (order.version !== input.expected_version) {
-        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
-      }
-
-      // BR-24: Seller/Owner cũng được hủy khi chưa PROCESSING.
-      const cancellableStatuses = ['AWAITING_PAYMENT', 'PREPARING', 'PENDING', 'CONFIRMED'];
-      if (!cancellableStatuses.includes(order.status)) {
-        throw new ApiError(
-          409,
-          'ORDER_CANNOT_BE_CANCELLED',
-          `Đơn hàng đang ở trạng thái "${order.status}", không thể hủy.`
-        );
-      }
-
-      const updated = await repo.updateOrderStatusWithHistory({
-        order_id: id,
-        from_status: order.status,
-        to_status: 'CANCELLED',
-        expected_version: input.expected_version,
-        actor_user_id: auth.user_id,
-        reason: input.reason ?? 'Cửa hàng hủy đơn',
-      });
-
-      if (!updated) {
-        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
-      }
-
-      let paymentStatus = order.payment_status;
-      let refundStatus = order.refund_status;
-
-      // BR-25: Order sandbox đã trả tiền bị hủy tạo Refund đúng payable snapshot.
-      const payment = await repo.findPaymentByOrderId(id);
-      if (payment) {
-        if (payment.method === 'SANDBOX' && (payment.status === 'PAID' || payment.status === 'SUCCEEDED')) {
-          await repo.createRefundRecord({
-            payment_id: payment.id,
-            order_id: id,
-            amount_vnd: Number(order.payable_vnd),
-            status: 'REQUESTED',
-          });
-          await repo.updatePaymentStatus(id, 'REFUND_PENDING');
-          paymentStatus = 'REFUND_PENDING';
-          refundStatus = 'REQUESTED';
-        } else {
-          await repo.updatePaymentStatus(id, 'CANCELLED');
-          paymentStatus = 'CANCELLED';
-        }
-      }
-
-      // Restock / release inventory compensation
-      await this.releaseOrRestockInventory(id, order.items, correlation);
-
-      return this.mapOrderRowToDto({
-        ...updated,
-        items: order.items,
-        payment_status: paymentStatus,
-        refund_status: refundStatus,
-      });
+  async cancelStoreOrder(id:string,input:OperationInputs['cancelStoreOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelStoreOrder']> {
+    const storeId=requireStorePermission(auth,'order.store.read_status_cancel');
+    return database.transaction(async manager=>{
+      const order=await new OrderRepository(manager).lockStoreOrderById(id,storeId);
+      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
+      this.checkCancellation(order,input.expected_version);
+      return notImplemented('cancelStoreOrder: cần worker release/restock/refund bền vững');
     });
   }
+  private checkCancellation(order:OrderRow,version:number):void {
+    if(order.version!==version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
+    if(!['AWAITING_PAYMENT','PENDING','CONFIRMED'].includes(order.status)) throw new ApiError(409,'ORDER_CANNOT_BE_CANCELLED','Không thể hủy ở trạng thái này.');
+  }
 
-  // --- ORDER-05: COD Collection ---
-
-  async collectCod(
-    id: string,
-    input: OperationInputs['collectCod']['body'],
-    auth: any,
-    _correlation: string
-  ): Promise<OperationOutputs['collectCod']> {
-    const storeId = auth?.store_membership?.store_id;
-    if (!storeId) {
-      throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thao tác đơn hàng của cửa hàng.');
-    }
-
-    if (!id || !UUID_REGEX.test(id)) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
-    }
-
-    if (input?.expected_version === undefined || typeof input.expected_version !== 'number') {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
-    }
-
-    if (input?.amount_collected_vnd === undefined || typeof input.amount_collected_vnd !== 'number' || input.amount_collected_vnd <= 0) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'amount_collected_vnd phải là số tiền dương.');
-    }
-
-    return database.transaction(async manager => {
-      const repo = new OrderRepository(manager);
-      const order = await repo.findStoreOrderById(id, storeId);
-      if (!order) {
-        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
-      }
-
-      if (order.version !== input.expected_version) {
-        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
-      }
-
-      if (order.payment_method !== 'COD') {
-        throw new ApiError(422, 'INVALID_PAYMENT_METHOD', 'Đơn hàng này không sử dụng phương thức thanh toán COD.');
-      }
-
-      const payment = await repo.findPaymentByOrderId(id);
-      if (!payment) {
-        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy thông tin thanh toán của đơn hàng.');
-      }
-
-      if (payment.status === 'SUCCEEDED') {
-        throw new ApiError(409, 'ALREADY_COLLECTED', 'Tiền COD của đơn hàng này đã được thu trước đó.');
-      }
-
-      const payableAmount = Number(order.payable_vnd);
-      if (input.amount_collected_vnd !== payableAmount) {
-        throw new ApiError(
-          422,
-          'INVALID_COLLECTED_AMOUNT',
-          `Số tiền thu (${input.amount_collected_vnd.toLocaleString('vi-VN')} VND) không khớp với số tiền cần thu (${payableAmount.toLocaleString('vi-VN')} VND).`
-        );
-      }
-
-      // Record COD Collection
-      await repo.recordCodCollection({
-        order_id: id,
-        amount_due_vnd: payableAmount,
-        amount_collected_vnd: input.amount_collected_vnd,
-        status: 'COLLECTED',
-      });
-
-      // Update payment status to SUCCEEDED and collected_vnd
-      await repo.markPaymentCollected(id, input.amount_collected_vnd);
-
-      // Increment order version
-      const updated = await repo.incrementOrderVersion(id, input.expected_version);
-      if (!updated) {
-        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
-      }
-
-      return this.mapOrderRowToDto({
-        ...updated,
-        items: order.items,
-        payment_status: 'SUCCEEDED',
-        refund_status: order.refund_status,
-      });
+  async collectCod(id:string,input:OperationInputs['collectCod']['body'],auth:any,_correlation:string):Promise<OperationOutputs['collectCod']> {
+    const storeId=requireStorePermission(auth,'cod.store.collect');
+    return database.transaction(async manager=>{
+      const repo=new OrderRepository(manager),order=await repo.lockStoreOrderById(id,storeId);
+      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
+      if(order.version!==input.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
+      if(order.status!=='SHIPPED' || order.payment_method!=='COD') throw new ApiError(409,'INVALID_STATE_TRANSITION','Chỉ thu COD cho đơn đang giao.');
+      const payment=await repo.lockPaymentByOrderId(id);
+      if(!payment || ['SUCCEEDED','CANCELLED'].includes(payment.status)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment không cho phép thu COD.');
+      if(input.amount_collected_vnd!==moneyNumber(payment.collectible_vnd)) throw new ApiError(422,'COD_AMOUNT_MISMATCH','Phải thu đủ số tiền phải thu.');
+      const result=await this.payments(manager).recordCodCollection({order_id:id,amount_vnd:BigInt(input.amount_collected_vnd),operation_id:randomUUID(),actor_user_id:auth.user_id});
+      if(result.status!=='SUCCEEDED' || result.order_id!==id || result.collected_vnd!==moneyNumber(payment.collectible_vnd)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment chưa xác nhận thu đủ COD.');
+      const updated=await repo.incrementOrderVersion(id,input.expected_version);
+      if(!updated) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
+      return this.mapOrderRowToDto({...updated,items:order.items,payment_status:result.status,refund_status:order.refund_status});
     });
   }
 

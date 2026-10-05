@@ -45,7 +45,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       if (mounted) {
         setState(() {
           _isResetMode = true;
-          _successMessage = res['message']?.toString() ??
+          _successMessage =
+              res['message']?.toString() ??
               'Đã gửi liên kết/mã đặt lại mật khẩu đến email.';
         });
       }
@@ -82,7 +83,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              res['message']?.toString() ?? 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập.',
+              res['message']?.toString() ??
+                  'Đặt lại mật khẩu thành công! Vui lòng đăng nhập.',
             ),
             backgroundColor: Colors.green,
           ),

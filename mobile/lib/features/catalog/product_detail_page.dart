@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../main.dart';
 
 class ProductDetailPage extends ConsumerStatefulWidget {
-  const ProductDetailPage({super.key, required this.productId, this.initialProduct});
+  const ProductDetailPage({
+    super.key,
+    required this.productId,
+    this.initialProduct,
+  });
   final String productId;
   final Map<String, dynamic>? initialProduct;
 
@@ -31,7 +35,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   Future<void> _loadAll() async {
     setState(() {
-      _loading = _product == null;
+      _loading = true;
       _error = null;
     });
 
@@ -58,7 +62,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          if (_product == null) _error = errorMessage(e);
+          _product = null;
+          _error = errorMessage(e);
           _loading = false;
         });
       }
@@ -74,13 +79,21 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       return;
     }
 
-    final selectedVariant = variants[_selectedVariantIndex] as Map<String, dynamic>;
-    final variantId = selectedVariant['id']?.toString() ?? selectedVariant['sku']?.toString() ?? '';
+    final selectedVariant =
+        variants[_selectedVariantIndex] as Map<String, dynamic>;
+    final variantId =
+        selectedVariant['id']?.toString() ??
+        selectedVariant['sku']?.toString() ??
+        '';
 
     setState(() => _addingToCart = true);
     try {
       final client = ref.read(apiProvider);
-      await client.addToCart(variantId: variantId, quantity: _quantity);
+      await client.addToCart(
+        variantId: variantId,
+        productId: widget.productId,
+        quantity: _quantity,
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -100,10 +113,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -131,7 +141,11 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               children: [
                 const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 12),
-                Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                Text(
+                  _error!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
                 const SizedBox(height: 16),
                 FilledButton(onPressed: _loadAll, child: const Text('Thử lại')),
               ],
@@ -143,7 +157,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
     final product = _product!;
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final desc = product['description']?.toString() ?? 'Chưa có mô tả chi tiết.';
+    final desc =
+        product['description']?.toString() ?? 'Chưa có mô tả chi tiết.';
     final attributes = (product['attributes'] as Map?) ?? {};
     final variants = (product['variants'] as List?) ?? [];
 
@@ -154,7 +169,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
     final price = activeVariant != null
         ? activeVariant['price_vnd']?.toString() ?? '100000'
-        : (variants.isNotEmpty ? variants[0]['price_vnd']?.toString() ?? '100000' : '100000');
+        : (variants.isNotEmpty
+              ? variants[0]['price_vnd']?.toString() ?? '100000'
+              : '100000');
 
     final sku = activeVariant?['sku']?.toString() ?? 'SKU-DEFAULT';
 
@@ -185,7 +202,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _addingToCart ? null : () => _addToCart(navigateToCart: false),
+                  onPressed: _addingToCart
+                      ? null
+                      : () => _addToCart(navigateToCart: false),
                   icon: const Icon(Icons.add_shopping_cart),
                   label: const Text('Thêm vào giỏ'),
                   style: OutlinedButton.styleFrom(
@@ -196,7 +215,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: _addingToCart ? null : () => _addToCart(navigateToCart: true),
+                  onPressed: _addingToCart
+                      ? null
+                      : () => _addToCart(navigateToCart: true),
                   icon: const Icon(Icons.bolt),
                   label: const Text('Mua ngay'),
                   style: FilledButton.styleFrom(
@@ -227,7 +248,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 children: [
                   Icon(Icons.image_outlined, size: 72, color: Colors.grey),
                   SizedBox(height: 8),
-                  Text('Hình ảnh sản phẩm', style: TextStyle(color: Colors.grey)),
+                  Text(
+                    'Hình ảnh sản phẩm',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -248,7 +272,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text('Mã SKU: $sku', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+            Text(
+              'Mã SKU: $sku',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
 
             const Divider(height: 32),
 
@@ -285,17 +312,25 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             // Quantity Counter
             Row(
               children: [
-                const Text('Số lượng:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Số lượng:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
                 const Spacer(),
                 IconButton.outlined(
                   icon: const Icon(Icons.remove),
-                  onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
+                  onPressed: _quantity > 1
+                      ? () => setState(() => _quantity--)
+                      : null,
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
                     '$_quantity',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton.outlined(
@@ -315,7 +350,11 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             const SizedBox(height: 8),
             Text(
               desc,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade800, height: 1.4),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade800,
+                height: 1.4,
+              ),
             ),
 
             // Attributes
@@ -331,7 +370,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
                   child: Row(
                     children: [
-                      Text('${entry.key}: ', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        '${entry.key}: ',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       Text('${entry.value}'),
                     ],
                   ),
@@ -349,19 +391,27 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                Text('(${_reviews.length} đánh giá)', style: const TextStyle(color: Colors.grey)),
+                Text(
+                  '(${_reviews.length} đánh giá)',
+                  style: const TextStyle(color: Colors.grey),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             if (_reviews.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text('Chưa có đánh giá nào cho sản phẩm này.', style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Chưa có đánh giá nào cho sản phẩm này.',
+                  style: TextStyle(color: Colors.grey),
+                ),
               )
             else
               ..._reviews.map((rev) {
                 final rating = (rev['rating'] as num?)?.toInt() ?? 5;
-                final body = rev['body']?.toString() ?? 'Sản phẩm tốt, đóng gói cẩn thận.';
+                final body =
+                    rev['body']?.toString() ??
+                    'Sản phẩm tốt, đóng gói cẩn thận.';
                 return Card(
                   elevation: 0,
                   color: Colors.grey.shade50,
@@ -401,11 +451,15 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _relatedProducts.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final item = _relatedProducts[index];
                     final rTitle = item['title']?.toString() ?? '';
-                    final rPrice = (item['variants'] as List?)?.firstOrNull?['price_vnd'] ?? '100000';
+                    final rPrice =
+                        (item['variants'] as List?)
+                            ?.firstOrNull?['price_vnd'] ??
+                        '100000';
 
                     return GestureDetector(
                       onTap: () {
@@ -432,14 +486,22 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                             Container(
                               height: 70,
                               color: Colors.grey.shade100,
-                              child: const Center(child: Icon(Icons.shopping_bag_outlined, color: Colors.grey)),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.shopping_bag_outlined,
+                                  color: Colors.grey,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               rTitle,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const Spacer(),
                             Text(

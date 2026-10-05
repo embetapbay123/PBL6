@@ -22,86 +22,104 @@ import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
 
 class MockApiClient extends ApiClient {
   @override
-  Future<Map<String, dynamic>> getPersonalizationConsent() async => {'status': 'GRANTED', 'version': 1};
+  Future<Map<String, dynamic>> getPersonalizationConsent() async => {
+    'status': 'GRANTED',
+    'version': 1,
+  };
 
   @override
-  Future<Map<String, dynamic>> updatePersonalizationConsent(String status, int expectedVersion) async => {
-        'status': status,
-        'version': expectedVersion + 1,
-      };
+  Future<Map<String, dynamic>> updatePersonalizationConsent(
+    String status,
+    int expectedVersion,
+  ) async => {'status': status, 'version': expectedVersion + 1};
 
   @override
   Future<Map<String, dynamic>> getProduct(String id) async => {
-        'id': id,
-        'title': 'Bàn phím cơ không dây Bluetooth',
-        'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
-        'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
-        'variants': [
-          {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000'},
-          {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000'},
-        ],
-      };
+    'id': id,
+    'title': 'Bàn phím cơ không dây Bluetooth',
+    'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
+    'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
+    'variants': [
+      {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000'},
+      {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000'},
+    ],
+  };
 
   @override
-  Future<List<Map<String, dynamic>>> getProductReviews(String productId, {int page = 1, int size = 20}) async => [
-        {'id': 'rev-1', 'rating': 5, 'body': 'Sản phẩm gõ rất êm!'},
-      ];
+  Future<List<Map<String, dynamic>>> getProductReviews(
+    String productId, {
+    int page = 1,
+    int size = 20,
+  }) async => [
+    {'id': 'rev-1', 'rating': 5, 'body': 'Sản phẩm gõ rất êm!'},
+  ];
 
   @override
-  Future<List<Map<String, dynamic>>> getRelatedProducts(String productId, {int page = 1, int size = 10}) async => [];
+  Future<List<Map<String, dynamic>>> getRelatedProducts(
+    String productId, {
+    int page = 1,
+    int size = 10,
+  }) async => [];
 
   @override
-  Future<Map<String, dynamic>> addToCart({required String variantId, int quantity = 1}) async => {'status': 'success'};
+  Future<Map<String, dynamic>> addToCart({
+    required String variantId,
+    required String productId,
+    int quantity = 1,
+  }) async => {'status': 'success'};
 
   @override
-  Future<Map<String, dynamic>> getCartItems({int page = 1, int size = 50}) async => {
-        'items': [
-          {
-            'id': 'ci-01',
-            'store_id': 'store-tech',
-            'store_name': 'PBL Tech Store',
-            'product_id': 'prod-01',
-            'title': 'Chuột Gaming không dây',
-            'sku': 'MOUSE-RGB',
-            'unit_price_vnd': 350000,
-            'quantity': 1,
-          },
-          {
-            'id': 'ci-02',
-            'store_id': 'store-fashion',
-            'store_name': 'PBL Fashion Hub',
-            'product_id': 'prod-02',
-            'title': 'Áo hoodie Unisex',
-            'sku': 'HOODIE-BLACK-L',
-            'unit_price_vnd': 450000,
-            'quantity': 2,
-          },
-        ],
-        'total': 2,
-      };
+  Future<Map<String, dynamic>> getCartItems({
+    int page = 1,
+    int size = 50,
+  }) async => {
+    'items': [
+      {
+        'id': 'ci-01',
+        'store_id': 'store-tech',
+        'store_name': 'PBL Tech Store',
+        'product_id': 'prod-01',
+        'title': 'Chuột Gaming không dây',
+        'sku': 'MOUSE-RGB',
+        'unit_price_vnd': 350000,
+        'quantity': 1,
+      },
+      {
+        'id': 'ci-02',
+        'store_id': 'store-fashion',
+        'store_name': 'PBL Fashion Hub',
+        'product_id': 'prod-02',
+        'title': 'Áo hoodie Unisex',
+        'sku': 'HOODIE-BLACK-L',
+        'unit_price_vnd': 450000,
+        'quantity': 2,
+      },
+    ],
+    'total': 2,
+  };
 
   @override
-  Future<Map<String, dynamic>> updateCartItem(String id, {required int quantity}) async => {
-        'id': id,
-        'quantity': quantity,
-      };
+  Future<Map<String, dynamic>> updateCartItem(
+    String id, {
+    required int quantity,
+  }) async => {'id': id, 'quantity': quantity};
 
   @override
   Future<void> removeCartItem(String id) async {}
 
   @override
   Future<List<Map<String, dynamic>>> getAddresses() async => [
-        {
-          'id': 'addr-01',
-          'recipient_name': 'Nguyễn Văn A',
-          'phone': '0901234567',
-          'street': '123 Nguyễn Huệ',
-          'ward': 'Bến Nghé',
-          'district': 'Quận 1',
-          'province': 'Hồ Chí Minh',
-          'is_default': true,
-        },
-      ];
+    {
+      'id': 'addr-01',
+      'recipient_name': 'Nguyễn Văn A',
+      'phone': '0901234567',
+      'street': '123 Nguyễn Huệ',
+      'ward': 'Bến Nghé',
+      'district': 'Quận 1',
+      'province': 'Hồ Chí Minh',
+      'is_default': true,
+    },
+  ];
 
   @override
   Future<Map<String, dynamic>> quoteCheckout({
@@ -111,28 +129,30 @@ class MockApiClient extends ApiClient {
     Map<String, String>? storeVouchers,
     String? platformVoucherCode,
   }) async => {
-        'quote_id': 'quote-uuid-1234',
-        'expires_at': DateTime.now().add(const Duration(minutes: 15)).toIso8601String(),
-        'payable_total_vnd': 1250000,
-        'stores': [
-          {
-            'store_id': 'store-tech',
-            'items_subtotal_vnd': 350000,
-            'shipping_fee_vnd': 25000,
-            'store_voucher_discount_vnd': 0,
-            'platform_voucher_discount_vnd': 25000,
-            'store_payable_total_vnd': 350000,
-          },
-          {
-            'store_id': 'store-fashion',
-            'items_subtotal_vnd': 900000,
-            'shipping_fee_vnd': 30000,
-            'store_voucher_discount_vnd': 30000,
-            'platform_voucher_discount_vnd': 0,
-            'store_payable_total_vnd': 900000,
-          },
-        ],
-      };
+    'quote_id': 'quote-uuid-1234',
+    'expires_at': DateTime.now()
+        .add(const Duration(minutes: 15))
+        .toIso8601String(),
+    'payable_total_vnd': 1250000,
+    'stores': [
+      {
+        'store_id': 'store-tech',
+        'items_subtotal_vnd': 350000,
+        'shipping_fee_vnd': 25000,
+        'store_voucher_discount_vnd': 0,
+        'platform_voucher_discount_vnd': 25000,
+        'store_payable_total_vnd': 350000,
+      },
+      {
+        'store_id': 'store-fashion',
+        'items_subtotal_vnd': 900000,
+        'shipping_fee_vnd': 30000,
+        'store_voucher_discount_vnd': 30000,
+        'platform_voucher_discount_vnd': 0,
+        'store_payable_total_vnd': 900000,
+      },
+    ],
+  };
 
   @override
   Future<Map<String, dynamic>> confirmCheckout({
@@ -145,38 +165,38 @@ class MockApiClient extends ApiClient {
     required int expectedPayableTotalVnd,
     required String idempotencyKey,
   }) async => {
+    'purchase_group_id': 'pg-uuid-9999',
+    'order_ids': ['order-tech-1', 'order-fashion-2'],
+    'payable_total_vnd': expectedPayableTotalVnd,
+    'orders': [
+      {
+        'id': 'order-tech-1',
         'purchase_group_id': 'pg-uuid-9999',
-        'order_ids': ['order-tech-1', 'order-fashion-2'],
-        'payable_total_vnd': expectedPayableTotalVnd,
-        'orders': [
-          {
-            'id': 'order-tech-1',
-            'purchase_group_id': 'pg-uuid-9999',
-            'store_id': 'store-tech',
-            'status': 'PENDING',
-            'version': 1,
-            'payment_method': paymentMethods['store-tech'] ?? 'COD',
-            'amounts': {'payable_vnd': 350000},
-          },
-          {
-            'id': 'order-fashion-2',
-            'purchase_group_id': 'pg-uuid-9999',
-            'store_id': 'store-fashion',
-            'status': 'PENDING',
-            'version': 1,
-            'payment_method': paymentMethods['store-fashion'] ?? 'COD',
-            'amounts': {'payable_vnd': 900000},
-          },
-        ],
-      };
+        'store_id': 'store-tech',
+        'status': 'PENDING',
+        'version': 1,
+        'payment_method': paymentMethods['store-tech'] ?? 'COD',
+        'amounts': {'payable_vnd': 350000},
+      },
+      {
+        'id': 'order-fashion-2',
+        'purchase_group_id': 'pg-uuid-9999',
+        'store_id': 'store-fashion',
+        'status': 'PENDING',
+        'version': 1,
+        'payment_method': paymentMethods['store-fashion'] ?? 'COD',
+        'amounts': {'payable_vnd': 900000},
+      },
+    ],
+  };
 
   @override
   Future<Map<String, dynamic>> getPurchaseGroupOrders(String batchId) async => {
-        'purchase_group_id': batchId,
-        'order_ids': ['order-1'],
-        'payable_total_vnd': 500000,
-        'orders': [],
-      };
+    'purchase_group_id': batchId,
+    'order_ids': ['order-1'],
+    'payable_total_vnd': 500000,
+    'orders': [],
+  };
 }
 
 void main() {
@@ -184,20 +204,28 @@ void main() {
     testWidgets('Pending screens disclose unfinished behavior', (tester) async {
       await tester.pumpWidget(const MaterialApp(home: PendingPage('Cart')));
       expect(find.text('Cart'), findsNWidgets(2));
-      expect(find.text('Khung module — nghiệp vụ chờ triển khai trong các task tiếp theo.'), findsOneWidget);
+      expect(
+        find.text(
+          'Khung module — nghiệp vụ chờ triển khai trong các task tiếp theo.',
+        ),
+        findsOneWidget,
+      );
     });
 
     test('Useful unauthenticated message', () {
-      expect(errorMessage(StateError('Vui lòng đăng nhập.')), contains('Vui lòng đăng nhập'));
+      expect(
+        errorMessage(StateError('Vui lòng đăng nhập.')),
+        contains('Vui lòng đăng nhập'),
+      );
     });
   });
 
   group('Authentication Screen Tests', () {
-    testWidgets('LoginPage renders email, password fields and login button', (tester) async {
+    testWidgets('LoginPage renders email, password fields and login button', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: LoginPage()),
-        ),
+        const ProviderScope(child: MaterialApp(home: LoginPage())),
       );
 
       expect(find.text('Đăng nhập'), findsWidgets);
@@ -207,11 +235,11 @@ void main() {
       expect(find.text('Đăng ký ngay'), findsOneWidget);
     });
 
-    testWidgets('RegisterPage renders all input fields and validation', (tester) async {
+    testWidgets('RegisterPage renders all input fields and validation', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: RegisterPage()),
-        ),
+        const ProviderScope(child: MaterialApp(home: RegisterPage())),
       );
 
       expect(find.text('Đăng ký tài khoản'), findsOneWidget);
@@ -226,11 +254,11 @@ void main() {
       expect(find.text('Vui lòng nhập họ và tên.'), findsOneWidget);
     });
 
-    testWidgets('VerifyEmailPage renders token input and verify button', (tester) async {
+    testWidgets('VerifyEmailPage renders token input and verify button', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: VerifyEmailPage()),
-        ),
+        const ProviderScope(child: MaterialApp(home: VerifyEmailPage())),
       );
 
       expect(find.text('Xác minh Email'), findsOneWidget);
@@ -238,30 +266,31 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Xác minh'), findsOneWidget);
     });
 
-    testWidgets('ForgotPasswordPage toggles between forgot email and reset password modes', (tester) async {
+    testWidgets(
+      'ForgotPasswordPage toggles between forgot email and reset password modes',
+      (tester) async {
+        await tester.pumpWidget(
+          const ProviderScope(child: MaterialApp(home: ForgotPasswordPage())),
+        );
+
+        expect(find.text('Quên mật khẩu'), findsOneWidget);
+        expect(find.text('Email đã đăng ký *'), findsOneWidget);
+
+        // Switch to reset mode
+        await tester.tap(find.text('Đã có mã xác nhận? Đặt lại mật khẩu ngay'));
+        await tester.pump();
+
+        expect(find.text('Đặt lại mật khẩu'), findsOneWidget);
+        expect(find.text('Mã xác nhận (Token) *'), findsOneWidget);
+        expect(find.text('Mật khẩu mới *'), findsOneWidget);
+      },
+    );
+
+    testWidgets('ChangePasswordPage renders password input fields', (
+      tester,
+    ) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: ForgotPasswordPage()),
-        ),
-      );
-
-      expect(find.text('Quên mật khẩu'), findsOneWidget);
-      expect(find.text('Email đã đăng ký *'), findsOneWidget);
-
-      // Switch to reset mode
-      await tester.tap(find.text('Đã có mã xác nhận? Đặt lại mật khẩu ngay'));
-      await tester.pump();
-
-      expect(find.text('Đặt lại mật khẩu'), findsOneWidget);
-      expect(find.text('Mã xác nhận (Token) *'), findsOneWidget);
-      expect(find.text('Mật khẩu mới *'), findsOneWidget);
-    });
-
-    testWidgets('ChangePasswordPage renders password input fields', (tester) async {
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: ChangePasswordPage()),
-        ),
+        const ProviderScope(child: MaterialApp(home: ChangePasswordPage())),
       );
 
       expect(find.text('Đổi mật khẩu'), findsOneWidget);
@@ -275,12 +304,14 @@ void main() {
     testWidgets('ProfilePage displays profile data correctly', (tester) async {
       final container = ProviderContainer(
         overrides: [
-          profileProvider.overrideWith((ref) async => {
-                'email': 'user@example.com',
-                'display_name': 'Nguyễn Văn A',
-                'phone': '0901234567',
-                'roles': ['CUSTOMER'],
-              }),
+          profileProvider.overrideWith(
+            (ref) async => {
+              'email': 'user@example.com',
+              'display_name': 'Nguyễn Văn A',
+              'phone': '0901234567',
+              'roles': ['CUSTOMER'],
+            },
+          ),
         ],
       );
 
@@ -319,11 +350,11 @@ void main() {
       expect(find.text('0912345678'), findsOneWidget);
     });
 
-    testWidgets('AddressListPage displays empty and list states', (tester) async {
+    testWidgets('AddressListPage displays empty and list states', (
+      tester,
+    ) async {
       final emptyContainer = ProviderContainer(
-        overrides: [
-          addressListProvider.overrideWith((ref) async => []),
-        ],
+        overrides: [addressListProvider.overrideWith((ref) async => [])],
       );
 
       await tester.pumpWidget(
@@ -339,18 +370,20 @@ void main() {
 
       final listContainer = ProviderContainer(
         overrides: [
-          addressListProvider.overrideWith((ref) async => [
-                {
-                  'id': 'addr-1',
-                  'recipient_name': 'Lê Văn C',
-                  'phone': '0987654321',
-                  'street': '456 Hoàng Diệu',
-                  'ward': 'Hải Châu 2',
-                  'district': 'Hải Châu',
-                  'province': 'Đà Nẵng',
-                  'is_default': true,
-                },
-              ]),
+          addressListProvider.overrideWith(
+            (ref) async => [
+              {
+                'id': 'addr-1',
+                'recipient_name': 'Lê Văn C',
+                'phone': '0987654321',
+                'street': '456 Hoàng Diệu',
+                'ward': 'Hải Châu 2',
+                'district': 'Hải Châu',
+                'province': 'Đà Nẵng',
+                'is_default': true,
+              },
+            ],
+          ),
         ],
       );
 
@@ -369,9 +402,7 @@ void main() {
 
     testWidgets('AddressFormPage validates required fields', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(home: AddressFormPage()),
-        ),
+        const ProviderScope(child: MaterialApp(home: AddressFormPage())),
       );
 
       expect(find.text('Thêm địa chỉ mới'), findsOneWidget);
@@ -385,14 +416,15 @@ void main() {
     });
   });
 
-
-
   group('MOB-02 Catalog & Product Detail Screen Tests', () {
-    testWidgets('CatalogPage renders product list, AI recommendations banner, and categories', (tester) async {
-      final container = ProviderContainer(
-        overrides: [
-          apiProvider.overrideWithValue(MockApiClient()),
-          catalogProductsProvider.overrideWith((ref, query) async => {
+    testWidgets(
+      'CatalogPage renders product list, AI recommendations banner, and categories',
+      (tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {
                 'items': [
                   {
                     'id': 'prod-01',
@@ -405,50 +437,59 @@ void main() {
                   },
                 ],
                 'total': 1,
-              }),
-          categoriesProvider.overrideWith((ref) async => [
+              },
+            ),
+            categoriesProvider.overrideWith(
+              (ref) async => [
                 {'id': 'cat-1', 'name': 'Thời trang'},
                 {'id': 'cat-2', 'name': 'Điện tử'},
-              ]),
-          recommendationProvider.overrideWith((ref) async => {
+              ],
+            ),
+            recommendationProvider.overrideWith(
+              (ref) async => {
                 'source': 'BASELINE',
                 'mode': 'mock',
                 'product_ids': ['prod-01'],
-              }),
-        ],
-      );
+              },
+            ),
+          ],
+        );
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: CatalogPage()),
-        ),
-      );
-      await tester.pump();
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pump();
 
-      expect(find.text('PBL6 E-Commerce'), findsOneWidget);
-      expect(find.text('Dành riêng cho bạn'), findsOneWidget);
-      expect(find.text('Gợi ý Baseline / Mock'), findsOneWidget);
-      expect(find.text('Thời trang'), findsOneWidget);
-      expect(find.text('Điện tử'), findsOneWidget);
-      expect(find.text('Áo thun thể thao Dry-Fit'), findsOneWidget);
-      expect(find.text('250000 ₫'), findsOneWidget);
-    });
+        expect(find.text('PBL6 E-Commerce'), findsOneWidget);
+        expect(find.text('Dành riêng cho bạn'), findsOneWidget);
+        expect(find.text('Gợi ý Baseline / Mock'), findsOneWidget);
+        expect(find.text('Thời trang'), findsOneWidget);
+        expect(find.text('Điện tử'), findsOneWidget);
+        expect(find.text('Áo thun thể thao Dry-Fit'), findsOneWidget);
+        expect(find.text('250000 ₫'), findsOneWidget);
+      },
+    );
 
-    testWidgets('CatalogPage displays empty state when no products found', (tester) async {
+    testWidgets('CatalogPage displays empty state when no products found', (
+      tester,
+    ) async {
       final container = ProviderContainer(
         overrides: [
           apiProvider.overrideWithValue(MockApiClient()),
-          catalogProductsProvider.overrideWith((ref, query) async => {
-                'items': [],
-                'total': 0,
-              }),
+          catalogProductsProvider.overrideWith(
+            (ref, query) async => {'items': [], 'total': 0},
+          ),
           categoriesProvider.overrideWith((ref) async => []),
-          recommendationProvider.overrideWith((ref) async => {
-                'source': 'BASELINE',
-                'mode': 'mock',
-                'product_ids': [],
-              }),
+          recommendationProvider.overrideWith(
+            (ref) async => {
+              'source': 'BASELINE',
+              'mode': 'mock',
+              'product_ids': [],
+            },
+          ),
         ],
       );
 
@@ -463,78 +504,83 @@ void main() {
       expect(find.text('Không tìm thấy sản phẩm nào'), findsOneWidget);
     });
 
-    testWidgets('ProductDetailPage renders full details, variant chips and quantity selection', (tester) async {
-      final mockProduct = {
-        'id': 'prod-01',
-        'title': 'Bàn phím cơ không dây Bluetooth',
-        'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
-        'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
-        'variants': [
-          {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000'},
-          {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000'},
-        ],
-      };
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            apiProvider.overrideWithValue(MockApiClient()),
+    testWidgets(
+      'ProductDetailPage renders full details, variant chips and quantity selection',
+      (tester) async {
+        final mockProduct = {
+          'id': 'prod-01',
+          'title': 'Bàn phím cơ không dây Bluetooth',
+          'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
+          'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
+          'variants': [
+            {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000'},
+            {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000'},
           ],
-          child: MaterialApp(
-            home: ProductDetailPage(
-              productId: 'prod-01',
-              initialProduct: mockProduct,
+        };
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [apiProvider.overrideWithValue(MockApiClient())],
+            child: MaterialApp(
+              home: ProductDetailPage(
+                productId: 'prod-01',
+                initialProduct: mockProduct,
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Bàn phím cơ không dây Bluetooth'), findsWidgets);
-      expect(find.text('1200000 ₫'), findsOneWidget);
-      expect(find.text('Mã SKU: KB-RED'), findsOneWidget);
-      expect(find.text('KB-RED (1200000 ₫)'), findsOneWidget);
-      expect(find.text('KB-BLUE (1250000 ₫)'), findsOneWidget);
-      expect(find.text('Thêm vào giỏ'), findsOneWidget);
-      expect(find.text('Mua ngay'), findsOneWidget);
+        expect(find.text('Bàn phím cơ không dây Bluetooth'), findsWidgets);
+        expect(find.text('1200000 ₫'), findsOneWidget);
+        expect(find.text('Mã SKU: KB-RED'), findsOneWidget);
+        expect(find.text('KB-RED (1200000 ₫)'), findsOneWidget);
+        expect(find.text('KB-BLUE (1250000 ₫)'), findsOneWidget);
+        expect(find.text('Thêm vào giỏ'), findsOneWidget);
+        expect(find.text('Mua ngay'), findsOneWidget);
 
-      // Change variant
-      await tester.tap(find.text('KB-BLUE (1250000 ₫)'));
-      await tester.pump();
-      expect(find.text('1250000 ₫'), findsOneWidget);
-      expect(find.text('Mã SKU: KB-BLUE'), findsOneWidget);
+        // Change variant
+        await tester.tap(find.text('KB-BLUE (1250000 ₫)'));
+        await tester.pump();
+        expect(find.text('1250000 ₫'), findsOneWidget);
+        expect(find.text('Mã SKU: KB-BLUE'), findsOneWidget);
 
-      // Increase quantity
-      expect(find.text('1'), findsOneWidget);
-      await tester.ensureVisible(find.byIcon(Icons.add));
-      await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
-      expect(find.text('2'), findsOneWidget);
-    });
+        // Increase quantity
+        expect(find.text('1'), findsOneWidget);
+        await tester.ensureVisible(find.byIcon(Icons.add));
+        await tester.tap(find.byIcon(Icons.add));
+        await tester.pumpAndSettle();
+        expect(find.text('2'), findsOneWidget);
+      },
+    );
 
-    testWidgets('ConsentDialog renders switch and controls AI personalization', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            apiProvider.overrideWithValue(MockApiClient()),
-          ],
-          child: const MaterialApp(home: Scaffold(body: ConsentDialog())),
-        ),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'ConsentDialog renders switch and controls AI personalization',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [apiProvider.overrideWithValue(MockApiClient())],
+            child: const MaterialApp(home: Scaffold(body: ConsentDialog())),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Cá nhân hóa & Gợi ý AI'), findsOneWidget);
-      expect(find.text('Bật gợi ý thông minh'), findsOneWidget);
-      expect(find.text('Đóng'), findsOneWidget);
-    });
+        expect(find.text('Cá nhân hóa & Gợi ý AI'), findsOneWidget);
+        expect(find.text('Bật gợi ý thông minh'), findsOneWidget);
+        expect(find.text('Đóng'), findsOneWidget);
+      },
+    );
   });
 
   group('MOB-03 Cart, Multi-Store Checkout & Order Screen Tests', () {
-    testWidgets('CartPage displays grouped items by store, handles selection and updates subtotal', (tester) async {
-      final container = ProviderContainer(
-        overrides: [
-          apiProvider.overrideWithValue(MockApiClient()),
-          cartItemsProvider.overrideWith((ref) async => {
+    testWidgets(
+      'CartPage displays grouped items by store, handles selection and updates subtotal',
+      (tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            cartItemsProvider.overrideWith(
+              (ref) async => {
                 'items': [
                   {
                     'id': 'ci-01',
@@ -558,41 +604,44 @@ void main() {
                   },
                 ],
                 'total': 2,
-              }),
-        ],
-      );
+              },
+            ),
+          ],
+        );
 
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(home: CartPage()),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CartPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Giỏ hàng của bạn'), findsOneWidget);
-      expect(find.text('PBL Tech Store'), findsOneWidget);
-      expect(find.text('PBL Fashion Hub'), findsOneWidget);
-      expect(find.text('Chuột Gaming không dây'), findsOneWidget);
-      expect(find.text('Áo hoodie Unisex'), findsOneWidget);
-      expect(find.text('Mua hàng (0)'), findsOneWidget);
+        expect(find.text('Giỏ hàng của bạn'), findsOneWidget);
+        expect(find.text('PBL Tech Store'), findsOneWidget);
+        expect(find.text('PBL Fashion Hub'), findsOneWidget);
+        expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+        expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+        expect(find.text('Mua hàng (0)'), findsOneWidget);
 
-      // Select All items
-      await tester.tap(find.text('Chọn tất cả sản phẩm'));
-      await tester.pumpAndSettle();
+        // Select All items
+        await tester.tap(find.text('Chọn tất cả sản phẩm'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Mua hàng (2)'), findsOneWidget);
-      expect(find.text('1250000 ₫'), findsOneWidget);
-    });
+        expect(find.text('Mua hàng (2)'), findsOneWidget);
+        expect(find.text('1250000 ₫'), findsOneWidget);
+      },
+    );
 
-    testWidgets('CartPage displays empty state when cart is empty', (tester) async {
+    testWidgets('CartPage displays empty state when cart is empty', (
+      tester,
+    ) async {
       final container = ProviderContainer(
         overrides: [
           apiProvider.overrideWithValue(MockApiClient()),
-          cartItemsProvider.overrideWith((ref) async => {
-                'items': [],
-                'total': 0,
-              }),
+          cartItemsProvider.overrideWith(
+            (ref) async => {'items': [], 'total': 0},
+          ),
         ],
       );
 
@@ -608,90 +657,94 @@ void main() {
       expect(find.text('Tiếp tục mua sắm'), findsOneWidget);
     });
 
-    testWidgets('CheckoutPage renders addresses, multi-store items, vouchers, and quote breakdown', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            apiProvider.overrideWithValue(MockApiClient()),
-          ],
-          child: MaterialApp(
-            home: CheckoutPage(
-              cartItemIds: const ['ci-01', 'ci-02'],
-              initialSelectedItems: [
-                {
-                  'id': 'ci-01',
-                  'store_id': 'store-tech',
-                  'store_name': 'PBL Tech Store',
-                  'title': 'Chuột Gaming không dây',
-                  'sku': 'MOUSE-RGB',
-                  'unit_price_vnd': 350000,
-                  'quantity': 1,
-                },
-                {
-                  'id': 'ci-02',
-                  'store_id': 'store-fashion',
-                  'store_name': 'PBL Fashion Hub',
-                  'title': 'Áo hoodie Unisex',
-                  'sku': 'HOODIE-BLACK-L',
-                  'unit_price_vnd': 450000,
-                  'quantity': 2,
-                },
-              ],
+    testWidgets(
+      'CheckoutPage renders addresses, multi-store items, vouchers, and quote breakdown',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [apiProvider.overrideWithValue(MockApiClient())],
+            child: MaterialApp(
+              home: CheckoutPage(
+                cartItemIds: const ['ci-01', 'ci-02'],
+                initialSelectedItems: [
+                  {
+                    'id': 'ci-01',
+                    'store_id': 'store-tech',
+                    'store_name': 'PBL Tech Store',
+                    'title': 'Chuột Gaming không dây',
+                    'sku': 'MOUSE-RGB',
+                    'unit_price_vnd': 350000,
+                    'quantity': 1,
+                  },
+                  {
+                    'id': 'ci-02',
+                    'store_id': 'store-fashion',
+                    'store_name': 'PBL Fashion Hub',
+                    'title': 'Áo hoodie Unisex',
+                    'sku': 'HOODIE-BLACK-L',
+                    'unit_price_vnd': 450000,
+                    'quantity': 2,
+                  },
+                ],
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Xác nhận & Báo giá đơn hàng'), findsOneWidget);
-      expect(find.text('Địa chỉ nhận hàng'), findsOneWidget);
-      expect(find.text('Nguyễn Văn A (0901234567)'), findsOneWidget);
-      expect(find.text('PBL Tech Store'), findsOneWidget);
-      expect(find.text('PBL Fashion Hub'), findsOneWidget);
-      expect(find.text('Voucher toàn sàn PBL6'), findsOneWidget);
-      expect(find.text('Chi tiết báo giá'), findsOneWidget);
-      expect(find.text('1250000 ₫'), findsWidgets);
-      expect(find.text('Đặt hàng'), findsOneWidget);
-    });
+        expect(find.text('Xác nhận & Báo giá đơn hàng'), findsOneWidget);
+        expect(find.text('Địa chỉ nhận hàng'), findsOneWidget);
+        expect(find.text('Nguyễn Văn A (0901234567)'), findsOneWidget);
+        expect(find.text('PBL Tech Store'), findsOneWidget);
+        expect(find.text('PBL Fashion Hub'), findsOneWidget);
+        expect(find.text('Voucher toàn sàn PBL6'), findsOneWidget);
+        expect(find.text('Chi tiết báo giá'), findsOneWidget);
+        expect(find.text('1250000 ₫'), findsWidgets);
+        expect(find.text('Đặt hàng'), findsOneWidget);
+      },
+    );
 
-    testWidgets('CheckoutPage confirms order and navigates to OrderSuccessPage', (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            apiProvider.overrideWithValue(MockApiClient()),
-          ],
-          child: MaterialApp(
-            home: CheckoutPage(
-              cartItemIds: const ['ci-01'],
-              initialSelectedItems: [
-                {
-                  'id': 'ci-01',
-                  'store_id': 'store-tech',
-                  'store_name': 'PBL Tech Store',
-                  'title': 'Chuột Gaming không dây',
-                  'sku': 'MOUSE-RGB',
-                  'unit_price_vnd': 350000,
-                  'quantity': 1,
-                },
-              ],
+    testWidgets(
+      'CheckoutPage confirms order and navigates to OrderSuccessPage',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [apiProvider.overrideWithValue(MockApiClient())],
+            child: MaterialApp(
+              home: CheckoutPage(
+                cartItemIds: const ['ci-01'],
+                initialSelectedItems: [
+                  {
+                    'id': 'ci-01',
+                    'store_id': 'store-tech',
+                    'store_name': 'PBL Tech Store',
+                    'title': 'Chuột Gaming không dây',
+                    'sku': 'MOUSE-RGB',
+                    'unit_price_vnd': 350000,
+                    'quantity': 1,
+                  },
+                ],
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Đặt hàng'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Đặt hàng'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('Đặt hàng thành công'), findsOneWidget);
-      expect(find.text('Cảm ơn bạn đã đặt hàng!'), findsOneWidget);
-      expect(find.text('pg-uuid-9999'), findsOneWidget);
-      expect(find.textContaining('order-tech-1'), findsOneWidget);
-      expect(find.textContaining('order-fashion-2'), findsOneWidget);
-      expect(find.text('Xem đơn hàng của tôi'), findsOneWidget);
-    });
+        expect(find.text('Đặt hàng thành công'), findsOneWidget);
+        expect(find.text('Cảm ơn bạn đã đặt hàng!'), findsOneWidget);
+        expect(find.text('pg-uuid-9999'), findsOneWidget);
+        expect(find.textContaining('order-tech-1'), findsOneWidget);
+        expect(find.textContaining('order-fashion-2'), findsOneWidget);
+        expect(find.text('Xem đơn hàng của tôi'), findsOneWidget);
+      },
+    );
 
-    testWidgets('OrderSuccessPage renders complete batch details', (tester) async {
+    testWidgets('OrderSuccessPage renders complete batch details', (
+      tester,
+    ) async {
       final mockBatch = {
         'purchase_group_id': 'pg-123456',
         'payable_total_vnd': 750000,
@@ -737,18 +790,20 @@ void main() {
       expect(client.isAuthenticated, isTrue);
     });
 
-    test('ApiClient recommendation fallback returns non-null map', () async {
-      final client = ApiClient(baseUrl: 'http://invalid-host-for-testing:9999/api/v1');
-      final res = await client.getRecommendations();
-      expect(res['source'], equals('BASELINE'));
-      expect(res['mode'], equals('mock'));
+    test('ApiClient propagates recommendation network errors', () async {
+      final client = ApiClient();
+      await expectLater(client.getRecommendations(), throwsA(isA<Exception>()));
     });
 
-    test('ApiClient categories fallback returns empty list on network error', () async {
-      final client = ApiClient(baseUrl: 'http://invalid-host-for-testing:9999/api/v1');
-      final res = await client.getCategories();
-      expect(res, isEmpty);
-    });
+    test(
+      'ApiClient categories fallback returns empty list on network error',
+      () async {
+        final client = ApiClient(
+          baseUrl: 'http://invalid-host-for-testing:9999/api/v1',
+        );
+        final res = await client.getCategories();
+        expect(res, isEmpty);
+      },
+    );
   });
 }
-

@@ -4,6 +4,7 @@ import { audit } from '../../../shared/src/audit';
 import { moneyNumber } from '../../../shared/src/money';
 import { VoucherRepository, VoucherRow } from './voucher.repository';
 import { OrderService } from '../order/order.service';
+import { requireStorePermission } from '../scope';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,15 +31,7 @@ export function voucherResponse(row: VoucherRow): OperationOutputs['createStoreV
 
 export class VoucherService {
   private verifyStoreOwner(auth: any): string {
-    const storeId = auth?.store_membership?.store_id;
-    const isStoreOwner =
-      auth?.roles?.includes('STORE_OWNER') ||
-      auth?.store_membership?.role === 'OWNER' ||
-      auth?.store_membership?.permissions?.includes('voucher.store.manage');
-    if (!storeId || !isStoreOwner) {
-      throw new ApiError(403, 'FORBIDDEN', 'Yêu cầu quyền chủ cửa hàng để thao tác.');
-    }
-    return storeId;
+    return requireStorePermission(auth,'voucher.store.manage');
   }
 
   private verifyAdmin(auth: any) {
@@ -408,7 +401,7 @@ export class VoucherService {
       voucher_id: voucher.id,
       reserved_count: counts.reserved_count,
       redeemed_count: counts.redeemed_count,
-      remaining_count: voucher.usage_limit,
+      remaining_count: Math.max(0, voucher.usage_limit - counts.reserved_count - counts.redeemed_count),
     };
   }
 
@@ -434,7 +427,7 @@ export class VoucherService {
       voucher_id: voucher.id,
       reserved_count: counts.reserved_count,
       redeemed_count: counts.redeemed_count,
-      remaining_count: voucher.usage_limit,
+      remaining_count: Math.max(0, voucher.usage_limit - counts.reserved_count - counts.redeemed_count),
     };
   }
 }

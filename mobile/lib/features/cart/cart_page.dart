@@ -39,7 +39,11 @@ class _CartPageState extends ConsumerState<CartPage> {
               children: [
                 const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 12),
-                Text(errorMessage(err), textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                Text(
+                  errorMessage(err),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.red),
+                ),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => ref.invalidate(cartItemsProvider),
@@ -50,7 +54,11 @@ class _CartPageState extends ConsumerState<CartPage> {
           ),
         ),
         data: (data) {
-          final items = (data['items'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList() ?? [];
+          final items =
+              (data['items'] as List?)
+                  ?.map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList() ??
+              [];
           if (items.isEmpty) {
             return Center(
               child: Padding(
@@ -58,11 +66,18 @@ class _CartPageState extends ConsumerState<CartPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.remove_shopping_cart_outlined, size: 72, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.remove_shopping_cart_outlined,
+                      size: 72,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'Giỏ hàng của bạn đang trống',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -72,7 +87,11 @@ class _CartPageState extends ConsumerState<CartPage> {
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
-                      onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
+                      onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/',
+                        (route) => false,
+                      ),
                       icon: const Icon(Icons.shopping_bag_outlined),
                       label: const Text('Tiếp tục mua sắm'),
                     ),
@@ -88,21 +107,30 @@ class _CartPageState extends ConsumerState<CartPage> {
 
           for (final item in items) {
             final storeId = item['store_id']?.toString() ?? 'store-default';
-            final storeName = item['store_name']?.toString() ?? 'Cửa hàng $storeId';
+            final storeName =
+                item['store_name']?.toString() ?? 'Cửa hàng $storeId';
             storeGroups.putIfAbsent(storeId, () => []).add(item);
             storeNames[storeId] = storeName;
           }
 
-          final allItemIds = items.map((e) => e['id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
-          final isAllSelected = allItemIds.isNotEmpty && _selectedItemIds.containsAll(allItemIds);
+          final allItemIds = items
+              .where(_available)
+              .map((e) => e['id']?.toString() ?? '')
+              .where((id) => id.isNotEmpty)
+              .toSet();
+          _selectedItemIds.retainAll(allItemIds);
+          final isAllSelected =
+              allItemIds.isNotEmpty && _selectedItemIds.containsAll(allItemIds);
 
           // Calculate estimated total of selected items
           int selectedSubtotal = 0;
           for (final item in items) {
             final id = item['id']?.toString() ?? '';
             if (_selectedItemIds.contains(id)) {
-              final price = (item['unit_price_vnd'] as num?)?.toInt() ?? 
-                            (item['price_vnd'] as num?)?.toInt() ?? 100000;
+              final price =
+                  (item['unit_price_vnd'] as num?)?.toInt() ??
+                  (item['price_vnd'] as num?)?.toInt() ??
+                  0;
               final qty = (item['quantity'] as num?)?.toInt() ?? 1;
               selectedSubtotal += price * qty;
             }
@@ -124,10 +152,15 @@ class _CartPageState extends ConsumerState<CartPage> {
                         });
                       },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade200),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -145,9 +178,15 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 });
                               },
                       ),
-                      const Text('Chọn tất cả sản phẩm', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Chọn tất cả sản phẩm',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       const Spacer(),
-                      Text('${_selectedItemIds.length}/${items.length} mục', style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        '${_selectedItemIds.length}/${items.length} mục',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                     ],
                   ),
                 ),
@@ -165,8 +204,14 @@ class _CartPageState extends ConsumerState<CartPage> {
                       final storeItems = storeGroups[storeId]!;
                       final storeName = storeNames[storeId]!;
 
-                      final storeItemIds = storeItems.map((e) => e['id']?.toString() ?? '').where((id) => id.isNotEmpty).toSet();
-                      final isStoreAllSelected = storeItemIds.isNotEmpty && _selectedItemIds.containsAll(storeItemIds);
+                      final storeItemIds = storeItems
+                          .where(_available)
+                          .map((e) => e['id']?.toString() ?? '')
+                          .where((id) => id.isNotEmpty)
+                          .toSet();
+                      final isStoreAllSelected =
+                          storeItemIds.isNotEmpty &&
+                          _selectedItemIds.containsAll(storeItemIds);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -190,19 +235,30 @@ class _CartPageState extends ConsumerState<CartPage> {
                                         : (checked) {
                                             setState(() {
                                               if (checked == true) {
-                                                _selectedItemIds.addAll(storeItemIds);
+                                                _selectedItemIds.addAll(
+                                                  storeItemIds,
+                                                );
                                               } else {
-                                                _selectedItemIds.removeAll(storeItemIds);
+                                                _selectedItemIds.removeAll(
+                                                  storeItemIds,
+                                                );
                                               }
                                             });
                                           },
                                   ),
-                                  const Icon(Icons.storefront, size: 20, color: Color(0xff1648a8)),
+                                  const Icon(
+                                    Icons.storefront,
+                                    size: 20,
+                                    color: Color(0xff1648a8),
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       storeName,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -213,29 +269,48 @@ class _CartPageState extends ConsumerState<CartPage> {
 
                               // Store Items
                               ...storeItems.map((item) {
+                                final available = _available(item);
                                 final itemId = item['id']?.toString() ?? '';
-                                final title = item['title']?.toString() ?? item['product_title']?.toString() ?? 'Sản phẩm';
-                                final sku = item['sku']?.toString() ?? item['variant_sku']?.toString() ?? 'SKU';
-                                final price = (item['unit_price_vnd'] as num?)?.toInt() ?? 
-                                              (item['price_vnd'] as num?)?.toInt() ?? 100000;
-                                final qty = (item['quantity'] as num?)?.toInt() ?? 1;
-                                final isSelected = _selectedItemIds.contains(itemId);
+                                final title =
+                                    item['title']?.toString() ??
+                                    item['product_title']?.toString() ??
+                                    'Sản phẩm';
+                                final sku =
+                                    item['sku']?.toString() ??
+                                    item['variant_sku']?.toString() ??
+                                    'SKU';
+                                final price =
+                                    (item['unit_price_vnd'] as num?)?.toInt() ??
+                                    (item['price_vnd'] as num?)?.toInt() ??
+                                    0;
+                                final qty =
+                                    (item['quantity'] as num?)?.toInt() ?? 1;
+                                final isSelected = _selectedItemIds.contains(
+                                  itemId,
+                                );
 
                                 return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8.0,
+                                  ),
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Checkbox(
                                         value: isSelected,
-                                        onChanged: _busy
+                                        onChanged: _busy || !available
                                             ? null
                                             : (checked) {
                                                 setState(() {
                                                   if (checked == true) {
-                                                    _selectedItemIds.add(itemId);
+                                                    _selectedItemIds.add(
+                                                      itemId,
+                                                    );
                                                   } else {
-                                                    _selectedItemIds.remove(itemId);
+                                                    _selectedItemIds.remove(
+                                                      itemId,
+                                                    );
                                                   }
                                                 });
                                               },
@@ -245,32 +320,48 @@ class _CartPageState extends ConsumerState<CartPage> {
                                         height: 60,
                                         decoration: BoxDecoration(
                                           color: Colors.grey.shade100,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                         ),
-                                        child: const Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                                        child: const Icon(
+                                          Icons.shopping_bag_outlined,
+                                          color: Colors.grey,
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               title,
-                                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13,
+                                              ),
                                               maxLines: 2,
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                             const SizedBox(height: 2),
                                             Text(
                                               'Phân loại: $sku',
-                                              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 11,
+                                              ),
                                             ),
                                             const SizedBox(height: 6),
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
                                               children: [
                                                 Text(
-                                                  '$price ₫',
+                                                  available
+                                                      ? '$price ₫'
+                                                      : 'Chưa có giá',
                                                   style: const TextStyle(
                                                     color: Color(0xff1648a8),
                                                     fontWeight: FontWeight.bold,
@@ -281,29 +372,79 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                 Row(
                                                   children: [
                                                     IconButton(
-                                                      icon: const Icon(Icons.remove, size: 16),
+                                                      icon: const Icon(
+                                                        Icons.remove,
+                                                        size: 16,
+                                                      ),
                                                       padding: EdgeInsets.zero,
-                                                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                                      onPressed: (_busy || qty <= 1)
+                                                      constraints:
+                                                          const BoxConstraints(
+                                                            minWidth: 28,
+                                                            minHeight: 28,
+                                                          ),
+                                                      onPressed:
+                                                          (_busy ||
+                                                              !available ||
+                                                              qty <= 1)
                                                           ? null
-                                                          : () => _updateQuantity(itemId, qty - 1),
+                                                          : () =>
+                                                                _updateQuantity(
+                                                                  itemId,
+                                                                  qty - 1,
+                                                                ),
                                                     ),
                                                     Padding(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                                      child: Text('$qty', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 6.0,
+                                                          ),
+                                                      child: Text(
+                                                        '$qty',
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
                                                     ),
                                                     IconButton(
-                                                      icon: const Icon(Icons.add, size: 16),
+                                                      icon: const Icon(
+                                                        Icons.add,
+                                                        size: 16,
+                                                      ),
                                                       padding: EdgeInsets.zero,
-                                                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                                                      onPressed: _busy ? null : () => _updateQuantity(itemId, qty + 1),
+                                                      constraints:
+                                                          const BoxConstraints(
+                                                            minWidth: 28,
+                                                            minHeight: 28,
+                                                          ),
+                                                      onPressed:
+                                                          _busy || !available
+                                                          ? null
+                                                          : () =>
+                                                                _updateQuantity(
+                                                                  itemId,
+                                                                  qty + 1,
+                                                                ),
                                                     ),
                                                     IconButton(
-                                                      icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                                      icon: const Icon(
+                                                        Icons.delete_outline,
+                                                        size: 18,
+                                                        color: Colors.red,
+                                                      ),
                                                       padding: EdgeInsets.zero,
-                                                      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                                                      constraints:
+                                                          const BoxConstraints(
+                                                            minWidth: 28,
+                                                            minHeight: 28,
+                                                          ),
                                                       tooltip: 'Xóa',
-                                                      onPressed: _busy ? null : () => _removeItem(itemId, title),
+                                                      onPressed: _busy
+                                                          ? null
+                                                          : () => _removeItem(
+                                                              itemId,
+                                                              title,
+                                                            ),
                                                     ),
                                                   ],
                                                 ),
@@ -327,7 +468,10 @@ class _CartPageState extends ConsumerState<CartPage> {
 
               // Bottom Checkout Bar
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -345,7 +489,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text('Tổng thanh toán tạm tính:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          const Text(
+                            'Tổng thanh toán tạm tính:',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
                           Text(
                             '$selectedSubtotal ₫',
                             style: const TextStyle(
@@ -362,7 +509,11 @@ class _CartPageState extends ConsumerState<CartPage> {
                             ? null
                             : () {
                                 final selectedList = items
-                                    .where((e) => _selectedItemIds.contains(e['id']?.toString()))
+                                    .where(
+                                      (e) => _selectedItemIds.contains(
+                                        e['id']?.toString(),
+                                      ),
+                                    )
                                     .toList();
 
                                 Navigator.push(
@@ -378,7 +529,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                         icon: const Icon(Icons.shopping_cart_checkout),
                         label: Text('Mua hàng (${_selectedItemIds.length})'),
                         style: FilledButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ],
@@ -391,6 +545,10 @@ class _CartPageState extends ConsumerState<CartPage> {
       ),
     );
   }
+
+  bool _available(Map<String, dynamic> item) =>
+      item['catalog_available'] != false &&
+      (item['unit_price_vnd'] is int || item['price_vnd'] is int);
 
   Future<void> _updateQuantity(String itemId, int newQuantity) async {
     setState(() => _busy = true);
@@ -416,7 +574,10 @@ class _CartPageState extends ConsumerState<CartPage> {
         title: const Text('Xác nhận xóa'),
         content: Text('Bạn có chắc muốn xóa "$title" khỏi giỏ hàng?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
@@ -436,7 +597,10 @@ class _CartPageState extends ConsumerState<CartPage> {
       ref.invalidate(cartItemsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa sản phẩm khỏi giỏ hàng.'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Đã xóa sản phẩm khỏi giỏ hàng.'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {

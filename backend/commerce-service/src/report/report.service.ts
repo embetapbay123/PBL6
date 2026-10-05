@@ -3,6 +3,10 @@ import { ApiError } from '../../../shared/src/errors';
 import { moneyNumber } from '../../../shared/src/money';
 import { ReportRepository, OrderAdminRow } from './report.repository';
 import type { OperationOutputs } from '../../../shared/src/operations.generated';
+import { config } from '../../../shared/src/config';
+import { InternalClients } from '../../../shared/src/internal-clients';
+import { accessToken, requireStorePermission } from '../scope';
+import { IdentityStatsClient, IdentityStats } from '../identity-stats-client';
 
 export function adminOrderResponse(row: OrderAdminRow) {
   return {
@@ -28,6 +32,11 @@ export function adminOrderResponse(row: OrderAdminRow) {
 }
 
 export class ReportService {
+  constructor(private readonly clientsFactory?:()=>InternalClients,private readonly identity:IdentityStats=new IdentityStatsClient()) {}
+  private clients():InternalClients {
+    if(this.clientsFactory) return this.clientsFactory();
+    const c=config('M2');return new InternalClients('M2',c.internalKeys.M2,{M1:c.catalogUrl,M2:'',M3:c.identityUrl});
+  }
   private verifyAdmin(auth: any) {
     if (!auth?.roles?.includes('ADMIN')) {
       throw new ApiError(403, 'FORBIDDEN', 'Chỉ Quản trị viên (Admin) mới có quyền truy cập.');
@@ -35,16 +44,7 @@ export class ReportService {
   }
 
   private verifyStoreOwner(auth: any): string {
-    const storeId = auth?.store_membership?.store_id;
-    const isStoreOwner =
-      auth?.roles?.includes('STORE_OWNER') ||
-      auth?.store_membership?.role === 'OWNER' ||
-      auth?.store_membership?.permissions?.includes('report.store.view') ||
-      auth?.store_membership?.permissions?.includes('voucher.store.manage');
-    if (!storeId || !isStoreOwner) {
-      throw new ApiError(403, 'FORBIDDEN', 'Yêu cầu quyền chủ cửa hàng để xem báo cáo.');
-    }
-    return storeId;
+    return requireStorePermission(auth,'report.store.view');
   }
 
   async listAllOrders(
@@ -69,26 +69,27 @@ export class ReportService {
 
   async getPlatformDashboard(
     auth: any,
-    _correlation: string
+    correlation: string
   ): Promise<OperationOutputs['getPlatformDashboard']> {
     this.verifyAdmin(auth);
     const repo = new ReportRepository(database.manager);
     const data = await repo.getPlatformDashboardData();
+    const counts=await this.identity.counts(accessToken(auth),correlation);
 
     return {
       order_value_vnd: moneyNumber(data.order_value_vnd),
       completed_goods_revenue_vnd: moneyNumber(data.completed_goods_revenue_vnd),
       collected_vnd: moneyNumber(data.collected_vnd),
       refunded_vnd: moneyNumber(data.refunded_vnd),
-      store_count: data.store_count,
-      user_count: data.user_count,
+      store_count: counts.store_count,
+      user_count: counts.user_count,
     };
   }
 
   async getStoreReport(
     query: { from: string; to: string; granularity?: 'DAY' | 'MONTH' },
     auth: any,
-    _correlation: string
+    correlation: string
   ): Promise<OperationOutputs['getStoreReport']> {
     const storeId = this.verifyStoreOwner(auth);
 
@@ -105,6 +106,13 @@ export class ReportService {
     const granularity = query.granularity === 'MONTH' ? 'MONTH' : 'DAY';
     const repo = new ReportRepository(database.manager);
     const data = await repo.getStoreReportData(storeId, from, to, granularity);
+    const lowStockIds:string[]=[];
+    let page=1,total=0;
+    do {
+      const result=await this.clients().call('ListLowStockVariants',{token:accessToken(auth),store_id:storeId,threshold:5,page,size:100},correlation);
+      if ((!result.items.length && lowStockIds.length<result.total) || page>100) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Low-stock pagination không thể hoàn tất.');
+      lowStockIds.push(...result.items.map(item=>item.variant_id));total=result.total;page++;
+    } while(lowStockIds.length<total);
 
     return {
       store_id: storeId,
@@ -117,7 +125,7 @@ export class ReportService {
       shipping_fee_vnd: moneyNumber(data.shipping_fee_vnd),
       order_count: data.order_count,
       best_selling_product_ids: data.best_selling_product_ids,
-      low_stock_variant_ids: [],
+      low_stock_variant_ids: lowStockIds,
       revenue_series: data.revenue_series.map(s => ({
         bucket_start: s.bucket_start instanceof Date ? s.bucket_start.toISOString() : new Date(s.bucket_start).toISOString(),
         completed_goods_revenue_vnd: moneyNumber(s.completed_goods_revenue_vnd),

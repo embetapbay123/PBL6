@@ -71,9 +71,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Đổi mật khẩu'),
-      ),
+      appBar: AppBar(title: const Text('Đổi mật khẩu')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -99,7 +97,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscureOld ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      _obscureOld ? Icons.visibility_off : Icons.visibility,
+                    ),
                     onPressed: () => setState(() => _obscureOld = !_obscureOld),
                   ),
                 ),
@@ -119,7 +119,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                   prefixIcon: const Icon(Icons.lock_reset_outlined),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
+                    icon: Icon(
+                      _obscureNew ? Icons.visibility_off : Icons.visibility,
+                    ),
                     onPressed: () => setState(() => _obscureNew = !_obscureNew),
                   ),
                 ),
@@ -182,7 +184,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Lưu thay đổi', style: TextStyle(fontSize: 16)),
+                    : const Text(
+                        'Lưu thay đổi',
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
             ],
           ),

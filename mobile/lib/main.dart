@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,15 +21,29 @@ import 'features/checkout/order_success_page.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
 
-final catalogProductsProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, query) async {
-  return await ref.read(apiProvider).getProducts(q: query.isEmpty ? null : query);
-});
+final catalogProductsProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((ref, query) async {
+      final params = query.startsWith('{')
+          ? jsonDecode(query) as Map<String, dynamic>
+          : {'q': query};
+      return await ref
+          .read(apiProvider)
+          .getProducts(
+            q: params['q'] as String?,
+            categoryId: params['category_id'] as String?,
+            page: (params['page'] as int?) ?? 1,
+          );
+    });
 
-final categoriesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final categoriesProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   return await ref.read(apiProvider).getCategories();
 });
 
-final recommendationProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final recommendationProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
   return await ref.read(apiProvider).getRecommendations();
 });
 
@@ -40,11 +55,43 @@ final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).getProfile();
 });
 
-final addressListProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final addressListProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   return await ref.read(apiProvider).getAddresses();
 });
 
-void main() => runApp(const ProviderScope(child: BootstrapApp()));
+void main() => runApp(const ProviderScope(child: SessionBootstrap()));
+
+class SessionBootstrap extends ConsumerStatefulWidget {
+  const SessionBootstrap({super.key});
+  @override
+  ConsumerState<SessionBootstrap> createState() => _SessionBootstrapState();
+}
+
+class _SessionBootstrapState extends ConsumerState<SessionBootstrap> {
+  bool ready = false;
+  @override
+  void initState() {
+    super.initState();
+    _restore();
+  }
+
+  Future<void> _restore() async {
+    try {
+      await ref.read(apiProvider).tryRestoreSession();
+    } finally {
+      if (mounted) setState(() => ready = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => ready
+      ? const BootstrapApp()
+      : const MaterialApp(
+          home: Scaffold(body: Center(child: CircularProgressIndicator())),
+        );
+}
 
 class BootstrapApp extends StatelessWidget {
   const BootstrapApp({super.key});
@@ -80,8 +127,14 @@ class BootstrapApp extends StatelessWidget {
             return MaterialPageRoute(builder: (_) => const CartPage());
           case '/checkout':
             final args = settings.arguments as Map<String, dynamic>?;
-            final itemIds = (args?['cart_item_ids'] as List?)?.map((e) => e.toString()).toList() ?? [];
-            final items = (args?['items'] as List?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+            final itemIds =
+                (args?['cart_item_ids'] as List?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                [];
+            final items = (args?['items'] as List?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList();
             return MaterialPageRoute(
               builder: (_) => CheckoutPage(
                 cartItemIds: itemIds,
@@ -100,9 +153,13 @@ class BootstrapApp extends StatelessWidget {
           case '/verify-email':
             return MaterialPageRoute(builder: (_) => const VerifyEmailPage());
           case '/forgot-password':
-            return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
+            return MaterialPageRoute(
+              builder: (_) => const ForgotPasswordPage(),
+            );
           case '/change-password':
-            return MaterialPageRoute(builder: (_) => const ChangePasswordPage());
+            return MaterialPageRoute(
+              builder: (_) => const ChangePasswordPage(),
+            );
           case '/profile':
             return MaterialPageRoute(builder: (_) => const ProfilePage());
           case '/edit-profile':
@@ -118,9 +175,13 @@ class BootstrapApp extends StatelessWidget {
               builder: (_) => AddressFormPage(initialAddress: args),
             );
           case '/orders':
-            return MaterialPageRoute(builder: (_) => const PendingPage('Đơn hàng (Orders)'));
+            return MaterialPageRoute(
+              builder: (_) => const PendingPage('Đơn hàng (Orders)'),
+            );
           case '/chat':
-            return MaterialPageRoute(builder: (_) => const PendingPage('Chat AI'));
+            return MaterialPageRoute(
+              builder: (_) => const PendingPage('Chat AI'),
+            );
           default:
             return MaterialPageRoute(builder: (_) => const CatalogPage());
         }
@@ -146,10 +207,11 @@ String errorMessage(Object error) {
     }
     return 'Không kết nối được API. Kiểm tra base URL và Gateway.';
   }
-  return error.toString().replaceAll('Exception: ', '').replaceAll('StateError: ', '');
+  return error
+      .toString()
+      .replaceAll('Exception: ', '')
+      .replaceAll('StateError: ', '');
 }
-
-
 
 class PendingPage extends StatelessWidget {
   const PendingPage(this.feature, {super.key});
@@ -165,11 +227,18 @@ class PendingPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.construction_outlined, size: 64, color: Colors.orange),
+              const Icon(
+                Icons.construction_outlined,
+                size: 64,
+                color: Colors.orange,
+              ),
               const SizedBox(height: 16),
               Text(
                 feature,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(

@@ -61,11 +61,18 @@ class AddressListPage extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_off_outlined, size: 64, color: Colors.grey),
+                    const Icon(
+                      Icons.location_off_outlined,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       'Bạn chưa có địa chỉ nhận hàng nào',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
@@ -76,7 +83,10 @@ class AddressListPage extends ConsumerWidget {
                     const SizedBox(height: 20),
                     FilledButton.icon(
                       onPressed: () async {
-                        final created = await Navigator.pushNamed(context, '/address-form');
+                        final created = await Navigator.pushNamed(
+                          context,
+                          '/address-form',
+                        );
                         if (created == true) {
                           ref.invalidate(addressListProvider);
                         }
@@ -99,21 +109,26 @@ class AddressListPage extends ConsumerWidget {
               final id = addr['id']?.toString() ?? '';
               final recipientName = addr['recipient_name']?.toString() ?? '';
               final phone = addr['phone']?.toString() ?? '';
-              final street = addr['street']?.toString() ?? '';
+              final street = addr['line1']?.toString() ?? '';
               final ward = addr['ward']?.toString() ?? '';
               final district = addr['district']?.toString() ?? '';
-              final province = addr['province']?.toString() ?? '';
+              final province = addr['city']?.toString() ?? '';
               final isDefault = addr['is_default'] == true;
 
-              final fullAddress = [street, ward, district, province]
-                  .where((part) => part.isNotEmpty)
-                  .join(', ');
+              final fullAddress = [
+                street,
+                ward,
+                district,
+                province,
+              ].where((part) => part.isNotEmpty).join(', ');
 
               return Card(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
-                    color: isDefault ? const Color(0xff1648a8) : Colors.grey.shade200,
+                    color: isDefault
+                        ? const Color(0xff1648a8)
+                        : Colors.grey.shade200,
                     width: isDefault ? 1.5 : 1.0,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -143,7 +158,10 @@ class AddressListPage extends ConsumerWidget {
                           const Spacer(),
                           if (isDefault)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: const Color(0xff1648a8),
                                 borderRadius: BorderRadius.circular(6),
@@ -172,17 +190,26 @@ class AddressListPage extends ConsumerWidget {
                             TextButton(
                               onPressed: () async {
                                 try {
-                                  await ref.read(apiProvider).setDefaultAddress(id);
+                                  await ref
+                                      .read(apiProvider)
+                                      .setDefaultAddress(id);
                                   ref.invalidate(addressListProvider);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Đã thiết lập địa chỉ mặc định.')),
+                                      const SnackBar(
+                                        content: Text(
+                                          'Đã thiết lập địa chỉ mặc định.',
+                                        ),
+                                      ),
                                     );
                                   }
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+                                      SnackBar(
+                                        content: Text(errorMessage(e)),
+                                        backgroundColor: Colors.red,
+                                      ),
                                     );
                                   }
                                 }
@@ -190,7 +217,10 @@ class AddressListPage extends ConsumerWidget {
                               child: const Text('Đặt làm mặc định'),
                             ),
                           IconButton(
-                            icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: Colors.blue,
+                            ),
                             tooltip: 'Chỉnh sửa',
                             onPressed: () async {
                               final updated = await Navigator.pushNamed(
@@ -204,22 +234,30 @@ class AddressListPage extends ConsumerWidget {
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
                             tooltip: 'Xóa địa chỉ',
                             onPressed: () async {
                               final confirmed = await showDialog<bool>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Xác nhận xóa'),
-                                  content: Text('Bạn có chắc chắn muốn xóa địa chỉ của $recipientName không?'),
+                                  content: Text(
+                                    'Bạn có chắc chắn muốn xóa địa chỉ của $recipientName không?',
+                                  ),
                                   actions: [
                                     TextButton(
-                                      onPressed: () => Navigator.pop(ctx, false),
+                                      onPressed: () =>
+                                          Navigator.pop(ctx, false),
                                       child: const Text('Hủy'),
                                     ),
                                     FilledButton(
                                       onPressed: () => Navigator.pop(ctx, true),
-                                      style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                      ),
                                       child: const Text('Xóa'),
                                     ),
                                   ],
@@ -232,13 +270,20 @@ class AddressListPage extends ConsumerWidget {
                                   ref.invalidate(addressListProvider);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Đã xóa địa chỉ thành công.')),
+                                      const SnackBar(
+                                        content: Text(
+                                          'Đã xóa địa chỉ thành công.',
+                                        ),
+                                      ),
                                     );
                                   }
                                 } catch (e) {
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+                                      SnackBar(
+                                        content: Text(errorMessage(e)),
+                                        backgroundColor: Colors.red,
+                                      ),
                                     );
                                   }
                                 }

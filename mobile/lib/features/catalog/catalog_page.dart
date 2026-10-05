@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../main.dart';
@@ -15,6 +16,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String? _selectedCategory;
+  int _page = 1;
+  String get _catalogKey => jsonEncode({
+    'q': _searchQuery,
+    'category_id': _selectedCategory,
+    'page': _page,
+  });
 
   @override
   void dispose() {
@@ -25,16 +32,38 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   void _onSearch(String val) {
     setState(() {
       _searchQuery = val.trim();
+      _page = 1;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final productsAsync = ref.watch(catalogProductsProvider(_searchQuery));
+    final productsAsync = ref.watch(catalogProductsProvider(_catalogKey));
     final categoriesAsync = ref.watch(categoriesProvider);
     final recommendationsAsync = ref.watch(recommendationProvider);
 
+    final total = (productsAsync.asData?.value['total'] as num?)?.toInt() ?? 0;
     return Scaffold(
+      bottomNavigationBar: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: _page > 1 && !productsAsync.isLoading
+                  ? () => setState(() => _page--)
+                  : null,
+              child: const Text('Trang trước'),
+            ),
+            Text('Trang $_page'),
+            TextButton(
+              onPressed: _page * 20 < total && !productsAsync.isLoading
+                  ? () => setState(() => _page++)
+                  : null,
+              child: const Text('Trang sau'),
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         title: const Text('PBL6 E-Commerce'),
         actions: [
@@ -63,11 +92,19 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 36),
+                  Icon(
+                    Icons.shopping_bag_outlined,
+                    color: Colors.white,
+                    size: 36,
+                  ),
                   SizedBox(height: 12),
                   Text(
                     'PBL6 Customer App',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Text(
                     'Customer Android Starter',
@@ -174,13 +211,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           label: const Text('Tất cả'),
                           selected: _selectedCategory == null,
                           onSelected: (selected) {
-                            setState(() => _selectedCategory = null);
+                            setState(() {
+                              _selectedCategory = null;
+                              _page = 1;
+                            });
                           },
                         ),
                       ),
                       ...categories.map((cat) {
                         final catName = cat['name']?.toString() ?? 'Danh mục';
-                        final isSelected = _selectedCategory == catName;
+                        final categoryId = cat['id']?.toString();
+                        final isSelected = _selectedCategory == categoryId;
                         return Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: FilterChip(
@@ -188,7 +229,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             selected: isSelected,
                             onSelected: (selected) {
                               setState(() {
-                                _selectedCategory = selected ? catName : null;
+                                _selectedCategory = selected
+                                    ? categoryId
+                                    : null;
+                                _page = 1;
                               });
                             },
                           ),
@@ -209,14 +253,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               data: (rec) {
                 final source = rec['source']?.toString() ?? 'BASELINE';
                 final isMock = rec['mode'] == 'mock' || source == 'BASELINE';
-                final badgeLabel = isMock ? 'Gợi ý Baseline / Mock' : 'AI Cá nhân hóa';
+                final badgeLabel = isMock
+                    ? 'Gợi ý Baseline / Mock'
+                    : 'AI Cá nhân hóa';
 
                 return Card(
                   elevation: 0,
                   color: const Color(0xff1648a8).withAlpha(15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: const Color(0xff1648a8).withAlpha(40)),
+                    side: BorderSide(
+                      color: const Color(0xff1648a8).withAlpha(40),
+                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
@@ -225,17 +273,29 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.auto_awesome, color: Color(0xff1648a8), size: 18),
+                            const Icon(
+                              Icons.auto_awesome,
+                              color: Color(0xff1648a8),
+                              size: 18,
+                            ),
                             const SizedBox(width: 6),
                             const Text(
                               'Dành riêng cho bạn',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
                             const Spacer(),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: isMock ? Colors.grey.shade300 : const Color(0xff1648a8),
+                                color: isMock
+                                    ? Colors.grey.shade300
+                                    : const Color(0xff1648a8),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -260,7 +320,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 );
               },
               loading: () => const SizedBox.shrink(),
-              error: (err, stack) => const SizedBox.shrink(), // Fallback: don't block UI
+              error: (err, stack) =>
+                  const SizedBox.shrink(), // Fallback: don't block UI
             ),
 
             const SizedBox(height: 16),
@@ -294,12 +355,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 12),
-                      Text(errorMessage(error), textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                      Text(
+                        errorMessage(error),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red),
+                      ),
                       const SizedBox(height: 16),
                       FilledButton(
-                        onPressed: () => ref.invalidate(catalogProductsProvider),
+                        onPressed: () =>
+                            ref.invalidate(catalogProductsProvider),
                         child: const Text('Thử lại'),
                       ),
                     ],
@@ -314,11 +384,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       padding: const EdgeInsets.all(32.0),
                       child: Column(
                         children: [
-                          const Icon(Icons.search_off_outlined, size: 64, color: Colors.grey),
+                          const Icon(
+                            Icons.search_off_outlined,
+                            size: 64,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(height: 12),
                           const Text(
                             'Không tìm thấy sản phẩm nào',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           const Text(
@@ -326,7 +403,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.grey),
                           ),
-                          if (_searchQuery.isNotEmpty || _selectedCategory != null) ...[
+                          if (_searchQuery.isNotEmpty ||
+                              _selectedCategory != null) ...[
                             const SizedBox(height: 16),
                             OutlinedButton(
                               onPressed: () {
@@ -390,10 +468,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               height: 110,
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade100,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12),
+                                ),
                               ),
                               child: const Center(
-                                child: Icon(Icons.shopping_bag_outlined, size: 36, color: Colors.grey),
+                                child: Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: 36,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                             Padding(
@@ -405,14 +489,20 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                     title,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     desc,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 11,
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(

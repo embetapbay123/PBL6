@@ -120,7 +120,7 @@ export class VoucherRepository extends OwnedRepository {
       status?: string;
     }
   ): Promise<VoucherRow> {
-    const [updated] = await this.manager.query(
+    const updated = await this.updateReturning(
       `UPDATE voucher SET
          discount_type = COALESCE($1, discount_type),
          discount_value = COALESCE($2, discount_value),
@@ -254,7 +254,7 @@ export class VoucherRepository extends OwnedRepository {
       status?: string;
     }
   ): Promise<VoucherRow> {
-    const [updated] = await this.manager.query(
+    const updated = await this.updateReturning(
       `UPDATE voucher SET
          discount_type = COALESCE($1, discount_type),
          discount_value = COALESCE($2, discount_value),
@@ -290,8 +290,8 @@ export class VoucherRepository extends OwnedRepository {
   ): Promise<{ redeemed_count: number; reserved_count: number }> {
     const [row] = await this.manager.query(
       `SELECT 
-         (SELECT count(*)::int FROM voucher_redemption WHERE voucher_id = $1) AS redeemed_count,
-         (SELECT count(*)::int FROM voucher_reservation WHERE voucher_id = $1 AND status = 'RESERVED' AND expires_at > NOW()) AS reserved_count`,
+         (SELECT count(DISTINCT purchase_group_id)::int FROM voucher_redemption WHERE voucher_id = $1) AS redeemed_count,
+         (SELECT count(DISTINCT purchase_group_id)::int FROM voucher_reservation r WHERE voucher_id = $1 AND status IN ('ACTIVE','RESERVED') AND expires_at > NOW() AND NOT EXISTS (SELECT 1 FROM voucher_redemption d WHERE d.voucher_id=r.voucher_id AND d.purchase_group_id=r.purchase_group_id)) AS reserved_count`,
       [voucherId]
     );
     return {

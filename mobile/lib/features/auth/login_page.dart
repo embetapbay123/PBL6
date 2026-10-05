@@ -38,6 +38,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         _passwordController.text,
       );
       ref.invalidate(profileProvider);
+      ref.invalidate(addressListProvider);
+      ref.invalidate(cartItemsProvider);
+      ref.invalidate(recommendationProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -65,9 +68,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Đăng nhập'),
-      ),
+      appBar: AppBar(title: const Text('Đăng nhập')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -121,7 +122,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: () {
                       setState(() {
@@ -141,7 +144,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/forgot-password'),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/forgot-password'),
                   child: const Text('Quên mật khẩu?'),
                 ),
               ),

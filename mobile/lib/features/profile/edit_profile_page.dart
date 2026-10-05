@@ -14,7 +14,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _displayNameController;
   late final TextEditingController _phoneController;
-  late final TextEditingController _avatarUrlController;
 
   bool _busy = false;
   String? _errorMessage;
@@ -23,16 +22,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   void initState() {
     super.initState();
     final profile = widget.initialProfile;
-    _displayNameController = TextEditingController(text: profile?['display_name']?.toString() ?? '');
-    _phoneController = TextEditingController(text: profile?['phone']?.toString() ?? '');
-    _avatarUrlController = TextEditingController(text: profile?['avatar_url']?.toString() ?? '');
+    _displayNameController = TextEditingController(
+      text: profile?['display_name']?.toString() ?? '',
+    );
+    _phoneController = TextEditingController(
+      text: profile?['phone']?.toString() ?? '',
+    );
   }
 
   @override
   void dispose() {
     _displayNameController.dispose();
     _phoneController.dispose();
-    _avatarUrlController.dispose();
     super.dispose();
   }
 
@@ -47,8 +48,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       final client = ref.read(apiProvider);
       await client.updateProfile(
         displayName: _displayNameController.text.trim(),
-        phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        avatarUrl: _avatarUrlController.text.trim().isNotEmpty ? _avatarUrlController.text.trim() : null,
+        phone: _phoneController.text.trim().isNotEmpty
+            ? _phoneController.text.trim()
+            : null,
       );
 
       if (mounted) {
@@ -78,9 +80,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chỉnh sửa hồ sơ'),
-      ),
+      appBar: AppBar(title: const Text('Chỉnh sửa hồ sơ')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -113,15 +113,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 ),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _avatarUrlController,
-                keyboardType: TextInputType.url,
-                decoration: const InputDecoration(
-                  labelText: 'Link ảnh đại diện (Avatar URL)',
-                  prefixIcon: Icon(Icons.image_outlined),
-                  border: OutlineInputBorder(),
-                ),
-              ),
               const SizedBox(height: 20),
               if (_errorMessage != null) ...[
                 Container(
@@ -152,7 +143,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Lưu thông tin', style: TextStyle(fontSize: 16)),
+                    : const Text(
+                        'Lưu thông tin',
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
             ],
           ),

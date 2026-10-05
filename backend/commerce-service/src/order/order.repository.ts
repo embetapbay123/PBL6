@@ -5,6 +5,7 @@ export interface CartItemCheckoutRow {
   id: string;
   cart_id: string;
   variant_id: string;
+  product_id?: string | null;
   store_id: string;
   quantity: number;
 }
@@ -100,7 +101,7 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<CartItemCheckoutRow[]> {
     if (!cartItemIds.length) return [];
     const rows = await this.manager.query(
-      `SELECT ci.id, ci.cart_id, ci.variant_id, ci.store_id, ci.quantity
+      `SELECT ci.id, ci.cart_id, ci.variant_id, ci.product_id, ci.store_id, ci.quantity
        FROM cart_item ci
        INNER JOIN cart c ON c.id = ci.cart_id
        WHERE ci.id = ANY($1::uuid[]) AND c.customer_user_id = $2`,
@@ -247,32 +248,7 @@ export class OrderRepository extends OwnedRepository {
     return created;
   }
 
-  async createPayment(data: {
-    id?: string;
-    order_id: string;
-    method: string;
-    status: string;
-    payable_vnd: number;
-    collectible_vnd: number;
-  }): Promise<void> {
-    await this.manager.query(
-      `INSERT INTO payment (
-         id, order_id, method, status, payable_vnd, collectible_vnd,
-         collected_vnd, refunded_vnd, version
-       ) VALUES (
-         COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6,
-         0, 0, 0
-       )`,
-      [
-        data.id ?? null,
-        data.order_id,
-        data.method,
-        data.status,
-        data.payable_vnd,
-        data.collectible_vnd,
-      ]
-    );
-  }
+
 
   async recordVoucherRedemption(data: {
     voucher_id: string;
@@ -298,15 +274,7 @@ export class OrderRepository extends OwnedRepository {
     );
   }
 
-  async decrementVoucherUsage(voucherId: string): Promise<void> {
-    await this.manager.query(
-      `UPDATE voucher
-       SET usage_limit = GREATEST(0, usage_limit - 1),
-           version = version + 1
-       WHERE id = $1`,
-      [voucherId]
-    );
-  }
+
 
   async removeCartItems(cartItemIds: string[], customerUserId: string): Promise<void> {
     if (!cartItemIds.length) return;
@@ -572,7 +540,7 @@ export class OrderRepository extends OwnedRepository {
     actor_user_id: string;
     reason?: string;
   }): Promise<OrderRow | null> {
-    const [updated] = await this.manager.query(
+    const updated = await this.updateReturning(
       `UPDATE "order"
        SET status = $1, version = version + 1
        WHERE id = $2 AND version = $3
@@ -602,70 +570,16 @@ export class OrderRepository extends OwnedRepository {
     return updated;
   }
 
-  async createRefundRecord(data: {
-    payment_id: string;
-    order_id: string;
-    amount_vnd: number;
-    status?: string;
-  }): Promise<void> {
-    await this.manager.query(
-      `INSERT INTO refund (
-         id, payment_id, order_id, amount_vnd, status, operation_id, created_at
-       ) VALUES (
-         gen_random_uuid(), $1, $2, $3, $4, gen_random_uuid(), NOW()
-       )`,
-      [
-        data.payment_id,
-        data.order_id,
-        data.amount_vnd,
-        data.status ?? 'REQUESTED',
-      ]
-    );
-  }
 
-  async updatePaymentStatus(orderId: string, status: string): Promise<void> {
-    await this.manager.query(
-      `UPDATE payment
-       SET status = $1, version = version + 1
-       WHERE order_id = $2`,
-      [status, orderId]
-    );
-  }
 
-  async recordCodCollection(data: {
-    order_id: string;
-    amount_due_vnd: number;
-    amount_collected_vnd: number;
-    status?: string;
-  }): Promise<void> {
-    await this.manager.query(
-      `INSERT INTO c_o_d_collection (
-         id, order_id, amount_due_vnd, amount_collected_vnd, status, operation_id, collected_at
-       ) VALUES (
-         gen_random_uuid(), $1, $2, $3, $4, gen_random_uuid(), NOW()
-       )`,
-      [
-        data.order_id,
-        data.amount_due_vnd,
-        data.amount_collected_vnd,
-        data.status ?? 'COLLECTED',
-      ]
-    );
-  }
 
-  async markPaymentCollected(orderId: string, collectedAmountVnd: number): Promise<void> {
-    await this.manager.query(
-      `UPDATE payment
-       SET status = 'SUCCEEDED',
-           collected_vnd = $1,
-           version = version + 1
-       WHERE order_id = $2`,
-      [collectedAmountVnd, orderId]
-    );
-  }
+
+
+
+
 
   async incrementOrderVersion(orderId: string, expectedVersion: number): Promise<OrderRow | null> {
-    const [updated] = await this.manager.query(
+    const updated = await this.updateReturning(
       `UPDATE "order"
        SET version = version + 1
        WHERE id = $1 AND version = $2
@@ -686,6 +600,25 @@ export class OrderRepository extends OwnedRepository {
       [orderItemId]
     );
     return row;
+  }
+
+  async lockCustomerOrderById(id:string,userId:string) {
+    await this.manager.query('SELECT id FROM "order" WHERE id=$1 AND customer_user_id=$2 FOR UPDATE',[id,userId]);
+    return this.findCustomerOrderById(id,userId);
+  }
+  async lockStoreOrderById(id:string,storeId:string) {
+    await this.manager.query('SELECT id FROM "order" WHERE id=$1 AND store_id=$2 FOR UPDATE',[id,storeId]);
+    return this.findStoreOrderById(id,storeId);
+  }
+  async lockPaymentByOrderId(id:string):Promise<PaymentRow|undefined> {
+    const [row]=await this.manager.query('SELECT * FROM payment WHERE order_id=$1 FOR UPDATE',[id]);return row;
+  }
+  async voucherAvailable(voucher:VoucherCheckoutRow,userId:string):Promise<boolean> {
+    const [c]=await this.manager.query(`WITH used AS (
+      SELECT purchase_group_id,customer_user_id FROM voucher_redemption WHERE voucher_id=$1
+      UNION SELECT purchase_group_id,customer_user_id FROM voucher_reservation WHERE voucher_id=$1 AND status IN ('ACTIVE','RESERVED') AND expires_at>now()
+    ) SELECT COUNT(*)::int AS total,COUNT(*) FILTER(WHERE customer_user_id=$2)::int AS customer FROM used`,[voucher.id,userId]);
+    return Number(c?.total ?? 0)<voucher.usage_limit && Number(c?.customer ?? 0)<voucher.per_customer_limit;
   }
 }
 

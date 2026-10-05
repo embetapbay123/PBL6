@@ -1,33 +1,21 @@
 # Customer Android — Hoa
 
-Flutter / Riverpod / Dio ứng dụng Customer Android. Đã hoàn thiện toàn bộ luồng Auth, Profile, Address và Quản lý phiên theo hợp đồng [OpenAPI](../docs/contracts/openapi.json).
+Flutter / Riverpod / Dio. Màn Auth, Profile, Address, Catalog, consent, Cart và checkout đã có client theo [OpenAPI](../docs/contracts/openapi.json). Chưa nghiệm thu toàn bộ luồng bằng API thật hoặc thiết bị Android; xem [bản tổng Hoa và dependency](../docs/implementation/hoa-consolidated-handoff.md).
 
-## Cấu trúc Module
+## File và điểm nối
 
-- `lib/core/`
-  - `api_client.dart`: Dio HTTP Client, tự động gắn Bearer Token, cơ chế retry khi gặp lỗi 401 với mutex refresh token tránh race condition, lưu `refresh_token` trong `FlutterSecureStorage`, `access_token` trong memory.
-  - `contract_fixtures.dart`: Tải dữ liệu mock fixture theo schema contract khi cần test offline.
-- `lib/features/auth/`
-  - `login_page.dart`: Đăng nhập tài khoản (`POST /auth/login`).
-  - `register_page.dart`: Đăng ký tài khoản (`POST /auth/register`).
-  - `verify_email_page.dart`: Xác minh tài khoản qua email token (`POST /auth/verify-email`).
-  - `forgot_password_page.dart`: Quên & đặt lại mật khẩu (`POST /auth/forgot-password`, `POST /auth/reset-password`).
-  - `change_password_page.dart`: Đổi mật khẩu (`POST /auth/change-password`).
-- `lib/features/profile/`
-  - `profile_page.dart`: Xem thông tin cá nhân (`GET /me`) & điều hướng.
-  - `edit_profile_page.dart`: Cập nhật thông tin cá nhân (`PATCH /me`).
-- `lib/features/catalog/`
-  - `catalog_page.dart`: Trang danh mục sản phẩm, tìm kiếm từ khóa với debounce, lọc theo danh mục sản phẩm (`GET /products?q=&page=&size=`, `GET /categories`), mục "Dành riêng cho bạn" hiển thị nhãn `[AI Cá nhân hóa]` / `[Gợi ý Baseline / Mock]`, cơ chế fallback không chặn tải danh mục khi service AI hoặc endpoint lỗi.
-  - `product_detail_page.dart`: Chi tiết sản phẩm (`GET /products/{id}`), bộ chọn biến thể (SKU, giá cập nhật theo biến thể đã chọn), bộ đếm số lượng mua, thông số kỹ thuật, đánh giá khách hàng (`GET /products/{id}/reviews`), sản phẩm tương tự (`GET /products/{id}/related`), hành động "Thêm vào giỏ" (`POST /cart/items`) và "Mua ngay".
-  - `consent_dialog.dart`: Hộp thoại quản lý quyền cá nhân hóa & gợi ý AI (`GET /me/consent`, `PATCH /me/consent`).
-- `lib/features/cart/`
-  - `cart_page.dart`: Trang giỏ hàng (`GET /cart/items`), gom nhóm sản phẩm theo từng Store, chọn từng item hoặc chọn cả shop/toàn bộ giỏ, tăng giảm số lượng (`PATCH /cart/items/{id}`), xóa item (`DELETE /cart/items/{id}`), thanh toán các item đã chọn.
-- `lib/features/checkout/`
-  - `checkout_page.dart`: Báo giá đa Store (`POST /checkout/quotes`), chọn địa chỉ giao hàng (`GET /me/addresses`), chọn phương thức thanh toán từng Store (`COD` / `SANDBOX`), áp dụng voucher Store và voucher toàn sàn, đếm ngược hạn báo giá, xử lý biến động giá (`PRICE_CHANGED`) / hết hàng (`OUT_OF_STOCK`), chống click đúp bằng `Idempotency-Key` khi tạo đơn hàng (`POST /orders/batches`).
-  - `order_success_page.dart`: Màn hình thông báo đặt hàng thành công (`OrderBatch`), hiển thị mã nhóm mua sắm `purchase_group_id` và danh sách Order chi tiết theo từng Store.
-- `lib/main.dart`: Thiết lập Routing, Drawer navigation, Riverpod Providers (`catalogProductsProvider`, `categoriesProvider`, `recommendationProvider`, `cartItemsProvider`, `profileProvider`, `addressListProvider`), Theme Material 3.
+- `lib/core/api_client.dart`: Bearer token, mutex refresh khi 401, secure storage, request đúng contract. Request retry gặp lỗi nghiệp vụ không xóa phiên mới. `main.dart` khôi phục refresh token trước khi mở màn hình.
+- Auth: forgot gọi `POST /auth/reset-password`, confirm reset gọi `POST /auth/reset-password/confirm`; change dùng `current_password`. Register chỉ gửi email/password/display_name; sửa số điện thoại qua Profile. Profile không cung cấp sửa avatar vì contract chưa hỗ trợ.
+- Address dùng `city`, `line1`; đổi default bằng `PATCH /me/addresses/{id}` với `is_default=true`.
+- Catalog gửi `q`, category UUID, page/size. Product Detail tải dữ liệu hiện tại; thêm giỏ gửi Product ID và Variant ID. Taxonomy/filter/review/related còn phụ thuộc M1 owner; empty fallback ở section phụ chưa phải nghiệm thu dữ liệu.
+- Consent gọi `/me/personalization-consent`; tải lỗi giữ trạng thái chưa biết và có retry, không mặc định GRANTED. Recommendation lỗi không sinh danh sách fixture/baseline thành công.
+- Cart gom Store, lấy title/SKU/giá từ M1 qua Product ID. Item legacy hoặc Catalog lỗi hiện chưa có giá và không cho chọn mua; có thể xóa và thêm lại. Tổng giỏ chỉ tạm tính, số tiền checkout lấy từ quote server.
+- Checkout dùng `/checkout/quotes` và `/orders/batches`, giữ Idempotency-Key khi retry cùng attempt. Đổi address/payment/voucher phải lấy quote mới. Confirm server còn 501; màn thành công chỉ mở khi API confirm thực sự thành công. Mock success trong widget test chưa chứng minh đã thu tiền/giữ kho.
+- `lib/core/contract_fixtures.dart` chỉ đọc bộ JSON chung khi bật `USE_CONTRACT_FIXTURES` rõ ràng; không tự bật khi API lỗi, chặn fixture checkout/payment.
 
-## Lệnh kiểm thử và chạy
+## Chạy và kiểm thử
+
+Trong `mobile`:
 
 ```powershell
 flutter pub get
@@ -36,8 +24,11 @@ flutter test
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api/v1
 ```
 
-Android emulator dùng `10.0.2.2` để gọi gateway máy host. Máy thật cần gateway bind địa chỉ phù hợp, thiết bị cùng mạng và base URL của host.
-Release build:
+Android emulator dùng `10.0.2.2` để gọi gateway máy host. Máy thật cần thiết bị cùng mạng và base URL của host. Backend setup/migration/seed theo [README gốc](../README.md), gồm migration M2 004 mới.
+
+`test/api_contract_test.dart` ghi request qua Dio adapter để kiểm route/key/consent/refresh/Cart mapping. `test/widget_test.dart` dùng provider/client mock có chủ đích để kiểm màn hình. Auth/Profile/Address/consent và Checkout còn dependency chưa triển khai đầy đủ; cần demo thật trước khi đóng MOB-01/02/03.
+
+Release build khi có môi trường demo:
 
 ```powershell
 flutter build apk --release --dart-define=API_BASE_URL=https://demo.example.com/api/v1

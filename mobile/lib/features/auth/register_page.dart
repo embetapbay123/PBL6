@@ -13,7 +13,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   bool _busy = false;
@@ -24,7 +23,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   void dispose() {
     _displayNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -43,9 +41,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         displayName: _displayNameController.text.trim(),
-        phone: _phoneController.text.trim().isNotEmpty
-            ? _phoneController.text.trim()
-            : null,
       );
 
       if (mounted) {
@@ -61,10 +56,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  Navigator.pushReplacementNamed(
-                    context,
-                    '/verify-email',
-                  );
+                  Navigator.pushReplacementNamed(context, '/verify-email');
                 },
                 child: const Text('Xác minh ngay'),
               ),
@@ -97,9 +89,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Đăng ký tài khoản'),
-      ),
+      appBar: AppBar(title: const Text('Đăng ký tài khoản')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -152,16 +142,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Số điện thoại',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
@@ -170,7 +150,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: () {
                       setState(() {
@@ -243,7 +225,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 children: [
                   const Text('Đã có tài khoản?'),
                   TextButton(
-                    onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                    onPressed: () =>
+                        Navigator.pushReplacementNamed(context, '/login'),
                     child: const Text('Đăng nhập'),
                   ),
                 ],

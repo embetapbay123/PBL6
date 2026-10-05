@@ -77,13 +77,13 @@ describe('Report Contract and DTO Validation', () => {
 describe('ReportService RBAC and Business Logic', () => {
   const adminUser = {
     user_id: 'admin-user-id',
-    roles: ['ADMIN'],
+    roles: ['ADMIN'], access_token:'admin-token',
   };
 
   const storeAOwner = {
     user_id: 'owner-a-user-id',
     roles: ['STORE_OWNER'],
-    store_membership: {
+    access_token: 'test-token', store_membership: {
       store_id: '11111111-1111-4111-8111-111111111111',
       role: 'OWNER',
       permissions: ['report.store.view'],
@@ -103,7 +103,7 @@ describe('ReportService RBAC and Business Logic', () => {
 
   // --- listAllOrders Tests ---
   test('listAllOrders rejects non-admin caller', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
     await expect(service.listAllOrders({}, regularCustomer, correlation)).rejects.toMatchObject({
       status: 403,
       response: { code: 'FORBIDDEN' },
@@ -111,7 +111,7 @@ describe('ReportService RBAC and Business Logic', () => {
   });
 
   test('listAllOrders returns paginated order list with amounts and payment status', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
 
     // 1. count query
     mockQuery.mockResolvedValueOnce([{ total: 1 }]);
@@ -163,7 +163,7 @@ describe('ReportService RBAC and Business Logic', () => {
 
   // --- getPlatformDashboard Tests ---
   test('getPlatformDashboard rejects non-admin caller', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
     await expect(service.getPlatformDashboard(regularCustomer, correlation)).rejects.toMatchObject({
       status: 403,
       response: { code: 'FORBIDDEN' },
@@ -171,7 +171,7 @@ describe('ReportService RBAC and Business Logic', () => {
   });
 
   test('getPlatformDashboard returns aggregated metrics for platform admin', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
 
     // 1. orderAgg
     mockQuery.mockResolvedValueOnce([
@@ -205,7 +205,7 @@ describe('ReportService RBAC and Business Logic', () => {
 
   // --- getStoreReport Tests ---
   test('getStoreReport rejects caller without Store membership', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
     await expect(
       service.getStoreReport(
         { from: '2026-10-01T00:00:00.000Z', to: '2026-10-31T23:59:59.000Z' },
@@ -219,7 +219,7 @@ describe('ReportService RBAC and Business Logic', () => {
   });
 
   test('getStoreReport validates date range (to >= from)', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
     await expect(
       service.getStoreReport(
         {
@@ -236,7 +236,7 @@ describe('ReportService RBAC and Business Logic', () => {
   });
 
   test('getStoreReport returns aggregated report and revenue series for store', async () => {
-    const service = new ReportService();
+    const service = new ReportService((()=>({call:jest.fn(async()=>({items:[],total:0,page:1,size:100}))})) as any,{counts:async()=>({store_count:15,user_count:120})});
     const storeId = storeAOwner.store_membership.store_id;
 
     // 1. orderAgg

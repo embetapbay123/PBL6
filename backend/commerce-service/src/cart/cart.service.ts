@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { CatalogClient, CatalogDirectory } from '../catalog-client';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { config } from '../../../shared/src/config';
@@ -13,40 +13,17 @@ export class CartService {
       caller: 'M2',
       key: string,
       urls: Record<'M1' | 'M2' | 'M3', string>
-    ) => InternalClients
+    ) => InternalClients,
+    private readonly catalog:CatalogDirectory=new CatalogClient(),
   ) {}
 
-  private getInternalClients(): InternalClients | null {
-    if (this.internalClientsFactory) {
-      return this.internalClientsFactory('M2', 'mock-key', { M1: 'http://localhost:3101', M2: '', M3: 'http://localhost:3103' });
-    }
-    try {
-      const c = config('M2');
-      return new InternalClients('M2', c.internalKeys.M2, { M1: c.catalogUrl, M2: '', M3: c.identityUrl });
-    } catch {
-      return null;
-    }
+  private getInternalClients():InternalClients {
+    if(this.internalClientsFactory) return this.internalClientsFactory('M2','test',{M1:'',M2:'',M3:''});
+    const c=config('M2');return new InternalClients('M2',c.internalKeys.M2,{M1:c.catalogUrl,M2:'',M3:c.identityUrl});
   }
-
-  async quoteItems(items: Array<{ variant_id: string; store_id?: string; quantity: number }>, correlation: string) {
+  async quoteItems(items:Array<{variant_id:string;store_id:string;quantity:number}>,correlation:string) {
     if (!items.length) return [];
-    const client = this.getInternalClients();
-    if (!client) return [];
-    try {
-      const formattedItems = items.map(item => ({
-        variant_id: item.variant_id,
-        store_id:
-          item.store_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.store_id)
-            ? item.store_id
-            : '11111111-1111-4111-8111-111111111111',
-        quantity: item.quantity,
-      }));
-      const result = await client.call('QuoteVariants', { items: formattedItems }, correlation);
-      return result.items ?? [];
-    } catch {
-      // M1 QuoteVariants is still stubbed or unavailable; gracefully proceed
-      return [];
-    }
+    return (await this.getInternalClients().call('QuoteVariants',{items},correlation)).items;
   }
 
   async add(
@@ -63,61 +40,37 @@ export class CartService {
     }
 
     const quantity = input?.quantity;
-    if (quantity === undefined || quantity === null || !Number.isSafeInteger(quantity) || quantity < 1) {
+    if (quantity === undefined || quantity === null || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 2147483647) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Số lượng sản phẩm không hợp lệ (phải là số nguyên >= 1).');
     }
 
-    // Call M1 QuoteVariants to validate variant, store_id, and stock
-    const quotes = await this.quoteItems(
-      [{ variant_id: variantId, store_id: '11111111-1111-4111-8111-111111111111', quantity }],
-      correlation
-    );
-
-    let storeId = '11111111-1111-4111-8111-111111111111';
-    let productId = variantId;
-
-    if (quotes && quotes.length > 0) {
-      const quote = quotes.find(q => q.variant_id === variantId);
-      if (quote) {
-        if (quote.available_quantity !== undefined && quote.available_quantity < quantity) {
-          throw new ApiError(409, 'INSUFFICIENT_STOCK', 'Số lượng sản phẩm trong kho không đủ.');
-        }
-        storeId = quote.store_id || storeId;
-        if ((quote as any).product_id) {
-          productId = (quote as any).product_id;
-        }
-      }
-    }
+    const product=await this.catalog.product(input.product_id,correlation);
+    if (!product.variants.some(v=>v.id===variantId)) throw new ApiError(404,'VARIANT_NOT_FOUND','Variant không thuộc Product.');
+    const quotes=await this.quoteItems([{variant_id:variantId,store_id:product.store_id,quantity}],correlation);
+    const quote=quotes.find(q=>q.variant_id===variantId && q.store_id===product.store_id);
+    if(!quote) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Quote không khớp Product/Store.');
+    if(quote.available_quantity<quantity) throw new ApiError(409,'INSUFFICIENT_STOCK','Không đủ tồn khả dụng.');
+    const storeId=product.store_id,productId=product.id;
 
     return database.transaction(async manager => {
       const repo = new CartRepository(manager);
       const cart = await repo.getOrCreateCart(userId);
 
+      await repo.lockCart(cart.id);
       const existingItem = await repo.lockItemByVariant(cart.id, variantId);
       let resultItem: CartItemRow;
 
       if (existingItem) {
         const newQuantity = existingItem.quantity + quantity;
-        resultItem = await repo.updateItemQuantity(existingItem.id, newQuantity, cart.id);
+        if (!Number.isSafeInteger(newQuantity) || newQuantity>2147483647) throw new ApiError(422,'VALIDATION_FAILED','Số lượng quá lớn.');
+        if (newQuantity>quote.available_quantity) throw new ApiError(409,'INSUFFICIENT_STOCK','Tổng số lượng vượt tồn khả dụng.');
+        resultItem = await repo.updateItemQuantity(existingItem.id, newQuantity, cart.id,productId,storeId);
       } else {
-        resultItem = await repo.addItem(cart.id, variantId, storeId, quantity);
+        resultItem = await repo.addItem(cart.id, variantId, storeId, quantity,productId);
       }
 
       // Emit outbox event for FLOW-01/AI-01: InteractionRecorded with event_type 'CART'
-      const eventPayload = {
-        event_id: randomUUID(),
-        event_type: 'InteractionRecorded',
-        schema_version: '1.0',
-        producer: 'M2',
-        occurred_at: new Date().toISOString(),
-        correlation_id: correlation,
-        payload: {
-          user_id: userId,
-          product_id: productId,
-          event_type: 'CART',
-          quantity: quantity,
-        },
-      };
+      const eventPayload={user_id:userId,product_id:productId,event_type:'CART',quantity};
 
       await emitEvent(manager, 'InteractionRecorded', eventPayload, correlation);
 
@@ -126,6 +79,7 @@ export class CartService {
         variant_id: resultItem.variant_id,
         store_id: resultItem.store_id,
         quantity: resultItem.quantity,
+        ...(resultItem.product_id ? {product_id:resultItem.product_id}:{}),
       };
     });
   }
@@ -151,6 +105,7 @@ export class CartService {
         variant_id: item.variant_id,
         store_id: item.store_id,
         quantity: item.quantity,
+        ...(item.product_id ? {product_id:item.product_id}:{}),
       })),
       total,
       page,
@@ -162,18 +117,24 @@ export class CartService {
     id: string,
     input: { quantity: number },
     auth: any,
-    _correlation: string
+    correlation: string
   ): Promise<OperationOutputs['updateCartItem']> {
     const userId = auth?.user_id;
     if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
 
     const quantity = input?.quantity;
-    if (quantity === undefined || quantity === null || !Number.isSafeInteger(quantity) || quantity < 1) {
+    if (quantity === undefined || quantity === null || !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 2147483647) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Số lượng sản phẩm không hợp lệ (phải là số nguyên >= 1).');
     }
 
+    const source=await new CartRepository(database.manager).findItemWithOwnership(id,userId);
+    if (!source) throw new ApiError(404,'NOT_FOUND','Không tìm thấy item trong giỏ.');
+    const quotes=await this.quoteItems([{variant_id:source.variant_id,store_id:source.store_id,quantity}],correlation);
+    const quote=quotes.find(q=>q.variant_id===source.variant_id && q.store_id===source.store_id);
+    if (!quote || quote.available_quantity<quantity) throw new ApiError(409,'INSUFFICIENT_STOCK','Không đủ tồn khả dụng.');
     return database.transaction(async manager => {
       const repo = new CartRepository(manager);
+      await repo.lockCart(source.cart_id);
       const item = await repo.lockItemWithOwnership(id, userId);
       if (!item) {
         throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy sản phẩm trong giỏ hàng.');
@@ -185,6 +146,7 @@ export class CartService {
         variant_id: updated.variant_id,
         store_id: updated.store_id,
         quantity: updated.quantity,
+        ...(updated.product_id ? {product_id:updated.product_id}:{}),
       };
     });
   }
@@ -204,6 +166,7 @@ export class CartService {
         throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy sản phẩm trong giỏ hàng.');
       }
 
+      await repo.lockCart(item.cart_id);
       await repo.removeItem(id, item.cart_id);
       return {
         status: 'SUCCESS',

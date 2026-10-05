@@ -505,7 +505,7 @@
     "service": "M2",
     "module": "cart",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -517,7 +517,7 @@
     "service": "M2",
     "module": "cart",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -529,7 +529,7 @@
     "service": "M2",
     "module": "cart",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -541,7 +541,7 @@
     "service": "M2",
     "module": "cart",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -577,7 +577,7 @@
     "service": "M2",
     "module": "order",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -637,7 +637,7 @@
     "service": "M2",
     "module": "order",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -649,7 +649,7 @@
     "service": "M2",
     "module": "order",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -673,7 +673,7 @@
     "service": "M2",
     "module": "order",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "SELLER",
       "STORE_OWNER"
@@ -686,7 +686,7 @@
     "service": "M2",
     "module": "order",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "SELLER",
       "STORE_OWNER"
@@ -750,7 +750,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -762,7 +762,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -774,7 +774,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -786,7 +786,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -798,7 +798,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -810,7 +810,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -931,7 +931,7 @@
     "service": "M2",
     "module": "report",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -1054,7 +1054,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -1066,7 +1066,7 @@
     "service": "M2",
     "module": "voucher",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]

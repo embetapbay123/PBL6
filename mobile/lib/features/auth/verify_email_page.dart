@@ -34,7 +34,9 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(res['message']?.toString() ?? 'Xác minh email thành công!'),
+            content: Text(
+              res['message']?.toString() ?? 'Xác minh email thành công!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -58,9 +60,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Xác minh Email'),
-      ),
+      appBar: AppBar(title: const Text('Xác minh Email')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -135,7 +135,8 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
               ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/login'),
                 child: const Text('Quay lại đăng nhập'),
               ),
             ],

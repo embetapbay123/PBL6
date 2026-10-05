@@ -11,6 +11,7 @@ export interface CartItemRow {
   id: string;
   cart_id: string;
   variant_id: string;
+  product_id?: string | null;
   store_id: string;
   quantity: number;
   added_at: Date;
@@ -20,6 +21,8 @@ export class CartRepository extends OwnedRepository {
   constructor(manager: EntityManager) {
     super(manager);
   }
+
+  async lockCart(id:string):Promise<void> {await this.manager.query('SELECT id FROM cart WHERE id=$1 FOR UPDATE',[id]);}
 
   async getCartByCustomerId(customerUserId: string): Promise<CartRow | undefined> {
     const [cart] = await this.manager.query(
@@ -53,7 +56,7 @@ export class CartRepository extends OwnedRepository {
     );
     const offset = (page - 1) * size;
     const items = await this.manager.query(
-      `SELECT id, cart_id, variant_id, store_id, quantity, added_at
+      `SELECT id, cart_id, variant_id, product_id, store_id, quantity, added_at
        FROM cart_item
        WHERE cart_id = $1
        ORDER BY added_at DESC, id ASC
@@ -65,7 +68,7 @@ export class CartRepository extends OwnedRepository {
 
   async findItemWithOwnership(itemId: string, customerUserId: string): Promise<CartItemRow | undefined> {
     const [row] = await this.manager.query(
-      `SELECT ci.id, ci.cart_id, ci.variant_id, ci.store_id, ci.quantity, ci.added_at
+      `SELECT ci.id, ci.cart_id, ci.variant_id, ci.product_id, ci.store_id, ci.quantity, ci.added_at
        FROM cart_item ci
        INNER JOIN cart c ON c.id = ci.cart_id
        WHERE ci.id = $1 AND c.customer_user_id = $2`,
@@ -76,7 +79,7 @@ export class CartRepository extends OwnedRepository {
 
   async lockItemWithOwnership(itemId: string, customerUserId: string): Promise<CartItemRow | undefined> {
     const [row] = await this.manager.query(
-      `SELECT ci.id, ci.cart_id, ci.variant_id, ci.store_id, ci.quantity, ci.added_at
+      `SELECT ci.id, ci.cart_id, ci.variant_id, ci.product_id, ci.store_id, ci.quantity, ci.added_at
        FROM cart_item ci
        INNER JOIN cart c ON c.id = ci.cart_id
        WHERE ci.id = $1 AND c.customer_user_id = $2
@@ -88,7 +91,7 @@ export class CartRepository extends OwnedRepository {
 
   async findItemByVariant(cartId: string, variantId: string): Promise<CartItemRow | undefined> {
     const [row] = await this.manager.query(
-      `SELECT id, cart_id, variant_id, store_id, quantity, added_at
+      `SELECT id, cart_id, variant_id, product_id, store_id, quantity, added_at
        FROM cart_item
        WHERE cart_id = $1 AND variant_id = $2`,
       [cartId, variantId]
@@ -98,7 +101,7 @@ export class CartRepository extends OwnedRepository {
 
   async lockItemByVariant(cartId: string, variantId: string): Promise<CartItemRow | undefined> {
     const [row] = await this.manager.query(
-      `SELECT id, cart_id, variant_id, store_id, quantity, added_at
+      `SELECT id, cart_id, variant_id, product_id, store_id, quantity, added_at
        FROM cart_item
        WHERE cart_id = $1 AND variant_id = $2
        FOR UPDATE`,
@@ -107,12 +110,12 @@ export class CartRepository extends OwnedRepository {
     return row;
   }
 
-  async addItem(cartId: string, variantId: string, storeId: string, quantity: number): Promise<CartItemRow> {
+  async addItem(cartId: string, variantId: string, storeId: string, quantity: number, productId: string): Promise<CartItemRow> {
     const [created] = await this.manager.query(
-      `INSERT INTO cart_item (id, cart_id, variant_id, store_id, quantity, added_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-       RETURNING id, cart_id, variant_id, store_id, quantity, added_at`,
-      [cartId, variantId, storeId, quantity]
+      `INSERT INTO cart_item (id, cart_id, variant_id, product_id, store_id, quantity, added_at)
+       VALUES (gen_random_uuid(), $1, $2, $5, $3, $4, NOW())
+       RETURNING id, cart_id, variant_id, product_id, store_id, quantity, added_at`,
+      [cartId, variantId, storeId, quantity, productId]
     );
     await this.manager.query(
       `UPDATE cart SET updated_at = NOW() WHERE id = $1`,
@@ -121,13 +124,13 @@ export class CartRepository extends OwnedRepository {
     return created;
   }
 
-  async updateItemQuantity(itemId: string, quantity: number, cartId: string): Promise<CartItemRow> {
-    const [updated] = await this.manager.query(
+  async updateItemQuantity(itemId: string, quantity: number, cartId: string, productId?: string, storeId?: string): Promise<CartItemRow> {
+    const updated = await this.updateReturning(
       `UPDATE cart_item
-       SET quantity = $1
+       SET quantity = $1, product_id = COALESCE($3, product_id), store_id = COALESCE($4, store_id)
        WHERE id = $2
-       RETURNING id, cart_id, variant_id, store_id, quantity, added_at`,
-      [quantity, itemId]
+       RETURNING id, cart_id, variant_id, product_id, store_id, quantity, added_at`,
+      [quantity, itemId, productId ?? null, storeId ?? null]
     );
     await this.manager.query(
       `UPDATE cart SET updated_at = NOW() WHERE id = $1`,

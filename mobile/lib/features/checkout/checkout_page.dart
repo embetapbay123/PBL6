@@ -46,6 +46,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   int _secondsLeft = 0;
 
   // Order Submission
+  String? _checkoutKey;
   bool _submittingOrder = false;
 
   @override
@@ -86,7 +87,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         for (final item in items) {
           final sId = item['store_id']?.toString() ?? 'default-store';
           _paymentMethods.putIfAbsent(sId, () => 'COD');
-          _storeVoucherControllers.putIfAbsent(sId, () => TextEditingController());
+          _storeVoucherControllers.putIfAbsent(
+            sId,
+            () => TextEditingController(),
+          );
         }
 
         if (_selectedAddress != null) {
@@ -115,7 +119,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       } else {
         setState(() {
           _secondsLeft = 0;
-          _quoteError = 'Báo giá đã hết hạn. Vui lòng bấm "Cập nhật báo giá" để tính lại.';
+          _quoteError =
+              'Báo giá đã hết hạn. Vui lòng bấm "Cập nhật báo giá" để tính lại.';
         });
         timer.cancel();
       }
@@ -123,6 +128,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _fetchQuote() async {
+    _checkoutKey = null;
+    _quote = null;
     if (_selectedAddress == null) return;
     final addressId = _selectedAddress!['id']?.toString() ?? '';
 
@@ -150,7 +157,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
         final expiresAtStr = res['expires_at']?.toString();
         if (expiresAtStr != null) {
-          final expiresAt = DateTime.tryParse(expiresAtStr) ?? DateTime.now().add(const Duration(minutes: 10));
+          final expiresAt =
+              DateTime.tryParse(expiresAtStr) ??
+              DateTime.now().add(const Duration(minutes: 10));
           _startTimer(expiresAt);
         }
       }
@@ -160,7 +169,8 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         setState(() {
           _loadingQuote = false;
           if (errText.contains('PRICE_CHANGED') || errText.contains('giá')) {
-            _warningMessage = 'Giá hoặc tồn kho sản phẩm vừa có thay đổi. Vui lòng kiểm tra lại trước khi chốt đơn!';
+            _warningMessage =
+                'Giá hoặc tồn kho sản phẩm vừa có thay đổi. Vui lòng kiểm tra lại trước khi chốt đơn!';
           }
           _quoteError = errText;
         });
@@ -184,7 +194,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
     if (_quote == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chưa có báo giá hợp lệ. Vui lòng tính lại báo giá.')),
+        const SnackBar(
+          content: Text('Chưa có báo giá hợp lệ. Vui lòng tính lại báo giá.'),
+        ),
       );
       return;
     }
@@ -192,7 +204,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final quoteId = _quote!['quote_id']?.toString() ?? '';
     final expectedTotal = (_quote!['payable_total_vnd'] as num?)?.toInt() ?? 0;
     final addressId = _selectedAddress!['id']?.toString() ?? '';
-    final idempotencyKey = _generateIdempotencyKey();
+    final idempotencyKey = _checkoutKey ??= _generateIdempotencyKey();
 
     setState(() => _submittingOrder = true);
 
@@ -223,9 +235,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     } catch (e) {
       if (mounted) {
         final errText = errorMessage(e);
-        if (errText.contains('PRICE_CHANGED') || errText.contains('QUOTE_EXPIRED') || errText.contains('409')) {
+        if (errText.contains('PRICE_CHANGED') ||
+            errText.contains('QUOTE_EXPIRED') ||
+            errText.contains('409')) {
           setState(() {
-            _warningMessage = 'Báo giá hoặc giá sản phẩm đã biến động. Đang tự động cập nhật báo giá mới...';
+            _warningMessage =
+                'Báo giá hoặc giá sản phẩm đã biến động. Đang tự động cập nhật báo giá mới...';
           });
           _fetchQuote();
         } else {
@@ -257,16 +272,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final payableTotal = (_quote?['payable_total_vnd'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Xác nhận & Báo giá đơn hàng'),
-      ),
+      appBar: AppBar(title: const Text('Xác nhận & Báo giá đơn hàng')),
       bottomNavigationBar: SafeArea(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
-              BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 6, offset: const Offset(0, -2)),
+              BoxShadow(
+                color: Colors.black.withAlpha(15),
+                blurRadius: 6,
+                offset: const Offset(0, -2),
+              ),
             ],
           ),
           child: Row(
@@ -275,7 +292,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Tổng thanh toán:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const Text(
+                    'Tổng thanh toán:',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                   Text(
                     _loadingQuote ? 'Đang tính...' : '$payableTotal ₫',
                     style: const TextStyle(
@@ -288,13 +308,25 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: (_submittingOrder || _loadingQuote || _quote == null) ? null : _confirmOrder,
+                onPressed: (_submittingOrder || _loadingQuote || _quote == null)
+                    ? null
+                    : _confirmOrder,
                 icon: _submittingOrder
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Icon(Icons.check_circle_outline),
                 label: Text(_submittingOrder ? 'Đang xử lý...' : 'Đặt hàng'),
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ],
@@ -317,10 +349,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 24),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber,
+                      size: 24,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(_warningMessage!, style: const TextStyle(color: Colors.black87, fontSize: 13)),
+                      child: Text(
+                        _warningMessage!,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -342,9 +384,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.location_on_outlined, color: Color(0xff1648a8)),
+                        const Icon(
+                          Icons.location_on_outlined,
+                          color: Color(0xff1648a8),
+                        ),
                         const SizedBox(width: 8),
-                        const Text('Địa chỉ nhận hàng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        const Text(
+                          'Địa chỉ nhận hàng',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                         const Spacer(),
                         if (_addresses.isNotEmpty)
                           TextButton(
@@ -360,10 +411,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Bạn chưa có địa chỉ nhận hàng nào.', style: TextStyle(color: Colors.red)),
+                          const Text(
+                            'Bạn chưa có địa chỉ nhận hàng nào.',
+                            style: TextStyle(color: Colors.red),
+                          ),
                           const SizedBox(height: 6),
                           OutlinedButton(
-                            onPressed: () => Navigator.pushNamed(context, '/address-form'),
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/address-form'),
                             child: const Text('Thêm địa chỉ mới'),
                           ),
                         ],
@@ -371,12 +426,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     else ...[
                       Text(
                         '${_selectedAddress!['recipient_name']} (${_selectedAddress!['phone']})',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${_selectedAddress!['street']}, ${_selectedAddress!['ward']}, ${_selectedAddress!['district']}, ${_selectedAddress!['province']}',
-                        style: TextStyle(color: Colors.grey.shade800, fontSize: 13),
+                        '${_selectedAddress!['line1']}, ${_selectedAddress!['ward']}, ${_selectedAddress!['district']}, ${_selectedAddress!['city']}',
+                        style: TextStyle(
+                          color: Colors.grey.shade800,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ],
@@ -406,19 +467,37 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.storefront, color: Color(0xff1648a8), size: 20),
+                          const Icon(
+                            Icons.storefront,
+                            color: Color(0xff1648a8),
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
-                          Text(sName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text(
+                            sName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
                         ],
                       ),
                       const Divider(height: 20),
 
                       // Items
                       ...sItems.map((item) {
-                        final title = item['title']?.toString() ?? item['product_title']?.toString() ?? 'Sản phẩm';
-                        final sku = item['sku']?.toString() ?? item['variant_sku']?.toString() ?? 'SKU';
-                        final price = (item['unit_price_vnd'] as num?)?.toInt() ?? 
-                                      (item['price_vnd'] as num?)?.toInt() ?? 100000;
+                        final title =
+                            item['title']?.toString() ??
+                            item['product_title']?.toString() ??
+                            'Sản phẩm';
+                        final sku =
+                            item['sku']?.toString() ??
+                            item['variant_sku']?.toString() ??
+                            'SKU';
+                        final price =
+                            (item['unit_price_vnd'] as num?)?.toInt() ??
+                            (item['price_vnd'] as num?)?.toInt() ??
+                            100000;
                         final qty = (item['quantity'] as num?)?.toInt() ?? 1;
 
                         return Padding(
@@ -429,12 +508,30 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13), maxLines: 1),
-                                    Text('Phân loại: $sku x$qty', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                    Text(
+                                      title,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                    Text(
+                                      'Phân loại: $sku x$qty',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
-                              Text('${price * qty} ₫', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                '${price * qty} ₫',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -445,12 +542,21 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       // Payment Method for Store
                       Row(
                         children: [
-                          const Text('Phương thức:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          const Text(
+                            'Phương thức:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
                           const Spacer(),
                           SegmentedButton<String>(
                             segments: const [
                               ButtonSegment(value: 'COD', label: Text('COD')),
-                              ButtonSegment(value: 'SANDBOX', label: Text('SANDBOX')),
+                              ButtonSegment(
+                                value: 'SANDBOX',
+                                label: Text('SANDBOX'),
+                              ),
                             ],
                             selected: {selectedPayment},
                             onSelectionChanged: (set) {
@@ -474,14 +580,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               decoration: const InputDecoration(
                                 hintText: 'Mã giảm giá shop',
                                 isDense: true,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton(
                             onPressed: () {
-                              final text = _storeVoucherControllers[sId]?.text.trim() ?? '';
+                              final text =
+                                  _storeVoucherControllers[sId]?.text.trim() ??
+                                  '';
                               if (text.isNotEmpty) {
                                 setState(() => _storeVouchers[sId] = text);
                               } else {
@@ -513,9 +624,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.confirmation_num_outlined, color: Color(0xff1648a8)),
+                        Icon(
+                          Icons.confirmation_num_outlined,
+                          color: Color(0xff1648a8),
+                        ),
                         SizedBox(width: 8),
-                        Text('Voucher toàn sàn PBL6', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text(
+                          'Voucher toàn sàn PBL6',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -532,7 +652,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                       icon: const Icon(Icons.clear, size: 18),
                                       onPressed: () {
                                         _platformVoucherController.clear();
-                                        setState(() => _appliedPlatformVoucher = null);
+                                        setState(
+                                          () => _appliedPlatformVoucher = null,
+                                        );
                                         _fetchQuote();
                                       },
                                     )
@@ -575,20 +697,37 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.receipt_long, color: Color(0xff1648a8), size: 20),
+                        const Icon(
+                          Icons.receipt_long,
+                          color: Color(0xff1648a8),
+                          size: 20,
+                        ),
                         const SizedBox(width: 8),
-                        const Text('Chi tiết báo giá', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        const Text(
+                          'Chi tiết báo giá',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
                         const Spacer(),
                         if (_secondsLeft > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.orange.shade100,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               'Hết hạn sau: ${_secondsLeft}s',
-                              style: TextStyle(color: Colors.orange.shade900, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.orange.shade900,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                       ],
@@ -605,7 +744,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     else if (_quoteError != null)
                       Column(
                         children: [
-                          Text(_quoteError!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                          Text(
+                            _quoteError!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
                             onPressed: _fetchQuote,
@@ -621,26 +766,48 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           final stId = sq['store_id']?.toString() ?? 'Store';
                           final subtotal = sq['items_subtotal_vnd'] ?? 0;
                           final ship = sq['shipping_fee_vnd'] ?? 0;
-                          final storeVch = sq['store_voucher_discount_vnd'] ?? 0;
-                          final platVch = sq['platform_voucher_discount_vnd'] ?? 0;
+                          final storeVch =
+                              sq['store_voucher_discount_vnd'] ?? 0;
+                          final platVch =
+                              sq['platform_voucher_discount_vnd'] ?? 0;
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Store: $stId', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                                Text(
+                                  'Store: $stId',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
                                 _buildSummaryRow('Tiền hàng:', '$subtotal ₫'),
                                 _buildSummaryRow('Phí vận chuyển:', '+$ship ₫'),
-                                if (storeVch > 0) _buildSummaryRow('Giảm giá shop:', '-$storeVch ₫', isDiscount: true),
-                                if (platVch > 0) _buildSummaryRow('Giảm giá sàn:', '-$platVch ₫', isDiscount: true),
+                                if (storeVch > 0)
+                                  _buildSummaryRow(
+                                    'Giảm giá shop:',
+                                    '-$storeVch ₫',
+                                    isDiscount: true,
+                                  ),
+                                if (platVch > 0)
+                                  _buildSummaryRow(
+                                    'Giảm giá sàn:',
+                                    '-$platVch ₫',
+                                    isDiscount: true,
+                                  ),
                                 const SizedBox(height: 4),
                               ],
                             ),
                           );
                         }),
                       const Divider(),
-                      _buildSummaryRow('Tổng thanh toán cuối:', '$payableTotal ₫', isTotal: true),
+                      _buildSummaryRow(
+                        'Tổng thanh toán cuối:',
+                        '$payableTotal ₫',
+                        isTotal: true,
+                      ),
                     ],
                   ],
                 ),
@@ -653,19 +820,32 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isDiscount = false, bool isTotal = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    bool isDiscount = false,
+    bool isTotal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: isTotal ? 14 : 12, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 14 : 12,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
           Text(
             value,
             style: TextStyle(
               fontSize: isTotal ? 16 : 12,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-              color: isDiscount ? Colors.green : (isTotal ? const Color(0xff1648a8) : Colors.black87),
+              color: isDiscount
+                  ? Colors.green
+                  : (isTotal ? const Color(0xff1648a8) : Colors.black87),
             ),
           ),
         ],
@@ -687,7 +867,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Chọn địa chỉ nhận hàng', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Chọn địa chỉ nhận hàng',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 12),
                 Flexible(
                   child: ListView.separated(
@@ -700,11 +883,20 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
                       return ListTile(
                         leading: Icon(
-                          isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                          color: isSelected ? const Color(0xff1648a8) : Colors.grey,
+                          isSelected
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: isSelected
+                              ? const Color(0xff1648a8)
+                              : Colors.grey,
                         ),
-                        title: Text('${addr['recipient_name']} (${addr['phone']})', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${addr['street']}, ${addr['ward']}, ${addr['district']}, ${addr['province']}'),
+                        title: Text(
+                          '${addr['recipient_name']} (${addr['phone']})',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '${addr['line1']}, ${addr['ward']}, ${addr['district']}, ${addr['city']}',
+                        ),
                         onTap: () {
                           setState(() => _selectedAddress = addr);
                           Navigator.pop(context);

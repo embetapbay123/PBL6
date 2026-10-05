@@ -3,19 +3,21 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiClient {
   ApiClient({String? baseUrl, FlutterSecureStorage? storage, Dio? customDio})
-      : _storage = storage ?? const FlutterSecureStorage(),
-        dio = customDio ??
-            Dio(
-              BaseOptions(
-                baseUrl: baseUrl ??
-                    const String.fromEnvironment(
-                      'API_BASE_URL',
-                      defaultValue: 'http://10.0.2.2:8080/api/v1',
-                    ),
-                connectTimeout: const Duration(seconds: 5),
-                receiveTimeout: const Duration(seconds: 10),
-              ),
-            );
+    : _storage = storage ?? const FlutterSecureStorage(),
+      dio =
+          customDio ??
+          Dio(
+            BaseOptions(
+              baseUrl:
+                  baseUrl ??
+                  const String.fromEnvironment(
+                    'API_BASE_URL',
+                    defaultValue: 'http://10.0.2.2:8080/api/v1',
+                  ),
+              connectTimeout: const Duration(seconds: 5),
+              receiveTimeout: const Duration(seconds: 10),
+            ),
+          );
 
   final Dio dio;
   final FlutterSecureStorage _storage;
@@ -84,12 +86,12 @@ class ApiClient {
         _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
         try {
           await _refreshing;
-          return await _requestWithRetry(makeRequest, retry: false);
         } catch (_) {
           _accessToken = null;
           await _storage.delete(key: 'refresh_token');
           rethrow;
         }
+        return _requestWithRetry(makeRequest, retry: false);
       }
       rethrow;
     }
@@ -189,7 +191,6 @@ class ApiClient {
         'email': email.trim(),
         'password': password,
         'display_name': displayName.trim(),
-        if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
       },
     );
     return response.data!;
@@ -205,7 +206,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> forgotPassword(String email) async {
     final response = await dio.post<Map<String, dynamic>>(
-      '/auth/forgot-password',
+      '/auth/reset-password',
       data: {'email': email.trim()},
     );
     return response.data ?? {'message': 'Đã gửi liên kết đặt lại mật khẩu.'};
@@ -216,11 +217,8 @@ class ApiClient {
     required String newPassword,
   }) async {
     final response = await dio.post<Map<String, dynamic>>(
-      '/auth/reset-password',
-      data: {
-        'token': token.trim(),
-        'new_password': newPassword,
-      },
+      '/auth/reset-password/confirm',
+      data: {'token': token.trim(), 'new_password': newPassword},
     );
     return response.data ?? {'message': 'Đặt lại mật khẩu thành công.'};
   }
@@ -231,12 +229,11 @@ class ApiClient {
   }) async {
     final res = await post(
       '/auth/change-password',
-      data: {
-        'old_password': oldPassword,
-        'new_password': newPassword,
-      },
+      data: {'current_password': oldPassword, 'new_password': newPassword},
     );
-    return (res is Map<String, dynamic>) ? res : {'message': 'Đổi mật khẩu thành công.'};
+    return (res is Map<String, dynamic>)
+        ? res
+        : {'message': 'Đổi mật khẩu thành công.'};
   }
 
   Future<void> logout() async {
@@ -267,7 +264,6 @@ class ApiClient {
     final body = <String, dynamic>{
       if (displayName != null) 'display_name': displayName.trim(),
       if (phone != null) 'phone': phone.trim(),
-      if (avatarUrl != null) 'avatar_url': avatarUrl.trim(),
     };
     final res = await patch('/me', data: body);
     return Map<String, dynamic>.from(res as Map);
@@ -276,7 +272,9 @@ class ApiClient {
   Future<List<Map<String, dynamic>>> getAddresses() async {
     final res = await get('/me/addresses');
     if (res is Map && res['items'] is List) {
-      return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return (res['items'] as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
     }
     if (res is List) {
       return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -289,7 +287,10 @@ class ApiClient {
     return Map<String, dynamic>.from(res as Map);
   }
 
-  Future<Map<String, dynamic>> updateAddress(String id, Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateAddress(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
     final res = await patch('/me/addresses/$id', data: data);
     return Map<String, dynamic>.from(res as Map);
   }
@@ -299,13 +300,14 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> setDefaultAddress(String id) async {
-    final res = await patch('/me/addresses/$id/default');
+    final res = await patch('/me/addresses/$id', data: {'is_default': true});
     return Map<String, dynamic>.from(res as Map);
   }
 
   // --- Catalog & Products Endpoints (MOB-02) ---
   Future<Map<String, dynamic>> getProducts({
     String? q,
+    String? categoryId,
     int page = 1,
     int size = 20,
   }) async {
@@ -314,6 +316,7 @@ class ApiClient {
       'size': size,
       if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
     };
+    if (categoryId != null) query['category_id'] = categoryId;
     final res = await get('/products', query: query);
     return Map<String, dynamic>.from(res as Map);
   }
@@ -330,7 +333,9 @@ class ApiClient {
     try {
       final res = await get('/categories', query: {'page': page, 'size': size});
       if (res is Map && res['items'] is List) {
-        return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        return (res['items'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
       }
       if (res is List) {
         return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -352,7 +357,9 @@ class ApiClient {
         query: {'page': page, 'size': size},
       );
       if (res is Map && res['items'] is List) {
-        return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        return (res['items'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
       }
     } catch (_) {
       // Return empty list if reviews are not found or unavailable
@@ -371,7 +378,9 @@ class ApiClient {
         query: {'page': page, 'size': size},
       );
       if (res is Map && res['items'] is List) {
-        return (res['items'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        return (res['items'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
       }
     } catch (_) {
       // Fallback to empty if endpoint not yet ready
@@ -380,43 +389,23 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getRecommendations() async {
-    try {
-      final res = await get('/recommendations/for-you');
-      if (res is Map) {
-        return Map<String, dynamic>.from(res);
-      }
-    } catch (_) {
-      // Fallback baseline recommendation response without blocking catalog
-    }
-    return {
-      'model_version': 'baseline-mobile-v1',
-      'source': 'BASELINE',
-      'product_ids': <String>[],
-      'recently_viewed_product_ids': <String>[],
-      'mode': 'mock',
-    };
+    final res = await get('/recommendations/for-you');
+    return Map<String, dynamic>.from(res as Map);
   }
 
   Future<Map<String, dynamic>> getPersonalizationConsent() async {
-    try {
-      final res = await get('/me/consent');
-      if (res is Map) {
-        return Map<String, dynamic>.from(res);
-      }
-    } catch (_) {
-      // Fallback consent state
-    }
-    return {'status': 'GRANTED', 'version': 1};
+    final res = await get('/me/personalization-consent');
+    return Map<String, dynamic>.from(res as Map);
   }
 
   Future<Map<String, dynamic>> updatePersonalizationConsent(
     String status,
     int expectedVersion,
   ) async {
-    final res = await patch('/me/consent', data: {
-      'status': status,
-      'expected_version': expectedVersion,
-    });
+    final res = await patch(
+      '/me/personalization-consent',
+      data: {'status': status, 'expected_version': expectedVersion},
+    );
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -425,35 +414,84 @@ class ApiClient {
     int page = 1,
     int size = 50,
   }) async {
-    final res = await get('/cart/items', query: {'page': page, 'size': size});
-    return (res is Map) ? Map<String, dynamic>.from(res) : {'items': <dynamic>[], 'total': 0};
+    final res = Map<String, dynamic>.from(
+      await get('/cart/items', query: {'page': page, 'size': size}) as Map,
+    );
+    final products = <String, Future<Map<String, dynamic>>>{};
+    final items = await Future.wait(
+      (res['items'] as List).map((raw) async {
+        final item = Map<String, dynamic>.from(raw as Map);
+        try {
+          final productId = item['product_id'] as String?;
+          if (productId == null) {
+            throw const FormatException('Cart cũ cần xóa và thêm lại Product.');
+          }
+          final product = await products.putIfAbsent(
+            productId,
+            () => getProduct(productId),
+          );
+          final variant = (product['variants'] as List).cast<Map>().firstWhere(
+            (v) => v['id'] == item['variant_id'],
+          );
+          final price = variant['price_vnd'];
+          if (product['store_id'] != item['store_id'] ||
+              price is! int ||
+              price < 0 ||
+              price > 9007199254740991) {
+            throw const FormatException('Catalog thiếu giá hoặc sai Store.');
+          }
+          item.addAll({
+            'title': product['title'],
+            'sku': variant['sku'],
+            'unit_price_vnd': price,
+            'catalog_available': true,
+          });
+        } catch (_) {
+          item['catalog_available'] = false;
+          item['catalog_error'] =
+              'Không lấy được giá hiện tại. Thử làm mới; item cũ cần xóa và thêm lại.';
+        }
+        return item;
+      }),
+    );
+    return {...res, 'items': items};
   }
 
   Future<Map<String, dynamic>> addCartItem({
     required String variantId,
+    required String productId,
     int quantity = 1,
   }) async {
-    final res = await post('/cart/items', data: {
-      'variant_id': variantId,
-      'quantity': quantity,
-    });
-    return (res is Map) ? Map<String, dynamic>.from(res) : {'status': 'success'};
+    final res = await post(
+      '/cart/items',
+      data: {
+        'variant_id': variantId,
+        'product_id': productId,
+        'quantity': quantity,
+      },
+    );
+    return (res is Map)
+        ? Map<String, dynamic>.from(res)
+        : {'status': 'success'};
   }
 
   Future<Map<String, dynamic>> addToCart({
     required String variantId,
+    required String productId,
     int quantity = 1,
   }) async {
-    return addCartItem(variantId: variantId, quantity: quantity);
+    return addCartItem(
+      variantId: variantId,
+      productId: productId,
+      quantity: quantity,
+    );
   }
 
   Future<Map<String, dynamic>> updateCartItem(
     String id, {
     required int quantity,
   }) async {
-    final res = await patch('/cart/items/$id', data: {
-      'quantity': quantity,
-    });
+    final res = await patch('/cart/items/$id', data: {'quantity': quantity});
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -528,11 +566,10 @@ class ApiClient {
     required List<String> codes,
     required List<Map<String, dynamic>> items,
   }) async {
-    final res = await post('/vouchers/validate', data: {
-      'codes': codes,
-      'items': items,
-    });
+    final res = await post(
+      '/vouchers/validate',
+      data: {'codes': codes, 'items': items},
+    );
     return (res is Map) ? Map<String, dynamic>.from(res) : {};
   }
 }
-

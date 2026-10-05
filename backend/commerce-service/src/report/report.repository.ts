@@ -24,8 +24,6 @@ export interface PlatformDashboardData {
   completed_goods_revenue_vnd: string;
   collected_vnd: string;
   refunded_vnd: string;
-  store_count: number;
-  user_count: number;
 }
 
 export interface StoreReportData {
@@ -82,7 +80,7 @@ export class ReportRepository extends OwnedRepository {
     const [orderAgg] = await this.manager.query(
       `SELECT 
          COALESCE(SUM(payable_vnd), 0)::text AS order_value_vnd,
-         COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN goods_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd
+         COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN goods_vnd - store_discount_vnd - platform_discount_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd
        FROM "order"`
     );
 
@@ -93,21 +91,11 @@ export class ReportRepository extends OwnedRepository {
        FROM "payment"`
     );
 
-    const [storeCountRow] = await this.manager.query(
-      `SELECT count(DISTINCT store_id)::int AS store_count FROM "order"`
-    );
-
-    const [userCountRow] = await this.manager.query(
-      `SELECT count(DISTINCT customer_user_id)::int AS user_count FROM "order"`
-    );
-
     return {
       order_value_vnd: orderAgg?.order_value_vnd ?? '0',
       completed_goods_revenue_vnd: orderAgg?.completed_goods_revenue_vnd ?? '0',
       collected_vnd: paymentAgg?.collected_vnd ?? '0',
       refunded_vnd: paymentAgg?.refunded_vnd ?? '0',
-      store_count: storeCountRow?.store_count ?? 0,
-      user_count: userCountRow?.user_count ?? 0,
     };
   }
 
@@ -122,7 +110,7 @@ export class ReportRepository extends OwnedRepository {
       `SELECT 
          COUNT(*)::int AS order_count,
          COALESCE(SUM(o.payable_vnd), 0)::text AS order_value_vnd,
-         COALESCE(SUM(CASE WHEN o.status = 'COMPLETED' THEN o.goods_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd,
+         COALESCE(SUM(CASE WHEN o.status = 'COMPLETED' THEN o.goods_vnd - o.store_discount_vnd - o.platform_discount_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd,
          COALESCE(SUM(o.shipping_vnd), 0)::text AS shipping_fee_vnd
        FROM "order" o
        WHERE o.store_id = $1 AND o.created_at >= $2 AND o.created_at <= $3`,
@@ -156,7 +144,7 @@ export class ReportRepository extends OwnedRepository {
     const seriesRows = await this.manager.query(
       `SELECT 
          date_trunc('${truncUnit}', o.created_at) AS bucket_start,
-         COALESCE(SUM(CASE WHEN o.status = 'COMPLETED' THEN o.goods_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd
+         COALESCE(SUM(CASE WHEN o.status = 'COMPLETED' THEN o.goods_vnd - o.store_discount_vnd - o.platform_discount_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd
        FROM "order" o
        WHERE o.store_id = $1 AND o.created_at >= $2 AND o.created_at <= $3
        GROUP BY date_trunc('${truncUnit}', o.created_at)

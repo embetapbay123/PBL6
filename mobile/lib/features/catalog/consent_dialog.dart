@@ -11,7 +11,8 @@ class ConsentDialog extends ConsumerStatefulWidget {
 
 class _ConsentDialogState extends ConsumerState<ConsentDialog> {
   bool _busy = false;
-  bool _granted = true;
+  bool _granted = false;
+  bool _loaded = false;
   int _version = 1;
   String? _errorMessage;
 
@@ -28,12 +29,18 @@ class _ConsentDialogState extends ConsumerState<ConsentDialog> {
       final res = await client.getPersonalizationConsent();
       if (mounted) {
         setState(() {
+          _loaded = true;
           _granted = res['status'] == 'GRANTED';
           _version = (res['version'] as num?)?.toInt() ?? 1;
         });
       }
-    } catch (_) {
-      // Keep default granted
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loaded = false;
+          _errorMessage = errorMessage(e);
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -48,7 +55,10 @@ class _ConsentDialogState extends ConsumerState<ConsentDialog> {
     try {
       final client = ref.read(apiProvider);
       final newStatus = grant ? 'GRANTED' : 'WITHDRAWN';
-      final res = await client.updatePersonalizationConsent(newStatus, _version);
+      final res = await client.updatePersonalizationConsent(
+        newStatus,
+        _version,
+      );
       if (mounted) {
         setState(() {
           _granted = grant;
@@ -59,8 +69,8 @@ class _ConsentDialogState extends ConsumerState<ConsentDialog> {
           SnackBar(
             content: Text(
               grant
-                ? 'Đã bật tính năng gợi ý cá nhân hóa AI.'
-                : 'Đã tắt tính năng gợi ý cá nhân hóa AI.',
+                  ? 'Đã bật tính năng gợi ý cá nhân hóa AI.'
+                  : 'Đã tắt tính năng gợi ý cá nhân hóa AI.',
             ),
           ),
         );
@@ -96,19 +106,31 @@ class _ConsentDialogState extends ConsumerState<ConsentDialog> {
           ),
           const SizedBox(height: 16),
           if (_errorMessage != null) ...[
-            Text(_errorMessage!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.red, fontSize: 13),
+            ),
+            TextButton(
+              onPressed: _busy ? null : _loadConsent,
+              child: const Text('Thử lại'),
+            ),
             const SizedBox(height: 12),
           ],
           SwitchListTile(
-            title: const Text('Bật gợi ý thông minh', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text(
+              'Bật gợi ý thông minh',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
-              _granted
-                ? 'Đang bật: Hiển thị sản phẩm phù hợp sở thích'
-                : 'Đang tắt: Hiển thị sản phẩm phổ biến mặc định',
+              !_loaded
+                  ? 'Chưa tải được trạng thái đồng ý'
+                  : _granted
+                  ? 'Đang bật: Hiển thị sản phẩm phù hợp sở thích'
+                  : 'Đang tắt: Hiển thị sản phẩm phổ biến mặc định',
             ),
             value: _granted,
             contentPadding: EdgeInsets.zero,
-            onChanged: _busy ? null : (val) => _updateConsent(val),
+            onChanged: _busy || !_loaded ? null : (val) => _updateConsent(val),
           ),
         ],
       ),
