@@ -1,6 +1,8 @@
 # Bàn giao nhánh tổng của Hoa
 
-Nhánh giữ lại: [`feat/mob-03`](https://github.com/embetapbay123/PBL6/tree/feat/mob-03). Nhánh này chứa Cart, Voucher, Order, report và Mobile từ chuỗi PR #72–85, cộng MOB-03 mới nhất và `main` có QuoteVariants của Thịnh. #73 có Store Voucher trùng #74 nhưng lịch sử khác nhau; giữ CRUD và kiểm quyền membership hiện hành trong bản tổng. Các issue nghiệp vụ vẫn mở cho đến review, merge và nghiệm thu đầy đủ.
+PR giữ lại: [#88](https://github.com/embetapbay123/PBL6/pull/88), nhánh [`feat/mob-03`](https://github.com/embetapbay123/PBL6/tree/feat/mob-03). Nhánh này chứa Cart, Voucher, Order, report và Mobile từ chuỗi PR #72–85, cộng MOB-03 mới nhất và `main` có QuoteVariants của Thịnh. #73 có Store Voucher trùng #74 nhưng lịch sử khác nhau; giữ CRUD và kiểm quyền membership hiện hành trong bản tổng. Các issue nghiệp vụ vẫn mở cho đến review, merge và nghiệm thu đầy đủ.
+
+Đã đóng 14 PR #72–85 và xóa 14 nhánh cũ sau khi kiểm tra toàn bộ head commit là ancestor của nhánh tổng. Lịch sử vẫn có trong PR #88; các issue liên quan giao Hoa và giữ Review, không chuyển Done khi chỉ có một lát cắt.
 
 ## Phần có thể chạy
 
