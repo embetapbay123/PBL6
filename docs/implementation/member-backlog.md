@@ -4,6 +4,8 @@
 
 Để nhận việc, dùng [bảng phân công đầy đủ](task-assignment.md): có toàn bộ issue của từng member, ưu tiên, đầu ra và handoff để nghiệm thu tích hợp. Mỗi issue ghi cách làm bằng seed/fixture khi API phụ thuộc chưa xong. Bảng dưới là phạm vi tổng thể; không giao nguyên một ô thành một task.
 
+M1 QuoteVariants đã được bàn giao qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; phần này không còn là backlog triển khai M1. Thịnh tiếp tục CAT-04, Hoa nối Cart/checkout theo [contract tích hợp](../integration-contract.md). Các command giữ/trừ/hoàn kho vẫn cần triển khai và nghiệm thu riêng.
+
 | Member | Nhóm 1: độc lập | Nhóm 2: tích hợp | Bằng chứng bàn giao |
 | --- | --- | --- | --- |
 | Thịnh | Taxonomy/Product/Variant/Image CRUD; Seller list/form; kho adjustment/movement; validation attribute/SKU | Reserve/consume/release theo operation ID; Review hậu mua; moderation; Seller gọi Order/Voucher/Store | Scope hai Store; version conflict; SKU unique; cạnh tranh SKU cuối; replay kho; upload sai; UI loading/error |

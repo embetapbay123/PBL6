@@ -22,7 +22,7 @@ Task chưa làm không có nghĩa nghiệp vụ đã hoàn thành. Khung vẫn c
 | Trí | [phantri1912](https://github.com/phantri1912) | Auth/Profile/Address/Store/Staff/RBAC M3 và toàn Admin Web | 14 |
 | Hatsaphone | [HATSAPHONE](https://github.com/HATSAPHONE) | Customer Web theo màn; chỉ UI/API theo mẫu, không BE/AI | 11 |
 
-Cả4 member đã có username và quyền Write trên Project. Trí đã nhận lời mời repo Write và14 task đã gán trực tiếp phantri1912. Hoa/Thịnh/Hatsaphone còn chờ nhận; Assignee của các task đó tạm embetapbay123 trong lúc GitHub chưa cho gán. Sau khi member nhận lời mời, chuyển các issue có Owner tương ứng sang tài khoản đó. Tên Owner và body issue đã xác định người thực hiện, không hiểu Assignee tạm là Công phải code toàn bộ.
+Cả4 member đã có username và quyền Write trên Project. Trí đã nhận lời mời repo Write và14 task đã gán trực tiếp phantri1912. Thịnh đã có quyền Write trên repo; CAT-QUOTE-01 và CAT-04 gán QT-2005. Các issue còn tạm embetapbay123 cần chuyển sang member khi tài khoản đã có quyền; kiểm Assignee hiện hành trên GitHub. Tên Owner và body issue đã xác định người thực hiện, không hiểu Assignee tạm là Công phải code toàn bộ.
 
 Số task không là số giờ: Công giữ giao dịch/AI/tích hợp nặng; Hatsaphone nhận các màn theo component/contract mẫu, Công hỗ trợ adapter. Hoa có cả M2 và Android; khi chọn việc cần ưu tiên handoff BE trước phần UI dùng API đó.
 
@@ -31,7 +31,7 @@ Số task không là số giờ: Công giữ giao dịch/AI/tích hợp nặng; 
 | Người | Ưu tiên lấy việc đầu | Phần khác có thể làm với seed/fixture |
 | --- | --- | --- |
 | Công | [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-04 · #54](https://github.com/embetapbay123/PBL6/issues/54), [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55) | Review CORE/FLOW đã có; callback/recommendation theo payload đã chốt |
-| Thịnh | [CAT-QUOTE-01 · #7](https://github.com/embetapbay123/PBL6/issues/7), [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2) | Inventory, Product/Variant/Image, taxonomy và Seller page riêng |
+| Thịnh | [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), rồi [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2); QuoteVariants đã merge ở [PR #86](https://github.com/embetapbay123/PBL6/pull/86) | Inventory, Product/Variant/Image, taxonomy và Seller page riêng |
 | Hoa | [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3), [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27), [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28) | Order read/report từ seed; orchestration/Android từ adapter fixture |
 | Trí | [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4), [ID-LOOKUP-01 · #45](https://github.com/embetapbay123/PBL6/issues/45), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) | Store, register/reset, staff/permission, admin list/form từ seed/fixture |
 | Hatsaphone | [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [WEB-04 · #64](https://github.com/embetapbay123/PBL6/issues/64) | Dùng login/client nền; làm component và ráp API thật theo Week 1 |
