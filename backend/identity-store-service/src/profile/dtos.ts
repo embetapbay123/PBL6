@@ -3,6 +3,7 @@ import type { components } from '../../../shared/src/contracts.generated';
 export type GetAuthContextRequest = Record<string, never>;
 export type GetProfileRequest = Record<string, never>;
 export type UpdateProfileRequest = components['schemas']['ProfileUpdate'];
+export type ProfileResponse = components['schemas']['Profile'];
 export type ListAddressesRequest = Record<string, never>;
 export type CreateAddressRequest = components['schemas']['AddressCreate'];
 export type UpdateAddressRequest = components['schemas']['AddressUpdate'];

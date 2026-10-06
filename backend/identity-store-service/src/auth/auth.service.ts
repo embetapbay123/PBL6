@@ -12,10 +12,30 @@ export class AuthService {
     const [user] = await database.query('SELECT id,email,status,version FROM "user" WHERE id=$1',[userId]);
     if (!user || user.status !== 'ACTIVE') throw new ApiError(401,'SESSION_REVOKED','Phiên đăng nhập đã bị thu hồi.');
     const roleRows = await database.query('SELECT r.code FROM user_role ur JOIN role r ON r.id=ur.role_id WHERE ur.user_id=$1 AND r.status=\'ACTIVE\'',[userId]);
-    const roles = roleRows.map((r: any) => r.code);
-    const [member] = await database.query('SELECT store_id,role,status FROM store_membership WHERE user_id=$1 AND status=\'ACTIVE\'',[userId]);
+    const roles: string[] = roleRows.map((r: any) => r.code);
+    const [member] = await database.query(
+      `SELECT m.store_id,m.role,m.status
+       FROM store_membership m
+       JOIN store s ON s.id=m.store_id AND s.status='ACTIVE'
+       WHERE m.user_id=$1 AND m.status='ACTIVE'
+       ORDER BY m.joined_at DESC,m.id
+       LIMIT 1`,
+      [userId],
+    );
     if (member) roles.push(member.role === 'OWNER' ? 'STORE_OWNER' : 'SELLER');
-    const permissions = member ? (await database.query('SELECT p.code FROM membership_permission mp JOIN permission p ON p.id=mp.permission_id JOIN store_membership m ON m.id=mp.membership_id WHERE m.user_id=$1 AND m.status=\'ACTIVE\'',[userId])).map((p: any)=>p.code) : [];
+    const permissions = member ? (await database.query(
+      `SELECT p.code
+       FROM membership_permission mp
+       JOIN permission p ON p.id=mp.permission_id
+       WHERE mp.membership_id=(
+         SELECT m.id
+         FROM store_membership m
+         JOIN store s ON s.id=m.store_id AND s.status='ACTIVE'
+         WHERE m.user_id=$1 AND m.store_id=$2 AND m.status='ACTIVE'
+         LIMIT 1
+       )`,
+      [userId, member.store_id],
+    )).map((p: any)=>p.code) : [];
     return {user_id:user.id, roles:[...new Set(roles)], token_version:user.version,
       ...(member ? {store_membership:{...member,permissions}} : {})};
   }

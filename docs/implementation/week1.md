@@ -8,6 +8,8 @@ Tuần 1 gồm **5 ngày làm việc kể từ lúc nhóm bắt đầu**. Mục 
 
 [Bàn giao bản tổng Hoa](hoa-consolidated-handoff.md): contract Cart thêm product_id, migration 004, các phần đã sửa và dependency Checkout/COD/report còn cần hoàn thiện. Dùng Kanban để review và nghiệm thu; không lấy số PR làm số task đã xong.
 
+[Bàn giao lookup/Profile/Address của Trí](tri-lookup-handoff.md): API, quyền, transaction và cách kiểm tra trong PR #87. Trạng thái tích hợp chỉ áp dụng trên main sau merge.
+
 ## Nhìn nhanh: mỗi người làm gì trước
 
 | Người | Việc bắt đầu ngay | Đầu ra chính của tuần | Chi tiết |

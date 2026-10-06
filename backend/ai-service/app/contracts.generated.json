@@ -827,7 +827,7 @@
       "route": "/me",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -904,7 +904,7 @@
       "route": "/me/addresses",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -1020,7 +1020,7 @@
       "route": "/me/addresses",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -1135,7 +1135,7 @@
       "route": "/me/addresses/{id}",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -1250,7 +1250,7 @@
       "route": "/me/addresses/{id}",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -12466,7 +12466,7 @@
       "route": "/internal/checkout/context",
       "internal": true,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12752,7 +12752,7 @@
       "route": "/internal/ai/metrics-scope",
       "internal": true,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
