@@ -2,9 +2,11 @@
 
 Owner: Hoa
 
-- `GET /cart/items` — listCartItems: **NOT_IMPLEMENTED**
-- `POST /cart/items` — addCartItem: **NOT_IMPLEMENTED**
-- `PATCH /cart/items/{id}` — updateCartItem: **NOT_IMPLEMENTED**
-- `DELETE /cart/items/{id}` — removeCartItem: **NOT_IMPLEMENTED**
+- `GET /cart/items` — listCartItems: **IMPLEMENTED**
+- `POST /cart/items` — addCartItem: **IMPLEMENTED**
+- `PATCH /cart/items/{id}` — updateCartItem: **IMPLEMENTED**
+- `DELETE /cart/items/{id}` — removeCartItem: **IMPLEMENTED**
 
-Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
+Đọc [bàn giao nhánh tổng](../../../../docs/implementation/hoa-consolidated-handoff.md) để biết code, test, migration và dependency. `IMPLEMENTED` là handler có nghiệp vụ trong nhánh này; issue chỉ Done sau review/merge/nghiệm thu. `NOT_IMPLEMENTED` có thể đã có một lát cắt nhưng chưa đủ luồng.
+
+Add nhận product_id + variant_id + quantity; lấy Product/Store từ M1 rồi QuoteVariants. Chạy migration 004 trước khi chạy M2. Item legacy thiếu product_id cần xóa/thêm lại để quote. CartRepository khóa Cart trước Item; không giữ transaction trong lúc gọi M1.

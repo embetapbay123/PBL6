@@ -4297,7 +4297,7 @@
       "route": "/cart/items",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -4357,6 +4357,10 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 9007199254740991
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
                   }
                 },
                 "required": [
@@ -4395,7 +4399,7 @@
       "route": "/cart/items",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4407,12 +4411,18 @@
           "quantity": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 2147483647
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product chứa Variant; M2 xác minh qua Catalog M1."
           }
         },
         "required": [
           "variant_id",
-          "quantity"
+          "quantity",
+          "product_id"
         ],
         "additionalProperties": false
       },
@@ -4455,6 +4465,10 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 9007199254740991
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid"
             }
           },
           "required": [
@@ -4470,7 +4484,7 @@
       "route": "/cart/items/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4478,7 +4492,7 @@
           "quantity": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 2147483647
           }
         },
         "required": [
@@ -4532,6 +4546,10 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 9007199254740991
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid"
             }
           },
           "required": [
@@ -4547,7 +4565,7 @@
       "route": "/cart/items/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -5012,7 +5030,7 @@
       "route": "/orders/batches/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -5543,7 +5561,7 @@
       "route": "/me/orders",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -5725,7 +5743,7 @@
       "route": "/me/orders/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -6037,7 +6055,7 @@
       "route": "/store/orders",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -6219,7 +6237,7 @@
       "route": "/store/orders/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -6367,7 +6385,7 @@
       "route": "/store/orders/{id}/status",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -7038,7 +7056,7 @@
       "route": "/store/vouchers",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -7192,7 +7210,7 @@
       "route": "/store/vouchers",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -7371,7 +7389,7 @@
       "route": "/store/vouchers/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -7549,7 +7567,7 @@
       "route": "/admin/vouchers",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -7703,7 +7721,7 @@
       "route": "/admin/vouchers",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -7882,7 +7900,7 @@
       "route": "/admin/vouchers/{id}",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -8955,7 +8973,7 @@
       "route": "/admin/orders",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -10090,7 +10108,7 @@
       "route": "/store/vouchers/{id}/usage",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -10153,7 +10171,7 @@
       "route": "/admin/vouchers/{id}/usage",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -11818,7 +11836,7 @@
       "route": "/internal/variants/quote",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12373,7 +12391,7 @@
       "route": "/internal/reviews/eligibility",
       "internal": true,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",

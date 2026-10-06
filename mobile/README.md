@@ -1,6 +1,21 @@
-# Customer Android starter — Hoa
+# Customer Android — Hoa
 
-Flutter/Riverpod/Dio, login/profile/catalog mẫu gọi API thật. Cart/Order/Chat đang là màn pending. Refresh token lưu secure storage; access token trong memory; refresh một lần khi 401.
+Flutter / Riverpod / Dio. Màn Auth, Profile, Address, Catalog, consent, Cart và checkout đã có client theo [OpenAPI](../docs/contracts/openapi.json). Chưa nghiệm thu toàn bộ luồng bằng API thật hoặc thiết bị Android; xem [bản tổng Hoa và dependency](../docs/implementation/hoa-consolidated-handoff.md).
+
+## File và điểm nối
+
+- `lib/core/api_client.dart`: Bearer token, mutex refresh khi 401, secure storage, request đúng contract. Request retry gặp lỗi nghiệp vụ không xóa phiên mới; refresh lỗi mạng/503 giữ refresh token để thử lại sau, chỉ xóa khi bị từ chối 401/403. `main.dart` khôi phục refresh token trước khi mở màn hình.
+- Auth: forgot gọi `POST /auth/reset-password`, confirm reset gọi `POST /auth/reset-password/confirm`; change dùng `current_password`. Register chỉ gửi email/password/display_name; sửa số điện thoại qua Profile. Profile không cung cấp sửa avatar vì contract chưa hỗ trợ.
+- Address dùng `city`, `line1`; đổi default bằng `PATCH /me/addresses/{id}` với `is_default=true`.
+- Catalog gửi `q`, category UUID, page/size. Product Detail tải dữ liệu hiện tại; thêm giỏ gửi Product ID và Variant ID. Taxonomy/filter/review/related còn phụ thuộc M1 owner; empty fallback ở section phụ chưa phải nghiệm thu dữ liệu.
+- Consent gọi `/me/personalization-consent`; tải lỗi giữ trạng thái chưa biết và có retry, không mặc định GRANTED. Recommendation lỗi không sinh danh sách fixture/baseline thành công.
+- Cart tải đủ các trang (100 item/trang), gom Store, lấy title/SKU/giá từ M1 qua Product ID. Item legacy hoặc Catalog lỗi hiện chưa có giá và không cho chọn mua; có thể xóa và thêm lại. Tổng giỏ chỉ tạm tính, số tiền checkout lấy từ quote server.
+- Checkout dùng `/checkout/quotes` và `/orders/batches`, giữ Idempotency-Key khi retry cùng attempt. Đổi address/payment/voucher phải lấy quote mới; response cũ không được ghi đè lựa chọn mới. Hiển thị item/giá từ quote server, chặn quote hết hạn và có retry khi tải địa chỉ lỗi. Confirm server còn 501; màn thành công chỉ mở khi API confirm thực sự thành công. Mock success trong widget test chưa chứng minh đã thu tiền/giữ kho.
+- `lib/core/contract_fixtures.dart` chỉ đọc bộ JSON chung khi bật `USE_CONTRACT_FIXTURES` rõ ràng; không tự bật khi API lỗi, chặn fixture checkout/payment.
+
+## Chạy và kiểm thử
+
+Trong `mobile`:
 
 ```powershell
 flutter pub get
@@ -9,12 +24,12 @@ flutter test
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080/api/v1
 ```
 
-Android emulator dùng 10.0.2.2 để gọi gateway máy host. Máy thật cần gateway bind địa chỉ phù hợp, thiết bị cùng mạng và base URL của host. Local debug cho cleartext; release dùng HTTPS:
+Android emulator dùng `10.0.2.2` để gọi gateway máy host. Máy thật cần thiết bị cùng mạng và base URL của host. Backend setup/migration/seed theo [README gốc](../README.md), gồm migration M2 004 mới.
+
+`test/api_contract_test.dart` ghi request qua Dio adapter để kiểm route/key/consent/refresh/Cart mapping. `test/widget_test.dart` dùng provider/client mock có chủ đích để kiểm màn hình. Auth/Profile/Address/consent và Checkout còn dependency chưa triển khai đầy đủ; cần demo thật trước khi đóng MOB-01/02/03.
+
+Release build khi có môi trường demo:
 
 ```powershell
 flutter build apk --release --dart-define=API_BASE_URL=https://demo.example.com/api/v1
 ```
-
-Thay domain bằng môi trường thực. Máy bàn giao hiện chưa có Android SDK; analyze/test đã chạy, chưa build APK hoặc kiểm thiết bị. Cài SDK/emulator và chấp nhận license trước khi build.
-
-Code hiện tập trung ở main.dart/core để đọc mẫu. Khi mở rộng, Hoa tách `features/auth`, `catalog`, `cart`, `checkout`, `order`, `profile`, `review`, `chat` theo module, bổ sung typed models, provider/repository và widget. Payload theo [OpenAPI](../docs/contracts/openapi.json), không tính giá/tồn/quyền trên client. Test đang là widget/utility mẫu, chưa đại diện e2e Android. Xem [backlog](../docs/implementation/member-backlog.md).

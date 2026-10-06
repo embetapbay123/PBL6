@@ -2120,6 +2120,8 @@ export interface components {
             /** Format: uuid */
             store_id?: string;
             quantity: number;
+            /** Format: uuid */
+            product_id?: string;
         };
         StoreReport: {
             /** Format: uuid */
@@ -2549,6 +2551,11 @@ export interface components {
             /** Format: uuid */
             variant_id: string;
             quantity: number;
+            /**
+             * Format: uuid
+             * @description Product chứa Variant; M2 xác minh qua Catalog M1.
+             */
+            product_id: string;
         };
         CartItemUpdate: {
             quantity: number;
@@ -6673,8 +6680,9 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "variant_id": "11111111-1111-4111-8111-111111111111",
-                 *       "quantity": 2
+                 *       "product_id": "10000000-0000-4000-8000-000000000080",
+                 *       "variant_id": "10000000-0000-4000-8000-000000000090",
+                 *       "quantity": 1
                  *     }
                  */
                 "application/json": components["schemas"]["CartItemCreate"];

@@ -39,7 +39,7 @@ npm run infra:up
 
 Mở [http://localhost:8080](http://localhost:8080). Đăng nhập `customer1@pbl6.test`, `customer2@pbl6.test`, `owner@pbl6.test` hoặc `admin@pbl6.test`. Mật khẩu là `SEED_PASSWORD` trong `infrastructure/.env`, mặc định local `LocalDemo-ChangeMe123!`. Seed chỉ là dữ liệu giả để phát triển. Script giữ cấu hình/khóa đã có, không in secret.
 
-Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ của chính User, danh sách/chi tiết Product và mẫu sửa title/description có expected_version + audit/outbox. AI chỉ chạy mock. Các API còn lại trả `501 FEATURE_NOT_IMPLEMENTED`; UI demo cũ ở `/?mode=mock` vẫn dùng dữ liệu mô phỏng.
+Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ của chính User, danh sách/chi tiết Product và mẫu sửa title/description có expected_version + audit/outbox. Bản tổng Hoa bổ sung Cart, Voucher CRUD/usage và Order read; chạy migration M2 004 và đọc [phạm vi/dependency](docs/implementation/hoa-consolidated-handoff.md). Checkout, COD, report còn phần 501/dependency; AI chỉ chạy mock. UI demo cũ ở `/?mode=mock` vẫn dùng dữ liệu mô phỏng.
 
 ## Nhận việc
 
@@ -53,7 +53,7 @@ Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kan
 | Member | Task đầu tiên | Phạm vi lâu dài |
 | --- | --- | --- |
 | Công | PAY-01: Payment/attempt/port; review nền CORE/FLOW đã có | Shared/hạ tầng/tích hợp; M2 Payment/Refund/COD; M4 AI |
-| Thịnh | CAT-QUOTE-01: quote cho M2, rồi CAT-04: public Catalog | M1 và Seller Web |
+| Thịnh | CAT-04: public Catalog; QuoteVariants đã merge ở [PR #86](https://github.com/embetapbay123/PBL6/pull/86) | M1 và Seller Web |
 | Hoa | CART-01: đọc/sửa số lượng/xóa item giỏ | M2 Cart/Order/Voucher/report và Customer Android |
 | Trí | ID-01: CRUD địa chỉ | M3 và Admin Web |
 | Hatsaphone | WEB-01: danh sách sản phẩm Customer | Customer Web theo từng màn và API bàn giao |
