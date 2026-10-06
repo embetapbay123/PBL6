@@ -48,7 +48,10 @@ export class AuthController {
     res.clearCookie('pbl6_refresh',{path:'/api/v1/auth'}); res.clearCookie('pbl6_csrf',{path:'/'});
     return {success:true};
   }
-  @Get('me/context') context(@Req() req: any) { return req.auth; }
+  @Get('me/context') context(@Req() req: any) {
+    const { access_token: _internalToken, ...context } = req.auth;
+    return context;
+  }
   @Get('me') async profile(@Req() req: any) {
     return new ProfileService().getProfile(req.auth.user_id);
   }

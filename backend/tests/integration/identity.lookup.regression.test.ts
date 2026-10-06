@@ -64,6 +64,8 @@ test('Internal checkout and AI scope validate tokens, snapshots, caller allowlis
   const source = new DataSource({ type: 'postgres', url: process.env.M3_DATABASE_URL }); await source.initialize();
   const customer = await login('customer1@pbl6.test'), other = await login('customer2@pbl6.test'), owner = await login('owner@pbl6.test'), admin = await login('admin@pbl6.test');
   const context = await (await fetch(base + '/me/context', { headers: headers(customer) })).json() as any;
+  schema('getAuthContext', context);
+  expect(context.access_token).toBeUndefined();
   const [store] = await source.query("SELECT id FROM store WHERE status='ACTIVE' LIMIT 1");
   const [membership] = await source.query("SELECT id,status FROM store_membership WHERE store_id=$1 AND role='OWNER' AND status='ACTIVE' LIMIT 1", [store.id]);
   const id = randomUUID();
