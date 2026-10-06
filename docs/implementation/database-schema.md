@@ -4,7 +4,7 @@ Ngày chốt: **02/10/2026**. Thành viên triển khai theo schema này, không
 
 ## Nguồn để code
 
-1. SQL `001_initial.sql` → `002_correlation_text.sql` → `003_schema_baseline.sql` của từng service là nguồn schema runtime, áp dụng theo thứ tự.
+1. SQL `001_initial.sql` → `002_correlation_text.sql` → `003_schema_baseline.sql` của từng service là baseline; áp dụng tiếp migration append-only. M2 thêm `004_cart_product_reference.sql` (05/10/2026): cart_item.product_id nullable, tham chiếu logic M1; dữ liệu cũ không tự backfill ID giả.
 2. Entity TypeORM / model SQLAlchemy ánh xạ cột; **synchronize=false**. Index, FK và CHECK do migration quản lý, không tự sinh schema từ ORM.
 3. [OpenAPI](../contracts/openapi.json) và [internal API](../contracts/internal-api.json) là nguồn request/response; DTO tách khỏi entity. BIGINT trong Node giữ string nội bộ; mapper kiểm tra số nguyên an toàn khi trả số tiền theo contract API. Không trả trực tiếp entity, token hash hoặc password hash.
 4. [Từ điển dữ liệu](../data-dictionary.md), [ERD](../diagrams/erd/README.md), [state transitions](../state-transitions.md) giải thích nghiệp vụ. Khi sơ đồ khác SQL, SQL cộng tài liệu này là schema đã chốt; không chạy generator cũ để ghi đè.
@@ -23,7 +23,7 @@ Hatsaphone dùng DTO/fixture và API; không sở hữu DB. Cùng PostgreSQL ins
 ## Quyết định dùng ngay
 
 - UUID là khóa nghiệp vụ; thời gian UTC `timestamptz`; tiền là BIGINT VND nguyên, không dùng float. Dữ liệu JSON phải được kiểm tra bằng DTO/schema tại boundary.
-- Một Cart/User, một CartItem/Variant trong giỏ. Thêm cùng variant là tăng số lượng bằng upsert/lock, không tạo dòng trùng. `store_id` và `variant_id` lấy từ quote M1, không tin dữ liệu giá của client.
+- Một Cart/User, một CartItem/Variant trong giỏ. Thêm cùng variant là tăng số lượng bằng upsert/lock, không tạo dòng trùng. Client gửi product_id/variant_id; M2 đọc Product M1 và kiểm Variant/Store trước quote. Không tin dữ liệu giá của client.
 - Một Order/Store trong purchase_group, một Payment/Order, một Shipment/Order, một CODCollection/Order. Không có bảng Checkout/Purchase hoặc Payment chung cho purchase_group.
 - OrderItem và address_snapshot giữ bản chụp bất biến. `line_total_vnd = unit_price_vnd * quantity`; `payable_vnd = goods_vnd - store_discount_vnd - platform_discount_vnd + shipping_vnd`. Giảm giá không vượt tiền hàng.
 - Payment và Refund cùng order_id được bảo vệ bằng composite FK. Payment.payable_vnd bằng Order.payable_vnd do service kiểm trong transaction. Callback có thể thu thừa: lưu số thu thực, đối soát/hoàn phần dư, không cắt số thu về payable.

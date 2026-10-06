@@ -6,6 +6,8 @@ Tuần 1 gồm **5 ngày làm việc kể từ lúc nhóm bắt đầu**. Mục 
 
 **Schema, DTO và contract đã có.** Không chờ Công thiết kế lại database hay viết client cho từng API. CORE-01, FLOW-01 và CORE-02 đã có code mẫu để review; tuần này Công tiếp tục nghiệp vụ Payment/M4. Tiến độ thực tế chỉ cập nhật trên Kanban, không sửa bảng này thành một board thứ hai.
 
+[Bàn giao bản tổng Hoa](hoa-consolidated-handoff.md): contract Cart thêm product_id, migration 004, các phần đã sửa và dependency Checkout/COD/report còn cần hoàn thiện. Dùng Kanban để review và nghiệm thu; không lấy số PR làm số task đã xong.
+
 ## Nhìn nhanh: mỗi người làm gì trước
 
 | Người | Việc bắt đầu ngay | Đầu ra chính của tuần | Chi tiết |

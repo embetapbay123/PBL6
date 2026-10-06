@@ -319,6 +319,7 @@ quote_id trỏ bản báo giá tạm trong cache TTL ngắn để giao diện x�
 | Cart.updated_at | timestamptz | Không | — | Dữ liệu nghiệp vụ |
 | CartItem.id | uuid | Không | gen_random_uuid() | PK |
 | CartItem.cart_id | uuid | Không | — | FK nội bộ |
+| CartItem.product_id | uuid | Có (legacy) | — | ID logic M1; migration 004, bắt buộc khi add mới |
 | CartItem.variant_id | uuid | Không | — | ID tham chiếu logic |
 | CartItem.store_id | uuid | Không | — | ID tham chiếu logic |
 | CartItem.quantity | int | Không | — | Dữ liệu nghiệp vụ |
