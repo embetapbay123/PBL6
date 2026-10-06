@@ -6376,6 +6376,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -6404,7 +6414,7 @@
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/payments/{id}": {
@@ -6515,6 +6525,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6530,7 +6550,7 @@
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/payment-callbacks/sandbox": {
@@ -12908,6 +12928,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -12922,7 +12952,7 @@
         "x-service-owner": "M4",
         "x-module": "consent",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "patch": {
         "operationId": "updatePersonalizationConsent",
@@ -12944,6 +12974,16 @@
           },
           "501": {
             "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
             "content": {
               "application/json": {
                 "schema": {
@@ -12975,7 +13015,7 @@
         "x-service-owner": "M4",
         "x-module": "consent",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/payment-callbacks/sepay": {

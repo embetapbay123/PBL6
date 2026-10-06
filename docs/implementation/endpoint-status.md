@@ -2,6 +2,8 @@
 
 OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
 
+Trong nhánh bàn giao Công: Payment read/attempt và consent GET/PATCH đã có handler thật; public 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending. Payment callback/Refund, confirm checkout và các producer M1 chưa đủ vẫn giữ scope riêng. Có handler không tự đóng issue trước review/merge.
+
 Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope), 5 stub. Lookup M3 đã merge vào main qua PR #87 ngày 06/10/2026. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
 
 | API | Operation | Service / module | Owner | Trạng thái |
@@ -53,8 +55,8 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `POST /checkout/quotes` | quoteCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `GET /orders/batches/{id}` | getPurchaseGroupOrders | M2 / order | Hoa | IMPLEMENTED |
-| `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | NOT_IMPLEMENTED |
-| `GET /payments/{id}` | getPayment | M2 / payment | Công | NOT_IMPLEMENTED |
+| `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | IMPLEMENTED |
+| `GET /payments/{id}` | getPayment | M2 / payment | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sandbox` | sandboxCallback | M2 / payment | Công | NOT_IMPLEMENTED |
 | `GET /orders/{id}/refund` | getOrderRefund | M2 / payment | Công | NOT_IMPLEMENTED |
 | `GET /me/orders` | listOwnOrders | M2 / order | Hoa | IMPLEMENTED |
@@ -102,6 +104,6 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `POST /admin/products/{id}/hide` | hideProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `POST /admin/products/{id}/restore` | restoreProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `GET /ai/metrics` | getAiMetrics | M4 / evaluation | Công | MOCK_ONLY |
-| `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | NOT_IMPLEMENTED |
-| `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | NOT_IMPLEMENTED |
+| `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
+| `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |

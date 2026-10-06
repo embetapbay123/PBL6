@@ -15,6 +15,9 @@ from .runtime_contracts import validate_operation, MISSING
 from .internal_client import InternalClient, InternalError
 from .chat.service import MockChatService
 from .recommendation.service import MockRecommendationService
+from .consent.service import ConsentService
+from .consent.domain import ConsentConflict
+from starlette.concurrency import run_in_threadpool
 
 log = logging.getLogger('pbl6.ai')
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -109,6 +112,13 @@ def register(record):
             query={key:request.query_params.getlist(key) if len(request.query_params.getlist(key))>1 else value for key,value in request.query_params.items()}
             request.state.contract=validate_operation(op,body=payload,path=request.path_params,query=query,headers=dict(request.headers))
         except (ValueError,ValidationError): raise ApiError(422,'VALIDATION_FAILED','Dữ liệu không hợp lệ.')
+        if op in ['getPersonalizationConsent','updatePersonalizationConsent']:
+            if engine is None: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Database chưa sẵn sàng.')
+            service=ConsentService(engine)
+            try:
+                if op=='getPersonalizationConsent': return await run_in_threadpool(service.get,identity['user_id'])
+                return await run_in_threadpool(service.update,identity['user_id'],request.state.contract['body'])
+            except ConsentConflict: raise ApiError(409,'VERSION_CONFLICT','Consent đã thay đổi.')
         if op in ['getForYou','getRelatedProducts']:
             try:
                 async with httpx.AsyncClient(timeout=2) as client:

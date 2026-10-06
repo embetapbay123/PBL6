@@ -14,4 +14,8 @@ export class PaymentAttempt {
   amount_vnd!: string;
   @Column({"type": "timestamptz", "nullable": false})
   created_at!: Date;
+  @Column({type:'text',nullable:true})
+  qr_url!: string | null;
+  @Column({type:'timestamptz',nullable:true})
+  expires_at!: Date | null;
 }
