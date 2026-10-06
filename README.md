@@ -4,6 +4,8 @@
 
 **Nhận việc hiện tại:** [Week 2 — task, thứ tự, dependency và demo từng người](docs/implementation/week2.md). [Week 1](docs/implementation/week1.md) giữ kế hoạch giai đoạn trước.
 
+**Kế hoạch toàn bộ:** [Roadmap Week 1–8](docs/implementation/roadmap.md), mục tiêu đủ chức năng cuối Week 6, nghiệm thu/bàn giao cuối Week 8 và Week 9 dự phòng. Đây là dự kiến theo năng lực/handoff, chưa là deadline nộp đề tài.
+
 **Schema đã chốt:** [database baseline 2.2](docs/implementation/database-schema.md) — thành viên code theo migration và contract hiện có.
 
 [![Scaffold checks](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/embetapbay123/PBL6/actions/workflows/ci.yml)

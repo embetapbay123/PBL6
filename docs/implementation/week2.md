@@ -4,6 +4,8 @@ Kế hoạch chốt ngày **06/10/2026**, gồm **5 ngày làm việc kể từ 
 
 [Kanban theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Toàn bộ task](task-assignment.md) · [Cách chạy](../../README.md) · [Contract tích hợp](../integration-contract.md) · [Week 1](week1.md)
 
+[Roadmap toàn bộ](roadmap.md) chốt mốc dự kiến Week 6 đủ chức năng, Week 8 nghiệm thu và Week 9 dự phòng; [Week 3](week3.md) tiếp Online Payment/Refund và màn mua hàng. Rà mốc sau demo Week 2 bằng kết quả thực tế.
+
 ## Đầu vào đã có và kết quả cần đạt
 
 Main đã có QuoteVariants M1; Cart M2; Address/Profile và hai lookup M3; Order read, Voucher CRUD, review eligibility và Seller transition/Shipment mô phỏng; Mobile có các màn/client để tiếp tục tích hợp. Customer Web hiện có danh sách mẫu với retry. Xem [bàn giao Hoa](hoa-consolidated-handoff.md), [bàn giao Trí](tri-lookup-handoff.md) và [trạng thái API](endpoint-status.md). Có code hoặc PR đã merge không đồng nghĩa toàn bộ issue rộng đã hoàn thành.

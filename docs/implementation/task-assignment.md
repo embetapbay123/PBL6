@@ -4,6 +4,8 @@
 
 **Việc cần làm hiện tại:** [Week 2: kế hoạch 5 ngày, link issue và chi tiết từng người](week2.md). [Week 1](week1.md) giữ kế hoạch giai đoạn trước. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, Công bắt đầu Payment/M4.
 
+**Kế hoạch toàn bộ:** [Roadmap Week 1–8](roadmap.md) bao phủ 71 issue và mốc mục tiêu từng scope; Week 3–8 có lịch/việc/handoff riêng. Status thực tế vẫn trên Kanban, không tự Done theo lịch.
+
 **Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service và thêm 004 ở M2; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
 
 [Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
@@ -31,10 +33,10 @@ Số task không là số giờ: Công giữ giao dịch/AI/tích hợp nặng; 
 | Người | Ưu tiên lấy việc đầu | Phần khác có thể làm với seed/fixture |
 | --- | --- | --- |
 | Công | [PAY-01 · #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-04 · #54](https://github.com/embetapbay123/PBL6/issues/54), [AI-01 · #55](https://github.com/embetapbay123/PBL6/issues/55) | Review CORE/FLOW đã có; callback/recommendation theo payload đã chốt |
-| Thịnh | [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11), rồi [CAT-01 · #2](https://github.com/embetapbay123/PBL6/issues/2); QuoteVariants đã merge ở [PR #86](https://github.com/embetapbay123/PBL6/pull/86) | Inventory, Product/Variant/Image, taxonomy và Seller page riêng |
-| Hoa | [CART-01 · #3](https://github.com/embetapbay123/PBL6/issues/3), [VOUCHER-01 · #27](https://github.com/embetapbay123/PBL6/issues/27), [VOUCHER-02 · #28](https://github.com/embetapbay123/PBL6/issues/28) | Order read/report từ seed; orchestration/Android từ adapter fixture |
-| Trí | [ID-01 · #4](https://github.com/embetapbay123/PBL6/issues/4), [ID-LOOKUP-01 · #45](https://github.com/embetapbay123/PBL6/issues/45), [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39) | Store, register/reset, staff/permission, admin list/form từ seed/fixture |
-| Hatsaphone | [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5), [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62), [WEB-04 · #64](https://github.com/embetapbay123/PBL6/issues/64) | Dùng login/client nền; làm component và ráp API thật theo Week 1 |
+| Thịnh | [INV-02 · #14](https://github.com/embetapbay123/PBL6/issues/14) → [INV-01 · #13](https://github.com/embetapbay123/PBL6/issues/13) → [CAT-04 · #11](https://github.com/embetapbay123/PBL6/issues/11); QuoteVariants đã Done | Product/Variant/Image, taxonomy và Seller page riêng |
+| Hoa | [ORDER-01 · #21](https://github.com/embetapbay123/PBL6/issues/21) → [ORDER-02 · #22](https://github.com/embetapbay123/PBL6/issues/22)/[VOUCHER-03 · #29](https://github.com/embetapbay123/PBL6/issues/29) → [ORDER-05 · #25](https://github.com/embetapbay123/PBL6/issues/25); Cart/Admin Voucher đã Done | Order read/report và Android; Store Voucher còn acceptance riêng |
+| Trí | Nhánh Auth đang làm: [AUTH-01 · #37](https://github.com/embetapbay123/PBL6/issues/37) → [AUTH-02 · #38](https://github.com/embetapbay123/PBL6/issues/38) → [AUTH-03 · #39](https://github.com/embetapbay123/PBL6/issues/39); Address/lookup đã Done | Store/staff/RBAC và Admin từ seed/fixture |
+| Hatsaphone | [WEB-01 · #5](https://github.com/embetapbay123/PBL6/issues/5) → [WEB-02 · #62](https://github.com/embetapbay123/PBL6/issues/62) → [WEB-04 · #64](https://github.com/embetapbay123/PBL6/issues/64)/[WEB-05 · #65](https://github.com/embetapbay123/PBL6/issues/65) | Dùng login/client nền; làm component và ráp API thật theo Week 2 |
 
 - FLOW-01 đã chốt M1 quote/kho, lookup M3, low-stock/report, scope AI và EntityManager Order/Payment trong [foundation handoff](foundation-handoff.md); member dùng điểm nối này để triển khai.
 - API client/types/fixture là điểm xuất phát; generic client hiện có và seed cho phép viết module/page riêng. Không để mọi page chờ Công viết toàn bộ adapter.
