@@ -4,7 +4,7 @@
 
 **Việc cần làm hiện tại:** [Week 2: kế hoạch 5 ngày, link issue và chi tiết từng người](week2.md). [Week 1](week1.md) giữ kế hoạch giai đoạn trước. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, Công bắt đầu Payment/M4.
 
-**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
+**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service và thêm 004 ở M2; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
 
 [Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
 
@@ -22,7 +22,7 @@ Task chưa làm không có nghĩa nghiệp vụ đã hoàn thành. Khung vẫn c
 | Trí | [phantri1912](https://github.com/phantri1912) | Auth/Profile/Address/Store/Staff/RBAC M3 và toàn Admin Web | 14 |
 | Hatsaphone | [HATSAPHONE](https://github.com/HATSAPHONE) | Customer Web theo màn; chỉ UI/API theo mẫu, không BE/AI | 11 |
 
-Cả4 member đã có username và quyền Write trên Project. Trí đã nhận lời mời repo Write và14 task đã gán trực tiếp phantri1912. Thịnh đã có quyền Write trên repo; CAT-QUOTE-01 và CAT-04 gán QT-2005. Các issue còn tạm embetapbay123 cần chuyển sang member khi tài khoản đã có quyền; kiểm Assignee hiện hành trên GitHub. Tên Owner và body issue đã xác định người thực hiện, không hiểu Assignee tạm là Công phải code toàn bộ.
+Cả bốn member đã có quyền cộng tác repo và Write trên Project. Toàn bộ 71 issue gán Assignee theo Owner: Công `embetapbay123`, Hoa `mimidangeiu`, Thịnh `QT-2005`, Trí `phantri1912`, Hatsaphone `HATSAPHONE`. Task member không còn tạm giao Công; Status hiện hành xem trên Kanban.
 
 Số task không là số giờ: Công giữ giao dịch/AI/tích hợp nặng; Hatsaphone nhận các màn theo component/contract mẫu, Công hỗ trợ adapter. Hoa có cả M2 và Android; khi chọn việc cần ưu tiên handoff BE trước phần UI dùng API đó.
 
