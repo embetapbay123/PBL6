@@ -1,6 +1,6 @@
 # M3 lookup, Profile and Address handoff
 
-Owner: Trí (`phantri1912`). Review in [PR #87](https://github.com/embetapbay123/PBL6/pull/87); use `feat/ID-LOOKUP-01` until the PR is merged. M1 inventory and M2 Payment/checkout commands remain with their existing owners.
+Owner: Trí (`phantri1912`). [PR #87](https://github.com/embetapbay123/PBL6/pull/87) merged into main on 06/10/2026 at `c43fdce`. Use main and [Week 2](week2.md) for the next tasks. M1 inventory and M2 Payment/checkout commands remain with their existing owners.
 
 ## Internal APIs
 

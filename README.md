@@ -2,7 +2,7 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](docs/implementation/foundation-handoff.md).
 
-**Nhận việc tuần 1:** [task theo từng người, link issue, lịch 5 ngày và tiêu chí demo](docs/implementation/week1.md).
+**Nhận việc hiện tại:** [Week 2 — task, thứ tự, dependency và demo từng người](docs/implementation/week2.md). [Week 1](docs/implementation/week1.md) giữ kế hoạch giai đoạn trước.
 
 **Schema đã chốt:** [database baseline 2.2](docs/implementation/database-schema.md) — thành viên code theo migration và contract hiện có.
 
@@ -39,13 +39,13 @@ npm run infra:up
 
 Mở [http://localhost:8080](http://localhost:8080). Đăng nhập `customer1@pbl6.test`, `customer2@pbl6.test`, `owner@pbl6.test` hoặc `admin@pbl6.test`. Mật khẩu là `SEED_PASSWORD` trong `infrastructure/.env`, mặc định local `LocalDemo-ChangeMe123!`. Seed chỉ là dữ liệu giả để phát triển. Script giữ cấu hình/khóa đã có, không in secret.
 
-Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ của chính User, danh sách/chi tiết Product và mẫu sửa title/description có expected_version + audit/outbox. Bản tổng Hoa bổ sung Cart, Voucher CRUD/usage và Order read; chạy migration M2 004 và đọc [phạm vi/dependency](docs/implementation/hoa-consolidated-handoff.md). Checkout, COD, report còn phần 501/dependency; AI chỉ chạy mock. UI demo cũ ở `/?mode=mock` vẫn dùng dữ liệu mô phỏng.
+Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ của chính User, danh sách/chi tiết Product và mẫu sửa title/description có expected_version + audit/outbox. Bản tổng Hoa bổ sung Cart, Voucher CRUD/usage và Order read; chạy migration M2 004 và đọc [phạm vi/dependency](docs/implementation/hoa-consolidated-handoff.md). M3 Profile/Address và checkout/AI scope lookup đã merge qua [PR #87](https://github.com/embetapbay123/PBL6/pull/87); Web list mẫu có retry qua [#89](https://github.com/embetapbay123/PBL6/pull/89). Seller transition/Shipment mô phỏng đã có. Checkout confirm/cancel, COD, report còn phần 501/dependency; AI chỉ chạy mock. UI demo cũ ở `/?mode=mock` vẫn dùng dữ liệu mô phỏng.
 
 ## Nhận việc
 
-Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kanban](https://github.com/users/embetapbay123/projects/1/views/3); [bảng phân công đầy đủ](docs/implementation/task-assignment.md) dẫn tới scope/ưu tiên/dependency của từng issue. Member tự chọn việc phù hợp, code bằng contract/seed/fixture trong lúc chờ API tích hợp, không đợi mở task từng đợt. Kéo thẻ để cập nhật tiến độ theo [hướng dẫn](docs/implementation/kanban-guide.md). Username: Công `embetapbay123`, Thịnh `QT-2005`, Hoa `mimidangeiu`, Trí `phantri1912`, Hatsaphone `HATSAPHONE`. Trí đã nhận lời mời repo và được gán14 task; Hoa/Thịnh/Hatsaphone đang chờ nhận, Assignee tạm Công nhưng Owner vẫn là người thực hiện.
+Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kanban](https://github.com/users/embetapbay123/projects/1/views/3); [bảng phân công đầy đủ](docs/implementation/task-assignment.md) dẫn tới scope/ưu tiên/dependency của từng issue. Member tự chọn việc phù hợp, code bằng contract/seed/fixture trong lúc chờ API tích hợp, không đợi mở task từng đợt. Kéo thẻ để cập nhật tiến độ theo [hướng dẫn](docs/implementation/kanban-guide.md). Username: Công `embetapbay123`, Thịnh `QT-2005`, Hoa `mimidangeiu`, Trí `phantri1912`, Hatsaphone `HATSAPHONE`. Cả bốn member đã có quyền cộng tác; Assignee của toàn bộ task được đối chiếu với Owner. Status trên Kanban là nguồn tiến độ, không suy từ số PR.
 
-1. Mở [Week 1](docs/implementation/week1.md), tìm tên mình và task đầu tiên; tra [bảng giao toàn bộ task](docs/implementation/task-assignment.md) khi cần phạm vi lâu dài. Week 1 ghi link issue, việc cụ thể, thứ tự bàn giao và tiêu chí demo.
+1. Mở [Week 2](docs/implementation/week2.md), tìm tên mình và thứ tự task; tra [bảng giao toàn bộ task](docs/implementation/task-assignment.md) khi cần phạm vi lâu dài. Kế hoạch ghi API/file bắt đầu, dependency, mốc bàn giao và tiêu chí demo.
 2. Đọc [phân công](docs/implementation/service-ownership.md) và [backlog tổng thể](docs/implementation/member-backlog.md) để biết phạm vi lâu dài.
 3. Tra [trạng thái endpoint](docs/implementation/endpoint-status.md), [OpenAPI công khai](docs/contracts/openapi.json) và [API nội bộ](docs/contracts/internal-api.json). Phân biệt mẫu, mock và stub 501.
 4. Làm theo [hướng dẫn phát triển](docs/implementation/development-guide.md); lấy Auth/Catalog và test làm mẫu. Dùng [mẫu issue](.github/ISSUE_TEMPLATE/member-task.md) để ghi task, branch riêng và PR về `main`.
@@ -53,10 +53,10 @@ Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kan
 | Member | Task đầu tiên | Phạm vi lâu dài |
 | --- | --- | --- |
 | Công | PAY-01: Payment/attempt/port; review nền CORE/FLOW đã có | Shared/hạ tầng/tích hợp; M2 Payment/Refund/COD; M4 AI |
-| Thịnh | CAT-04: public Catalog; QuoteVariants đã merge ở [PR #86](https://github.com/embetapbay123/PBL6/pull/86) | M1 và Seller Web |
-| Hoa | CART-01: đọc/sửa số lượng/xóa item giỏ | M2 Cart/Order/Voucher/report và Customer Android |
-| Trí | ID-01: CRUD địa chỉ | M3 và Admin Web |
-| Hatsaphone | WEB-01: danh sách sản phẩm Customer | Customer Web theo từng màn và API bàn giao |
+| Thịnh | INV-02: reserve/consume/release; tiếp inventory/Catalog | M1 và Seller Web |
+| Hoa | ORDER-01/02: quote thật rồi confirm/quota, phối hợp COD | M2 Cart/Order/Voucher/report và Customer Android |
+| Trí | AUTH-01/02/03: Auth/token/session; tiếp RBAC/Store | M3 và Admin Web |
+| Hatsaphone | Chốt WEB-01, detail/Profile/Address/Cart theo Week 2 | Customer Web theo từng màn và API bàn giao |
 
 Clone repo và tạo branch theo task, ví dụ cho ID-01:
 

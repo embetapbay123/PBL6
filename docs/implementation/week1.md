@@ -1,5 +1,7 @@
 # Week 1 — giao việc sau khi có nền code
 
+**Chuyển giai đoạn ngày 06/10/2026:** kế hoạch hiện tại ở [Week 2](week2.md). Week 1 giữ scope/lịch gốc; Status thực tế trên Kanban. PR #88/#87/#89 đã merge, phần nghiệp vụ rộng chưa đạt vẫn giữ issue mở.
+
 Tuần 1 gồm **5 ngày làm việc kể từ lúc nhóm bắt đầu**. Mục tiêu là có Catalog, địa chỉ/Store lookup, Cart và các màn Customer nối API thật; đồng thời bàn giao kho, Payment và consent/tracking để tuần sau ráp checkout. Đây là kế hoạch đầu ra, không phải báo cáo các task đã hoàn thành.
 
 [Kanban theo từng người](https://github.com/users/embetapbay123/projects/1/views/3) · [Toàn bộ 71 task](task-assignment.md) · [Nền code và cách dùng DTO/client/fixture](foundation-handoff.md) · [Chạy hệ thống](../../README.md)
@@ -8,7 +10,7 @@ Tuần 1 gồm **5 ngày làm việc kể từ lúc nhóm bắt đầu**. Mục 
 
 [Bàn giao bản tổng Hoa](hoa-consolidated-handoff.md): contract Cart thêm product_id, migration 004, các phần đã sửa và dependency Checkout/COD/report còn cần hoàn thiện. Dùng Kanban để review và nghiệm thu; không lấy số PR làm số task đã xong.
 
-[Bàn giao lookup/Profile/Address của Trí](tri-lookup-handoff.md): API, quyền, transaction và cách kiểm tra trong PR #87. Trạng thái tích hợp chỉ áp dụng trên main sau merge.
+[Bàn giao lookup/Profile/Address của Trí](tri-lookup-handoff.md): API, quyền, transaction và cách kiểm tra trong PR #87. PR #87 đã merge vào main ngày 06/10/2026; Address/Profile/lookup có thể dùng thật.
 
 ## Nhìn nhanh: mỗi người làm gì trước
 
@@ -44,7 +46,7 @@ Các mốc dưới đây là mục tiêu phối hợp. Nếu chưa đạt, ghi r
 | 4 | Consumer search/view/cart; kiểm consent/inbox/retention | Reserve/consume/release và test tranh SKU | Order read; lát cắt Android login/profile/address/catalog | Kiểm mất quyền/Store khóa và integration M2/M4; phần Admin độc lập nếu còn thời gian | Ráp ba màn, kiểm lỗi/điện thoại/reload; Cart UI nếu còn thời gian |
 | 5 | Review PR, kiểm điểm nối và ghi phần chưa tích hợp | Demo Catalog/quote/kho + Seller list; sửa lỗi | Demo Cart/Voucher/Order read; demo Android đã làm | Demo Address/Store/lookup; sửa lỗi quyền | Demo Customer bằng API thật; sửa lỗi UX |
 
-**Handoff:** QuoteVariants đã merge ngày 05/10/2026 qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86); Hoa dùng [payload, lỗi và dữ liệu seed đã bàn giao](../../backend/catalog-service/src/inventory/README.md) để nối M1 thật. Address/ResolveCheckoutContext của Trí vẫn là đầu vào cần bàn giao ngày 2. Hoa bàn giao Cart cho Hatsaphone sau khi nối M1 thật. Công bàn giao PaymentPort cho Hoa trước lúc Hoa bắt đầu ORDER-02. Không ai đọc hoặc ghi database của service khác để vượt dependency.
+**Handoff:** QuoteVariants đã merge ngày 05/10/2026 qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86); Hoa dùng [payload, lỗi và dữ liệu seed đã bàn giao](../../backend/catalog-service/src/inventory/README.md) để nối M1 thật. Address/ResolveCheckoutContext của Trí đã merge qua PR #87 ngày 06/10/2026; Hoa/Web/Mobile dùng API thật và tiếp tục nghiệm thu luồng của mình. Hoa bàn giao Cart cho Hatsaphone sau khi nối M1 thật. Công bàn giao PaymentPort cho Hoa trước lúc Hoa bắt đầu ORDER-02. Không ai đọc hoặc ghi database của service khác để vượt dependency.
 
 <a id="cong"></a>
 

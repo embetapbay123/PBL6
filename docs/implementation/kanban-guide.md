@@ -26,7 +26,7 @@ BE có thể làm repository/state machine bằng seed/adapter fixture, UI có t
 | Hatsaphone | HATSAPHONE | 11 |
 
 - Bảng tổng nhóm theo **Owner**, cột theo **Status**. Owner là người thực hiện; Assignee là tài khoản GitHub. Cả4 member có quyền Write trên Project để tự kéo thẻ.
-- Trí đã nhận lời mời repo và được gán14 task cho phantri1912. Thịnh đã có quyền Write; CAT-QUOTE-01 và CAT-04 gán QT-2005. Member chưa nhận lời mời cần đăng nhập đúng tài khoản và [chấp nhận lời mời](https://github.com/embetapbay123/PBL6/invitations); issue còn tạm giao embetapbay123 vẫn dùng Owner để xác định người làm. Sau khi nhận, chuyển Assignee sang tài khoản tương ứng.
+- Cả bốn member đã là collaborator. Gán task theo Owner: Hoa `mimidangeiu`, Thịnh `QT-2005`, Trí `phantri1912`, Hatsaphone `HATSAPHONE`; không để task member tạm giao Công khi đã gán được. [Week 2](week2.md) chốt thứ tự và dependency, không tạo board/task trùng.
 - Tất cả task đã có issue, cách bắt đầu và dependency nghiệm thu. Không chờ Công giao tiếp. Chọn task Todo phù hợp; có thể đưa task Backlog lên Todo khi đã hiểu scope và có đầu vào/fixture đủ để làm phần độc lập. Mỗi người tối đa một task In progress.
 - **P0** ưu tiên contract/nền và luồng mua cốt lõi, **P1** nghiệp vụ/UI, **P2** nghiệm thu thiết bị/tải/recovery/demo. Priority không bắt cả nhóm làm tuần tự.
 - Task mới ngoài scope hiện có dùng [mẫu issue](../../.github/ISSUE_TEMPLATE/member-task.md), thêm vào **PBL6 — Team Kanban**, chọn Owner/Status/Priority và Assignee. Reviewer/phối hợp ghi trong body; labels `task`, `owner:*`, `scope:*`, `phase:*` để lọc.
@@ -39,3 +39,5 @@ BE có thể làm repository/state machine bằng seed/adapter fixture, UI có t
 4. Task hủy: đóng với reason not_planned rồi archive thẻ; không tính Done. Task mở lại: đưa về Todo hoặc In progress theo thực tế.
 
 Quy tắc nghiệm thu ở [verification plan](verification-plan.md), phạm vi dài hạn ở [backlog](member-backlog.md) và [bảng giao task](task-assignment.md).
+
+Sau merge: đối chiếu toàn bộ tiêu chí rồi mới đóng completed/Done. Nếu PR chỉ là một phần và không còn PR mở để review, ghi phần đã đạt/chưa đạt và đưa task về Todo; giữ In progress do owner đang làm, không tự reset. Commit message, tiêu đề và mô tả PR viết tiếng Anh.

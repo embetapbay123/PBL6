@@ -1,12 +1,12 @@
 # Contract tích hợp service — baseline 2.2.1
 
-**Nền 2.2.1:** [Internal OpenAPI](contracts/internal-api.json) có 11 operation và runtime DTO/fixture; ResolveContext/ActiveStores là sample, QuoteVariants đã `IMPLEMENTED` qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86), 8 operation còn lại guarded 501. [Foundation handoff](implementation/foundation-handoff.md) chốt interface M2, typed clients, nguồn tracking và cách phát triển. [Event schemas](contracts/events.json) là nguồn envelope/payload 1.0; event nghiệp vụ chưa có consumer thật.
+**Nền 2.2.1:** [Internal OpenAPI](contracts/internal-api.json) có 11 operation và runtime DTO/fixture; ResolveContext/ActiveStores là sample; QuoteVariants (#86), VerifyReviewEligibility (#88), ResolveCheckoutContext và ResolveAiMetricsScope (#87) đã `IMPLEMENTED` và merge vào main. Năm operation còn lại guarded 501: reserve/consume/release/restock/low-stock của M1. [Foundation handoff](implementation/foundation-handoff.md) chốt interface M2, typed clients, nguồn tracking và cách phát triển. [Event schemas](contracts/events.json) là nguồn envelope/payload 1.0; event nghiệp vụ chưa có consumer thật.
 
 Command ghi có operation_id UUID; correlation_id được truyền bằng header. Event có event_id UUID, correlation_id, occurred_at UTC, schema_version, producer và payload. Lookup không cần operation_id. Producer ghi outbox cùng transaction; consumer lưu inbox theo (producer,event_id), xử lý lặp trả cùng kết quả. ID xuyên service là tham chiếu logic, không FK xuyên database.
 
 | Từ → đến | Contract | Payload tối thiểu | Tác động và khi lỗi |
 | --- | --- | --- | --- |
-| M2 → M3 | ResolveCheckoutContext | token, address_id, store_ids | Xác minh địa chỉ Customer và lấy Store snapshot phí/version; DTO/guard có sẵn, logic thuộc Trí |
+| M2 → M3 | ResolveCheckoutContext | token, address_id, store_ids | Xác minh địa chỉ Customer và lấy Store snapshot phí/version; IMPLEMENTED qua #87; token/session/Customer/address ownership và Store active được kiểm |
 | M2 → M1 | QuoteVariants | items: variant_id, quantity, store_id thật | IMPLEMENTED ở M1; trả snapshot giá/tồn/version, chỉ đọc; đổi giá yêu cầu quote mới |
 | M2 → M1 | ListLowStockVariants | store_id từ membership, ngưỡng tồn cấu hình | Trả Variant tồn thấp cho StoreReport; M1 lỗi thì báo phần báo cáo chưa sẵn sàng, không trả mảng rỗng như số liệu thật |
 | M2 → M1 | ReserveInventory | purchase_group_id, order_id dự kiến, variant/quantity, expiry, operation_id | Giữ đủ SKU; nếu một SKU lỗi, release toàn bộ và không tạo Order |
@@ -16,7 +16,7 @@ Command ghi có operation_id UUID; correlation_id được truyền bằng heade
 | M1 → M2 | VerifyReviewEligibility | order_item_id, customer_user_id, product_id | Xác minh Order COMPLETED và Customer sở hữu trước tạo Review |
 | M1 → M4 | ProductChanged | product_id, store_id, version, status bán, moderation_status, giá Variant | Cập nhật/loại embedding; read vẫn kiểm tra Product hiện hành |
 | M3 → M1/M2/M4 | StoreStatusChanged, UserLocked, MembershipChanged | ID, trạng thái, version | Cập nhật cache/index; API nhạy cảm kiểm tra M3 hiện hành |
-| M4 → M3 | ResolveAiMetricsScope | user_id, quyền hiệu lực, Store membership | Owner chỉ xem metric Store mình, Admin xem toàn sàn; mất quyền thì 403/404 dù JWT còn hạn |
+| M4 → M3 | ResolveAiMetricsScope | token, store_id tùy chọn | Owner chỉ xem metric Store mình, Admin xem toàn sàn; mất quyền thì 403/404 dù JWT còn hạn |
 | M1 → M4 | SearchRecorded, InteractionRecorded VIEW | user_id, query hoặc product_id | Ingress từ read xác thực; M4 kiểm consent/inbox; không thu hành vi Guest |
 | M2 → M4 | OrderCompleted, InteractionRecorded CART | user_id, product_id, event_type, event_id, time | Tín hiệu AI dedup và chỉ dùng khi PersonalizationConsent cho phép |
 

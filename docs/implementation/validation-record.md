@@ -106,3 +106,9 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - M3 checkout context and AI metrics scope now implement the internal contract with live sessions and caller restrictions. Profile updates and Address CRUD implement authenticated ownership and atomic audit writes. Public: 24 implemented / 8 sample / 4 mock / 63 pending; internal: 4 implemented / 2 sample / 5 pending. These counts describe the PR branch until merge.
 - Backend build, 168 unit tests and 33 HTTP/PostgreSQL integration tests pass locally. Tests include strict response schemas, concurrent default addresses, audit rollback, missing/foreign addresses, unsafe fees, revoked membership and locked Stores. Contract/parser, generated drift and docs checks pass.
 - Auth registration/verification/password additions remain separate tasks and explicit stubs. No mock email provider is counted as implemented. No migrations or service ownership changes. CI evidence must be read at PR #87's current head.
+
+## 06/10/2026 — merged baseline and Week 2 handoff
+
+- PR #88 merged at `25456d5`, #89 at `e0dfc31`, and #87 at `c43fdce`. [Main CI at c43fdce](https://github.com/embetapbay123/PBL6/actions/runs/37412724706) passed contracts-and-node/mobile, including fresh setup/schema/migrations, 168 unit, 33 PostgreSQL/HTTP integration, Python, seven Web e2e and 40 Flutter tests.
+- Six complete task scopes (#3/#4/#8/#26/#28/#45) have merge/test evidence for completed/Done; wider Auth, Voucher Store, Order, report, Mobile and WEB-01 scopes remain open with explicit remaining acceptance. Shared foundation review remains separate. No unimplemented endpoint is promoted just because a dependency merged.
+- Week 2 assigns the existing issues to their real GitHub owners and prioritizes inventory commands, Payment/COD and atomic checkout. Kanban remains the only live status source. No new board, business code, migration, environment file or group-message template is introduced.

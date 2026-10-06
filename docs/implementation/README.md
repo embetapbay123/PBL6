@@ -9,7 +9,8 @@ Chốt **4 service M1–M4**. Khung có code, migration, môi trường và lu�
 | Đọc để làm gì | Tài liệu |
 | --- | --- |
 | Chạy hệ thống | [README gốc](../../README.md), [development guide](development-guide.md) |
-| Nhận việc ngay trong tuần 1 | [Week 1: link issue, việc cụ thể, thứ tự và tiêu chí demo từng người](week1.md) |
+| Nhận việc hiện tại | [Week 2: kho/Payment/checkout và task từng người](week2.md) |
+| Kế hoạch tuần 1 | [Week 1: link issue, việc cụ thể, thứ tự và tiêu chí demo từng người](week1.md) |
 | Biết ai làm gì | [ownership](service-ownership.md), [backlog](member-backlog.md), [bảng giao task](task-assignment.md) |
 | Nhận toàn bộ task và theo dõi tiến độ | [Kanban tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3), [phân công đầy đủ](task-assignment.md), [cách dùng](kanban-guide.md) |
 | Biết API đã chạy tới đâu | [endpoint status](endpoint-status.md), [OpenAPI](../contracts/openapi.json) |
