@@ -99,9 +99,3 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Flutter analyze sạch, 40 test đạt: refresh lỗi tạm thời giữ token; giỏ tải đủ trang; quote response cũ/hết hạn bị chặn; địa chỉ tải lỗi có retry; confirm 409 tải quote mới; confirm 501 giữ màn hình và cùng Idempotency-Key qua retry. Mock success không chứng minh checkout giao dịch thật hoặc Android thiết bị.
 - OpenAPI/parser, docs/link check và drift 99 public + 11 internal + 7 event đạt. Public hiện 19 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 68 NOT_IMPLEMENTED. Migration 001–003 không đổi; đợt này không thêm migration.
 - Giữ đúng owner: Thịnh phụ trách command kho/low-stock M1, Trí phụ trách checkout context/count M3, Công phụ trách Payment. Confirm/cancel/COD còn dependency và chưa nghiệm thu thành công; issue vẫn mở và Review. CI cần xem theo head mới của [PR #88](https://github.com/embetapbay123/PBL6/pull/88).
-
-## 06/10/2026 — Customer product-list retry review
-
-- PR #89 incorporates main after Hoa's PR #88 merge. ErrorView supports retry while preserving server error/correlation display; ProductsSample refetches the existing query and displays loading. No fixture fallback or service ownership changes.
-- Frontend production build and seven Playwright tests pass locally through Chrome. The phone viewport case checks an initial 503, correlation display, exactly one user-triggered retry of the same request, and recovery through the real M1 API.
-- This is a partial WEB-01 improvement. Issue #5 remains open and Review, assigned to HATSAPHONE. PR uses `Refs #5` and does not auto-close the full task. CI evidence must be read at the current PR head.
