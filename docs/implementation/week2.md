@@ -30,6 +30,8 @@ Owner và Assignee phải khớp tên trên bảng này. Không đổi owner đ�
 
 ### Công — Payment/COD và M4
 
+**Cập nhật sau PR #90:** PAY-01 #51 và PAY-04 #54 đã Done, port/Payment read/attempt dùng được trên main; không viết lại. AI-01 #55 Todo cho phần còn lại, còn nghiệm thu đủ nguồn search/view/cart/purchase thật; producer giữ đúng owner. [Handoff và CI](cong-week2-handoff.md). PAY-02 #52/PAY-03 #53 giữ kế hoạch tiếp theo, không tự đưa toàn bộ task tương lai vào Todo. Các mục dưới mô tả phạm vi và tiêu chí để đối chiếu.
+
 - Đọc [PaymentPort](../../backend/commerce-service/src/payment/payment.port.ts) và module [Payment/Refund](../../backend/commerce-service/src/payment/README.md). Implement `createForOrder`, `recordCodCollection` bằng đúng manager truyền vào. Hoa gọi port; Công ghi Payment/CODCollection/PaymentEvent và audit. Không có writer tiền thứ hai trong OrderRepository, không gọi provider trong transaction DB.
 - PAY-01: `getPayment` kiểm Customer/Order; `createPaymentAttempt` cấp reference từ server, đúng amount và idempotency. QR/reference chưa chứng minh đã thu tiền; timeout chưa xác định phải giữ UNKNOWN để đối soát.
 - PAY-04: chỉ thu Order SHIPPED/COD, đúng payable và operation ID. Hai request cạnh tranh/replay chỉ ghi một collection; lỗi Payment rollback Order và tiền. Bàn giao port ngày 2 để Hoa ráp endpoint.

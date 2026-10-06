@@ -120,3 +120,10 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Local checks pass: docs/OpenAPI/generated drift (99 public + 11 internal, seven events), backend/Web build, 168 Node unit tests, 41 PostgreSQL/HTTP integration tests, 23 Python tests (including isolated schema and durable broker fixture), seven Web e2e, and four fresh database schema suites with 12 negative invariants. Web e2e first lacked a local browser binary; after installing the Playwright Chromium runtime all seven passed. No source change was needed for that environment failure. Flutter is unchanged except generated contract fixture metadata and is verified separately by CI.
 - M2 adds migration 005; M4 adds 004/005; applied 001–003 are unchanged. Public branch status is 28 implemented / 8 sample / 4 mock / 59 pending; internal remains 4 implemented / 2 sample / 5 pending. Added 503 error documentation does not alter request/success payloads. This evidence describes the PR branch, not an already-merged main.
 - PAY-01/PAY-04 require peer review and merge before Done. AI-01 remains partial: M1 real search/view producers and full source acceptance still belong to Thịnh; fake/broker fixtures are not all real behavior history. Hoa retains confirm/cancel/Order/COD controller scope, Trí retains M3 events, callback/refund remain PAY-02/PAY-03 stubs. See [handoff](cong-week2-handoff.md).
+
+
+## PR #90 sau merge — 06/10/2026
+
+[PR #90](https://github.com/embetapbay123/PBL6/pull/90) đã squash merge vào main (`1b6028a`) ngày 06/10/2026 sau self-review và bypass được chủ repo cho phép. [CI main](https://github.com/embetapbay123/PBL6/actions/runs/37455617355) đạt; PR checks đạt 168 Node unit, 41 integration, 23 Python, 7 Web e2e và Flutter. [Handoff trên main](https://github.com/embetapbay123/PBL6/blob/main/docs/implementation/cong-week2-handoff.md).
+
+PAY-01/PAY-04 completed; AI-01 còn nguồn thật. ORDER-05/checkout/callback/refund và producer giữ owner, không đóng thay hoặc đổi metadata rộng.

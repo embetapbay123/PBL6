@@ -2,11 +2,11 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
-**Việc cần làm hiện tại:** [Week 2: kế hoạch 5 ngày, link issue và chi tiết từng người](week2.md). [Week 1](week1.md) giữ kế hoạch giai đoạn trước. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, Công bắt đầu Payment/M4.
+**Việc cần làm hiện tại:** [Week 2: kế hoạch 5 ngày, link issue và chi tiết từng người](week2.md). [Week 1](week1.md) giữ kế hoạch giai đoạn trước. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, PAY-01/PAY-04 của Công đã Done qua PR #90; AI-01 còn nghiệm thu nguồn thật.
 
 **Kế hoạch toàn bộ:** [Roadmap Week 1–8](roadmap.md) bao phủ 71 issue và mốc mục tiêu từng scope; Week 3–8 có lịch/việc/handoff riêng. Status thực tế vẫn trên Kanban, không tự Done theo lịch.
 
-**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service và thêm 004 ở M2; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
+**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service, thêm 004/005 ở M2 và 004/005 ở M4; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
 
 [Mở bảng tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3) · [Kanban tiến độ](https://github.com/users/embetapbay123/projects/1/views/2) · [Cách dùng](kanban-guide.md)
 

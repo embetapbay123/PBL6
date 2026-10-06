@@ -2,8 +2,8 @@
 
 Owner: Công
 
-- `POST /orders/{id}/payment-attempts` — createPaymentAttempt: **IMPLEMENTED in this branch**
-- `GET /payments/{id}` — getPayment: **IMPLEMENTED in this branch**
+- `POST /orders/{id}/payment-attempts` — createPaymentAttempt: **IMPLEMENTED on main (PR #90)**
+- `GET /payments/{id}` — getPayment: **IMPLEMENTED on main (PR #90)**
 - `POST /payment-callbacks/sandbox` — sandboxCallback: **NOT_IMPLEMENTED**
 - `GET /orders/{id}/refund` — getOrderRefund: **NOT_IMPLEMENTED**
 - `POST /payment-callbacks/sepay` — sepayCallback: **NOT_IMPLEMENTED**

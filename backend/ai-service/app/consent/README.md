@@ -2,8 +2,8 @@
 
 Owner: Công
 
-- `GET /me/personalization-consent` — getPersonalizationConsent: **IMPLEMENTED in this branch**
-- `PATCH /me/personalization-consent` — updatePersonalizationConsent: **IMPLEMENTED in this branch**
+- `GET /me/personalization-consent` — getPersonalizationConsent: **IMPLEMENTED on main (PR #90)**
+- `PATCH /me/personalization-consent` — updatePersonalizationConsent: **IMPLEMENTED on main (PR #90)**
 
 Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
 

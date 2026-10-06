@@ -1,6 +1,6 @@
 # Công — Payment/COD và consent/tracking
 
-Nhánh `codex/cong-week2-foundations`, scope [PAY-01 #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-04 #54](https://github.com/embetapbay123/PBL6/issues/54), lát cắt [AI-01 #55](https://github.com/embetapbay123/PBL6/issues/55). Đây là code trong nhánh/PR, chưa tự coi main/issue Done trước review và merge.
+Nhánh `codex/cong-week2-foundations`, scope [PAY-01 #51](https://github.com/embetapbay123/PBL6/issues/51), [PAY-04 #54](https://github.com/embetapbay123/PBL6/issues/54), lát cắt [AI-01 #55](https://github.com/embetapbay123/PBL6/issues/55). [PR #90](https://github.com/embetapbay123/PBL6/pull/90) đã merge vào main (`1b6028a`) ngày 06/10/2026. PAY-01/PAY-04 Done; AI-01 còn nghiệm thu đủ nguồn thật. [CI main đạt](https://github.com/embetapbay123/PBL6/actions/runs/37455617355).
 
 ## Hoa lấy điểm nối nào
 
@@ -16,6 +16,6 @@ Nhánh `codex/cong-week2-foundations`, scope [PAY-01 #51](https://github.com/emb
 
 ## Setup và trạng thái
 
-Chạy migration theo README: M2 thêm 005, M4 thêm 004/005. Không sửa 001–003 hoặc commit `.env`; cập nhật `.env.example` với cấu hình QR để trống, mặc định disabled. Compose có thêm worker-m4. 99 public/11 internal/7 event không thay request/response: public trong nhánh là 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending; internal giữ 4 implemented / 2 sample / 5 stub. collectCod và các task nghiệp vụ rộng vẫn theo acceptance của owner, không nâng metadata chỉ vì port đã có.
+Chạy migration theo README: M2 thêm 005, M4 thêm 004/005. Không sửa 001–003 hoặc commit `.env`; cập nhật `.env.example` với cấu hình QR để trống, mặc định disabled. Compose có thêm worker-m4. 99 public/11 internal/7 event không thay request/response: public trên main là 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending; internal giữ 4 implemented / 2 sample / 5 stub. collectCod và các task nghiệp vụ rộng vẫn theo acceptance của owner, không nâng metadata chỉ vì port đã có.
 
-Test mới dùng PostgreSQL, transaction/audit rollback, cạnh tranh/replay/amount/state, guard/DTO và HTTP COD; M4 dùng schema test riêng, consent/version/deletion/retention/inbox rollback và broker fixture. Bằng chứng chạy nằm trong [validation record](validation-record.md). Review cần Hoa/Công đối chiếu cùng manager; một member khác review PR của Công trước merge. Week 2/roadmap là mục tiêu, Kanban chỉ chuyển Review khi có PR và test; không tự đóng issue theo lịch.
+Test mới dùng PostgreSQL, transaction/audit rollback, cạnh tranh/replay/amount/state, guard/DTO và HTTP COD; M4 dùng schema test riêng, consent/version/deletion/retention/inbox rollback và broker fixture. Bằng chứng chạy nằm trong [validation record](validation-record.md). PR #90 đã self-review và merge bằng bypass theo yêu cầu chủ repo; không có approval của member khác. Hoa tiếp nghiệm thu controller/luồng Order với port đã bàn giao. Week 2/roadmap là mục tiêu, Kanban chỉ chuyển Review khi có PR và test; không tự đóng issue theo lịch.
