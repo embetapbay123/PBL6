@@ -23,13 +23,26 @@ test('legacy mock UI remains accessible',async({page})=>{
  await page.goto('/?mode=mock');await expect(page.locator('body')).not.toContainText('Khung tích hợp API');
  await expect(page.locator('body')).not.toBeEmpty();expect(errors).toEqual([]);
 });
-test('catalog reusable loading/error states and paging',async({page})=>{
+test('catalog error retry preserves the request and recovers through the API on a phone viewport',async({page})=>{
+ await page.setViewportSize({width:390,height:844});
+ const requests:string[]=[];
  await page.route('**/api/v1/products?*',async route=>{
+  requests.push(route.request().url());
+  if(requests.length>1){
+   await new Promise(resolve=>setTimeout(resolve,500));
+   await route.continue();return;
+  }
   await new Promise(resolve=>setTimeout(resolve,300));
   await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'DEPENDENCY_UNAVAILABLE',message:'Dịch vụ chưa sẵn sàng.',correlation_id:'web-correlation',details:[]})});
  });
  await page.goto('/');await expect(page.getByRole('status')).toContainText('Đang tải');
  await expect(page.getByRole('alert')).toContainText('Dịch vụ chưa sẵn sàng.');await expect(page.getByRole('alert')).toContainText('web-correlation');
+ const retry=page.getByRole('button',{name:'Thử lại',exact:true});
+ await expect(retry).toBeEnabled();await retry.click();
+ await expect(page.getByRole('status')).toContainText('Đang tải');await expect(retry).toHaveCount(0);
+ await expect(page.locator('article')).toHaveCount(3);
+ await expect(page.getByRole('alert')).toHaveCount(0);
+ expect(requests).toHaveLength(2);expect(requests[1]).toBe(requests[0]);
 });
 test('Owner edit sample writes through the real API and keeps optimistic version',async({page})=>{
  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('owner@pbl6.test');await page.getByLabel('Mật khẩu',{exact:true}).fill(process.env.SEED_PASSWORD!);
