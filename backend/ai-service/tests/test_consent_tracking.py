@@ -58,6 +58,7 @@ def test_consent_dedup_producer_and_purchase_multiple_items(engine):
     with pytest.raises(InvalidEvent):s.ingest(bad)
     purchase=event('OrderCompleted',user,order_id=str(uuid.uuid4()),store_id=str(uuid.uuid4()),version=3,items=[{'product_id':product,'variant_id':str(uuid.uuid4()),'quantity':1},{'product_id':str(uuid.uuid4()),'variant_id':str(uuid.uuid4()),'quantity':2}])
     assert s.ingest(purchase)=='RECORDED'
+    with engine.connect() as db:assert db.execute(text("SELECT payload FROM event_entity_state WHERE kind='OrderCompleted'")).scalar_one()=={}
     replay=copy.deepcopy(purchase);replay['event_id']=str(uuid.uuid4());replay['payload']['version']=2
     assert s.ingest(replay)=='STALE';assert count(engine,'recommendation_interaction')==3
     replay['event_id']=str(uuid.uuid4());replay['payload']['version']=4

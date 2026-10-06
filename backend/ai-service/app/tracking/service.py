@@ -30,7 +30,8 @@ class TrackingService:
                 state_kind=kind+(':'+p['store_id'] if kind=='MembershipChanged' else '')
                 import json
                 conflict='DO NOTHING' if kind=='OrderCompleted' else 'DO UPDATE SET version=EXCLUDED.version,payload=EXCLUDED.payload WHERE event_entity_state.version<EXCLUDED.version'
-                updated=db.execute(text('INSERT INTO event_entity_state(kind,entity_id,version,payload) VALUES(:kind,:entity,:version,CAST(:payload AS jsonb)) ON CONFLICT(kind,entity_id) '+conflict+' RETURNING version'),{'kind':state_kind,'entity':entity,'version':p['version'],'payload':json.dumps(p)}).first()
+                state_payload={} if kind=='OrderCompleted' else p
+                updated=db.execute(text('INSERT INTO event_entity_state(kind,entity_id,version,payload) VALUES(:kind,:entity,:version,CAST(:payload AS jsonb)) ON CONFLICT(kind,entity_id) '+conflict+' RETURNING version'),{'kind':state_kind,'entity':entity,'version':p['version'],'payload':json.dumps(state_payload)}).first()
                 if not updated:return 'STALE'
                 if kind=='ProductChanged':
                     db.execute(text("UPDATE product_embedding SET status='STALE' WHERE product_id=:id AND source_version<=:version"),{'id':entity,'version':p['version']})

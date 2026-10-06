@@ -23,6 +23,7 @@ def invalidate_dataset(db,erase=False):
 def purge_user(db,user_id):
     for table in ('search_history','recommendation_interaction','user_preference'):
         db.execute(text(f'DELETE FROM {table} WHERE user_id=:u'),{'u':user_id})
+    db.execute(text("UPDATE event_entity_state SET payload='{}'::jsonb WHERE kind='OrderCompleted' AND payload->>'user_id'=:u"),{'u':user_id})
     invalidate_dataset(db,erase=True)
 
 def set_consent(db,user_id,status,expected_version,source='SELF'):
@@ -41,6 +42,8 @@ def set_consent(db,user_id,status,expected_version,source='SELF'):
 def retain_recent(db):
     # Demo policy: at most 30 days; immediate deletion on withdrawal.
     deleted=0
+    # Keep only the Order dedup key/version, never purchase items or Customer data in tombstones.
+    db.execute(text("UPDATE event_entity_state SET payload='{}'::jsonb WHERE kind='OrderCompleted' AND payload<>'{}'::jsonb"))
     for table,column in [('search_history','created_at'),('recommendation_interaction','occurred_at')]:
         deleted+=db.execute(text(f"DELETE FROM {table} WHERE {column}<now()-interval '30 days'")).rowcount
     if deleted: invalidate_dataset(db,erase=True)
