@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Headers, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Headers, Req, UseGuards, HttpCode } from '@nestjs/common';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import {
   QuoteCheckoutBodyDto,
@@ -111,6 +111,7 @@ export class OrderController {
   }
 
   @Post('store/orders/:id/cod-collection')
+  @HttpCode(200)
   @Roles('SELLER', 'STORE_OWNER')
   collectCod(
     @Param('id') id: string,

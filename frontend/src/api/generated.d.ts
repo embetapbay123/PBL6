@@ -7389,6 +7389,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     getPayment: {
@@ -7476,6 +7485,15 @@ export interface operations {
             };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12138,6 +12156,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     updatePersonalizationConsent: {
@@ -12164,6 +12191,15 @@ export interface operations {
             };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -704,7 +704,7 @@ export class OrderService {
       const payment=await repo.lockPaymentByOrderId(id);
       if(!payment || ['SUCCEEDED','CANCELLED'].includes(payment.status)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment không cho phép thu COD.');
       if(input.amount_collected_vnd!==moneyNumber(payment.collectible_vnd)) throw new ApiError(422,'COD_AMOUNT_MISMATCH','Phải thu đủ số tiền phải thu.');
-      const result=await this.payments(manager).recordCodCollection({order_id:id,amount_vnd:BigInt(input.amount_collected_vnd),operation_id:randomUUID(),actor_user_id:auth.user_id});
+      const result=await this.payments(manager).recordCodCollection({order_id:id,amount_vnd:BigInt(input.amount_collected_vnd),operation_id:randomUUID(),actor_user_id:auth.user_id,correlation_id:_correlation});
       if(result.status!=='SUCCEEDED' || result.order_id!==id || result.collected_vnd!==moneyNumber(payment.collectible_vnd)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment chưa xác nhận thu đủ COD.');
       const updated=await repo.incrementOrderVersion(id,input.expected_version);
       if(!updated) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');

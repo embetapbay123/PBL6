@@ -4,8 +4,10 @@ import { Entity, Column, PrimaryColumn } from 'typeorm';
 export class PaymentEvent {
   @PrimaryColumn({"type": "uuid", "nullable": false})
   id!: string;
-  @Column({"type": "uuid", "nullable": false})
-  attempt_id!: string;
+  @Column({"type": "uuid", "nullable": true})
+  attempt_id!: string | null;
+  @Column({type:'uuid',nullable:true})
+  payment_id!: string | null;
   @Column({"type": "varchar", "nullable": false})
   provider_event_id!: string;
   @Column({"type": "varchar", "nullable": false})
