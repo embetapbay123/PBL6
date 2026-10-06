@@ -10,14 +10,16 @@ if (!process.env.M3_DATABASE_URL) {
   });
 } else {
   process.env.SERVICE_ID = 'M3';
-  const { initializeDatabase, database } = require('../../shared/src/database');
+  const dbModule = require('../../shared/src/database');
+  let database: any;
   const { ProfileRepository } = require('../../identity-store-service/src/profile/profile.repository');
   const { randomUUID } = require('node:crypto');
 
   describe('ProfileRepository integration (addresses)', () => {
     let userId: string;
     beforeAll(async () => {
-      await initializeDatabase();
+      await dbModule.initializeDatabase();
+      database = dbModule.database;
       userId = randomUUID();
       // insert a minimal user record
       await database.query(
@@ -27,6 +29,7 @@ if (!process.env.M3_DATABASE_URL) {
     }, 20000);
 
     afterAll(async () => {
+      await database.query('DELETE FROM m3_audit WHERE actor_user_id=$1', [userId]);
       await database.query('DELETE FROM address WHERE customer_user_id=$1', [userId]);
       await database.query('DELETE FROM "user" WHERE id=$1', [userId]);
       if (database && database.isInitialized) await database.destroy();

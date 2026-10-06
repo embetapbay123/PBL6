@@ -131,7 +131,7 @@
     "service": "M3",
     "module": "profile",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "AUTHENTICATED"
     ]
@@ -143,7 +143,7 @@
     "service": "M3",
     "module": "profile",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -155,7 +155,7 @@
     "service": "M3",
     "module": "profile",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -167,7 +167,7 @@
     "service": "M3",
     "module": "profile",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -179,7 +179,7 @@
     "service": "M3",
     "module": "profile",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]

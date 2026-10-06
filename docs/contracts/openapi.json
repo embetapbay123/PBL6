@@ -1407,7 +1407,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/addresses": {
@@ -1546,7 +1546,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -1670,7 +1670,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/addresses/{id}": {
@@ -1806,7 +1806,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "delete": {
         "tags": [
@@ -1930,7 +1930,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/store-applications": {

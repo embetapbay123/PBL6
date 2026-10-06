@@ -99,3 +99,10 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Flutter analyze sạch, 40 test đạt: refresh lỗi tạm thời giữ token; giỏ tải đủ trang; quote response cũ/hết hạn bị chặn; địa chỉ tải lỗi có retry; confirm 409 tải quote mới; confirm 501 giữ màn hình và cùng Idempotency-Key qua retry. Mock success không chứng minh checkout giao dịch thật hoặc Android thiết bị.
 - OpenAPI/parser, docs/link check và drift 99 public + 11 internal + 7 event đạt. Public hiện 19 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 68 NOT_IMPLEMENTED. Migration 001–003 không đổi; đợt này không thêm migration.
 - Giữ đúng owner: Thịnh phụ trách command kho/low-stock M1, Trí phụ trách checkout context/count M3, Công phụ trách Payment. Confirm/cancel/COD còn dependency và chưa nghiệm thu thành công; issue vẫn mở và Review. CI cần xem theo head mới của [PR #88](https://github.com/embetapbay123/PBL6/pull/88).
+
+## 06/10/2026 — M3 lookup/Profile/Address review
+
+- PR #88 is merged into main at `25456d5`; PR #87 incorporates that main baseline without rewriting the member's commits.
+- M3 checkout context and AI metrics scope now implement the internal contract with live sessions and caller restrictions. Profile updates and Address CRUD implement authenticated ownership and atomic audit writes. Public: 24 implemented / 8 sample / 4 mock / 63 pending; internal: 4 implemented / 2 sample / 5 pending. These counts describe the PR branch until merge.
+- Backend build, 168 unit tests and 33 HTTP/PostgreSQL integration tests pass locally. Tests include strict response schemas, concurrent default addresses, audit rollback, missing/foreign addresses, unsafe fees, revoked membership and locked Stores. Contract/parser, generated drift and docs checks pass.
+- Auth registration/verification/password additions remain separate tasks and explicit stubs. No mock email provider is counted as implemented. No migrations or service ownership changes. CI evidence must be read at PR #87's current head.

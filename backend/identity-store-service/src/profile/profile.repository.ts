@@ -17,7 +17,7 @@ export class ProfileRepository {
        WHERE u.id=$1 AND u.status='ACTIVE'`,
       [userId],
     );
-    return row ?? null;
+    return row ? { ...row, email_verified_at: row.email_verified_at instanceof Date ? row.email_verified_at.toISOString() : row.email_verified_at } : null;
   }
 
   async updateProfile(userId: string, input: UpdateProfileRequest, requestId: string): Promise<ProfileResponse> {
@@ -33,7 +33,7 @@ export class ProfileRepository {
       if (!current) throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
 
       const updates = profileFields
-        .filter(field => Object.prototype.hasOwnProperty.call(input, field))
+        .filter(field => input[field] !== undefined)
         .map(field => ({ field, value: input[field] }));
       if (!updates.length) {
         throw new ApiError(422, 'VALIDATION_FAILED', 'Phải có ít nhất một trường cần cập nhật.');
@@ -59,7 +59,7 @@ export class ProfileRepository {
       const after = {
         user_id: userId,
         email: current.email,
-        email_verified_at: current.email_verified_at,
+        email_verified_at: current.email_verified_at instanceof Date ? current.email_verified_at.toISOString() : current.email_verified_at,
         display_name: profile.display_name,
         phone: profile.phone,
       };
@@ -71,14 +71,8 @@ export class ProfileRepository {
           userId,
           profile.id,
           requestId || randomUUID(),
-          JSON.stringify({
-            user_id: userId,
-            email: current.email,
-            email_verified_at: current.email_verified_at,
-            display_name: current.display_name,
-            phone: current.phone,
-          }),
-          JSON.stringify(after),
+          JSON.stringify({ fields: updates.map(x => x.field) }),
+          JSON.stringify({ fields: updates.map(x => x.field) }),
         ],
       );
       return after;
@@ -108,6 +102,7 @@ export class ProfileRepository {
 
   async createAddress(userId: string, input: CreateAddressRequest, requestId: string) {
     return database.transaction(async manager => {
+      await this.lockCustomer(manager, userId);
       if (input.is_default === true) {
         await manager.query(
           `UPDATE address SET is_default=false
@@ -138,6 +133,7 @@ export class ProfileRepository {
 
   async updateAddress(userId: string, addressId: string, input: UpdateAddressRequest, requestId: string) {
     return database.transaction(async manager => {
+      await this.lockCustomer(manager, userId);
       const [current] = await manager.query(
         `SELECT id,recipient_name,phone,line1,ward,district,city,is_default
          FROM address
@@ -156,18 +152,19 @@ export class ProfileRepository {
       }
 
       const updates = addressFields
-        .filter(field => Object.prototype.hasOwnProperty.call(input, field))
+        .filter(field => input[field] !== undefined)
         .map(field => ({ field, value: input[field] }));
       if (!updates.length) throw new ApiError(422, 'VALIDATION_FAILED', 'Phải có ít nhất một trường cần cập nhật.');
 
       const assignments = updates.map(({ field }, index) => `"${field}"=$${index + 3}`).join(',');
       const values = updates.map(({ value }) => value);
-      const [row] = await manager.query(
+      const result = await manager.query(
         `UPDATE address SET ${assignments}
          WHERE id=$1 AND customer_user_id=$2 AND status='ACTIVE'
          RETURNING id,recipient_name,phone,line1,ward,district,city,is_default`,
         [addressId, userId, ...values],
       );
+      const row = (Array.isArray(result[0]) ? result[0] : result)[0];
       if (!row) throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy địa chỉ.');
       await this.audit(manager, userId, row.id, 'ADDRESS_UPDATED', current, row, requestId);
       return row;
@@ -176,6 +173,7 @@ export class ProfileRepository {
 
   async deleteAddress(userId: string, addressId: string, requestId: string) {
     return database.transaction(async manager => {
+      await this.lockCustomer(manager, userId);
       const [current] = await manager.query(
         `SELECT id,recipient_name,phone,line1,ward,district,city,is_default
          FROM address
@@ -194,6 +192,11 @@ export class ProfileRepository {
     });
   }
 
+  private async lockCustomer(manager: QueryManager, userId: string) {
+    const [user] = await manager.query('SELECT id FROM "user" WHERE id=$1 AND status=\'ACTIVE\' FOR UPDATE', [userId]);
+    if (!user) throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
+  }
+
   private async audit(
     manager: QueryManager,
     actorUserId: string,
@@ -207,7 +210,7 @@ export class ProfileRepository {
       `INSERT INTO m3_audit
         (actor_user_id,target_type,target_id,action,request_id,before_json,after_json)
        VALUES ($1,'ADDRESS',$2,$3,$4,$5::jsonb,$6::jsonb)`,
-      [actorUserId, targetId, action, requestId || randomUUID(), JSON.stringify(before ?? {}), JSON.stringify(after ?? {})],
+      [actorUserId, targetId, action, requestId || randomUUID(), JSON.stringify(before ? { is_default: (before as any).is_default } : {}), JSON.stringify(after ? { is_default: (after as any).is_default } : {})],
     );
   }
 }

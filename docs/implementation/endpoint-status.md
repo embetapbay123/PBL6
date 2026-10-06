@@ -2,7 +2,7 @@
 
 OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
 
-Internal API có 11 operation: 2 sample, QuoteVariants và VerifyReviewEligibility `IMPLEMENTED`, 7 stub. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
+Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope), 5 stub. Lookup M3 được kiểm trên nhánh PR #87; chỉ có trên main sau merge. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
 
 | API | Operation | Service / module | Owner | Trạng thái |
 | --- | --- | --- | --- | --- |
@@ -16,11 +16,11 @@ Internal API có 11 operation: 2 sample, QuoteVariants và VerifyReviewEligibili
 | `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
-| `PATCH /me` | updateProfile | M3 / profile | Trí | NOT_IMPLEMENTED |
-| `GET /me/addresses` | listAddresses | M3 / profile | Trí | NOT_IMPLEMENTED |
-| `POST /me/addresses` | createAddress | M3 / profile | Trí | NOT_IMPLEMENTED |
-| `PATCH /me/addresses/{id}` | updateAddress | M3 / profile | Trí | NOT_IMPLEMENTED |
-| `DELETE /me/addresses/{id}` | deleteAddress | M3 / profile | Trí | NOT_IMPLEMENTED |
+| `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
+| `GET /me/addresses` | listAddresses | M3 / profile | Trí | IMPLEMENTED |
+| `POST /me/addresses` | createAddress | M3 / profile | Trí | IMPLEMENTED |
+| `PATCH /me/addresses/{id}` | updateAddress | M3 / profile | Trí | IMPLEMENTED |
+| `DELETE /me/addresses/{id}` | deleteAddress | M3 / profile | Trí | IMPLEMENTED |
 | `POST /me/store-applications` | submitStoreApplication | M3 / store | Trí | NOT_IMPLEMENTED |
 | `GET /me/store-applications` | listOwnStoreApplications | M3 / store | Trí | NOT_IMPLEMENTED |
 | `GET /admin/store-applications` | listStoreApplications | M3 / store | Trí | NOT_IMPLEMENTED |

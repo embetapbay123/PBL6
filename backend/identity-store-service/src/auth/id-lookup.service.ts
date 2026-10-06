@@ -1,97 +1,60 @@
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
-import {
-  ResolveAiMetricsScopeRequestDto,
-  ResolveAiMetricsScopeResponseDto,
-  ResolveCheckoutContextRequestDto,
-  ResolveCheckoutContextResponseDto,
-} from './id-lookup.dto';
+import { moneyNumber } from '../../../shared/src/money';
+import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
+import { AuthService } from './auth.service';
 
-type Queryable = {
-  query<T = any>(sql: string, parameters?: unknown[]): Promise<T[]>;
-};
-
-type AddressRow = ResolveCheckoutContextResponseDto['address_snapshot'];
-type StoreRow = { id: string; shipping_fee_vnd: string | number; version: number };
+type Queryable = { query(sql: string, parameters?: unknown[]): Promise<any[]> };
+type Context = { user_id: string; roles: string[]; token_version: number };
+type Resolver = { resolve(token: string): Promise<Context> };
 
 export class IdLookupService {
-  constructor(private readonly db: Queryable = database) {}
+  constructor(private readonly db: Queryable = database, private readonly auth: Resolver = new AuthService()) {}
 
-  async resolveCheckoutContext(
-    input: ResolveCheckoutContextRequestDto,
-  ): Promise<ResolveCheckoutContextResponseDto> {
-    const [address] = await this.db.query<AddressRow>(
-      `SELECT recipient_name,phone,line1,ward,district,city
-       FROM address
-       WHERE id=$1 AND customer_user_id=$2 AND status='ACTIVE'`,
-      [input.addressId, input.customerId],
+  async resolveCheckoutContext(input: OperationInputs['ResolveCheckoutContext']['body']): Promise<OperationOutputs['ResolveCheckoutContext']> {
+    const context = await this.auth.resolve(input.token);
+    if (!context.roles.includes('CUSTOMER')) throw new ApiError(403, 'FORBIDDEN', 'Checkout yêu cầu quyền Customer.');
+    const [address] = await this.db.query(
+      `SELECT id,recipient_name,phone,line1,ward,district,city,is_default
+       FROM address WHERE id=$1 AND customer_user_id=$2 AND status='ACTIVE'`,
+      [input.address_id, context.user_id],
     );
-    if (!address) {
-      throw new ApiError(404, 'ADDRESS_NOT_FOUND', 'Không tìm thấy địa chỉ hoạt động của khách hàng.');
-    }
-
-    const stores = await this.db.query<StoreRow>(
-      `SELECT id,shipping_fee_vnd,version
-       FROM store
-       WHERE id=ANY($1::uuid[]) AND status='ACTIVE'`,
-      [input.storeIds],
+    if (!address) throw new ApiError(404, 'ADDRESS_NOT_FOUND', 'Không tìm thấy địa chỉ hoạt động của khách hàng.');
+    const stores = await this.db.query(
+      `SELECT id,name,shipping_fee_vnd,version FROM store WHERE id=ANY($1::uuid[]) AND status='ACTIVE'`,
+      [input.store_ids],
     );
-    const activeStoreIds = new Set(stores.map(store => store.id));
-    const unavailableStoreIds = input.storeIds.filter(id => !activeStoreIds.has(id));
-    if (unavailableStoreIds.length) {
-      throw new ApiError(409, 'STORE_UNAVAILABLE', 'Một hoặc nhiều cửa hàng không còn hoạt động.', unavailableStoreIds);
-    }
-
-    const storesById = new Map(stores.map(store => [store.id, store]));
+    const byId = new Map(stores.map(row => [row.id, row]));
+    const missing = input.store_ids.filter(id => !byId.has(id));
+    if (missing.length) throw new ApiError(409, 'STORE_UNAVAILABLE', 'Một hoặc nhiều cửa hàng không còn hoạt động.', missing);
     return {
+      customer_user_id: context.user_id,
       address_snapshot: address,
-      stores: input.storeIds.map(storeId => {
-        const store = storesById.get(storeId)!;
-        return {
-          store_id: store.id,
-          shipping_fee_vnd: String(store.shipping_fee_vnd),
-          version: store.version,
-        };
+      stores: input.store_ids.map(id => {
+        const store = byId.get(id)!;
+        return { id: store.id, name: store.name, shipping_fee_vnd: moneyNumber(store.shipping_fee_vnd), version: store.version };
       }),
     };
   }
 
-  async resolveAiMetricsScope(
-    input: ResolveAiMetricsScopeRequestDto,
-  ): Promise<ResolveAiMetricsScopeResponseDto> {
-    const [admin] = await this.db.query(
-      `SELECT 1
-       FROM user_role ur
-       JOIN role r ON r.id=ur.role_id
-       WHERE ur.user_id=$1 AND r.scope='PLATFORM' AND r.status='ACTIVE'`,
-      [input.userId],
-    );
-    if (admin) {
-      return input.requestedStoreId
-        ? { is_platform_scope: true, store_ids: [input.requestedStoreId] }
-        : { is_platform_scope: true };
-    }
-
-    if (input.requestedStoreId) {
-      const [membership] = await this.db.query(
-        `SELECT 1
-         FROM store_membership
-         WHERE user_id=$1 AND store_id=$2 AND status='ACTIVE'`,
-        [input.userId, input.requestedStoreId],
-      );
-      if (!membership) {
-        throw new ApiError(403, 'STORE_METRICS_FORBIDDEN', 'Bạn không có quyền xem metrics của cửa hàng này.');
+  async resolveAiMetricsScope(input: OperationInputs['ResolveAiMetricsScope']['body']): Promise<OperationOutputs['ResolveAiMetricsScope']> {
+    const context = await this.auth.resolve(input.token);
+    if (context.roles.includes('ADMIN')) {
+      if (input.store_id) {
+        const [store] = await this.db.query("SELECT id FROM store WHERE id=$1 AND status='ACTIVE'", [input.store_id]);
+        if (!store) throw new ApiError(404, 'STORE_NOT_FOUND', 'Không tìm thấy Store hoạt động.');
+        return { user_id: context.user_id, scope: 'STORE', store_id: input.store_id, token_version: context.token_version };
       }
-      return { is_platform_scope: false, store_ids: [input.requestedStoreId] };
+      return { user_id: context.user_id, scope: 'PLATFORM', token_version: context.token_version };
     }
-
-    const memberships = await this.db.query<{ store_id: string }>(
-      `SELECT store_id
-       FROM store_membership
-       WHERE user_id=$1 AND status='ACTIVE'
-       ORDER BY store_id`,
-      [input.userId],
+    const memberships = await this.db.query(
+      `SELECT m.store_id FROM store_membership m JOIN store s ON s.id=m.store_id AND s.status='ACTIVE'
+       WHERE m.user_id=$1 AND m.status='ACTIVE' AND m.role='OWNER'
+       AND ($2::uuid IS NULL OR m.store_id=$2) ORDER BY m.store_id LIMIT 2`,
+      [context.user_id, input.store_id ?? null],
     );
-    return { is_platform_scope: false, store_ids: memberships.map(row => row.store_id) };
+    if (!memberships.length) throw new ApiError(403, 'STORE_METRICS_FORBIDDEN', 'Metrics yêu cầu membership Owner hoạt động.');
+    if (memberships.length > 1) throw new ApiError(422, 'STORE_SCOPE_REQUIRED', 'Cần chọn Store cho metrics.');
+    return { user_id: context.user_id, scope: 'STORE', store_id: memberships[0].store_id, token_version: context.token_version };
   }
 }
