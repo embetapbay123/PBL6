@@ -7614,7 +7614,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/orders/{id}/cancel": {

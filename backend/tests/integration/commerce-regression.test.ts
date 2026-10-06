@@ -48,12 +48,14 @@ test('HTTP Order transitions and COD do not complete unpaid/cancelled orders',as
   try {
     await source.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd) VALUES($1,$1,$2,$3,'SHIPPED','COD',100000,0,0,0,100000)`,[id,context.user_id,store]);
     await source.query("INSERT INTO payment(order_id,method,status,payable_vnd,collectible_vnd) VALUES($1,'COD','PENDING',100000,100000)",[id]);
+    await source.query("INSERT INTO shipment(order_id,status,shipped_at) VALUES($1,'SHIPPED',now())",[id]);
     const complete=await fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status:'COMPLETED',expected_version:0})});
     expect(complete.status).toBe(409);expect((await complete.json() as any).code).toBe('PAYMENT_NOT_COLLECTED');
     await source.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=100000 WHERE order_id=$1",[id]);
     const paid=await fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status:'COMPLETED',expected_version:0})});
     expect(paid.status).toBe(200);const completed=await paid.json() as any;
     expect(completed).toMatchObject({id,status:'COMPLETED',version:1});
+    expect((await source.query('SELECT status,delivered_at FROM shipment WHERE order_id=$1',[id]))[0]).toMatchObject({status:'DELIVERED',delivered_at:expect.any(Date)});
     expect(schemaErrors(completed,bundle.operations.transitionStoreOrder.responses['200'])).toEqual([]);
     expect(await source.query('SELECT id FROM order_status_history WHERE order_id=$1',[id])).toHaveLength(1);
     await source.query('UPDATE "order" SET status=\'CANCELLED\' WHERE id=$1',[id]);
@@ -61,7 +63,7 @@ test('HTTP Order transitions and COD do not complete unpaid/cancelled orders',as
     expect(cod.status).toBe(409);expect((await cod.json() as any).code).toBe('INVALID_STATE_TRANSITION');
     expect((await source.query('SELECT status,collected_vnd FROM payment WHERE order_id=$1',[id]))[0]).toMatchObject({status:'SUCCEEDED',collected_vnd:'100000'});
     expect(await source.query('SELECT id FROM c_o_d_collection WHERE order_id=$1',[id])).toHaveLength(0);
-  } finally {await source.query('DELETE FROM outbox WHERE correlation_id=\'commerce-regression\' AND payload->>\'order_id\'=$1',[id]);await source.query('DELETE FROM order_status_history WHERE order_id=$1',[id]);await source.query('DELETE FROM payment WHERE order_id=$1',[id]);await source.query('DELETE FROM "order" WHERE id=$1',[id]);await source.destroy();}
+  } finally {await source.query('DELETE FROM outbox WHERE correlation_id=\'commerce-regression\' AND payload->>\'order_id\'=$1',[id]);await source.query('DELETE FROM m2_audit WHERE target_id=$1',[id]);await source.query('DELETE FROM order_status_history WHERE order_id=$1',[id]);await source.query('DELETE FROM shipment WHERE order_id=$1',[id]);await source.query('DELETE FROM payment WHERE order_id=$1',[id]);await source.query('DELETE FROM "order" WHERE id=$1',[id]);await source.destroy();}
 });
 test('completed revenue SQL subtracts Store and platform discounts',async()=>{
   const source=new DataSource({type:'postgres',url:process.env.M2_DATABASE_URL});await source.initialize();
@@ -110,4 +112,45 @@ test('Store and platform Voucher updates return contract-shaped rows and reject 
     for(const id of created) {await source.query('DELETE FROM m2_audit WHERE target_id=$1',[id]);await source.query('DELETE FROM voucher WHERE id=$1',[id]);}
     await source.destroy();
   }
+});
+
+test('Seller transitions create one Shipment; a shipment failure rolls back Order/history/audit',async()=>{
+  const source=new DataSource({type:'postgres',url:process.env.M2_DATABASE_URL});await source.initialize();
+  const token=await login('owner@pbl6.test');
+  const context=await (await fetch(base+'/me/context',{headers:headers(token)})).json() as any;
+  const id=randomUUID(),store=context.store_membership.store_id;
+  const transition=(to_status:string,expected_version:number)=>fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status,expected_version})});
+  try {
+    await source.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd) VALUES($1,$1,$2,$3,'PENDING','COD',100000,0,0,0,100000)`,[id,context.user_id,store]);
+    expect((await transition('CONFIRMED',0)).status).toBe(200);
+    expect((await transition('PROCESSING',1)).status).toBe(200);
+    const concurrent=await Promise.all([transition('SHIPPED',2),transition('SHIPPED',2)]);
+    expect(concurrent.map(r=>r.status).sort()).toEqual([200,409]);
+    const shipment=await source.query('SELECT status,shipped_at,tracking_code FROM shipment WHERE order_id=$1',[id]);
+    expect(shipment).toHaveLength(1);expect(shipment[0]).toMatchObject({status:'SHIPPED',shipped_at:expect.any(Date),tracking_code:null});
+    await source.query("INSERT INTO payment(order_id,method,status,payable_vnd,collectible_vnd,collected_vnd) VALUES($1,'COD','SUCCEEDED',100000,100000,100000)",[id]);
+    await source.query('DELETE FROM shipment WHERE order_id=$1',[id]);
+    const failure=await transition('COMPLETED',3);expect(failure.status).toBe(409);
+    expect((await failure.json() as any).code).toBe('SHIPMENT_STATE_CONFLICT');
+    expect((await source.query('SELECT status,version FROM "order" WHERE id=$1',[id]))[0]).toEqual({status:'SHIPPED',version:3});
+    expect(await source.query('SELECT id FROM order_status_history WHERE order_id=$1',[id])).toHaveLength(3);
+    expect(await source.query('SELECT id FROM m2_audit WHERE target_id=$1',[id])).toHaveLength(3);
+    expect(await source.query("SELECT id FROM outbox WHERE payload->>'order_id'=$1",[id])).toHaveLength(0);
+  } finally {
+    await source.query('DELETE FROM m2_audit WHERE target_id=$1',[id]);await source.query('DELETE FROM order_status_history WHERE order_id=$1',[id]);
+    await source.query('DELETE FROM shipment WHERE order_id=$1',[id]);await source.query('DELETE FROM payment WHERE order_id=$1',[id]);await source.query('DELETE FROM "order" WHERE id=$1',[id]);await source.destroy();
+  }
+});
+
+test('concurrent Store/Admin Voucher creation returns a 409 business conflict, not a database error',async()=>{
+  const source=new DataSource({type:'postgres',url:process.env.M2_DATABASE_URL});await source.initialize();
+  const code='RACE-'+randomUUID();
+  try {
+    const owner=await login('owner@pbl6.test'),admin=await login('admin@pbl6.test');
+    const body={code,discount_type:'FIXED',discount_value:10000,starts_at:'2026-01-01T00:00:00Z',ends_at:'2027-01-01T00:00:00Z',usage_limit:10,per_customer_limit:1};
+    const responses=await Promise.all([fetch(base+'/store/vouchers',{method:'POST',headers:headers(owner),body:JSON.stringify({...body,scope:'STORE'})}),fetch(base+'/admin/vouchers',{method:'POST',headers:headers(admin),body:JSON.stringify({...body,scope:'PLATFORM'})})]);
+    expect(responses.map(r=>r.status).sort()).toEqual([201,409]);
+    const error=await responses.find(r=>r.status===409)!.json() as any;expect(error.code).toBe('VOUCHER_CODE_EXISTS');
+    expect(await source.query('SELECT id FROM voucher WHERE code=$1',[code.toUpperCase()])).toHaveLength(1);
+  } finally {await source.query('DELETE FROM m2_audit WHERE target_id IN (SELECT id FROM voucher WHERE code=$1)',[code.toUpperCase()]);await source.query('DELETE FROM voucher WHERE code=$1',[code.toUpperCase()]);await source.destroy();}
 });

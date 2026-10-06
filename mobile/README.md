@@ -4,13 +4,13 @@ Flutter / Riverpod / Dio. Màn Auth, Profile, Address, Catalog, consent, Cart v�
 
 ## File và điểm nối
 
-- `lib/core/api_client.dart`: Bearer token, mutex refresh khi 401, secure storage, request đúng contract. Request retry gặp lỗi nghiệp vụ không xóa phiên mới. `main.dart` khôi phục refresh token trước khi mở màn hình.
+- `lib/core/api_client.dart`: Bearer token, mutex refresh khi 401, secure storage, request đúng contract. Request retry gặp lỗi nghiệp vụ không xóa phiên mới; refresh lỗi mạng/503 giữ refresh token để thử lại sau, chỉ xóa khi bị từ chối 401/403. `main.dart` khôi phục refresh token trước khi mở màn hình.
 - Auth: forgot gọi `POST /auth/reset-password`, confirm reset gọi `POST /auth/reset-password/confirm`; change dùng `current_password`. Register chỉ gửi email/password/display_name; sửa số điện thoại qua Profile. Profile không cung cấp sửa avatar vì contract chưa hỗ trợ.
 - Address dùng `city`, `line1`; đổi default bằng `PATCH /me/addresses/{id}` với `is_default=true`.
 - Catalog gửi `q`, category UUID, page/size. Product Detail tải dữ liệu hiện tại; thêm giỏ gửi Product ID và Variant ID. Taxonomy/filter/review/related còn phụ thuộc M1 owner; empty fallback ở section phụ chưa phải nghiệm thu dữ liệu.
 - Consent gọi `/me/personalization-consent`; tải lỗi giữ trạng thái chưa biết và có retry, không mặc định GRANTED. Recommendation lỗi không sinh danh sách fixture/baseline thành công.
-- Cart gom Store, lấy title/SKU/giá từ M1 qua Product ID. Item legacy hoặc Catalog lỗi hiện chưa có giá và không cho chọn mua; có thể xóa và thêm lại. Tổng giỏ chỉ tạm tính, số tiền checkout lấy từ quote server.
-- Checkout dùng `/checkout/quotes` và `/orders/batches`, giữ Idempotency-Key khi retry cùng attempt. Đổi address/payment/voucher phải lấy quote mới. Confirm server còn 501; màn thành công chỉ mở khi API confirm thực sự thành công. Mock success trong widget test chưa chứng minh đã thu tiền/giữ kho.
+- Cart tải đủ các trang (100 item/trang), gom Store, lấy title/SKU/giá từ M1 qua Product ID. Item legacy hoặc Catalog lỗi hiện chưa có giá và không cho chọn mua; có thể xóa và thêm lại. Tổng giỏ chỉ tạm tính, số tiền checkout lấy từ quote server.
+- Checkout dùng `/checkout/quotes` và `/orders/batches`, giữ Idempotency-Key khi retry cùng attempt. Đổi address/payment/voucher phải lấy quote mới; response cũ không được ghi đè lựa chọn mới. Hiển thị item/giá từ quote server, chặn quote hết hạn và có retry khi tải địa chỉ lỗi. Confirm server còn 501; màn thành công chỉ mở khi API confirm thực sự thành công. Mock success trong widget test chưa chứng minh đã thu tiền/giữ kho.
 - `lib/core/contract_fixtures.dart` chỉ đọc bộ JSON chung khi bật `USE_CONTRACT_FIXTURES` rõ ràng; không tự bật khi API lỗi, chặn fixture checkout/payment.
 
 ## Chạy và kiểm thử

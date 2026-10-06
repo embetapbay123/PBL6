@@ -23,6 +23,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   List<Map<String, dynamic>> _addresses = [];
   Map<String, dynamic>? _selectedAddress;
   bool _loadingAddresses = true;
+  String? _addressError;
 
   // Payment methods per store: storeId -> "COD" | "SANDBOX"
   final Map<String, String> _paymentMethods = {};
@@ -38,6 +39,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   // Quote State
   Map<String, dynamic>? _quote;
   bool _loadingQuote = false;
+  int _quoteRequest = 0;
   String? _quoteError;
   String? _warningMessage;
 
@@ -66,7 +68,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _loadAddresses() async {
-    setState(() => _loadingAddresses = true);
+    setState(() {
+      _loadingAddresses = true;
+      _addressError = null;
+    });
     try {
       final client = ref.read(apiProvider);
       final list = await client.getAddresses();
@@ -97,8 +102,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           _fetchQuote();
         }
       }
-    } catch (_) {
-      if (mounted) setState(() => _loadingAddresses = false);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loadingAddresses = false;
+          _addressError = errorMessage(error);
+        });
+      }
     }
   }
 
@@ -128,6 +138,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _fetchQuote() async {
+    if (_submittingOrder) return;
+    final request = ++_quoteRequest;
+    _quoteTimer?.cancel();
+    _secondsLeft = 0;
     _checkoutKey = null;
     _quote = null;
     if (_selectedAddress == null) return;
@@ -144,27 +158,32 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       final res = await client.quoteCheckout(
         cartItemIds: widget.cartItemIds,
         addressId: addressId,
-        paymentMethods: _paymentMethods,
-        storeVouchers: _storeVouchers,
+        paymentMethods: Map<String, String>.from(_paymentMethods),
+        storeVouchers: Map<String, String>.from(_storeVouchers),
         platformVoucherCode: _appliedPlatformVoucher,
       );
 
-      if (mounted) {
-        setState(() {
-          _quote = res;
-          _loadingQuote = false;
-        });
-
-        final expiresAtStr = res['expires_at']?.toString();
-        if (expiresAtStr != null) {
-          final expiresAt =
-              DateTime.tryParse(expiresAtStr) ??
-              DateTime.now().add(const Duration(minutes: 10));
-          _startTimer(expiresAt);
-        }
+      if (!mounted || request != _quoteRequest) return;
+      final expiresAt = DateTime.tryParse(res['expires_at']?.toString() ?? '');
+      final amount = res['payable_total_vnd'];
+      if (expiresAt == null ||
+          !expiresAt.isAfter(DateTime.now()) ||
+          res['quote_id'] is! String ||
+          (res['quote_id'] as String).isEmpty ||
+          amount is! int ||
+          amount < 0 ||
+          amount > 9007199254740991) {
+        throw const FormatException(
+          'Báo giá thiếu dữ liệu hợp lệ hoặc đã hết hạn.',
+        );
       }
+      setState(() {
+        _quote = res;
+        _loadingQuote = false;
+      });
+      _startTimer(expiresAt);
     } catch (e) {
-      if (mounted) {
+      if (mounted && request == _quoteRequest) {
         final errText = errorMessage(e);
         setState(() {
           _loadingQuote = false;
@@ -185,6 +204,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _confirmOrder() async {
+    if (_submittingOrder || _loadingQuote || _secondsLeft <= 0) return;
     if (_selectedAddress == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng chọn địa chỉ giao hàng.')),
@@ -207,14 +227,15 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     final idempotencyKey = _checkoutKey ??= _generateIdempotencyKey();
 
     setState(() => _submittingOrder = true);
+    var refreshQuote = false;
 
     try {
       final client = ref.read(apiProvider);
       final result = await client.confirmCheckout(
         cartItemIds: widget.cartItemIds,
         addressId: addressId,
-        paymentMethods: _paymentMethods,
-        storeVouchers: _storeVouchers,
+        paymentMethods: Map<String, String>.from(_paymentMethods),
+        storeVouchers: Map<String, String>.from(_storeVouchers),
         platformVoucherCode: _appliedPlatformVoucher,
         quoteId: quoteId,
         expectedPayableTotalVnd: expectedTotal,
@@ -242,7 +263,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             _warningMessage =
                 'Báo giá hoặc giá sản phẩm đã biến động. Đang tự động cập nhật báo giá mới...';
           });
-          _fetchQuote();
+          refreshQuote = true;
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(errText), backgroundColor: Colors.red),
@@ -250,21 +271,44 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         }
       }
     } finally {
-      if (mounted) setState(() => _submittingOrder = false);
+      if (mounted) {
+        setState(() => _submittingOrder = false);
+        if (refreshQuote) await _fetchQuote();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.initialSelectedItems ?? [];
+    final items = _quote == null
+        ? (widget.initialSelectedItems ?? [])
+        : (_quote!['stores'] as List)
+              .expand(
+                (store) => (store['items'] as List? ?? []).map(
+                  (item) => {
+                    ...Map<String, dynamic>.from(item as Map),
+                    'store_id': store['store_id'],
+                  },
+                ),
+              )
+              .toList();
 
+    // Retain display names, but use server quote prices and quantities.
+    final initialStoreNames = {
+      for (final item
+          in widget.initialSelectedItems ?? <Map<String, dynamic>>[])
+        item['store_id']: item['store_name'],
+    };
     // Group items by store_id
     final Map<String, List<Map<String, dynamic>>> storeGroups = {};
     final Map<String, String> storeNames = {};
 
     for (final item in items) {
       final storeId = item['store_id']?.toString() ?? 'store-default';
-      final storeName = item['store_name']?.toString() ?? 'Cửa hàng $storeId';
+      final storeName =
+          item['store_name']?.toString() ??
+          initialStoreNames[storeId]?.toString() ??
+          'Cửa hàng $storeId';
       storeGroups.putIfAbsent(storeId, () => []).add(item);
       storeNames[storeId] = storeName;
     }
@@ -308,7 +352,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ),
               const Spacer(),
               FilledButton.icon(
-                onPressed: (_submittingOrder || _loadingQuote || _quote == null)
+                onPressed:
+                    (_submittingOrder ||
+                        _loadingQuote ||
+                        _quote == null ||
+                        _secondsLeft <= 0)
                     ? null
                     : _confirmOrder,
                 icon: _submittingOrder
@@ -399,7 +447,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         const Spacer(),
                         if (_addresses.isNotEmpty)
                           TextButton(
-                            onPressed: () => _showAddressSelector(context),
+                            onPressed: _submittingOrder
+                                ? null
+                                : () => _showAddressSelector(context),
                             child: const Text('Thay đổi'),
                           ),
                       ],
@@ -407,6 +457,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     const SizedBox(height: 8),
                     if (_loadingAddresses)
                       const Text('Đang tải địa chỉ...')
+                    else if (_addressError != null)
+                      Column(
+                        children: [
+                          Text(
+                            _addressError!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                          OutlinedButton(
+                            onPressed: _loadAddresses,
+                            child: const Text('Thử tải lại địa chỉ'),
+                          ),
+                        ],
+                      )
                     else if (_selectedAddress == null)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,8 +480,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           const SizedBox(height: 6),
                           OutlinedButton(
-                            onPressed: () =>
-                                Navigator.pushNamed(context, '/address-form'),
+                            onPressed: () async {
+                              await Navigator.pushNamed(
+                                context,
+                                '/address-form',
+                              );
+                              if (mounted) _loadAddresses();
+                            },
                             child: const Text('Thêm địa chỉ mới'),
                           ),
                         ],
@@ -496,8 +564,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                             'SKU';
                         final price =
                             (item['unit_price_vnd'] as num?)?.toInt() ??
-                            (item['price_vnd'] as num?)?.toInt() ??
-                            100000;
+                            (item['price_vnd'] as num?)?.toInt();
                         final qty = (item['quantity'] as num?)?.toInt() ?? 1;
 
                         return Padding(
@@ -527,7 +594,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                 ),
                               ),
                               Text(
-                                '${price * qty} ₫',
+                                price == null
+                                    ? 'Chưa có giá'
+                                    : '${price * qty} ₫',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -559,12 +628,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               ),
                             ],
                             selected: {selectedPayment},
-                            onSelectionChanged: (set) {
-                              setState(() {
-                                _paymentMethods[sId] = set.first;
-                              });
-                              _fetchQuote();
-                            },
+                            onSelectionChanged: _submittingOrder
+                                ? null
+                                : (set) {
+                                    setState(() {
+                                      _paymentMethods[sId] = set.first;
+                                    });
+                                    _fetchQuote();
+                                  },
                           ),
                         ],
                       ),
@@ -589,17 +660,24 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           const SizedBox(width: 8),
                           OutlinedButton(
-                            onPressed: () {
-                              final text =
-                                  _storeVoucherControllers[sId]?.text.trim() ??
-                                  '';
-                              if (text.isNotEmpty) {
-                                setState(() => _storeVouchers[sId] = text);
-                              } else {
-                                setState(() => _storeVouchers.remove(sId));
-                              }
-                              _fetchQuote();
-                            },
+                            onPressed: _submittingOrder
+                                ? null
+                                : () {
+                                    final text =
+                                        _storeVoucherControllers[sId]?.text
+                                            .trim() ??
+                                        '';
+                                    if (text.isNotEmpty) {
+                                      setState(
+                                        () => _storeVouchers[sId] = text,
+                                      );
+                                    } else {
+                                      setState(
+                                        () => _storeVouchers.remove(sId),
+                                      );
+                                    }
+                                    _fetchQuote();
+                                  },
                             child: const Text('Áp dụng'),
                           ),
                         ],
@@ -650,13 +728,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               suffixIcon: _appliedPlatformVoucher != null
                                   ? IconButton(
                                       icon: const Icon(Icons.clear, size: 18),
-                                      onPressed: () {
-                                        _platformVoucherController.clear();
-                                        setState(
-                                          () => _appliedPlatformVoucher = null,
-                                        );
-                                        _fetchQuote();
-                                      },
+                                      onPressed: _submittingOrder
+                                          ? null
+                                          : () {
+                                              _platformVoucherController
+                                                  .clear();
+                                              setState(
+                                                () => _appliedPlatformVoucher =
+                                                    null,
+                                              );
+                                              _fetchQuote();
+                                            },
                                     )
                                   : null,
                             ),
@@ -664,13 +746,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ),
                         const SizedBox(width: 8),
                         FilledButton(
-                          onPressed: () {
-                            final code = _platformVoucherController.text.trim();
-                            if (code.isNotEmpty) {
-                              setState(() => _appliedPlatformVoucher = code);
-                              _fetchQuote();
-                            }
-                          },
+                          onPressed: _submittingOrder
+                              ? null
+                              : () {
+                                  final code = _platformVoucherController.text
+                                      .trim();
+                                  if (code.isNotEmpty) {
+                                    setState(
+                                      () => _appliedPlatformVoucher = code,
+                                    );
+                                    _fetchQuote();
+                                  }
+                                },
                           child: const Text('Áp dụng'),
                         ),
                       ],
@@ -753,7 +840,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton.icon(
-                            onPressed: _fetchQuote,
+                            onPressed: _submittingOrder ? null : _fetchQuote,
                             icon: const Icon(Icons.refresh),
                             label: const Text('Cập nhật báo giá'),
                           ),

@@ -36,10 +36,17 @@ class ApiClient {
       if (token == null || token.isEmpty) return false;
       await _refresh();
       return _accessToken != null;
-    } catch (_) {
-      await _storage.delete(key: 'refresh_token');
+    } catch (error) {
+      await _invalidateRejectedSession(error);
       _accessToken = null;
       return false;
+    }
+  }
+
+  Future<void> _invalidateRejectedSession(Object error) async {
+    if (error is DioException &&
+        [401, 403].contains(error.response?.statusCode)) {
+      await _storage.delete(key: 'refresh_token');
     }
   }
 
@@ -86,9 +93,9 @@ class ApiClient {
         _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
         try {
           await _refreshing;
-        } catch (_) {
+        } catch (error) {
           _accessToken = null;
-          await _storage.delete(key: 'refresh_token');
+          await _invalidateRejectedSession(error);
           rethrow;
         }
         return _requestWithRetry(makeRequest, retry: false);
@@ -410,6 +417,26 @@ class ApiClient {
   }
 
   // --- Cart & Checkout Endpoints (MOB-03) ---
+  Future<Map<String, dynamic>> getAllCartItems() async {
+    final first = await getCartItems(page: 1, size: 100);
+    final items = List<dynamic>.from(first['items'] as List);
+    var page = 1;
+    var total = first['total'] as int;
+    while (items.length < total) {
+      if (page >= 100) {
+        throw const FormatException('Giỏ hàng quá lớn; cần tải theo trang.');
+      }
+      final next = await getCartItems(page: ++page, size: 100);
+      final rows = next['items'] as List;
+      if (rows.isEmpty) {
+        throw const FormatException('Giỏ hàng đã thay đổi. Vui lòng tải lại.');
+      }
+      items.addAll(rows);
+      total = next['total'] as int;
+    }
+    return {...first, 'items': items, 'total': total, 'loaded_pages': page};
+  }
+
   Future<Map<String, dynamic>> getCartItems({
     int page = 1,
     int size = 50,

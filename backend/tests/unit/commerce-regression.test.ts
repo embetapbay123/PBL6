@@ -100,11 +100,14 @@ test('COD delegates to PaymentPort using the transaction manager; Payment failur
   expect(seen).toBe(manager);expect(update).not.toHaveBeenCalled();
 });
 
-test.each([['PENDING','CONFIRMED'],['PROCESSING','SHIPPED']])('transition %s -> %s fails before writes while inventory/shipment is pending',async(from,to)=>{
-  jest.spyOn(OrderRepository.prototype,'lockStoreOrderById').mockResolvedValue(order(from));
-  const write=jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory');
-  await expect(service().transitionStoreOrder(randomUUID(),{expected_version:1,to_status:to as any},seller,'corr')).rejects.toMatchObject({status:501});
-  expect(write).not.toHaveBeenCalled();
+test.each([['PENDING','CONFIRMED'],['PROCESSING','SHIPPED']])('transition %s -> %s uses only M2 transaction and records shipment when shipping',async(from,to)=>{
+  const source=order(from);
+  jest.spyOn(OrderRepository.prototype,'lockStoreOrderById').mockResolvedValue(source);
+  jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory').mockResolvedValue({...source,status:to,version:2});
+  const ship=jest.spyOn(OrderRepository.prototype,'ship').mockResolvedValue();
+  await expect(service().transitionStoreOrder(source.id,{expected_version:1,to_status:to as any},seller,'corr')).resolves.toMatchObject({status:to,version:2});
+  expect(call).not.toHaveBeenCalled();
+  expect(ship).toHaveBeenCalledTimes(to==='SHIPPED'?1:0);
 });
 test('wrong Payment manager is rejected',async()=>{
   jest.spyOn(OrderRepository.prototype,'lockStoreOrderById').mockResolvedValue(order());

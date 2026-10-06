@@ -91,3 +91,11 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Flutter analyze sạch, 31 test đạt (widget + Dio request contract). Web build và 7 Playwright test đạt qua Chrome trên Windows; 13 Python test M4 đạt. CI vẫn phải kiểm trên Ubuntu và Flutter 3.41.4.
 - Phạm vi chưa hoàn thành: quote/validate cần M3 ResolveCheckoutContext; confirm/cancel/confirm-state/ship-state còn 501 trước ghi; COD cần PaymentService; report cần low-stock và số liệu User/Store thật. Không dùng mock success trong test để nghiệm thu checkout/payment/Android thiết bị.
 - Chi tiết tiếp tục: [bàn giao Hoa](hoa-consolidated-handoff.md). PR cũ bị thay thế chỉ là dọn chuỗi branch trùng; không đóng các issue nghiệp vụ một phần.
+
+## 06/10/2026 — hoàn thiện phần độc lập của PR Hoa
+
+- transitionStoreOrder được IMPLEMENTED: PENDING → CONFIRMED → PROCESSING → SHIPPED → COMPLETED; PREPARING không được nhảy trạng thái. Shipment mô phỏng, Order/history/audit/outbox cùng transaction. Đơn PENDING phải được checkout/payment consume kho trước đó; không gọi consume lần nữa khi Seller xác nhận.
+- 155 backend unit và 28 HTTP/PostgreSQL integration test đạt. Test mới kiểm concurrent chuyển SHIPPED chỉ tạo một Shipment, thiếu Shipment rollback completion, completion chuyển DELIVERED và Voucher trùng code trả 409.
+- Flutter analyze sạch, 40 test đạt: refresh lỗi tạm thời giữ token; giỏ tải đủ trang; quote response cũ/hết hạn bị chặn; địa chỉ tải lỗi có retry; confirm 409 tải quote mới; confirm 501 giữ màn hình và cùng Idempotency-Key qua retry. Mock success không chứng minh checkout giao dịch thật hoặc Android thiết bị.
+- OpenAPI/parser, docs/link check và drift 99 public + 11 internal + 7 event đạt. Public hiện 19 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 68 NOT_IMPLEMENTED. Migration 001–003 không đổi; đợt này không thêm migration.
+- Giữ đúng owner: Thịnh phụ trách command kho/low-stock M1, Trí phụ trách checkout context/count M3, Công phụ trách Payment. Confirm/cancel/COD còn dependency và chưa nghiệm thu thành công; issue vẫn mở và Review. CI cần xem theo head mới của [PR #88](https://github.com/embetapbay123/PBL6/pull/88).

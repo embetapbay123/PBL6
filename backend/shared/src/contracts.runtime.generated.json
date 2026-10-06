@@ -6385,7 +6385,7 @@
       "route": "/store/orders/{id}/status",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",

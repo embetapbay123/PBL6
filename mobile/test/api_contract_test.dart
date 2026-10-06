@@ -47,6 +47,70 @@ void main() {
     client = ApiClient(customDio: dio);
   });
   test(
+    'Cart loads every page instead of silently hiding items after the first page',
+    () async {
+      final adapter = RecordingAdapter((request) {
+        final page = request.queryParameters['page'] as int;
+        return jsonResponse({
+          'items': List.generate(
+            page == 1 ? 100 : 1,
+            (i) => {
+              'id': 'item-${page == 1 ? i : 100}',
+              'variant_id': 'variant',
+              'store_id': 'store',
+              'quantity': 1,
+            },
+          ),
+          'total': 101,
+          'page': page,
+          'size': 100,
+        });
+      });
+      client.dio.httpClientAdapter = adapter;
+      final cart = await client.getAllCartItems();
+      expect(cart['items'], hasLength(101));
+      expect(cart['loaded_pages'], 2);
+      expect(adapter.requests.map((r) => r.queryParameters['page']), [1, 2]);
+    },
+  );
+  for (final status in [401, 503]) {
+    test(
+      'restore refresh $status only deletes credentials when the session is rejected',
+      () async {
+        FlutterSecureStorage.setMockInitialValues({
+          'refresh_token': 'saved-refresh',
+        });
+        client.dio.httpClientAdapter = RecordingAdapter(
+          (_) => jsonResponse({'code': 'REFRESH_ERROR'}, status),
+        );
+        expect(await client.tryRestoreSession(), false);
+        expect(
+          await const FlutterSecureStorage().read(key: 'refresh_token'),
+          status == 401 ? null : 'saved-refresh',
+        );
+      },
+    );
+  }
+  test(
+    'a transient refresh failure retains the refresh token for a later retry',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({
+        'refresh_token': 'saved-refresh',
+      });
+      client.setAccessTokenForTesting('expired-access');
+      client.dio.httpClientAdapter = RecordingAdapter(
+        (request) => jsonResponse({
+          'code': 'UNAVAILABLE',
+        }, request.path == '/auth/refresh' ? 503 : 401),
+      );
+      await expectLater(client.getProfile(), throwsA(isA<DioException>()));
+      expect(
+        await const FlutterSecureStorage().read(key: 'refresh_token'),
+        'saved-refresh',
+      );
+    },
+  );
+  test(
     'Cart loads the real Catalog price and marks unavailable mappings without inventing a price',
     () async {
       adapter = RecordingAdapter((options) {

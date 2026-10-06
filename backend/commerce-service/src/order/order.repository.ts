@@ -1,5 +1,6 @@
 import { EntityManager } from 'typeorm';
 import { OwnedRepository } from '../../../shared/src/repository';
+import { ApiError } from '../../../shared/src/errors';
 
 export interface CartItemCheckoutRow {
   id: string;
@@ -589,6 +590,16 @@ export class OrderRepository extends OwnedRepository {
       [orderId, expectedVersion]
     );
     return updated ?? null;
+  }
+
+  async ship(orderId:string):Promise<void> {
+    const [created]=await this.manager.query("INSERT INTO shipment(order_id,status,shipped_at) VALUES($1,'SHIPPED',now()) ON CONFLICT(order_id) DO NOTHING RETURNING id",[orderId]);
+    if(!created) throw new ApiError(409,'SHIPMENT_STATE_CONFLICT','Order đã có Shipment; cần kiểm tra lại trạng thái.');
+  }
+
+  async deliver(orderId:string):Promise<void> {
+    const updated=await this.updateReturning("UPDATE shipment SET status='DELIVERED',delivered_at=now() WHERE order_id=$1 AND status='SHIPPED' RETURNING id",[orderId]);
+    if(!updated) throw new ApiError(409,'SHIPMENT_STATE_CONFLICT','Shipment chưa ở trạng thái đang giao.');
   }
 
   async findOrderItemEligibility(orderItemId: string): Promise<OrderItemEligibilityRow | undefined> {

@@ -5,6 +5,7 @@ import { moneyNumber } from '../../../shared/src/money';
 import { VoucherRepository, VoucherRow } from './voucher.repository';
 import { OrderService } from '../order/order.service';
 import { requireStorePermission } from '../scope';
+import { EntityManager } from 'typeorm';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,6 +31,15 @@ export function voucherResponse(row: VoucherRow): OperationOutputs['createStoreV
 }
 
 export class VoucherService {
+  private async write<T>(work:(manager:EntityManager)=>Promise<T>):Promise<T> {
+    try {return await database.transaction(work);}
+    catch(error:any) {
+      if(error?.driverError?.code==='23505' && error.driverError.constraint==='voucher_code_unique') {
+        throw new ApiError(409,'VOUCHER_CODE_EXISTS','Mã voucher đã tồn tại trên hệ thống.');
+      }
+      throw error;
+    }
+  }
   private verifyStoreOwner(auth: any): string {
     return requireStorePermission(auth,'voucher.store.manage');
   }
@@ -107,7 +117,7 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Mức giảm tối đa không được âm.');
     }
 
-    return database.transaction(async manager => {
+    return this.write(async manager => {
       const repo = new VoucherRepository(manager);
       const existing = await repo.findByCode(code);
       if (existing) {
@@ -148,7 +158,7 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Thiếu hoặc sai expected_version.');
     }
 
-    return database.transaction(async manager => {
+    return this.write(async manager => {
       const repo = new VoucherRepository(manager);
       const before = await repo.lockStoreVoucherById(id, storeId);
       if (!before) {
@@ -272,7 +282,7 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Mức giảm tối đa không được âm.');
     }
 
-    return database.transaction(async manager => {
+    return this.write(async manager => {
       const repo = new VoucherRepository(manager);
       const existing = await repo.findByCode(code);
       if (existing) {
@@ -312,7 +322,7 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Thiếu hoặc sai expected_version.');
     }
 
-    return database.transaction(async manager => {
+    return this.write(async manager => {
       const repo = new VoucherRepository(manager);
       const before = await repo.lockPlatformVoucherById(id);
       if (!before) {

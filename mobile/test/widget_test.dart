@@ -113,10 +113,10 @@ class MockApiClient extends ApiClient {
       'id': 'addr-01',
       'recipient_name': 'Nguyễn Văn A',
       'phone': '0901234567',
-      'street': '123 Nguyễn Huệ',
+      'line1': '123 Nguyễn Huệ',
       'ward': 'Bến Nghé',
       'district': 'Quận 1',
-      'province': 'Hồ Chí Minh',
+      'city': 'Hồ Chí Minh',
       'is_default': true,
     },
   ];
@@ -137,19 +137,39 @@ class MockApiClient extends ApiClient {
     'stores': [
       {
         'store_id': 'store-tech',
-        'items_subtotal_vnd': 350000,
-        'shipping_fee_vnd': 25000,
-        'store_voucher_discount_vnd': 0,
-        'platform_voucher_discount_vnd': 25000,
-        'store_payable_total_vnd': 350000,
+        'amounts': {
+          'goods_vnd': 350000,
+          'shipping_vnd': 25000,
+          'store_discount_vnd': 0,
+          'platform_discount_vnd': 25000,
+          'payable_vnd': 350000,
+        },
+        'items': [
+          {
+            'product_title': 'Bàn phím cơ không dây Bluetooth',
+            'sku': 'KB-RED',
+            'unit_price_vnd': 350000,
+            'quantity': 1,
+          },
+        ],
       },
       {
         'store_id': 'store-fashion',
-        'items_subtotal_vnd': 900000,
-        'shipping_fee_vnd': 30000,
-        'store_voucher_discount_vnd': 30000,
-        'platform_voucher_discount_vnd': 0,
-        'store_payable_total_vnd': 900000,
+        'amounts': {
+          'goods_vnd': 900000,
+          'shipping_vnd': 30000,
+          'store_discount_vnd': 30000,
+          'platform_discount_vnd': 0,
+          'payable_vnd': 900000,
+        },
+        'items': [
+          {
+            'product_title': 'Áo hoodie Unisex',
+            'sku': 'HOODIE-BLACK-L',
+            'unit_price_vnd': 450000,
+            'quantity': 2,
+          },
+        ],
       },
     ],
   };

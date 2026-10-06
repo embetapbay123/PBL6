@@ -699,7 +699,7 @@
     "service": "M2",
     "module": "order",
     "owner": "Hoa",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "SELLER",
       "STORE_OWNER"

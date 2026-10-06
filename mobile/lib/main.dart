@@ -48,7 +48,7 @@ final recommendationProvider = FutureProvider<Map<String, dynamic>>((
 });
 
 final cartItemsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  return await ref.read(apiProvider).getCartItems();
+  return await ref.read(apiProvider).getAllCartItems();
 });
 
 final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {

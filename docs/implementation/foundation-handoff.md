@@ -1,6 +1,6 @@
 # Nền code đã bàn giao — 2.2.1
 
-Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 18 IMPLEMENTED, 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 69 NOT_IMPLEMENTED ở public API; internal có 2 sample, 2 IMPLEMENTED (QuoteVariants, VerifyReviewEligibility) và 7 stub.
+Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 19 IMPLEMENTED, 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 68 NOT_IMPLEMENTED ở public API; internal có 2 sample, 2 IMPLEMENTED (QuoteVariants, VerifyReviewEligibility) và 7 stub.
 
 ## Chạy và kiểm tra nền
 

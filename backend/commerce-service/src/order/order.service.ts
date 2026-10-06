@@ -12,6 +12,7 @@ import { PaymentPort } from '../payment/payment.port';
 import { EntityManager } from 'typeorm';
 import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
+import { audit } from '../../../shared/src/audit';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
@@ -599,7 +600,7 @@ export class OrderService {
       }
 
       // Legal state transitions:
-      // PREPARING / PENDING -> CONFIRMED
+      // PENDING is reached only after inventory consumption by the checkout/payment workflow.
       // CONFIRMED -> PROCESSING
       // PROCESSING -> SHIPPED
       // SHIPPED -> COMPLETED
@@ -619,10 +620,6 @@ export class OrderService {
         );
       }
 
-      if(toStatus==='CONFIRMED' || toStatus==='SHIPPED') {
-        return notImplemented('transitionStoreOrder: cần consume reservation/shipment bền vững trước cập nhật trạng thái');
-      }
-
       if(toStatus==='COMPLETED') {
         const payment=await repo.lockPaymentByOrderId(id);
         if(!payment || payment.status!=='SUCCEEDED' || BigInt(payment.collected_vnd)<BigInt(order.payable_vnd)) throw new ApiError(409,'PAYMENT_NOT_COLLECTED','Chưa thu đủ tiền.');
@@ -638,6 +635,11 @@ export class OrderService {
       if (!updated) {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
       }
+
+      if(toStatus==='SHIPPED') await repo.ship(id);
+      if(toStatus==='COMPLETED') await repo.deliver(id);
+      await audit(manager,'M2',auth.user_id,'Order',id,'TRANSITION_ORDER',correlation,
+        {status:order.status,version:order.version},{status:updated.status,version:updated.version});
 
       // If transition to COMPLETED: emit OrderCompleted outbox event (BR: OrderCompleted outbox cùng transaction)
       if (toStatus === 'COMPLETED') {
