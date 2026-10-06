@@ -20,14 +20,15 @@ test('new internal routes authenticate, validate, remain stubs and are hidden fr
     expect(publicResponse.headers.get('content-type') ?? '').not.toContain('application/json');
   }
 });
-test('public stubs run guard before strict request DTO validation',async()=>{
+test('public handlers run guard before strict request DTO validation',async()=>{
   const headers={'Content-Type':'application/json'};
   expect((await fetch(base+'/cart/items',{method:'POST',headers,body:'{}'})).status).toBe(401);
   const login=await fetch(base+'/auth/login',{method:'POST',headers,body:JSON.stringify({email:'customer1@pbl6.test',password:process.env.SEED_PASSWORD,client_type:'MOBILE'})});
   const session=await login.json() as any;
   const call=(body:unknown)=>fetch(base+'/cart/items',{method:'POST',headers:{...headers,Authorization:'Bearer '+session.access_token},body:JSON.stringify(body)});
   expect((await call({})).status).toBe(422);
-  expect((await call(fixtures.addCartItem.request.body)).status).toBe(501);
+  // Structurally valid fixture IDs are not seeded entities; the real Catalog rejects them.
+  expect((await call(fixtures.addCartItem.request.body)).status).toBe(404);
   const response=await fetch(base+'/products');assertSchema(await response.json(),bundle.operations.listProducts.responses['200']);
   const malformed=await fetch(base+'/auth/login',{method:'POST',headers,body:'{"private-value'});
   expect(malformed.status).toBe(400);const error=await malformed.json() as any;

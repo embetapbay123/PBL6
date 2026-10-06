@@ -73,3 +73,29 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Demo Owner sửa tên/mô tả Product thật, reload đọc lại, sau test khôi phục tên; 409/422/501 form hiển thị lỗi. Order/Payment rollback và Catalog write/audit/outbox rollback được kiểm trên PostgreSQL.
 - GitHub CI trên commit `03f89fc` đạt cả contracts-and-node và mobile: [run 37031999009](https://github.com/embetapbay123/PBL6/actions/runs/37031999009). Runner Linux kiểm setup, schema, migration/seed, integration, Python, Playwright Chromium và Flutter từ checkout mới. Compose chờ healthcheck PostgreSQL TCP trước khi kiểm schema/migrate để tránh chạy trong giai đoạn init database.
 - Không chạy APK/device, tải 100 user, provider thanh toán thật hoặc AI thật; các phần này giữ trong task owner. CI trên GitHub phải xem theo commit mới, không suy từ kết quả local.
+
+## Bàn giao M1 QuoteVariants — 05/10/2026
+
+- [PR #86](https://github.com/embetapbay123/PBL6/pull/86) của Thịnh đã merge vào `main` tại commit `f4e49dba155b63ebe251d2c8a45d75e07a93d6ba`. QuoteVariants là `IMPLEMENTED`; internal hiện có 11 operation: 2 sample, 1 implemented, 8 stub. Public API giữ nguyên trạng thái.
+- [CI trên merge commit](https://github.com/embetapbay123/PBL6/actions/runs/37282746278) đạt cả contracts-and-node/mobile, bao gồm schema, migration/seed, integration PostgreSQL/HTTP, Python, Web và Flutter. Đây là bằng chứng CI; đợt cập nhật docs không chạy lại integration local vì Docker chưa chạy.
+- Chạy lại local riêng `tests/unit/quote-variants.test.ts`: 4 test đạt, kiểm lỗi dependency/service identity và mapper tiền an toàn. Contract parser, runtime drift và docs/link check đạt sau cập nhật tài liệu.
+- [Issue #7](https://github.com/embetapbay123/PBL6/issues/7) đóng completed, thẻ Kanban Done; body có bằng chứng PR/CI, payload và tiêu chí đã đạt. Thịnh tiếp tục [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11), vẫn Todo đến khi bắt đầu code.
+- [CART-01 #3](https://github.com/embetapbay123/PBL6/issues/3), [CART-02 #8](https://github.com/embetapbay123/PBL6/issues/8), [ORDER-01 #21](https://github.com/embetapbay123/PBL6/issues/21) có đầu vào M1 thật để tích hợp; không chuyển Done chỉ vì dependency #7 đã merge. M2 phải gửi Store thật, không tự thêm field Product vào quote response và không dùng fallback giá/Store khi lỗi.
+- ActiveStores của M3 vẫn là sample; kho reservation/consume/release/restock và luồng checkout xuyên service còn nghiệm thu theo issue owner. Không thêm migration hoặc đổi contract response trong đợt cập nhật docs này.
+
+## 05/10/2026 — bản tổng Hoa trên feat/mob-03
+
+- Đồng bộ Cart product_id và migration M2 004; migration 001–003 không đổi. 99 public + 11 internal operation, 7 event có DTO/fixture và drift check đạt. Public hiện 18 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 69 NOT_IMPLEMENTED; internal 2 sample / 2 IMPLEMENTED / 7 stub. Trạng thái là code trong nhánh, issue chưa Done trước review/merge/nghiệm thu.
+- Backend build và 155 unit test đạt, gồm quota ledger và lỗi dependency. 26 integration test qua HTTP/PostgreSQL đạt: concurrent Cart, UPDATE RETURNING Cart/Voucher/Order, stale version, Order/COD state, review ownership/HTTP 200 và công thức doanh thu.
+- Schema fresh migration/constraint check của 4 DB và 12 negative invariant check đạt. Không query DB xuyên service, không tự backfill Product ID cho Cart legacy.
+- Flutter analyze sạch, 31 test đạt (widget + Dio request contract). Web build và 7 Playwright test đạt qua Chrome trên Windows; 13 Python test M4 đạt. CI vẫn phải kiểm trên Ubuntu và Flutter 3.41.4.
+- Phạm vi chưa hoàn thành: quote/validate cần M3 ResolveCheckoutContext; confirm/cancel/confirm-state/ship-state còn 501 trước ghi; COD cần PaymentService; report cần low-stock và số liệu User/Store thật. Không dùng mock success trong test để nghiệm thu checkout/payment/Android thiết bị.
+- Chi tiết tiếp tục: [bàn giao Hoa](hoa-consolidated-handoff.md). PR cũ bị thay thế chỉ là dọn chuỗi branch trùng; không đóng các issue nghiệp vụ một phần.
+
+## 06/10/2026 — hoàn thiện phần độc lập của PR Hoa
+
+- transitionStoreOrder được IMPLEMENTED: PENDING → CONFIRMED → PROCESSING → SHIPPED → COMPLETED; PREPARING không được nhảy trạng thái. Shipment mô phỏng, Order/history/audit/outbox cùng transaction. Đơn PENDING phải được checkout/payment consume kho trước đó; không gọi consume lần nữa khi Seller xác nhận.
+- 155 backend unit và 28 HTTP/PostgreSQL integration test đạt. Test mới kiểm concurrent chuyển SHIPPED chỉ tạo một Shipment, thiếu Shipment rollback completion, completion chuyển DELIVERED và Voucher trùng code trả 409.
+- Flutter analyze sạch, 40 test đạt: refresh lỗi tạm thời giữ token; giỏ tải đủ trang; quote response cũ/hết hạn bị chặn; địa chỉ tải lỗi có retry; confirm 409 tải quote mới; confirm 501 giữ màn hình và cùng Idempotency-Key qua retry. Mock success không chứng minh checkout giao dịch thật hoặc Android thiết bị.
+- OpenAPI/parser, docs/link check và drift 99 public + 11 internal + 7 event đạt. Public hiện 19 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 68 NOT_IMPLEMENTED. Migration 001–003 không đổi; đợt này không thêm migration.
+- Giữ đúng owner: Thịnh phụ trách command kho/low-stock M1, Trí phụ trách checkout context/count M3, Công phụ trách Payment. Confirm/cancel/COD còn dependency và chưa nghiệm thu thành công; issue vẫn mở và Review. CI cần xem theo head mới của [PR #88](https://github.com/embetapbay123/PBL6/pull/88).

@@ -1,6 +1,8 @@
 # Trạng thái endpoint của khung 2.2
 
-OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` trả 501 sau kiểm tra quyền. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
+OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
+
+Internal API có 11 operation: 2 sample, QuoteVariants và VerifyReviewEligibility `IMPLEMENTED`, 7 stub. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
 
 | API | Operation | Service / module | Owner | Trạng thái |
 | --- | --- | --- | --- | --- |
@@ -44,32 +46,32 @@ OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ 
 | `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
 | `POST /store/inventory/adjustments` | adjustInventory | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
 | `GET /store/inventory/movements` | listStockMovements | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
-| `GET /cart/items` | listCartItems | M2 / cart | Hoa | NOT_IMPLEMENTED |
-| `POST /cart/items` | addCartItem | M2 / cart | Hoa | NOT_IMPLEMENTED |
-| `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | NOT_IMPLEMENTED |
-| `DELETE /cart/items/{id}` | removeCartItem | M2 / cart | Hoa | NOT_IMPLEMENTED |
+| `GET /cart/items` | listCartItems | M2 / cart | Hoa | IMPLEMENTED |
+| `POST /cart/items` | addCartItem | M2 / cart | Hoa | IMPLEMENTED |
+| `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | IMPLEMENTED |
+| `DELETE /cart/items/{id}` | removeCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `POST /checkout/quotes` | quoteCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `GET /orders/batches/{id}` | getPurchaseGroupOrders | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `GET /orders/batches/{id}` | getPurchaseGroupOrders | M2 / order | Hoa | IMPLEMENTED |
 | `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | NOT_IMPLEMENTED |
 | `GET /payments/{id}` | getPayment | M2 / payment | Công | NOT_IMPLEMENTED |
 | `POST /payment-callbacks/sandbox` | sandboxCallback | M2 / payment | Công | NOT_IMPLEMENTED |
 | `GET /orders/{id}/refund` | getOrderRefund | M2 / payment | Công | NOT_IMPLEMENTED |
-| `GET /me/orders` | listOwnOrders | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `GET /me/orders/{id}` | getOwnOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `GET /me/orders` | listOwnOrders | M2 / order | Hoa | IMPLEMENTED |
+| `GET /me/orders/{id}` | getOwnOrder | M2 / order | Hoa | IMPLEMENTED |
 | `POST /me/orders/{id}/cancel` | cancelOwnOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `GET /store/orders` | listStoreOrders | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `GET /store/orders/{id}` | getStoreOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `PATCH /store/orders/{id}/status` | transitionStoreOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `GET /store/orders` | listStoreOrders | M2 / order | Hoa | IMPLEMENTED |
+| `GET /store/orders/{id}` | getStoreOrder | M2 / order | Hoa | IMPLEMENTED |
+| `PATCH /store/orders/{id}/status` | transitionStoreOrder | M2 / order | Hoa | IMPLEMENTED |
 | `POST /store/orders/{id}/cancel` | cancelStoreOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /store/orders/{id}/cod-collection` | collectCod | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /vouchers/validate` | validateVouchers | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `GET /store/vouchers` | listStoreVouchers | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `POST /store/vouchers` | createStoreVoucher | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `PATCH /store/vouchers/{id}` | updateStoreVoucher | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `GET /admin/vouchers` | listPlatformVouchers | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `POST /admin/vouchers` | createPlatformVoucher | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `PATCH /admin/vouchers/{id}` | updatePlatformVoucher | M2 / voucher | Hoa | NOT_IMPLEMENTED |
+| `GET /store/vouchers` | listStoreVouchers | M2 / voucher | Hoa | IMPLEMENTED |
+| `POST /store/vouchers` | createStoreVoucher | M2 / voucher | Hoa | IMPLEMENTED |
+| `PATCH /store/vouchers/{id}` | updateStoreVoucher | M2 / voucher | Hoa | IMPLEMENTED |
+| `GET /admin/vouchers` | listPlatformVouchers | M2 / voucher | Hoa | IMPLEMENTED |
+| `POST /admin/vouchers` | createPlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
+| `PATCH /admin/vouchers/{id}` | updatePlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
 | `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | NOT_IMPLEMENTED |
 | `POST /me/reviews` | createReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
 | `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
@@ -79,7 +81,7 @@ OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ 
 | `PATCH /admin/users/{id}` | updateUserState | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `GET /admin/stores` | listStores | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `PATCH /admin/stores/{id}` | updateStoreState | M3 / administration | Trí | NOT_IMPLEMENTED |
-| `GET /admin/orders` | listAllOrders | M2 / report | Hoa | NOT_IMPLEMENTED |
+| `GET /admin/orders` | listAllOrders | M2 / report | Hoa | IMPLEMENTED |
 | `GET /admin/dashboard` | getPlatformDashboard | M2 / report | Hoa | NOT_IMPLEMENTED |
 | `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `POST /chat/sessions` | createChatSession | M4 / chat | Công | NOT_IMPLEMENTED |
@@ -89,8 +91,8 @@ OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ 
 | `GET /products/{id}/related` | getRelatedProducts | M4 / recommendation | Công | MOCK_ONLY |
 | `PATCH /store/staff/{id}` | updateStaff | M3 / staff | Trí | NOT_IMPLEMENTED |
 | `GET /store/reports` | getStoreReport | M2 / report | Hoa | NOT_IMPLEMENTED |
-| `GET /store/vouchers/{id}/usage` | getStoreVoucherUsage | M2 / voucher | Hoa | NOT_IMPLEMENTED |
-| `GET /admin/vouchers/{id}/usage` | getPlatformVoucherUsage | M2 / voucher | Hoa | NOT_IMPLEMENTED |
+| `GET /store/vouchers/{id}/usage` | getStoreVoucherUsage | M2 / voucher | Hoa | IMPLEMENTED |
+| `GET /admin/vouchers/{id}/usage` | getPlatformVoucherUsage | M2 / voucher | Hoa | IMPLEMENTED |
 | `POST /admin/categories` | createCategory | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `PATCH /admin/categories/{id}` | updateCategory | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `POST /admin/product-types` | createProductType | M1 / moderation | Thịnh | NOT_IMPLEMENTED |

@@ -540,8 +540,10 @@ export class ListCartItemsHeadersDto {
 export class AddCartItemBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
   "variant_id"!: string;
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
   "quantity"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid", "description": "Product chứa Variant; M2 xác minh qua Catalog M1."},true),defaultMessage:()=> 'Invalid contract field'}})
+  "product_id"!: string;
 }
 export class AddCartItemPathDto {
 }
@@ -550,7 +552,7 @@ export class AddCartItemQueryDto {
 export class AddCartItemHeadersDto {
 }
 export class UpdateCartItemBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
   "quantity"!: number;
 }
 export class UpdateCartItemPathDto {

@@ -41,7 +41,7 @@ export interface OperationInputs {
   adjustInventory: {body: {"variant_id": string; "delta_quantity": number; "reason": string; "operation_id": string; "expected_version": number}; path: {}; query: {}; headers: {} & Record<string, unknown>};
   listStockMovements: {body?: undefined; path: {}; query: {"page"?: number; "size"?: number}; headers: {} & Record<string, unknown>};
   listCartItems: {body?: undefined; path: {}; query: {"page"?: number; "size"?: number}; headers: {} & Record<string, unknown>};
-  addCartItem: {body: {"variant_id": string; "quantity": number}; path: {}; query: {}; headers: {} & Record<string, unknown>};
+  addCartItem: {body: {"variant_id": string; "quantity": number; "product_id": string}; path: {}; query: {}; headers: {} & Record<string, unknown>};
   updateCartItem: {body: {"quantity": number}; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
   removeCartItem: {body?: undefined; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
   quoteCheckout: {body: {"cart_item_ids": Array<string>; "address_id": string; "payment_methods": {} & Record<string, "SANDBOX" | "COD">; "platform_voucher_code"?: string; "store_vouchers"?: {} & Record<string, string>}; path: {}; query: {}; headers: {} & Record<string, unknown>};
@@ -152,9 +152,9 @@ export interface OperationOutputs {
   listStoreInventory: {"items": Array<{"variant_id": string; "quantity": number; "reserved_quantity": number; "available_quantity": number; "version": number}>; "total": number; "page": number; "size": number};
   adjustInventory: {"variant_id": string; "quantity": number; "reserved_quantity": number; "available_quantity": number; "version": number};
   listStockMovements: {"items": Array<{"id": string; "variant_id": string; "order_id"?: string; "delta_quantity": number; "reason"?: string; "occurred_at"?: string}>; "total": number; "page": number; "size": number};
-  listCartItems: {"items": Array<{"id"?: string; "variant_id": string; "store_id"?: string; "quantity": number}>; "total": number; "page": number; "size": number};
-  addCartItem: {"id"?: string; "variant_id": string; "store_id"?: string; "quantity": number};
-  updateCartItem: {"id"?: string; "variant_id": string; "store_id"?: string; "quantity": number};
+  listCartItems: {"items": Array<{"id"?: string; "variant_id": string; "store_id"?: string; "quantity": number; "product_id"?: string}>; "total": number; "page": number; "size": number};
+  addCartItem: {"id"?: string; "variant_id": string; "store_id"?: string; "quantity": number; "product_id"?: string};
+  updateCartItem: {"id"?: string; "variant_id": string; "store_id"?: string; "quantity": number; "product_id"?: string};
   removeCartItem: {"status": string; "message"?: string; "correlation_id"?: string};
   quoteCheckout: {"quote_id": string; "stores": Array<{"store_id": string; "amounts": {"goods_vnd": number; "store_discount_vnd": number; "platform_discount_vnd": number; "shipping_vnd": number; "payable_vnd": number}; "items": Array<{} & Record<string, unknown>>}>; "payable_total_vnd": number; "expires_at": string};
   confirmCheckout: {"purchase_group_id": string; "order_ids": Array<string>; "orders": Array<{"id": string; "purchase_group_id": string; "store_id": string; "status": "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING"; "version": number; "payment_method": "SANDBOX" | "COD"; "payment_status"?: string; "refund_status"?: string; "payment_expires_at"?: string; "amounts": {"goods_vnd": number; "store_discount_vnd": number; "platform_discount_vnd": number; "shipping_vnd": number; "payable_vnd": number}; "items"?: Array<{} & Record<string, unknown>>}>; "payable_total_vnd": number};
