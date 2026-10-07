@@ -1,0 +1,151 @@
+{
+  "date": "2026-10-07",
+  "tool": "grafana/k6:0.57.0",
+  "image_digest": "sha256:70af91f86cd8e142e0544a4edaf79835a80033f71974b92edd5ac36fd4442a7b",
+  "profile": {
+    "vus": 100,
+    "duration_seconds": 30,
+    "graceful_stop_seconds": 1,
+    "think_time_seconds": 20,
+    "http_timeout_seconds": 6
+  },
+  "environment": {
+    "os": "Windows / Docker Desktop",
+    "docker_cpus": 16,
+    "docker_memory_bytes": 7902412800,
+    "service_instances": 1,
+    "m4_workers": 1,
+    "ai_mode": "real",
+    "chat_provider": "none",
+    "public_seed_products": 3
+  },
+  "runs": [
+    {
+      "run_id": "catalog-smoke-20261007",
+      "status": "PASS",
+      "requests": 200,
+      "rps": 6.451418597943701,
+      "latency_ms": {
+        "min": 26.443838,
+        "med": 117.3242505,
+        "max": 544.550942,
+        "p(90)": 482.59085609999994,
+        "p(95)": 508.8067431999999,
+        "avg": 206.99193377500006
+      },
+      "http_error_rate": 0,
+      "checks": {
+        "passed": 400,
+        "failed": 0
+      },
+      "summary_sha256": "cac5acc9717a1d9e700ce177a1ae56408badfa3b6c64b556d43c012c713ee232",
+      "local_raw_artifact": "artifacts\\load\\catalog-smoke-20261007\\raw.json",
+      "raw_sha256": "121c88ce64a75fd0b8635ecbe2749274a18d841be5cc445faba5ee7c2ec23d6e"
+    },
+    {
+      "run_id": "related-smoke-before-20261007",
+      "status": "FAIL",
+      "requests": 170,
+      "rps": 5.476259595437556,
+      "latency_ms": {
+        "p(95)": 5999.49367475,
+        "avg": 4306.63867091765,
+        "min": 42.071958,
+        "med": 4782.762016,
+        "max": 6000.190481,
+        "p(90)": 5999.2282552
+      },
+      "http_error_rate": 0.8705882352941177,
+      "checks": {
+        "passed": 42,
+        "failed": 296
+      },
+      "summary_sha256": "e161c547cfc3c506085047aac339afb941b584a809c07cc0dfbb421086711cd1",
+      "local_raw_artifact": "artifacts\\load\\related-smoke-before-20261007\\raw.json",
+      "raw_sha256": "e7126ffe363f0ed3c9f66c150d8af643047b31f52bf375d7e730291db1913208"
+    },
+    {
+      "run_id": "related-smoke-after-20261007",
+      "status": "FAIL",
+      "requests": 201,
+      "rps": 6.476644211759782,
+      "latency_ms": {
+        "avg": 2057.010065577115,
+        "min": 30.642665,
+        "med": 1973.621516,
+        "max": 3201.482184,
+        "p(90)": 2909.29657,
+        "p(95)": 3043.359585
+      },
+      "http_error_rate": 0,
+      "checks": {
+        "passed": 400,
+        "failed": 0
+      },
+      "summary_sha256": "5d338a2ed291fef37299fc9118b9e93e11df018b93e8cfcd34cd6972cd0caeca",
+      "local_raw_artifact": "artifacts\\load\\related-smoke-after-20261007\\raw.json",
+      "raw_sha256": "93813ee076e8969d4f0d6e48c10fc71c402d641cc1032a178ba61317664e8d25"
+    },
+    {
+      "run_id": "related-smoke-final-20261007",
+      "status": "PASS",
+      "requests": 201,
+      "rps": 6.4760347071227375,
+      "latency_ms": {
+        "p(90)": 1630.120254,
+        "p(95)": 1669.946968,
+        "avg": 846.4446034975124,
+        "min": 34.08196,
+        "med": 410.500695,
+        "max": 1694.572472
+      },
+      "http_error_rate": 0,
+      "checks": {
+        "passed": 400,
+        "failed": 0
+      },
+      "summary_sha256": "d578fc2582a52a4879458a5938ff584a26c46e108f89f108db81390410276423",
+      "local_raw_artifact": "artifacts\\load\\related-smoke-final-20261007\\raw.json",
+      "raw_sha256": "ae961a1c7c46e3586a7e382a6998b7da29af6f64e1364d7db585b1e428b60cc4"
+    }
+  ],
+  "restore": {
+    "run_id": "20261007035228",
+    "services": {
+      "m1": {
+        "database": "restore_drill_m1_20261007035228",
+        "backup_sha256": "a2cabf10c64128ff6d4bdb6a2a08629e8c9e098e778fed163bb3f4a2ac4d89d4",
+        "status": "PASS",
+        "invariant_violations": 0
+      },
+      "m2": {
+        "database": "restore_drill_m2_20261007035228",
+        "backup_sha256": "80e687c61b988126066195084cf2a200b7a1128291f27fc6929d9495fe225b9d",
+        "status": "PASS",
+        "invariant_violations": 0
+      },
+      "m3": {
+        "database": "restore_drill_m3_20261007035228",
+        "backup_sha256": "61650bd109740d1b33f28c56144fb192562ccc9ce22a36b5fc0a14d218bda5ba",
+        "status": "PASS",
+        "invariant_violations": 0
+      },
+      "m4": {
+        "database": "restore_drill_m4_20261007035228",
+        "backup_sha256": "6837bc6e43dbfce2112e7254827c77de8d333c7b9fa405f1b34b6f2e94068be9",
+        "status": "PASS",
+        "invariant_violations": 0
+      }
+    },
+    "local_raw_artifact": "artifacts\\verification\\restore-20261007035228.json",
+    "raw_sha256": "b803b9b840172412eaecc30831be96fc9f8ae900533b5bb1aaf9213c109a48d6",
+    "limit": "per-database restore compared with current source metadata/counts; not a coordinated cross-service snapshot or row-content checksum"
+  },
+  "limits": [
+    "Smoke read bursts only; full 15-minute marketplace NFR NOT_RUN",
+    "No provider/model quality benchmark",
+    "Ignored raw artifacts are local; hashes allow verification if shared separately",
+    "Resource snapshots are not peak measurements",
+    "Anonymous ForYou 401 misconfiguration excluded from capacity results; tuning failures retained locally"
+  ]
+}

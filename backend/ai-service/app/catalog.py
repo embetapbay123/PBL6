@@ -3,15 +3,16 @@ import httpx
 from .internal_client import InternalClient, InternalError
 from .runtime_contracts import OPERATIONS, schema_errors
 from .safety import price
+from .network import session
 
 class LiveCatalog:
-    def __init__(self,transport=None,internal=None):
-        self.transport=transport
-        self.internal=internal or InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']})
+    def __init__(self,transport=None,internal=None,http_client=None):
+        self.transport,self.http_client=transport,http_client
+        self.internal=internal or InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']},http_client=http_client)
     async def _get(self,path,operation,correlation,params=None):
         try:
-            async with httpx.AsyncClient(timeout=1,transport=self.transport,follow_redirects=False) as client:
-                response=await client.get(os.environ['CATALOG_URL']+'/api/v1'+path,params=params,headers={'X-Correlation-Id':correlation})
+            async with session(self.http_client,self.transport) as client:
+                response=await client.get(os.environ['CATALOG_URL']+'/api/v1'+path,timeout=1,params=params,headers={'X-Correlation-Id':correlation})
             if response.status_code==404:raise InternalError(404,'NOT_FOUND','Không tìm thấy Product.')
             if response.status_code!=200:raise InternalError(503,'DEPENDENCY_UNAVAILABLE','Không xác minh được Catalog.')
             result=response.json()
@@ -33,3 +34,13 @@ class LiveCatalog:
         if product.get('status')!='ACTIVE' or product.get('moderation_status')!='VISIBLE' or product.get('store_id') not in active['ids'] or price(product) is None:
             raise InternalError(404,'NOT_FOUND','Product không còn công khai.')
         return product
+
+    async def related_context(self,id,correlation):
+        # Reuse a freshly validated public reference already present in this request's page.
+        first,active=await asyncio.gather(self._get('/products','listProducts',correlation,{'page':1,'size':100}),self.internal.call('ActiveStores',None,correlation))
+        product=next((p for p in first['items'] if p['id']==id),None)
+        if product is None:product=await self._get('/products/'+id,'getProduct',correlation)
+        ids=set(active['ids'])
+        def eligible(p):return p.get('status')=='ACTIVE' and p.get('moderation_status')=='VISIBLE' and p.get('store_id') in ids and price(p) is not None
+        if not eligible(product):raise InternalError(404,'NOT_FOUND','Product không còn công khai.')
+        return product,[p for p in first['items'] if eligible(p)]

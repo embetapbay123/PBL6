@@ -14,7 +14,7 @@ Bổ sung [integration contract](../integration-contract.md), [state transitions
 | 503/504 | Dependency/timeout; không suy ra mutation thất bại chắc chắn |
 | 500 | Lỗi bất ngờ; correlation để điều tra, không trả stack/SQL/secret |
 
-Khung Node và M4 trả `{code,message,correlation_id,details}`. Internal HTTP budget hữu hạn; client Web 7 giây, chỉ tự refresh khi 401, không tự retry mutation. M4 Identity 1 giây/Catalog 2 giây. DB Node statement timeout 3 giây/pool10; cần điều chỉnh theo đo tải, không tăng vô hạn.
+Khung Node và M4 trả `{code,message,correlation_id,details}`. Internal HTTP budget hữu hạn; client Web 7 giây, chỉ tự refresh khi 401, không tự retry mutation. M4 Identity/Catalog 1 giây, shared HTTP pool50/keep-alive20; model 2 giây. DB Node statement timeout 3 giây/pool10; cần điều chỉnh theo đo tải, không tăng vô hạn.
 
 ## Transaction và idempotency
 
@@ -44,3 +44,11 @@ Queue `pbl6.m1.bootstrap.v1`, `pbl6.m2.bootstrap.v1` chỉ nghe bootstrap.exampl
 | AI lỗi/index cũ | Fallback có nhãn, card còn hợp lệ; không bịa thông tin giao dịch | Công |
 
 Không xóa outbox/inbox/payment event để xử lý sự cố. Runbook phải lưu case/operation/correlation, trạng thái và action có audit. Khôi phục service bằng restart không thay việc đối soát dữ liệu nghiệp vụ.
+
+## Runtime độc lập đã kiểm ngày 07/10/2026
+
+[Callback receipt/follow-up](payment-callback-handoff.md) và [Refund kernel](refund-runtime-handoff.md) có transaction/idempotency/audit, lease/restart, UNKNOWN lookup và retry cùng operation ID. Refund provider mặc định disabled; còn cần adapter thật và owner Order/kho để nghiệm thu toàn luồng. Không coi disabled hoặc provider test double là đã chuyển tiền.
+
+[Restore drill](../../scripts/restore_drill.py) tạo DB mới có prefix, không ghi đè service DB; kiểm counts/schema/constraints/migrations và invariant. [Bằng chứng](cong-independent-handoff.md) ghi cả giới hạn: so với nguồn hiện tại, chưa checksum từng row hoặc snapshot ACID xuyên service. Dừng writers/jobs trên môi trường drill trước backup; mismatch phải điều tra, không sửa dữ liệu để ép PASS. Giữ dump/raw ở artifacts được ignore.
+
+M4 client theo lifespan đóng lúc shutdown, giữ header/correlation riêng từng call. Thiếu provider trả fallback có nhãn; mất Catalog/identity trả 503, không tự bật fixture hoặc coi dữ liệu stale là hiện hành. Shared pool và related request-scoped reuse đã có test; không retry HTTP command trong request.

@@ -20,18 +20,22 @@ from .consent.domain import ConsentConflict
 from starlette.concurrency import run_in_threadpool
 from .chat.runtime import ChatRuntime
 from .catalog import LiveCatalog
+from .chat.provider import CatalogSelector
 
 log = logging.getLogger('pbl6.ai')
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 engine = None
 limiter = None
+http_client = None
+
+def live_catalog():return LiveCatalog(http_client=http_client) if http_client else LiveCatalog()
 
 class ApiError(Exception):
     def __init__(self, status, code, message): self.status,self.code,self.message=status,code,message
 
 @asynccontextmanager
 async def lifespan(app):
-    global engine, limiter
+    global engine, limiter,http_client
     required=['M4_DATABASE_URL','IDENTITY_URL','CATALOG_URL','M4_INTERNAL_KEY','AI_MODE','REDIS_URL']
     if any(not os.getenv(key) for key in required): raise RuntimeError('Missing AI configuration')
     if os.environ['AI_MODE'] not in ('mock','real'): raise RuntimeError('Unsupported AI_MODE')
@@ -41,9 +45,13 @@ async def lifespan(app):
     engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1),pool_size=5,max_overflow=0)
     with engine.connect() as db: db.execute(text('SELECT 1'))
     limiter=Redis.from_url(os.environ['REDIS_URL'],socket_timeout=1,socket_connect_timeout=1)
-    yield
-    await limiter.aclose()
-    engine.dispose()
+    http_client=httpx.AsyncClient(timeout=1,follow_redirects=False,limits=httpx.Limits(max_connections=50,max_keepalive_connections=20))
+    try:yield
+    finally:
+        await http_client.aclose()
+        http_client=None
+        await limiter.aclose()
+        engine.dispose()
 
 app=FastAPI(title='PBL6 M4 skeleton',lifespan=lifespan)
 
@@ -87,7 +95,7 @@ async def context(request: Request, roles: list[str]):
     if 'GUEST' in roles and not token: return None
     if not token.startswith('Bearer '): raise ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.')
     try:
-        result=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']}).call('ResolveContext',{'token':token[7:]},request.state.correlation_id)
+        result=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']},http_client=http_client).call('ResolveContext',{'token':token[7:]},request.state.correlation_id)
         if roles and not (set(roles)-{'GUEST'}).intersection(result['roles']): raise ApiError(403,'FORBIDDEN','Không có quyền.')
         return result
     except InternalError as error: raise ApiError(error.status,error.code,error.message)
@@ -124,7 +132,7 @@ def register(record):
         except (ValueError,ValidationError): raise ApiError(422,'VALIDATION_FAILED','Dữ liệu không hợp lệ.')
         if os.getenv('AI_MODE')=='real' and op in ('createChatSession','listOwnChatSessions','sendChatMessage'):
             from fastapi.responses import JSONResponse
-            service=ChatRuntime(engine,LiveCatalog())
+            service=ChatRuntime(engine,live_catalog(),CatalogSelector(http_client=http_client))
             user=identity['user_id'] if identity else None
             try:
                 if op=='createChatSession':
@@ -144,7 +152,7 @@ def register(record):
             try:
                 if os.getenv('AI_MODE')=='real':
                     from .recommendation.runtime import RecommendationRuntime
-                    service=RecommendationRuntime(engine,LiveCatalog())
+                    service=RecommendationRuntime(engine,live_catalog())
                     if op=='getForYou':return await service.recommend(identity['user_id'] if identity else None,request.state.correlation_id)
                     return await service.related(request.path_params['id'],request.state.contract['query'],request.state.correlation_id)
                 async with httpx.AsyncClient(timeout=2) as client:
@@ -157,7 +165,7 @@ def register(record):
             if os.getenv('AI_MODE')=='real':
                 from .evaluation.metrics import read_metrics
                 try:
-                    scope=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']}).call('ResolveAiMetricsScope',{'token':request.headers['authorization'][7:],**({'store_id':request.state.contract['query']['store_id']} if request.state.contract['query'].get('store_id') else {})},request.state.correlation_id)
+                    scope=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']},http_client=http_client).call('ResolveAiMetricsScope',{'token':request.headers['authorization'][7:],**({'store_id':request.state.contract['query']['store_id']} if request.state.contract['query'].get('store_id') else {})},request.state.correlation_id)
                     return await run_in_threadpool(read_metrics,engine,scope)
                 except InternalError as error:raise ApiError(error.status,error.code,error.message)
             return {'index_status':'MOCK','model_version':'mock','evaluation_status':'NOT_RUN','metrics':{},'mode':'mock'}
