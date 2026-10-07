@@ -9314,18 +9314,15 @@
       "route": "/chat/sessions",
       "internal": false,
       "service": "M4",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED_SAMPLE",
       "body_required": true,
       "body": {
         "type": "object",
         "properties": {
-          "anonymous_key": {
-            "type": "string",
-            "maxLength": 200
-          },
           "first_message": {
             "type": "string",
-            "maxLength": 10000
+            "maxLength": 2000,
+            "minLength": 1
           }
         },
         "additionalProperties": false
@@ -9368,6 +9365,113 @@
             "created_at": {
               "type": "string",
               "format": "date-time"
+            },
+            "messages": {
+              "type": "object",
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "content": {
+                        "type": "string",
+                        "maxLength": 10000
+                      },
+                      "product_cards": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "current_price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "maximum": 9007199254740991
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "product_id",
+                            "current_price_vnd",
+                            "status"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "fallback": {
+                        "type": "boolean"
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "mock",
+                          "real"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "ASSISTANT",
+                          "USER",
+                          "SYSTEM"
+                        ]
+                      },
+                      "fallback_reason": {
+                        "type": "string",
+                        "enum": [
+                          "PROVIDER_NOT_CONFIGURED",
+                          "PROVIDER_UNAVAILABLE",
+                          "PROVIDER_INVALID_RESPONSE",
+                          "NO_MATCH",
+                          "MODEL_SELECTED"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "content"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 100
+                },
+                "total": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "page": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                }
+              },
+              "required": [
+                "items",
+                "total",
+                "page",
+                "size"
+              ],
+              "additionalProperties": false
             }
           },
           "required": [
@@ -9383,7 +9487,7 @@
       "route": "/chat/sessions/{id}/messages",
       "internal": false,
       "service": "M4",
-      "status": "MOCK_ONLY",
+      "status": "IMPLEMENTED_SAMPLE",
       "body_required": true,
       "body": {
         "type": "object",
@@ -9422,7 +9526,13 @@
       },
       "headers": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "x-chat-key": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
         "required": [],
         "additionalProperties": true
       },
@@ -9472,7 +9582,8 @@
             "mode": {
               "type": "string",
               "enum": [
-                "mock"
+                "mock",
+                "real"
               ]
             },
             "id": {
@@ -9485,6 +9596,16 @@
                 "ASSISTANT",
                 "USER",
                 "SYSTEM"
+              ]
+            },
+            "fallback_reason": {
+              "type": "string",
+              "enum": [
+                "PROVIDER_NOT_CONFIGURED",
+                "PROVIDER_UNAVAILABLE",
+                "PROVIDER_INVALID_RESPONSE",
+                "NO_MATCH",
+                "MODEL_SELECTED"
               ]
             }
           },
@@ -9500,7 +9621,7 @@
       "route": "/me/chat/sessions",
       "internal": false,
       "service": "M4",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED_SAMPLE",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -9520,6 +9641,22 @@
             "default": 1
           },
           "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message_page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000,
+            "default": 1
+          },
+          "message_size": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
@@ -9559,6 +9696,113 @@
                   "created_at": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "messages": {
+                    "type": "object",
+                    "properties": {
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "session_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "content": {
+                              "type": "string",
+                              "maxLength": 10000
+                            },
+                            "product_cards": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "product_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "current_price_vnd": {
+                                    "type": "integer",
+                                    "format": "int64",
+                                    "maximum": 9007199254740991
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  }
+                                },
+                                "required": [
+                                  "product_id",
+                                  "current_price_vnd",
+                                  "status"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "maxItems": 100
+                            },
+                            "fallback": {
+                              "type": "boolean"
+                            },
+                            "mode": {
+                              "type": "string",
+                              "enum": [
+                                "mock",
+                                "real"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "role": {
+                              "type": "string",
+                              "enum": [
+                                "ASSISTANT",
+                                "USER",
+                                "SYSTEM"
+                              ]
+                            },
+                            "fallback_reason": {
+                              "type": "string",
+                              "enum": [
+                                "PROVIDER_NOT_CONFIGURED",
+                                "PROVIDER_UNAVAILABLE",
+                                "PROVIDER_INVALID_RESPONSE",
+                                "NO_MATCH",
+                                "MODEL_SELECTED"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "content"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "page": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "size": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100
+                      }
+                    },
+                    "required": [
+                      "items",
+                      "total",
+                      "page",
+                      "size"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "required": [
@@ -9597,7 +9841,7 @@
       "route": "/recommendations/for-you",
       "internal": false,
       "service": "M4",
-      "status": "MOCK_ONLY",
+      "status": "IMPLEMENTED_SAMPLE",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -9655,7 +9899,8 @@
             "mode": {
               "type": "string",
               "enum": [
-                "mock"
+                "mock",
+                "real"
               ]
             },
             "evaluation_status": {
@@ -9682,7 +9927,7 @@
       "route": "/products/{id}/related",
       "internal": false,
       "service": "M4",
-      "status": "MOCK_ONLY",
+      "status": "IMPLEMENTED_SAMPLE",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -11362,7 +11607,7 @@
       "route": "/ai/metrics",
       "internal": false,
       "service": "M4",
-      "status": "MOCK_ONLY",
+      "status": "IMPLEMENTED_SAMPLE",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -11421,7 +11666,8 @@
             "mode": {
               "type": "string",
               "enum": [
-                "mock"
+                "mock",
+                "real"
               ]
             }
           },

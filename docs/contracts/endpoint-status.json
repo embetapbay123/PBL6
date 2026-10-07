@@ -967,7 +967,7 @@
     "service": "M4",
     "module": "chat",
     "owner": "Công",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED_SAMPLE",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -980,7 +980,7 @@
     "service": "M4",
     "module": "chat",
     "owner": "Công",
-    "status": "MOCK_ONLY",
+    "status": "IMPLEMENTED_SAMPLE",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -993,7 +993,7 @@
     "service": "M4",
     "module": "chat",
     "owner": "Công",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED_SAMPLE",
     "roles": [
       "CUSTOMER"
     ]
@@ -1005,7 +1005,7 @@
     "service": "M4",
     "module": "recommendation",
     "owner": "Công",
-    "status": "MOCK_ONLY",
+    "status": "IMPLEMENTED_SAMPLE",
     "roles": [
       "CUSTOMER"
     ]
@@ -1017,7 +1017,7 @@
     "service": "M4",
     "module": "recommendation",
     "owner": "Công",
-    "status": "MOCK_ONLY",
+    "status": "IMPLEMENTED_SAMPLE",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -1174,7 +1174,7 @@
     "service": "M4",
     "module": "evaluation",
     "owner": "Công",
-    "status": "MOCK_ONLY",
+    "status": "IMPLEMENTED_SAMPLE",
     "roles": [
       "STORE_OWNER",
       "ADMIN"

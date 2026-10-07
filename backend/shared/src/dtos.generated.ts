@@ -1112,9 +1112,7 @@ export class UpdateRoleQueryDto {
 export class UpdateRoleHeadersDto {
 }
 export class CreateChatSessionBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
-  "anonymous_key"?: string;
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 10000},false),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 2000, "minLength": 1},false),defaultMessage:()=> 'Invalid contract field'}})
   "first_message"?: string;
 }
 export class CreateChatSessionPathDto {
@@ -1135,6 +1133,9 @@ export class SendChatMessagePathDto {
 export class SendChatMessageQueryDto {
 }
 export class SendChatMessageHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-chat-key"?: string;
 }
 export class ListOwnChatSessionsPathDto {
 }
@@ -1145,6 +1146,15 @@ export class ListOwnChatSessionsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "session_id"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1},false),defaultMessage:()=> 'Invalid contract field'}})
+  "message_page": number = 1;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
+  "message_size": number = 20;
 }
 export class ListOwnChatSessionsHeadersDto {
 }
