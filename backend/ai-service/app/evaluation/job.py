@@ -3,10 +3,9 @@ import os, uuid, json, hashlib, asyncio
 from datetime import datetime,timezone
 from sqlalchemy import create_engine,text
 from ..catalog import LiveCatalog
-from ..recommendation.als import fit
-from .ranking import split_temporal,evaluate
+from .pipeline import run
 
-def train(engine,candidates):
+def train(engine,candidates,products=None):
     started=datetime.now(timezone.utc)
     with engine.connect() as db:
         revision=db.execute(text('SELECT version FROM behavior_dataset_revision')).scalar_one()
@@ -14,17 +13,8 @@ def train(engine,candidates):
     if len(rows)>50000:raise ValueError('Dataset exceeds 50000-event budget')
     eligible=set(candidates);rows=[r for r in rows if r['product_id'] in eligible]
     if not rows:raise ValueError('No consented eligible training data')
-    training,validation,test=split_temporal(rows)
-    # Select configuration on validation only. The test fold is consulted once.
-    choices=[]
-    for regularization in (.1,1):
-        config={'regularization':regularization,'seed':17}
-        model=fit(training,**config)
-        quality=evaluate(model,training,validation,eligible)
-        choices.append((quality['model']['ndcg_at_k'],config,model))
-    _,config,artifact=max(choices,key=lambda c:c[0])
-    result=evaluate(artifact,training,test,eligible)
-    result.update({'data_source':'CONSENTED_DATABASE','split':'per-user timestamp 60/20/20; ties grouped','validation_events':len(validation),'train_events':len(training),'test_events':len(test),'config':config})
+    artifact,result=run(rows,eligible,products)
+    config=result['config'];result['data_source']='CONSENTED_DATABASE'
     dataset=hashlib.sha256(json.dumps(rows,default=str,sort_keys=True).encode()).hexdigest()
     mid,rid=str(uuid.uuid4()),str(uuid.uuid4());version='als-'+mid
     with engine.begin() as db:
@@ -41,7 +31,7 @@ async def main():
     engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1))
     try:
         candidates=await LiveCatalog().snapshot(str(uuid.uuid4()),pages=50)
-        print(json.dumps(train(engine,[p['id'] for p in candidates])))
+        print(json.dumps(train(engine,[p['id'] for p in candidates],candidates)))
     finally:engine.dispose()
 
 if __name__=='__main__':asyncio.run(main())

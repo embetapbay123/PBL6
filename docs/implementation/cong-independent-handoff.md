@@ -37,3 +37,8 @@ Chạy drill khi writers/test/jobs đã dừng trên môi trường dành riêng
 ## Trạng thái trách nhiệm
 
 PAY-01/PAY-04 và CORE-01/CORE-02 đã Done. #52/#55 và các task rộng #53/#56–61 giữ mở với phần còn thiếu rõ ràng. Không chuyển toàn bộ backlog sang Todo, không đóng task vì có DTO/test fixture. Checkout/Inventory/cancel/producer và UI giữ owner; Công tiếp tích hợp khi có điểm nối thật. Các tuần roadmap vẫn là mục tiêu theo kết quả demo, không phải ngày hoàn thành đã cam kết.
+
+
+## Evaluation tiếp theo — 07/10/2026
+
+Đã có [bộ kiểm soát AI độc lập](ai-evaluation-handoff.md): dataset synthetic versioned, Content/Behavioral baseline, pipeline chung với DB job, 13 case chat và report/rubric. Synthetic controls chạy đạt; đây chưa phải nghiệm thu hành vi thật hoặc generation với model. #56/#57/#58 giữ mở cho dataset/provider/manual review đúng acceptance, không dùng fixture để đóng task.
