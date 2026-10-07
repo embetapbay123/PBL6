@@ -98,7 +98,7 @@ export interface OperationInputs {
   getAiMetrics: {body?: undefined; path: {}; query: {"store_id"?: string}; headers: {} & Record<string, unknown>};
   getPersonalizationConsent: {body?: undefined; path: {}; query: {}; headers: {} & Record<string, unknown>};
   updatePersonalizationConsent: {body: {"status": "GRANTED" | "WITHDRAWN"; "expected_version": number}; path: {}; query: {}; headers: {} & Record<string, unknown>};
-  sepayCallback: {body: {"id": number; "transferType": "in" | "out"; "transferAmount": number; "accountNumber": string; "code"?: string | null; "content": string; "referenceCode"?: string}; path: {}; query: {}; headers: {"x-sepay-signature": string; "x-sepay-timestamp": string} & Record<string, unknown>};
+  sepayCallback: {body: {"id": number; "transferType": "in" | "out"; "transferAmount": number; "accountNumber": string; "code"?: string | null; "content": string; "referenceCode"?: string; "gateway"?: string; "transactionDate"?: string; "subAccount"?: string | null; "description"?: string | null; "accumulated"?: number}; path: {}; query: {}; headers: {"x-sepay-signature": string; "x-sepay-timestamp": string} & Record<string, unknown>};
   ResolveContext: {body: {"token": string}; path: {}; query: {}; headers: {"x-correlation-id"?: string} & Record<string, unknown>};
   ActiveStores: {body?: undefined; path: {}; query: {}; headers: {"x-correlation-id"?: string} & Record<string, unknown>};
   QuoteVariants: {body: {"items": Array<{"variant_id": string; "store_id": string; "quantity": number}>}; path: {}; query: {}; headers: {"x-correlation-id"?: string} & Record<string, unknown>};

@@ -2275,13 +2275,18 @@
     "mode": "fixture",
     "request": {
       "body": {
-        "id": 0,
+        "id": 1,
         "transferType": "in",
-        "transferAmount": 0,
+        "transferAmount": 1,
         "accountNumber": "fixture-value",
         "code": "fixture-value",
         "content": "fixture-value",
-        "referenceCode": "fixture-value"
+        "referenceCode": "fixture-value",
+        "gateway": "fixture-value",
+        "transactionDate": "2026-10-07 10:30:00",
+        "subAccount": "fixture-value",
+        "description": "fixture-value",
+        "accumulated": 0
       },
       "path": {},
       "query": {},

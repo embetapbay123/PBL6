@@ -3,7 +3,7 @@ export interface PaymentRow {
   id:string;order_id:string;method:'COD'|'SANDBOX';status:string;
   payable_vnd:string;collectible_vnd:string;collected_vnd:string;refunded_vnd:string;version:number;
 }
-export interface AttemptRow {id:string;payment_id:string;status:string;provider_reference:string;amount_vnd:string;qr_url:string|null;expires_at:Date|null}
+export interface AttemptRow {id:string;payment_id:string;status:string;provider_reference:string;amount_vnd:string;qr_url:string|null;expires_at:Date|null;provider:string}
 export class PaymentRepository {
   constructor(readonly manager:EntityManager) {}
   async lockOrder(id:string) {

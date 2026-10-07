@@ -8,6 +8,8 @@ Owner: Công
 - `GET /orders/{id}/refund` — getOrderRefund: **NOT_IMPLEMENTED**
 - `POST /payment-callbacks/sepay` — sepayCallback: **NOT_IMPLEMENTED**
 
+PAY-02 has real authenticated callback receipt/Payment persistence with durable follow-up; full acceptance remains NOT_IMPLEMENTED pending Order/inventory/recovery/refund integration. Read [callback handoff](../../../../docs/implementation/payment-callback-handoff.md). ACK 200 confirms persistence, not Order completion. Apply append-only M2 migrations 006/007. Legacy sandbox is provider-scoped; extra SePay transfers require reconciliation.
+
 Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
 
 ## Payment/COD handoff — PAY-01/PAY-04

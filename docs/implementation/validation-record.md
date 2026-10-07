@@ -127,3 +127,10 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 [PR #90](https://github.com/embetapbay123/PBL6/pull/90) đã squash merge vào main (`1b6028a`) ngày 06/10/2026 sau self-review và bypass được chủ repo cho phép. [CI main](https://github.com/embetapbay123/PBL6/actions/runs/37455617355) đạt; PR checks đạt 168 Node unit, 41 integration, 23 Python, 7 Web e2e và Flutter. [Handoff trên main](https://github.com/embetapbay123/PBL6/blob/main/docs/implementation/cong-week2-handoff.md).
 
 PAY-01/PAY-04 completed; AI-01 còn nguồn thật. ORDER-05/checkout/callback/refund và producer giữ owner, không đóng thay hoặc đổi metadata rộng.
+
+
+## PAY-02 durable callback receipt — 07/10/2026
+
+Nhánh codex/payment-callback-receipts: HMAC raw body trước DTO, official optional fields, provider-scoped receipt/PaymentEvent/Payment/audit/follow-up atomic, late/sibling và extra transfer reconciliation; typed completion port dùng cùng manager. M2 migrations 006/007 append-only; không ghi Order transition hoặc fake consume/refund.
+
+Local checks đạt: docs/OpenAPI/drift (99 public, 11 internal, 7 events), backend/Web build, 168 Node unit, 53 PostgreSQL/HTTP integration (12 callback tests), 23 Python, 7 Web e2e, 4 fresh schema suites/12 negative invariants. Test callback HTTP dùng server test/schema cô lập và key giả riêng; chưa chứng nhận webhook từ dashboard SePay. Flutter/checks fresh head theo CI PR. #52 còn Order/inventory worker consume/RECOVERING/restart và Refund/provider acceptance; metadata callback vẫn NOT_IMPLEMENTED toàn scope.

@@ -851,7 +851,7 @@ export interface paths {
         put?: never;
         /**
          * Nhận callback sandbox đã ký
-         * @description Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.
          */
         post: operations["sandboxCallback"];
         delete?: never;
@@ -1777,7 +1777,7 @@ export interface paths {
         put?: never;
         /**
          * sepayCallback
-         * @description HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton.
+         * @description HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.
          */
         post: operations["sepayCallback"];
         delete?: never;
@@ -2680,6 +2680,12 @@ export interface components {
             code?: string | null;
             content: string;
             referenceCode?: string;
+            gateway?: string;
+            /** @example 2026-10-07 10:30:00 */
+            transactionDate?: string;
+            subAccount?: string | null;
+            description?: string | null;
+            accumulated?: number;
         };
     };
     responses: never;
@@ -7562,7 +7568,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Not found or outside scope */
+            /** @description Callback reference/amount/conflict/configuration error */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7571,7 +7577,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description State/version/idempotency conflict */
+            /** @description Callback reference/amount/conflict/configuration error */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7580,7 +7586,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Validation failure */
+            /** @description Callback reference/amount/conflict/configuration error */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7600,6 +7606,15 @@ export interface operations {
             };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12236,8 +12251,44 @@ export interface operations {
                     };
                 };
             };
+            /** @description Callback reference/amount/conflict/configuration error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

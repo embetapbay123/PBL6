@@ -80,6 +80,8 @@ def main():
             return schema['default']
         if 'enum' in schema:
             return schema['enum'][0]
+        if 'pattern' in schema and 'example' in schema:
+            return copy.deepcopy(schema['example'])
         kind = schema.get('type')
         if kind == 'object':
             props = schema.get('properties', {})
