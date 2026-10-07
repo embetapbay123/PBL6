@@ -6612,7 +6612,7 @@
             }
           },
           "404": {
-            "description": "Not found or outside scope",
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6622,7 +6622,7 @@
             }
           },
           "409": {
-            "description": "State/version/idempotency conflict",
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6632,7 +6632,7 @@
             }
           },
           "422": {
-            "description": "Validation failure",
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6653,6 +6653,16 @@
           },
           "501": {
             "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6683,7 +6693,7 @@
           "SANDBOX_PROVIDER"
         ],
         "x-data-scope": "SIGNED_CALLBACK",
-        "description": "Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.",
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
@@ -13072,6 +13082,46 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [],
@@ -13089,7 +13139,7 @@
             }
           }
         },
-        "description": "HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton.",
+        "description": "HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.",
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
@@ -16433,7 +16483,8 @@
         "properties": {
           "id": {
             "type": "integer",
-            "maximum": 9007199254740991
+            "maximum": 9007199254740991,
+            "minimum": 1
           },
           "transferType": {
             "type": "string",
@@ -16444,7 +16495,7 @@
           },
           "transferAmount": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 9007199254740991
           },
           "accountNumber": {
@@ -16463,6 +16514,31 @@
           "referenceCode": {
             "type": "string",
             "maxLength": 200
+          },
+          "gateway": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "transactionDate": {
+            "type": "string",
+            "maxLength": 19,
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "example": "2026-10-07 10:30:00"
+          },
+          "subAccount": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10000
+          },
+          "accumulated": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "required": [

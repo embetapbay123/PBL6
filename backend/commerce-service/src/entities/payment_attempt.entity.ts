@@ -18,4 +18,6 @@ export class PaymentAttempt {
   qr_url!: string | null;
   @Column({type:'timestamptz',nullable:true})
   expires_at!: Date | null;
+  @Column({type:'varchar',nullable:false})
+  provider!: 'SEPAY_TEST' | 'LEGACY_SANDBOX';
 }

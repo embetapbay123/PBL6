@@ -1448,11 +1448,11 @@ export class UpdatePersonalizationConsentQueryDto {
 export class UpdatePersonalizationConsentHeadersDto {
 }
 export class SepayCallbackBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991, "minimum": 1},true),defaultMessage:()=> 'Invalid contract field'}})
   "id"!: number;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["in", "out"]},true),defaultMessage:()=> 'Invalid contract field'}})
   "transferType"!: "in" | "out";
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
   "transferAmount"!: number;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
   "accountNumber"!: string;
@@ -1462,6 +1462,16 @@ export class SepayCallbackBodyDto {
   "content"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
   "referenceCode"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "gateway"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 19, "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$", "example": "2026-10-07 10:30:00"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "transactionDate"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "nullable": true, "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "subAccount"?: string | null;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "nullable": true, "maxLength": 10000},false),defaultMessage:()=> 'Invalid contract field'}})
+  "description"?: string | null;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},false),defaultMessage:()=> 'Invalid contract field'}})
+  "accumulated"?: number;
 }
 export class SepayCallbackPathDto {
 }

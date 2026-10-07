@@ -30,7 +30,7 @@ export class PaymentApiService {
       if(!payment || payment.method!=='SANDBOX' || !['PENDING','FAILED'].includes(payment.status) || BigInt(payment.payable_vnd)!==BigInt(order.payable_vnd) || BigInt(payment.collected_vnd)!==0n)throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment không cho phép thử thanh toán.');
       const existing=await repo.activeAttempt(payment.id);
       if(existing){
-        if(existing.status==='SUCCEEDED' || BigInt(existing.amount_vnd)!==BigInt(payment.payable_vnd) || !existing.qr_url || !existing.expires_at)throw new ApiError(409,'ATTEMPT_RECONCILIATION_REQUIRED','Attempt hiện tại cần đối soát; không tạo reference thứ hai.');
+        if(existing.provider!=='SEPAY_TEST' || existing.status==='SUCCEEDED' || BigInt(existing.amount_vnd)!==BigInt(payment.payable_vnd) || !existing.qr_url || !existing.expires_at)throw new ApiError(409,'ATTEMPT_RECONCILIATION_REQUIRED','Attempt hiện tại cần đối soát; không tạo reference thứ hai.');
         return mapAttempt(existing);
       }
       const attemptId=randomUUID(),reference='PBL6'+attemptId.replace(/-/g,'').toUpperCase();
