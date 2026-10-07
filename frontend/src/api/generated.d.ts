@@ -1419,7 +1419,7 @@ export interface paths {
         put?: never;
         /**
          * Gửi câu hỏi cho chatbot RAG
-         * @description Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. Real mode: Guest must send the server-issued X-Chat-Key; Customer must own the session. Missing Guest key is rejected before body validation.
          */
         post: operations["sendChatMessage"];
         delete?: never;
@@ -2164,11 +2164,13 @@ export interface components {
             }[];
             fallback?: boolean;
             /** @enum {string} */
-            mode?: "mock";
+            mode?: "mock" | "real";
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
             role?: "ASSISTANT" | "USER" | "SYSTEM";
+            /** @enum {string} */
+            fallback_reason?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED";
         };
         RecommendationResult: {
             model_version?: string;
@@ -2178,7 +2180,7 @@ export interface components {
             /** @description ID Product đã xem gần đây, chỉ khi Customer có consent; luôn lọc trạng thái Product/Store hiện hành, không có consent thì mảng rỗng. */
             recently_viewed_product_ids: string[];
             /** @enum {string} */
-            mode?: "mock";
+            mode?: "mock" | "real";
             /** @enum {string} */
             evaluation_status?: "NOT_RUN" | "RUNNING" | "COMPLETED" | "FAILED";
         };
@@ -2285,7 +2287,6 @@ export interface components {
             version: number;
         };
         ChatSessionCreate: {
-            anonymous_key?: string;
             first_message?: string;
         };
         ChatSession: {
@@ -2296,6 +2297,7 @@ export interface components {
             anonymous_key?: string;
             /** Format: date-time */
             created_at: string;
+            messages?: components["schemas"]["PageChatMessages"];
         };
         Category: {
             /** Format: uuid */
@@ -2385,7 +2387,7 @@ export interface components {
                 [key: string]: unknown;
             };
             /** @enum {string} */
-            mode?: "mock";
+            mode?: "mock" | "real";
         };
         VoucherUsage: {
             /** Format: uuid */
@@ -2686,6 +2688,12 @@ export interface components {
             subAccount?: string | null;
             description?: string | null;
             accumulated?: number;
+        };
+        PageChatMessages: {
+            items: components["schemas"]["ChatMessage"][];
+            total: number;
+            page: number;
+            size: number;
         };
     };
     responses: never;
@@ -10495,7 +10503,9 @@ export interface operations {
     sendChatMessage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Chat-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -10600,6 +10610,9 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                session_id?: string;
+                message_page?: number;
+                message_size?: number;
             };
             header?: never;
             path?: never;

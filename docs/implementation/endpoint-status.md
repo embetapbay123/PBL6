@@ -4,6 +4,8 @@ OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ 
 
 Sau merge PR #90 trên main: Payment read/attempt và consent GET/PATCH đã có handler thật; public 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending. Payment callback/Refund, confirm checkout và các producer M1 chưa đủ vẫn giữ scope riêng. Có handler không tự đóng issue trước review/merge.
 
+Sau phần M4 runtime độc lập: 28 IMPLEMENTED / 14 IMPLEMENTED_SAMPLE / 57 NOT_IMPLEMENTED. Sáu API recommendation/chat/metrics có nhánh `AI_MODE=real`, vẫn đánh SAMPLE vì provider, chất lượng dữ liệu và nghiệm thu toàn phạm vi còn thiếu. Xem [AI runtime handoff](ai-runtime-handoff.md); status không tự đóng AI-02/03/04.
+
 Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope), 5 stub. Lookup M3 đã merge vào main qua PR #87 ngày 06/10/2026. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
 
 | API | Operation | Service / module | Owner | Trạng thái |
@@ -86,11 +88,11 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `GET /admin/orders` | listAllOrders | M2 / report | Hoa | IMPLEMENTED |
 | `GET /admin/dashboard` | getPlatformDashboard | M2 / report | Hoa | NOT_IMPLEMENTED |
 | `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | NOT_IMPLEMENTED |
-| `POST /chat/sessions` | createChatSession | M4 / chat | Công | NOT_IMPLEMENTED |
-| `POST /chat/sessions/{id}/messages` | sendChatMessage | M4 / chat | Công | MOCK_ONLY |
-| `GET /me/chat/sessions` | listOwnChatSessions | M4 / chat | Công | NOT_IMPLEMENTED |
-| `GET /recommendations/for-you` | getForYou | M4 / recommendation | Công | MOCK_ONLY |
-| `GET /products/{id}/related` | getRelatedProducts | M4 / recommendation | Công | MOCK_ONLY |
+| `POST /chat/sessions` | createChatSession | M4 / chat | Công | IMPLEMENTED_SAMPLE |
+| `POST /chat/sessions/{id}/messages` | sendChatMessage | M4 / chat | Công | IMPLEMENTED_SAMPLE |
+| `GET /me/chat/sessions` | listOwnChatSessions | M4 / chat | Công | IMPLEMENTED_SAMPLE |
+| `GET /recommendations/for-you` | getForYou | M4 / recommendation | Công | IMPLEMENTED_SAMPLE |
+| `GET /products/{id}/related` | getRelatedProducts | M4 / recommendation | Công | IMPLEMENTED_SAMPLE |
 | `PATCH /store/staff/{id}` | updateStaff | M3 / staff | Trí | NOT_IMPLEMENTED |
 | `GET /store/reports` | getStoreReport | M2 / report | Hoa | NOT_IMPLEMENTED |
 | `GET /store/vouchers/{id}/usage` | getStoreVoucherUsage | M2 / voucher | Hoa | IMPLEMENTED |
@@ -103,7 +105,7 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `PATCH /admin/attribute-definitions/{id}` | updateAttributeDefinition | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `POST /admin/products/{id}/hide` | hideProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `POST /admin/products/{id}/restore` | restoreProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `GET /ai/metrics` | getAiMetrics | M4 / evaluation | Công | MOCK_ONLY |
+| `GET /ai/metrics` | getAiMetrics | M4 / evaluation | Công | IMPLEMENTED_SAMPLE |
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |

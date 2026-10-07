@@ -18,7 +18,7 @@ def response(row):
 def invalidate_dataset(db,erase=False):
     db.execute(text('UPDATE behavior_dataset_revision SET version=version+1'))
     # Already-trained artifacts may contain withdrawn behavior: serving them is unsafe.
-    if erase:db.execute(text("UPDATE model_version SET status='STALE' WHERE status='ACTIVE'"))
+    if erase:db.execute(text("UPDATE model_version SET status='STALE',artifact_json=NULL WHERE artifact_json IS NOT NULL OR status='ACTIVE'"))
 
 def purge_user(db,user_id):
     for table in ('search_history','recommendation_interaction','user_preference'):

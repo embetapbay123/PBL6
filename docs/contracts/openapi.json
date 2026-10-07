@@ -10636,7 +10636,7 @@
         "x-service-owner": "M4",
         "x-module": "chat",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/chat/sessions/{id}/messages": {
@@ -10654,6 +10654,16 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Chat-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$",
+              "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             }
           }
         ],
@@ -10773,11 +10783,11 @@
           "CUSTOMER"
         ],
         "x-data-scope": "PUBLIC_OR_OWN_SESSION",
-        "description": "Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. Real mode: Guest must send the server-issued X-Chat-Key; Customer must own the session. Missing Guest key is rejected before body validation.",
         "x-service-owner": "M4",
         "x-module": "chat",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/me/chat/sessions": {
@@ -10801,6 +10811,37 @@
           },
           {
             "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "message_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "message_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -10916,7 +10957,7 @@
         "x-service-owner": "M4",
         "x-module": "chat",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/recommendations/for-you": {
@@ -11032,7 +11073,7 @@
         "x-service-owner": "M4",
         "x-module": "recommendation",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/products/{id}/related": {
@@ -11177,7 +11218,7 @@
         "x-service-owner": "M4",
         "x-module": "recommendation",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/store/staff/{id}": {
@@ -12907,7 +12948,7 @@
         "x-service-owner": "M4",
         "x-module": "evaluation",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/me/personalization-consent": {
@@ -14524,7 +14565,8 @@
           "mode": {
             "type": "string",
             "enum": [
-              "mock"
+              "mock",
+              "real"
             ]
           },
           "id": {
@@ -14537,6 +14579,16 @@
               "ASSISTANT",
               "USER",
               "SYSTEM"
+            ]
+          },
+          "fallback_reason": {
+            "type": "string",
+            "enum": [
+              "PROVIDER_NOT_CONFIGURED",
+              "PROVIDER_UNAVAILABLE",
+              "PROVIDER_INVALID_RESPONSE",
+              "NO_MATCH",
+              "MODEL_SELECTED"
             ]
           }
         },
@@ -14580,7 +14632,8 @@
           "mode": {
             "type": "string",
             "enum": [
-              "mock"
+              "mock",
+              "real"
             ]
           },
           "evaluation_status": {
@@ -14970,13 +15023,10 @@
       "ChatSessionCreate": {
         "type": "object",
         "properties": {
-          "anonymous_key": {
-            "type": "string",
-            "maxLength": 200
-          },
           "first_message": {
             "type": "string",
-            "maxLength": 10000
+            "maxLength": 2000,
+            "minLength": 1
           }
         },
         "additionalProperties": false
@@ -14999,6 +15049,9 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "messages": {
+            "$ref": "#/components/schemas/PageChatMessages"
           }
         },
         "required": [
@@ -15304,7 +15357,8 @@
           "mode": {
             "type": "string",
             "enum": [
-              "mock"
+              "mock",
+              "real"
             ]
           }
         },
@@ -16547,6 +16601,39 @@
           "transferAmount",
           "accountNumber",
           "content"
+        ],
+        "additionalProperties": false
+      },
+      "PageChatMessages": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "maxItems": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
         ],
         "additionalProperties": false
       }
