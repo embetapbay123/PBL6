@@ -625,7 +625,7 @@
     "service": "M2",
     "module": "payment",
     "owner": "Công",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]

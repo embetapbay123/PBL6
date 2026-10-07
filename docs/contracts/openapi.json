@@ -6823,7 +6823,7 @@
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/orders": {
@@ -13715,7 +13715,8 @@
               "REQUESTED",
               "PROCESSING",
               "SUCCEEDED",
-              "FAILED"
+              "FAILED",
+              "UNKNOWN"
             ]
           }
         },

@@ -1,6 +1,6 @@
 import { EntityManager } from 'typeorm';
 import { PaymentPort, PaymentDraft, CodDraft, RefundDraft } from './payment.port';
-import { notImplemented } from '../../../shared/src/errors';
+import { RefundService } from './refund.service';
 import { ApiError } from '../../../shared/src/errors';
 import { PaymentRepository, PaymentRow } from './payment.repository';
 import { once, fingerprint } from '../../../shared/src/idempotency';
@@ -59,5 +59,5 @@ export class PaymentService implements PaymentPort {
       return result;
     });
   }
-  async requestRefund(_input:RefundDraft):Promise<never> {return notImplemented('Payment.requestRefund');}
+  async requestRefund(input:RefundDraft):Promise<OperationOutputs['getOrderRefund']> {return new RefundService(this.manager).request(input);}
 }

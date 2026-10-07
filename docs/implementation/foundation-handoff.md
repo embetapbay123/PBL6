@@ -1,6 +1,8 @@
 # Nền code đã bàn giao — 2.2.1
 
-Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ vẫn là 24 IMPLEMENTED, 8 IMPLEMENTED_SAMPLE, 4 MOCK_ONLY, 63 NOT_IMPLEMENTED ở public API; internal có 2 sample, 4 IMPLEMENTED (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope) và 5 stub.
+Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ hiện là 29 IMPLEMENTED, 14 IMPLEMENTED_SAMPLE, 56 NOT_IMPLEMENTED ở public API; internal có 2 sample, 4 IMPLEMENTED (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope) và 5 stub. Xem [trạng thái API](endpoint-status.md) và [M4 runtime](ai-runtime-handoff.md); có mode real không đồng nghĩa provider/chất lượng AI đã nghiệm thu.
+
+CORE-01 #1 và CORE-02 #50 đã self-review theo ủy quyền của chủ repo và chuyển Done ngày 07/10/2026. FLOW-01 #6 vẫn giữ mở cho phần ingress/producer thật chưa đủ; đóng task nền không đóng các task nghiệp vụ của member.
 
 ## Chạy và kiểm tra nền
 
@@ -71,7 +73,7 @@ QuoteVariants bàn giao ngày 05/10/2026: [README inventory](../../backend/catal
 
 Nest dùng `InternalClients.call(operation, body, correlation)` với generated input/output; M4 dùng InternalClient và Pydantic input. Timeout 1 giây, không retry trong HTTP request. Caller sai hoặc service credentials sai là lỗi vận hành 503; 404/409/422/501 nghiệp vụ được giữ. Response sai contract hoặc lỗi kết nối trả 503. Không log token/key. Command retry ở worker giữ nguyên ID/payload; đổi payload cùng ID là 409. Các service không đọc DB nhau.
 
-Order–Payment thuộc **cùng M2**, không gọi HTTP nội bộ. `orderPaymentUnitOfWork(source, manager => new PaymentService(manager), work)` truyền manager cho repository Order và PaymentPort. createForOrder/recordCodCollection/requestRefund đang là extension point 501; Hoa giữ Order/controller collectCod, Công triển khai tiền. Không gọi provider hoặc giữ transaction trong lúc gọi M1. Test chứng minh lỗi Payment rollback Order/Payment cùng transaction.
+Order–Payment thuộc **cùng M2**, không gọi HTTP nội bộ. `orderPaymentUnitOfWork(source, manager => new PaymentService(manager), work)` truyền manager cho repository Order và PaymentPort. createForOrder/recordCodCollection/requestRefund đã có implementation dùng manager của caller; Hoa giữ Order/collectCod/cancel/expiry, Công giữ tiền. Refund request chỉ REQUESTED, không chứng minh đã hoàn tiền; xem [Refund runtime](refund-runtime-handoff.md), provider hiện disabled. Không gọi provider hoặc giữ transaction trong lúc gọi M1. Test chứng minh lỗi Payment rollback Order/Payment cùng transaction.
 
 ## Event và tracking
 
