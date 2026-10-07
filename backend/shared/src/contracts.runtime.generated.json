@@ -5485,7 +5485,7 @@
       "route": "/orders/{id}/refund",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -5541,7 +5541,8 @@
                 "REQUESTED",
                 "PROCESSING",
                 "SUCCEEDED",
-                "FAILED"
+                "FAILED",
+                "UNKNOWN"
               ]
             }
           },

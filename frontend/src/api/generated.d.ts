@@ -1936,7 +1936,7 @@ export interface components {
             /** Format: int64 */
             amount_vnd: number;
             /** @enum {string} */
-            status: "REQUESTED" | "PROCESSING" | "SUCCEEDED" | "FAILED";
+            status: "REQUESTED" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "UNKNOWN";
         };
         OrderTransition: {
             /** @enum {string} */

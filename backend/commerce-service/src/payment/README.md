@@ -5,7 +5,7 @@ Owner: Công
 - `POST /orders/{id}/payment-attempts` — createPaymentAttempt: **IMPLEMENTED on main (PR #90)**
 - `GET /payments/{id}` — getPayment: **IMPLEMENTED on main (PR #90)**
 - `POST /payment-callbacks/sandbox` — sandboxCallback: **NOT_IMPLEMENTED**
-- `GET /orders/{id}/refund` — getOrderRefund: **NOT_IMPLEMENTED**
+- `GET /orders/{id}/refund` — getOrderRefund: **IMPLEMENTED**
 - `POST /payment-callbacks/sepay` — sepayCallback: **NOT_IMPLEMENTED**
 
 PAY-02 has real authenticated callback receipt/Payment persistence with durable follow-up; full acceptance remains NOT_IMPLEMENTED pending Order/inventory/recovery/refund integration. Read [callback handoff](../../../../docs/implementation/payment-callback-handoff.md). ACK 200 confirms persistence, not Order completion. Apply append-only M2 migrations 006/007. Legacy sandbox is provider-scoped; extra SePay transfers require reconciliation.
@@ -16,7 +16,9 @@ Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fi
 
 Run M2 migration `005_payment_foundation.sql`; 001–004 remain unchanged. `PaymentService` must be constructed with the caller's active `EntityManager`. It never opens a transaction or calls a provider. Order belongs to Hoa; Payment/COD money writes belong to Công. `createForOrder` matches method/payable to the locked Order, creates one Payment and COD obligation, and records audit/idempotency atomically. Pass a stable UUID operation ID; replay returns the original result, changed payload returns 409. Optional `correlation_id` preserves request correlation in audit.
 
-`recordCodCollection` requires SHIPPED/COD, PENDING Payment and exactly the Order payable/collectible amount. Collection, PaymentEvent, Payment and audit use the same manager; a subsequent Order failure rolls all of them back. Existing Hoa `collectCod` calls this port and returns HTTP 200 per contract. A second HTTP request with a stale Order version returns 409; direct worker/port replay uses the same operation ID. Completion/Shipment/Order version are still Hoa's responsibilities. Refund remains explicitly 501 (PAY-03); do not use it to report a successful cancellation/refund.
+`recordCodCollection` requires SHIPPED/COD, PENDING Payment and exactly the Order payable/collectible amount. Collection, PaymentEvent, Payment and audit use the same manager; a subsequent Order failure rolls all of them back. Existing Hoa `collectCod` calls this port and returns HTTP 200 per contract. A second HTTP request with a stale Order version returns 409; direct worker/port replay uses the same operation ID. Completion/Shipment/Order version are still Hoa's responsibilities.
+
+Refund request/read and a durable worker kernel are implemented independently; the production provider remains disabled. See [Refund runtime handoff](../../../../docs/implementation/refund-runtime-handoff.md). `requestRefund` uses the caller's manager and only requests a full collected online payment refund for a closed Order. UNKNOWN requires authoritative lookup; no fake provider is configurable and a request is never proof of returned money. Extra-transfer reconciliation and full PAY-03 acceptance remain open.
 
 Payment read joins only M2 Order for Customer ownership. Attempt creation requires owned SANDBOX/AWAITING_PAYMENT, current version, unexpired Order and unpaid Payment. Concurrent/retried POST reuses the persisted active attempt/reference/QR; FAILED may retry, UNKNOWN must not produce a second reference. Legacy active attempts without persisted instructions require reconciliation (409), not fake backfill. QR instructions do not change Payment to SUCCEEDED; only verified callback processing can do that (PAY-02).
 

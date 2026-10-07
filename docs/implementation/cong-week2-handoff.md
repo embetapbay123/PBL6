@@ -5,7 +5,7 @@ Nhánh `codex/cong-week2-foundations`, scope [PAY-01 #51](https://github.com/emb
 ## Hoa lấy điểm nối nào
 
 - [PaymentPort](../../backend/commerce-service/src/payment/payment.port.ts), [service](../../backend/commerce-service/src/payment/payment.service.ts), [README](../../backend/commerce-service/src/payment/README.md). Dùng manager của transaction tạo nhóm Order; `createForOrder` và `recordCodCollection` đã thật, giữ operation ID/payload qua worker retry và correlation. Không tạo repository global/transaction tiền thứ hai.
-- Payment read/attempt có runtime DTO/ownership/version/expiry; QR/reference do server cấp. Cấu hình tài khoản SePay Test là lựa chọn rõ ràng; thiếu config trả 503 trước ghi. Callback/refund vẫn 501; confirm vẫn chờ durable orchestration/kho đúng owner, không được mở success giả.
+- Payment read/attempt có runtime DTO/ownership/version/expiry; QR/reference do server cấp. Cấu hình tài khoản SePay Test là lựa chọn rõ ràng; thiếu config trả 503 trước ghi. Callback đã có [receipt/follow-up](payment-callback-handoff.md); Refund đã có [request/read/worker kernel](refund-runtime-handoff.md), provider vẫn disabled. Confirm vẫn chờ durable orchestration/kho đúng owner; request/receipt không chứng minh đã consume kho hoặc hoàn tiền ngân hàng.
 - Điểm gọi collectCod giữ logic Order/quyền/version của Hoa; chỉ bổ sung correlation và HTTP 200 đúng contract. Không tự đánh dấu ORDER-05 hoàn tất thay Hoa.
 
 ## Client và AI lấy điểm nối nào

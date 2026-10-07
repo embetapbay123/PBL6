@@ -87,10 +87,12 @@ test('concurrent commands with same ID commit one effect; changed payload confli
   expect((await source.query('SELECT count(*)::int AS count FROM bootstrap_effect WHERE event_id=$1',[id]))[0].count).toBe(1);
  }finally{await source.destroy();}
 });
-test('M4 recommendations identify mock mode and return current catalog product IDs',async()=>{
+test('M4 recommendations disclose the configured mode and return current catalog product IDs',async()=>{
  const session=await login();const response=await fetch(base+'/recommendations/for-you',{headers:{Authorization:'Bearer '+session.access_token}});
  expect(response.status).toBe(200);const result=await response.json() as any;
- expect(result.mode).toBe('mock');expect(result.source).toBe('FALLBACK');expect(result.evaluation_status).toBe('NOT_RUN');
+ const ready=await fetch('http://m4:3104/health/ready');expect(ready.status).toBe(200);
+ const configured=(await ready.json() as any).mode;expect(['mock','real']).toContain(configured);
+ expect(result.mode).toBe(configured);expect(result.source).toBe('FALLBACK');expect(result.evaluation_status).toBe('NOT_RUN');
  for(const id of result.product_ids)expect((await fetch(base+'/products/'+id)).status).toBe(200);
 });
 test('internal inventory contract admits only M2 and is hidden from gateway',async()=>{

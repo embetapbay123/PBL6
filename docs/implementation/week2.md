@@ -16,6 +16,8 @@ Sandbox callback/refund/recovery có lát cắt riêng. Chỉ demo thành công 
 
 Phần M4 độc lập của Công có [AI runtime handoff](ai-runtime-handoff.md): session/Guest key/history, retrieval Catalog có kiểm version, adapter model mặc định none, recommendation baseline/ALS offline và metrics đúng scope. Chỉ bật `AI_MODE=real` sau migration 006; provider chưa cấu hình thì fallback có lý do, không nhận là AI/model đã nghiệm thu. AI-02/03/04 vẫn cần dữ liệu/provider/bằng chứng chất lượng theo issue; các module Cart/Checkout/Inventory của owner khác không được thay bằng fake để đóng task.
 
+Hoa đã có [Refund request/read/worker kernel](refund-runtime-handoff.md) để nối cancel/expiry cùng transaction Order; provider hiện disabled, Refund REQUESTED/UNKNOWN không phải tiền đã hoàn. Normal late payment của Order đóng có job ổn định; tiền chuyển dư và RECONCILE_REQUIRED giữ scope riêng, không tự đóng theo khoản chính.
+
 ## Phân công và thứ tự
 
 | Người / GitHub | Task chính theo thứ tự | Task tiếp khi phần chính đạt | Đầu ra bàn giao |

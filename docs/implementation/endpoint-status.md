@@ -4,7 +4,7 @@ OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ 
 
 Sau merge PR #90 trên main: Payment read/attempt và consent GET/PATCH đã có handler thật; public 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending. Payment callback/Refund, confirm checkout và các producer M1 chưa đủ vẫn giữ scope riêng. Có handler không tự đóng issue trước review/merge.
 
-Sau phần M4 runtime độc lập: 28 IMPLEMENTED / 14 IMPLEMENTED_SAMPLE / 57 NOT_IMPLEMENTED. Sáu API recommendation/chat/metrics có nhánh `AI_MODE=real`, vẫn đánh SAMPLE vì provider, chất lượng dữ liệu và nghiệm thu toàn phạm vi còn thiếu. Xem [AI runtime handoff](ai-runtime-handoff.md); status không tự đóng AI-02/03/04.
+Sau phần M4 và Refund runtime độc lập: 29 IMPLEMENTED / 14 IMPLEMENTED_SAMPLE / 56 NOT_IMPLEMENTED. Refund read kiểm quyền thật; provider refund vẫn disabled, PAY-03 chưa đóng. Sáu API recommendation/chat/metrics có nhánh `AI_MODE=real`, vẫn đánh SAMPLE vì provider, chất lượng dữ liệu và nghiệm thu toàn phạm vi còn thiếu. Xem [AI runtime handoff](ai-runtime-handoff.md), [Refund handoff](refund-runtime-handoff.md); status không tự đóng AI-02/03/04 hoặc PAY-03.
 
 Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope), 5 stub. Lookup M3 đã merge vào main qua PR #87 ngày 06/10/2026. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
 
@@ -60,7 +60,7 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | IMPLEMENTED |
 | `GET /payments/{id}` | getPayment | M2 / payment | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sandbox` | sandboxCallback | M2 / payment | Công | NOT_IMPLEMENTED |
-| `GET /orders/{id}/refund` | getOrderRefund | M2 / payment | Công | NOT_IMPLEMENTED |
+| `GET /orders/{id}/refund` | getOrderRefund | M2 / payment | Công | IMPLEMENTED |
 | `GET /me/orders` | listOwnOrders | M2 / order | Hoa | IMPLEMENTED |
 | `GET /me/orders/{id}` | getOwnOrder | M2 / order | Hoa | IMPLEMENTED |
 | `POST /me/orders/{id}/cancel` | cancelOwnOrder | M2 / order | Hoa | NOT_IMPLEMENTED |

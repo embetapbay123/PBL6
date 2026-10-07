@@ -7,6 +7,7 @@ import { moneyNumber } from '../../../shared/src/money';
 import { PaymentRepository, AttemptRow } from './payment.repository';
 import { mapPayment } from './payment.service';
 import { sepayTestQr } from './qr.provider';
+import { mapRefund } from './refund.service';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 function mapAttempt(row:AttemptRow):OperationOutputs['createPaymentAttempt'] {
   return {id:row.id,status:row.status,provider:'SEPAY_TEST',provider_reference:row.provider_reference,payment_code:row.provider_reference,
@@ -18,6 +19,11 @@ export class PaymentApiService {
     const payment=await new PaymentRepository(this.source.manager).owned(id,auth.user_id);
     if(!payment)throw new ApiError(404,'NOT_FOUND','Không tìm thấy Payment.');
     return mapPayment(payment);
+  }
+  async getOrderRefund(id:string,auth:{user_id:string}) {
+    const [row]=await this.source.manager.query('SELECT r.* FROM refund r JOIN "order" o ON o.id=r.order_id WHERE o.id=$1 AND o.customer_user_id=$2',[id,auth.user_id]);
+    if(!row)throw new ApiError(404,'NOT_FOUND','Không tìm thấy Refund của bạn.');
+    return mapRefund(row);
   }
   async createPaymentAttempt(id:string,input:OperationInputs['createPaymentAttempt']['body'],auth:{user_id:string},correlation:string) {
     return this.source.transaction(async manager=>{
