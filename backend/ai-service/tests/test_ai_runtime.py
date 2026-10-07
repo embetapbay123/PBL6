@@ -126,11 +126,13 @@ def test_training_restart_durable_and_withdrawal_erases_artifact(engine):
     with engine.begin() as db:
         for i,p in enumerate(c.items):
             db.execute(text("INSERT INTO recommendation_interaction(user_id,product_id,event_id,event_type,weight,occurred_at) VALUES(:u,:p,:e,'VIEW',1,:at)"),{'u':user,'p':p['id'],'e':str(i),'at':at+timedelta(milliseconds=i+1)})
-    result=train(engine,[p['id'] for p in c.items]);assert result['train_events']<20
+    result=train(engine,[p['id'] for p in c.items],c.items);assert result['train_events']<20
+    assert result['content_baseline_status']=='COMPLETED'
     with engine.connect() as db:
         artifact=db.execute(text('SELECT artifact_json FROM model_version')).scalar_one()
         assert user in artifact['users']
-        assert db.execute(text('SELECT raw_result FROM model_evaluation')).scalar_one()['data_source']=='CONSENTED_DATABASE'
+        stored=db.execute(text('SELECT raw_result FROM model_evaluation')).scalar_one()
+        assert stored['data_source']=='CONSENTED_DATABASE' and stored['content_baseline']==result['content_baseline']
     ConsentService(engine).update(user,{'status':'WITHDRAWN','expected_version':1})
     with engine.connect() as db:
         row=db.execute(text('SELECT status,artifact_json FROM model_version')).first()

@@ -59,3 +59,8 @@ Evaluation chia timestamp theo từng User 60/20/20, timestamp bằng nhau nằm
 Metrics phải resolve scope qua M3. Admin xem platform/lọc Store; Owner chỉ Store của mình. Trace nhiều Store hoặc không Store bị loại khỏi aggregate Owner; không trả model/global evaluation/dataset count cho Owner. Evaluation riêng Store chưa được tạo bởi job global, nên Owner có thể `NOT_RUN`; không đẩy metric toàn sàn vào response Store.
 
 Các test PostgreSQL dùng schema cô lập, Catalog/provider test double có nhãn test. Test không chứng minh model ngoài đời, độ chính xác RAG trên câu hỏi thật, hay producer M1/M2 đầy đủ. Các issue rộng giữ mở đến khi đủ bằng chứng riêng: producer thật #55; dataset/quality/report #56/#58; provider và latency/cost benchmark #57; checkout/Refund/recovery giữ đúng owner và scope #52/#53.
+
+
+## Evaluation controls cập nhật 07/10/2026
+
+[Dataset/runner/rubric bàn giao](ai-evaluation-handoff.md) chạy synthetic controls và thêm Content/Behavioral baseline train-only bên cạnh popularity. DB job và benchmark dùng chung pipeline/config/split; quality_pass phải vượt mỗi baseline ít nhất một metric, thiếu Content baseline giữ NOT_RUN. Có raw result, runtime versions và source hashes; không publish synthetic artifact vào serving DB. Chất lượng model/Catalog/dataset thực và pronoun-only context còn nghiệm thu riêng.
