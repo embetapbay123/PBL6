@@ -146,3 +146,16 @@ Demo gateway với AI_MODE=real, provider none: tạo Guest session 201, gửi c
 Local: 168 Node unit, 63 PostgreSQL/HTTP integration (10 Refund cases), backend/Web build, docs/OpenAPI/drift và 4 fresh schema suites/12 negative invariants đạt. M2 008/009 đã apply append-only. Gateway chứng minh guard trước path validation: 401 thiếu auth, 422 UUID sai khi đã auth, 404 Refund không tồn tại. Disabled worker CLI trả DISABLED; không gọi provider, không giả hoàn tiền.
 
 Test provider nằm trong schema cô lập, kiểm đủ transaction/request replay/amount/state/ownership/concurrency, UNKNOWN lookup, same-ID retry, crash lease, audit rollback/restart, FK operation/amount và late-payment/extra-transfer boundary. Integration bootstrap kiểm mode M4 đúng readiness thay vì ép mock khi môi trường local đã bật real. [Refund handoff](refund-runtime-handoff.md) giữ provider/reconciliation/cancel acceptance mở; receipt test không chứng minh chuyển tiền ngân hàng.
+
+
+## Công independent runtime merged / ops evidence — 07/10/2026
+
+[PR #92 CI](https://github.com/embetapbay123/PBL6/actions/runs/37565657522) và [PR #93 CI](https://github.com/embetapbay123/PBL6/actions/runs/37567270997) PASS đầy đủ, đã self-review/self-merge bằng quyền bypass được chủ repo cho phép; main tương ứng 079f683 và d1c9a8d. Không có approval member khác.
+
+Ops local: 54 Python tests PASS (pool lifecycle/header isolation, timeout overrides và related page reuse/missing reference thêm 4 cases); 2 restore canonicalization tests PASS; docs/OpenAPI/drift 99 public +11 internal/7 event PASS. Shared client pool50/keep-alive20, timeout1s, giữ scope và correlation. Full CI theo PR head mới, không suy từ PR trước.
+
+k6 smoke Catalog p95 508.81 ms/200 requests/0% lỗi; related final 1669.95 ms/201 requests/0% lỗi, 100 VU/30s/think20s, 3 Product thật, M4 real/provider none. Related trước tối ưu FAIL được giữ raw. Đây chưa phải NFR toàn marketplace, load model hay peak resources.
+
+Restore 4 DB vào target mới PASS schema/count/migration/invariant, run 20261007035228. Lần đầu CHECK cast deparse làm hash lệch; normalize đúng literal varchar-array→text đã kiểm không che đổi enum/cột/toán tử. Nguồn và restore khớp sau normalization; không sửa row hoặc migration. Không overwrite service DB, không claim row-content checksum/cross-service snapshot/failover.
+
+[Record JSON](evidence/2026-10-07-cong-ops.json) lưu số liệu/hash và tên raw artifact local được ignore. [Handoff](cong-independent-handoff.md) giữ các task tích hợp/provider/quality mở và owner đúng. Không commit dump, .env, key hoặc group-message template.

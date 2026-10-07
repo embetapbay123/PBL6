@@ -33,8 +33,11 @@ class RecommendationRuntime:
         return result
 
     async def related(self,id,query,correlation):
-        reference=await self.catalog.product(id,correlation)
-        candidates=await self.catalog.snapshot(correlation)
+        if hasattr(self.catalog,'related_context'):
+            reference,candidates=await self.catalog.related_context(id,correlation)
+        else:
+            reference=await self.catalog.product(id,correlation)
+            candidates=await self.catalog.snapshot(correlation)
         terms=set(tokens(public_text(reference)));refprice=price(reference)
         score=lambda p:(-(10*(p.get('product_type_id')==reference.get('product_type_id'))+len(terms.intersection(tokens(public_text(p))))),abs(price(p)-refprice),p['id'])
         ordered=sorted([p for p in candidates if p['id']!=id],key=score)

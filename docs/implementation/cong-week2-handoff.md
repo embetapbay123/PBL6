@@ -19,3 +19,8 @@ Nhánh `codex/cong-week2-foundations`, scope [PAY-01 #51](https://github.com/emb
 Chạy migration theo README: M2 thêm 005, M4 thêm 004/005. Không sửa 001–003 hoặc commit `.env`; cập nhật `.env.example` với cấu hình QR để trống, mặc định disabled. Compose có thêm worker-m4. 99 public/11 internal/7 event không thay request/response: public trên main là 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending; internal giữ 4 implemented / 2 sample / 5 stub. collectCod và các task nghiệp vụ rộng vẫn theo acceptance của owner, không nâng metadata chỉ vì port đã có.
 
 Test mới dùng PostgreSQL, transaction/audit rollback, cạnh tranh/replay/amount/state, guard/DTO và HTTP COD; M4 dùng schema test riêng, consent/version/deletion/retention/inbox rollback và broker fixture. Bằng chứng chạy nằm trong [validation record](validation-record.md). PR #90 đã self-review và merge bằng bypass theo yêu cầu chủ repo; không có approval của member khác. Hoa tiếp nghiệm thu controller/luồng Order với port đã bàn giao. Week 2/roadmap là mục tiêu, Kanban chỉ chuyển Review khi có PR và test; không tự đóng issue theo lịch.
+
+
+## Cập nhật 07/10/2026
+
+PR #91/#92/#93 đã merge, gồm callback receipt, AI runtime và Refund kernel. Các số lượng API/migration ở phần PR #90 phía trên là lịch sử. Trạng thái hiện hành theo [endpoint status](endpoint-status.md); cách chạy và trách nhiệm còn lại theo [bàn giao độc lập](cong-independent-handoff.md). M2 migration tới 009, M4 tới 006; provider model/refund chưa chọn vẫn fallback/disabled rõ ràng, không giả nghiệm thu hoàn tiền hoặc AI chất lượng thực.

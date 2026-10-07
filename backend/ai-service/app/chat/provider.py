@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 import httpx
 from ..safety import redact, price
+from ..network import session
 
 PROMPT_VERSION='catalog-selector-v1'
 
@@ -19,11 +20,12 @@ class Selection:
     actual_tokens: int|None=None
 
 class CatalogSelector:
-    def __init__(self, *, provider=None, url=None, model=None, transport=None):
+    def __init__(self, *, provider=None, url=None, model=None, transport=None,http_client=None):
         self.provider=provider or os.getenv('CHAT_PROVIDER','none')
         self.url=(url or os.getenv('CHAT_MODEL_URL','')).rstrip('/')
         self.model=model or os.getenv('CHAT_MODEL','')
         self.transport=transport
+        self.http_client=http_client
         if self.provider not in ('none','ollama'):raise ValueError('Unsupported CHAT_PROVIDER')
         if self.provider=='ollama':
             parsed=urlparse(self.url)
@@ -42,8 +44,8 @@ class CatalogSelector:
         try:
             # Overall deadline includes streaming/chunked response; HTTP timeout alone is per I/O.
             async with asyncio.timeout(2):
-                async with httpx.AsyncClient(timeout=2,transport=self.transport,follow_redirects=False) as client:
-                    async with client.stream('POST',self.url+'/api/chat',headers={'X-Correlation-Id':correlation} if correlation else {},json={'model':self.model,'messages':messages,'stream':False,'format':schema,'options':{'temperature':0,'num_predict':128}}) as response:
+                async with session(self.http_client,self.transport) as client:
+                    async with client.stream('POST',self.url+'/api/chat',timeout=2,headers={'X-Correlation-Id':correlation} if correlation else {},json={'model':self.model,'messages':messages,'stream':False,'format':schema,'options':{'temperature':0,'num_predict':128}}) as response:
                         if response.status_code!=200:return fallback('PROVIDER_UNAVAILABLE')
                         data=bytearray()
                         async for chunk in response.aiter_bytes():
