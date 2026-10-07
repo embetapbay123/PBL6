@@ -33,7 +33,7 @@ Dataset version là cố định; không đổi split/seed sau khi xem test đ�
 | Train-popularity | 0.0483 | 0.1208 | 0.0880 |
 | Content/Behavioral | 0.4000 | 1.0000 | 0.8627 |
 
-60 user được đánh giá, train/validation/test = 720/240/240 event, ALS catalog coverage=1.0; synthetic quality_pass=true. Cấu trúc cluster là nhân tạo và thuận lợi cho học preference; không chứng minh chất lượng marketplace. Chat controls 13/13 đạt, 16 card được kiểm, 0 card sai; runtime latency với scenario test double không phải latency gateway/LLM. Bản evidence có raw result và hash được lưu trong docs sau khi khóa source commit.
+60 user được đánh giá, train/validation/test = 720/240/240 event, ALS catalog coverage=1.0; synthetic quality_pass=true. Cấu trúc cluster là nhân tạo và thuận lợi cho học preference; không chứng minh chất lượng marketplace. Chat controls 13/13 đạt, 16 card được kiểm, 0 card sai; runtime latency với scenario test double không phải latency gateway/LLM. [Evidence/raw result](evidence/2026-10-07-ai-controls.json) ghi source commit ac733f5, file hashes và runtime versions; source đã khóa trước khi chạy. Rubric template sinh cạnh raw artifact local, scores vẫn null.
 
 ## Còn để nghiệm thu thật
 

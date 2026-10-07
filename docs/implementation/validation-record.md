@@ -159,3 +159,14 @@ k6 smoke Catalog p95 508.81 ms/200 requests/0% lỗi; related final 1669.95 ms/2
 Restore 4 DB vào target mới PASS schema/count/migration/invariant, run 20261007035228. Lần đầu CHECK cast deparse làm hash lệch; normalize đúng literal varchar-array→text đã kiểm không che đổi enum/cột/toán tử. Nguồn và restore khớp sau normalization; không sửa row hoặc migration. Không overwrite service DB, không claim row-content checksum/cross-service snapshot/failover.
 
 [Record JSON](evidence/2026-10-07-cong-ops.json) lưu số liệu/hash và tên raw artifact local được ignore. [Handoff](cong-independent-handoff.md) giữ các task tích hợp/provider/quality mở và owner đúng. Không commit dump, .env, key hoặc group-message template.
+
+
+## AI evaluation controls — 07/10/2026
+
+59 Python tests PASS, gồm 5 case mới cho versioned deterministic dataset/public Product contract, Content train-only/candidate exclusions, shared pipeline/reproducibility, missing-baseline/empty-test quality gate và 13-case ChatRuntime benchmark. DB training restart/withdrawal test xác minh Content metrics được lưu durable cùng raw result. Docs/OpenAPI/drift đạt, contract 99 public/11 internal/7 event và endpoint status không đổi. CI mới vẫn cần đọc theo PR head.
+
+Runner all dùng schema eval_<UUID> tách biệt, tự cleanup, không ghi/publish synthetic model vào public serving DB; provider none không gọi model. Runner recommendation-only PASS trong container không có M4_DATABASE_URL/DB config, xác minh chạy độc lập trong RAM. [Evidence](evidence/2026-10-07-ai-controls.json) source ac733f5 và hashes khớp file đã khóa trước run, Python3.12.10/NumPy2.5.3.
+
+Synthetic 60 user/72 product/1200 event, split720/240/240: ALS P@10=0.4, R@10=1, NDCG@10=0.9250; popularity0.0483/0.1208/0.0880; Content0.4/1/0.8627. Synthetic quality_pass=true, marketplace acceptance NOT_RUN. Chat13/13 control PASS,16 card/0 invalid; model generation/manual groundedness/relevance/hallucination NOT_RUN/REQUIRED. Latency chỉ runtime/isolated DB với Catalog test double, không phải gateway/provider NFR. Case pronoun-only còn chưa được chứng minh.
+
+[Handoff](ai-evaluation-handoff.md) ghi lệnh chạy/report/rubric và phần còn thiếu #55–59; không dùng synthetic result để đóng issue hoặc tự chọn provider trái với lựa chọn none hiện tại. Không có migration/env/secret/nhắn nhóm.
