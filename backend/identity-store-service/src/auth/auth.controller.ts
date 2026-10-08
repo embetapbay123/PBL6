@@ -5,6 +5,7 @@ import { AuthGuard, Public, Roles, ServiceGuard, ServiceCallers, verifyService }
 import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
+import { ProfileService } from '../profile/profile.service';
 import { AuthService } from './auth.service';
 import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordDto, ChangePasswordDto, VerifyEmailDto } from './auth.dto';
 import { ProfileService } from '../profile/profile.service';
@@ -72,9 +73,12 @@ export class AuthController {
     res.clearCookie('pbl6_refresh',{path:'/api/v1/auth'}); res.clearCookie('pbl6_csrf',{path:'/'});
     return result;
   }
-  @Get('me/context') context(@Req() req: any) { return req.auth; }
+  @Get('me/context') context(@Req() req: any) {
+    const { access_token: _internalToken, ...context } = req.auth;
+    return context;
+  }
   @Get('me') async profile(@Req() req: any) {
-    return this.profiles.getProfile(req.auth.user_id);
+    return new ProfileService().getProfile(req.auth.user_id);
   }
   @Post('internal/context') @HttpCode(200) @Public() @UseGuards(ServiceGuard) @ServiceCallers('M1','M2','M3','M4')
   async internalContext(@Req() req: Request,@Body() body: {token:string}) {

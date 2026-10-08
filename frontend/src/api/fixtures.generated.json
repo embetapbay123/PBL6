@@ -872,7 +872,8 @@
     "request": {
       "body": {
         "variant_id": "11111111-1111-4111-8111-111111111111",
-        "quantity": 1
+        "quantity": 1,
+        "product_id": "11111111-1111-4111-8111-111111111111"
       },
       "path": {},
       "query": {},
@@ -882,7 +883,8 @@
       "id": "11111111-1111-4111-8111-111111111111",
       "variant_id": "11111111-1111-4111-8111-111111111111",
       "store_id": "11111111-1111-4111-8111-111111111111",
-      "quantity": 1
+      "quantity": 1,
+      "product_id": "11111111-1111-4111-8111-111111111111"
     },
     "status": 201
   },
@@ -902,7 +904,8 @@
       "id": "11111111-1111-4111-8111-111111111111",
       "variant_id": "11111111-1111-4111-8111-111111111111",
       "store_id": "11111111-1111-4111-8111-111111111111",
-      "quantity": 1
+      "quantity": 1,
+      "product_id": "11111111-1111-4111-8111-111111111111"
     },
     "status": 200
   },
@@ -1799,7 +1802,6 @@
     "mode": "fixture",
     "request": {
       "body": {
-        "anonymous_key": "fixture-value",
         "first_message": "fixture-value"
       },
       "path": {},
@@ -1810,7 +1812,13 @@
       "id": "11111111-1111-4111-8111-111111111111",
       "user_id": "11111111-1111-4111-8111-111111111111",
       "anonymous_key": "fixture-value",
-      "created_at": "2026-10-02T00:00:00Z"
+      "created_at": "2026-10-02T00:00:00Z",
+      "messages": {
+        "items": [],
+        "total": 0,
+        "page": 1,
+        "size": 1
+      }
     },
     "status": 201
   },
@@ -1833,7 +1841,8 @@
       "fallback": false,
       "mode": "mock",
       "id": "11111111-1111-4111-8111-111111111111",
-      "role": "ASSISTANT"
+      "role": "ASSISTANT",
+      "fallback_reason": "PROVIDER_NOT_CONFIGURED"
     },
     "status": 200
   },
@@ -1844,7 +1853,10 @@
       "path": {},
       "query": {
         "page": 1,
-        "size": 20
+        "size": 20,
+        "session_id": "11111111-1111-4111-8111-111111111111",
+        "message_page": 1,
+        "message_size": 20
       },
       "headers": {}
     },
@@ -2272,13 +2284,18 @@
     "mode": "fixture",
     "request": {
       "body": {
-        "id": 0,
+        "id": 1,
         "transferType": "in",
-        "transferAmount": 0,
+        "transferAmount": 1,
         "accountNumber": "fixture-value",
         "code": "fixture-value",
         "content": "fixture-value",
-        "referenceCode": "fixture-value"
+        "referenceCode": "fixture-value",
+        "gateway": "fixture-value",
+        "transactionDate": "2026-10-07 10:30:00",
+        "subAccount": "fixture-value",
+        "description": "fixture-value",
+        "accumulated": 0
       },
       "path": {},
       "query": {},

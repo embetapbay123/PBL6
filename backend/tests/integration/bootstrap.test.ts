@@ -15,7 +15,9 @@ test('sample product list/detail, validation and explicit placeholders',async()=
  expect((await fetch(base+'/products?unexpected=1')).status).toBe(422);
  expect((await fetch(base+'/products/'+list.items[0].id)).status).toBe(200);
  expect((await fetch(base+'/cart/items')).status).toBe(401);
- const session=await login();const stub=await fetch(base+'/cart/items',{headers:{Authorization:'Bearer '+session.access_token}});
+ const session=await login();const cart=await fetch(base+'/cart/items',{headers:{Authorization:'Bearer '+session.access_token}});
+ expect(cart.status).toBe(200);expect(Array.isArray((await cart.json() as any).items)).toBe(true);
+ const stub=await fetch(base+'/categories');
  expect(stub.status).toBe(501);expect((await stub.json() as any).code).toBe('FEATURE_NOT_IMPLEMENTED');
 });
 test('profiles reflect token ownership; logout and refresh replay revoke session',async()=>{
@@ -85,10 +87,12 @@ test('concurrent commands with same ID commit one effect; changed payload confli
   expect((await source.query('SELECT count(*)::int AS count FROM bootstrap_effect WHERE event_id=$1',[id]))[0].count).toBe(1);
  }finally{await source.destroy();}
 });
-test('M4 recommendations identify mock mode and return current catalog product IDs',async()=>{
+test('M4 recommendations disclose the configured mode and return current catalog product IDs',async()=>{
  const session=await login();const response=await fetch(base+'/recommendations/for-you',{headers:{Authorization:'Bearer '+session.access_token}});
  expect(response.status).toBe(200);const result=await response.json() as any;
- expect(result.mode).toBe('mock');expect(result.source).toBe('FALLBACK');expect(result.evaluation_status).toBe('NOT_RUN');
+ const ready=await fetch('http://m4:3104/health/ready');expect(ready.status).toBe(200);
+ const configured=(await ready.json() as any).mode;expect(['mock','real']).toContain(configured);
+ expect(result.mode).toBe(configured);expect(result.source).toBe('FALLBACK');expect(result.evaluation_status).toBe('NOT_RUN');
  for(const id of result.product_ids)expect((await fetch(base+'/products/'+id)).status).toBe(200);
 });
 test('internal inventory contract admits only M2 and is hidden from gateway',async()=>{

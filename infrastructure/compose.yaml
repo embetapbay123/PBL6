@@ -52,7 +52,7 @@ services:
     command: [node, dist/catalog-service/src/main.js]
   m2:
     <<: *node
-    environment: {<<: *app-env, SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}', SANDBOX_WEBHOOK_SECRET: '${SANDBOX_WEBHOOK_SECRET:-}'}
+    environment: {<<: *app-env, SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}', SANDBOX_WEBHOOK_SECRET: '${SANDBOX_WEBHOOK_SECRET:-}', PAYMENT_PROVIDER_MODE: '${PAYMENT_PROVIDER_MODE:-disabled}', SEPAY_TEST_ACCOUNT: '${SEPAY_TEST_ACCOUNT:-}', SEPAY_TEST_BANK: '${SEPAY_TEST_BANK:-}'}
     command: [node, dist/commerce-service/src/main.js]
   m3:
     <<: *node
@@ -63,7 +63,7 @@ services:
     command: [node, dist/identity-store-service/src/main.js]
   m4:
     build: {context: .., dockerfile: backend/ai-service/Dockerfile}
-    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}'}
+    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}'}
     depends_on: {postgres: {condition: service_healthy}}
     restart: unless-stopped
   worker-m1:
@@ -76,6 +76,12 @@ services:
     environment: {<<: *app-env, SERVICE_ID: M2, M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2'}
     command: [node, dist/shared/src/worker.js]
     depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
+  worker-m4:
+    build: {context: .., dockerfile: backend/ai-service/Dockerfile}
+    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4'}
+    command: [python, -m, app.tracking.worker]
+    depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
+    restart: unless-stopped
   web:
     build: {context: .., dockerfile: frontend/Dockerfile}
     restart: unless-stopped

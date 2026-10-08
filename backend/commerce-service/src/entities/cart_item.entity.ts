@@ -8,6 +8,8 @@ export class CartItem {
   cart_id!: string;
   @Column({"type": "uuid", "nullable": false})
   variant_id!: string;
+  @Column({type: "uuid", nullable: true})
+  product_id!: string | null;
   @Column({"type": "uuid", "nullable": false})
   store_id!: string;
   @Column({"type": "integer", "nullable": false})

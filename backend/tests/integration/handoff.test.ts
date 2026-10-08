@@ -8,26 +8,27 @@ import { assertSchema } from '../../shared/src/contract-validation';
 import bundle from '../../shared/src/contracts.runtime.generated.json';
 import fixtures from '../../shared/src/fixtures.generated.json';
 const base=process.env.TEST_API_URL ?? 'http://gateway/api/v1';
-test('new internal routes authenticate, validate, remain stubs and are hidden from public gateway',async()=>{
+test('internal routes authenticate, validate and are hidden from public gateway',async()=>{
   for(const [op,host,caller] of [['ResolveCheckoutContext','http://m3:3103','M2'],['ResolveAiMetricsScope','http://m3:3103','M4'],['ListLowStockVariants','http://m1:3101','M2']] as const){
     const r=bundle.operations[op],body=fixtures[op].request.body;
     const call=(data:unknown,valid=true)=>fetch(host+r.route,{method:r.method,headers:{'Content-Type':'application/json','X-Service-Id':caller,'X-Service-Key':valid?process.env[`${caller}_INTERNAL_KEY`]!:'invalid'},body:JSON.stringify(data)});
     expect((await call(body,false)).status).toBe(401);
     expect((await call({})).status).toBe(422);
-    expect((await call(body)).status).toBe(501);
+    expect((await call(body)).status).toBe(op==='ListLowStockVariants' ? 501 : 401);
     const publicResponse=await fetch(base.replace('/api/v1','')+r.route,{method:'POST',body:'{}'});
     expect(publicResponse.status).toBeGreaterThanOrEqual(400);
     expect(publicResponse.headers.get('content-type') ?? '').not.toContain('application/json');
   }
 });
-test('public stubs run guard before strict request DTO validation',async()=>{
+test('public handlers run guard before strict request DTO validation',async()=>{
   const headers={'Content-Type':'application/json'};
   expect((await fetch(base+'/cart/items',{method:'POST',headers,body:'{}'})).status).toBe(401);
   const login=await fetch(base+'/auth/login',{method:'POST',headers,body:JSON.stringify({email:'customer1@pbl6.test',password:process.env.SEED_PASSWORD,client_type:'MOBILE'})});
   const session=await login.json() as any;
   const call=(body:unknown)=>fetch(base+'/cart/items',{method:'POST',headers:{...headers,Authorization:'Bearer '+session.access_token},body:JSON.stringify(body)});
   expect((await call({})).status).toBe(422);
-  expect((await call(fixtures.addCartItem.request.body)).status).toBe(501);
+  // Structurally valid fixture IDs are not seeded entities; the real Catalog rejects them.
+  expect((await call(fixtures.addCartItem.request.body)).status).toBe(404);
   const response=await fetch(base+'/products');assertSchema(await response.json(),bundle.operations.listProducts.responses['200']);
   const malformed=await fetch(base+'/auth/login',{method:'POST',headers,body:'{"private-value'});
   expect(malformed.status).toBe(400);const error=await malformed.json() as any;

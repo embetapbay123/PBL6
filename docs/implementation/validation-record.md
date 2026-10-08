@@ -73,3 +73,100 @@ Có handoff rõ cho tracking search/view/cart/purchase và Guest chat, ngoài ma
 - Demo Owner sửa tên/mô tả Product thật, reload đọc lại, sau test khôi phục tên; 409/422/501 form hiển thị lỗi. Order/Payment rollback và Catalog write/audit/outbox rollback được kiểm trên PostgreSQL.
 - GitHub CI trên commit `03f89fc` đạt cả contracts-and-node và mobile: [run 37031999009](https://github.com/embetapbay123/PBL6/actions/runs/37031999009). Runner Linux kiểm setup, schema, migration/seed, integration, Python, Playwright Chromium và Flutter từ checkout mới. Compose chờ healthcheck PostgreSQL TCP trước khi kiểm schema/migrate để tránh chạy trong giai đoạn init database.
 - Không chạy APK/device, tải 100 user, provider thanh toán thật hoặc AI thật; các phần này giữ trong task owner. CI trên GitHub phải xem theo commit mới, không suy từ kết quả local.
+
+## Bàn giao M1 QuoteVariants — 05/10/2026
+
+- [PR #86](https://github.com/embetapbay123/PBL6/pull/86) của Thịnh đã merge vào `main` tại commit `f4e49dba155b63ebe251d2c8a45d75e07a93d6ba`. QuoteVariants là `IMPLEMENTED`; internal hiện có 11 operation: 2 sample, 1 implemented, 8 stub. Public API giữ nguyên trạng thái.
+- [CI trên merge commit](https://github.com/embetapbay123/PBL6/actions/runs/37282746278) đạt cả contracts-and-node/mobile, bao gồm schema, migration/seed, integration PostgreSQL/HTTP, Python, Web và Flutter. Đây là bằng chứng CI; đợt cập nhật docs không chạy lại integration local vì Docker chưa chạy.
+- Chạy lại local riêng `tests/unit/quote-variants.test.ts`: 4 test đạt, kiểm lỗi dependency/service identity và mapper tiền an toàn. Contract parser, runtime drift và docs/link check đạt sau cập nhật tài liệu.
+- [Issue #7](https://github.com/embetapbay123/PBL6/issues/7) đóng completed, thẻ Kanban Done; body có bằng chứng PR/CI, payload và tiêu chí đã đạt. Thịnh tiếp tục [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11), vẫn Todo đến khi bắt đầu code.
+- [CART-01 #3](https://github.com/embetapbay123/PBL6/issues/3), [CART-02 #8](https://github.com/embetapbay123/PBL6/issues/8), [ORDER-01 #21](https://github.com/embetapbay123/PBL6/issues/21) có đầu vào M1 thật để tích hợp; không chuyển Done chỉ vì dependency #7 đã merge. M2 phải gửi Store thật, không tự thêm field Product vào quote response và không dùng fallback giá/Store khi lỗi.
+- ActiveStores của M3 vẫn là sample; kho reservation/consume/release/restock và luồng checkout xuyên service còn nghiệm thu theo issue owner. Không thêm migration hoặc đổi contract response trong đợt cập nhật docs này.
+
+## 05/10/2026 — bản tổng Hoa trên feat/mob-03
+
+- Đồng bộ Cart product_id và migration M2 004; migration 001–003 không đổi. 99 public + 11 internal operation, 7 event có DTO/fixture và drift check đạt. Public hiện 18 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 69 NOT_IMPLEMENTED; internal 2 sample / 2 IMPLEMENTED / 7 stub. Trạng thái là code trong nhánh, issue chưa Done trước review/merge/nghiệm thu.
+- Backend build và 155 unit test đạt, gồm quota ledger và lỗi dependency. 26 integration test qua HTTP/PostgreSQL đạt: concurrent Cart, UPDATE RETURNING Cart/Voucher/Order, stale version, Order/COD state, review ownership/HTTP 200 và công thức doanh thu.
+- Schema fresh migration/constraint check của 4 DB và 12 negative invariant check đạt. Không query DB xuyên service, không tự backfill Product ID cho Cart legacy.
+- Flutter analyze sạch, 31 test đạt (widget + Dio request contract). Web build và 7 Playwright test đạt qua Chrome trên Windows; 13 Python test M4 đạt. CI vẫn phải kiểm trên Ubuntu và Flutter 3.41.4.
+- Phạm vi chưa hoàn thành: quote/validate cần M3 ResolveCheckoutContext; confirm/cancel/confirm-state/ship-state còn 501 trước ghi; COD cần PaymentService; report cần low-stock và số liệu User/Store thật. Không dùng mock success trong test để nghiệm thu checkout/payment/Android thiết bị.
+- Chi tiết tiếp tục: [bàn giao Hoa](hoa-consolidated-handoff.md). PR cũ bị thay thế chỉ là dọn chuỗi branch trùng; không đóng các issue nghiệp vụ một phần.
+
+## 06/10/2026 — hoàn thiện phần độc lập của PR Hoa
+
+- transitionStoreOrder được IMPLEMENTED: PENDING → CONFIRMED → PROCESSING → SHIPPED → COMPLETED; PREPARING không được nhảy trạng thái. Shipment mô phỏng, Order/history/audit/outbox cùng transaction. Đơn PENDING phải được checkout/payment consume kho trước đó; không gọi consume lần nữa khi Seller xác nhận.
+- 155 backend unit và 28 HTTP/PostgreSQL integration test đạt. Test mới kiểm concurrent chuyển SHIPPED chỉ tạo một Shipment, thiếu Shipment rollback completion, completion chuyển DELIVERED và Voucher trùng code trả 409.
+- Flutter analyze sạch, 40 test đạt: refresh lỗi tạm thời giữ token; giỏ tải đủ trang; quote response cũ/hết hạn bị chặn; địa chỉ tải lỗi có retry; confirm 409 tải quote mới; confirm 501 giữ màn hình và cùng Idempotency-Key qua retry. Mock success không chứng minh checkout giao dịch thật hoặc Android thiết bị.
+- OpenAPI/parser, docs/link check và drift 99 public + 11 internal + 7 event đạt. Public hiện 19 IMPLEMENTED / 8 IMPLEMENTED_SAMPLE / 4 MOCK_ONLY / 68 NOT_IMPLEMENTED. Migration 001–003 không đổi; đợt này không thêm migration.
+- Giữ đúng owner: Thịnh phụ trách command kho/low-stock M1, Trí phụ trách checkout context/count M3, Công phụ trách Payment. Confirm/cancel/COD còn dependency và chưa nghiệm thu thành công; issue vẫn mở và Review. CI cần xem theo head mới của [PR #88](https://github.com/embetapbay123/PBL6/pull/88).
+
+## 06/10/2026 — M3 lookup/Profile/Address review
+
+- PR #88 is merged into main at `25456d5`; PR #87 incorporates that main baseline without rewriting the member's commits.
+- M3 checkout context and AI metrics scope now implement the internal contract with live sessions and caller restrictions. Profile updates and Address CRUD implement authenticated ownership and atomic audit writes. Public: 24 implemented / 8 sample / 4 mock / 63 pending; internal: 4 implemented / 2 sample / 5 pending. These counts describe the PR branch until merge.
+- Backend build, 168 unit tests and 33 HTTP/PostgreSQL integration tests pass locally. Tests include strict response schemas, concurrent default addresses, audit rollback, missing/foreign addresses, unsafe fees, revoked membership and locked Stores. Contract/parser, generated drift and docs checks pass.
+- Auth registration/verification/password additions remain separate tasks and explicit stubs. No mock email provider is counted as implemented. No migrations or service ownership changes. CI evidence must be read at PR #87's current head.
+
+## 06/10/2026 — merged baseline and Week 2 handoff
+
+- PR #88 merged at `25456d5`, #89 at `e0dfc31`, and #87 at `c43fdce`. [Main CI at c43fdce](https://github.com/embetapbay123/PBL6/actions/runs/37412724706) passed contracts-and-node/mobile, including fresh setup/schema/migrations, 168 unit, 33 PostgreSQL/HTTP integration, Python, seven Web e2e and 40 Flutter tests.
+- Six complete task scopes (#3/#4/#8/#26/#28/#45) have merge/test evidence for completed/Done; wider Auth, Voucher Store, Order, report, Mobile and WEB-01 scopes remain open with explicit remaining acceptance. Shared foundation review remains separate. No unimplemented endpoint is promoted just because a dependency merged.
+- Week 2 assigns the existing issues to their real GitHub owners and prioritizes inventory commands, Payment/COD and atomic checkout. Kanban remains the only live status source. No new board, business code, migration, environment file or group-message template is introduced.
+
+## 06/10/2026 — Công Week 2 Payment/COD and consent/tracking branch
+
+- PAY-01/PAY-04 implement caller-owned Payment creation, COD obligation/collection/Event/audit, ownership-safe Payment read and persisted test QR attempts. Same manager, concurrency/replay, exact amount/state, zero-payable COD, rollback and real HTTP collectCod are verified. QR is instructions only; no live provider/callback/refund success is claimed. Explicit disabled provider returns 503 before writes; UNKNOWN persists and does not create a second reference.
+- Consent GET/PATCH implements live M3 guard before strict DTO, ownership/version, atomic metadata audit and withdrawal purge. Tracking worker has durable bindings/DLQ, inbox/effect transaction, source/schema/entity version checks, one purchase signal per Order, grant-window checks and 30-day demo retention. Withdrawal/retention invalidate affected training eligibility/models; real ALS/RAG remain separate tasks.
+- Local checks pass: docs/OpenAPI/generated drift (99 public + 11 internal, seven events), backend/Web build, 168 Node unit tests, 41 PostgreSQL/HTTP integration tests, 23 Python tests (including isolated schema and durable broker fixture), seven Web e2e, and four fresh database schema suites with 12 negative invariants. Web e2e first lacked a local browser binary; after installing the Playwright Chromium runtime all seven passed. No source change was needed for that environment failure. Flutter is unchanged except generated contract fixture metadata and is verified separately by CI.
+- M2 adds migration 005; M4 adds 004/005; applied 001–003 are unchanged. Public branch status is 28 implemented / 8 sample / 4 mock / 59 pending; internal remains 4 implemented / 2 sample / 5 pending. Added 503 error documentation does not alter request/success payloads. This evidence describes the PR branch, not an already-merged main.
+- PAY-01/PAY-04 require peer review and merge before Done. AI-01 remains partial: M1 real search/view producers and full source acceptance still belong to Thịnh; fake/broker fixtures are not all real behavior history. Hoa retains confirm/cancel/Order/COD controller scope, Trí retains M3 events, callback/refund remain PAY-02/PAY-03 stubs. See [handoff](cong-week2-handoff.md).
+
+
+## PR #90 sau merge — 06/10/2026
+
+[PR #90](https://github.com/embetapbay123/PBL6/pull/90) đã squash merge vào main (`1b6028a`) ngày 06/10/2026 sau self-review và bypass được chủ repo cho phép. [CI main](https://github.com/embetapbay123/PBL6/actions/runs/37455617355) đạt; PR checks đạt 168 Node unit, 41 integration, 23 Python, 7 Web e2e và Flutter. [Handoff trên main](https://github.com/embetapbay123/PBL6/blob/main/docs/implementation/cong-week2-handoff.md).
+
+PAY-01/PAY-04 completed; AI-01 còn nguồn thật. ORDER-05/checkout/callback/refund và producer giữ owner, không đóng thay hoặc đổi metadata rộng.
+
+
+## PAY-02 durable callback receipt — 07/10/2026
+
+Nhánh codex/payment-callback-receipts: HMAC raw body trước DTO, official optional fields, provider-scoped receipt/PaymentEvent/Payment/audit/follow-up atomic, late/sibling và extra transfer reconciliation; typed completion port dùng cùng manager. M2 migrations 006/007 append-only; không ghi Order transition hoặc fake consume/refund.
+
+Local checks đạt: docs/OpenAPI/drift (99 public, 11 internal, 7 events), backend/Web build, 168 Node unit, 53 PostgreSQL/HTTP integration (12 callback tests), 23 Python, 7 Web e2e, 4 fresh schema suites/12 negative invariants. Test callback HTTP dùng server test/schema cô lập và key giả riêng; chưa chứng nhận webhook từ dashboard SePay. Flutter/checks fresh head theo CI PR. #52 còn Order/inventory worker consume/RECOVERING/restart và Refund/provider acceptance; metadata callback vẫn NOT_IMPLEMENTED toàn scope.
+
+## M4 independent runtime — 07/10/2026
+
+Local checks: 168 Node unit, 53 PostgreSQL/HTTP integration, 50 Python, 7 Web e2e; backend/Web build; docs/OpenAPI/drift; 4 fresh migration suites/12 negative invariants đạt. Python chạy cả khi container cấu hình AI_MODE=real; test mock tự chọn mode mock. New cases kiểm Guest key/Customer scope/history, provider output/timeout/size/injection, budget, message+trace rollback, lexical index/source version, consent erasure và Owner metrics. Migration M4 006 đã apply local; không sửa 001–005.
+
+Demo gateway với AI_MODE=real, provider none: tạo Guest session 201, gửi câu hỏi từ title Catalog 200, 3 card thật, fallback=true/PROVIDER_NOT_CONFIGURED. Index job đọc 3 Product thật. Model selection dùng test transport; ALS/evaluation dùng dữ liệu test ở schema riêng, chưa được coi chất lượng marketplace/provider thật. [AI runtime handoff](ai-runtime-handoff.md) ghi rõ giới hạn pool, manual jobs, cost null và nghiệm thu còn lại. CI PR sẽ kiểm Flutter và checkout mới; không mặc định coi CI đạt trước khi có kết quả.
+
+## Refund independent runtime — 07/10/2026
+
+Local: 168 Node unit, 63 PostgreSQL/HTTP integration (10 Refund cases), backend/Web build, docs/OpenAPI/drift và 4 fresh schema suites/12 negative invariants đạt. M2 008/009 đã apply append-only. Gateway chứng minh guard trước path validation: 401 thiếu auth, 422 UUID sai khi đã auth, 404 Refund không tồn tại. Disabled worker CLI trả DISABLED; không gọi provider, không giả hoàn tiền.
+
+Test provider nằm trong schema cô lập, kiểm đủ transaction/request replay/amount/state/ownership/concurrency, UNKNOWN lookup, same-ID retry, crash lease, audit rollback/restart, FK operation/amount và late-payment/extra-transfer boundary. Integration bootstrap kiểm mode M4 đúng readiness thay vì ép mock khi môi trường local đã bật real. [Refund handoff](refund-runtime-handoff.md) giữ provider/reconciliation/cancel acceptance mở; receipt test không chứng minh chuyển tiền ngân hàng.
+
+
+## Công independent runtime merged / ops evidence — 07/10/2026
+
+[PR #92 CI](https://github.com/embetapbay123/PBL6/actions/runs/37565657522) và [PR #93 CI](https://github.com/embetapbay123/PBL6/actions/runs/37567270997) PASS đầy đủ, đã self-review/self-merge bằng quyền bypass được chủ repo cho phép; main tương ứng 079f683 và d1c9a8d. Không có approval member khác.
+
+Ops local: 54 Python tests PASS (pool lifecycle/header isolation, timeout overrides và related page reuse/missing reference thêm 4 cases); 2 restore canonicalization tests PASS; docs/OpenAPI/drift 99 public +11 internal/7 event PASS. Shared client pool50/keep-alive20, timeout1s, giữ scope và correlation. Full CI theo PR head mới, không suy từ PR trước.
+
+k6 smoke Catalog p95 508.81 ms/200 requests/0% lỗi; related final 1669.95 ms/201 requests/0% lỗi, 100 VU/30s/think20s, 3 Product thật, M4 real/provider none. Related trước tối ưu FAIL được giữ raw. Đây chưa phải NFR toàn marketplace, load model hay peak resources.
+
+Restore 4 DB vào target mới PASS schema/count/migration/invariant, run 20261007035228. Lần đầu CHECK cast deparse làm hash lệch; normalize đúng literal varchar-array→text đã kiểm không che đổi enum/cột/toán tử. Nguồn và restore khớp sau normalization; không sửa row hoặc migration. Không overwrite service DB, không claim row-content checksum/cross-service snapshot/failover.
+
+[Record JSON](evidence/2026-10-07-cong-ops.json) lưu số liệu/hash và tên raw artifact local được ignore. [Handoff](cong-independent-handoff.md) giữ các task tích hợp/provider/quality mở và owner đúng. Không commit dump, .env, key hoặc group-message template.
+
+
+## AI evaluation controls — 07/10/2026
+
+59 Python tests PASS, gồm 5 case mới cho versioned deterministic dataset/public Product contract, Content train-only/candidate exclusions, shared pipeline/reproducibility, missing-baseline/empty-test quality gate và 13-case ChatRuntime benchmark. DB training restart/withdrawal test xác minh Content metrics được lưu durable cùng raw result. Docs/OpenAPI/drift đạt, contract 99 public/11 internal/7 event và endpoint status không đổi. CI mới vẫn cần đọc theo PR head.
+
+Runner all dùng schema eval_<UUID> tách biệt, tự cleanup, không ghi/publish synthetic model vào public serving DB; provider none không gọi model. Runner recommendation-only PASS trong container không có M4_DATABASE_URL/DB config, xác minh chạy độc lập trong RAM. [Evidence](evidence/2026-10-07-ai-controls.json) source ac733f5 và hashes khớp file đã khóa trước run, Python3.12.10/NumPy2.5.3.
+
+Synthetic 60 user/72 product/1200 event, split720/240/240: ALS P@10=0.4, R@10=1, NDCG@10=0.9250; popularity0.0483/0.1208/0.0880; Content0.4/1/0.8627. Synthetic quality_pass=true, marketplace acceptance NOT_RUN. Chat13/13 control PASS,16 card/0 invalid; model generation/manual groundedness/relevance/hallucination NOT_RUN/REQUIRED. Latency chỉ runtime/isolated DB với Catalog test double, không phải gateway/provider NFR. Case pronoun-only còn chưa được chứng minh.
+
+[Handoff](ai-evaluation-handoff.md) ghi lệnh chạy/report/rubric và phần còn thiếu #55–59; không dùng synthetic result để đóng issue hoặc tự chọn provider trái với lựa chọn none hiện tại. Không có migration/env/secret/nhắn nhóm.

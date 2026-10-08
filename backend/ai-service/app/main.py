@@ -15,27 +15,43 @@ from .runtime_contracts import validate_operation, MISSING
 from .internal_client import InternalClient, InternalError
 from .chat.service import MockChatService
 from .recommendation.service import MockRecommendationService
+from .consent.service import ConsentService
+from .consent.domain import ConsentConflict
+from starlette.concurrency import run_in_threadpool
+from .chat.runtime import ChatRuntime
+from .catalog import LiveCatalog
+from .chat.provider import CatalogSelector
 
 log = logging.getLogger('pbl6.ai')
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 engine = None
 limiter = None
+http_client = None
+
+def live_catalog():return LiveCatalog(http_client=http_client) if http_client else LiveCatalog()
 
 class ApiError(Exception):
     def __init__(self, status, code, message): self.status,self.code,self.message=status,code,message
 
 @asynccontextmanager
 async def lifespan(app):
-    global engine, limiter
+    global engine, limiter,http_client
     required=['M4_DATABASE_URL','IDENTITY_URL','CATALOG_URL','M4_INTERNAL_KEY','AI_MODE','REDIS_URL']
     if any(not os.getenv(key) for key in required): raise RuntimeError('Missing AI configuration')
-    if os.environ['AI_MODE'] != 'mock': raise RuntimeError('Real AI provider is not implemented yet')
+    if os.environ['AI_MODE'] not in ('mock','real'): raise RuntimeError('Unsupported AI_MODE')
+    if os.environ['AI_MODE']=='real':
+        from .chat.provider import CatalogSelector
+        CatalogSelector() # Fail startup for invalid provider configuration.
     engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1),pool_size=5,max_overflow=0)
     with engine.connect() as db: db.execute(text('SELECT 1'))
     limiter=Redis.from_url(os.environ['REDIS_URL'],socket_timeout=1,socket_connect_timeout=1)
-    yield
-    await limiter.aclose()
-    engine.dispose()
+    http_client=httpx.AsyncClient(timeout=1,follow_redirects=False,limits=httpx.Limits(max_connections=50,max_keepalive_connections=20))
+    try:yield
+    finally:
+        await http_client.aclose()
+        http_client=None
+        await limiter.aclose()
+        engine.dispose()
 
 app=FastAPI(title='PBL6 M4 skeleton',lifespan=lifespan)
 
@@ -79,8 +95,8 @@ async def context(request: Request, roles: list[str]):
     if 'GUEST' in roles and not token: return None
     if not token.startswith('Bearer '): raise ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.')
     try:
-        result=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']}).call('ResolveContext',{'token':token[7:]},request.state.correlation_id)
-        if roles and 'GUEST' not in roles and not set(roles).intersection(result['roles']): raise ApiError(403,'FORBIDDEN','Không có quyền.')
+        result=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']},http_client=http_client).call('ResolveContext',{'token':token[7:]},request.state.correlation_id)
+        if roles and not (set(roles)-{'GUEST'}).intersection(result['roles']): raise ApiError(403,'FORBIDDEN','Không có quyền.')
         return result
     except InternalError as error: raise ApiError(error.status,error.code,error.message)
 
@@ -91,9 +107,10 @@ def live(): return {'status':'alive','service':'M4'}
 def ready():
     if engine is None: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Database chưa sẵn sàng.')
     with engine.connect() as db:
-        row=db.execute(text("SELECT version FROM schema_migration WHERE version='001_initial.sql'")).first()
+        expected='006_ai_runtime.sql' if os.getenv('AI_MODE')=='real' else '001_initial.sql'
+        row=db.execute(text('SELECT version FROM schema_migration WHERE version=:version'),{'version':expected}).first()
         if not row: raise ApiError(503,'SCHEMA_NOT_READY','Chưa chạy migration.')
-    return {'status':'ready','service':'M4','mode':'mock'}
+    return {'status':'ready','service':'M4','mode':os.getenv('AI_MODE','mock')}
 
 contract_file=Path('/app/contracts/endpoint-status.json')
 if not contract_file.exists(): contract_file=Path(__file__).resolve().parents[3]/'docs/contracts/endpoint-status.json'
@@ -103,20 +120,55 @@ def register(record):
     async def endpoint(request: Request):
         identity=await context(request,record['roles'])
         op=record['operation_id']
+        if op=='sendChatMessage' and os.getenv('AI_MODE')=='real' and not identity:
+            import re
+            if not re.fullmatch('[a-f0-9]{64}',request.headers.get('x-chat-key','')):
+                raise ApiError(401,'UNAUTHENTICATED','Cần khóa phiên chat Guest.')
         try:
             raw=await request.body()
             payload=json.loads(raw) if raw else MISSING
             query={key:request.query_params.getlist(key) if len(request.query_params.getlist(key))>1 else value for key,value in request.query_params.items()}
             request.state.contract=validate_operation(op,body=payload,path=request.path_params,query=query,headers=dict(request.headers))
         except (ValueError,ValidationError): raise ApiError(422,'VALIDATION_FAILED','Dữ liệu không hợp lệ.')
+        if os.getenv('AI_MODE')=='real' and op in ('createChatSession','listOwnChatSessions','sendChatMessage'):
+            from fastapi.responses import JSONResponse
+            service=ChatRuntime(engine,live_catalog(),CatalogSelector(http_client=http_client))
+            user=identity['user_id'] if identity else None
+            try:
+                if op=='createChatSession':
+                    result=await run_in_threadpool(service.create,user,request.client.host,request.state.contract['body'].get('first_message'))
+                    return JSONResponse(status_code=201,content=result)
+                if op=='listOwnChatSessions':return await run_in_threadpool(service.list,user,request.state.contract['query'])
+                return await service.answer(request.path_params['id'],user,request.headers.get('x-chat-key'),request.state.contract['body']['content'],request.state.correlation_id)
+            except InternalError as error:raise ApiError(error.status,error.code,error.message)
+        if op in ['getPersonalizationConsent','updatePersonalizationConsent']:
+            if engine is None: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Database chưa sẵn sàng.')
+            service=ConsentService(engine)
+            try:
+                if op=='getPersonalizationConsent': return await run_in_threadpool(service.get,identity['user_id'])
+                return await run_in_threadpool(service.update,identity['user_id'],request.state.contract['body'])
+            except ConsentConflict: raise ApiError(409,'VERSION_CONFLICT','Consent đã thay đổi.')
         if op in ['getForYou','getRelatedProducts']:
             try:
+                if os.getenv('AI_MODE')=='real':
+                    from .recommendation.runtime import RecommendationRuntime
+                    service=RecommendationRuntime(engine,live_catalog())
+                    if op=='getForYou':return await service.recommend(identity['user_id'] if identity else None,request.state.correlation_id)
+                    return await service.related(request.path_params['id'],request.state.contract['query'],request.state.correlation_id)
                 async with httpx.AsyncClient(timeout=2) as client:
                     response=await client.get(os.environ['CATALOG_URL']+'/api/v1/products',headers={'X-Correlation-Id':request.state.correlation_id})
                 if response.status_code!=200: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Không xác minh được sản phẩm.')
                 return await MockRecommendationService().recommend(identity['user_id'] if identity else None,response.json()['items'])
+            except InternalError as error:raise ApiError(error.status,error.code,error.message)
             except httpx.HTTPError: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Catalog chưa sẵn sàng.')
-        if op=='getAiMetrics': return {'index_status':'MOCK','model_version':'mock','evaluation_status':'NOT_RUN','metrics':{},'mode':'mock'}
+        if op=='getAiMetrics':
+            if os.getenv('AI_MODE')=='real':
+                from .evaluation.metrics import read_metrics
+                try:
+                    scope=await InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']},http_client=http_client).call('ResolveAiMetricsScope',{'token':request.headers['authorization'][7:],**({'store_id':request.state.contract['query']['store_id']} if request.state.contract['query'].get('store_id') else {})},request.state.correlation_id)
+                    return await run_in_threadpool(read_metrics,engine,scope)
+                except InternalError as error:raise ApiError(error.status,error.code,error.message)
+            return {'index_status':'MOCK','model_version':'mock','evaluation_status':'NOT_RUN','metrics':{},'mode':'mock'}
         if op=='sendChatMessage':
             try: payload=await request.json()
             except ValueError: raise ApiError(422,'VALIDATION_FAILED','JSON không hợp lệ.')

@@ -35,7 +35,7 @@ export class AuthGuard implements CanActivate {
     const context = await internalRequest<any>(`${c.identityUrl}/internal/context`, c.id, c.internalKeys[c.id], request.correlationId, { token });
     const roles = this.reflector.getAllAndOverride<string[]>('roles', [ctx.getHandler(), ctx.getClass()]);
     if (roles?.length && !roles.some(role => context.roles.includes(role))) throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này.');
-    request.auth = context;
+    request.auth = { ...context, access_token: token };
     return true;
   }
 }

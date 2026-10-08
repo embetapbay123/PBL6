@@ -1,6 +1,6 @@
 # Kế hoạch triển khai và bàn giao nhóm — 2.2
 
-Cập nhật 02/10/2026. Đây là phân công làm việc hiện hành theo [ownership](implementation/service-ownership.md), thay bảng đề xuất 2.1. Đã chốt bốn service M1–M4; mỗi service có DB riêng. Khung đã có code mẫu; member hoàn thiện nghiệp vụ theo [bảng giao task](implementation/task-assignment.md). Chưa đặt deadline vì chưa có lịch nộp.
+Cập nhật 06/10/2026. Đây là phân công làm việc hiện hành theo [ownership](implementation/service-ownership.md), thay bảng đề xuất 2.1. Đã chốt bốn service M1–M4; mỗi service có DB riêng. Khung và một số scope đã merge; member hoàn thiện theo [bảng giao task](implementation/task-assignment.md). [Roadmap Week 1–8](implementation/roadmap.md) bao phủ đủ 71 issue: mục tiêu cuối Week 6 đủ chức năng, cuối Week 8 nghiệm thu/bàn giao, Week 9 dự phòng. Đây là ước lượng có điều kiện, chưa là deadline nộp.
 
 | Thành viên | Backend / tích hợp | Frontend | Đầu ra bàn giao |
 | --- | --- | --- | --- |
@@ -10,19 +10,20 @@ Cập nhật 02/10/2026. Đây là phân công làm việc hiện hành theo [ow
 | Thịnh | Toàn M1: taxonomy/product/variant/image/inventory/review/moderation | Seller Web; gọi Order/Voucher M2 và Store/staff M3 | API Catalog/kho; Seller; test cạnh tranh/replay/version và hai Store |
 | Hatsaphone | Không sở hữu BE/AI; tích hợp API theo mẫu bàn giao | Customer Web | Từng màn Customer với loading/empty/error, phân trang và số liệu từ API |
 
-## Thứ tự mở việc
+## Mốc triển khai, toàn bộ task đã giao trước
 
-1. Giao task đầu tiên có scope/đầu ra/tiêu chí trong [bảng task](implementation/task-assignment.md): CORE-01, CAT-01, CART-01, ID-01, WEB-01.
-2. Catalog/Cart/address/Store và quyền: ưu tiên API mở chặn người khác; Web/Mobile chuyển từng màn sang API đã kiểm chứng.
-3. Checkout/Order/Payment/kho: Công chốt FLOW-01; Hoa/Công/Thịnh review chung local transaction M2, command M1, idempotency và recovery.
-4. Review/voucher/report/AI và các màn còn lại; chạy [verification plan](implementation/verification-plan.md), lưu kết quả FR/NFR và [AI evaluation](ai-evaluation.md) theo run thật.
-5. Hoàn thiện checklist demo/triển khai, ghi rủi ro/chưa chạy; nghiệm thu theo [requirements acceptance](requirements-acceptance.md), không theo số file đã có.
+1. Week 1: baseline/nền và QuoteVariants/Cart/Address/lookup đã merge; task rộng còn thiếu giữ mở.
+2. [Week 2](implementation/week2.md): reserve/consume/release, Payment/COD và checkout nhiều Store; Auth và UI song song.
+3. [Week 3](implementation/week3.md): callback/Refund/cancel/recovery, Product/Variant và client mua hàng.
+4. [Week 4](implementation/week4.md)–[Week 5](implementation/week5.md): staff/Review/report/recommendation, RAG/moderation và UI còn lại.
+5. [Week 6](implementation/week6.md): AI metrics/evaluation, report đầy đủ, APK RC và feature complete.
+6. [Week 7](implementation/week7.md)–[Week 8](implementation/week8.md): security/tải/recovery/device, fix/retest, bằng chứng FR/NFR và bàn giao. Week 9 dành cho phần trễ, không feature mới.
 
 ## Trách nhiệm tài liệu và review
 
 Owner cập nhật code, migration, DTO/contract, README module, status và test của phần mình. Công review shared/infrastructure/contract và ảnh hưởng tích hợp; Trí phối hợp kiểm quyền; chủ service cung cấp ví dụ cho owner Web/Mobile. Task giao dịch nhiều service được review bởi các owner liên quan.
 
-Mỗi task có một branch/PR và một owner; reviewer ghi rõ ở issue. Chỉ đánh dấu Done khi demo/test đạt và PR được merge. Hoàn thành task nhỏ không đồng nghĩa endpoint đủ phạm vi hoặc toàn bộ service đã nghiệm thu. Các mốc ngày được bổ sung sau khi nhóm có lịch nộp và ước lượng task.
+Mỗi task có một branch/PR và một owner; reviewer ghi rõ ở issue. Chỉ đánh dấu Done khi demo/test đạt và PR được merge. Hoàn thành task nhỏ không đồng nghĩa endpoint đủ phạm vi hoặc toàn bộ service đã nghiệm thu. Roadmap giả định khoảng 20–25 giờ tập trung/người/tuần và handoff/review kịp thời; cuối mỗi tuần dùng kết quả thực tế để điều chỉnh, không tự cắt yêu cầu hoặc tự Done theo lịch.
 
 ## Phạm vi và nguồn
 

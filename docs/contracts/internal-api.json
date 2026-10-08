@@ -227,7 +227,7 @@
         "x-allowed-callers": [
           "M2"
         ],
-        "x-implementation-status": "NOT_IMPLEMENTED",
+        "x-implementation-status": "IMPLEMENTED",
         "parameters": [
           {
             "in": "header",
@@ -742,7 +742,7 @@
         "x-allowed-callers": [
           "M1"
         ],
-        "x-implementation-status": "NOT_IMPLEMENTED",
+        "x-implementation-status": "IMPLEMENTED",
         "parameters": [
           {
             "in": "header",
@@ -845,7 +845,7 @@
         "x-allowed-callers": [
           "M2"
         ],
-        "x-implementation-status": "NOT_IMPLEMENTED",
+        "x-implementation-status": "IMPLEMENTED",
         "parameters": [
           {
             "in": "header",
@@ -1051,7 +1051,7 @@
         "x-allowed-callers": [
           "M4"
         ],
-        "x-implementation-status": "NOT_IMPLEMENTED",
+        "x-implementation-status": "IMPLEMENTED",
         "parameters": [
           {
             "in": "header",

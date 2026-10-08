@@ -7,6 +7,7 @@ import app.main as module
 
 @pytest.fixture(autouse=True)
 def rate_limit(monkeypatch):
+    monkeypatch.setenv('AI_MODE','mock')
     class FakeRedis:
         async def eval(self,*args): return 1
     monkeypatch.setattr(module,'limiter',FakeRedis())

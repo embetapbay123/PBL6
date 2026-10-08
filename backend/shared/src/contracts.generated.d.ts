@@ -851,7 +851,7 @@ export interface paths {
         put?: never;
         /**
          * Nhận callback sandbox đã ký
-         * @description Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.
          */
         post: operations["sandboxCallback"];
         delete?: never;
@@ -1419,7 +1419,7 @@ export interface paths {
         put?: never;
         /**
          * Gửi câu hỏi cho chatbot RAG
-         * @description Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. Real mode: Guest must send the server-issued X-Chat-Key; Customer must own the session. Missing Guest key is rejected before body validation.
          */
         post: operations["sendChatMessage"];
         delete?: never;
@@ -1777,7 +1777,7 @@ export interface paths {
         put?: never;
         /**
          * sepayCallback
-         * @description HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton.
+         * @description HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.
          */
         post: operations["sepayCallback"];
         delete?: never;
@@ -1936,7 +1936,7 @@ export interface components {
             /** Format: int64 */
             amount_vnd: number;
             /** @enum {string} */
-            status: "REQUESTED" | "PROCESSING" | "SUCCEEDED" | "FAILED";
+            status: "REQUESTED" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "UNKNOWN";
         };
         OrderTransition: {
             /** @enum {string} */
@@ -2120,6 +2120,8 @@ export interface components {
             /** Format: uuid */
             store_id?: string;
             quantity: number;
+            /** Format: uuid */
+            product_id?: string;
         };
         StoreReport: {
             /** Format: uuid */
@@ -2162,11 +2164,13 @@ export interface components {
             }[];
             fallback?: boolean;
             /** @enum {string} */
-            mode?: "mock";
+            mode?: "mock" | "real";
             /** Format: uuid */
             id?: string;
             /** @enum {string} */
             role?: "ASSISTANT" | "USER" | "SYSTEM";
+            /** @enum {string} */
+            fallback_reason?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED";
         };
         RecommendationResult: {
             model_version?: string;
@@ -2176,7 +2180,7 @@ export interface components {
             /** @description ID Product đã xem gần đây, chỉ khi Customer có consent; luôn lọc trạng thái Product/Store hiện hành, không có consent thì mảng rỗng. */
             recently_viewed_product_ids: string[];
             /** @enum {string} */
-            mode?: "mock";
+            mode?: "mock" | "real";
             /** @enum {string} */
             evaluation_status?: "NOT_RUN" | "RUNNING" | "COMPLETED" | "FAILED";
         };
@@ -2283,7 +2287,6 @@ export interface components {
             version: number;
         };
         ChatSessionCreate: {
-            anonymous_key?: string;
             first_message?: string;
         };
         ChatSession: {
@@ -2294,6 +2297,7 @@ export interface components {
             anonymous_key?: string;
             /** Format: date-time */
             created_at: string;
+            messages?: components["schemas"]["PageChatMessages"];
         };
         Category: {
             /** Format: uuid */
@@ -2383,7 +2387,7 @@ export interface components {
                 [key: string]: unknown;
             };
             /** @enum {string} */
-            mode?: "mock";
+            mode?: "mock" | "real";
         };
         VoucherUsage: {
             /** Format: uuid */
@@ -2549,6 +2553,11 @@ export interface components {
             /** Format: uuid */
             variant_id: string;
             quantity: number;
+            /**
+             * Format: uuid
+             * @description Product chứa Variant; M2 xác minh qua Catalog M1.
+             */
+            product_id: string;
         };
         CartItemUpdate: {
             quantity: number;
@@ -2673,6 +2682,18 @@ export interface components {
             code?: string | null;
             content: string;
             referenceCode?: string;
+            gateway?: string;
+            /** @example 2026-10-07 10:30:00 */
+            transactionDate?: string;
+            subAccount?: string | null;
+            description?: string | null;
+            accumulated?: number;
+        };
+        PageChatMessages: {
+            items: components["schemas"]["ChatMessage"][];
+            total: number;
+            page: number;
+            size: number;
         };
     };
     responses: never;
@@ -6673,8 +6694,9 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "variant_id": "11111111-1111-4111-8111-111111111111",
-                 *       "quantity": 2
+                 *       "product_id": "10000000-0000-4000-8000-000000000080",
+                 *       "variant_id": "10000000-0000-4000-8000-000000000090",
+                 *       "quantity": 1
                  *     }
                  */
                 "application/json": components["schemas"]["CartItemCreate"];
@@ -7381,6 +7403,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     getPayment: {
@@ -7475,6 +7506,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     sandboxCallback: {
@@ -7536,7 +7576,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Not found or outside scope */
+            /** @description Callback reference/amount/conflict/configuration error */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7545,7 +7585,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description State/version/idempotency conflict */
+            /** @description Callback reference/amount/conflict/configuration error */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7554,7 +7594,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Validation failure */
+            /** @description Callback reference/amount/conflict/configuration error */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7574,6 +7614,15 @@ export interface operations {
             };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10454,7 +10503,9 @@ export interface operations {
     sendChatMessage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Chat-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -10559,6 +10610,9 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                session_id?: string;
+                message_page?: number;
+                message_size?: number;
             };
             header?: never;
             path?: never;
@@ -12130,6 +12184,15 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
         };
     };
     updatePersonalizationConsent: {
@@ -12156,6 +12219,15 @@ export interface operations {
             };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Dependency or test provider not configured/unavailable; no success or automatic fixture fallback */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12192,8 +12264,44 @@ export interface operations {
                     };
                 };
             };
+            /** @description Callback reference/amount/conflict/configuration error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

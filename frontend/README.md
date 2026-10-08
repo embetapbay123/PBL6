@@ -89,3 +89,9 @@ Ngay trên thanh điều hướng đầu trang, có bộ chọn nhanh vai trò c
 
 ### 5. Dữ Liệu Mẫu (Mock Data)
 Toàn bộ dữ liệu mẫu trong `src/data/mockData.ts` được đồng bộ qua `localStorage` và có nút **"Reset Demo Data"** trên thanh điều hướng để khôi phục dữ liệu ban đầu bất kỳ lúc nào.
+
+### Customer API sample retry
+
+The default API-mode product list uses `ProductsSample` and the shared `ErrorView`. API failures display the server message and correlation ID with an optional retry action. Retrying keeps the same query, shows loading and prevents another retry while the request runs; it never switches to mock data. The legacy UI above is available separately with `?mode=mock`.
+
+PR #89 covers this retry behavior only. WEB-01 remains open for its full acceptance criteria. `tests/scaffold.spec.ts` checks 503 → retry → real M1 recovery at a phone viewport, together with search, pagination and the existing API samples.

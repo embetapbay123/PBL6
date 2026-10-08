@@ -1,6 +1,6 @@
 # Hướng dẫn member phát triển trên khung
 
-**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
+**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service và thêm 004 ở M2; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
 
 Chạy lần đầu theo [README gốc](../../README.md). API qua gateway ở `http://localhost:8080/api/v1`; không gọi service container trực tiếp từ Web/Mobile. DB/broker không publish port ra máy ngoài.
 

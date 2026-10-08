@@ -17,7 +17,7 @@ type AuthenticatedRequest = Request & { auth: { user_id: string }; correlationId
 
 @Controller() @UseGuards(AuthGuard)
 export class ProfileSkeletonController {
-  @Patch('me') @Roles("AUTHENTICATED")
+  @Patch('me')
   updateProfile(@Req() req: AuthenticatedRequest, @Body() body: UpdateProfileBodyDto) {
     return this.service.updateProfile(req.auth.user_id, body, req.correlationId ?? '');
   }

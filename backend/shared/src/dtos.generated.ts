@@ -540,8 +540,10 @@ export class ListCartItemsHeadersDto {
 export class AddCartItemBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
   "variant_id"!: string;
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
   "quantity"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid", "description": "Product chứa Variant; M2 xác minh qua Catalog M1."},true),defaultMessage:()=> 'Invalid contract field'}})
+  "product_id"!: string;
 }
 export class AddCartItemPathDto {
 }
@@ -550,7 +552,7 @@ export class AddCartItemQueryDto {
 export class AddCartItemHeadersDto {
 }
 export class UpdateCartItemBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
   "quantity"!: number;
 }
 export class UpdateCartItemPathDto {
@@ -1110,9 +1112,7 @@ export class UpdateRoleQueryDto {
 export class UpdateRoleHeadersDto {
 }
 export class CreateChatSessionBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
-  "anonymous_key"?: string;
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 10000},false),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 2000, "minLength": 1},false),defaultMessage:()=> 'Invalid contract field'}})
   "first_message"?: string;
 }
 export class CreateChatSessionPathDto {
@@ -1133,6 +1133,9 @@ export class SendChatMessagePathDto {
 export class SendChatMessageQueryDto {
 }
 export class SendChatMessageHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-chat-key"?: string;
 }
 export class ListOwnChatSessionsPathDto {
 }
@@ -1143,6 +1146,15 @@ export class ListOwnChatSessionsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "session_id"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1},false),defaultMessage:()=> 'Invalid contract field'}})
+  "message_page": number = 1;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
+  "message_size": number = 20;
 }
 export class ListOwnChatSessionsHeadersDto {
 }
@@ -1446,11 +1458,11 @@ export class UpdatePersonalizationConsentQueryDto {
 export class UpdatePersonalizationConsentHeadersDto {
 }
 export class SepayCallbackBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991, "minimum": 1},true),defaultMessage:()=> 'Invalid contract field'}})
   "id"!: number;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["in", "out"]},true),defaultMessage:()=> 'Invalid contract field'}})
   "transferType"!: "in" | "out";
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
   "transferAmount"!: number;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
   "accountNumber"!: string;
@@ -1460,6 +1472,16 @@ export class SepayCallbackBodyDto {
   "content"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
   "referenceCode"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "gateway"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 19, "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$", "example": "2026-10-07 10:30:00"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "transactionDate"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "nullable": true, "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "subAccount"?: string | null;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "nullable": true, "maxLength": 10000},false),defaultMessage:()=> 'Invalid contract field'}})
+  "description"?: string | null;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},false),defaultMessage:()=> 'Invalid contract field'}})
+  "accumulated"?: number;
 }
 export class SepayCallbackPathDto {
 }

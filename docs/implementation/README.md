@@ -2,14 +2,19 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
-**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Dùng migration 001→002→003 và DTO OpenAPI; không phải chờ chốt database thêm.
+**Payment callback:** [durable receipt và điểm nối worker Order](payment-callback-handoff.md), scope PAY-02 của Công; nghiệm thu consume/recovery/refund còn phối hợp đúng owner.
+
+**Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service và thêm 004 ở M2; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
 
 Chốt **4 service M1–M4**. Khung có code, migration, môi trường và luồng mẫu; thành viên viết phần nghiệp vụ theo hợp đồng. Không tách Cart/Order/Payment thành service riêng ở mốc này.
 
 | Đọc để làm gì | Tài liệu |
 | --- | --- |
 | Chạy hệ thống | [README gốc](../../README.md), [development guide](development-guide.md) |
-| Nhận việc ngay trong tuần 1 | [Week 1: link issue, việc cụ thể, thứ tự và tiêu chí demo từng người](week1.md) |
+| Nhận việc hiện tại | [Week 2: kho/Payment/checkout và task từng người](week2.md) |
+| Kế hoạch toàn bộ và dự kiến hoàn thành | [Roadmap Week 1–8; Week 9 dự phòng](roadmap.md) |
+| Điểm nối Payment/COD và consent/tracking của Công | [Handoff Week 2 của Công](cong-week2-handoff.md) |
+| Kế hoạch tuần 1 | [Week 1: link issue, việc cụ thể, thứ tự và tiêu chí demo từng người](week1.md) |
 | Biết ai làm gì | [ownership](service-ownership.md), [backlog](member-backlog.md), [bảng giao task](task-assignment.md) |
 | Nhận toàn bộ task và theo dõi tiến độ | [Kanban tổng theo member](https://github.com/users/embetapbay123/projects/1/views/3), [phân công đầy đủ](task-assignment.md), [cách dùng](kanban-guide.md) |
 | Biết API đã chạy tới đâu | [endpoint status](endpoint-status.md), [OpenAPI](../contracts/openapi.json) |

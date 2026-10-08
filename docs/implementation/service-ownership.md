@@ -37,7 +37,7 @@ flowchart LR
   MQ --> M4
 ```
 
-Mũi tên nghiệp vụ thể hiện hợp đồng đích. Khung mới có HTTP kiểm quyền/Store/catalog và event `bootstrap.example.v1` mẫu; chưa có reserve/order/AI consumer thật.
+Mũi tên nghiệp vụ thể hiện hợp đồng đích. Main có HTTP kiểm quyền/Store/catalog, checkout/AI scope lookup, Cart/Voucher/Order read, Seller transition/Shipment mô phỏng và outbox Cart/OrderCompleted. Reserve/checkout confirm/COD/AI consumer nghiệp vụ chưa hoàn thiện; xem [Week 2](week2.md).
 
 M2 có transaction cục bộ chung giữa Cart/Order/Payment. M1/M3/M4 không tham gia transaction đó. Quy trình nhiều service dùng operation ID, outbox/inbox và bù trừ/phục hồi theo thiết kế; không join/FK/ghi database service khác. Shared code chỉ chứa cơ chế chung; repository nghiệp vụ không dùng entity/DB service khác.
 

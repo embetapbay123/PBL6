@@ -1,6 +1,7 @@
 """Typed Pydantic input/output adapters; no implicit retry or fixture fallback."""
 from typing import Literal, Any
 import httpx
+from .network import session
 from .runtime_contracts import OPERATIONS, RESPONSE_REGISTRY, schema_errors, validate_operation
 
 class InternalError(Exception):
@@ -9,17 +10,17 @@ class InternalError(Exception):
         super().__init__(message)
 
 class InternalClient:
-    def __init__(self,caller:Literal['M1','M2','M3','M4'],key:str,urls:dict[str,str],transport=None):
-        self.caller,self.key,self.urls,self.transport=caller,key,urls,transport
+    def __init__(self,caller:Literal['M1','M2','M3','M4'],key:str,urls:dict[str,str],transport=None,http_client=None):
+        self.caller,self.key,self.urls,self.transport,self.http_client=caller,key,urls,transport,http_client
     async def call(self,operation:str,body:dict|None,correlation:str)->dict[str,Any]:
         record=OPERATIONS[operation]
         if not record['internal'] or self.caller not in record['callers']:
             raise InternalError(503,'SERVICE_AUTH_FAILED','Caller không thuộc contract.')
         validate_operation(operation,body=body,headers={'x-correlation-id':correlation})
         try:
-            async with httpx.AsyncClient(timeout=1,transport=self.transport) as client:
+            async with session(self.http_client,self.transport) as client:
                 response=await client.request(record['method'],self.urls[record['service']]+record['route'],
-                    json=body if body is not None else None,headers={'X-Service-Id':self.caller,'X-Service-Key':self.key,'X-Correlation-Id':correlation})
+                    json=body if body is not None else None,timeout=1,headers={'X-Service-Id':self.caller,'X-Service-Key':self.key,'X-Correlation-Id':correlation})
             try: result=response.json()
             except ValueError: raise InternalError(503,'DEPENDENCY_CONTRACT_INVALID','Response không phải JSON.')
             if response.is_error:

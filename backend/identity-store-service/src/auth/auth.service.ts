@@ -29,7 +29,7 @@ export class AuthService {
     const [user] = await database.query('SELECT id,email,status,version FROM "user" WHERE id=$1',[userId]);
     if (!user || user.status !== 'ACTIVE') throw new ApiError(401,'SESSION_REVOKED','Phiên đăng nhập đã bị thu hồi.');
     const roleRows = await database.query('SELECT r.code FROM user_role ur JOIN role r ON r.id=ur.role_id WHERE ur.user_id=$1 AND r.status=\'ACTIVE\'',[userId]);
-    const roles = roleRows.map((r: any) => r.code);
+    const roles: string[] = roleRows.map((r: any) => r.code);
     const [member] = await database.query(
       `SELECT m.store_id,m.role,m.status
        FROM store_membership m

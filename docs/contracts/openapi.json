@@ -1407,7 +1407,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/addresses": {
@@ -1546,7 +1546,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -1670,7 +1670,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/addresses/{id}": {
@@ -1806,7 +1806,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "delete": {
         "tags": [
@@ -1930,7 +1930,7 @@
         "x-service-owner": "M3",
         "x-module": "profile",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/store-applications": {
@@ -5456,7 +5456,7 @@
         "x-service-owner": "M2",
         "x-module": "cart",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -5565,8 +5565,9 @@
                 "$ref": "#/components/schemas/CartItemCreate"
               },
               "example": {
-                "variant_id": "11111111-1111-4111-8111-111111111111",
-                "quantity": 2
+                "product_id": "10000000-0000-4000-8000-000000000080",
+                "variant_id": "10000000-0000-4000-8000-000000000090",
+                "quantity": 1
               }
             }
           }
@@ -5584,7 +5585,7 @@
         "x-service-owner": "M2",
         "x-module": "cart",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/cart/items/{id}": {
@@ -5720,7 +5721,7 @@
         "x-service-owner": "M2",
         "x-module": "cart",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "delete": {
         "tags": [
@@ -5844,7 +5845,7 @@
         "x-service-owner": "M2",
         "x-module": "cart",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/checkout/quotes": {
@@ -6264,7 +6265,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/orders/{id}/payment-attempts": {
@@ -6375,6 +6376,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "requestBody": {
@@ -6403,7 +6414,7 @@
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/payments/{id}": {
@@ -6514,6 +6525,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6529,7 +6550,7 @@
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/payment-callbacks/sandbox": {
@@ -6591,7 +6612,7 @@
             }
           },
           "404": {
-            "description": "Not found or outside scope",
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6601,7 +6622,7 @@
             }
           },
           "409": {
-            "description": "State/version/idempotency conflict",
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6611,7 +6632,7 @@
             }
           },
           "422": {
-            "description": "Validation failure",
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6632,6 +6653,16 @@
           },
           "501": {
             "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Callback reference/amount/conflict/configuration error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6662,7 +6693,7 @@
           "SANDBOX_PROVIDER"
         ],
         "x-data-scope": "SIGNED_CALLBACK",
-        "description": "Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Nhận callback sandbox đã ký. Phạm vi dữ liệu: SIGNED_CALLBACK; quyền: SANDBOX_PROVIDER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.",
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
@@ -6792,7 +6823,7 @@
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/orders": {
@@ -6931,7 +6962,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/orders/{id}": {
@@ -7057,7 +7088,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/orders/{id}/cancel": {
@@ -7337,7 +7368,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/orders/{id}": {
@@ -7464,7 +7495,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/orders/{id}/status": {
@@ -7613,7 +7644,7 @@
         "x-service-owner": "M2",
         "x-module": "order",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/orders/{id}/cancel": {
@@ -8160,7 +8191,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -8294,7 +8325,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/vouchers/{id}": {
@@ -8434,7 +8465,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/vouchers": {
@@ -8573,7 +8604,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -8707,7 +8738,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/vouchers/{id}": {
@@ -8847,7 +8878,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/products/{id}/reviews": {
@@ -10225,7 +10256,7 @@
         "x-service-owner": "M2",
         "x-module": "report",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/dashboard": {
@@ -10605,7 +10636,7 @@
         "x-service-owner": "M4",
         "x-module": "chat",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/chat/sessions/{id}/messages": {
@@ -10623,6 +10654,16 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Chat-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$",
+              "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             }
           }
         ],
@@ -10742,11 +10783,11 @@
           "CUSTOMER"
         ],
         "x-data-scope": "PUBLIC_OR_OWN_SESSION",
-        "description": "Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Gửi câu hỏi cho chatbot RAG. Phạm vi dữ liệu: PUBLIC_OR_OWN_SESSION; quyền: GUEST, CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan. Real mode: Guest must send the server-issued X-Chat-Key; Customer must own the session. Missing Guest key is rejected before body validation.",
         "x-service-owner": "M4",
         "x-module": "chat",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/me/chat/sessions": {
@@ -10770,6 +10811,37 @@
           },
           {
             "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "message_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "message_size",
             "in": "query",
             "required": false,
             "schema": {
@@ -10885,7 +10957,7 @@
         "x-service-owner": "M4",
         "x-module": "chat",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/recommendations/for-you": {
@@ -11001,7 +11073,7 @@
         "x-service-owner": "M4",
         "x-module": "recommendation",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/products/{id}/related": {
@@ -11146,7 +11218,7 @@
         "x-service-owner": "M4",
         "x-module": "recommendation",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/store/staff/{id}": {
@@ -11564,7 +11636,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/vouchers/{id}/usage": {
@@ -11690,7 +11762,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/categories": {
@@ -12876,7 +12948,7 @@
         "x-service-owner": "M4",
         "x-module": "evaluation",
         "x-member-owner": "Công",
-        "x-implementation-status": "MOCK_ONLY"
+        "x-implementation-status": "IMPLEMENTED_SAMPLE"
       }
     },
     "/me/personalization-consent": {
@@ -12907,6 +12979,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -12921,7 +13003,7 @@
         "x-service-owner": "M4",
         "x-module": "consent",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "patch": {
         "operationId": "updatePersonalizationConsent",
@@ -12943,6 +13025,16 @@
           },
           "501": {
             "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency or test provider not configured/unavailable; no success or automatic fixture fallback",
             "content": {
               "application/json": {
                 "schema": {
@@ -12974,7 +13066,7 @@
         "x-service-owner": "M4",
         "x-module": "consent",
         "x-member-owner": "Công",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/payment-callbacks/sepay": {
@@ -13031,6 +13123,46 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Callback reference/amount/conflict/configuration error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         },
         "security": [],
@@ -13048,7 +13180,7 @@
             }
           }
         },
-        "description": "HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton.",
+        "description": "HMAC SHA256(timestamp.raw_body), timestamp window 300s; Test Mode only. No business processing in skeleton. ACK xác nhận callback đã lưu, không xác nhận Order đã consume kho. Follow-up pending cần owner Order tích hợp; toàn scope endpoint chưa nghiệm thu.",
         "x-service-owner": "M2",
         "x-module": "payment",
         "x-member-owner": "Công",
@@ -13583,7 +13715,8 @@
               "REQUESTED",
               "PROCESSING",
               "SUCCEEDED",
-              "FAILED"
+              "FAILED",
+              "UNKNOWN"
             ]
           }
         },
@@ -14272,6 +14405,10 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 9007199254740991
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -14429,7 +14566,8 @@
           "mode": {
             "type": "string",
             "enum": [
-              "mock"
+              "mock",
+              "real"
             ]
           },
           "id": {
@@ -14442,6 +14580,16 @@
               "ASSISTANT",
               "USER",
               "SYSTEM"
+            ]
+          },
+          "fallback_reason": {
+            "type": "string",
+            "enum": [
+              "PROVIDER_NOT_CONFIGURED",
+              "PROVIDER_UNAVAILABLE",
+              "PROVIDER_INVALID_RESPONSE",
+              "NO_MATCH",
+              "MODEL_SELECTED"
             ]
           }
         },
@@ -14485,7 +14633,8 @@
           "mode": {
             "type": "string",
             "enum": [
-              "mock"
+              "mock",
+              "real"
             ]
           },
           "evaluation_status": {
@@ -14875,13 +15024,10 @@
       "ChatSessionCreate": {
         "type": "object",
         "properties": {
-          "anonymous_key": {
-            "type": "string",
-            "maxLength": 200
-          },
           "first_message": {
             "type": "string",
-            "maxLength": 10000
+            "maxLength": 2000,
+            "minLength": 1
           }
         },
         "additionalProperties": false
@@ -14904,6 +15050,9 @@
           "created_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "messages": {
+            "$ref": "#/components/schemas/PageChatMessages"
           }
         },
         "required": [
@@ -15209,7 +15358,8 @@
           "mode": {
             "type": "string",
             "enum": [
-              "mock"
+              "mock",
+              "real"
             ]
           }
         },
@@ -15964,12 +16114,18 @@
           "quantity": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 2147483647
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Product chứa Variant; M2 xác minh qua Catalog M1."
           }
         },
         "required": [
           "variant_id",
-          "quantity"
+          "quantity",
+          "product_id"
         ],
         "additionalProperties": false
       },
@@ -15979,7 +16135,7 @@
           "quantity": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 9007199254740991
+            "maximum": 2147483647
           }
         },
         "required": [
@@ -16382,7 +16538,8 @@
         "properties": {
           "id": {
             "type": "integer",
-            "maximum": 9007199254740991
+            "maximum": 9007199254740991,
+            "minimum": 1
           },
           "transferType": {
             "type": "string",
@@ -16393,7 +16550,7 @@
           },
           "transferAmount": {
             "type": "integer",
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 9007199254740991
           },
           "accountNumber": {
@@ -16412,6 +16569,31 @@
           "referenceCode": {
             "type": "string",
             "maxLength": 200
+          },
+          "gateway": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "transactionDate": {
+            "type": "string",
+            "maxLength": 19,
+            "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$",
+            "example": "2026-10-07 10:30:00"
+          },
+          "subAccount": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 10000
+          },
+          "accumulated": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -16420,6 +16602,39 @@
           "transferAmount",
           "accountNumber",
           "content"
+        ],
+        "additionalProperties": false
+      },
+      "PageChatMessages": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            },
+            "maxItems": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
         ],
         "additionalProperties": false
       }
