@@ -12,14 +12,13 @@ export interface IEmailAdapter {
   sendPasswordResetEmail(email: string, token: string): Promise<void>;
 }
 export class MockEmailAdapter implements IEmailAdapter {
-  async sendVerificationEmail(email: string, token: string): Promise<void> {
-    console.log(`[FIXTURE - MOCK EMAIL] DEV ONLY`);
-    console.log(`[FIXTURE - MOCK EMAIL] Đang gửi email xác thực tới: ${email}`);
-    console.log(`[FIXTURE - MOCK EMAIL] Link: https://m3-domain.com/verify?token=${token}`);
+  async sendVerificationEmail(email: string, _token: string): Promise<void> {
+    if (process.env.NODE_ENV === 'production') return;
+    // Sanitized log: never log raw token or raw email link per security policy
   }
-  async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    console.log(`[FIXTURE - MOCK EMAIL] Gửi link khôi phục mật khẩu tới: ${email}`);
-    console.log(`[FIXTURE - MOCK EMAIL] Link: https://m3-domain.com/reset-password/confirm?token=${token}`);
+  async sendPasswordResetEmail(email: string, _token: string): Promise<void> {
+    if (process.env.NODE_ENV === 'production') return;
+    // Sanitized log: never log raw token or raw email link per security policy
   }
 }
 export class AuthService {
@@ -66,52 +65,92 @@ export class AuthService {
   private issueAccess(userId: string, sid: string) {
     return jwt.sign({sid},readFileSync(required('JWT_PRIVATE_KEY_FILE'),'utf8'),{algorithm:'RS256',subject:userId,issuer:'pbl6-identity',audience:'pbl6-clients',expiresIn:'15m'});
   }
-  private issueVerificationToken(userId: string): string {
-    const privateKey = readFileSync(required('JWT_PRIVATE_KEY_FILE'),'utf8');
-    return jwt.sign({}, privateKey, { algorithm: 'RS256', subject: userId, expiresIn: '15m' });
-  }
 
-  async register(email: string, password: string) {
+  async register(email: string, password: string, displayName?: string) {
     const [existing] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
     if (existing) {
       if (existing.status === 'PENDING') {
-         const token = this.issueVerificationToken(existing.id);
-         await this.emailAdapter.sendVerificationEmail(email, token);
+        const rawToken = randomBytes(32).toString('hex');
+        await database.query(
+          `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
+           VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '24 hours', now())`,
+          [randomUUID(), existing.id, digest(rawToken)]
+        );
+        await this.emailAdapter.sendVerificationEmail(email, rawToken);
       }
-      return; 
+      return {
+        user_id: existing.id,
+        email_verified: false,
+        message: 'Nếu email chưa được đăng ký, một liên kết xác thực đã được gửi.'
+      };
     }
+
     const hash = await bcrypt.hash(password, 10);
     const userId = randomUUID();
-    await database.query(
-      'INSERT INTO "user"(id, email, password_hash, status, version) VALUES($1, $2, $3, \'PENDING\', 0)', 
-      [userId, email, hash]
-    );
+    const rawToken = randomBytes(32).toString('hex');
+    const name = displayName || email.split('@')[0];
 
-    const token = this.issueVerificationToken(userId);
-    await this.emailAdapter.sendVerificationEmail(email, token);
+    await database.transaction(async manager => {
+      await manager.query(
+        'INSERT INTO "user"(id, email, password_hash, status, created_at, version) VALUES($1, $2, $3, \'PENDING\', now(), 0)',
+        [userId, email, hash]
+      );
+      await manager.query(
+        'INSERT INTO customer_profile(id, user_id, display_name, phone, updated_at) VALUES($1, $2, $3, NULL, now())',
+        [randomUUID(), userId, name]
+      );
+      const [customerRole] = await manager.query('SELECT id FROM role WHERE code=\'CUSTOMER\'');
+      if (customerRole) {
+        await manager.query(
+          'INSERT INTO user_role(user_id, role_id, granted_at) VALUES($1, $2, now())',
+          [userId, customerRole.id]
+        );
+      }
+      await manager.query(
+        `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
+         VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '24 hours', now())`,
+        [randomUUID(), userId, digest(rawToken)]
+      );
+    });
+
+    await this.emailAdapter.sendVerificationEmail(email, rawToken);
+    return {
+      user_id: userId,
+      email_verified: false,
+      message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác thực.'
+    };
   }
 
   async verify(token: string) {
-    let claims;
-    try {
-      claims = verifyToken(token, config('M3').publicKey);
-    } catch (e) {
-      throw new ApiError(400, 'INVALID_OR_EXPIRED_TOKEN', 'Token không hợp lệ hoặc đã hết hạn.');
-    }
-    if (!claims.sub) {
-      throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ.');
-    }
-    const result = await database.query(
-      `UPDATE "user"
-       SET status = 'ACTIVE', version = version + 1
-       WHERE id = $1 AND status = 'PENDING'
-       RETURNING id`,
-      [claims.sub]
-    );
-    if (result.length === 0) {
-      throw new ApiError(400, 'VERIFICATION_FAILED', 'Xác thực thất bại. Token đã được sử dụng hoặc tài khoản không tồn tại.');
-    }
-    return this.context(claims.sub);
+    const tokenHash = digest(token);
+    await database.transaction(async manager => {
+      const [tokenRow] = await manager.query(
+        `SELECT id, user_id, expires_at, consumed_at FROM one_time_token
+         WHERE token_hash=$1 AND purpose='EMAIL_VERIFICATION' FOR UPDATE`,
+        [tokenHash]
+      );
+      if (!tokenRow || tokenRow.consumed_at) {
+        throw new ApiError(400, 'INVALID_OR_CONSUMED_TOKEN', 'Mã xác thực không hợp lệ hoặc đã được sử dụng.');
+      }
+      if (new Date(tokenRow.expires_at).getTime() <= Date.now()) {
+        throw new ApiError(400, 'TOKEN_EXPIRED', 'Mã xác thực đã hết hạn.');
+      }
+      await manager.query(
+        'UPDATE one_time_token SET consumed_at=now() WHERE id=$1',
+        [tokenRow.id]
+      );
+      const result = await manager.query(
+        `UPDATE "user"
+         SET status = 'ACTIVE', email_verified_at = now(), version = version + 1
+         WHERE id = $1 AND status = 'PENDING'
+         RETURNING id`,
+        [tokenRow.user_id]
+      );
+      if (result.length === 0) {
+        throw new ApiError(400, 'VERIFICATION_FAILED', 'Tài khoản không tồn tại hoặc đã kích hoạt.');
+      }
+    });
+    return { status: 'OK', message: 'Xác thực email thành công.' };
   }
 
   async login(email: string,password: string) {
@@ -146,86 +185,88 @@ export class AuthService {
   }
   async logout(token: string) {
     await database.query('UPDATE refresh_session SET revoked_at=coalesce(revoked_at,now()) WHERE family_id IN (SELECT family_id FROM refresh_session WHERE token_hash=$1)',[digest(token)]);
+    return { status: 'OK', message: 'Đăng xuất thành công.' };
   }
   async resetPassword(email: string) {
     const [user] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
-    
-    // Nếu user không tồn tại hoặc chưa ACTIVE thì ngầm bỏ qua, nhưng không throw lỗi.
-    if (!user || user.status !== 'ACTIVE') return;
+    if (!user || user.status !== 'ACTIVE') {
+      return { status: 'OK', message: 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.' };
+    }
 
-    // YÊU CẦU: Token hash & expiry
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = digest(rawToken);
     
-    // Lưu vào Database với thời hạn 15 phút
     await database.query(
-      `INSERT INTO password_reset_request(id, user_id, token_hash, expires_at) 
-       VALUES($1, $2, $3, now() + interval '15 minutes')`,
+      `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at) 
+       VALUES($1, $2, 'PASSWORD_RESET', $3, now() + interval '15 minutes', now())`,
       [randomUUID(), user.id, tokenHash]
     );
 
     await this.emailAdapter.sendPasswordResetEmail(email, rawToken);
+    return { status: 'OK', message: 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.' };
   }
 
   async confirmResetPassword(rawToken: string, newPassword: string) {
     const tokenHash = digest(rawToken);
 
     await database.transaction(async manager => {
-      // FOR UPDATE để block các request đồng thời (Chặn Race condition / Replay)
-      const [request] = await manager.query(
-        'SELECT id, user_id, expires_at, used_at FROM password_reset_request WHERE token_hash=$1 FOR UPDATE',
+      const [tokenRow] = await manager.query(
+        `SELECT id, user_id, expires_at, consumed_at FROM one_time_token
+         WHERE token_hash=$1 AND purpose='PASSWORD_RESET' FOR UPDATE`,
         [tokenHash]
       );
 
-      // Validate logic theo yêu cầu
-      if (!request) throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ.');
-      if (request.used_at) throw new ApiError(400, 'TOKEN_USED', 'Token đã được sử dụng.');
-      if (new Date(request.expires_at).getTime() <= Date.now()) throw new ApiError(400, 'TOKEN_EXPIRED', 'Token đã hết hạn.');
+      if (!tokenRow || tokenRow.consumed_at) {
+        throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ hoặc đã được sử dụng.');
+      }
+      if (new Date(tokenRow.expires_at).getTime() <= Date.now()) {
+        throw new ApiError(400, 'TOKEN_EXPIRED', 'Token đã hết hạn.');
+      }
 
       const hash = await bcrypt.hash(newPassword, 10);
 
-      // Cập nhật mật khẩu và tăng version (Để invalidate Access Token hiện hành)
       await manager.query(
         'UPDATE "user" SET password_hash=$1, version=version+1 WHERE id=$2',
-        [hash, request.user_id]
+        [hash, tokenRow.user_id]
       );
 
-      // YÊU CẦU: One-time -> Đánh dấu token đã sử dụng
       await manager.query(
-        'UPDATE password_reset_request SET used_at=now() WHERE id=$1',
-        [request.id]
+        'UPDATE one_time_token SET consumed_at=now() WHERE id=$1',
+        [tokenRow.id]
       );
 
-      // YÊU CẦU: Password thay đổi thu hồi phiên đúng BR
       await manager.query(
         'UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
-        [request.user_id]
+        [tokenRow.user_id]
       );
     });
+
+    return { status: 'OK', message: 'Mật khẩu đã được khôi phục thành công.' };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
-    const [user] = await database.query('SELECT password_hash FROM "user" WHERE id=$1', [userId]);
-    if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ.');
+    const [user] = await database.query('SELECT id, password_hash, status FROM "user" WHERE id=$1', [userId]);
+    if (!user || user.status !== 'ACTIVE') {
+      throw new ApiError(401, 'UNAUTHENTICATED', 'Phiên đăng nhập không hợp lệ.');
+    }
 
-    // YÊU CẦU: Kiểm credential hiện hành
     const valid = await bcrypt.compare(currentPassword, user.password_hash);
     if (!valid) throw new ApiError(400, 'INVALID_CREDENTIALS', 'Mật khẩu hiện tại không chính xác.');
 
     const hash = await bcrypt.hash(newPassword, 10);
 
     await database.transaction(async manager => {
-      // Cập nhật mật khẩu và tăng version
       await manager.query(
         'UPDATE "user" SET password_hash=$1, version=version+1 WHERE id=$2',
         [hash, userId]
       );
 
-      // YÊU CẦU: Thu hồi tất cả các phiên hiện tại (Bao gồm cả phiên đang gọi API này)
       await manager.query(
         'UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
         [userId]
       );
     });
+
+    return { status: 'OK', message: 'Đổi mật khẩu thành công.' };
   }
 }
