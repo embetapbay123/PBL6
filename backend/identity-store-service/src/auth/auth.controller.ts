@@ -8,7 +8,7 @@ import { ApiError } from '../../../shared/src/errors';
 import { ProfileService } from '../profile/profile.service';
 import { AuthService } from './auth.service';
 import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordDto, ChangePasswordDto, VerifyEmailDto } from './auth.dto';
-import { ProfileService } from '../profile/profile.service';
+
 
 @Controller() @UseGuards(AuthGuard)
 export class AuthController {
