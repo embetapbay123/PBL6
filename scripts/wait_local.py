@@ -19,6 +19,12 @@ while time.monotonic() < deadline:
             last_failure = f"HTTP {response.status}"
     except urllib.error.HTTPError as error:
         last_failure = f"HTTP {error.code}"
+        try:
+            body = error.read().decode("utf-8", errors="replace").strip()
+            if body:
+                last_failure += f": {body[:300]}"
+        except OSError:
+            pass
     except (OSError, urllib.error.URLError) as error:
         last_failure = error.reason if isinstance(error, urllib.error.URLError) else str(error)
     time.sleep(1)
