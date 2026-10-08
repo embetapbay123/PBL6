@@ -7,7 +7,7 @@ export class StoreRepository {
     const [row] = await database.query(
       `SELECT s.id, m.user_id AS owner_user_id, s.name, s.status, s.shipping_fee_vnd, s.version
        FROM store s
-       JOIN store_membership m ON m.store_id=s.id AND m.status='ACTIVE'
+       JOIN store_membership m ON m.store_id=s.id AND m.role='OWNER' AND m.status='ACTIVE'
        WHERE m.user_id=$1 AND s.status='ACTIVE'
        ORDER BY m.joined_at DESC, m.id
        LIMIT 1`,

@@ -31,7 +31,7 @@ export class AuthService {
     const roleRows = await database.query('SELECT r.code FROM user_role ur JOIN role r ON r.id=ur.role_id WHERE ur.user_id=$1 AND r.status=\'ACTIVE\'',[userId]);
     const roles: string[] = roleRows.map((r: any) => r.code);
     const [member] = await database.query(
-      `SELECT m.store_id,m.role,m.status
+      `SELECT m.id AS membership_id,m.store_id,m.role,m.status
        FROM store_membership m
        JOIN store s ON s.id=m.store_id AND s.status='ACTIVE'
        WHERE m.user_id=$1 AND m.status='ACTIVE'
@@ -44,14 +44,8 @@ export class AuthService {
       `SELECT p.code
        FROM membership_permission mp
        JOIN permission p ON p.id=mp.permission_id
-       WHERE mp.membership_id=(
-         SELECT m.id
-         FROM store_membership m
-         JOIN store s ON s.id=m.store_id AND s.status='ACTIVE'
-         WHERE m.user_id=$1 AND m.store_id=$2 AND m.status='ACTIVE'
-         LIMIT 1
-       )`,
-      [userId, member.store_id],
+       WHERE mp.membership_id=$1`,
+      [member.membership_id],
     )).map((p: any)=>p.code) : [];
     return {user_id:user.id, roles:[...new Set(roles)], token_version:user.version,
       ...(member ? {store_membership:{...member,permissions}} : {})};
@@ -70,10 +64,10 @@ export class AuthService {
     const [existing] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
     if (existing) {
       if (existing.status === 'PENDING') {
-        const rawToken = randomBytes(32).toString('hex');
+        const rawToken = randomBytes(32).toString('base64url');
         await database.query(
           `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
-           VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '24 hours', now())`,
+           VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '15 minutes', now())`,
           [randomUUID(), existing.id, digest(rawToken)]
         );
         await this.emailAdapter.sendVerificationEmail(email, rawToken);
@@ -87,7 +81,7 @@ export class AuthService {
 
     const hash = await bcrypt.hash(password, 10);
     const userId = randomUUID();
-    const rawToken = randomBytes(32).toString('hex');
+    const rawToken = randomBytes(32).toString('base64url');
     const name = displayName || email.split('@')[0];
 
     await database.transaction(async manager => {
@@ -99,16 +93,15 @@ export class AuthService {
         'INSERT INTO customer_profile(id, user_id, display_name, phone, updated_at) VALUES($1, $2, $3, NULL, now())',
         [randomUUID(), userId, name]
       );
-      const [customerRole] = await manager.query('SELECT id FROM role WHERE code=\'CUSTOMER\'');
-      if (customerRole) {
-        await manager.query(
-          'INSERT INTO user_role(user_id, role_id, granted_at) VALUES($1, $2, now())',
-          [userId, customerRole.id]
-        );
-      }
+      const [customerRole] = await manager.query('SELECT id FROM role WHERE code=\'CUSTOMER\' AND status=\'ACTIVE\'');
+      if (!customerRole) throw new Error('Required CUSTOMER role is not seeded');
+      await manager.query(
+        'INSERT INTO user_role(user_id, role_id, granted_at) VALUES($1, $2, now())',
+        [userId, customerRole.id]
+      );
       await manager.query(
         `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
-         VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '24 hours', now())`,
+         VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '15 minutes', now())`,
         [randomUUID(), userId, digest(rawToken)]
       );
     });
@@ -193,7 +186,7 @@ export class AuthService {
       return { status: 'OK', message: 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.' };
     }
 
-    const rawToken = randomBytes(32).toString('hex');
+    const rawToken = randomBytes(32).toString('base64url');
     const tokenHash = digest(rawToken);
     
     await database.query(

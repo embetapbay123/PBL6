@@ -69,7 +69,7 @@ function UsersManagement() {
   return (
     <div className="boot-card">
       <h3>Quản lý Người dùng (Users)</h3>
-      {error && <ErrorView error={error} />}
+      {error !== undefined && <ErrorView error={error} />}
       {loading ? <Loading /> : (
         <>
           <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '1rem' }}>
@@ -153,7 +153,7 @@ function StoresManagement() {
   return (
     <div className="boot-card">
       <h3>Quản lý Cửa hàng (Stores)</h3>
-      {error && <ErrorView error={error} />}
+      {error !== undefined && <ErrorView error={error} />}
       {loading ? <Loading /> : (
         <>
           <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '1rem' }}>

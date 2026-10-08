@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   ShieldCheck,
@@ -17,17 +17,15 @@ import {
   Sparkles,
   Layers
 } from 'lucide-react';
-import { StoreStatus } from '../../types';
+import { callOperation } from '../../api/operations';
+
+type AdminUser = { id: string; email: string; status: string; version: number };
+type AdminStore = { id: string; owner_user_id?: string; name: string; status: string; shipping_fee_vnd?: number; version: number };
 
 export const AdminPortal: React.FC = () => {
   const {
-    currentUser,
     storeApplications,
     reviewStoreApplication,
-    users,
-    toggleUserLock,
-    stores,
-    toggleStoreStatus,
     products,
     toggleAdminHideProduct,
     reviews,
@@ -37,6 +35,47 @@ export const AdminPortal: React.FC = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'applications' | 'users-stores' | 'moderation' | 'vouchers-ai'>('applications');
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [adminStores, setAdminStores] = useState<AdminStore[]>([]);
+  const [adminError, setAdminError] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  const loadDirectory = useCallback(async () => {
+    setAdminLoading(true);
+    setAdminError('');
+    try {
+      const [userPage, storePage] = await Promise.all([
+        callOperation('listUsers', { query: { page: 1, size: 100 } }),
+        callOperation('listStores', { query: { page: 1, size: 100 } }),
+      ]);
+      setAdminUsers(userPage.items as AdminUser[]);
+      setAdminStores(storePage.items as AdminStore[]);
+    } catch (error) {
+      setAdminError(error instanceof Error ? error.message : 'Không tải được dữ liệu quản trị.');
+    } finally {
+      setAdminLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { if (activeTab === 'users-stores') void loadDirectory(); }, [activeTab, loadDirectory]);
+
+  const updateUser = async (user: AdminUser, reason: string) => {
+    try {
+      const updated = await callOperation('updateUserState', { path: { id: user.id }, body: {
+        status: user.status === 'LOCKED' ? 'ACTIVE' : 'LOCKED', reason, expected_version: user.version,
+      } });
+      setAdminUsers(current => current.map(item => item.id === user.id ? { ...item, ...updated } : item));
+    } catch (error) { setAdminError(error instanceof Error ? error.message : 'Không cập nhật được tài khoản.'); }
+  };
+
+  const updateStore = async (store: AdminStore, reason: string) => {
+    try {
+      const updated = await callOperation('updateStoreState', { path: { id: store.id }, body: {
+        status: store.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE', reason, expected_version: store.version,
+      } });
+      setAdminStores(current => current.map(item => item.id === store.id ? { ...item, ...updated } : item));
+    } catch (error) { setAdminError(error instanceof Error ? error.message : 'Không cập nhật được cửa hàng.'); }
+  };
 
   const pendingApps = storeApplications.filter(a => a.status === 'PENDING');
 
@@ -223,44 +262,44 @@ export const AdminPortal: React.FC = () => {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600 border-y border-slate-200 uppercase tracking-wider">
                   <tr>
-                    <th className="p-3">Họ và tên</th>
+                    <th className="p-3">User ID</th>
                     <th className="p-3">Email</th>
-                    <th className="p-3">Vai trò</th>
+                    <th className="p-3">Tài khoản</th>
                     <th className="p-3">Trạng thái</th>
                     <th className="p-3 text-right">Khóa / Mở</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {users.map(u => (
+                  {adminUsers.map(u => (
                     <tr key={u.id}>
-                      <td className="p-3 font-bold text-slate-900">{u.fullName}</td>
+                      <td className="p-3 font-bold text-slate-900">{u.id}</td>
                       <td className="p-3 font-mono text-slate-600">{u.email}</td>
-                      <td className="p-3 font-semibold text-slate-700">{u.activeRole}</td>
+                      <td className="p-3 font-semibold text-slate-700">{u.status}</td>
                       <td className="p-3">
                         <span
                           className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                            u.isLocked ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                            u.status === 'LOCKED' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
                           }`}
                         >
-                          {u.isLocked ? 'ĐÃ KHÓA' : 'HOẠT ĐỘNG'}
+                          {u.status}
                         </span>
                       </td>
                       <td className="p-3 text-right">
-                        {u.activeRole !== 'ADMIN' && (
+                        {u.status !== 'PENDING' && (
                           <button
                             onClick={() => {
                               const reason = prompt(
-                                u.isLocked ? 'Lý do mở khóa:' : 'Lý do khóa tài khoản:'
+                                u.status === 'LOCKED' ? 'Lý do mở khóa:' : 'Lý do khóa tài khoản:'
                               );
-                              if (reason) toggleUserLock(u.id, reason);
+                              if (reason) void updateUser(u, reason);
                             }}
                             className={`px-3 py-1 rounded text-[11px] font-bold transition ${
-                              u.isLocked
+                              u.status === 'LOCKED'
                                 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                 : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
                             }`}
                           >
-                            {u.isLocked ? 'Mở khóa' : 'Khóa User'}
+                            {u.status === 'LOCKED' ? 'Mở khóa' : 'Khóa User'}
                           </button>
                         )}
                       </td>
@@ -269,6 +308,8 @@ export const AdminPortal: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            {adminError && <p role="alert" className="text-sm text-rose-700">{adminError}</p>}
+            {adminLoading && <p className="text-sm text-slate-500">Đang tải dữ liệu...</p>}
           </div>
 
           {/* Stores table */}
@@ -280,23 +321,23 @@ export const AdminPortal: React.FC = () => {
                   <tr>
                     <th className="p-3">Gian hàng</th>
                     <th className="p-3">Phí ship</th>
-                    <th className="p-3">Đánh giá</th>
+                    <th className="p-3">Chủ cửa hàng</th>
                     <th className="p-3">Trạng thái</th>
                     <th className="p-3 text-right">Quản lý</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {stores.map(s => (
+                  {adminStores.map(s => (
                     <tr key={s.id}>
                       <td className="p-3 flex items-center gap-3">
-                        <img src={s.logo} alt={s.name} className="w-9 h-9 rounded-lg object-cover" />
+                        <div className="w-9 h-9 rounded-lg bg-slate-100" aria-hidden="true" />
                         <div>
                           <p className="font-bold text-slate-900">{s.name}</p>
                           <p className="text-[10px] text-slate-400">ID: {s.id}</p>
                         </div>
                       </td>
-                      <td className="p-3 text-slate-700">{formatVnd(s.shippingFeeVnd)}</td>
-                      <td className="p-3 font-semibold text-amber-600">{s.ratingAvg} ★</td>
+                      <td className="p-3 text-slate-700">{formatVnd(s.shipping_fee_vnd ?? 0)}</td>
+                      <td className="p-3 font-mono text-slate-600">{s.owner_user_id ?? '—'}</td>
                       <td className="p-3">
                         <span
                           className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
@@ -311,9 +352,8 @@ export const AdminPortal: React.FC = () => {
                       <td className="p-3 text-right">
                         <button
                           onClick={() => {
-                            const newStatus: StoreStatus = s.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
                             const reason = prompt('Nhập lý do thay đổi trạng thái Store:') || 'Admin audit';
-                            toggleStoreStatus(s.id, newStatus, reason);
+                            void updateStore(s, reason);
                           }}
                           className="px-3 py-1 rounded border border-slate-200 hover:bg-slate-100 font-semibold text-[11px]"
                         >

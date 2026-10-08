@@ -6,6 +6,8 @@ import { randomUUID } from 'node:crypto';
 
 export class AdministrationRepository {
   async listUsers(page = 1, size = 20) {
+    page = Math.max(1, Math.trunc(page));
+    size = Math.min(100, Math.max(1, Math.trunc(size)));
     const offset = Math.max(0, (page - 1) * size);
     const [totalRow] = await database.query('SELECT count(*)::int AS total FROM "user"');
     const items = await database.query(
@@ -69,6 +71,8 @@ export class AdministrationRepository {
   }
 
   async listStores(page = 1, size = 20) {
+    page = Math.max(1, Math.trunc(page));
+    size = Math.min(100, Math.max(1, Math.trunc(size)));
     const offset = Math.max(0, (page - 1) * size);
     const [totalRow] = await database.query('SELECT count(*)::int AS total FROM store');
     const rows = await database.query(
@@ -149,8 +153,9 @@ export class AdministrationRepository {
 
   async updateRole(id: string, permissionIds: string[], expectedVersion: number, actorUserId: string, correlationId: string) {
     return database.transaction(async manager => {
-      const [role] = await manager.query('SELECT * FROM role WHERE id=$1', [id]);
+      const [role] = await manager.query('SELECT * FROM role WHERE id=$1 FOR UPDATE', [id]);
       if (!role) throw new ApiError(404, 'NOT_FOUND', 'Vai trò không tồn tại.');
+      if (role.version !== expectedVersion) throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
 
       const existing = await manager.query(
         'SELECT permission_id FROM role_permission WHERE role_id=$1',
@@ -158,6 +163,15 @@ export class AdministrationRepository {
       );
       const oldPermissionIds = existing.map((r: any) => r.permission_id);
 
+      if (permissionIds.some(permissionId => !existing.some((row: any) => row.permission_id === permissionId))) {
+        const allowed = await manager.query(
+          'SELECT id FROM permission WHERE id = ANY($1::uuid[])',
+          [permissionIds],
+        );
+        if (allowed.length !== new Set(permissionIds).size) {
+          throw new ApiError(422, 'VALIDATION_FAILED', 'Một hoặc nhiều quyền không tồn tại.');
+        }
+      }
       await manager.query('DELETE FROM role_permission WHERE role_id=$1', [id]);
       for (const pid of permissionIds) {
         await manager.query(
@@ -165,7 +179,8 @@ export class AdministrationRepository {
           [id, pid]
         );
       }
-      const newVersion = expectedVersion + 1;
+      const newVersion = role.version + 1;
+      await manager.query('UPDATE role SET version=$1 WHERE id=$2', [newVersion, id]);
 
       await audit(
         manager,
