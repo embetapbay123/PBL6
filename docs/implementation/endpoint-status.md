@@ -37,10 +37,10 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `POST /store/staff/invitations/{id}/revoke` | revokeStaffInvitation | M3 / staff | Trí | NOT_IMPLEMENTED |
 | `GET /me/invitations` | listOwnInvitations | M3 / staff | Trí | NOT_IMPLEMENTED |
 | `POST /me/invitations/{id}/accept` | acceptInvitation | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `GET /categories` | listCategories | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
-| `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
+| `GET /categories` | listCategories | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `POST /store/products` | createProduct | M1 / catalog | Thịnh | NOT_IMPLEMENTED |

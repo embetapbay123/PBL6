@@ -603,7 +603,10 @@
       "query": {
         "page": 1,
         "size": 20,
-        "q": "fixture-value"
+        "q": "fixture-value",
+        "category_id": "11111111-1111-4111-8111-111111111111",
+        "product_type_id": "11111111-1111-4111-8111-111111111111",
+        "sort": "title"
       },
       "headers": {}
     },
@@ -633,6 +636,7 @@
       "description": "fixture-value",
       "attributes": {},
       "variants": [],
+      "images": [],
       "status": "DRAFT",
       "moderation_status": "VISIBLE",
       "version": 0
@@ -702,6 +706,7 @@
       "description": "fixture-value",
       "attributes": {},
       "variants": [],
+      "images": [],
       "status": "DRAFT",
       "moderation_status": "VISIBLE",
       "version": 0
@@ -734,6 +739,7 @@
       "description": "fixture-value",
       "attributes": {},
       "variants": [],
+      "images": [],
       "status": "DRAFT",
       "moderation_status": "VISIBLE",
       "version": 0
@@ -2194,6 +2200,7 @@
       "description": "fixture-value",
       "attributes": {},
       "variants": [],
+      "images": [],
       "status": "DRAFT",
       "moderation_status": "VISIBLE",
       "version": 0
@@ -2221,6 +2228,7 @@
       "description": "fixture-value",
       "attributes": {},
       "variants": [],
+      "images": [],
       "status": "DRAFT",
       "moderation_status": "VISIBLE",
       "version": 0

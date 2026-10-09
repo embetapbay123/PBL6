@@ -4,10 +4,6 @@ import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
 import { notImplemented } from '../../../shared/src/errors';
 @Controller() @UseGuards(AuthGuard)
 export class CatalogSkeletonController {
-  @Get('categories') @Public()
-  listCategories(): never { return notImplemented('listCategories'); }
-  @Get('product-types') @Public()
-  listProductTypes(): never { return notImplemented('listProductTypes'); }
   @Get('store/products') @Roles("SELLER","STORE_OWNER")
   listOwnStoreProducts(): never { return notImplemented('listOwnStoreProducts'); }
   @Post('store/products') @Roles("SELLER","STORE_OWNER")
