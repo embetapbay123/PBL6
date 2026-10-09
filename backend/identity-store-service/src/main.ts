@@ -7,4 +7,8 @@ import { StoreSkeletonController } from './store/store.skeleton.controller';
 import { StaffSkeletonController } from './staff/staff.skeleton.controller';
 import { AdministrationSkeletonController } from './administration/administration.skeleton.controller';
 import { AuthController } from './auth/auth.controller';
-bootstrap('M3',[ContextInternalController,AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StaffSkeletonController,AdministrationSkeletonController]).catch(()=>{ console.error('Startup failed: check service configuration and dependencies.'); process.exit(1); });
+bootstrap('M3',[ContextInternalController,AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StaffSkeletonController,AdministrationSkeletonController]).catch((error: unknown)=>{
+  const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+  console.error(`Startup failed: ${detail}`);
+  process.exit(1);
+});
