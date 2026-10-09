@@ -9,6 +9,13 @@ Owner: Thịnh
 ## Internal operation (không qua gateway)
 
 - `POST /internal/variants/quote` — QuoteVariants: **IMPLEMENTED** — M2 gọi để lấy snapshot giá/tồn hiện hành; chỉ đọc, không reserve và không trừ tồn. Caller allowlist `M2` do `ServiceGuard` chặn; lỗi M3 fail closed với 503. Chi tiết ở [inventory.service.ts](inventory.service.ts).
+- `POST /internal/inventory/reserve` — ReserveInventory: **IMPLEMENTED** — giữ hàng nhiều SKU/mọi Store nguyên tử theo `operation_id`; một reservation mỗi Order; không oversell.
+- `POST /internal/inventory/consume` — ConsumeReservation: **IMPLEMENTED** — trừ tồn thật và giải phóng hold; gọi lặp trả `ALREADY_APPLIED`.
+- `POST /internal/inventory/release` — ReleaseReservation: **IMPLEMENTED** — chỉ giải phóng hold, không đổi tồn thật.
+- `POST /internal/inventory/restock` — RestockOrder: **NOT_IMPLEMENTED** (INV-03 #15).
+- `POST /internal/inventory/low-stock` — ListLowStockVariants: **NOT_IMPLEMENTED** (INV-01 #13).
+
+Chi tiết thiết kế và bằng chứng của ba command kho ở [bàn giao INV-02](../../../../docs/implementation/inv-02-handoff.md).
 
 ## Bàn giao CAT-QUOTE-01
 
