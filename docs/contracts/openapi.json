@@ -2060,7 +2060,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "get": {
         "tags": [
@@ -2197,7 +2197,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/store-applications": {
@@ -2336,7 +2336,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/store-applications/{id}": {
@@ -2477,7 +2477,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store": {
@@ -2594,7 +2594,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "patch": {
         "tags": [
@@ -2718,7 +2718,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/staff": {
