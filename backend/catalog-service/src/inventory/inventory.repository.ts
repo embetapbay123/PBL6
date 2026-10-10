@@ -65,6 +65,8 @@ export interface ReservationItemRow {
 }
 
 export class InventoryRepository extends OwnedRepository {
+  /* ------------------------------------------------------------- QuoteVariants */
+
   /**
    * Current Product/Variant/Store facts plus available stock (`quantity - reserved_quantity`).
    * `inventory_variant_unique` keeps one row per Variant, so the join cannot fan out.
