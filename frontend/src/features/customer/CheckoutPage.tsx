@@ -74,7 +74,7 @@ export function CheckoutPage() {
     {error != null && <ErrorView error={error} />}
     <button disabled={busy || quoting} onClick={() => setRetry(value => value + 1)}>Tải lại báo giá</button>
     <h2>Địa chỉ nhận hàng</h2>
-    {!addresses.length && <p>Bạn chưa có địa chỉ giao hàng.</p>}
+    {!addresses.length && error == null && <p>Bạn chưa có địa chỉ giao hàng.</p>}
     {addresses.filter(item => item.id).map(item => <label key={item.id}><input type="radio" name="address" disabled={busy}
       checked={address === item.id} onChange={() => setAddress(item.id!)} />{item.recipient_name} ({item.phone}) · {item.line1}, {item.ward}, {item.district}, {item.city}</label>)}
     {quoting && <Loading />}
