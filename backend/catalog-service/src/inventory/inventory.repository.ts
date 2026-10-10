@@ -65,6 +65,13 @@ export interface ReservationItemRow {
 }
 
 export class InventoryRepository extends OwnedRepository {
+  async lockReservationOrders(orderIds: string[]): Promise<void> {
+    for (const orderId of [...new Set(orderIds)].sort()) {
+      await this.manager.query("SELECT pg_advisory_xact_lock(hashtextextended('Inventory.Order:' || $1, 0))", [orderId]);
+    }
+  }
+  /* ------------------------------------------------------------- QuoteVariants */
+
   /**
    * Current Product/Variant/Store facts plus available stock (`quantity - reserved_quantity`).
    * `inventory_variant_unique` keeps one row per Variant, so the join cannot fan out.
