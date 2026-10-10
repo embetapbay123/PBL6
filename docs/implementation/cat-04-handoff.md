@@ -46,7 +46,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml bui
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
 ```
 
-Kết quả: build đạt · unit **171 test** đạt · tích hợp **69 test** đạt (10 suite) · `docs:check` / `contracts:check` / `contracts:drift` đạt.
+Kết quả sau tích hợp INV-01/02: build đạt · unit **179 test** đạt · tích hợp **85 test** đạt (12 suite) · `docs:check` / `contracts:check` / `contracts:drift` đạt. Rebuild M1/M2/M3/M4 cùng contract để consumer validator nhận `Product.images` và query `sort` mặc định đúng.
 
 ## Chưa làm
 

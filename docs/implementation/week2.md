@@ -20,6 +20,15 @@ Hoa đã có [Refund request/read/worker kernel](refund-runtime-handoff.md) đ�
 
 ## Phân công và thứ tự
 
+### Cập nhật review ngày 10/10/2026
+
+- Thịnh đã bàn giao reserve/consume/release ở [PR #98](https://github.com/embetapbay123/PBL6/pull/98), inventory/low-stock backend ở [#99](https://github.com/embetapbay123/PBL6/pull/99) và public Catalog/taxonomy/filter/ảnh/search-view producer ở [#100](https://github.com/embetapbay123/PBL6/pull/100). INV-02 #14 và CAT-04 #11 hoàn thành; INV-01 #13 còn Seller UI. Tiếp INV-03 #15 và Seller UI, không viết lại command đã bàn giao.
+- Hatsaphone có Product detail/Variant/ảnh/addCart thật và route Cart/Checkout qua [PR #96](https://github.com/embetapbay123/PBL6/pull/96). WEB-02 #62 hoàn thành; WEB-05 #65 còn enrich thông tin Product/giá và nghiệm thu UI; WEB-06 #66 mới có client COD, còn nghiệm thu backend confirm/multi-Store, voucher/online Payment và khôi phục attempt khi reload. Chi tiết: [Customer Web handoff](customer-web-handoff.md).
+- Trí sửa [PR #101 theo review](https://github.com/embetapbay123/PBL6/pull/101#pullrequestreview-5478882839): email delivery/fail-closed; vô hiệu reset token cũ; chống ghi đè khi đổi password đồng thời; payload event đúng schema và effective permission. AUTH-01 #37, AUTH-02 #38, RBAC-01 #44 giữ mở/In progress, không dùng CI xanh hiện tại để coi các lỗi này đã đạt.
+- Hoa có thể tích hợp Inventory và Catalog thật từ main; Công tiếp nghiệm thu nguồn tracking thật và các điểm nối Payment/Refund theo task hiện có. Không đổi owner của Checkout, Inventory hay M3.
+
+Kiểm tra tích hợp sau review: **179 Node unit, 85 HTTP/PostgreSQL integration, 14 Web e2e** đạt; CI kiểm thêm Python, Flutter và schema/contract. Additive contract `Product.images` yêu cầu rebuild cả các consumer M2/M4; container cũ có validator cũ sẽ từ chối response mới bằng 503. Setup giữ migration/seed và `.env` local theo README.
+
 | Người / GitHub | Task chính theo thứ tự | Task tiếp khi phần chính đạt | Đầu ra bàn giao |
 | --- | --- | --- | --- |
 | Công / `embetapbay123` | [PAY-01 #51](https://github.com/embetapbay123/PBL6/issues/51) → [PAY-04 #54](https://github.com/embetapbay123/PBL6/issues/54) → [AI-01 #55](https://github.com/embetapbay123/PBL6/issues/55) | [PAY-02 #52](https://github.com/embetapbay123/PBL6/issues/52), lát cắt [OPS-02 #60](https://github.com/embetapbay123/PBL6/issues/60); [PAY-03 #53](https://github.com/embetapbay123/PBL6/issues/53) khi bắt đầu Refund | PaymentPort/Payment read, COD cùng manager; consent GET/PATCH và inbox consumer; bộ test điểm nối |

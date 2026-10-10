@@ -53,10 +53,10 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml bui
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
 ```
 
-Kết quả: build đạt · unit **173 test** đạt · tích hợp **68 test** đạt (10 suite).
+Kết quả sau tích hợp INV-02 và review: build đạt · unit **176 test** đạt · tích hợp **79 test** đạt (11 suite). Adjustment kiểm quyền wildcard hoặc `inventory.store.read_adjust`, từ chối reason trắng và quantity vượt PostgreSQL INTEGER; không ghi StockMovement/audit khi bị từ chối.
 
 ## Chưa làm
 
 - `RestockOrder` và worker đối soát reservation hết hạn thuộc INV-03 #15.
-- `adjustInventory` chưa nối Seller UI (thuộc SELL-02 #19 / phần Seller Web).
+- `adjustInventory` chưa nối Seller UI; đây vẫn là tiêu chí chưa đạt của INV-01 #13, phối hợp Seller Web/SELL-02 #19 và giữ owner Thịnh.
 - Chưa benchmark tải khi nhiều Seller điều chỉnh cùng lúc.
