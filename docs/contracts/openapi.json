@@ -5072,7 +5072,7 @@
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/inventory/adjustments": {
@@ -5206,7 +5206,7 @@
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/inventory/movements": {
@@ -5346,7 +5346,7 @@
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/cart/items": {

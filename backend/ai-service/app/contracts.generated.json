@@ -4195,7 +4195,7 @@
       "route": "/store/inventory",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -4302,7 +4302,7 @@
       "route": "/store/inventory/adjustments",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4400,7 +4400,7 @@
       "route": "/store/inventory/movements",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -12544,7 +12544,7 @@
       "route": "/internal/inventory/reserve",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12686,7 +12686,7 @@
       "route": "/internal/inventory/consume",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12775,7 +12775,7 @@
       "route": "/internal/inventory/release",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -13204,7 +13204,7 @@
       "route": "/internal/inventory/low-stock",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
