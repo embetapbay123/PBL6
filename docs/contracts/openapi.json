@@ -3654,7 +3654,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/product-types": {
@@ -3790,7 +3790,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/products": {
@@ -3829,6 +3829,35 @@
             "schema": {
               "type": "string",
               "maxLength": 200
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "product_type_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "title",
+                "price_asc",
+                "price_desc"
+              ],
+              "default": "title"
             }
           }
         ],
@@ -3934,7 +3963,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "IMPLEMENTED_SAMPLE"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/products/{id}": {
@@ -4057,7 +4086,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "IMPLEMENTED_SAMPLE"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/stores/{id}/products": {
@@ -5043,7 +5072,7 @@
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/inventory/adjustments": {
@@ -5177,7 +5206,7 @@
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/inventory/movements": {
@@ -5317,7 +5346,7 @@
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/cart/items": {
@@ -14289,6 +14318,13 @@
               "$ref": "#/components/schemas/ProductVariant"
             },
             "maxItems": 100
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductImage"
+            },
+            "maxItems": 20
           },
           "status": {
             "type": "string",
