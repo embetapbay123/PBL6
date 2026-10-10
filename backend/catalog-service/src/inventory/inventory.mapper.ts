@@ -1,6 +1,6 @@
 import { moneyNumber } from '../../../shared/src/money';
 import type { OperationOutputs } from '../../../shared/src/operations.generated';
-import type { QuoteVariantRow, StockMovementRow } from './inventory.repository';
+import type { QuoteVariantRow, StockMovementRow, ReservationRow } from './inventory.repository';
 
 /** `pg` returns `timestamptz` as a Date; cached idempotent results come back as strings. */
 function isoTime(value: Date | string): string {
@@ -52,3 +52,21 @@ export function stockMovementView(row: StockMovementRow): OperationOutputs['list
     ...(row.occurred_at === null ? {} : { occurred_at: isoTime(row.occurred_at) }),
   };
 }
+
+/**
+ * One `ReservationView` per requested line. `id` is the reservation that covers the line, so a
+ * multi-SKU Order repeats the same id once per Variant. `expires_at` is normalised to an ISO
+ * string so a live result and a replay from `operation_result` are byte-identical.
+ */
+export function reservationView(reservation: ReservationRow, line: { order_id: string; variant_id: string; quantity: number }):
+OperationOutputs['ReserveInventory']['reservations'][number] {
+  return {
+    id: reservation.id,
+    order_id: line.order_id,
+    variant_id: line.variant_id,
+    quantity: line.quantity,
+    expires_at: isoTime(reservation.expires_at),
+  };
+}
+
+export { isoTime };

@@ -13,6 +13,13 @@ Store scope lấy từ `store_membership` hiện hành trong context chứ khôn
 - `POST /internal/variants/quote` — QuoteVariants: **IMPLEMENTED** — M2 gọi để lấy snapshot giá/tồn hiện hành; chỉ đọc, không reserve và không trừ tồn. Caller allowlist `M2` do `ServiceGuard` chặn; lỗi M3 fail closed với 503. Chi tiết ở [inventory.service.ts](inventory.service.ts).
 - `POST /internal/inventory/low-stock` — ListLowStockVariants: **IMPLEMENTED** — M2 chuyển token người dùng, M1 tự resolve scope với M3; Store khác hoặc thiếu quyền trả 403, lỗi M3 trả 503 nên không bao giờ thành trang rỗng.
 
+- `POST /internal/inventory/reserve` — ReserveInventory: **IMPLEMENTED** — giữ hàng nhiều SKU/mọi Store nguyên tử theo `operation_id`; một reservation mỗi Order; không oversell.
+- `POST /internal/inventory/consume` — ConsumeReservation: **IMPLEMENTED** — trừ tồn thật và giải phóng hold; gọi lặp trả `ALREADY_APPLIED`.
+- `POST /internal/inventory/release` — ReleaseReservation: **IMPLEMENTED** — chỉ giải phóng hold, không đổi tồn thật.
+- `POST /internal/inventory/restock` — RestockOrder: **NOT_IMPLEMENTED** (INV-03 #15).
+
+Chi tiết: [bàn giao INV-02](../../../../docs/implementation/inv-02-handoff.md).
+
 ## Bàn giao CAT-QUOTE-01
 
 [Issue #7](https://github.com/embetapbay123/PBL6/issues/7) đã bàn giao qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86), merge ngày 05/10/2026 tại commit `f4e49dba155b63ebe251d2c8a45d75e07a93d6ba`. [CI trên main](https://github.com/embetapbay123/PBL6/actions/runs/37282746278) đạt. Thịnh tiếp tục [CAT-04 #11](https://github.com/embetapbay123/PBL6/issues/11); Hoa nghiệm thu điểm nối thật ở CART-01/CART-02/ORDER-01.

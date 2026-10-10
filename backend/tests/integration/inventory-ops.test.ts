@@ -69,6 +69,15 @@ beforeAll(async () => {
 beforeEach(reset);
 afterAll(async () => { await reset(); await source.destroy(); });
 
+test('stock overflow and blank adjustment reasons fail without changing stock', async () => {
+  for (const body of [adjustBody(VARIANT_A, 2147483647, 0), adjustBody(VARIANT_A, 1, 0, '   ')]) {
+    expect((await adjust(owner, body)).status).toBe(422);
+  }
+  expect(await source.query('SELECT quantity, reserved_quantity, version FROM inventory WHERE variant_id=$1', [VARIANT_A]))
+    .toEqual([{ quantity: 10, reserved_quantity: 0, version: 0 }]);
+  expect(await source.query('SELECT count(*)::int AS n FROM stock_movement WHERE operation_id=ANY($1::uuid[])', [operationIds])).toEqual([{ n: 0 }]);
+});
+
 test('listStoreInventory returns the caller Store stock and refuses other roles', async () => {
   const response = await api('/store/inventory', owner);
   expect(response.status).toBe(200);
