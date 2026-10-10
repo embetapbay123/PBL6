@@ -2,11 +2,11 @@
 
 Owner: Trí
 
-- `POST /me/store-applications` — submitStoreApplication: **NOT_IMPLEMENTED**
-- `GET /me/store-applications` — listOwnStoreApplications: **NOT_IMPLEMENTED**
-- `GET /admin/store-applications` — listStoreApplications: **NOT_IMPLEMENTED**
-- `PATCH /admin/store-applications/{id}` — reviewStoreApplication: **NOT_IMPLEMENTED**
-- `GET /store` — getOwnStore: **NOT_IMPLEMENTED**
-- `PATCH /store` — updateOwnStore: **NOT_IMPLEMENTED**
+- `POST /me/store-applications` — submitStoreApplication: **IMPLEMENTED**
+- `GET /me/store-applications` — listOwnStoreApplications: **IMPLEMENTED**
+- `GET /admin/store-applications` — listStoreApplications: **IMPLEMENTED**
+- `PATCH /admin/store-applications/{id}` — reviewStoreApplication: **IMPLEMENTED**
+- `GET /store` — getOwnStore: **IMPLEMENTED**
+- `PATCH /store` — updateOwnStore: **IMPLEMENTED**
 
-Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
+Owner routes use the signed-in active membership; store updates are owner-only and use expected-version checks with an audit record in the same transaction. Application approval atomically creates the ACTIVE Store and OWNER membership. `ActiveStores` reads current ACTIVE rows from `store` and authenticates M1/M2/M4 with the internal service guard.

@@ -22,7 +22,15 @@ jobs:
       - run: python scripts/check_database_schema.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
-      - run: npm run infra:up && python scripts/wait_local.py
+      - name: Start infrastructure and wait for gateway
+        run: |
+          set -o pipefail
+          npm run infra:up
+          if ! python scripts/wait_local.py; then
+            docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml ps --all
+            docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml logs --no-color --tail=200 m1 m2 m3 m4 gateway
+            exit 1
+          fi
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
       - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium

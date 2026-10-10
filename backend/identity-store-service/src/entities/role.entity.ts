@@ -10,4 +10,6 @@ export class Role {
   scope!: string;
   @Column({"type": "varchar", "nullable": false})
   status!: string;
+  @Column({"type": "integer", "nullable": false, "default": 0})
+  version!: number;
 }

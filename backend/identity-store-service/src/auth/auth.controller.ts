@@ -1,17 +1,19 @@
 import { Body, Controller, Get, Post, HttpCode, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { AuthGuard, Public, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
+import { AuthGuard, Public, Roles, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
 import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { ProfileService } from '../profile/profile.service';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto } from './auth.dto';
+import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordDto, ChangePasswordDto, VerifyEmailDto } from './auth.dto';
+
 
 @Controller() @UseGuards(AuthGuard)
 export class AuthController {
   private readonly service = new AuthService();
+  private readonly profiles = new ProfileService();
   private deliver(tokens: any, res: Response, web: boolean) {
     if (!web) return tokens;
     const secure = config('M3').secureCookie;
@@ -31,6 +33,28 @@ export class AuthController {
     if (!dto.refresh_token) throw new ApiError(401,'UNAUTHENTICATED','Thiếu refresh token.');
     return {token:dto.refresh_token,web:false};
   }
+  @Post('auth/register') @HttpCode(201) @Public()
+  async register(@Body() dto: RegisterDto) {
+    return this.service.register(dto.email, dto.password, dto.display_name);
+  }
+  @Post('auth/reset-password') @HttpCode(200) @Public()
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.service.resetPassword(dto.email);
+  }
+  @Post('auth/reset-password/confirm') @HttpCode(200) @Public()
+  async confirmResetPassword(@Body() dto: ConfirmResetPasswordDto) {
+    return this.service.confirmResetPassword(dto.token, dto.new_password);
+  }
+  @Post('auth/change-password') @HttpCode(200) @Roles('AUTHENTICATED')
+  async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
+    const userId = req.auth?.user_id;
+    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    return this.service.changePassword(userId, dto.current_password, dto.new_password);
+  }
+  @Post('auth/verify-email') @HttpCode(200) @Public()
+  async verify(@Body() dto: VerifyEmailDto) {
+    return this.service.verify(dto.token);
+  }
   @Post('auth/login') @HttpCode(200) @Public()
   async login(@Body() dto: LoginDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {
     const web = dto.client_type === 'WEB';
@@ -44,9 +68,10 @@ export class AuthController {
   }
   @Post('auth/logout') @HttpCode(200) @Public()
   async logout(@Body() dto: RefreshDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {
-    const session = this.getRefresh(req,dto); await this.service.logout(session.token);
+    const session = this.getRefresh(req,dto);
+    const result = await this.service.logout(session.token);
     res.clearCookie('pbl6_refresh',{path:'/api/v1/auth'}); res.clearCookie('pbl6_csrf',{path:'/'});
-    return {success:true};
+    return result;
   }
   @Get('me/context') context(@Req() req: any) {
     const { access_token: _internalToken, ...context } = req.auth;
