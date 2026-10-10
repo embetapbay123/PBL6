@@ -47,9 +47,9 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
 | `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `POST /store/products/{id}/images` | addProductImage | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
-| `POST /store/inventory/adjustments` | adjustInventory | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
-| `GET /store/inventory/movements` | listStockMovements | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
+| `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | IMPLEMENTED |
+| `POST /store/inventory/adjustments` | adjustInventory | M1 / inventory | Thịnh | IMPLEMENTED |
+| `GET /store/inventory/movements` | listStockMovements | M1 / inventory | Thịnh | IMPLEMENTED |
 | `GET /cart/items` | listCartItems | M2 / cart | Hoa | IMPLEMENTED |
 | `POST /cart/items` | addCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | IMPLEMENTED |

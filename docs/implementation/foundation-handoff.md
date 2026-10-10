@@ -1,6 +1,6 @@
 # Nền code đã bàn giao — 2.2.1
 
-Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ hiện là 29 IMPLEMENTED, 14 IMPLEMENTED_SAMPLE, 56 NOT_IMPLEMENTED ở public API; internal có 2 sample, 7 IMPLEMENTED (QuoteVariants, ReserveInventory, ConsumeReservation, ReleaseReservation, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope) và 2 stub. Xem [trạng thái API](endpoint-status.md) và [M4 runtime](ai-runtime-handoff.md); có mode real không đồng nghĩa provider/chất lượng AI đã nghiệm thu.
+Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ hiện là 32 IMPLEMENTED, 14 IMPLEMENTED_SAMPLE, 53 NOT_IMPLEMENTED ở public API; internal có 2 sample, 8 IMPLEMENTED (QuoteVariants, ReserveInventory, ConsumeReservation, ReleaseReservation, ListLowStockVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope) và 1 stub. Xem [trạng thái API](endpoint-status.md) và [M4 runtime](ai-runtime-handoff.md); có mode real không đồng nghĩa provider/chất lượng AI đã nghiệm thu.
 
 CORE-01 #1 và CORE-02 #50 đã self-review theo ủy quyền của chủ repo và chuyển Done ngày 07/10/2026. FLOW-01 #6 vẫn giữ mở cho phần ingress/producer thật chưa đủ; đóng task nền không đóng các task nghiệp vụ của member.
 
@@ -67,7 +67,7 @@ Validation chỉ kiểm shape. Owner vẫn phải kiểm quyền hiện hành, o
 | ListLowStockVariants | M2 → M1 | Thịnh: resolve token M3, membership/quyền report đúng Store; trả tồn khả dụng và phân trang, không biến lỗi thành danh sách rỗng |
 | ResolveAiMetricsScope | M4 → M3 | Trí: resolve phiên hiện hành; Admin PLATFORM hoặc Store filter, Owner STORE đúng membership; Store khác trả 403 |
 
-Schema/path/caller/error đầy đủ trong [internal API](../contracts/internal-api.json). `RestockOrder` và `ListLowStockVariants` còn guard/validation/501, chưa có nghiệp vụ; QuoteVariants đã triển khai ở CAT-QUOTE-01 và ba command kho ở INV-02. Khi thêm handler thật, bỏ đúng handler stub để không trùng method/path; cập nhật status đúng owner. Gateway không chuyển tiếp `/internal/*` đến backend.
+Schema/path/caller/error đầy đủ trong [internal API](../contracts/internal-api.json). `RestockOrder` còn guard/validation/501; ba command reserve/consume/release đã triển khai ở INV-02, QuoteVariants ở CAT-QUOTE-01 và `ListLowStockVariants` ở INV-01. Khi thêm handler thật, bỏ đúng handler stub để không trùng method/path; cập nhật status đúng owner. Gateway không chuyển tiếp `/internal/*` đến backend.
 
 QuoteVariants bàn giao ngày 05/10/2026: [README inventory](../../backend/catalog-service/src/inventory/README.md) ghi payload/seed/test; [integration contract](../integration-contract.md) ghi nghĩa lỗi và giới hạn snapshot. Response không có Product ID/title/SKU; M2 không dùng Store giả, giá mặc định hoặc đổi Variant ID thành Product ID. CART-01/CART-02/ORDER-01 giữ task tích hợp riêng; có API M1 thật chưa đồng nghĩa checkout hoàn thành.
 

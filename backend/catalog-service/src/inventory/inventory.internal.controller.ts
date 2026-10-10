@@ -8,7 +8,10 @@ import { InventoryService } from './inventory.service';
 @Controller('internal') @UseGuards(ServiceGuard) @ServiceCallers('M2')
 export class InventoryInternalController {
   private readonly service=new InventoryService();
-  @Post('inventory/low-stock') lowStock(@Body() _input: ListLowStockVariantsBodyDto):never {return notImplemented('ListLowStockVariants');}
+  // ListLowStockVariants: M2 chuyển token người dùng, M1 tự resolve scope với M3; lỗi M3 trả 503, không trả trang rỗng.
+  @Post('inventory/low-stock') @HttpCode(200) lowStock(@Body() dto: ListLowStockVariantsBodyDto,@Req() request:any) {
+    return this.service.listLowStockVariants({ ...dto },request.correlationId);
+  }
   // QuoteVariants: snapshot giá/tồn hiện hành cho M2, không reserve. Caller allowlist do @ServiceCallers('M2') chặn.
   // Contract khai báo response 2xx là 200 nên phải ghi đè mặc định 201 của @Post.
   @Post('variants/quote') @HttpCode(200) quote(@Body() dto: QuoteVariantsBodyDto,@Req() request:any) {return this.service.quote({items:dto.items},request.correlationId);}
