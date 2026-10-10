@@ -2089,6 +2089,7 @@ export interface components {
                 [key: string]: unknown;
             };
             variants?: components["schemas"]["ProductVariant"][];
+            images?: components["schemas"]["ProductImage"][];
             /** @enum {string} */
             status?: "DRAFT" | "ACTIVE" | "STOPPED";
             /** @enum {string} */
@@ -5501,6 +5502,9 @@ export interface operations {
                 page?: number;
                 size?: number;
                 q?: string;
+                category_id?: string;
+                product_type_id?: string;
+                sort?: "title" | "price_asc" | "price_desc";
             };
             header?: never;
             path?: never;

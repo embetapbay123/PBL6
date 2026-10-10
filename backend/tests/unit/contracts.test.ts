@@ -27,7 +27,7 @@ test('strict body, nested arrays, maps, UUID, nullability and query defaults',()
   }
   expect(()=>validateOperation('addCartItem',{...valid,body:{...valid.body,extra:true}})).toThrow();
   expect(()=>validateOperation('getProduct',{path:{id:'bad'},query:{},headers:{}})).toThrow();
-  expect(validateOperation('listProducts',{query:{page:'2' as any},path:{},headers:{}}).query).toEqual({page:2,size:20});
+  expect(validateOperation('listProducts',{query:{page:'2' as any},path:{},headers:{}}).query).toEqual({page:2,size:20,sort:'title'});
   expect(()=>validateOperation('listProducts',{query:{size:101},path:{},headers:{}})).toThrow();
   expect(()=>validateOperation('listProducts',{query:{q:null} as any,path:{},headers:{}})).toThrow();
   expect(()=>validateOperation('addCartItem',{...valid,body:JSON.parse(JSON.stringify(valid.body).slice(0,-1)+',"__proto__":{"polluted":true}}')})).toThrow();

@@ -336,7 +336,7 @@
     "service": "M1",
     "module": "catalog",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -349,7 +349,7 @@
     "service": "M1",
     "module": "catalog",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -362,7 +362,7 @@
     "service": "M1",
     "module": "catalog",
     "owner": "Thịnh",
-    "status": "IMPLEMENTED_SAMPLE",
+    "status": "IMPLEMENTED",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -375,7 +375,7 @@
     "service": "M1",
     "module": "catalog",
     "owner": "Thịnh",
-    "status": "IMPLEMENTED_SAMPLE",
+    "status": "IMPLEMENTED",
     "roles": [
       "GUEST",
       "CUSTOMER"
