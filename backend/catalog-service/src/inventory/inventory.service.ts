@@ -153,18 +153,18 @@ export class InventoryService {
    * ghi, phải nhanh và chỉ phụ thuộc DB của M1.
    */
   async reserve(input: OperationInputs['ReserveInventory']['body']): Promise<OperationOutputs['ReserveInventory']> {
-    // reservation_item is unique per (reservation, inventory): one line per Variant per Order.
-    const seen = new Set<string>();
-    for (const line of input.items) {
-      const key = line.order_id + ':' + line.variant_id;
-      if (seen.has(key)) throw new ApiError(422, 'DUPLICATE_RESERVATION_LINE', 'Mỗi Variant chỉ được xuất hiện một lần trong một Order.');
-      seen.add(key);
-    }
     const variantIds = [...new Set(input.items.map(line => line.variant_id))].sort();
 
     return database.transaction(async manager => {
       const repository = new InventoryRepository(manager);
       return once(manager, 'M2.Inventory.reserve', input.operation_id, input, async () => {
+        // Business validation follows the idempotency check, including malformed duplicate lines.
+        const seen = new Set<string>();
+        for (const line of input.items) {
+          const key = line.order_id + ':' + line.variant_id;
+          if (seen.has(key)) throw new ApiError(422, 'DUPLICATE_RESERVATION_LINE', 'Mỗi Variant chỉ được xuất hiện một lần trong một Order.');
+          seen.add(key);
+        }
         // Serialize competing commands for an Order even when they use disjoint stock rows.
         const orderIds = [...new Set(input.items.map(line => line.order_id))].sort();
         await repository.lockReservationOrders(orderIds);

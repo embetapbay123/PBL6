@@ -112,6 +112,13 @@ test('ReserveInventory holds every line once and is idempotent per operation id'
   expect(conflict.status).toBe(409);
   expect((await conflict.json() as any).code).toBe('IDEMPOTENCY_CONFLICT');
 
+  const duplicatePayload = await post(reserveUrl, { ...body, items: [body.items[0], body.items[0]] });
+  expect(duplicatePayload.status).toBe(409);
+  expect((await duplicatePayload.json() as any).code).toBe('IDEMPOTENCY_CONFLICT');
+  const duplicateNewOperation = await post(reserveUrl, { ...body, operation_id: randomUUID(), items: [body.items[0], body.items[0]] });
+  expect(duplicateNewOperation.status).toBe(422);
+  expect((await duplicateNewOperation.json() as any).code).toBe('DUPLICATE_RESERVATION_LINE');
+
   const otherOperation = await post(reserveUrl, reserveBody(orderId, [{ variant_id: VARIANT_A, quantity: 1 }]));
   expect(otherOperation.status).toBe(409);
   expect((await otherOperation.json() as any).code).toBe('RESERVATION_EXISTS');
