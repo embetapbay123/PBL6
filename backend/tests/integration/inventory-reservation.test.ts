@@ -142,6 +142,34 @@ test('concurrent reservations never oversell the last unit', async () => {
   expect(created).toHaveLength(1);
 });
 
+test('competing commands for one Order on disjoint variants return a business conflict', async () => {
+  const orderId = randomUUID();
+  const first = reserveBody(orderId, [{ variant_id: VARIANT_A, quantity: 1 }]);
+  const second = reserveBody(orderId, [{ variant_id: VARIANT_B, quantity: 1 }]);
+  const responses = await Promise.all([post(reserveUrl, first), post(reserveUrl, second)]);
+  expect(responses.map(response => response.status).sort()).toEqual([200, 409]);
+  expect((await responses.find(response => response.status === 409)!.json() as any).code).toBe('RESERVATION_EXISTS');
+  expect(await source.query('SELECT count(*)::int AS n FROM inventory_reservation WHERE order_id=$1', [orderId])).toEqual([{ n: 1 }]);
+  expect(await source.query('SELECT sum(reserved_quantity)::int AS n FROM inventory WHERE variant_id=ANY($1::uuid[])', [[VARIANT_A, VARIANT_B]])).toEqual([{ n: 1 }]);
+});
+
+test('a reserve replay after expiry returns the original result without another hold', async () => {
+  const orderId = randomUUID();
+  const expiresAt = new Date(Date.now() + 1500).toISOString();
+  const body = reserveBody(orderId, [{ variant_id: VARIANT_A, quantity: 2 }], expiresAt);
+  const first = await post(reserveUrl, body);
+  expect(first.status).toBe(200);
+  const result = await first.json();
+  await new Promise(resolve => setTimeout(resolve, Math.max(0, Date.parse(expiresAt) - Date.now() + 50)));
+  const replay = await post(reserveUrl, body);
+  expect(replay.status).toBe(200);
+  expect(await replay.json()).toEqual(result);
+  expect(await stock(VARIANT_A)).toEqual([{ quantity: 10, reserved_quantity: 2, version: 1 }]);
+  const conflict = await post(reserveUrl, { ...body, items: [{ ...body.items[0], quantity: 3 }] });
+  expect(conflict.status).toBe(409);
+  expect((await conflict.json() as any).code).toBe('IDEMPOTENCY_CONFLICT');
+});
+
 test('ConsumeReservation is applied once and reports an already applied replay', async () => {
   const orderId = randomUUID();
   const reservation = await reserveOne(orderId, VARIANT_A, 4);

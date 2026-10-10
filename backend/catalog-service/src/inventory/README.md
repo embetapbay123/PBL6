@@ -60,7 +60,7 @@ Response không có `product_id`, title hoặc SKU. M2 phải lấy Store/Produc
 | 409 | Store/Product/Variant không được bán hoặc quantity vượt tồn khả dụng |
 | 503 | ActiveStores M3 lỗi/timeout hoặc typed client không kết nối được |
 
-M2 giữ correlation và các lỗi nghiệp vụ, timeout mặc định 1 giây, không retry trong HTTP request và không trả giá/Store mặc định khi dependency lỗi. ActiveStores M3 vẫn là sample; ReserveInventory/ConsumeReservation/ReleaseReservation/RestockOrder còn là task INV-02/INV-03, không nằm trong PR #86.
+M2 giữ correlation và các lỗi nghiệp vụ, timeout mặc định 1 giây, không retry trong HTTP request và không trả giá/Store mặc định khi dependency lỗi. ReserveInventory/ConsumeReservation/ReleaseReservation được bổ sung ở PR #98; RestockOrder và recovery/expiry vẫn thuộc INV-03 #15.
 
 ## Kiểm chứng
 

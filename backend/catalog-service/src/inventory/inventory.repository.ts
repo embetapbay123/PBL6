@@ -41,6 +41,11 @@ export interface ReservationItemRow {
 }
 
 export class InventoryRepository extends OwnedRepository {
+  async lockReservationOrders(orderIds: string[]): Promise<void> {
+    for (const orderId of [...new Set(orderIds)].sort()) {
+      await this.manager.query("SELECT pg_advisory_xact_lock(hashtextextended('Inventory.Order:' || $1, 0))", [orderId]);
+    }
+  }
   /* ------------------------------------------------------------- QuoteVariants */
 
   /**

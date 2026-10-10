@@ -62,7 +62,6 @@ export class InventoryService {
    * ghi, phải nhanh và chỉ phụ thuộc DB của M1.
    */
   async reserve(input: OperationInputs['ReserveInventory']['body']): Promise<OperationOutputs['ReserveInventory']> {
-    if (millis(input.expires_at) <= Date.now()) throw new ApiError(422, 'INVALID_EXPIRY', 'Thời điểm hết hạn phải ở tương lai.');
     // reservation_item is unique per (reservation, inventory): one line per Variant per Order.
     const seen = new Set<string>();
     for (const line of input.items) {
@@ -75,7 +74,12 @@ export class InventoryService {
     return database.transaction(async manager => {
       const repository = new InventoryRepository(manager);
       return once(manager, 'M2.Inventory.reserve', input.operation_id, input, async () => {
+        // Serialize competing commands for an Order even when they use disjoint stock rows.
+        const orderIds = [...new Set(input.items.map(line => line.order_id))].sort();
+        await repository.lockReservationOrders(orderIds);
         const stock = await repository.lockInventoryByVariant(variantIds);
+        // A replay is returned by once before checking time-dependent conditions.
+        if (millis(input.expires_at) <= Date.now()) throw new ApiError(422, 'INVALID_EXPIRY', 'Thời điểm hết hạn phải ở tương lai.');
         const byVariantId = new Map<string, InventoryRow>(stock.map(row => [row.variant_id, row] as const));
 
         for (const line of input.items) {
@@ -91,7 +95,7 @@ export class InventoryService {
         }
 
         const reservations = new Map<string, ReservationRow>();
-        for (const orderId of [...new Set(input.items.map(line => line.order_id))].sort()) {
+        for (const orderId of orderIds) {
           if (await repository.reservationByOrder(orderId)) throw new ApiError(409, 'RESERVATION_EXISTS', 'Order đã có reservation.');
           reservations.set(orderId, await repository.insertReservation(orderId, input.purchase_group_id, input.expires_at));
         }
@@ -141,11 +145,11 @@ export class InventoryService {
 
         const active = (await repository.reservationItems(reservationIds)).filter(item => item.status === 'ACTIVE');
         if (!active.length) return { operation_id: input.operation_id, status: 'ALREADY_APPLIED' as const };
-        // Expiry blocks consume only: release must still be able to free an expired hold.
+        await repository.lockInventoryById([...new Set(active.map(item => item.inventory_id))]);
+        // Check after waiting for stock locks; release must still free an expired hold.
         if (mode === 'CONSUME' && reservations.some(row => millis(row.expires_at) <= Date.now()))
           throw new ApiError(409, 'RESERVATION_EXPIRED', 'Reservation đã hết hạn, không thể consume.');
 
-        await repository.lockInventoryById([...new Set(active.map(item => item.inventory_id))]);
         for (const item of active) {
           if (mode === 'CONSUME') await repository.consumeStock(item.inventory_id, item.quantity);
           else await repository.releaseStock(item.inventory_id, item.quantity);

@@ -11,7 +11,7 @@
 | [inventory.mapper.ts](../../backend/catalog-service/src/inventory/inventory.mapper.ts) | `reservationView`, chuẩn hoá `expires_at` sang ISO |
 | [inventory.internal.controller.ts](../../backend/catalog-service/src/inventory/inventory.internal.controller.ts) | Nối 3 route, gỡ stub, `@HttpCode(200)` |
 | [unit test](../../backend/tests/unit/inventory-reservation.test.ts) | 3 test mapper (live vs replay) |
-| [integration test](../../backend/tests/integration/inventory-reservation.test.ts) | 8 test trên PostgreSQL + HTTP thật |
+| [integration test](../../backend/tests/integration/inventory-reservation.test.ts) | 10 test trên PostgreSQL + HTTP thật, gồm retry sau expiry và cạnh tranh cùng Order/khác SKU |
 | [internal-api.json](../../docs/contracts/internal-api.json) | 3 operation → `IMPLEMENTED` |
 
 ## Chức năng đã hoàn thành
@@ -25,7 +25,7 @@
 
 1. **Không oversell**: `SELECT … FOR UPDATE` trên `inventory`, luôn `ORDER BY variant_id` nên mọi command đa SKU khoá cùng thứ tự → không deadlock, không đọc dữ liệu cũ. DB có `CHECK(quantity >= reserved_quantity)` làm chốt cuối.
 2. **Nguyên tử**: kiểm **toàn bộ** dòng trước khi ghi; cộng dồn nhu cầu theo Variant nên hai dòng cùng Variant không cùng vượt qua một lần kiểm cũ. Thiếu một SKU ⇒ rollback cả transaction.
-3. **Idempotent**: dùng `once(manager, key, operation_id, payload, effect)` của shared; hiệu ứng và `operation_result` cùng transaction.
+3. **Idempotent**: dùng `once(manager, key, operation_id, payload, effect)` của shared; hiệu ứng và `operation_result` cùng transaction. Replay trả kết quả cũ kể cả sau expiry; payload khác vẫn trả 409. Khóa advisory theo Order trước khóa stock để hai command khác ID, khác SKU nhưng cùng Order nhận `RESERVATION_EXISTS`, không lỗi unique constraint 500.
 4. **Không lặp hiệu ứng**: consume/release chỉ tác động `reservation_item` còn `ACTIVE`; gọi lại trả `ALREADY_APPLIED`; đi ngược trạng thái (release sau consume) trả 409.
 
 ## Mã lỗi
@@ -51,7 +51,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml bui
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
 ```
 
-Kết quả: build đạt · unit **171 test** đạt · tích hợp **71 test** đạt (10 suite).
+Kết quả review: build đạt; tích hợp **73 test** đạt (10 suite), gồm 10 test command kho. Consume kiểm expiry sau khi đã lấy stock lock.
 
 ## Chưa làm
 
