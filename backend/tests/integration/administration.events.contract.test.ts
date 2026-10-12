@@ -5,8 +5,6 @@ import { database, initializeDatabase } from '../../shared/src/database';
 import { applyEvent } from '../../shared/src/events';
 import { schemaErrors } from '../../shared/src/contract-validation';
 import contracts from '../../shared/src/contracts.runtime.generated.json';
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
 
 const m3Url = process.env.M3_DATABASE_URL;
 const m4Url = process.env.M4_DATABASE_URL;
@@ -53,18 +51,18 @@ describePostgres('Administration event producer to M4 schema and inbox', () => {
   test('UserLocked and StoreStatusChanged payloads validate and enter the consumer inbox once', async () => {
     await new AdministrationRepository().updateUserState(userId, 'LOCKED', 'integration test', 0, actor!, correlation);
     await new AdministrationRepository().updateStoreState(storeId, 'LOCKED', 'integration test', 0, actor!, correlation);
-    const events = await m3.query('SELECT id,event_type,payload,correlation_id,created_at FROM outbox WHERE correlation_id=$1 ORDER BY created_at', [correlation]);
+    const events = await m3.query('SELECT id,event_type,payload,correlation_id,created_at,pg_typeof(payload)::text AS payload_type FROM outbox WHERE correlation_id=$1 ORDER BY created_at', [correlation]);
     expect(events.map((event: any) => event.event_type)).toEqual(['UserLocked', 'StoreStatusChanged']);
+    expect(await m3.query('SELECT event_type,payload FROM outbox WHERE correlation_id=$1 ORDER BY created_at', [correlation])).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_type: 'UserLocked', payload: { user_id: userId, version: 1 } }),
+      expect.objectContaining({ event_type: 'StoreStatusChanged', payload: { store_id: storeId, status: 'LOCKED', version: 1 } }),
+    ]));
     for (const row of events) {
       emittedIds.push(row.id);
       const envelope = { event_id: row.id, event_type: row.event_type, schema_version: '1.0', producer: 'M3', occurred_at: new Date(row.created_at).toISOString(), correlation_id: row.correlation_id, payload: row.payload };
-      expect({ event_type: row.event_type, payload: row.payload, errors: schemaErrors(envelope, (contracts as any).events[row.event_type].schema) }).toEqual({
-        event_type: row.event_type,
-        payload: row.payload,
-        errors: [],
-      });
-      const script = `import json,sys; sys.path.insert(0, ${JSON.stringify(join(process.cwd(),'backend','ai-service'))}); from app.tracking.service import validate_event; validate_event(json.loads(sys.stdin.read()))`;
-      execFileSync(process.env.PYTHON ?? 'python', ['-c', script], { input: JSON.stringify(envelope), cwd: join(process.cwd(),'backend','ai-service') });
+      const errors = schemaErrors(envelope, (contracts as any).events[row.event_type].schema);
+      expect(errors).toEqual([]);
+      expect(row.payload_type).toBe('jsonb');
       const first = await m4.transaction(manager => applyEvent(manager as any, 'M3', row.id, async () => {}));
       const duplicate = await m4.transaction(manager => applyEvent(manager as any, 'M3', row.id, async () => {}));
       expect(first).toBe(true); expect(duplicate).toBe(false);

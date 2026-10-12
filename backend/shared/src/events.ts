@@ -10,7 +10,7 @@ export function validSampleEnvelope(event:any):boolean {
 }
 export async function emitEvent(manager:EntityManager,eventType:string,payload:unknown,correlationId:string) {
   const id=randomUUID();
-  await manager.query('INSERT INTO outbox(id,event_type,payload,correlation_id) VALUES($1,$2,$3,$4)',[id,eventType,JSON.stringify(payload),correlationId]);
+  await manager.query('INSERT INTO outbox(id,event_type,payload,correlation_id) VALUES($1,$2,$3,$4)',[id,eventType,payload,correlationId]);
   return id;
 }
 export async function applyEvent(manager:EntityManager,producer:string,id:string,effect:()=>Promise<void>) {

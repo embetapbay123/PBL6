@@ -30,10 +30,10 @@ export class AdministrationRepository {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
       }
       const newVersion = user.version + 1;
-      const [updated] = await manager.query(
+      const [updated] = (await manager.query(
         'UPDATE "user" SET status=$1, version=$2 WHERE id=$3 RETURNING id, email, status, version',
         [status, newVersion, id]
-      );
+      ))[0];
 
       if (status !== 'ACTIVE') {
         await manager.query(
@@ -105,10 +105,10 @@ export class AdministrationRepository {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
       }
       const newVersion = store.version + 1;
-      const [updated] = await manager.query(
+      const [updated] = (await manager.query(
         'UPDATE store SET status=$1, version=$2 WHERE id=$3 RETURNING *',
         [status, newVersion, id]
-      );
+      ))[0];
       const [ownerRow] = await manager.query(
         "SELECT user_id FROM store_membership WHERE store_id=$1 AND role='OWNER' AND status='ACTIVE' LIMIT 1",
         [id]
