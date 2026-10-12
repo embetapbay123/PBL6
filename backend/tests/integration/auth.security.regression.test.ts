@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { Controller, Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { Public } from '../../shared/src/auth';
 import { AuthController } from '../../identity-store-service/src/auth/auth.controller';
 import { AuthService, digest, IEmailAdapter } from '../../identity-store-service/src/auth/auth.service';
 import { AuthGuard } from '../../shared/src/auth';
@@ -32,7 +33,7 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     process.env.SERVICE_ID = 'M3';
     process.env.M3_DATABASE_URL = dbUrl;
     await import('../../shared/src/database').then(module => module.initializeDatabase());
-    @Controller() class TestAuthController extends AuthController {
+    @Controller() @Public() class TestAuthController extends AuthController {
       constructor() { super(new AuthService(adapter)); }
     }
     @Module({ controllers: [TestAuthController] }) class TestModule {}
@@ -55,6 +56,8 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     if (source?.isInitialized) {
       await source.query('DELETE FROM one_time_token WHERE user_id=$1', [userId]);
       await source.query('DELETE FROM refresh_session WHERE user_id=$1', [userId]);
+      await source.query('DELETE FROM customer_profile WHERE user_id=$1', [userId]);
+      await source.query('DELETE FROM user_role WHERE user_id=$1', [userId]);
       await source.query('DELETE FROM "user" WHERE id=$1', [userId]);
       await source.destroy();
     }
@@ -112,6 +115,9 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     const tokenRows = await source.query("SELECT token_hash FROM one_time_token WHERE user_id=$1 AND purpose='EMAIL_VERIFICATION'", [created.id]);
     expect(tokenRows).toHaveLength(1);
     expect(tokenRows[0].token_hash).toBe(digest(deliveredToken!));
+    await source.query('DELETE FROM one_time_token WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM customer_profile WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM user_role WHERE user_id=$1', [created.id]);
     await source.query('DELETE FROM "user" WHERE id=$1', [created.id]);
   });
 });
