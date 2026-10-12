@@ -4,6 +4,11 @@ import { audit } from '../../../shared/src/audit';
 import { emitEvent } from '../../../shared/src/events';
 import { randomUUID } from 'node:crypto';
 
+function returnedRow<T>(result: any): T | undefined {
+  const rows = Array.isArray(result?.[0]) ? result[0] : result;
+  return rows?.[0] as T | undefined;
+}
+
 export class AdministrationRepository {
   async listUsers(page = 1, size = 20) {
     page = Math.max(1, Math.trunc(page));
@@ -30,10 +35,11 @@ export class AdministrationRepository {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
       }
       const newVersion = user.version + 1;
-      const [updated] = (await manager.query(
+      const updated = returnedRow<any>(await manager.query(
         'UPDATE "user" SET status=$1, version=$2 WHERE id=$3 RETURNING id, email, status, version',
         [status, newVersion, id]
-      ))[0];
+      ));
+      if (!updated) throw new Error('User state update returned no row');
 
       if (status !== 'ACTIVE') {
         await manager.query(
@@ -105,10 +111,11 @@ export class AdministrationRepository {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
       }
       const newVersion = store.version + 1;
-      const [updated] = (await manager.query(
+      const updated = returnedRow<any>(await manager.query(
         'UPDATE store SET status=$1, version=$2 WHERE id=$3 RETURNING *',
         [status, newVersion, id]
-      ))[0];
+      ));
+      if (!updated) throw new Error('Store state update returned no row');
       const [ownerRow] = await manager.query(
         "SELECT user_id FROM store_membership WHERE store_id=$1 AND role='OWNER' AND status='ACTIVE' LIMIT 1",
         [id]
