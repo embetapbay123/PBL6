@@ -26,6 +26,18 @@ describe('AdministrationRepository event contracts', () => {
     expect(emit).toHaveBeenCalledWith(manager, kind, payload, 'corr');
   });
 
+  test('UserLocked emits the updated version from the persisted user row', async () => {
+    const manager = { query: jest.fn()
+      .mockResolvedValueOnce([{ id: 'user-1', version: 2, status: 'ACTIVE' }])
+      .mockResolvedValueOnce([{ id: 'user-1', version: 3, status: 'LOCKED' }])
+      .mockResolvedValue([]) };
+    transaction.mockImplementation(async (callback: any) => callback(manager));
+
+    await new AdministrationRepository().updateUserState('user-1', 'LOCKED', 'reason', 2, 'actor', 'corr');
+
+    expect(emit).toHaveBeenCalledWith(manager, 'UserLocked', { user_id: 'user-1', version: 3 }, 'corr');
+  });
+
   test('global role updates do not claim membership permissions were changed', async () => {
     const manager = { query: jest.fn()
       .mockResolvedValueOnce([{ id: 'role-1', code: 'CUSTOMER', version: 1 }])
