@@ -36,7 +36,12 @@ jobs:
       - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
       - run: npm --prefix frontend run test:e2e
       - if: always()
-        run: npm run infra:down
+        run: |
+          if [ -f infrastructure/.env ]; then
+            npm run infra:down
+          else
+            echo "Skipping infrastructure teardown because setup_local.py did not create infrastructure/.env."
+          fi
   mobile:
     runs-on: ubuntu-latest
     steps:

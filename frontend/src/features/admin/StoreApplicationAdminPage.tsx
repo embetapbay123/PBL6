@@ -45,7 +45,8 @@ function AdminStoreApplicationPage() {
     if (!review) return;
     setBusy(true); setError(undefined);
     try {
-      await mockReviewStoreApplication(review.app.id, { status: review.decision, expected_version: review.app.version ?? 0, ...(review.decision === 'REJECTED' && reason ? { decision_reason: reason ?? '' } : {}) });
+      if (!review.app.id) throw new Error('Hồ sơ demo không có mã hồ sơ hợp lệ.');
+      await mockReviewStoreApplication(review.app.id, { status: review.decision, expected_version: review.app.version ?? 0, ...(review.decision === 'REJECTED' && reason ? { decision_reason: reason } : {}) });
       setNotice(`Đã cập nhật hồ sơ demo “${review.app.proposed_name}”. Thay đổi chưa được gửi lên máy chủ.`);
       setReview(undefined); setSelected(undefined); await load(page);
     } catch (cause) { setError(cause); }
