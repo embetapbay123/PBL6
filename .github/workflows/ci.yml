@@ -31,6 +31,8 @@ jobs:
             docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml logs --no-color --tail=200 m1 m2 m3 m4 gateway
             exit 1
           fi
+      - name: Rebuild tools image from the checked out commit
+        run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build tools
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
       - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium

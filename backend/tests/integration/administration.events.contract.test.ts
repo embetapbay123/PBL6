@@ -58,7 +58,11 @@ describePostgres('Administration event producer to M4 schema and inbox', () => {
     for (const row of events) {
       emittedIds.push(row.id);
       const envelope = { event_id: row.id, event_type: row.event_type, schema_version: '1.0', producer: 'M3', occurred_at: new Date(row.created_at).toISOString(), correlation_id: row.correlation_id, payload: row.payload };
-      expect(schemaErrors(envelope, (contracts as any).events[row.event_type].schema)).toEqual([]);
+      expect({ event_type: row.event_type, payload: row.payload, errors: schemaErrors(envelope, (contracts as any).events[row.event_type].schema) }).toEqual({
+        event_type: row.event_type,
+        payload: row.payload,
+        errors: [],
+      });
       const script = `import json,sys; sys.path.insert(0, ${JSON.stringify(join(process.cwd(),'backend','ai-service'))}); from app.tracking.service import validate_event; validate_event(json.loads(sys.stdin.read()))`;
       execFileSync(process.env.PYTHON ?? 'python', ['-c', script], { input: JSON.stringify(envelope), cwd: join(process.cwd(),'backend','ai-service') });
       const first = await m4.transaction(manager => applyEvent(manager as any, 'M3', row.id, async () => {}));
