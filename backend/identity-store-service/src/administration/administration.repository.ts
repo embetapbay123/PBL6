@@ -58,7 +58,7 @@ export class AdministrationRepository {
         manager,
         'UserLocked',
         {
-          user_id: id,
+          user_id: updated.id,
           version: updated.version,
         },
         correlationId || randomUUID()

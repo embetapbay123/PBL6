@@ -12,7 +12,7 @@ describe('AdministrationRepository event contracts', () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   test.each([
-    ['UserLocked', { user_id: 'user-1', version: 3 }],
+    ['UserLocked', { user_id: 'target', version: 3 }],
     ['StoreStatusChanged', { store_id: 'store-1', status: 'LOCKED', version: 3 }],
   ])('%s emits exactly its declared payload', async (kind, payload) => {
     const manager = { query: jest.fn()
