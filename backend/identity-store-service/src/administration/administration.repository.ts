@@ -59,8 +59,6 @@ export class AdministrationRepository {
         'UserLocked',
         {
           user_id: id,
-          status: updated.status,
-          reason,
           version: updated.version,
         },
         correlationId || randomUUID()
@@ -134,7 +132,6 @@ export class AdministrationRepository {
         {
           store_id: id,
           status: updated.status,
-          reason,
           version: updated.version,
         },
         correlationId || randomUUID()
@@ -192,18 +189,6 @@ export class AdministrationRepository {
         correlationId,
         { permission_ids: oldPermissionIds, version: expectedVersion },
         { permission_ids: permissionIds, version: newVersion }
-      );
-
-      await emitEvent(
-        manager,
-        'MembershipChanged',
-        {
-          role_id: id,
-          code: role.code,
-          permission_ids: permissionIds,
-          version: newVersion,
-        },
-        correlationId || randomUUID()
       );
 
       return {

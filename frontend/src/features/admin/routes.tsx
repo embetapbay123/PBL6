@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { request, ApiError } from '../../api/client';
+import {storeApplicationAdminRoutes} from './StoreApplicationAdminPage';
 
 interface AdminUser {
   id: string;
@@ -221,6 +222,7 @@ function AdminDashboard() {
 }
 
 export const adminRoutes: RouteObject[] = [
+  ...storeApplicationAdminRoutes,
   {
     path: '/admin/*',
     element: (

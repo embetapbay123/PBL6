@@ -11,20 +11,12 @@ export interface IEmailAdapter {
   sendVerificationEmail(email: string, token: string): Promise<void>;
   sendPasswordResetEmail(email: string, token: string): Promise<void>;
 }
-export class MockEmailAdapter implements IEmailAdapter {
-  async sendVerificationEmail(email: string, _token: string): Promise<void> {
-    if (process.env.NODE_ENV === 'production') return;
-    // Sanitized log: never log raw token or raw email link per security policy
-  }
-  async sendPasswordResetEmail(email: string, _token: string): Promise<void> {
-    if (process.env.NODE_ENV === 'production') return;
-    // Sanitized log: never log raw token or raw email link per security policy
-  }
-}
 export class AuthService {
-  constructor(
-    private readonly emailAdapter: IEmailAdapter = new MockEmailAdapter()
-  ) {}
+  constructor(private readonly emailAdapter?: IEmailAdapter) {}
+  private deliveryAdapter(): IEmailAdapter {
+    if (!this.emailAdapter) throw new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Email delivery is not configured.');
+    return this.emailAdapter;
+  }
   async context(userId: string) {
     const [user] = await database.query('SELECT id,email,status,version FROM "user" WHERE id=$1',[userId]);
     if (!user || user.status !== 'ACTIVE') throw new ApiError(401,'SESSION_REVOKED','Phiên đăng nhập đã bị thu hồi.');
@@ -61,6 +53,7 @@ export class AuthService {
   }
 
   async register(email: string, password: string, displayName?: string) {
+    const adapter = this.deliveryAdapter();
     const [existing] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
     if (existing) {
       if (existing.status === 'PENDING') {
@@ -70,7 +63,7 @@ export class AuthService {
            VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '15 minutes', now())`,
           [randomUUID(), existing.id, digest(rawToken)]
         );
-        await this.emailAdapter.sendVerificationEmail(email, rawToken);
+        await adapter.sendVerificationEmail(email, rawToken);
       }
       return {
         user_id: existing.id,
@@ -106,7 +99,7 @@ export class AuthService {
       );
     });
 
-    await this.emailAdapter.sendVerificationEmail(email, rawToken);
+    await adapter.sendVerificationEmail(email, rawToken);
     return {
       user_id: userId,
       email_verified: false,
@@ -181,85 +174,61 @@ export class AuthService {
     return { status: 'OK', message: 'Đăng xuất thành công.' };
   }
   async resetPassword(email: string) {
-    const [user] = await database.query('SELECT id, status FROM "user" WHERE lower(email)=lower($1)', [email]);
-    if (!user || user.status !== 'ACTIVE') {
-      return { status: 'OK', message: 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.' };
-    }
-
+    const adapter = this.deliveryAdapter();
+    const [user] = await database.query('SELECT id,status FROM "user" WHERE lower(email)=lower($1)', [email]);
+    const genericMessage = 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.';
+    if (!user || user.status !== 'ACTIVE') return { status: 'OK', message: genericMessage };
     const rawToken = randomBytes(32).toString('base64url');
     const tokenHash = digest(rawToken);
-    
-    await database.query(
-      `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at) 
-       VALUES($1, $2, 'PASSWORD_RESET', $3, now() + interval '15 minutes', now())`,
-      [randomUUID(), user.id, tokenHash]
-    );
-
-    await this.emailAdapter.sendPasswordResetEmail(email, rawToken);
-    return { status: 'OK', message: 'Nếu email tồn tại trong hệ thống, link khôi phục đã được gửi.' };
+    const created = await database.transaction(async manager => {
+      const [lockedUser] = await manager.query('SELECT id,status FROM "user" WHERE id=$1 FOR UPDATE', [user.id]);
+      if (!lockedUser || lockedUser.status !== 'ACTIVE') return false;
+      await manager.query(`INSERT INTO one_time_token(id,user_id,purpose,token_hash,expires_at,created_at) VALUES($1,$2,'PASSWORD_RESET',$3,now()+interval '15 minutes',now())`, [randomUUID(), lockedUser.id, tokenHash]);
+      return true;
+    });
+    if (created) {
+      try {
+        await adapter.sendPasswordResetEmail(email, rawToken);
+      } catch (error) {
+        await database.query('UPDATE one_time_token SET consumed_at=now() WHERE token_hash=$1 AND purpose=\'PASSWORD_RESET\' AND consumed_at IS NULL', [tokenHash]);
+        throw error;
+      }
+    }
+    return { status: 'OK', message: genericMessage };
   }
-
   async confirmResetPassword(rawToken: string, newPassword: string) {
     const tokenHash = digest(rawToken);
-
     await database.transaction(async manager => {
       const [tokenRow] = await manager.query(
-        `SELECT id, user_id, expires_at, consumed_at FROM one_time_token
-         WHERE token_hash=$1 AND purpose='PASSWORD_RESET' FOR UPDATE`,
-        [tokenHash]
+        `SELECT id,user_id FROM one_time_token WHERE token_hash=$1 AND purpose='PASSWORD_RESET'`, [tokenHash]
       );
-
-      if (!tokenRow || tokenRow.consumed_at) {
-        throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ hoặc đã được sử dụng.');
-      }
-      if (new Date(tokenRow.expires_at).getTime() <= Date.now()) {
-        throw new ApiError(400, 'TOKEN_EXPIRED', 'Token đã hết hạn.');
-      }
-
+      if (!tokenRow) throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ hoặc đã được sử dụng.');
+      const [user] = await manager.query('SELECT id,status FROM "user" WHERE id=$1 FOR UPDATE', [tokenRow.user_id]);
+      if (!user || user.status !== 'ACTIVE') throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ hoặc tài khoản không hoạt động.');
+      const [lockedToken] = await manager.query(
+        `SELECT id,expires_at,consumed_at FROM one_time_token WHERE id=$1 AND purpose='PASSWORD_RESET' FOR UPDATE`, [tokenRow.id]
+      );
+      if (!lockedToken || lockedToken.consumed_at) throw new ApiError(400, 'INVALID_TOKEN', 'Token không hợp lệ hoặc đã được sử dụng.');
+      if (new Date(lockedToken.expires_at).getTime() <= Date.now()) throw new ApiError(400, 'TOKEN_EXPIRED', 'Token đã hết hạn.');
       const hash = await bcrypt.hash(newPassword, 10);
-
-      await manager.query(
-        'UPDATE "user" SET password_hash=$1, version=version+1 WHERE id=$2',
-        [hash, tokenRow.user_id]
-      );
-
-      await manager.query(
-        'UPDATE one_time_token SET consumed_at=now() WHERE id=$1',
-        [tokenRow.id]
-      );
-
-      await manager.query(
-        'UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
-        [tokenRow.user_id]
-      );
+      await manager.query('UPDATE "user" SET password_hash=$1,version=version+1 WHERE id=$2', [hash, user.id]);
+      await manager.query(`UPDATE one_time_token SET consumed_at=now() WHERE user_id=$1 AND purpose='PASSWORD_RESET' AND consumed_at IS NULL`, [user.id]);
+      await manager.query('UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL', [user.id]);
     });
-
     return { status: 'OK', message: 'Mật khẩu đã được khôi phục thành công.' };
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
-    const [user] = await database.query('SELECT id, password_hash, status FROM "user" WHERE id=$1', [userId]);
-    if (!user || user.status !== 'ACTIVE') {
-      throw new ApiError(401, 'UNAUTHENTICATED', 'Phiên đăng nhập không hợp lệ.');
-    }
-
-    const valid = await bcrypt.compare(currentPassword, user.password_hash);
-    if (!valid) throw new ApiError(400, 'INVALID_CREDENTIALS', 'Mật khẩu hiện tại không chính xác.');
-
-    const hash = await bcrypt.hash(newPassword, 10);
-
     await database.transaction(async manager => {
-      await manager.query(
-        'UPDATE "user" SET password_hash=$1, version=version+1 WHERE id=$2',
-        [hash, userId]
-      );
-
-      await manager.query(
-        'UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL',
-        [userId]
-      );
+      const [user] = await manager.query('SELECT id,password_hash,status FROM "user" WHERE id=$1 FOR UPDATE', [userId]);
+      if (!user || user.status !== 'ACTIVE') throw new ApiError(401, 'UNAUTHENTICATED', 'Phiên đăng nhập không hợp lệ.');
+      const valid = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!valid) throw new ApiError(400, 'INVALID_CREDENTIALS', 'Mật khẩu hiện tại không chính xác.');
+      const hash = await bcrypt.hash(newPassword, 10);
+      await manager.query('UPDATE "user" SET password_hash=$1,version=version+1 WHERE id=$2', [hash, userId]);
+      await manager.query(`UPDATE one_time_token SET consumed_at=now() WHERE user_id=$1 AND purpose='PASSWORD_RESET' AND consumed_at IS NULL`, [userId]);
+      await manager.query('UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL', [userId]);
     });
-
     return { status: 'OK', message: 'Đổi mật khẩu thành công.' };
   }
 }

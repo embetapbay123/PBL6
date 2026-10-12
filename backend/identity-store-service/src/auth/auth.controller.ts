@@ -12,7 +12,7 @@ import { ConfirmResetPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswo
 
 @Controller() @UseGuards(AuthGuard)
 export class AuthController {
-  private readonly service = new AuthService();
+  constructor(private readonly service: AuthService = new AuthService()) {}
   private readonly profiles = new ProfileService();
   private deliver(tokens: any, res: Response, web: boolean) {
     if (!web) return tokens;

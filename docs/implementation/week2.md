@@ -66,9 +66,9 @@ Cập nhật 07/10: [bàn giao toàn phần độc lập](cong-independent-hando
 ### Trí — Auth/RBAC thật, giữ lookup đã xong
 
 - Đọc [Auth](../../backend/identity-store-service/src/auth/README.md), [handoff M3](tri-lookup-handoff.md), [security](security.md). Address và hai lookup đã có; không làm lại.
-- AUTH-01/02: token verify/reset riêng, hash trong DB, expiry/one-time/rate limit; không dùng access-token verifier sai mục đích. Register phải tạo User/Profile/role theo schema và transaction; password mới revoke phiên theo BR. Không có route trùng skeleton, không để change-password Public, không log token/raw email link hoặc dùng mock email tự động trong production.
+- AUTH-01/02 remain **PENDING**: token verify/reset are hashed and expiring, but there is no real email delivery integration. Delivery requires an explicitly injected adapter and fails closed when absent. PostgreSQL/HTTP regressions must pass before these claims move from pending; no mock/no-op email adapter is supported.
 - AUTH-03: chốt WEB/MOBILE, refresh replay/expiry/CSRF/logout, effective permission sau User/Store khóa hoặc membership revoke, Profile ownership/audit và response schema. API còn sample giữ sample đến đủ nghiệm thu; không gom thiếu register/reset vào task này vì #37/#38 là task riêng.
-- [Administration](../../backend/identity-store-service/src/administration/README.md), [Store](../../backend/identity-store-service/src/store/README.md): RBAC-01 kiểm Admin-only/version và UserLocked/StoreStatusChanged/MembershipChanged outbox cùng audit. STORE-02 nối Owner update/ActiveStores thật; User/Store count phục vụ report M2 phải từ nguồn Admin M3, không tự lấy số khách có Order.
+- [Administration](../../backend/identity-store-service/src/administration/README.md), [Store](../../backend/identity-store-service/src/store/README.md): RBAC-01 remains **PENDING** until affected RBAC flows and producer-to-consumer PostgreSQL event/inbox tests are verified. Global Role permission changes do not emit MembershipChanged because effective memberships are not updated by that mutation. STORE-02 connects Owner update/ActiveStores; User/Store counts for M2 reports must come from M3 Admin source.
 - Admin Web chỉ nối API đã bàn giao; StoreApplication/staff/invitation giữ các issue riêng. Không nhận Payment hoặc Catalog của member khác.
 
 ### Hatsaphone — tiếp tục UI theo mẫu

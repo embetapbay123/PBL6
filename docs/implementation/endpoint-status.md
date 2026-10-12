@@ -2,6 +2,8 @@
 
 OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
 
+AUTH-01/AUTH-02 and RBAC-01 remain **PENDING**: registration/reset email delivery has no real adapter integration, and the affected authentication/event flows require the PostgreSQL and HTTP regression suites to pass in the supported Compose environment.
+
 Sau merge PR #90 trên main: Payment read/attempt và consent GET/PATCH đã có handler thật; public 28 IMPLEMENTED / 8 SAMPLE / 4 MOCK / 59 pending. Payment callback/Refund, confirm checkout và các producer M1 chưa đủ vẫn giữ scope riêng. Có handler không tự đóng issue trước review/merge.
 
 Sau phần M4 và Refund runtime độc lập: 29 IMPLEMENTED / 14 IMPLEMENTED_SAMPLE / 56 NOT_IMPLEMENTED. Refund read kiểm quyền thật; provider refund vẫn disabled, PAY-03 chưa đóng. Sáu API recommendation/chat/metrics có nhánh `AI_MODE=real`, vẫn đánh SAMPLE vì provider, chất lượng dữ liệu và nghiệm thu toàn phạm vi còn thiếu. Xem [AI runtime handoff](ai-runtime-handoff.md), [Refund handoff](refund-runtime-handoff.md); status không tự đóng AI-02/03/04 hoặc PAY-03.
