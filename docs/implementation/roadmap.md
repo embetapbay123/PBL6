@@ -4,6 +4,8 @@ Cập nhật **06/10/2026**, baseline main `98915a6` sau PR #86/#88/#89/#87. **M
 
 ## Cơ sở và điều kiện dự kiến
 
+**Rà soát Week 3 ngày 13/10/2026:** dùng [kế hoạch hiện hành](week3.md) và [bảng kiểm Kanban](week3-kanban-audit.md). Confirm/Cancel còn 501, PR M3 #103 còn CHANGES_REQUESTED; hoàn thành phần tồn Week 2 trước gate mua/hủy thật. Week 6/8 vẫn là dự kiến, cần ước lượng lại sau demo Week 3 nếu gate COD chưa đạt. Baseline cũ ở phần mở đầu không phải trạng thái hiện hành.
+
 - Nền đã có 99 public/11 internal DTO + fixture, 7 event, 4 service/4 DB, mẫu và CI. Baseline có 7 scope Done; 24 public IMPLEMENTED không đồng nghĩa 24 issue hoặc toàn luồng đã xong. Task rộng và sample/mock/501 vẫn cần acceptance thật.
 - Ước lượng giả định mỗi người dành khoảng **20–25 giờ tập trung/tuần**, 5 người tổng 100–125 giờ; đây là giả định lập kế hoạch, chưa phải năng lực nhóm đã xác nhận. Cần reviewer phản hồi trong một ngày làm việc và handoff nhỏ giữa tuần. Hai tuần đầu đo thời gian thực để điều chỉnh.
 - AI hỗ trợ sinh code/test/tài liệu, nhưng không bỏ thời gian review, test cạnh tranh/recovery, thiết bị hoặc đánh giá AI. Không ước lượng chỉ từ 71 thẻ hay tốc độ sinh code.

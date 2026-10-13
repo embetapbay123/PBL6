@@ -2,7 +2,7 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
-**Việc cần làm hiện tại:** [Week 2: kế hoạch 5 ngày, link issue và chi tiết từng người](week2.md). [Week 1](week1.md) giữ kế hoạch giai đoạn trước. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, PAY-01/PAY-04 của Công đã Done qua PR #90; AI-01 còn nghiệm thu nguồn thật.
+**Việc cần làm hiện tại:** [Week 3: kế hoạch 5 ngày, issue và thứ tự từng người](week3.md), cập nhật 13/10/2026; [bảng kiểm Kanban](week3-kanban-audit.md). Week 1/2 giữ lịch sử handoff. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, PAY-01/PAY-04 đã Done; Confirm/Cancel còn cần hoàn thiện, AI-01 còn nghiệm thu nguồn thật.
 
 **Kế hoạch toàn bộ:** [Roadmap Week 1–8](roadmap.md) bao phủ 71 issue và mốc mục tiêu từng scope; Week 3–8 có lịch/việc/handoff riêng. Status thực tế vẫn trên Kanban, không tự Done theo lịch.
 
