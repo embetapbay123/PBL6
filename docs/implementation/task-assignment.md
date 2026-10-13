@@ -2,6 +2,8 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
+**Lỗi đã biết cần sửa:** [bug register](known-bugs.md); issue có nhãn `bug` ghi trigger, actual/expected và tiêu chí kiểm lại ngay đầu body. Không nhầm phần chưa triển khai hoặc thiếu evidence với bug đã xác minh.
+
 **Việc cần làm hiện tại:** [Week 3: BE/provider và điểm nối](week3.md), rồi [Week 4: đủ chức năng](week4.md), [Week 5: nghiệm thu/diễn tập](week5.md). **Demo full scope ngày 03/11/2026**, gồm online Payment/Refund, AI generation và APK; [deadline/gate](demo-2026-11-03.md). Week 1/2 giữ lịch sử handoff; Kanban không tự Done theo deadline.
 
 **Kế hoạch toàn bộ:** [Roadmap full demo 03/11](roadmap.md) bao phủ 71 issue; toàn scope cần trước demo trong Week 3–5. Week 6–8 là tài liệu cũ lưu tham khảo sau demo, không dùng làm hạn hoàn thiện các chức năng đã cam kết.
