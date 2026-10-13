@@ -21,7 +21,7 @@ Verified on 2026-10-13 against main, merged PRs, implementation and test sources
 | [MOB-02 #32](https://github.com/embetapbay123/PBL6/issues/32) | Backlog — partial code | Search/category/pagination/detail/Variant/cart/recommendation clients exist. Detail images are still placeholders; finish image rendering and auxiliary-section error handling before real navigation/filter/consent acceptance. Catalog #11 is available. |
 | [MOB-04 #34](https://github.com/embetapbay123/PBL6/issues/34) | Backlog | Full Order history/detail/cancel, Payment/Refund polling and Review screens are missing from the current feature tree. |
 | [MOB-05 #35](https://github.com/embetapbay123/PBL6/issues/35) | Backlog | Consent dialog exists; Chat/session/history and Store application/invitation screens are missing. M4 adapters/fallback are available; provider disabled is not answer-quality evidence. |
-| [MOB-06 #36](https://github.com/embetapbay123/PBL6/issues/36) | Backlog | Android build setup exists; no verified release APK/device acceptance for the complete flow. |
+| [MOB-06 #36](https://github.com/embetapbay123/PBL6/issues/36) | Todo — Week 3 start, Week 5 acceptance | Verify SDK/device and build/install an early APK this week; no verified release APK/device acceptance for the complete flow yet. Full acceptance remains due before the 03/11 demo. |
 
 ## Evidence and limits
 

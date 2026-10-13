@@ -14,6 +14,8 @@ Cập nhật **13/10/2026**. Demo đầy đủ vào **thứ Ba 03/11/2026**. [Ph
 
 ## Nhịp làm và điều kiện bàn giao
 
+**Kanban đã đồng bộ theo deadline full demo:** #9/#10 (Thịnh), #42/#43 (Trí), #56/#57 (Công), #36 (Hoa) chuyển Backlog → Todo để bắt đầu trong Week 3. Các thẻ Week 3 đã Todo/In progress/Review giữ nguyên; Todo là phần đã lên lịch, member lấy theo thứ tự handoff trên bảng. Task chỉ bắt đầu Week 4–5 còn Backlog, không mở lại Done.
+
 Ngày 1 chọn nhánh chính và kiểm môi trường. Trước 15/10 chốt provider/email/model/device. Ngày 3 tích hợp Confirm; ngày 4 callback/Cancel/AI và UI. Phiên cuối kiểm COD nhóm thật, điểm nối và APK đầu tiên; phần thiếu ghi blocker có owner/date ngay, không đẩy âm thầm sau demo.
 
 File/API/DTO ở [task-assignment](task-assignment.md), README từng module và [integration contract](../integration-contract.md). Dùng code đã merge, giữ đúng manager cho Order–Payment và stable operation ID cho command/worker. Seed hợp lệ để kiểm nghiệp vụ; fixture/provider disabled/model none không thay bằng chứng online/Refund/generation thật.
