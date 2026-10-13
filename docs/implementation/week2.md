@@ -20,6 +20,8 @@ Hoa đã có [Refund request/read/worker kernel](refund-runtime-handoff.md) đ�
 
 ## Phân công và thứ tự
 
+Week 2 là lịch sử handoff. Nhóm hiện làm [Week 3, cập nhật 13/10/2026](week3.md); PR M3 hiện hành là #103, #101 đóng chưa merge. Dùng [Kanban audit Week 3](week3-kanban-audit.md) và trạng thái sống để chọn việc tiếp theo.
+
 ### Cập nhật review ngày 10/10/2026
 
 - Thịnh đã bàn giao reserve/consume/release ở [PR #98](https://github.com/embetapbay123/PBL6/pull/98), inventory/low-stock backend ở [#99](https://github.com/embetapbay123/PBL6/pull/99) và public Catalog/taxonomy/filter/ảnh/search-view producer ở [#100](https://github.com/embetapbay123/PBL6/pull/100). INV-02 #14 và CAT-04 #11 hoàn thành; INV-01 #13 còn Seller UI. Tiếp INV-03 #15 và Seller UI, không viết lại command đã bàn giao.
