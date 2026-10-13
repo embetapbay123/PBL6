@@ -2,6 +2,8 @@
 
 Owner: Công
 
+Week 3: generation qua Ollama/OpenAI-compatible (OpenCode/DeepSeek), revalidate nguồn/giá/card, trace prompt/model và fallback rõ. [Cấu hình/test/blocker](../../../../docs/implementation/cong-week3-handoff.md). Chưa có live provider/model evidence; giữ IMPLEMENTED_SAMPLE.
+
 - `POST /chat/sessions` — createChatSession: **IMPLEMENTED_SAMPLE**
 - `POST /chat/sessions/{id}/messages` — sendChatMessage: **IMPLEMENTED_SAMPLE**
 - `GET /me/chat/sessions` — listOwnChatSessions: **IMPLEMENTED_SAMPLE**

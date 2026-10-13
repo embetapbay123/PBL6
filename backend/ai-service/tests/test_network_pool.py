@@ -22,7 +22,7 @@ def test_model_uses_own_timeout_and_stream_does_not_close_shared_pool():
     def handler(request):
         assert request.extensions['timeout']['read']==2
         assert request.headers['x-correlation-id']=='chat-flow'
-        return httpx.Response(200,json={'message':{'content':'{"product_ids":["p"]}'}})
+        return httpx.Response(200,json={'message':{'content':'{"product_ids":["p"],"answer":"Tham khảo camera trong danh mục."}'}})
     async def run():
         async with httpx.AsyncClient(timeout=1,transport=httpx.MockTransport(handler)) as pool:
             selector=CatalogSelector(provider='ollama',url='http://model',model='test',http_client=pool)

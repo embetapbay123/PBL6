@@ -1,10 +1,11 @@
 import asyncio, hashlib, secrets, json, time, uuid, hmac
+from dataclasses import replace
 from sqlalchemy import text
 from starlette.concurrency import run_in_threadpool
 from ..internal_client import InternalError
 from ..safety import redact,budget,price
-from .provider import CatalogSelector, compose
-from .retrieval import retrieve
+from .provider import CatalogSelector, compose, PROMPT_VERSION,request_estimate
+from .retrieval import retrieve,contextual_question
 
 def digest(value):return hashlib.sha256(value.encode()).hexdigest()
 
@@ -12,9 +13,9 @@ class ChatRuntime:
     def __init__(self,engine,catalog,selector=None):
         self.engine,self.catalog,self.selector=engine,catalog,selector or CatalogSelector()
 
-    def budget(self,scope,estimated=0):
+    def budget(self,scope,estimated=0,request=True):
         with self.engine.begin() as db:
-            row=db.execute(text('INSERT INTO ai_usage_budget(scope_hash,day,requests,tokens) VALUES(:s,current_date,1,:t) ON CONFLICT(scope_hash,day) DO UPDATE SET requests=ai_usage_budget.requests+1,tokens=ai_usage_budget.tokens+EXCLUDED.tokens WHERE ai_usage_budget.requests<100 AND ai_usage_budget.tokens+:t<=100000 RETURNING requests'),{'s':digest(scope),'t':estimated}).first()
+            row=db.execute(text('INSERT INTO ai_usage_budget(scope_hash,day,requests,tokens) VALUES(:s,current_date,:n,:t) ON CONFLICT(scope_hash,day) DO UPDATE SET requests=ai_usage_budget.requests+:n,tokens=ai_usage_budget.tokens+EXCLUDED.tokens WHERE ai_usage_budget.requests+:n<=100 AND ai_usage_budget.tokens+:t<=100000 RETURNING requests'),{'s':digest(scope),'t':estimated,'n':int(request)}).first()
             if not row:raise InternalError(429,'CHAT_BUDGET_EXCEEDED','Đã hết ngân sách chat trong ngày.')
 
     def create(self,user,ip,first=None):
@@ -53,34 +54,41 @@ class ChatRuntime:
                 items[0]['messages']={'items':[{'id':str(m['id']),'session_id':str(m['session_id']),'role':m['role'],'content':m['content']} for m in messages],'total':count,'page':mp,'size':ms}
         return {'items':items,'total':total,'page':page,'size':size}
 
-    def save(self,id,version,question,response,selection,elapsed,stores):
+    def save(self,id,version,question,response,selection,elapsed,stores,estimated=0):
         with self.engine.begin() as db:
             changed=db.execute(text("UPDATE chat_session SET version=version+1 WHERE id=:s AND version=:v AND status='ACTIVE' AND created_at>now()-interval '30 days' RETURNING id"),{'s':id,'v':version}).first()
             if not changed:raise InternalError(409,'VERSION_CONFLICT','Phiên chat đã thay đổi; tải lại rồi gửi lại.')
             db.execute(text("INSERT INTO chat_message(session_id,role,content) VALUES(:s,'USER',:c)"),{'s':id,'c':redact(question)})
             db.execute(text("INSERT INTO chat_message(id,session_id,role,content,product_refs,response_meta) VALUES(:id,:s,'ASSISTANT',:c,CAST(:refs AS jsonb),CAST(:meta AS jsonb))"),{'id':response['id'],'s':id,'c':response['content'],'refs':json.dumps(response['product_cards']),'meta':json.dumps({'fallback':selection.fallback,'reason':selection.reason})})
-            db.execute(text("INSERT INTO ai_request_trace(operation,store_ids,latency_ms,fallback,provider,prompt_version,index_version,estimated_tokens,actual_tokens) VALUES('chat',CAST(:stores AS jsonb),:ms,:fallback,:provider,'catalog-selector-v1','live-lexical-v1',:estimate,:actual)"),{'stores':json.dumps(stores),'ms':elapsed,'fallback':selection.fallback,'provider':selection.provider,'estimate':len(question)//3+1000,'actual':selection.actual_tokens})
+            db.execute(text("INSERT INTO ai_request_trace(operation,store_ids,latency_ms,fallback,provider,prompt_version,index_version,estimated_tokens,actual_tokens,model_name,fallback_reason) VALUES('chat',CAST(:stores AS jsonb),:ms,:fallback,:provider,:prompt,'live-lexical-v1',:estimate,:actual,:model,:reason)"),{'stores':json.dumps(stores),'ms':elapsed,'fallback':selection.fallback,'provider':selection.provider,'prompt':PROMPT_VERSION,'estimate':estimated,'actual':selection.actual_tokens,'model':getattr(selection,'model',None),'reason':selection.reason})
 
     async def answer(self,id,user,key,question,correlation):
         started=time.monotonic()
         version,history=await run_in_threadpool(self.load,id,user,key)
-        await run_in_threadpool(self.budget,'turn:'+str(user or digest(key)),len(question)//3+1000)
+        scope='turn:'+str(user or digest(key))
+        await run_in_threadpool(self.budget,scope)
         try:
             async with asyncio.timeout(4):
                 candidates=await self.catalog.snapshot(correlation)
-                retrieved=await run_in_threadpool(retrieve,self.engine,question,candidates)
+                retrieved=await run_in_threadpool(retrieve,self.engine,contextual_question(question,history),candidates)
                 if user:
                     from ..recommendation.runtime import RecommendationRuntime
                     personalized,_,_=await run_in_threadpool(RecommendationRuntime(self.engine,self.catalog).personal,user,retrieved)
                     order={p:i for i,p in enumerate(personalized)}
                     retrieved.sort(key=lambda p:order.get(p['id'],len(order)))
+                estimated=request_estimate(question,retrieved,history) if retrieved and getattr(self.selector,'provider','none')!='none' else 0
+                await run_in_threadpool(self.budget,scope,estimated,False)
                 selection=await self.selector.select(question,retrieved,history,correlation)
                 # Resolve selected cards again after generation; no stale cached price or hidden card.
                 current=await asyncio.gather(*(self.catalog.product(p,correlation) for p in selection.ids))
                 maximum=budget(question)
                 if maximum is not None:current=[p for p in current if price(p)<=maximum]
+                # A model explanation belongs to the exact source snapshot, not merely its IDs.
+                before={p['id']:p for p in retrieved}
+                changed=len(current)!=len(selection.ids) or any(any(p.get(k)!=before[p['id']].get(k) for k in ('title','description','version','store_id')) for p in current)
+                if changed and not selection.fallback:selection=replace(selection,ids=tuple(p['id'] for p in current),fallback=True,reason='CATALOG_CHANGED',answer=None)
         except TimeoutError:raise InternalError(503,'DEPENDENCY_UNAVAILABLE','Catalog chưa sẵn sàng; vui lòng thử lại.')
         content,cards=compose(selection,current)
         response={'id':str(uuid.uuid4()),'session_id':id,'role':'ASSISTANT','content':content,'product_cards':cards,'fallback':selection.fallback,'fallback_reason':selection.reason,'mode':'real'}
-        await run_in_threadpool(self.save,id,version,question,response,selection,round((time.monotonic()-started)*1000),sorted({p['store_id'] for p in current}))
+        await run_in_threadpool(self.save,id,version,question,response,selection,round((time.monotonic()-started)*1000),sorted({p['store_id'] for p in current}),estimated)
         return response
