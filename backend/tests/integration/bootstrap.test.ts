@@ -17,8 +17,9 @@ test('sample product list/detail, validation and explicit placeholders',async()=
  expect((await fetch(base+'/cart/items')).status).toBe(401);
  const session=await login();const cart=await fetch(base+'/cart/items',{headers:{Authorization:'Bearer '+session.access_token}});
  expect(cart.status).toBe(200);expect(Array.isArray((await cart.json() as any).items)).toBe(true);
- const stub=await fetch(base+'/categories');
- expect(stub.status).toBe(501);expect((await stub.json() as any).code).toBe('FEATURE_NOT_IMPLEMENTED');
+ // Taxonomy is implemented: the public endpoint answers a real page instead of a 501 stub.
+ const categories=await fetch(base+'/categories');
+ expect(categories.status).toBe(200);expect(Array.isArray((await categories.json() as any).items)).toBe(true);
 });
 test('profiles reflect token ownership; logout and refresh replay revoke session',async()=>{
  const a=await login();const b=await login('customer2@pbl6.test');

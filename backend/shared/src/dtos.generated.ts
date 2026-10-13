@@ -363,6 +363,15 @@ export class ListProductsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 200}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
   "q"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "category_id"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "product_type_id"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["title", "price_asc", "price_desc"], "default": "title"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["title", "price_asc", "price_desc"], "default": "title"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort": "title" | "price_asc" | "price_desc" = "title";
 }
 export class ListProductsHeadersDto {
 }

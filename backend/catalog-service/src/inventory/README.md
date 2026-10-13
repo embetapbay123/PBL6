@@ -2,13 +2,23 @@
 
 Owner: Thịnh
 
-- `GET /store/inventory` — listStoreInventory: **NOT_IMPLEMENTED**
-- `POST /store/inventory/adjustments` — adjustInventory: **NOT_IMPLEMENTED**
-- `GET /store/inventory/movements` — listStockMovements: **NOT_IMPLEMENTED**
+- `GET /store/inventory` — listStoreInventory: **IMPLEMENTED**
+- `POST /store/inventory/adjustments` — adjustInventory: **IMPLEMENTED**
+- `GET /store/inventory/movements` — listStockMovements: **IMPLEMENTED**
+
+Store scope lấy từ `store_membership` hiện hành trong context chứ không từ request, nên thành viên Store này không đọc/điều chỉnh được kho Store khác. Thiết kế, mã lỗi và bằng chứng ở [bàn giao INV-01](../../../../docs/implementation/inv-01-handoff.md).
 
 ## Internal operation (không qua gateway)
 
 - `POST /internal/variants/quote` — QuoteVariants: **IMPLEMENTED** — M2 gọi để lấy snapshot giá/tồn hiện hành; chỉ đọc, không reserve và không trừ tồn. Caller allowlist `M2` do `ServiceGuard` chặn; lỗi M3 fail closed với 503. Chi tiết ở [inventory.service.ts](inventory.service.ts).
+- `POST /internal/inventory/low-stock` — ListLowStockVariants: **IMPLEMENTED** — M2 chuyển token người dùng, M1 tự resolve scope với M3; Store khác hoặc thiếu quyền trả 403, lỗi M3 trả 503 nên không bao giờ thành trang rỗng.
+
+- `POST /internal/inventory/reserve` — ReserveInventory: **IMPLEMENTED** — giữ hàng nhiều SKU/mọi Store nguyên tử theo `operation_id`; một reservation mỗi Order; không oversell.
+- `POST /internal/inventory/consume` — ConsumeReservation: **IMPLEMENTED** — trừ tồn thật và giải phóng hold; gọi lặp trả `ALREADY_APPLIED`.
+- `POST /internal/inventory/release` — ReleaseReservation: **IMPLEMENTED** — chỉ giải phóng hold, không đổi tồn thật.
+- `POST /internal/inventory/restock` — RestockOrder: **NOT_IMPLEMENTED** (INV-03 #15).
+
+Chi tiết: [bàn giao INV-02](../../../../docs/implementation/inv-02-handoff.md).
 
 ## Bàn giao CAT-QUOTE-01
 
@@ -53,7 +63,7 @@ Response không có `product_id`, title hoặc SKU. M2 phải lấy Store/Produc
 | 409 | Store/Product/Variant không được bán hoặc quantity vượt tồn khả dụng |
 | 503 | ActiveStores M3 lỗi/timeout hoặc typed client không kết nối được |
 
-M2 giữ correlation và các lỗi nghiệp vụ, timeout mặc định 1 giây, không retry trong HTTP request và không trả giá/Store mặc định khi dependency lỗi. ActiveStores M3 vẫn là sample; ReserveInventory/ConsumeReservation/ReleaseReservation/RestockOrder còn là task INV-02/INV-03, không nằm trong PR #86.
+M2 giữ correlation và các lỗi nghiệp vụ, timeout mặc định 1 giây, không retry trong HTTP request và không trả giá/Store mặc định khi dependency lỗi. ReserveInventory/ConsumeReservation/ReleaseReservation được bổ sung ở PR #98; RestockOrder và recovery/expiry vẫn thuộc INV-03 #15.
 
 ## Kiểm chứng
 

@@ -20,6 +20,15 @@ Hoa đã có [Refund request/read/worker kernel](refund-runtime-handoff.md) đ�
 
 ## Phân công và thứ tự
 
+### Cập nhật review ngày 10/10/2026
+
+- Thịnh đã bàn giao reserve/consume/release ở [PR #98](https://github.com/embetapbay123/PBL6/pull/98), inventory/low-stock backend ở [#99](https://github.com/embetapbay123/PBL6/pull/99) và public Catalog/taxonomy/filter/ảnh/search-view producer ở [#100](https://github.com/embetapbay123/PBL6/pull/100). INV-02 #14 và CAT-04 #11 hoàn thành; INV-01 #13 còn Seller UI. Tiếp INV-03 #15 và Seller UI, không viết lại command đã bàn giao.
+- Hatsaphone có Product detail/Variant/ảnh/addCart thật và route Cart/Checkout qua [PR #96](https://github.com/embetapbay123/PBL6/pull/96). WEB-02 #62 hoàn thành; WEB-05 #65 còn enrich thông tin Product/giá và nghiệm thu UI; WEB-06 #66 mới có client COD, còn nghiệm thu backend confirm/multi-Store, voucher/online Payment và khôi phục attempt khi reload. Chi tiết: [Customer Web handoff](customer-web-handoff.md).
+- Trí sửa [PR #101 theo review](https://github.com/embetapbay123/PBL6/pull/101#pullrequestreview-5478882839): email delivery/fail-closed; vô hiệu reset token cũ; chống ghi đè khi đổi password đồng thời; payload event đúng schema và effective permission. AUTH-01 #37, AUTH-02 #38, RBAC-01 #44 giữ mở/In progress, không dùng CI xanh hiện tại để coi các lỗi này đã đạt.
+- Hoa có thể tích hợp Inventory và Catalog thật từ main; Công tiếp nghiệm thu nguồn tracking thật và các điểm nối Payment/Refund theo task hiện có. Không đổi owner của Checkout, Inventory hay M3.
+
+Kiểm tra tích hợp sau review: **179 Node unit, 85 HTTP/PostgreSQL integration, 14 Web e2e** đạt; CI kiểm thêm Python, Flutter và schema/contract. Additive contract `Product.images` yêu cầu rebuild cả các consumer M2/M4; container cũ có validator cũ sẽ từ chối response mới bằng 503. Setup giữ migration/seed và `.env` local theo README.
+
 | Người / GitHub | Task chính theo thứ tự | Task tiếp khi phần chính đạt | Đầu ra bàn giao |
 | --- | --- | --- | --- |
 | Công / `embetapbay123` | [PAY-01 #51](https://github.com/embetapbay123/PBL6/issues/51) → [PAY-04 #54](https://github.com/embetapbay123/PBL6/issues/54) → [AI-01 #55](https://github.com/embetapbay123/PBL6/issues/55) | [PAY-02 #52](https://github.com/embetapbay123/PBL6/issues/52), lát cắt [OPS-02 #60](https://github.com/embetapbay123/PBL6/issues/60); [PAY-03 #53](https://github.com/embetapbay123/PBL6/issues/53) khi bắt đầu Refund | PaymentPort/Payment read, COD cùng manager; consent GET/PATCH và inbox consumer; bộ test điểm nối |
@@ -59,9 +68,11 @@ Cập nhật 07/10: [bàn giao toàn phần độc lập](cong-independent-hando
 - Đọc [Order](../../backend/commerce-service/src/order/README.md), [quote store](../../backend/commerce-service/src/order/quote-store.ts), [Voucher](../../backend/commerce-service/src/voucher/README.md). Không sửa lại Cart CRUD đã bàn giao.
 - ORDER-01: M3 context đã trên main qua #87. Chạy quote từ Cart thật, kiểm snapshot/address/Store shipping/version và voucher stacking/phân bổ. Kiểm thay đổi giá/tồn/địa chỉ/quyền, hash/TTL/owner; chưa đánh dấu toàn endpoint hoàn thành chỉ vì lookup đã có.
 - ORDER-02/VOUCHER-03: cấp ID Order trước reserve; persist orchestration/idempotency để restart được. Reserve đủ rồi transaction M2 tạo toàn nhóm Order/OrderItem/Payment, quota/redemption/snapshot/outbox bằng cùng manager; lỗi DB phải release tất cả reservation và phần giữ quota trước commit. COD consume sau tạo: lỗi giữ PREPARING và worker retry, chưa cho Seller xử lý. Không tự retry command HTTP trong request.
-- Chốt lượt Voucher theo BR-40: lỗi trước commit nhóm thì release phần giữ; hủy/hết hạn một Order sau commit **không khôi phục lượt đã chốt hoặc tính lại Order khác**. VOUCHER-01 còn bằng chứng hai Store/Voucher đã dùng; ORDER-03 còn nghiệm thu read/payment/refund scope. Các card rộng này giữ mở đến đủ tiêu chí.
+- Chốt lượt Voucher theo BR-40: lỗi trước commit nhóm thì release phần giữ; hủy/hết hạn một Order sau commit **không khôi phục lượt đã chốt hoặc tính lại Order khác**. VOUCHER-01: **CRUD đã merge, Review, chưa Done**; Hoa bổ sung [bằng chứng nghiệm thu còn thiếu](voucher-01-acceptance.md), không làm lại CRUD và không chờ toàn bộ Checkout. ORDER-03 còn nghiệm thu read/payment/refund scope. Các card này giữ mở đến đủ tiêu chí.
 - ORDER-05: kiểm scope/SHIPPED/COD/version/amount rồi gọi port Công. ORDER-04 đã có transition/Shipment; phần còn lại là hủy + release/restock/refund chống lặp, không viết lại transition và không báo hủy thành công trước compensation.
 - MOB-03: [Mobile README](../../mobile/README.md); chạy Cart/quote/COD confirm thật trên Android/emulator, giữ key qua retry cùng attempt và lấy quote mới khi 409. MOB-01/02 và report còn phạm vi riêng; không đóng bằng widget mock hoặc dependency vừa merge.
+
+Trạng thái Hoa đã được [đối chiếu lại ngày 13/10/2026](hoa-task-status.md): #23/#25/#27/#30/#31/#33 ở Review; đọc checklist còn thiếu trước khi làm lại phần đã merge. Review không thay cho nghiệm thu API/Android thật.
 
 ### Trí — Auth/RBAC thật, giữ lookup đã xong
 

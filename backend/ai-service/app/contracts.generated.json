@@ -2483,7 +2483,7 @@
       "route": "/categories",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2584,7 +2584,7 @@
       "route": "/product-types",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2740,7 +2740,7 @@
       "route": "/products",
       "internal": false,
       "service": "M1",
-      "status": "IMPLEMENTED_SAMPLE",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2768,6 +2768,23 @@
           "q": {
             "type": "string",
             "maxLength": 200
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_type_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "title",
+              "price_asc",
+              "price_desc"
+            ],
+            "default": "title"
           }
         },
         "required": [],
@@ -2854,6 +2871,38 @@
                     },
                     "maxItems": 100
                   },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
+                  },
                   "status": {
                     "type": "string",
                     "enum": [
@@ -2911,7 +2960,7 @@
       "route": "/products/{id}",
       "internal": false,
       "service": "M1",
-      "status": "IMPLEMENTED_SAMPLE",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -3009,6 +3058,38 @@
                 "additionalProperties": false
               },
               "maxItems": 100
+            },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "position": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "image_url"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
             },
             "status": {
               "type": "string",
@@ -3160,6 +3241,38 @@
                       "additionalProperties": false
                     },
                     "maxItems": 100
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
                   },
                   "status": {
                     "type": "string",
@@ -3327,6 +3440,38 @@
                       "additionalProperties": false
                     },
                     "maxItems": 100
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
                   },
                   "status": {
                     "type": "string",
@@ -3552,6 +3697,38 @@
               },
               "maxItems": 100
             },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "position": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "image_url"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            },
             "status": {
               "type": "string",
               "enum": [
@@ -3765,6 +3942,38 @@
                 "additionalProperties": false
               },
               "maxItems": 100
+            },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "position": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "image_url"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
             },
             "status": {
               "type": "string",
@@ -3986,7 +4195,7 @@
       "route": "/store/inventory",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -4093,7 +4302,7 @@
       "route": "/store/inventory/adjustments",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4191,7 +4400,7 @@
       "route": "/store/inventory/movements",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -10045,6 +10254,38 @@
                     },
                     "maxItems": 100
                   },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
+                  },
                   "status": {
                     "type": "string",
                     "enum": [
@@ -11423,6 +11664,38 @@
               },
               "maxItems": 100
             },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "position": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "image_url"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            },
             "status": {
               "type": "string",
               "enum": [
@@ -11573,6 +11846,38 @@
                 "additionalProperties": false
               },
               "maxItems": 100
+            },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "position": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "image_url"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
             },
             "status": {
               "type": "string",
@@ -12239,7 +12544,7 @@
       "route": "/internal/inventory/reserve",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12381,7 +12686,7 @@
       "route": "/internal/inventory/consume",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12470,7 +12775,7 @@
       "route": "/internal/inventory/release",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12899,7 +13204,7 @@
       "route": "/internal/inventory/low-stock",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",

@@ -8,7 +8,9 @@ Sau merge PR #90 trên main: Payment read/attempt và consent GET/PATCH đã có
 
 Sau phần M4 và Refund runtime độc lập: 29 IMPLEMENTED / 14 IMPLEMENTED_SAMPLE / 56 NOT_IMPLEMENTED. Refund read kiểm quyền thật; provider refund vẫn disabled, PAY-03 chưa đóng. Sáu API recommendation/chat/metrics có nhánh `AI_MODE=real`, vẫn đánh SAMPLE vì provider, chất lượng dữ liệu và nghiệm thu toàn phạm vi còn thiếu. Xem [AI runtime handoff](ai-runtime-handoff.md), [Refund handoff](refund-runtime-handoff.md); status không tự đóng AI-02/03/04 hoặc PAY-03.
 
-Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope), 5 stub. Lookup M3 đã merge vào main qua PR #87 ngày 06/10/2026. QuoteVariants của Thịnh đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026; [README inventory](../../backend/catalog-service/src/inventory/README.md) có payload và test. Trạng thái này chỉ áp dụng M1 quote; PR #86 chỉ hoàn thành M1 quote; Cart/Order/Voucher mới được cập nhật theo [bản tổng của Hoa](hoa-consolidated-handoff.md), checkout và command kho vẫn chưa đủ. Nguồn trạng thái internal là [Internal OpenAPI](../contracts/internal-api.json).
+Cập nhật review ngày 10/10/2026: **36 IMPLEMENTED / 12 IMPLEMENTED_SAMPLE / 51 NOT_IMPLEMENTED** ở public API. Inventory backend #99 và public Catalog #100 đã bàn giao; Auth/RBAC của PR #101 chưa merge do review còn lỗi. Các số ở hai đoạn trước là mốc lịch sử, không phải tổng hiện tại.
+
+Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPLEMENTED**. QuoteVariants, ReserveInventory, ConsumeReservation, ReleaseReservation, ListLowStockVariants, VerifyReviewEligibility, ResolveCheckoutContext và ResolveAiMetricsScope đã có handler thật. RestockOrder vẫn thuộc INV-03 #15; ResolveContext/ActiveStores còn sample. Xem [Internal OpenAPI](../contracts/internal-api.json), [Inventory handoff](inv-02-handoff.md) và [Week 2](week2.md). Owner Checkout, Payment, Inventory và M3 giữ nguyên; có handler không tự đóng toàn bộ issue.
 
 | API | Operation | Service / module | Owner | Trạng thái |
 | --- | --- | --- | --- | --- |
@@ -39,19 +41,19 @@ Internal API có 11 operation: 2 sample, 4 `IMPLEMENTED` (QuoteVariants, VerifyR
 | `POST /store/staff/invitations/{id}/revoke` | revokeStaffInvitation | M3 / staff | Trí | NOT_IMPLEMENTED |
 | `GET /me/invitations` | listOwnInvitations | M3 / staff | Trí | NOT_IMPLEMENTED |
 | `POST /me/invitations/{id}/accept` | acceptInvitation | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `GET /categories` | listCategories | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
-| `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
+| `GET /categories` | listCategories | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `POST /store/products` | createProduct | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
 | `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `POST /store/products/{id}/images` | addProductImage | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
-| `POST /store/inventory/adjustments` | adjustInventory | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
-| `GET /store/inventory/movements` | listStockMovements | M1 / inventory | Thịnh | NOT_IMPLEMENTED |
+| `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | IMPLEMENTED |
+| `POST /store/inventory/adjustments` | adjustInventory | M1 / inventory | Thịnh | IMPLEMENTED |
+| `GET /store/inventory/movements` | listStockMovements | M1 / inventory | Thịnh | IMPLEMENTED |
 | `GET /cart/items` | listCartItems | M2 / cart | Hoa | IMPLEMENTED |
 | `POST /cart/items` | addCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | IMPLEMENTED |

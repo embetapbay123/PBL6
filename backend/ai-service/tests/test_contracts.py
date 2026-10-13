@@ -22,7 +22,8 @@ def test_strict_body_values(value):
     with pytest.raises(ValueError): validate_operation('addCartItem',**fixture)
 
 def test_query_conversion_null_and_extra_fields():
-    assert validate_operation('listProducts',query={'page':'2'})['query']=={'page':2,'size':20}
+    # `sort` carries an OpenAPI default, so normalisation materialises it even when omitted.
+    assert validate_operation('listProducts',query={'page':'2'})['query']=={'page':2,'size':20,'sort':'title'}
     with pytest.raises(ValueError): validate_operation('listProducts',query={'size':'101'})
     with pytest.raises(ValueError): validate_operation('listProducts',query={'q':None})
     with pytest.raises(ValueError): validate_operation('listProducts',query={'extra':'1'})
