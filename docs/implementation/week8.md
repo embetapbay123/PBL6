@@ -1,3 +1,11 @@
+# Week 8 — kế hoạch lưu tham khảo sau demo
+
+**Cập nhật 13/10/2026: tài liệu dưới đây là kế hoạch cũ, đã được thay thế cho mốc demo.** Full demo là **03/11/2026**; chức năng, evaluation, security/load/recovery và bàn giao thuộc yêu cầu demo phải hoàn thành trong [Week 3–5](roadmap.md). Không chờ Week 8 để thực hiện các mục đó. Sau demo chỉ dùng lại phần cải tiến/bảo trì khi có quyết định mới; chưa có lịch sau demo được chốt.
+
+[Deadline và acceptance](demo-2026-11-03.md).
+
+---
+
 # Week 8 — Nghiệm thu, tài liệu và bàn giao
 
 **Kế hoạch dự kiến**, cập nhật 06/10/2026; 5 ngày làm việc/tuần. [Roadmap toàn bộ](roadmap.md) quy định mốc, điều kiện và cách xử lý trễ; Status thực tế xem [Kanban](https://github.com/users/embetapbay123/projects/1/views/3). Task dưới đây gồm phần tiếp tục/kiểm lại, không có nghĩa mở lại scope đã Done.

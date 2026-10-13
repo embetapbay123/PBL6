@@ -2,9 +2,9 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](docs/implementation/foundation-handoff.md).
 
-**Nhận việc hiện tại:** [Week 2 — task, thứ tự, dependency và demo từng người](docs/implementation/week2.md). [Week 1](docs/implementation/week1.md) giữ kế hoạch giai đoạn trước.
+**Nhận việc hiện tại:** [Week 3 — BE/provider và điểm nối](docs/implementation/week3.md), [Week 4 — đủ chức năng](docs/implementation/week4.md), [Week 5 — nghiệm thu/diễn tập](docs/implementation/week5.md). Week 1/2 giữ lịch sử handoff.
 
-**Kế hoạch toàn bộ:** [Roadmap Week 1–8](docs/implementation/roadmap.md), mục tiêu đủ chức năng cuối Week 6, nghiệm thu/bàn giao cuối Week 8 và Week 9 dự phòng. Đây là dự kiến theo năng lực/handoff, chưa là deadline nộp đề tài.
+**Deadline đã chốt: thứ Ba 03/11/2026, demo đủ chức năng**, gồm online Payment/Refund, AI sinh câu trả lời và APK Android. [Roadmap 71 task](docs/implementation/roadmap.md) và [gate demo](docs/implementation/demo-2026-11-03.md): đủ chức năng trước 27/10, tuần cuối kiểm/sửa lỗi/diễn tập. Week 6–8 cũ không còn là hạn hoàn thiện chức năng.
 
 **Schema đã chốt:** [database baseline 2.2](docs/implementation/database-schema.md) — thành viên code theo migration và contract hiện có.
 

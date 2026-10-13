@@ -20,7 +20,7 @@ Hoa đã có [Refund request/read/worker kernel](refund-runtime-handoff.md) đ�
 
 ## Phân công và thứ tự
 
-Week 2 là lịch sử handoff. Nhóm hiện làm [Week 3, cập nhật 13/10/2026](week3.md); PR M3 hiện hành là #103, #101 đóng chưa merge. Dùng [Kanban audit Week 3](week3-kanban-audit.md) và trạng thái sống để chọn việc tiếp theo.
+Week 2 là lịch sử handoff. Nhóm hiện làm [Week 3](week3.md), [Week 4](week4.md), [Week 5](week5.md) để **demo đủ chức năng ngày 03/11/2026**; [deadline/gate](demo-2026-11-03.md) thay mốc Week 6/8 cũ. PR M3 hiện hành là #103, #101 đóng chưa merge. Kanban giữ trạng thái thực, không tự Done theo lịch.
 
 ### Cập nhật review ngày 10/10/2026
 

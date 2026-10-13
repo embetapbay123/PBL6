@@ -2,9 +2,9 @@
 
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
-**Việc cần làm hiện tại:** [Week 3: kế hoạch 5 ngày, issue và thứ tự từng người](week3.md), cập nhật 13/10/2026; [bảng kiểm Kanban](week3-kanban-audit.md). Week 1/2 giữ lịch sử handoff. Bảng dưới giữ toàn bộ phạm vi; CORE/FLOW đã có nền để review, PAY-01/PAY-04 đã Done; Confirm/Cancel còn cần hoàn thiện, AI-01 còn nghiệm thu nguồn thật.
+**Việc cần làm hiện tại:** [Week 3: BE/provider và điểm nối](week3.md), rồi [Week 4: đủ chức năng](week4.md), [Week 5: nghiệm thu/diễn tập](week5.md). **Demo full scope ngày 03/11/2026**, gồm online Payment/Refund, AI generation và APK; [deadline/gate](demo-2026-11-03.md). Week 1/2 giữ lịch sử handoff; Kanban không tự Done theo deadline.
 
-**Kế hoạch toàn bộ:** [Roadmap Week 1–8](roadmap.md) bao phủ 71 issue và mốc mục tiêu từng scope; Week 3–8 có lịch/việc/handoff riêng. Status thực tế vẫn trên Kanban, không tự Done theo lịch.
+**Kế hoạch toàn bộ:** [Roadmap full demo 03/11](roadmap.md) bao phủ 71 issue; toàn scope cần trước demo trong Week 3–5. Week 6–8 là tài liệu cũ lưu tham khảo sau demo, không dùng làm hạn hoàn thiện các chức năng đã cam kết.
 
 **Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service, thêm 004/005 ở M2 và 004/005 ở M4; dùng DTO OpenAPI. Không phải chờ chốt database thêm.
 

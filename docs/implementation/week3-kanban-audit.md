@@ -2,6 +2,8 @@
 
 Updated 2026-10-13. [Board](https://github.com/users/embetapbay123/projects/1/views/3) · [Week 3](week3.md).
 
+**Deadline supersedes the earlier capacity plan below:** the owner subsequently confirmed full demo on 03/11/2026. Use [Week 3–5](roadmap.md) for delivery dates; #9/#10/#32/#46/#60 are no longer optional for demo. This audit remains a historical status snapshot, not permission to defer required scope. Future cards remain Backlog until their scheduled window starts.
+
 All 71 project cards were checked against issue state, owner and assignee. No missing issue, closed/Done mismatch or owner/assignee mismatch was found. Open PR #103 is CHANGES_REQUESTED; #101 is closed without merge. Remote main matched local baseline `0d11979` at inspection.
 
 Implementation checks covered Week 3 handoffs: Restock pending, Confirm/Cancel 501, M3 PR changes not merged, and actual Customer/Seller/Admin routes. [Hoa verification](hoa-task-status.md) covers 18 scopes and a fresh 102-test unit run. This audit adds no new integration/device run and does not claim all 71 implementations were retested.
