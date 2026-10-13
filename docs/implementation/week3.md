@@ -14,7 +14,7 @@ Cập nhật **13/10/2026**. Demo đầy đủ vào **thứ Ba 03/11/2026**. [Ph
 
 ## Nhịp làm và điều kiện bàn giao
 
-**Công — code 13/10:** [bàn giao Week 3](cong-week3-handoff.md) ghi generation OpenCode/DeepSeek, metrics/retention/body limit, fix tải M4, worker Refund, test/restore và blocker theo issue. Provider tiền chưa có; model ID/key local và dữ liệu consent/ALS chưa cấu hình. Không dùng CI/fallback để nghiệm thu online/Refund/generation.
+**Công — code 13/10:** [bàn giao Week 3](cong-week3-handoff.md) ghi generation OpenCode/DeepSeek, metrics/retention/body limit, fix tải M4, worker Refund, test/restore và blocker theo issue. Provider tiền chưa có; OpenCode Go đã cấu hình local và gateway smoke generation thật PASS (5.422 s); dữ liệu consent/ALS chưa cấu hình, human quality/billing/latency chưa nghiệm thu. Không dùng CI/fallback để nghiệm thu online/Refund/generation.
 
 **Kanban đã đồng bộ theo deadline full demo:** #9/#10 (Thịnh), #42/#43 (Trí), #56/#57 (Công), #36 (Hoa) chuyển Backlog → Todo để bắt đầu trong Week 3. Các thẻ Week 3 đã Todo/In progress/Review giữ nguyên; Todo là phần đã lên lịch, member lấy theo thứ tự handoff trên bảng. Task chỉ bắt đầu Week 4–5 còn Backlog, không mở lại Done.
 

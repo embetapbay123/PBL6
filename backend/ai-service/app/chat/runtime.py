@@ -4,7 +4,7 @@ from sqlalchemy import text
 from starlette.concurrency import run_in_threadpool
 from ..internal_client import InternalError
 from ..safety import redact,budget,price
-from .provider import CatalogSelector, compose, PROMPT_VERSION,request_estimate
+from .provider import CatalogSelector, compose, PROMPT_VERSION,request_estimate,CHAT_SESSION
 from .retrieval import retrieve,contextual_question
 
 def digest(value):return hashlib.sha256(value.encode()).hexdigest()
@@ -68,7 +68,7 @@ class ChatRuntime:
         scope='turn:'+str(user or digest(key))
         await run_in_threadpool(self.budget,scope)
         try:
-            async with asyncio.timeout(4):
+            async with asyncio.timeout(max(4,getattr(self.selector,'timeout',2)+2)):
                 candidates=await self.catalog.snapshot(correlation)
                 retrieved=await run_in_threadpool(retrieve,self.engine,contextual_question(question,history),candidates)
                 if user:
@@ -78,7 +78,9 @@ class ChatRuntime:
                     retrieved.sort(key=lambda p:order.get(p['id'],len(order)))
                 estimated=request_estimate(question,retrieved,history) if retrieved and getattr(self.selector,'provider','none')!='none' else 0
                 await run_in_threadpool(self.budget,scope,estimated,False)
-                selection=await self.selector.select(question,retrieved,history,correlation)
+                session_token=CHAT_SESSION.set(digest('session:'+str(id)))
+                try:selection=await self.selector.select(question,retrieved,history,correlation)
+                finally:CHAT_SESSION.reset(session_token)
                 # Resolve selected cards again after generation; no stale cached price or hidden card.
                 current=await asyncio.gather(*(self.catalog.product(p,correlation) for p in selection.ids))
                 maximum=budget(question)

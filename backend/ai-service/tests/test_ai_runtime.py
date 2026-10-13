@@ -186,7 +186,7 @@ def test_generated_explanation_is_discarded_after_source_change(engine):
     assert response['fallback_reason']=='CATALOG_CHANGED' and 'Lời giải thích cũ' not in response['content']
     with engine.connect() as db:
         row=db.execute(text('SELECT model_name,prompt_version,fallback_reason FROM ai_request_trace')).one()
-        assert tuple(row)==('test-model','catalog-answer-v2','CATALOG_CHANGED')
+        assert tuple(row)==('test-model','catalog-answer-v3','CATALOG_CHANGED')
 
 def test_metrics_partial_tokens_and_cost_are_unknown(engine):
     with engine.begin() as db:
