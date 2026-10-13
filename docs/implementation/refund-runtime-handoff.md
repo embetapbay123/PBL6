@@ -12,6 +12,8 @@ Migration mới: `backend/commerce-service/migrations/008_refund_runtime.sql` v�
 
 ## Worker và provider
 
+**Cập nhật 13/10:** Compose mặc định đã có `worker-refund` recovery/enqueue với provider disabled. Dòng “chưa thêm worker” trong ghi nhận ban đầu bên dưới là lịch sử; provider thật vẫn chưa có. [Bàn giao Week 3/test/blocker](cong-week3-handoff.md).
+
 `refund.runner.ts` là kernel worker có provider interface; `refund.worker.ts` là CLI hiện dùng DisabledRefundProvider. **Chưa có adapter hoàn tiền ngân hàng thực được cấu hình.** Không cho chọn fake provider qua biến môi trường. Default disabled không gọi network hoặc đổi Payment thành REFUNDED, nhưng có thể enqueue REFUND_REQUIRED của Order đã đóng thành REQUESTED và đưa lease hết hạn về UNKNOWN để đối soát.
 
 ```powershell

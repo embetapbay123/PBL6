@@ -67,6 +67,13 @@ def test_chat_daily_budget_fails_closed(engine):
     with pytest.raises(InternalError) as caught:s.budget('scope')
     assert caught.value.status==429
 
+def test_generation_budget_reserves_context_once_and_refuses_excess(engine):
+    s=service(engine);scope='context'
+    s.budget(scope);s.budget(scope,99999,False)
+    with engine.connect() as db:
+        assert tuple(db.execute(text('SELECT requests,tokens FROM ai_usage_budget WHERE scope_hash=:s'),{'s':digest(scope)}).one())==(1,99999)
+    with pytest.raises(InternalError):s.budget(scope,2,False)
+
 def test_chat_trace_failure_rolls_back_both_messages_and_version(engine):
     s=service(engine);user=str(uuid.uuid4());created=s.create(user,'ip')
     with engine.begin() as db:
@@ -155,6 +162,9 @@ def test_real_http_guest_guard_precedes_dto_and_customer_scope(engine,monkeypatc
     created=c.post(url,json={});assert created.status_code==201
     row=created.json();send=url+'/'+row['id']+'/messages'
     assert c.post(send,json={}).status_code==401
+    oversized={'content':'x'*65536}
+    assert c.post(send,json=oversized).status_code==401
+    assert c.post(send,headers={'X-Chat-Key':row['anonymous_key']},json=oversized).status_code==413
     assert c.post(send,headers={'X-Chat-Key':row['anonymous_key']},json={}).status_code==422
     answer=c.post(send,headers={'X-Chat-Key':row['anonymous_key']},json={'content':'máy ảnh'})
     assert answer.status_code==200 and answer.json()['fallback_reason']=='PROVIDER_NOT_CONFIGURED'
@@ -162,3 +172,44 @@ def test_real_http_guest_guard_precedes_dto_and_customer_scope(engine,monkeypatc
     own=c.post(url,headers={'Authorization':'Bearer own'},json={}).json()
     history=c.get('/api/v1/me/chat/sessions',headers={'Authorization':'Bearer own'},params={'session_id':own['id']})
     assert history.status_code==200 and history.json()['items'][0]['messages']['total']==0
+
+def test_generated_explanation_is_discarded_after_source_change(engine):
+    from app.chat.provider import Selection
+    c=Catalog()
+    class Selector:
+        async def select(self,q,products,*args):
+            selected=products[0]
+            c.items=[dict(p,title='Sản phẩm thay đổi',version=2) if p['id']==selected['id'] else p for p in c.items]
+            return Selection((selected['id'],),False,'MODEL_GENERATED','openai_compatible',50,'Lời giải thích cũ.', 'test-model')
+    s=ChatRuntime(engine,c,Selector());user=str(uuid.uuid4());session=s.create(user,'ip')
+    response=asyncio.run(s.answer(session['id'],user,None,'máy ảnh','test'))
+    assert response['fallback_reason']=='CATALOG_CHANGED' and 'Lời giải thích cũ' not in response['content']
+    with engine.connect() as db:
+        row=db.execute(text('SELECT model_name,prompt_version,fallback_reason FROM ai_request_trace')).one()
+        assert tuple(row)==('test-model','catalog-answer-v2','CATALOG_CHANGED')
+
+def test_metrics_partial_tokens_and_cost_are_unknown(engine):
+    with engine.begin() as db:
+        for tokens,cost in [(80,.01),(None,None)]:
+            db.execute(text("INSERT INTO ai_request_trace(operation,store_ids,latency_ms,fallback,provider,prompt_version,index_version,estimated_tokens,actual_tokens,cost_usd) VALUES('chat','[]',100,false,'api','v2','v1',100,:t,:c)"),{'t':tokens,'c':cost})
+    result=read_metrics(engine,{'scope':'PLATFORM'})['metrics']
+    assert result['requests']==2 and result['actual_tokens'] is None and result['cost_usd'] is None
+    assert result['token_samples']==1 and result['cost_samples']==1 and result['latency_p95_ms']==100
+
+def test_chat_retention_removes_old_trace_and_budget(engine):
+    with engine.begin() as db:
+        db.execute(text("INSERT INTO ai_request_trace(operation,store_ids,latency_ms,fallback,provider,prompt_version,index_version,estimated_tokens,created_at) VALUES('chat','[]',1,true,'none','v1','v1',1,now()-interval '8 days')"))
+        db.execute(text("INSERT INTO ai_usage_budget(scope_hash,day,requests,tokens) VALUES('test',current_date-3,1,1)"))
+    result=retain(engine)
+    assert result['traces']==1 and result['budgets']==1
+
+def test_explicit_followup_uses_own_session_topic_and_current_budget(engine):
+    s=service(engine);user=str(uuid.uuid4());session=s.create(user,'ip')
+    first=asyncio.run(s.answer(session['id'],user,None,'tìm máy ảnh','test'))
+    second=asyncio.run(s.answer(session['id'],user,None,'loại đó tối đa 100000','test'))
+    assert first['product_cards'] and second['product_cards']
+    third=asyncio.run(s.answer(session['id'],user,None,'loại đó dưới 50k','test'))
+    assert not third['product_cards']
+    # New topic must not retrieve the prior topic implicitly.
+    fourth=asyncio.run(s.answer(session['id'],user,None,'kính thiên văn','test'))
+    assert not fourth['product_cards']

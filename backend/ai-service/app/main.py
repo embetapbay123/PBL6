@@ -21,21 +21,23 @@ from starlette.concurrency import run_in_threadpool
 from .chat.runtime import ChatRuntime
 from .catalog import LiveCatalog
 from .chat.provider import CatalogSelector
+from .network import CatalogAdmission
 
 log = logging.getLogger('pbl6.ai')
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 engine = None
 limiter = None
 http_client = None
+catalog_admission = None
 
-def live_catalog():return LiveCatalog(http_client=http_client) if http_client else LiveCatalog()
+def live_catalog():return LiveCatalog(http_client=http_client,admission=catalog_admission) if http_client else LiveCatalog()
 
 class ApiError(Exception):
     def __init__(self, status, code, message): self.status,self.code,self.message=status,code,message
 
 @asynccontextmanager
 async def lifespan(app):
-    global engine, limiter,http_client
+    global engine, limiter,http_client,catalog_admission
     required=['M4_DATABASE_URL','IDENTITY_URL','CATALOG_URL','M4_INTERNAL_KEY','AI_MODE','REDIS_URL']
     if any(not os.getenv(key) for key in required): raise RuntimeError('Missing AI configuration')
     if os.environ['AI_MODE'] not in ('mock','real'): raise RuntimeError('Unsupported AI_MODE')
@@ -46,10 +48,12 @@ async def lifespan(app):
     with engine.connect() as db: db.execute(text('SELECT 1'))
     limiter=Redis.from_url(os.environ['REDIS_URL'],socket_timeout=1,socket_connect_timeout=1)
     http_client=httpx.AsyncClient(timeout=1,follow_redirects=False,limits=httpx.Limits(max_connections=50,max_keepalive_connections=20))
+    catalog_admission=CatalogAdmission()
     try:yield
     finally:
         await http_client.aclose()
         http_client=None
+        catalog_admission=None
         await limiter.aclose()
         engine.dispose()
 
@@ -125,7 +129,11 @@ def register(record):
             if not re.fullmatch('[a-f0-9]{64}',request.headers.get('x-chat-key','')):
                 raise ApiError(401,'UNAUTHENTICATED','Cần khóa phiên chat Guest.')
         try:
-            raw=await request.body()
+            # Guard above runs before body validation; also bound chunked JSON requests.
+            raw=bytearray()
+            async for chunk in request.stream():
+                if len(raw)+len(chunk)>65536:raise ApiError(413,'PAYLOAD_TOO_LARGE','Dữ liệu vượt giới hạn cho phép.')
+                raw.extend(chunk)
             payload=json.loads(raw) if raw else MISSING
             query={key:request.query_params.getlist(key) if len(request.query_params.getlist(key))>1 else value for key,value in request.query_params.items()}
             request.state.contract=validate_operation(op,body=payload,path=request.path_params,query=query,headers=dict(request.headers))
@@ -170,8 +178,6 @@ def register(record):
                 except InternalError as error:raise ApiError(error.status,error.code,error.message)
             return {'index_status':'MOCK','model_version':'mock','evaluation_status':'NOT_RUN','metrics':{},'mode':'mock'}
         if op=='sendChatMessage':
-            try: payload=await request.json()
-            except ValueError: raise ApiError(422,'VALIDATION_FAILED','JSON không hợp lệ.')
             try: input=ChatMessageInput.model_validate(payload)
             except ValidationError: raise ApiError(422,'VALIDATION_FAILED','content cần từ 1 đến 2000 ký tự, không nhận trường ngoài contract.')
             return await MockChatService().answer(request.path_params.get('id'),input)

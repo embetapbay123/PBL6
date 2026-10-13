@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from .service import TrackingService, InvalidEvent
 from ..runtime_contracts import BUNDLE
 from ..consent.domain import retain_recent
+from ..chat.retention import retain as retain_chat
 log=logging.getLogger('pbl6.tracking')
 
 def main():
@@ -26,6 +27,7 @@ def main():
     def retention():
         try:
             with engine.begin() as db:retain_recent(db)
+            retain_chat(engine)
         except Exception:log.warning(json.dumps({'service':'M4','code':'RETENTION_RETRY'}))
         connection.call_later(600,retention)
     connection.call_later(1,retention)

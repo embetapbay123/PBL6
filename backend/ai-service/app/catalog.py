@@ -4,10 +4,19 @@ from .internal_client import InternalClient, InternalError
 from .runtime_contracts import OPERATIONS, schema_errors
 from .safety import price
 from .network import session
+from functools import wraps
+
+def admitted(fn):
+    @wraps(fn)
+    async def call(self,*args,**kwargs):
+        if self.admission is None:return await fn(self,*args,**kwargs)
+        async with self.admission.enter():return await fn(self,*args,**kwargs)
+    return call
 
 class LiveCatalog:
-    def __init__(self,transport=None,internal=None,http_client=None):
+    def __init__(self,transport=None,internal=None,http_client=None,admission=None):
         self.transport,self.http_client=transport,http_client
+        self.admission=admission
         self.internal=internal or InternalClient('M4',os.environ['M4_INTERNAL_KEY'],{'M3':os.environ['IDENTITY_URL']},http_client=http_client)
     async def _get(self,path,operation,correlation,params=None):
         try:
@@ -20,6 +29,7 @@ class LiveCatalog:
             return result
         except httpx.HTTPError:raise InternalError(503,'DEPENDENCY_UNAVAILABLE','Catalog không phản hồi.')
         except ValueError:raise InternalError(503,'DEPENDENCY_CONTRACT_INVALID','Catalog không phản hồi đúng contract.')
+    @admitted
     async def snapshot(self,correlation,*,pages=1):
         if not 1<=pages<=50:raise ValueError('Catalog page budget')
         active,first=await asyncio.gather(self.internal.call('ActiveStores',None,correlation),self._get('/products','listProducts',correlation,{'page':1,'size':100}))
@@ -29,12 +39,14 @@ class LiveCatalog:
             products.extend((await self._get('/products','listProducts',correlation,{'page':page,'size':100}))['items'])
         ids=set(active['ids'])
         return [p for p in products if p.get('id') and p.get('store_id') in ids and p.get('status')=='ACTIVE' and p.get('moderation_status')=='VISIBLE' and price(p) is not None]
+    @admitted
     async def product(self,id,correlation):
         product,active=await asyncio.gather(self._get('/products/'+id,'getProduct',correlation),self.internal.call('ActiveStores',None,correlation))
         if product.get('status')!='ACTIVE' or product.get('moderation_status')!='VISIBLE' or product.get('store_id') not in active['ids'] or price(product) is None:
             raise InternalError(404,'NOT_FOUND','Product không còn công khai.')
         return product
 
+    @admitted
     async def related_context(self,id,correlation):
         # Reuse a freshly validated public reference already present in this request's page.
         first,active=await asyncio.gather(self._get('/products','listProducts',correlation,{'page':1,'size':100}),self.internal.call('ActiveStores',None,correlation))
