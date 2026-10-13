@@ -72,6 +72,8 @@ Cập nhật 07/10: [bàn giao toàn phần độc lập](cong-independent-hando
 - ORDER-05: kiểm scope/SHIPPED/COD/version/amount rồi gọi port Công. ORDER-04 đã có transition/Shipment; phần còn lại là hủy + release/restock/refund chống lặp, không viết lại transition và không báo hủy thành công trước compensation.
 - MOB-03: [Mobile README](../../mobile/README.md); chạy Cart/quote/COD confirm thật trên Android/emulator, giữ key qua retry cùng attempt và lấy quote mới khi 409. MOB-01/02 và report còn phạm vi riêng; không đóng bằng widget mock hoặc dependency vừa merge.
 
+Trạng thái Hoa đã được [đối chiếu lại ngày 13/10/2026](hoa-task-status.md): #23/#25/#27/#30/#31/#33 ở Review; đọc checklist còn thiếu trước khi làm lại phần đã merge. Review không thay cho nghiệm thu API/Android thật.
+
 ### Trí — Auth/RBAC thật, giữ lookup đã xong
 
 - Đọc [Auth](../../backend/identity-store-service/src/auth/README.md), [handoff M3](tri-lookup-handoff.md), [security](security.md). Address và hai lookup đã có; không làm lại.
