@@ -1,4 +1,4 @@
-# Week 3 — Online Payment, hủy/hoàn và màn mua hàng
+# Week 3 — hoàn tất checkout, hủy/hoàn và màn mua hàng
 
 **Kế hoạch hiện hành**, cập nhật **13/10/2026**; 5 ngày làm việc từ khi nhóm bắt đầu Week 3, không gán ngày kết thúc lịch chưa được chốt. [Roadmap](roadmap.md) giữ Week 6 đủ chức năng/Week 8 bàn giao là dự kiến, đánh giá lại sau demo tuần này. [Kanban](https://github.com/users/embetapbay123/projects/1/views/3) là trạng thái sống; [bảng kiểm](week3-kanban-audit.md) ghi thay đổi lần này. Không mở lại scope đã Done.
 
@@ -41,7 +41,7 @@ M1 reserve + Payment create đã có → Hoa Confirm/quota → COD gate → M1 r
 
 - Callback duplicate/out-of-order/sai chữ ký/sai amount và callback muộn có bằng chứng; không thu/hoàn hai lần.
 - Cancel trước/sau consume dùng đúng release/restock/refund; restart worker tiếp tục được. BR-40 không trả lại lượt Voucher đã chốt hoặc tính lại Order anh em.
-- Seller tạo Product/Variant/ảnh thật, Customer mua từ dữ liệu mới; Android và Web chạy cùng backend.
+- Gate chính: COD/Cancel theo API thật, Web và Android dùng cùng backend; thiết bị chưa nghiệm thu phải ghi rõ. Mốc mở rộng #9/#10 chỉ nghiệm thu khi Seller tạo Product/Variant/ảnh thật và Customer mua từ dữ liệu mới; chưa lấy task thì giữ Backlog.
 
 Nếu mốc bàn giao trễ: giữ logic chưa đạt ở trạng thái rõ, không fixture fallback khi API lỗi, không tự chuyển issue Done hoặc đổi owner. Dời phần thiếu cùng dependency sang tuần sau theo [roadmap](roadmap.md); tiếp tục scope độc lập. Commit/PR viết tiếng Anh; dùng Refs nếu chưa hoàn thành toàn issue.
 
