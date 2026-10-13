@@ -1,5 +1,6 @@
 import { EntityManager } from 'typeorm';
 import { OwnedRepository } from '../../../shared/src/repository';
+import { ApiError } from '../../../shared/src/errors';
 
 export interface VoucherRow {
   id: string;
@@ -298,6 +299,122 @@ export class VoucherRepository extends OwnedRepository {
       redeemed_count: Number(row?.redeemed_count ?? 0),
       reserved_count: Number(row?.reserved_count ?? 0),
     };
+  }
+
+  async reserveVoucher(data: {
+    voucher_id: string;
+    purchase_group_id: string;
+    customer_user_id: string;
+    store_id?: string | null;
+    discount_vnd: number;
+    expires_at: Date;
+  }): Promise<{ id: string }> {
+    const [voucher] = await this.manager.query(
+      `SELECT id, usage_limit, per_customer_limit, status, starts_at, ends_at
+       FROM voucher
+       WHERE id = $1
+       FOR UPDATE`,
+      [data.voucher_id]
+    );
+    if (!voucher) {
+      throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy voucher.');
+    }
+    if (voucher.status !== 'ACTIVE') {
+      throw new ApiError(422, 'VOUCHER_INACTIVE', 'Voucher không còn hoạt động.');
+    }
+    const now = new Date();
+    if (now < new Date(voucher.starts_at) || now > new Date(voucher.ends_at)) {
+      throw new ApiError(422, 'VOUCHER_EXPIRED', 'Voucher đã hết hạn hoặc chưa có hiệu lực.');
+    }
+
+    const [usage] = await this.manager.query(
+      `WITH used AS (
+         SELECT purchase_group_id, customer_user_id FROM voucher_redemption WHERE voucher_id = $1
+         UNION
+         SELECT purchase_group_id, customer_user_id FROM voucher_reservation 
+         WHERE voucher_id = $1 AND status IN ('ACTIVE', 'RESERVED') AND expires_at > NOW() AND purchase_group_id != $3
+       )
+       SELECT 
+         COUNT(*)::int AS total_used,
+         COUNT(*) FILTER (WHERE customer_user_id = $2)::int AS customer_used
+       FROM used`,
+      [data.voucher_id, data.customer_user_id, data.purchase_group_id]
+    );
+
+    if (Number(usage?.total_used ?? 0) >= voucher.usage_limit) {
+      throw new ApiError(422, 'VOUCHER_OUT_OF_QUOTA', 'Voucher đã hết lượt sử dụng.');
+    }
+    if (Number(usage?.customer_used ?? 0) >= voucher.per_customer_limit) {
+      throw new ApiError(422, 'VOUCHER_OUT_OF_QUOTA', 'Bạn đã đạt giới hạn sử dụng voucher này.');
+    }
+
+    const [inserted] = await this.manager.query(
+      `INSERT INTO voucher_reservation (
+         id, voucher_id, purchase_group_id, customer_user_id, store_id, status, discount_vnd, expires_at
+       ) VALUES (
+         gen_random_uuid(), $1, $2, $3, $4, 'ACTIVE', $5, $6
+       )
+       ON CONFLICT (voucher_id, purchase_group_id)
+       DO UPDATE SET discount_vnd = EXCLUDED.discount_vnd, expires_at = EXCLUDED.expires_at, status = 'ACTIVE'
+       RETURNING id`,
+      [
+        data.voucher_id,
+        data.purchase_group_id,
+        data.customer_user_id,
+        data.store_id ?? null,
+        data.discount_vnd,
+        data.expires_at,
+      ]
+    );
+    return { id: inserted.id };
+  }
+
+  async commitVoucherRedemptions(
+    purchaseGroupId: string,
+    redemptions: Array<{
+      voucher_id: string;
+      order_id: string;
+      customer_user_id: string;
+      discount_vnd: number;
+    }>
+  ): Promise<void> {
+    for (const r of redemptions) {
+      await this.manager.query(
+        `INSERT INTO voucher_redemption (
+           id, voucher_id, purchase_group_id, order_id, customer_user_id, discount_vnd, redeemed_at
+         ) VALUES (
+           gen_random_uuid(), $1, $2, $3, $4, $5, NOW()
+         )
+         ON CONFLICT (voucher_id, order_id) DO NOTHING`,
+        [r.voucher_id, purchaseGroupId, r.order_id, r.customer_user_id, r.discount_vnd]
+      );
+      await this.manager.query(
+        `UPDATE voucher_reservation 
+         SET status = 'RESERVED' 
+         WHERE purchase_group_id = $1 AND voucher_id = $2`,
+        [purchaseGroupId, r.voucher_id]
+      );
+    }
+  }
+
+  async releaseVoucherReservations(purchaseGroupId: string): Promise<void> {
+    await this.manager.query(
+      `UPDATE voucher_reservation 
+       SET status = 'RELEASED' 
+       WHERE purchase_group_id = $1 AND status = 'ACTIVE'`,
+      [purchaseGroupId]
+    );
+  }
+
+  async findActiveReservationsByPurchaseGroup(
+    purchaseGroupId: string
+  ): Promise<Array<{ id: string; voucher_id: string; discount_vnd: string; status: string }>> {
+    return this.manager.query(
+      `SELECT id, voucher_id, discount_vnd, status
+       FROM voucher_reservation
+       WHERE purchase_group_id = $1 AND status IN ('ACTIVE', 'RESERVED')`,
+      [purchaseGroupId]
+    );
   }
 }
 

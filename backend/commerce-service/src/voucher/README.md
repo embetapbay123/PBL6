@@ -2,7 +2,7 @@
 
 Owner: Hoa
 
-- `POST /vouchers/validate` — validateVouchers: **NOT_IMPLEMENTED**
+- `POST /vouchers/validate` — validateVouchers: **IMPLEMENTED**
 - `GET /store/vouchers` — listStoreVouchers: **IMPLEMENTED**
 - `POST /store/vouchers` — createStoreVoucher: **IMPLEMENTED**
 - `PATCH /store/vouchers/{id}` — updateStoreVoucher: **IMPLEMENTED**

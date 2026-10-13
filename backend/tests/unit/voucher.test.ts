@@ -853,5 +853,210 @@ describe('VOUCHER-03: validateVouchers, getStoreVoucherUsage & getPlatformVouche
       expect(storeUsage.remaining_count).toBe(100);
     });
   });
+
+  describe('Voucher Reservation, Redemption & Release Lifecycle (BR-30, BR-40)', () => {
+    const fakeManager = { query: mockQuery } as any;
+    const purchaseGroupId = '44444444-4444-4444-8444-444444444444';
+    const orderId = '55555555-5555-4555-8555-555555555555';
+    const customerUserId = '66666666-6666-4666-8666-666666666666';
+
+    test('reserveVoucher successfully creates reservation within quota', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          usage_limit: 10,
+          per_customer_limit: 2,
+          status: 'ACTIVE',
+          starts_at: new Date('2026-01-01T00:00:00Z'),
+          ends_at: new Date('2027-01-01T00:00:00Z'),
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([
+        {
+          total_used: 3,
+          customer_used: 1,
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: 'res-uuid-1',
+        },
+      ]);
+
+      const result = await service.reserveVoucher(fakeManager, {
+        voucher_id: voucherId,
+        purchase_group_id: purchaseGroupId,
+        customer_user_id: customerUserId,
+        store_id: storeId,
+        discount_vnd: 20000,
+        expires_at: new Date(Date.now() + 15 * 60 * 1000),
+      });
+
+      expect(result.id).toBe('res-uuid-1');
+      expect(mockQuery).toHaveBeenCalledTimes(3);
+    });
+
+    test('reserveVoucher throws 404 when voucher is not found', async () => {
+      mockQuery.mockResolvedValueOnce([]);
+
+      await expect(
+        service.reserveVoucher(fakeManager, {
+          voucher_id: voucherId,
+          purchase_group_id: purchaseGroupId,
+          customer_user_id: customerUserId,
+          discount_vnd: 10000,
+          expires_at: new Date(),
+        })
+      ).rejects.toMatchObject({
+        status: 404,
+        response: { code: 'NOT_FOUND' },
+      });
+    });
+
+    test('reserveVoucher throws 422 when voucher is STOPPED (inactive)', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          usage_limit: 10,
+          per_customer_limit: 1,
+          status: 'STOPPED',
+          starts_at: new Date('2026-01-01T00:00:00Z'),
+          ends_at: new Date('2027-01-01T00:00:00Z'),
+        },
+      ]);
+
+      await expect(
+        service.reserveVoucher(fakeManager, {
+          voucher_id: voucherId,
+          purchase_group_id: purchaseGroupId,
+          customer_user_id: customerUserId,
+          discount_vnd: 10000,
+          expires_at: new Date(),
+        })
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VOUCHER_INACTIVE' },
+      });
+    });
+
+    test('reserveVoucher throws 422 when voucher is expired', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          usage_limit: 10,
+          per_customer_limit: 1,
+          status: 'ACTIVE',
+          starts_at: new Date('2025-01-01T00:00:00Z'),
+          ends_at: new Date('2025-12-31T00:00:00Z'),
+        },
+      ]);
+
+      await expect(
+        service.reserveVoucher(fakeManager, {
+          voucher_id: voucherId,
+          purchase_group_id: purchaseGroupId,
+          customer_user_id: customerUserId,
+          discount_vnd: 10000,
+          expires_at: new Date(),
+        })
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VOUCHER_EXPIRED' },
+      });
+    });
+
+    test('reserveVoucher throws 422 when total usage limit is reached', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          usage_limit: 5,
+          per_customer_limit: 2,
+          status: 'ACTIVE',
+          starts_at: new Date('2026-01-01T00:00:00Z'),
+          ends_at: new Date('2027-01-01T00:00:00Z'),
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([
+        {
+          total_used: 5,
+          customer_used: 0,
+        },
+      ]);
+
+      await expect(
+        service.reserveVoucher(fakeManager, {
+          voucher_id: voucherId,
+          purchase_group_id: purchaseGroupId,
+          customer_user_id: customerUserId,
+          discount_vnd: 10000,
+          expires_at: new Date(),
+        })
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VOUCHER_OUT_OF_QUOTA' },
+      });
+    });
+
+    test('reserveVoucher throws 422 when customer limit is reached', async () => {
+      mockQuery.mockResolvedValueOnce([
+        {
+          id: voucherId,
+          usage_limit: 100,
+          per_customer_limit: 1,
+          status: 'ACTIVE',
+          starts_at: new Date('2026-01-01T00:00:00Z'),
+          ends_at: new Date('2027-01-01T00:00:00Z'),
+        },
+      ]);
+      mockQuery.mockResolvedValueOnce([
+        {
+          total_used: 10,
+          customer_used: 1,
+        },
+      ]);
+
+      await expect(
+        service.reserveVoucher(fakeManager, {
+          voucher_id: voucherId,
+          purchase_group_id: purchaseGroupId,
+          customer_user_id: customerUserId,
+          discount_vnd: 10000,
+          expires_at: new Date(),
+        })
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VOUCHER_OUT_OF_QUOTA' },
+      });
+    });
+
+    test('commitVoucherRedemptions records redemptions and updates reservation status', async () => {
+      mockQuery.mockResolvedValueOnce([]);
+      mockQuery.mockResolvedValueOnce([]);
+
+      await service.commitVoucherRedemptions(fakeManager, purchaseGroupId, [
+        {
+          voucher_id: voucherId,
+          order_id: orderId,
+          customer_user_id: customerUserId,
+          discount_vnd: 20000,
+        },
+      ]);
+
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      expect(mockQuery.mock.calls[0][0]).toContain('INSERT INTO voucher_redemption');
+      expect(mockQuery.mock.calls[1][0]).toContain('UPDATE voucher_reservation');
+      expect(mockQuery.mock.calls[1][0]).toContain("'RESERVED'");
+    });
+
+    test('releaseVoucherReservations marks active reservations as RELEASED', async () => {
+      mockQuery.mockResolvedValueOnce([]);
+
+      await service.releaseVoucherReservations(fakeManager, purchaseGroupId);
+
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      expect(mockQuery.mock.calls[0][0]).toContain('UPDATE voucher_reservation');
+      expect(mockQuery.mock.calls[0][0]).toContain("'RELEASED'");
+    });
+  });
 });
 
