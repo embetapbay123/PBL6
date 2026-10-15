@@ -1,14 +1,13 @@
 /**
- * MOCK/DEMO — Store Application API Mock Adapter
+ * DEVELOPMENT FIXTURE — Store Application API Mock Adapter
  *
- * Simulates the 4 NOT_IMPLEMENTED endpoints:
+ * Used only when VITE_API_MODE=fixture in development for these implemented API operations:
  *   POST   /me/store-applications        → submitStoreApplication
  *   GET    /me/store-applications        → listOwnStoreApplications
  *   GET    /admin/store-applications     → listStoreApplications
  *   PATCH  /admin/store-applications/:id → reviewStoreApplication
  *
- * All data lives in memory (localStorage-backed). Replace with
- * callOperation() once the backend implements these endpoints.
+ * All data lives in memory (localStorage-backed). Normal API mode always calls callOperation(); API failures do not fall back here.
  */
 
 import type { components } from './generated';

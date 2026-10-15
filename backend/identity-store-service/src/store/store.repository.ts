@@ -2,6 +2,25 @@ import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { audit } from '../../../shared/src/audit';
 import { randomUUID } from 'node:crypto';
+import { returnedRow } from '../../../shared/src/postgres-returning';
+
+interface StoreApplicationRow {
+  id: string;
+  proposed_name: string;
+  contact: string;
+  status: string;
+  decision_reason: string | null;
+  version: number;
+}
+
+interface StoreUpdateRow {
+  id: string;
+  name: string;
+  description: string | null;
+  shipping_fee_vnd: string | number;
+  status: string;
+  version: number;
+}
 
 export class StoreRepository {
   async submitStoreApplication(
@@ -9,28 +28,39 @@ export class StoreRepository {
     input: { proposed_name: string; contact: string },
     correlationId: string
   ) {
-    return database.transaction(async manager => {
-      const pending = await manager.query(
-        `SELECT id FROM store_application
-         WHERE applicant_user_id=$1 AND status='PENDING'
-         LIMIT 1 FOR UPDATE`,
-        [userId]
-      );
-      if (pending.length) {
+    try {
+      return await database.transaction(async manager => {
+        // Lock a stable row even when no pending application exists yet.
+        await manager.query('SELECT id FROM "user" WHERE id=$1 FOR UPDATE', [userId]);
+        const pending = await manager.query(
+          `SELECT id FROM store_application
+           WHERE applicant_user_id=$1 AND status='PENDING'
+           LIMIT 1 FOR UPDATE`,
+          [userId]
+        );
+        if (pending.length) {
+          throw new ApiError(409, 'DUPLICATE_APPLICATION', 'Người dùng đã có đơn đăng ký đang chờ duyệt.');
+        }
+
+        const application = returnedRow<StoreApplicationRow>(await manager.query(
+          `INSERT INTO store_application
+             (id, applicant_user_id, proposed_name, contact, status, submitted_at, version)
+           VALUES ($1,$2,$3,$4,'PENDING',now(),0)
+           RETURNING id, proposed_name, contact, status, decision_reason, version`,
+          [randomUUID(), userId, input.proposed_name, input.contact]
+        ));
+        if (!application) throw new Error('Store application insert returned no row');
+        await audit(manager, 'M3', userId, 'StoreApplication', application.id, 'STORE_APPLICATION_SUBMITTED',
+          correlationId, null, application);
+        return application;
+      });
+    } catch (error) {
+      const driverError = (error as { driverError?: { code?: string; constraint?: string } })?.driverError ?? error as { code?: string; constraint?: string };
+      if (driverError?.code === '23505' && driverError.constraint === 'store_application_one_pending_per_applicant') {
         throw new ApiError(409, 'DUPLICATE_APPLICATION', 'Người dùng đã có đơn đăng ký đang chờ duyệt.');
       }
-
-      const [application] = await manager.query(
-        `INSERT INTO store_application
-           (id, applicant_user_id, proposed_name, contact, status, submitted_at, version)
-         VALUES ($1,$2,$3,$4,'PENDING',now(),0)
-         RETURNING id, proposed_name, contact, status, decision_reason, version`,
-        [randomUUID(), userId, input.proposed_name, input.contact]
-      );
-      await audit(manager, 'M3', userId, 'StoreApplication', application.id, 'STORE_APPLICATION_SUBMITTED',
-        correlationId, null, { status: application.status, version: application.version });
-      return application;
-    });
+      throw error;
+    }
   }
 
   async listStoreApplications(userId: string | null, page = 1, size = 20) {
@@ -64,10 +94,11 @@ export class StoreRepository {
     }
 
     return database.transaction(async manager => {
-      const [application] = await manager.query(
-        'SELECT * FROM store_application WHERE id=$1 FOR UPDATE',
-        [id]
-      );
+      // Lock order is user -> application -> membership/store for submissions and reviews.
+      const [candidate] = await manager.query('SELECT applicant_user_id FROM store_application WHERE id=$1', [id]);
+      if (!candidate) throw new ApiError(404, 'NOT_FOUND', 'Đơn đăng ký Store không tồn tại.');
+      await manager.query('SELECT id FROM "user" WHERE id=$1 FOR UPDATE', [candidate.applicant_user_id]);
+      const [application] = await manager.query('SELECT * FROM store_application WHERE id=$1 FOR UPDATE', [id]);
       if (!application) throw new ApiError(404, 'NOT_FOUND', 'Đơn đăng ký Store không tồn tại.');
       if (application.version !== input.expected_version) {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
@@ -77,7 +108,6 @@ export class StoreRepository {
       }
 
       if (input.status === 'APPROVED') {
-        await manager.query('SELECT id FROM "user" WHERE id=$1 FOR UPDATE', [application.applicant_user_id]);
         const activeMembership = await manager.query(
           `SELECT id FROM store_membership
            WHERE user_id=$1 AND status='ACTIVE'
@@ -90,13 +120,14 @@ export class StoreRepository {
       }
 
       const version = application.version + 1;
-      const [updated] = await manager.query(
+      const updated = returnedRow<StoreApplicationRow>(await manager.query(
         `UPDATE store_application
          SET status=$1, decision_reason=$2, decided_by_user_id=$3, decided_at=now(), version=$4
          WHERE id=$5
          RETURNING id, proposed_name, contact, status, decision_reason, version`,
         [input.status, input.decision_reason ?? null, adminUserId, version, id]
-      );
+      ));
+      if (!updated) throw new Error('Store application update returned no row');
 
       if (input.status === 'APPROVED') {
         const storeId = randomUUID();
@@ -120,8 +151,11 @@ export class StoreRepository {
 
       await audit(manager, 'M3', adminUserId, 'StoreApplication', id, 'STORE_APPLICATION_REVIEWED',
         correlationId,
-        { status: application.status, version: application.version },
-        { status: updated.status, version: updated.version, decision_reason: updated.decision_reason });
+        { id: application.id, applicant_user_id: application.applicant_user_id,
+          proposed_name: application.proposed_name, contact: application.contact,
+          status: application.status, decision_reason: application.decision_reason,
+          version: application.version },
+        updated);
       return updated;
     });
   }
@@ -180,10 +214,11 @@ export class StoreRepository {
       const shippingFee = input.shipping_fee_vnd !== undefined ? input.shipping_fee_vnd : store.shipping_fee_vnd;
       const newVersion = store.version + 1;
 
-      const [updated] = await manager.query(
+      const updated = returnedRow<StoreUpdateRow>(await manager.query(
         `UPDATE store SET name=$1, description=$2, shipping_fee_vnd=$3, version=$4 WHERE id=$5 RETURNING *`,
         [name, description, shippingFee, newVersion, store.id]
-      );
+      ));
+      if (!updated) throw new Error('Store update returned no row');
 
       await audit(
         manager,
@@ -193,8 +228,10 @@ export class StoreRepository {
         store.id,
         'STORE_UPDATED',
         correlationId,
-        { name: store.name, description: store.description, shipping_fee_vnd: store.shipping_fee_vnd, version: store.version },
-        { name: updated.name, description: updated.description, shipping_fee_vnd: updated.shipping_fee_vnd, version: updated.version }
+        { id: store.id, name: store.name, description: store.description,
+          shipping_fee_vnd: Number(store.shipping_fee_vnd), status: store.status, version: store.version },
+        { id: updated.id, name: updated.name, description: updated.description,
+          shipping_fee_vnd: Number(updated.shipping_fee_vnd), status: updated.status, version: updated.version }
       );
 
       return {

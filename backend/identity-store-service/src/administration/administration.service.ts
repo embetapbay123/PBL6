@@ -1,4 +1,5 @@
 import { AdministrationRepository } from './administration.repository';
+import { notImplemented } from '../../../shared/src/errors';
 
 export class AdministrationService {
   constructor(private readonly repository = new AdministrationRepository()) {}
@@ -20,6 +21,6 @@ export class AdministrationService {
   }
 
   updateRole(id: string, permissionIds: string[], expectedVersion: number, actorUserId: string, correlationId: string) {
-    return this.repository.updateRole(id, permissionIds, expectedVersion, actorUserId, correlationId);
+    return notImplemented('effective role permission updates');
   }
 }

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
-import { mockListOwnStoreApplications, mockSubmitStoreApplication, type PageStoreApplications, type StoreApplication } from '../../api/store-application.mock';
+import { listOwnStoreApplications, submitStoreApplication } from '../../api/store-applications';
+import { dataMode } from '../../api/operations';
+import type { PageStoreApplications, StoreApplication } from '../../api/store-application.mock';
 
 const statusLabels: Record<string, string> = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối' };
 function StatusBadge({ status }: { status: string }) {
@@ -21,20 +23,22 @@ function SubmitForm({ onSuccess }: { onSuccess: () => void }) {
     if (!proposed_name || !normalizedContact) return;
     setBusy(true); setError(undefined); setNotice('');
     try {
-      await mockSubmitStoreApplication({ proposed_name, contact: normalizedContact });
-      setNotice('Đã tạo hồ sơ demo trên thiết bị này. Đây chưa phải hồ sơ được gửi lên máy chủ.');
+      const created = await submitStoreApplication({ proposed_name, contact: normalizedContact });
+      setNotice(dataMode === 'fixture'
+        ? `Đã tạo hồ sơ fixture “${created.proposed_name}” trong trình duyệt; chưa gửi lên máy chủ.`
+        : `Đã gửi hồ sơ “${created.proposed_name}” lên máy chủ.`);
       setName(''); setContact(''); onSuccess();
     } catch (cause) { setError(cause); }
     finally { setBusy(false); }
   };
   return <section className="boot-card store-app-card">
-    <div className="store-app-card-heading"><div><p className="store-app-eyebrow">HỒ SƠ CỬA HÀNG</p><h2>Đăng ký mở cửa hàng</h2></div><span className="store-app-demo">MOCK/DEMO</span></div>
-    <p className="store-app-muted">Điền thông tin để tạo hồ sơ xem thử. Dữ liệu demo được lưu trong trình duyệt.</p>
+    <div className="store-app-card-heading"><div><p className="store-app-eyebrow">HỒ SƠ CỬA HÀNG</p><h2>Đăng ký mở cửa hàng</h2></div><span className="store-app-demo">{dataMode === 'fixture' ? 'FIXTURE' : 'API'}</span></div>
+    <p className="store-app-muted">{dataMode === 'fixture' ? 'Dữ liệu fixture chỉ lưu trong trình duyệt.' : 'Gửi hồ sơ đăng ký cửa hàng lên máy chủ.'}</p>
     {notice && <p className="store-app-notice" role="status">{notice}</p>}
     <form onSubmit={submit} className="store-app-form">
       <label>Tên cửa hàng <span aria-hidden="true">*</span><input value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: TechGear Flagship Store" required maxLength={200} minLength={2} disabled={busy} /></label>
       <label>Email hoặc số điện thoại liên hệ <span aria-hidden="true">*</span><input value={contact} onChange={e => setContact(e.target.value)} placeholder="email@example.com hoặc 0901234567" required maxLength={200} minLength={3} disabled={busy} /></label>
-      <button className="store-app-button store-app-button--primary" disabled={busy}>{busy ? 'Đang tạo hồ sơ…' : 'Tạo hồ sơ demo'}</button>
+      <button className="store-app-button store-app-button--primary" disabled={busy}>{busy ? 'Đang gửi hồ sơ…' : dataMode === 'fixture' ? 'Tạo hồ sơ fixture' : 'Gửi hồ sơ đăng ký'}</button>
     </form>
     {error !== undefined && <ErrorView error={error} />}
   </section>;
@@ -47,7 +51,7 @@ function ApplicationHistory({ refreshKey }: { refreshKey: number }) {
   const [error, setError] = useState<unknown>();
   const load = useCallback(async (requestedPage: number) => {
     setLoading(true); setError(undefined);
-    try { const result = await mockListOwnStoreApplications(requestedPage, 10); setData(result); }
+    try { const result = await listOwnStoreApplications(requestedPage, 10); setData(result); }
     catch (cause) { setError(cause); }
     finally { setLoading(false); }
   }, [refreshKey]);
@@ -69,7 +73,7 @@ function ApplicationHistory({ refreshKey }: { refreshKey: number }) {
 function CustomerStoreApplicationPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   return <section className="store-app-page"><header className="store-app-page-heading"><p className="store-app-eyebrow">DÀNH CHO NHÀ BÁN HÀNG</p><h1>Bắt đầu bán hàng cùng PBL6</h1><p>Tạo hồ sơ cửa hàng và theo dõi trạng thái xét duyệt tại một nơi.</p></header>
-    <div className="store-app-demo-banner"><strong>MOCK/DEMO</strong><span>API hồ sơ cửa hàng chưa được triển khai. Thao tác ở trang này chỉ cập nhật dữ liệu demo trong trình duyệt.</span></div>
+    <div className="store-app-demo-banner"><strong>{dataMode === 'fixture' ? 'FIXTURE' : 'API THẬT'}</strong><span>{dataMode === 'fixture' ? 'Đang dùng dữ liệu fixture trong trình duyệt; hồ sơ không được gửi lên máy chủ.' : 'Hồ sơ và lịch sử được tải từ API máy chủ. Lỗi API sẽ được hiển thị, không chuyển sang dữ liệu fixture.'}</span></div>
     <SubmitForm onSuccess={() => setRefreshKey(key => key + 1)} />
     <ApplicationHistory refreshKey={refreshKey} />
   </section>;

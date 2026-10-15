@@ -3,11 +3,7 @@ import { ApiError } from '../../../shared/src/errors';
 import { audit } from '../../../shared/src/audit';
 import { emitEvent } from '../../../shared/src/events';
 import { randomUUID } from 'node:crypto';
-
-function returnedRow<T>(result: any): T | undefined {
-  const rows = Array.isArray(result?.[0]) ? result[0] : result;
-  return rows?.[0] as T | undefined;
-}
+import { returnedRow } from '../../../shared/src/postgres-returning';
 
 export class AdministrationRepository {
   async listUsers(page = 1, size = 20) {

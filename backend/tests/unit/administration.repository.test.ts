@@ -5,6 +5,7 @@ jest.mock('../../shared/src/events', () => ({ emitEvent: jest.fn() }));
 import { database } from '../../shared/src/database';
 import { emitEvent } from '../../shared/src/events';
 import { AdministrationRepository } from '../../identity-store-service/src/administration/administration.repository';
+import { AdministrationService } from '../../identity-store-service/src/administration/administration.service';
 
 describe('AdministrationRepository event contracts', () => {
   const transaction = database.transaction as jest.Mock;
@@ -48,5 +49,15 @@ describe('AdministrationRepository event contracts', () => {
     transaction.mockImplementation(async (callback: any) => callback(manager));
     await new AdministrationRepository().updateRole('role-1', [], 1, 'actor', 'corr');
     expect(emit).not.toHaveBeenCalled();
+  });
+
+  test('role permission update is explicitly disabled without touching the repository', () => {
+    const repository = { updateRole: jest.fn() };
+    const service = new AdministrationService(repository as any);
+    let error: any;
+    try { service.updateRole('role-1', [], 0, 'actor', 'corr'); } catch (cause) { error = cause; }
+    expect(error.getStatus()).toBe(501);
+    expect(error.getResponse()).toMatchObject({ code: 'FEATURE_NOT_IMPLEMENTED' });
+    expect(repository.updateRole).not.toHaveBeenCalled();
   });
 });

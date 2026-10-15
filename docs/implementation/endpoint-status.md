@@ -113,3 +113,6 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
+
+
+`updateRole` is deliberately disabled with HTTP 501 `FEATURE_NOT_IMPLEMENTED`; effective permission enforcement and revocation for existing sessions remain pending. The endpoint does not write `role_permission` or emit a success audit event.

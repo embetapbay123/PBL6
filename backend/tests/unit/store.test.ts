@@ -4,6 +4,7 @@ jest.mock('../../shared/src/database', () => ({
 jest.mock('../../shared/src/audit', () => ({ audit: jest.fn() }));
 
 import { database } from '../../shared/src/database';
+import { audit } from '../../shared/src/audit';
 import { StoreRepository } from '../../identity-store-service/src/store/store.repository';
 import { StoreService } from '../../identity-store-service/src/store/store.service';
 import { StoreSkeletonController } from '../../identity-store-service/src/store/store.skeleton.controller';
@@ -46,27 +47,29 @@ describe('Store application repository rules', () => {
   beforeEach(() => transaction.mockReset());
 
   test('rejects a second pending application', async () => {
-    const manager = { query: jest.fn().mockResolvedValue([{ id: 'existing' }]) };
+    const manager = { query: jest.fn().mockResolvedValueOnce([{ id: 'user-a' }]).mockResolvedValueOnce([{ id: 'existing' }]) };
     transaction.mockImplementation(async (callback: (value: typeof manager) => unknown) => callback(manager));
     const repository = new StoreRepository();
 
     await expect(repository.submitStoreApplication('user-a', {
       proposed_name: 'A', contact: 'a@example.test',
     }, 'corr')).rejects.toMatchObject({ status: 409, response: expect.objectContaining({ code: 'DUPLICATE_APPLICATION' }) });
-    expect(manager.query).toHaveBeenCalledTimes(1);
+    expect(manager.query).toHaveBeenCalledTimes(2);
+    expect(manager.query.mock.calls[0][0]).toContain('FOR UPDATE');
   });
 
   test('does not review an already decided application', async () => {
-    const manager = { query: jest.fn().mockResolvedValueOnce([{
-      id: 'application-1', status: 'REJECTED', version: 1, applicant_user_id: 'user-a',
-    }]) };
+    const manager = { query: jest.fn().mockResolvedValueOnce([{ applicant_user_id: 'user-a' }])
+      .mockResolvedValueOnce([{ id: 'user-a' }]).mockResolvedValueOnce([{
+        id: 'application-1', status: 'REJECTED', version: 1, applicant_user_id: 'user-a',
+      }]) };
     transaction.mockImplementation(async (callback: (value: typeof manager) => unknown) => callback(manager));
     const repository = new StoreRepository();
 
     await expect(repository.reviewStoreApplication('application-1', {
       status: 'APPROVED', expected_version: 1,
     }, 'admin-1', 'corr')).rejects.toMatchObject({ status: 409 });
-    expect(manager.query).toHaveBeenCalledTimes(1);
+    expect(manager.query).toHaveBeenCalledTimes(3);
   });
 
   test('approval creates store and owner membership in the same transaction', async () => {
@@ -76,8 +79,9 @@ describe('Store application repository rules', () => {
     };
     const manager = {
       query: jest.fn()
-        .mockResolvedValueOnce([application])
+        .mockResolvedValueOnce([{ applicant_user_id: 'user-a' }])
         .mockResolvedValueOnce([{ id: 'user-a' }])
+        .mockResolvedValueOnce([application])
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([{ ...application, status: 'APPROVED', version: 1, decision_reason: null }])
         .mockResolvedValueOnce([{ id: 'store-1' }])
@@ -91,9 +95,26 @@ describe('Store application repository rules', () => {
     }, 'admin-1', 'corr');
 
     expect(result).toMatchObject({ id: 'application-1', status: 'APPROVED', version: 1 });
-    expect(manager.query).toHaveBeenCalledTimes(6);
-    expect(manager.query.mock.calls[4][0]).toContain('INSERT INTO store');
-    expect(manager.query.mock.calls[5][0]).toContain('INSERT INTO store_membership');
+    expect(manager.query).toHaveBeenCalledTimes(7);
+    expect(manager.query.mock.calls[5][0]).toContain('INSERT INTO store');
+    expect(manager.query.mock.calls[6][0]).toContain('INSERT INTO store_membership');
+  });
+
+  test('normalizes wrapped UPDATE RETURNING rows and stores complete store audit state', async () => {
+    const original = { id: 'store-1', name: 'Old', description: null, shipping_fee_vnd: '10', status: 'ACTIVE', version: 3 };
+    const updated = { ...original, name: 'New', shipping_fee_vnd: '25', version: 4 };
+    const manager = { query: jest.fn().mockResolvedValueOnce([original]).mockResolvedValueOnce([[updated], 1]) };
+    transaction.mockImplementation(async (callback: any) => callback(manager));
+
+    const result = await new StoreRepository().updateOwnStore('user-a', {
+      name: 'New', shipping_fee_vnd: 25, expected_version: 3,
+    }, 'corr');
+
+    expect(result).toEqual({ id: 'store-1', owner_user_id: 'user-a', name: 'New', status: 'ACTIVE', shipping_fee_vnd: 25, version: 4 });
+    expect(Number.isNaN(result.shipping_fee_vnd)).toBe(false);
+    expect(audit).toHaveBeenCalledWith(manager, 'M3', 'user-a', 'Store', 'store-1', 'STORE_UPDATED', 'corr',
+      expect.objectContaining({ name: 'Old', shipping_fee_vnd: 10, version: 3 }),
+      expect.objectContaining({ name: 'New', shipping_fee_vnd: 25, version: 4 }));
   });
 });
 
