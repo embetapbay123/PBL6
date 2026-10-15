@@ -40,7 +40,7 @@ export class AuthService {
       [member.membership_id],
     )).map((p: any)=>p.code) : [];
     return {user_id:user.id, roles:[...new Set(roles)], token_version:user.version,
-      ...(member ? {store_membership:{...member,permissions}} : {})};
+      ...(member ? {store_membership:{store_id:member.store_id,role:member.role,status:member.status,permissions}} : {})};
   }
   async resolve(token: string) {
     const claims = verifyToken(token,config('M3').publicKey);
