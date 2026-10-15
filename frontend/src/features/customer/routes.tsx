@@ -3,9 +3,13 @@ import { ProductsSample } from './ProductsSample';
 import { ProductDetail } from './ProductDetail';
 import { CartPage } from './CartPage';
 import { CheckoutPage } from './CheckoutPage';
+import { AuthPage } from './auth/AuthPage';
 import { OwnerLanding, ProtectedRoute } from '../../bootstrap/components';
+
 export const customerRoutes: RouteObject[] = [
+  
   { path: '/', element: <ProductsSample /> },
+  { path: '/auth', element: <AuthPage /> },
   { path: '/products/:id', element: <ProductDetail /> },
   { path: '/cart', element: <ProtectedRoute roles={['CUSTOMER']}><CartPage /></ProtectedRoute> },
   { path: '/checkout', element: <ProtectedRoute roles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute> },
