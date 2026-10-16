@@ -1,14 +1,16 @@
-import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
+import { generateKeyPairSync, randomUUID } from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
-import { Controller, Module } from '@nestjs/common';
+import { Controller, Module, UseGuards } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AuthController } from '../../identity-store-service/src/auth/auth.controller';
 import { AuthService, digest, IEmailAdapter } from '../../identity-store-service/src/auth/auth.service';
-import { AuthGuard } from '../../shared/src/auth';
+import { AuthGuard, ServiceGuard } from '../../shared/src/auth';
 import { ErrorFilter } from '../../shared/src/errors';
 import { RequestContractInterceptor } from '../../shared/src/request-contract';
 import { database } from '../../shared/src/database';
@@ -19,6 +21,7 @@ const describePostgres = dbUrl ? describe : describe.skip;
 describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
   let source: DataSource;
   let app: any;
+  let keyDirectory: string;
   const userId = randomUUID();
   const email = `auth-regression-${userId}@example.test`;
   const delivered: Array<{ kind: string; email: string; token: string }> = [];
@@ -36,16 +39,25 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     process.env.CATALOG_URL = 'http://127.0.0.1:1';
     process.env.REDIS_URL = 'redis://127.0.0.1:6379';
     process.env.WEB_ORIGIN = 'http://localhost:8080';
-    process.env.JWT_PRIVATE_KEY_FILE = resolve(__dirname, '../../../infrastructure/secrets/jwt-private.pem');
-    process.env.JWT_PUBLIC_KEY_FILE = resolve(__dirname, '../../../infrastructure/secrets/jwt-public.pem');
+    keyDirectory = mkdtempSync(join(tmpdir(), 'pbl6-auth-regression-'));
+    const keys = generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    });
+    process.env.JWT_PRIVATE_KEY_FILE = join(keyDirectory, 'jwt-private.pem');
+    process.env.JWT_PUBLIC_KEY_FILE = join(keyDirectory, 'jwt-public.pem');
+    writeFileSync(process.env.JWT_PRIVATE_KEY_FILE, keys.privateKey);
+    writeFileSync(process.env.JWT_PUBLIC_KEY_FILE, keys.publicKey);
     for (const service of ['M1', 'M2', 'M3', 'M4']) process.env[`${service}_INTERNAL_KEY`] ??= `test-${service}-internal-key`;
     await import('../../shared/src/database').then(module => module.initializeDatabase());
-    @Controller() class TestAuthController extends AuthController {
+    @Controller() @UseGuards(AuthGuard) class TestAuthController extends AuthController {
       constructor() { super(new AuthService(adapter)); }
     }
-    @Module({ controllers: [TestAuthController] }) class TestModule {}
+    @Module({ controllers: [TestAuthController], providers: [AuthGuard, ServiceGuard] }) class TestModule {}
     app = await NestFactory.create(TestModule, { logger: false });
-    app.setGlobalPrefix('api/v1');
+    app.setGlobalPrefix('api/v1', { exclude: ['internal/context', 'internal/stores/active'] });
+    app.use((req: any, _res: any, next: any) => { req.correlationId = 'auth-regression'; next(); });
     app.useGlobalFilters(new ErrorFilter());
     app.useGlobalInterceptors(new RequestContractInterceptor());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -58,7 +70,7 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
 
   async function login(password: string) {
     const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email, password });
-    expect(response.status).toBe(200);
+    if (response.status !== 200) throw new Error(`Login failed (${response.status}): ${JSON.stringify(response.body)}`);
     return response.body as { access_token: string; refresh_token: string };
   }
 
@@ -73,6 +85,7 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     }
     if (app) await app.close();
     if (database?.isInitialized) await database.destroy();
+    if (keyDirectory) rmSync(keyDirectory, { recursive: true, force: true });
   });
 
   test('HTTP reset email is delivered through injected adapter and reset invalidates all outstanding links', async () => {
@@ -117,7 +130,8 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     await source.query('UPDATE "user" SET password_hash=$1,status=\'ACTIVE\' WHERE id=$2', [await bcrypt.hash('Guard-old-123', 10), userId]);
     const path = '/api/v1/auth/change-password';
     const body = { current_password: 'Guard-old-123', new_password: 'Guard-new-123' };
-    expect((await request(app.getHttpServer()).post(path).send(body)).status).toBe(401);
+    const guest = await request(app.getHttpServer()).post(path).send(body);
+    if (guest.status !== 401) throw new Error(`Guest request was not rejected (${guest.status}): ${JSON.stringify(guest.body)}`);
     const invalidToken = await request(app.getHttpServer()).post(path).set('Authorization', 'Bearer not-a-valid-token').send(body);
     expect(invalidToken.status).toBe(401);
     const wrongPasswordSession = await login('Guard-old-123');
