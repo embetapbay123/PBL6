@@ -1,3 +1,30 @@
+## Local OpenCode Go verification — 2026-10-13
+
+The local M4 configuration now uses `deepseek-v4-flash` with
+`https://opencode.ai/zen/go/v1/chat/completions`. The API key remains in the ignored
+`infrastructure/.env`; no credential is stored in this document or Git.
+
+A gateway chat smoke returned HTTP 200, `fallback=false`, `MODEL_GENERATED`, and
+one current Catalog card in 5,422 ms. This proves one real generation path,
+not full AI quality, latency, billing, concurrency or demo acceptance. The earlier
+Console 402 was a pay-as-you-go balance error, not a Go subscription check.
+
+The adapter sends its actual application User-Agent and an opaque stable session
+header. HTTP chat turns use a hash of the server session ID; standalone selector
+instances use a random stable ID. Neither header contains a user ID or guest key.
+`CHAT_TIMEOUT_SECONDS` accepts a finite value above zero and at most 30 seconds;
+the default remains 2. The local Go smoke uses 15 seconds. The chat flow deadline
+is at least 4 seconds and otherwise the provider deadline plus 2 seconds;
+internal service deadlines stay unchanged. This does not establish the 2-second
+latency goal. Provider failures still fall back and are never automatically retried.
+
+Numeric text is rejected unless it belongs to an exact supplied Catalog title;
+prices and current cards remain server-owned. Invalid JSON, invented numeric
+claims and unavailable/changed products retain their existing protections.
+
+This local evidence supersedes the provider-not-configured blocker below only.
+Human quality review and the remaining AI-03 acceptance criteria are still open.
+
 # Công — bàn giao Week 3, 13/10/2026
 
 [Week 3](week3.md) · [Kanban](https://github.com/users/embetapbay123/projects/1/views/3) · [Demo 03/11](demo-2026-11-03.md). Code đã kiểm và full acceptance được ghi riêng; không coi CI/adapter là bằng chứng provider/model thật.
@@ -16,18 +43,19 @@
 
 ## Cấu hình OpenCode / DeepSeek
 
-Chủ repo chọn API model và cung cấp base URL bên dưới; **model ID/token chưa cấu hình, chưa gọi provider**. Điền vào `infrastructure/.env` local; không commit hoặc gửi key vào issue/chat:
+Local OpenCode Go đã cấu hình và có một lượt gateway generation thật như evidence phía trên. Các máy khác cần tự cấu hình `infrastructure/.env`; không commit hoặc gửi key vào issue/chat:
 
 ```dotenv
 AI_MODE=real
 CHAT_PROVIDER=openai_compatible
-CHAT_MODEL_URL=https://opencode.ai/inference/openai/v1
-CHAT_MODEL=
+CHAT_MODEL_URL=https://opencode.ai/zen/go/v1/chat/completions
+CHAT_MODEL=deepseek-v4-flash
 CHAT_API_KEY=
 CHAT_RESPONSE_FORMAT=json_object
+CHAT_TIMEOUT_SECONDS=15
 ```
 
-Model ID phải được tài khoản hỗ trợ; không tự chọn model thay thế. Adapter nhận cả base URL hoặc URL đầy đủ `/chat/completions`. Endpoint chủ repo cung cấp chưa xác minh quyền truy cập. Chỉ dùng `json_schema` nếu provider/model hỗ trợ; không dùng `OPENAI_API_KEY` làm key OpenCode. Thiếu key/model/HTTPS thì real startup fail; khi chưa cấu hình giữ provider none.
+Model ID phải được tài khoản hỗ trợ; không tự chọn model thay thế. Adapter nhận cả base URL hoặc URL đầy đủ `/chat/completions`. Endpoint Go đã trả 200 trên máy chủ repo; endpoint Console trước đó trả 402 do balance. Chỉ dùng `json_schema` nếu provider/model hỗ trợ; không dùng `OPENAI_API_KEY` làm key OpenCode. Thiếu key/model/HTTPS thì real startup fail; khi chưa cấu hình giữ provider none.
 
 ```powershell
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build m4 worker-m4 tools
@@ -62,7 +90,7 @@ docker run --rm --network pbl6_default -v "${PWD}/infrastructure/load:/scripts:r
 | [PAY-03 #53](https://github.com/embetapbay123/PBL6/issues/53) | Refund kernel/worker/rollback/restart đã kiểm. Công chưa có provider hỗ trợ refund + lookup/idempotency; Hoa đóng Order/compensation. |
 | [AI-01 #55](https://github.com/embetapbay123/PBL6/issues/55) | Consent/consumer/inbox/revoke/retention PASS. Còn purchase producer Hoa, M3 auth/membership Trí và receipt qua API/Rabbit thật. |
 | [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56) | ALS/baseline/related/fallback đã có. DB hiện **0 consent GRANTED, 0 interaction, 0 ACTIVE model**; cần dataset có nguồn/consent và ranking thật, không import synthetic để giả đạt. |
-| [AI-03 #57](https://github.com/embetapbay123/PBL6/issues/57) | Generation adapter/session/grounding/budget PASS. Chủ repo cấu hình model ID/key local; Công chạy live/HTTP/human rubric. Generation thật NOT_RUN. |
+| [AI-03 #57](https://github.com/embetapbay123/PBL6/issues/57) | Generation adapter/session/grounding/budget PASS. Local Go gateway smoke: MODEL_GENERATED, fallback=false, 5.422 s. Còn live evaluation/human rubric/billing/latency acceptance; issue In progress, chưa Done. |
 | [AI-04 #58](https://github.com/embetapbay123/PBL6/issues/58) | Scope-filtered metrics/version/p95/limits và live runner. Còn Trí ResolveAiMetricsScope + live model/dataset/billing. |
 | [OPS-01 #59](https://github.com/embetapbay123/PBL6/issues/59) | Body/key/log controls, admission fix/read smoke PASS. Full security/revoke/upload/mixed load còn module thật và lỗi của đúng owner. |
 | [OPS-02 #60](https://github.com/embetapbay123/PBL6/issues/60) | Financial fault/replay/rollback, worker restart và restore PASS. Full matrix chờ Hoa Confirm/Cancel/Voucher, Thịnh restock/expiry, Công provider thật. |
