@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
 import { Controller, Module } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { Public } from '../../shared/src/auth';
 import { AuthController } from '../../identity-store-service/src/auth/auth.controller';
 import { AuthService, digest, IEmailAdapter } from '../../identity-store-service/src/auth/auth.service';
 import { AuthGuard } from '../../shared/src/auth';
@@ -32,17 +32,19 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     await source.initialize();
     process.env.SERVICE_ID = 'M3';
     process.env.M3_DATABASE_URL = dbUrl;
+    process.env.IDENTITY_URL = 'http://127.0.0.1:1';
+    process.env.CATALOG_URL = 'http://127.0.0.1:1';
+    process.env.REDIS_URL = 'redis://127.0.0.1:6379';
+    process.env.WEB_ORIGIN = 'http://localhost:8080';
+    process.env.JWT_PRIVATE_KEY_FILE = resolve(__dirname, '../../../infrastructure/secrets/jwt-private.pem');
+    process.env.JWT_PUBLIC_KEY_FILE = resolve(__dirname, '../../../infrastructure/secrets/jwt-public.pem');
+    for (const service of ['M1', 'M2', 'M3', 'M4']) process.env[`${service}_INTERNAL_KEY`] ??= `test-${service}-internal-key`;
     await import('../../shared/src/database').then(module => module.initializeDatabase());
-    @Controller() @Public() class TestAuthController extends AuthController {
+    @Controller() class TestAuthController extends AuthController {
       constructor() { super(new AuthService(adapter)); }
     }
     @Module({ controllers: [TestAuthController] }) class TestModule {}
     app = await NestFactory.create(TestModule, { logger: false });
-    app.useGlobalGuards({ canActivate: (context: any) => {
-      const req = context.switchToHttp().getRequest();
-      if (req.path.endsWith('/auth/change-password')) req.auth = { user_id: userId };
-      return true;
-    } } as any);
     app.setGlobalPrefix('api/v1');
     app.useGlobalFilters(new ErrorFilter());
     app.useGlobalInterceptors(new RequestContractInterceptor());
@@ -50,7 +52,15 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     await app.init();
     const hash = await bcrypt.hash('Old-password-123', 10);
     await source.query(`INSERT INTO "user"(id,email,password_hash,status,created_at,version) VALUES($1,$2,$3,'ACTIVE',now(),0)`, [userId, email, hash]);
+    await app.listen(0, '127.0.0.1');
+    process.env.IDENTITY_URL = await app.getUrl();
   });
+
+  async function login(password: string) {
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({ email, password });
+    expect(response.status).toBe(200);
+    return response.body as { access_token: string; refresh_token: string };
+  }
 
   afterAll(async () => {
     if (source?.isInitialized) {
@@ -80,9 +90,15 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
 
   test('an authenticated password change invalidates previously issued reset links', async () => {
     await source.query('UPDATE "user" SET password_hash=$1,status=\'ACTIVE\' WHERE id=$2', [await bcrypt.hash('Change-old-123', 10), userId]);
+    const currentSession = await login('Change-old-123');
+    const otherSession = await login('Change-old-123');
     await source.query(`INSERT INTO one_time_token(id,user_id,purpose,token_hash,expires_at,created_at) VALUES($1,$2,'PASSWORD_RESET',$3,now()+interval '15 minutes',now())`, [randomUUID(), userId, digest('pre-change-reset-link')]);
-    const changed = await request(app.getHttpServer()).post('/api/v1/auth/change-password').send({ current_password: 'Change-old-123', new_password: 'Change-new-123' });
+    const changed = await request(app.getHttpServer()).post('/api/v1/auth/change-password').set('Authorization', `Bearer ${currentSession.access_token}`).send({ current_password: 'Change-old-123', new_password: 'Change-new-123' });
     expect(changed.status).toBe(200);
+    expect((await source.query('SELECT id FROM refresh_session WHERE user_id=$1 AND revoked_at IS NULL', [userId]))).toHaveLength(0);
+    const invalidated = await request(app.getHttpServer()).get('/api/v1/me/context').set('Authorization', `Bearer ${otherSession.access_token}`);
+    expect(invalidated.status).toBe(401);
+    expect(invalidated.body.code).toBe('SESSION_REVOKED');
     const replay = await request(app.getHttpServer()).post('/api/v1/auth/reset-password/confirm').send({ token: 'pre-change-reset-link', new_password: 'Reset-after-change-123' });
     expect(replay.status).toBe(400);
   });
@@ -90,9 +106,28 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
   test('two concurrent HTTP password changes using the same old password have one winner', async () => {
     const hash = await bcrypt.hash('Concurrent-old-123', 10);
     await source.query('UPDATE "user" SET password_hash=$1,status=\'ACTIVE\',version=0 WHERE id=$2', [hash, userId]);
-    const body = (new_password: string) => request(app.getHttpServer()).post('/api/v1/auth/change-password').send({ current_password: 'Concurrent-old-123', new_password });
+    const session = await login('Concurrent-old-123');
+    const body = (new_password: string) => request(app.getHttpServer()).post('/api/v1/auth/change-password').set('Authorization', `Bearer ${session.access_token}`).send({ current_password: 'Concurrent-old-123', new_password });
     const results = await Promise.all([body('Concurrent-new-one-123'), body('Concurrent-new-two-123')]);
-    expect(results.map(result => result.status).sort()).toEqual([200, 400]);
+    expect(results.filter(result => result.status === 200)).toHaveLength(1);
+    expect(results.filter(result => [400, 401].includes(result.status))).toHaveLength(1);
+  });
+
+  test('change-password rejects missing, invalid, and revoked sessions and wrong current password', async () => {
+    await source.query('UPDATE "user" SET password_hash=$1,status=\'ACTIVE\' WHERE id=$2', [await bcrypt.hash('Guard-old-123', 10), userId]);
+    const path = '/api/v1/auth/change-password';
+    const body = { current_password: 'Guard-old-123', new_password: 'Guard-new-123' };
+    expect((await request(app.getHttpServer()).post(path).send(body)).status).toBe(401);
+    const invalidToken = await request(app.getHttpServer()).post(path).set('Authorization', 'Bearer not-a-valid-token').send(body);
+    expect(invalidToken.status).toBe(401);
+    const wrongPasswordSession = await login('Guard-old-123');
+    const wrongPassword = await request(app.getHttpServer()).post(path).set('Authorization', `Bearer ${wrongPasswordSession.access_token}`).send({ ...body, current_password: 'Incorrect-current-123' });
+    expect(wrongPassword.status).toBe(400);
+    expect(wrongPassword.body.code).toBe('INVALID_CREDENTIALS');
+    await source.query('UPDATE refresh_session SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL', [userId]);
+    const revoked = await request(app.getHttpServer()).post(path).set('Authorization', `Bearer ${wrongPasswordSession.access_token}`).send(body);
+    expect(revoked.status).toBe(401);
+    expect(revoked.body.code).toBe('SESSION_REVOKED');
   });
 
   test('registration fails closed without configured adapter before creating a pending account', async () => {
@@ -100,6 +135,7 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     const missingAdapter = new Service();
     const missingEmail = `no-adapter-${randomUUID()}@example.test`;
     await expect(missingAdapter.register(missingEmail, 'Password-123')).rejects.toMatchObject({ status: 503 });
+    await expect(missingAdapter.resetPassword(email)).rejects.toMatchObject({ status: 503 });
     expect(await source.query('SELECT id FROM "user" WHERE email=$1', [missingEmail])).toHaveLength(0);
   });
 

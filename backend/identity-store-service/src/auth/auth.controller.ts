@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, HttpCode, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
-import { AuthGuard, Public, Roles, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
+import { AuthGuard, Public, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
 import { config } from '../../../shared/src/config';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
@@ -45,7 +45,7 @@ export class AuthController {
   async confirmResetPassword(@Body() dto: ConfirmResetPasswordDto) {
     return this.service.confirmResetPassword(dto.token, dto.new_password);
   }
-  @Post('auth/change-password') @HttpCode(200) @Roles('AUTHENTICATED')
+  @Post('auth/change-password') @HttpCode(200)
   async changePassword(@Body() dto: ChangePasswordDto, @Req() req: any) {
     const userId = req.auth?.user_id;
     if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
