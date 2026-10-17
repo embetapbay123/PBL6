@@ -134,7 +134,7 @@
           "M2",
           "M4"
         ],
-        "x-implementation-status": "IMPLEMENTED_SAMPLE",
+        "x-implementation-status": "IMPLEMENTED",
         "parameters": [
           {
             "in": "header",

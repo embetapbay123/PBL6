@@ -191,7 +191,7 @@
     "service": "M3",
     "module": "store",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -203,7 +203,7 @@
     "service": "M3",
     "module": "store",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -215,7 +215,7 @@
     "service": "M3",
     "module": "store",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -227,7 +227,7 @@
     "service": "M3",
     "module": "store",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -239,7 +239,7 @@
     "service": "M3",
     "module": "store",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "SELLER",
       "STORE_OWNER"
@@ -252,7 +252,7 @@
     "service": "M3",
     "module": "store",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
