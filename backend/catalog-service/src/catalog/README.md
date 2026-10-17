@@ -6,12 +6,16 @@ Owner: Thịnh
 - `GET /product-types` — listProductTypes: **IMPLEMENTED**
 - `GET /products` — listProducts: **IMPLEMENTED**
 - `GET /products/{id}` — getProduct: **IMPLEMENTED**
-- `GET /stores/{id}/products` — listStoreProducts: **NOT_IMPLEMENTED**
-- `GET /store/products` — listOwnStoreProducts: **NOT_IMPLEMENTED**
+- `GET /stores/{id}/products` — listStoreProducts: **IMPLEMENTED**
+- `GET /store/products` — listOwnStoreProducts: **IMPLEMENTED**
 - `POST /store/products` — createProduct: **NOT_IMPLEMENTED**
 - `PATCH /store/products/{id}` — updateProduct: **IMPLEMENTED_SAMPLE**
 - `POST /store/products/{id}/variants` — createVariant: **NOT_IMPLEMENTED**
 - `POST /store/products/{id}/images` — addProductImage: **NOT_IMPLEMENTED**
+
+## Bàn giao CAT-01
+
+Danh sách quản lý và danh sách công khai theo Store ở [bàn giao CAT-01](../../../../docs/implementation/cat-01-handoff.md). `store/products` là **view quản lý**: trả cả `DRAFT`/`STOPPED`/`HIDDEN` và variant/ảnh ở mọi trạng thái, Store lấy từ membership nên hai Store không đọc được dữ liệu của nhau. `stores/{id}/products` là **view công khai**: dùng đúng predicate của catalog (ACTIVE + VISIBLE + Store đang bán), Store bị khóa trả 404.
 
 ## Bàn giao CAT-04
 
