@@ -73,7 +73,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /store/orders/{id}/status` | transitionStoreOrder | M2 / order | Hoa | IMPLEMENTED |
 | `POST /store/orders/{id}/cancel` | cancelStoreOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /store/orders/{id}/cod-collection` | collectCod | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `POST /vouchers/validate` | validateVouchers | M2 / voucher | Hoa | NOT_IMPLEMENTED |
+| `POST /vouchers/validate` | validateVouchers | M2 / voucher | Hoa | IMPLEMENTED |
 | `GET /store/vouchers` | listStoreVouchers | M2 / voucher | Hoa | IMPLEMENTED |
 | `POST /store/vouchers` | createStoreVoucher | M2 / voucher | Hoa | IMPLEMENTED |
 | `PATCH /store/vouchers/{id}` | updateStoreVoucher | M2 / voucher | Hoa | IMPLEMENTED |
