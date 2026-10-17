@@ -12,6 +12,7 @@ x-app-env: &app-env
   WEB_ORIGIN: ${WEB_ORIGIN}
   COOKIE_SECURE: ${COOKIE_SECURE}
   SEED_PASSWORD: ${SEED_PASSWORD}
+  SEED_ADMIN_USER_ID: ${SEED_ADMIN_USER_ID:-10000000-0000-4000-8000-000000000004}
   NODE_ENV: development
 x-node: &node
   image: pbl6-node:local
@@ -63,7 +64,7 @@ services:
     command: [node, dist/identity-store-service/src/main.js]
   m4:
     build: {context: .., dockerfile: backend/ai-service/Dockerfile}
-    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}'}
+    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}', CHAT_API_KEY: '${CHAT_API_KEY:-}', CHAT_RESPONSE_FORMAT: '${CHAT_RESPONSE_FORMAT:-json_object}', CHAT_TIMEOUT_SECONDS: '${CHAT_TIMEOUT_SECONDS:-2}'}
     depends_on: {postgres: {condition: service_healthy}}
     restart: unless-stopped
   worker-m1:
@@ -82,6 +83,10 @@ services:
     command: [python, -m, app.tracking.worker]
     depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
     restart: unless-stopped
+  worker-refund:
+    <<: *node
+    environment: {<<: *app-env, SERVICE_ID: M2, M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', REFUND_PROVIDER: disabled}
+    command: [node, dist/commerce-service/src/payment/refund.worker.js]
   web:
     build: {context: .., dockerfile: frontend/Dockerfile}
     restart: unless-stopped

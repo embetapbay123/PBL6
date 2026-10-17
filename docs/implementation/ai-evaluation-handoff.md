@@ -4,6 +4,8 @@ Owner: Công. Scope [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56)
 
 ## Đã có
 
+**Cập nhật 13/10:** chủ repo chọn API OpenCode/DeepSeek; generation adapter đã có, model ID/key chưa cấu hình. Runner synthetic vẫn giữ none; [live runner/cấu hình/evidence](cong-week3-handoff.md) tách riêng. Provider none trong ghi nhận 07/10 không còn là hướng provider cuối cùng.
+
 - [Dataset generator](../../backend/ai-service/app/evaluation/dataset.py): version cố định, UUID synthetic, 60 user/72 product/1.200 interaction; timestamp cố định, 6 nhóm sở thích. Product fixture validate theo OpenAPI; event IDs không trùng. Đây không phải dữ liệu người dùng đã consent thực.
 - [Pipeline](../../backend/ai-service/app/evaluation/pipeline.py) dùng chung với DB training job: 60/20/20 theo timestamp từng user, giữ timestamp trùng cùng fold; chọn regularization bằng validation NDCG@10, chỉ đánh giá test sau lựa chọn. Config ghi đầy đủ factors/iterations/alpha/regularization/seed.
 - [Ranking](../../backend/ai-service/app/evaluation/ranking.py): ALS so với train-popularity và Content/Behavioral baseline trên cùng candidates, K=10, loại item từng user đã thấy trong train. Content chỉ dùng observation train để tổng hợp product_type/text, không nhìn validation/test để fit. Tie-break theo Product UUID. Có coverage, cold count và raw per-case không chứa User ID.

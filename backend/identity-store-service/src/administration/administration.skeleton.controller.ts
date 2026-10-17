@@ -1,17 +1,75 @@
-// GENERATED from OpenAPI; replace implementations deliberately, do not regenerate after editing.
-import { Controller, Get, Post, Patch, Delete, UseGuards } from '@nestjs/common';
-import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
-import { notImplemented } from '../../../shared/src/errors';
+import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard, Roles } from '../../../shared/src/auth';
+import {
+  ListStoresQueryDto,
+  ListUsersQueryDto,
+  UpdateRoleBodyDto,
+  UpdateRolePathDto,
+  UpdateStoreStateBodyDto,
+  UpdateStoreStatePathDto,
+  UpdateUserStateBodyDto,
+  UpdateUserStatePathDto,
+} from '../../../shared/src/dtos.generated';
+import { AdministrationService } from './administration.service';
+
 @Controller() @UseGuards(AuthGuard)
 export class AdministrationSkeletonController {
+  private readonly service = new AdministrationService();
+
   @Get('admin/users') @Roles("ADMIN")
-  listUsers(): never { return notImplemented('listUsers'); }
+  async listUsers(@Query() query: ListUsersQueryDto) {
+    return this.service.listUsers(query.page, query.size);
+  }
+
   @Get('admin/stores') @Roles("ADMIN")
-  listStores(): never { return notImplemented('listStores'); }
+  async listStores(@Query() query: ListStoresQueryDto) {
+    return this.service.listStores(query.page, query.size);
+  }
+
   @Patch('admin/users/:id') @Roles("ADMIN")
-  updateUserState(): never { return notImplemented('updateUserState'); }
+  async updateUserState(
+    @Param() params: UpdateUserStatePathDto,
+    @Body() body: UpdateUserStateBodyDto,
+    @Req() req: any
+  ) {
+    return this.service.updateUserState(
+      params.id,
+      body.status,
+      body.reason,
+      body.expected_version,
+      req.auth?.user_id,
+      req.correlationId ?? ''
+    );
+  }
+
   @Patch('admin/stores/:id') @Roles("ADMIN")
-  updateStoreState(): never { return notImplemented('updateStoreState'); }
+  async updateStoreState(
+    @Param() params: UpdateStoreStatePathDto,
+    @Body() body: UpdateStoreStateBodyDto,
+    @Req() req: any
+  ) {
+    return this.service.updateStoreState(
+      params.id,
+      body.status,
+      body.reason,
+      body.expected_version,
+      req.auth?.user_id,
+      req.correlationId ?? ''
+    );
+  }
+
   @Patch('admin/roles/:id') @Roles("ADMIN")
-  updateRole(): never { return notImplemented('updateRole'); }
+  async updateRole(
+    @Param() params: UpdateRolePathDto,
+    @Body() body: UpdateRoleBodyDto,
+    @Req() req: any
+  ) {
+    return this.service.updateRole(
+      params.id,
+      body.permission_ids,
+      body.expected_version,
+      req.auth?.user_id,
+      req.correlationId ?? ''
+    );
+  }
 }
