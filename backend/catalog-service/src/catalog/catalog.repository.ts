@@ -87,4 +87,35 @@ export class CatalogRepository extends OwnedRepository {
          FROM product_image WHERE product_id=ANY($1::uuid[]) AND status='ACTIVE' ORDER BY position,id`,[ids]);
     return rows.map(row=>productResponse(row,variants,images));
   }
+
+  /* ------------------------------------------- CAT-01: Store product lists */
+
+  /**
+   * Seller management page: **every** Product of the Store, including DRAFT/STOPPED and HIDDEN.
+   * The Store id is a required argument because it always comes from the resolved membership, never
+   * from the request — this is the view that must stay invisible to another Store.
+   */
+  async pageOwnStore(storeId:string,page:number,size:number) {
+    const [count]=await this.manager.query('SELECT count(*)::int AS total FROM product WHERE store_id=$1',[storeId]);
+    const rows=await this.manager.query(
+      `SELECT ${PRODUCT_COLUMNS} FROM product p WHERE p.store_id=$1
+        ORDER BY p.title ASC, p.id LIMIT $2 OFFSET $3`,[storeId,size,(page-1)*size]);
+    return {items:await this.withAllRelations(rows),total:count.total,page,size};
+  }
+
+  /**
+   * Management view: variants and images in every status, so a Seller sees what is stopped or
+   * inactive instead of a list that silently looks complete. Still two statements for the page.
+   */
+  async withAllRelations(rows:any[]) {
+    if(!rows.length) return [];
+    const ids=rows.map(row=>row.id);
+    const variants=await this.manager.query(
+      `SELECT id,product_id,sku,price_vnd,variant_values_json AS variant_values,is_default,status
+         FROM product_variant WHERE product_id=ANY($1::uuid[]) ORDER BY sku,id`,[ids]);
+    const images=await this.manager.query(
+      `SELECT id,product_id,url AS image_url,position
+         FROM product_image WHERE product_id=ANY($1::uuid[]) ORDER BY position,id`,[ids]);
+    return rows.map(row=>productResponse(row,variants,images));
+  }
 }
