@@ -87,4 +87,115 @@ export class CatalogRepository extends OwnedRepository {
          FROM product_image WHERE product_id=ANY($1::uuid[]) AND status='ACTIVE' ORDER BY position,id`,[ids]);
     return rows.map(row=>productResponse(row,variants,images));
   }
+
+  /** Management read-back: variants and images in every status, so a write response is truthful. */
+  async withAllVariants(rows:any[]) {
+    if(!rows.length) return [];
+    const ids=rows.map(row=>row.id);
+    const variants=await this.manager.query(
+      `SELECT id,product_id,sku,price_vnd,variant_values_json AS variant_values,is_default,status
+         FROM product_variant WHERE product_id=ANY($1::uuid[]) ORDER BY sku,id`,[ids]);
+    const images=await this.manager.query(
+      `SELECT id,product_id,url AS image_url,position
+         FROM product_image WHERE product_id=ANY($1::uuid[]) ORDER BY position,id`,[ids]);
+    return rows.map(row=>productResponse(row,variants,images));
+  }
+
+  /* ------------------------------------------------ CAT-02: Product write */
+
+  async productTypeForWrite(id:string) {
+    const [row]=await this.manager.query('SELECT id,status FROM product_type WHERE id=$1',[id]);
+    return row;
+  }
+
+  async attributeDefinitions(productTypeId:string) {
+    return this.manager.query('SELECT code,required FROM attribute_definition WHERE product_type_id=$1 ORDER BY code',[productTypeId]);
+  }
+
+  async productRowForStore(id:string,storeId:string) {
+    const [row]=await this.manager.query(
+      `SELECT id,store_id,product_type_id,title,description,attributes_json AS attributes,
+              status,moderation_status,version FROM product WHERE id=$1 AND store_id=$2`,[id,storeId]);
+    return row;
+  }
+
+  async insertProduct(input:{storeId:string;productTypeId:string;title:string;description:string|null;
+    attributes:Record<string,unknown>;status:string}) {
+    const [row]=await this.manager.query(
+      `INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version)
+       VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,'VISIBLE',0)
+       RETURNING id,store_id,product_type_id,title,description,attributes_json AS attributes,status,moderation_status,version`,
+      [input.storeId,input.productTypeId,input.title,input.description,JSON.stringify(input.attributes),input.status]);
+    return row;
+  }
+
+  async updateProductFields(id:string,fields:{productTypeId?:string;title?:string;description?:string|null;
+    attributes?:Record<string,unknown>;status?:string}) {
+    await this.manager.query(
+      `UPDATE product SET product_type_id=coalesce($2,product_type_id), title=coalesce($3,title),
+              description=coalesce($4,description), attributes_json=coalesce($5::jsonb,attributes_json),
+              status=coalesce($6,status), version=version+1 WHERE id=$1`,
+      [id,fields.productTypeId ?? null,fields.title ?? null,fields.description ?? null,
+        fields.attributes===undefined ? null : JSON.stringify(fields.attributes),fields.status ?? null]);
+    const [row]=await this.manager.query(
+      `SELECT id,store_id,product_type_id,title,description,attributes_json AS attributes,
+              status,moderation_status,version FROM product WHERE id=$1`,[id]);
+    return row;
+  }
+
+  async variantsOfProduct(productId:string) {
+    return this.manager.query(
+      `SELECT id,product_id,store_id,sku,price_vnd,variant_values_json AS variant_values,
+              variant_signature,is_default,status FROM product_variant WHERE product_id=$1 ORDER BY sku,id`,[productId]);
+  }
+
+  /** `sku_store_unique` is unique per Store, so the check spans the whole Store, not just the Product. */
+  async skuTakenInStore(storeId:string,sku:string,exceptVariantId:string|null) {
+    const [row]=await this.manager.query(
+      'SELECT 1 AS found FROM product_variant WHERE store_id=$1 AND sku=$2 AND ($3::uuid IS NULL OR id<>$3) LIMIT 1',
+      [storeId,sku,exceptVariantId]);
+    return row!==undefined;
+  }
+
+  async insertVariant(input:{productId:string;storeId:string;sku:string;priceVnd:number;
+    variantValues:Record<string,unknown>;signature:string;isDefault:boolean;status:string}) {
+    const [row]=await this.manager.query(
+      `INSERT INTO product_variant(id,product_id,store_id,sku,price_vnd,variant_values_json,variant_signature,is_default,status)
+       VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [input.productId,input.storeId,input.sku,input.priceVnd,JSON.stringify(input.variantValues),
+        input.signature,input.isDefault,input.status]);
+    return row;
+  }
+
+  async updateVariantFields(id:string,fields:{sku?:string;priceVnd?:number;variantValues?:Record<string,unknown>;
+    signature?:string;isDefault?:boolean;status?:string}) {
+    await this.manager.query(
+      `UPDATE product_variant SET sku=coalesce($2,sku), price_vnd=coalesce($3,price_vnd),
+              variant_values_json=coalesce($4::jsonb,variant_values_json),
+              variant_signature=coalesce($5,variant_signature), is_default=coalesce($6,is_default),
+              status=coalesce($7,status) WHERE id=$1`,
+      [id,fields.sku ?? null,fields.priceVnd ?? null,
+        fields.variantValues===undefined ? null : JSON.stringify(fields.variantValues),
+        fields.signature ?? null,fields.isDefault ?? null,fields.status ?? null]);
+  }
+
+  /** `variant_default_unique` allows one default per Product, so callers clear before they set. */
+  async clearDefaultVariants(productId:string) {
+    await this.manager.query('UPDATE product_variant SET is_default=false WHERE product_id=$1 AND is_default',[productId]);
+  }
+
+  /**
+   * A Variant that disappears from a payload is stopped, not deleted: `reservation_item` and
+   * `stock_movement` keep referencing it, and deleting would destroy stock history.
+   */
+  async stopVariant(id:string) {
+    await this.manager.query("UPDATE product_variant SET status='STOPPED' WHERE id=$1",[id]);
+  }
+
+  /** A new Variant starts with zero stock so it is visible to inventory and quotable at once. */
+  async insertInventoryForVariant(variantId:string,storeId:string) {
+    await this.manager.query(
+      'INSERT INTO inventory(id,variant_id,store_id,quantity,reserved_quantity,version) VALUES(gen_random_uuid(),$1,$2,0,0,0)',
+      [variantId,storeId]);
+  }
 }
