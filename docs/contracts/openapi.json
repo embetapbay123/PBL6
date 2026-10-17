@@ -4795,7 +4795,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/products/{id}/images": {
@@ -4932,7 +4932,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/inventory": {
