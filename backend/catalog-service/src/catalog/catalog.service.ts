@@ -7,6 +7,18 @@ import { CatalogRepository } from './catalog.repository';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { optionalUserId, recordInteraction } from './catalog.telemetry';
+import { moneyNumber } from '../../../shared/src/money';
+import { createHash } from 'node:crypto';
+
+/**
+ * `product_variant.variant_signature` is NOT NULL and unique per Product, so the same combination of
+ * attribute values cannot be inserted twice. Keys are sorted first so `{a,b}` and `{b,a}` hash alike.
+ */
+function variantSignatureOf(values:Record<string,unknown>):string {
+  const canonical=Object.keys(values).sort().map(key=>[key,values[key] as unknown]);
+  return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+}
+
 export class CatalogService {
   private async stores(correlation:string) {
     const c=config('M1');return (await new InternalClients('M1',c.internalKeys.M1,{M1:c.catalogUrl,M2:'',M3:c.identityUrl}).call('ActiveStores',undefined,correlation)).ids;
@@ -44,6 +56,84 @@ export class CatalogService {
 
   async listProductTypes(query:OperationInputs['listProductTypes']['query']):Promise<OperationOutputs['listProductTypes']> {
     return new CatalogRepository(database.manager).pageProductTypes(query.page ?? 1,query.size ?? 20);
+  }
+
+  /**
+   * Write scope for catalogue mutations. Store comes from the resolved membership, the permission
+   * from the live context, and the Store must still be sellable before anything is written.
+   */
+  private async storeForWrite(context:any,correlation:string):Promise<{storeId:string;actorUserId:string}> {
+    const membership=context?.store_membership;
+    if(!membership?.store_id)throw new ApiError(403,'FORBIDDEN','Tài khoản không thuộc Store đang hoạt động nào.');
+    const permissions:string[]=membership.permissions ?? [];
+    if(membership.role!=='OWNER' && !permissions.includes('product.store.*') && !permissions.some(code=>code.startsWith('product.store.')))
+      throw new ApiError(403,'FORBIDDEN','Cần quyền quản lý sản phẩm của Store.');
+    if(!(await this.stores(correlation)).includes(membership.store_id))
+      throw new ApiError(403,'STORE_UNAVAILABLE','Store không được phép bán.');
+    return {storeId:membership.store_id,actorUserId:context.user_id};
+  }
+
+  /**
+   * createVariant — thêm một Variant cho Product đã có.
+   *
+   * Variant mới luôn bắt đầu với tồn kho 0 nên inventory và quote thấy ngay, nhưng chưa bán được
+   * cho tới khi Seller nhập hàng. Variant đầu tiên của Product tự thành mặc định; một Variant mặc
+   * định mới sẽ bỏ cờ của Variant cũ vì `variant_default_unique` chỉ cho một.
+   */
+  async createVariant(id:string,input:OperationInputs['createVariant']['body'],context:any,correlation:string):
+  Promise<OperationOutputs['createVariant']> {
+    const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
+    return database.transaction(async manager=>{
+      const repository=new CatalogRepository(manager);
+      const product=await repository.productForWrite(id,storeId);
+      if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+      if(await repository.skuUsedInStore(storeId,input.sku))
+        throw new ApiError(409,'SKU_CONFLICT','SKU đã tồn tại trong Store.',[{field:'sku:'+input.sku}]);
+      const signature=variantSignatureOf(input.variant_values);
+      if(await repository.signatureUsedInProduct(id,signature))
+        throw new ApiError(409,'VARIANT_DUPLICATE','Product đã có Variant với cùng bộ thuộc tính.');
+      const existing=await repository.variantRowsOfProduct(id);
+      const isDefault=input.is_default ?? existing.length===0;
+      if(isDefault)await repository.unsetDefaultVariants(id);
+      const variant=await repository.addVariantRow({productId:id,storeId,sku:input.sku,priceVnd:input.price_vnd,
+        variantValues:input.variant_values,signature,isDefault,status:'ACTIVE'});
+      await repository.addInventoryRow(variant.id,storeId);
+      const after=await repository.touchProductRow(id);
+      await audit(manager,'M1',actorUserId,'Product',id,'VARIANT_ADD',correlation,
+        {version:product.version},{variant_id:variant.id,sku:variant.sku,version:after.version});
+      await emitEvent(manager,'ProductChanged',{product_id:id,store_id:storeId,version:after.version,
+        sale_status:after.status,moderation_status:after.moderation_status},correlation);
+      return {id:variant.id,sku:variant.sku,price_vnd:moneyNumber(variant.price_vnd),
+        variant_values:variant.variant_values,is_default:variant.is_default,status:variant.status};
+    });
+  }
+
+  /**
+   * addProductImage — gắn ảnh vào Product, hoặc vào một Variant nếu `variant_id` được gửi.
+   *
+   * Ảnh không đổi giá hay tồn kho nên **không** tăng `version` và không phát `ProductChanged`; chỉ
+   * ghi audit. Nhờ vậy thêm ảnh không làm mọi client phải tải lại vì một thay đổi không liên quan
+   * tới giá. `position` bỏ trống thì ảnh được nối vào cuối.
+   */
+  async addProductImage(id:string,input:OperationInputs['addProductImage']['body'],context:any,correlation:string):
+  Promise<OperationOutputs['addProductImage']> {
+    const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
+    return database.transaction(async manager=>{
+      const repository=new CatalogRepository(manager);
+      const product=await repository.productForWrite(id,storeId);
+      if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+      if(input.variant_id) {
+        const variants=await repository.variantRowsOfProduct(id);
+        if(!variants.some((row:any)=>row.id===input.variant_id))
+          throw new ApiError(404,'VARIANT_NOT_FOUND','Variant không thuộc sản phẩm này.');
+      }
+      const position=input.position ?? await repository.nextImagePosition(id);
+      const image=await repository.addImageRow({productId:id,variantId:input.variant_id ?? null,
+        url:input.image_url,position});
+      await audit(manager,'M1',actorUserId,'Product',id,'IMAGE_ADD',correlation,
+        {version:product.version},{image_id:image.id,position:image.position});
+      return {id:image.id,product_id:image.product_id,image_url:image.image_url,position:image.position};
+    });
   }
 
   async update(id:string,input:OperationInputs['updateProduct']['body'],context:any,correlation:string) {
