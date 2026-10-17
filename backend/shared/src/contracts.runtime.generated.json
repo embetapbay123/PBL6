@@ -12864,7 +12864,7 @@
       "route": "/internal/inventory/restock",
       "internal": true,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
