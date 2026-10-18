@@ -15,8 +15,8 @@ async function login(page:Page){
 
 async function prepareCheckout(page:Page){
  await login(page);
- await page.route('**/api/v1/cart/items?*',route=>route.fulfill({json:cart}));
- await page.route('**/api/v1/me/addresses?*',route=>route.fulfill({json:{items:[{id:ADDRESS,recipient_name:'Customer',phone:'0900000000',line1:'Street',ward:'Ward',district:'District',city:'City',is_default:true}],page:1,size:100,total:1}}));
+ await page.route('**/api/v1/cart/items*',route=>route.fulfill({json:cart}));
+ await page.route('**/api/v1/me/addresses*',route=>route.fulfill({json:{items:[{id:ADDRESS,recipient_name:'Customer',phone:'0900000000',line1:'Street',ward:'Ward',district:'District',city:'City',is_default:true}],page:1,size:100,total:1}}));
  await page.goto('/cart');
  
  const checkbox = page.locator('input[type="checkbox"]').first();
@@ -46,7 +46,7 @@ test('cart and checkout routes require a session',async({page})=>{
 
 test('cart load failure is shown as error rather than an empty cart',async({page})=>{
  await login(page);
- await page.route('**/api/v1/cart/items?*',route=>route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'Cart unavailable',details:[]}}));
+ await page.route('**/api/v1/cart/items*',route=>route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'Cart unavailable',details:[]}}));
  await page.goto('/cart');
  await expect(page.getByRole('alert')).toBeVisible();
  await expect(page.getByText('Giỏ hàng của bạn đang trống.')).toHaveCount(0);
