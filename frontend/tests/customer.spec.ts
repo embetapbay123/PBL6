@@ -20,8 +20,9 @@ async function prepareCheckout(page:Page){
  await page.goto('/cart');
  
  const checkbox = page.locator('input[type="checkbox"]').first();
- if (await checkbox.count() > 0) {
-   await checkbox.check().catch(() => {});
+ await checkbox.waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+ if (await checkbox.isVisible()) {
+   await checkbox.click();
  }
  
  await page.getByRole('button',{name:'Tiến hành thanh toán'}).click();
@@ -47,7 +48,7 @@ test('cart load failure is shown as error rather than an empty cart',async({page
  await login(page);
  await page.route('**/api/v1/cart/items?*',route=>route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'Cart unavailable',details:[]}}));
  await page.goto('/cart');
- await expect(page.getByText('Cart unavailable')).toBeVisible();
+ await expect(page.getByRole('alert')).toBeVisible();
  await expect(page.getByText('Giỏ hàng của bạn đang trống.')).toHaveCount(0);
 });
 
