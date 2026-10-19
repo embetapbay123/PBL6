@@ -36,11 +36,11 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /store` | getOwnStore | M3 / store | Trí | IMPLEMENTED |
 | `PATCH /store` | updateOwnStore | M3 / store | Trí | IMPLEMENTED |
 | `GET /store/staff` | listStoreStaff | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `GET /store/staff/invitations` | listStaffInvitations | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `POST /store/staff/invitations` | inviteStaff | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `POST /store/staff/invitations/{id}/revoke` | revokeStaffInvitation | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `GET /me/invitations` | listOwnInvitations | M3 / staff | Trí | NOT_IMPLEMENTED |
-| `POST /me/invitations/{id}/accept` | acceptInvitation | M3 / staff | Trí | NOT_IMPLEMENTED |
+| `GET /store/staff/invitations` | listStaffInvitations | M3 / staff | Trí | IMPLEMENTED |
+| `POST /store/staff/invitations` | inviteStaff | M3 / staff | Trí | IMPLEMENTED |
+| `POST /store/staff/invitations/{id}/revoke` | revokeStaffInvitation | M3 / staff | Trí | IMPLEMENTED |
+| `GET /me/invitations` | listOwnInvitations | M3 / staff | Trí | IMPLEMENTED |
+| `POST /me/invitations/{id}/accept` | acceptInvitation | M3 / staff | Trí | IMPLEMENTED |
 | `GET /categories` | listCategories | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED |

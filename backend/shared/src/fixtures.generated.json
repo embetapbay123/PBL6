@@ -494,7 +494,8 @@
       "invited_email": "fixture@example.invalid",
       "permissions": [],
       "status": "PENDING",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "store_name": "fixture-value"
     },
     "status": 201
   },
@@ -514,7 +515,8 @@
       "invited_email": "fixture@example.invalid",
       "permissions": [],
       "status": "PENDING",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "store_name": "fixture-value"
     },
     "status": 200
   },
@@ -553,7 +555,8 @@
       "invited_email": "fixture@example.invalid",
       "permissions": [],
       "status": "PENDING",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "store_name": "fixture-value"
     },
     "status": 200
   },

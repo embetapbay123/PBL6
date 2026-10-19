@@ -373,13 +373,13 @@ export interface paths {
         };
         /**
          * Xem lời mời Seller của Store
-         * @description Xem lời mời Seller của Store. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description List paginated invitations for the active Owner Store. Scope is resolved from authenticated M3 membership.
          */
         get: operations["listStaffInvitations"];
         put?: never;
         /**
          * Mời Seller theo email
-         * @description Mời Seller theo email. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Persist a seven-day Seller invitation for the authenticated Owner Store. Email delivery is not configured; recipients can discover invitations through their authenticated invitation list.
          */
         post: operations["inviteStaff"];
         delete?: never;
@@ -399,7 +399,7 @@ export interface paths {
         put?: never;
         /**
          * Thu hồi lời mời Seller
-         * @description Thu hồi lời mời Seller. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Revoke a pending, unexpired invitation belonging to the authenticated Owner Store.
          */
         post: operations["revokeStaffInvitation"];
         delete?: never;
@@ -417,7 +417,7 @@ export interface paths {
         };
         /**
          * Xem lời mời Store gửi cho mình
-         * @description Xem lời mời Store gửi cho mình. Phạm vi dữ liệu: OWN_USER; quyền: CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description List invitations matching the authenticated user verified email, including the Store name.
          */
         get: operations["listOwnInvitations"];
         put?: never;
@@ -439,7 +439,7 @@ export interface paths {
         put?: never;
         /**
          * Chấp nhận lời mời Seller
-         * @description Chấp nhận lời mời Seller. Phạm vi dữ liệu: OWN_USER; quyền: CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description Accept a pending, unexpired invitation matching the authenticated user verified email and create Seller membership atomically.
          */
         post: operations["acceptInvitation"];
         delete?: never;
@@ -2047,11 +2047,12 @@ export interface components {
             store_id?: string;
             /** Format: email */
             invited_email: string;
-            permissions: string[];
+            permissions: ("product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect")[];
             /** @enum {string} */
             status?: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED";
             /** Format: date-time */
             expires_at?: string;
+            store_name?: string;
         };
         ModerationAction: {
             reason: string;
@@ -2647,7 +2648,7 @@ export interface components {
         StaffInvitationCreate: {
             /** Format: email */
             invited_email: string;
-            permissions: string[];
+            permissions: ("product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect")[];
         };
         ProductVariantCreate: {
             sku: string;
@@ -4907,15 +4908,6 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
         };
     };
     inviteStaff: {
@@ -5012,15 +5004,6 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
         };
     };
     revokeStaffInvitation: {
@@ -5099,15 +5082,6 @@ export interface operations {
             };
             /** @description Rate limited */
             429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
-            501: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5201,15 +5175,6 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
-            501: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
         };
     };
     acceptInvitation: {
@@ -5288,15 +5253,6 @@ export interface operations {
             };
             /** @description Rate limited */
             429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
-            501: {
                 headers: {
                     [name: string]: unknown;
                 };
