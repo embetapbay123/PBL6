@@ -288,8 +288,8 @@ export class ListStaffInvitationsHeadersDto {
 export class InviteStaffBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "email", "maxLength": 254},true),defaultMessage:()=> 'Invalid contract field'}})
   "invited_email"!: string;
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "items": {"type": "string", "maxLength": 200}, "maxItems": 100},true),defaultMessage:()=> 'Invalid contract field'}})
-  "permissions"!: Array<string>;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "items": {"type": "string", "maxLength": 200, "enum": ["product.store.read_write", "inventory.store.read_adjust", "order.store.read_status_cancel", "cod.store.collect"]}, "maxItems": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "permissions"!: Array<"product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect">;
 }
 export class InviteStaffPathDto {
 }
