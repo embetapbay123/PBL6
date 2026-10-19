@@ -15,6 +15,10 @@ export class AdministrationService {
     return this.repository.listStores(page, size);
   }
 
+  listRoles() {
+    return this.repository.listRoles();
+  }
+
   updateStoreState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
     return this.repository.updateStoreState(id, status, reason, expectedVersion, actorUserId, correlationId);
   }

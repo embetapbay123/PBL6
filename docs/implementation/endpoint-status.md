@@ -1,6 +1,6 @@
 # Trạng thái endpoint của khung 2.2
 
-OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 99 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
+OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 100 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
 
 AUTH-01/AUTH-02 and RBAC-01 remain **PENDING**. Registration and password-reset handlers require an explicitly injected delivery adapter and return 503 in the default runtime. No production email adapter or real provider delivery acceptance is configured. Password change is implemented and uses the authenticated session guard; its PostgreSQL/HTTP regression coverage is available but still needs to pass in the supported Compose environment before AUTH-02 acceptance can be considered complete. RBAC-01 separately requires effective permission enforcement and event regression evidence.
 
@@ -91,6 +91,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /admin/stores/{id}` | updateStoreState | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `GET /admin/orders` | listAllOrders | M2 / report | Hoa | IMPLEMENTED |
 | `GET /admin/dashboard` | getPlatformDashboard | M2 / report | Hoa | NOT_IMPLEMENTED |
+| `GET /admin/roles` | listRoles | M3 / administration | Trí | IMPLEMENTED |
 | `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | IMPLEMENTED |
 | `POST /chat/sessions` | createChatSession | M4 / chat | Công | IMPLEMENTED_SAMPLE |
 | `POST /chat/sessions/{id}/messages` | sendChatMessage | M4 / chat | Công | IMPLEMENTED_SAMPLE |
@@ -114,5 +115,6 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
 
+updateRole checks optimistic versions and audits changes. Live role permissions are resolved from PostgreSQL for each request; platform.admin is required on ADMIN routes. Store staff permissions and status are resolved from active membership, so revocation applies immediately.
 
-`updateRole` replaces a role's global permissions with an optimistic version check and audit. `AuthContext` resolves active role permissions from PostgreSQL on each request; `AuthGuard` requires `platform.admin` for ADMIN routes, so revocations apply to existing sessions immediately. The permission is seeded by M3 migration 006.
+Admin Web now exposes the M1 taxonomy/moderation workflows, but their API operations remain NOT_IMPLEMENTED; the UI will show the API error until M1 handlers are delivered. The AI metrics page reads the existing IMPLEMENTED_SAMPLE operation and does not replace the AI evaluation/provider acceptance.

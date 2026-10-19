@@ -99,6 +99,18 @@ export class AdministrationRepository {
     };
   }
 
+  async listRoles() {
+    const [roles, permissions] = await Promise.all([
+      database.query(
+        `SELECT r.id,r.code AS name,r.version,
+          COALESCE(array_agg(rp.permission_id ORDER BY rp.permission_id) FILTER (WHERE rp.permission_id IS NOT NULL), ARRAY[]::uuid[]) AS permission_ids
+         FROM role r LEFT JOIN role_permission rp ON rp.role_id=r.id
+         GROUP BY r.id ORDER BY r.code`),
+      database.query('SELECT id,code,resource,action FROM permission ORDER BY resource,action,code'),
+    ]);
+    return { roles, permissions };
+  }
+
   async updateStoreState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
     return database.transaction(async manager => {
       const [store] = await manager.query('SELECT * FROM store WHERE id=$1 FOR UPDATE', [id]);

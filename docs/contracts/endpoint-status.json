@@ -95,7 +95,7 @@
     "service": "M3",
     "module": "auth",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "AUTHENTICATED"
     ]
@@ -949,13 +949,25 @@
     ]
   },
   {
+    "method": "GET",
+    "path": "/admin/roles",
+    "operation_id": "listRoles",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
     "method": "PATCH",
     "path": "/admin/roles/{id}",
     "operation_id": "updateRole",
     "service": "M3",
     "module": "administration",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]

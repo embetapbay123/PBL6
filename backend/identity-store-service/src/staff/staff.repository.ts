@@ -44,6 +44,65 @@ export class StaffRepository {
     if (!row) throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy Store đang hoạt động.');
   }
 
+  async listStaff(userId: string, storeId: string, page = 1, size = 20) {
+    const paging = pageValues(page, size);
+    await this.assertOwner(database.manager, userId, storeId);
+    const [count] = await database.query(
+      `SELECT count(*)::int AS total FROM store_membership WHERE store_id=$1 AND role='SELLER'`, [storeId]);
+    const rows = await database.query(
+      `SELECT m.id,m.store_id,m.user_id,m.role,u.email,m.status,m.version,
+         COALESCE(array_agg(p.code ORDER BY p.code) FILTER (WHERE p.code IS NOT NULL), ARRAY[]::varchar[]) AS permissions
+       FROM store_membership m JOIN "user" u ON u.id=m.user_id
+       LEFT JOIN membership_permission mp ON mp.membership_id=m.id
+       LEFT JOIN permission p ON p.id=mp.permission_id
+       WHERE m.store_id=$1 AND m.role='SELLER'
+       GROUP BY m.id,u.email ORDER BY m.joined_at DESC,m.id LIMIT $2 OFFSET $3`,
+      [storeId, paging.size, (paging.page - 1) * paging.size]);
+    return { items: rows, total: count?.total ?? 0, ...paging };
+  }
+
+  async updateStaff(userId: string, storeId: string, membershipId: string,
+    input: { status?: string; permissions?: string[]; expected_version: number }, correlationId: string) {
+    if (!UUID_RE.test(membershipId ?? '')) throw new ApiError(404, 'NOT_FOUND', 'Nhân viên không tồn tại.');
+    if (input.status === undefined && input.permissions === undefined)
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Cần cập nhật trạng thái hoặc quyền.');
+    const permissions = input.permissions === undefined ? undefined : [...new Set(input.permissions)];
+    if (permissions?.some(permission => !SELLER_PERMISSIONS.has(permission)))
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Chỉ có thể cấp quyền Seller của Store.');
+
+    return database.transaction(async manager => {
+      await this.assertOwner(manager, userId, storeId);
+      const [member] = await manager.query(
+        `SELECT m.*,u.email FROM store_membership m JOIN "user" u ON u.id=m.user_id
+         WHERE m.id=$1 AND m.store_id=$2 AND m.role='SELLER' FOR UPDATE OF m`, [membershipId, storeId]);
+      if (!member) throw new ApiError(404, 'NOT_FOUND', 'Nhân viên không tồn tại trong Store.');
+      if (member.version !== input.expected_version) throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
+
+      if (permissions !== undefined) {
+        const allowed = permissions.length ? await manager.query('SELECT id,code FROM permission WHERE code=ANY($1::varchar[])', [permissions]) : [];
+        if (allowed.length !== permissions.length) throw new ApiError(503, 'PERMISSION_CONFIGURATION_UNAVAILABLE', 'Cấu hình quyền Seller chưa sẵn sàng.');
+        await manager.query('DELETE FROM membership_permission WHERE membership_id=$1', [membershipId]);
+        for (const permission of permissions) {
+          const permissionId = allowed.find((row: any) => row.code === permission).id;
+          await manager.query(`INSERT INTO membership_permission(membership_id,permission_id,granted_at,version)
+            VALUES($1,$2,now(),0)`, [membershipId, permissionId]);
+        }
+      }
+      const status = input.status ?? member.status;
+      const version = member.version + 1;
+      const [updated] = await manager.query(
+        `UPDATE store_membership SET status=$1,version=$2 WHERE id=$3
+         RETURNING id,user_id,status,version`, [status, version, membershipId]);
+      const updatedPermissions = permissions ?? (await manager.query(
+        `SELECT p.code FROM membership_permission mp JOIN permission p ON p.id=mp.permission_id
+         WHERE mp.membership_id=$1 ORDER BY p.code`, [membershipId])).map((row: any) => row.code);
+      await audit(manager, 'M3', userId, 'StoreMembership', membershipId, 'STAFF_MEMBERSHIP_UPDATED', correlationId,
+        { status: member.status, version: member.version }, { status, permissions: updatedPermissions, version });
+      return { id: updated.id, store_id: storeId, user_id: updated.user_id, email: member.email, role: 'SELLER',
+        status: updated.status, permissions: updatedPermissions, version: updated.version };
+    });
+  }
+
   async listStoreInvitations(userId: string, storeId: string, page = 1, size = 20) {
     const paging = pageValues(page, size);
     await this.assertOwner(database.manager, userId, storeId);

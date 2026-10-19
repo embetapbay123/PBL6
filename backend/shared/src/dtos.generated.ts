@@ -1105,6 +1105,12 @@ export class GetPlatformDashboardQueryDto {
 }
 export class GetPlatformDashboardHeadersDto {
 }
+export class ListRolesPathDto {
+}
+export class ListRolesQueryDto {
+}
+export class ListRolesHeadersDto {
+}
 export class UpdateRoleBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "items": {"type": "string", "format": "uuid"}, "maxItems": 100},true),defaultMessage:()=> 'Invalid contract field'}})
   "permission_ids"!: Array<string>;
@@ -1761,6 +1767,7 @@ export const runtimeDtos = {
   updateStoreState: {body: UpdateStoreStateBodyDto, path: UpdateStoreStatePathDto, query: UpdateStoreStateQueryDto, headers: UpdateStoreStateHeadersDto},
   listAllOrders: {body: undefined, path: ListAllOrdersPathDto, query: ListAllOrdersQueryDto, headers: ListAllOrdersHeadersDto},
   getPlatformDashboard: {body: undefined, path: GetPlatformDashboardPathDto, query: GetPlatformDashboardQueryDto, headers: GetPlatformDashboardHeadersDto},
+  listRoles: {body: undefined, path: ListRolesPathDto, query: ListRolesQueryDto, headers: ListRolesHeadersDto},
   updateRole: {body: UpdateRoleBodyDto, path: UpdateRolePathDto, query: UpdateRoleQueryDto, headers: UpdateRoleHeadersDto},
   createChatSession: {body: CreateChatSessionBodyDto, path: CreateChatSessionPathDto, query: CreateChatSessionQueryDto, headers: CreateChatSessionHeadersDto},
   sendChatMessage: {body: SendChatMessageBodyDto, path: SendChatMessagePathDto, query: SendChatMessageQueryDto, headers: SendChatMessageHeadersDto},

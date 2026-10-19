@@ -1,8 +1,10 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { IsArray, IsEmail, IsInt, IsString, Max, MaxLength, Min } from 'class-validator';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import { ApiError } from '../../../shared/src/errors';
 import { StaffService } from './staff.service';
+import { ListStoreStaffQueryDto, UpdateStaffBodyDto, UpdateStaffPathDto } from '../../../shared/src/dtos.generated';
+import { AuthService } from '../auth/auth.service';
 
 class PageQueryDto {
   @IsInt() @Min(1) @Max(1_000_000) page = 1;
@@ -15,7 +17,10 @@ class InviteStaffDto {
 
 @Controller() @UseGuards(AuthGuard)
 export class StaffSkeletonController {
-  private readonly service = new StaffService();
+  private readonly service: StaffService;
+  constructor(authService: AuthService) {
+    this.service = new StaffService(undefined, email => authService.sendStaffInvitationEmail(email));
+  }
   private context(req: any) {
     const userId = req.auth?.user_id;
     if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
@@ -33,6 +38,18 @@ export class StaffSkeletonController {
   listStaffInvitations(@Req() req: any, @Query() query: PageQueryDto) {
     const scope = this.ownerScope(req);
     return this.service.listStoreInvitations(scope.userId, scope.storeId, query.page, query.size);
+  }
+
+  @Get('store/staff') @Roles('STORE_OWNER')
+  listStoreStaff(@Req() req: any, @Query() query: ListStoreStaffQueryDto) {
+    const scope = this.ownerScope(req);
+    return this.service.listStaff(scope.userId, scope.storeId, query.page, query.size);
+  }
+
+  @Patch('store/staff/:id') @Roles('STORE_OWNER')
+  updateStaff(@Req() req: any, @Param() params: UpdateStaffPathDto, @Body() body: UpdateStaffBodyDto) {
+    const scope = this.ownerScope(req);
+    return this.service.updateStaff(scope.userId, scope.storeId, params.id, body, req.correlationId ?? '');
   }
 
   @Post('store/staff/invitations') @Roles('STORE_OWNER') @HttpCode(201)

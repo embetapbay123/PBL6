@@ -5,6 +5,7 @@ import { CartPage } from './CartPage';
 import { CheckoutPage } from './CheckoutPage';
 import { storeApplicationCustomerRoutes } from './StoreApplicationPage';
 import { OwnerLanding, ProtectedRoute } from '../../bootstrap/components';
+import { InvitationsPage } from './InvitationsPage';
 
 export const customerRoutes: RouteObject[] = [
   { path: '/', element: <ProductsSample /> },
@@ -12,5 +13,6 @@ export const customerRoutes: RouteObject[] = [
   { path: '/cart', element: <ProtectedRoute roles={['CUSTOMER']}><CartPage /></ProtectedRoute> },
   { path: '/checkout', element: <ProtectedRoute roles={['CUSTOMER']}><CheckoutPage /></ProtectedRoute> },
   ...storeApplicationCustomerRoutes,
+  { path: '/customer/invitations', element: <ProtectedRoute roles={['CUSTOMER']}><InvitationsPage /></ProtectedRoute> },
   { path: '/customer/*', element: <OwnerLanding owner="Hatsaphone" feature="User Web" /> },
 ];

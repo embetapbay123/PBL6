@@ -1,5 +1,7 @@
 # M3 Staff invitations
 
+Store Owner can list Seller memberships and update membership permissions/status with `expected_version`; a lock removes Seller from the live auth context on the next request. Permissions are limited to the four declared Store Seller permission codes and every update is audited.
+
 | Operation | Route | Status |
 | --- | --- | --- |
 | List invitations for active Owner store | `GET /store/staff/invitations` | Implemented |
@@ -12,7 +14,7 @@ Owner scope comes from the authenticated `store_membership` context and is check
 
 Invited email is trimmed and lowercased. Invitations expire after seven days. Only `product.store.read_write`, `inventory.store.read_adjust`, `order.store.read_status_cancel`, and `cod.store.collect` may be granted. Invitation secret hashes are never returned. The receiver must have an active account with verified matching email. Invitation status, membership, permission grants, audit, and `MembershipChanged` outbox event commit in the same M3 PostgreSQL transaction. PostgreSQL row locks serialize accept/revoke, and the existing partial unique index prevents a second active membership for a user.
 
-There is no staff-invitation email sender configured in M3. Creating an invitation persists it successfully; it does not claim an email was sent. The receiver can discover it through `GET /me/invitations`.
+The invitation email uses the configured M3 SMTP adapter and links to `/customer/invitations`; the recipient must sign in with the invited, verified email. In local `EMAIL_ADAPTER=mock` mode, the invitation is persisted but no email is sent, and the receiver can discover it through `GET /me/invitations`.
 
 Apply the append-only migration before use:
 

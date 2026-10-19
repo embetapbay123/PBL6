@@ -48,7 +48,7 @@ export class CatalogService {
 
   async update(id:string,input:OperationInputs['updateProduct']['body'],context:any,correlation:string) {
     const membership=context.store_membership;
-    if(!membership || (membership.role!=='OWNER' && !membership.permissions.includes('product.store.*')))throw new ApiError(403,'FORBIDDEN','Không có quyền quản lý sản phẩm.');
+    if(!membership || (membership.role!=='OWNER' && !membership.permissions?.includes('product.store.read_write')))throw new ApiError(403,'FORBIDDEN','Không có quyền quản lý sản phẩm.');
     if(Object.entries(input).some(([key,value])=>value!==undefined && !['title','description','expected_version'].includes(key)))throw new ApiError(501,'FEATURE_NOT_IMPLEMENTED','Mẫu Product chỉ hỗ trợ title/description; owner hoàn thiện các trường còn lại.');
     if(input.title===undefined && input.description===undefined)throw new ApiError(422,'VALIDATION_FAILED','Cần trường thay đổi.');
     const active=await this.stores(correlation);

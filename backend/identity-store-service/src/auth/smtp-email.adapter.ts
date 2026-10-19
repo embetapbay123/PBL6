@@ -14,6 +14,7 @@ export function emailActionLink(settings: Pick<SmtpSettings, 'publicUrl'>, path:
 export class DevelopmentMockEmailAdapter implements IEmailAdapter {
   async sendVerificationEmail(_email: string, _token: string): Promise<void> { /* Explicit local no delivery. */ }
   async sendPasswordResetEmail(_email: string, _token: string): Promise<void> { /* Explicit local no delivery. */ }
+  async sendStaffInvitationEmail(_email: string): Promise<void> { /* Explicit local no delivery. */ }
 }
 
 export function createEmailAdapter(env: NodeJS.ProcessEnv = process.env): IEmailAdapter {
@@ -51,17 +52,26 @@ export class SmtpEmailAdapter implements IEmailAdapter {
     return this.send(email, 'Reset your PBL6 password', 'reset-password', token, 'Reset password');
   }
 
+  sendStaffInvitationEmail(email: string) {
+    return this.sendMessage(email, 'You are invited to a PBL6 Store', `${this.settings.publicUrl}/customer/invitations`,
+      'View your Store invitation', 'Sign in to PBL6 with the invited email address to review and accept the invitation.');
+  }
+
   private async send(to: string, subject: string, path: 'verify-email' | 'reset-password', token: string, action: string): Promise<void> {
     const link = emailActionLink(this.settings, path, token);
+    return this.sendMessage(to, subject, link, action, 'This link expires in 15 minutes.');
+  }
+
+  private async sendMessage(to: string, subject: string, link: string, action: string, details: string): Promise<void> {
     const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
-    const text = `${action}: ${link}\r\nThis link expires in 15 minutes.`;
+    const text = `${action}: ${link}\r\n${details}`;
     const boundary = `pbl6-${randomUUID()}`;
     const body = [
       `From: <${this.settings.from}>`, `To: <${to}>`, `Subject: ${subject}`, 'MIME-Version: 1.0',
       `Content-Type: multipart/alternative; boundary="${boundary}"`, '', `--${boundary}`,
       'Content-Type: text/plain; charset=utf-8', 'Content-Transfer-Encoding: base64', '', Buffer.from(text).toString('base64'),
       `--${boundary}`, 'Content-Type: text/html; charset=utf-8', 'Content-Transfer-Encoding: base64', '',
-      Buffer.from(`<p>${action}</p><p><a href="${escapeHtml(link)}">${action}</a></p><p>This link expires in 15 minutes.</p>`).toString('base64'),
+      Buffer.from(`<p>${escapeHtml(action)}</p><p><a href="${escapeHtml(link)}">${escapeHtml(action)}</a></p><p>${escapeHtml(details)}</p>`).toString('base64'),
       `--${boundary}--`, '',
     ].join('\r\n');
     try { await this.deliver(to, body); }

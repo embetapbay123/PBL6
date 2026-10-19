@@ -1368,6 +1368,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin xem Role va danh muc Permission */
+        get: operations["listRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/roles/{id}": {
         parameters: {
             query?: never;
@@ -2282,6 +2299,17 @@ export interface components {
             permission_ids: string[];
             expected_version: number;
         };
+        AdminRoleConfiguration: {
+            roles: components["schemas"]["Role"][];
+            permissions: components["schemas"]["Permission"][];
+        };
+        Permission: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            resource: string;
+            action: string;
+        };
         Role: {
             /** Format: uuid */
             id: string;
@@ -2346,6 +2374,22 @@ export interface components {
             status: string;
             permissions?: string[];
             version?: number;
+        };
+        StoreStaff: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role: "SELLER";
+            /** @enum {string} */
+            status: "ACTIVE" | "LOCKED";
+            permissions: ("product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect")[];
+            version: number;
         };
         StockMovement: {
             /** Format: uuid */
@@ -2412,7 +2456,7 @@ export interface components {
             size: number;
         };
         PageStoreStaff: {
-            items: components["schemas"]["StoreMembership"][];
+            items: components["schemas"]["StoreStaff"][];
             total: number;
             page: number;
             size: number;
@@ -10267,6 +10311,44 @@ export interface operations {
             };
         };
     };
+    listRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Danh sach role va permission hien hanh */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRoleConfiguration"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     updateRole: {
         parameters: {
             query?: never;
@@ -10882,7 +10964,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StaffMembershipUpdate"];
+                    "application/json": components["schemas"]["StoreStaff"];
                 };
             };
             /** @description Malformed request */

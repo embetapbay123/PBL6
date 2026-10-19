@@ -10,12 +10,18 @@ export const digest = (value: string) => createHash('sha256').update(value).dige
 export interface IEmailAdapter {
   sendVerificationEmail(email: string, token: string): Promise<void>;
   sendPasswordResetEmail(email: string, token: string): Promise<void>;
+  sendStaffInvitationEmail?(email: string): Promise<void>;
 }
 export class AuthService {
   constructor(private readonly emailAdapter?: IEmailAdapter) {}
   private deliveryAdapter(): IEmailAdapter {
     if (!this.emailAdapter) throw new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Email delivery is not configured.');
     return this.emailAdapter;
+  }
+  async sendStaffInvitationEmail(email: string) {
+    const adapter = this.deliveryAdapter();
+    if (!adapter.sendStaffInvitationEmail) throw new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Email delivery is not configured.');
+    await adapter.sendStaffInvitationEmail(email);
   }
   async context(userId: string) {
     const [user] = await database.query('SELECT id,email,status,version FROM "user" WHERE id=$1',[userId]);
