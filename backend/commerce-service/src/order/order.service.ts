@@ -10,7 +10,7 @@ import { requireStorePermission, accessToken } from '../scope';
 import { PaymentService } from '../payment/payment.service';
 import { PaymentPort } from '../payment/payment.port';
 import { EntityManager } from 'typeorm';
-import { QuoteStore, RedisQuoteStore } from './quote-store';
+import { QuoteStore, RedisQuoteStore, CheckoutQuoteRecord } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { audit } from '../../../shared/src/audit';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
@@ -331,6 +331,60 @@ export class OrderService {
     return { storeList, totalPayableVnd, platformVoucherId };
   }
 
+  async resolveQuoteSnapshot(
+    cartItemIds: string[],
+    addressId: string,
+    storeVouchers: Record<string, string> | undefined,
+    platformVoucherCode: string | undefined,
+    auth: any,
+    correlation: string,
+    orderRepo?: OrderRepository
+  ): Promise<{
+    storeList: StoreCalculation[];
+    context: any;
+    payableTotalVnd: number;
+    snapshotHash: string;
+  }> {
+    const repo = orderRepo ?? new OrderRepository(database.manager);
+    const { storeList } = await this.calculateQuote(
+      cartItemIds,
+      auth.user_id,
+      storeVouchers,
+      platformVoucherCode,
+      correlation,
+      repo
+    );
+
+    const context = await this.getInternalClients().call(
+      'ResolveCheckoutContext',
+      {
+        token: accessToken(auth),
+        address_id: addressId,
+        store_ids: storeList.map(s => s.store_id),
+      },
+      correlation
+    );
+
+    for (const store of storeList) {
+      const snapshot = context.stores.find((s: any) => s.id === store.store_id);
+      if (!snapshot) throw new ApiError(503, 'DEPENDENCY_CONTRACT_INVALID', 'Lookup thiếu Store.');
+      store.shipping_vnd = moneyNumber(snapshot.shipping_fee_vnd);
+      store.payable_vnd = moneyNumber(
+        BigInt(store.goods_vnd) -
+          BigInt(store.store_discount_vnd) -
+          BigInt(store.platform_discount_vnd) +
+          BigInt(store.shipping_vnd)
+      );
+    }
+
+    const payableTotalVnd = moneyNumber(
+      storeList.reduce((sum, s) => sum + BigInt(s.payable_vnd), 0n)
+    );
+    const snapshotHash = fingerprint({ storeList, context });
+
+    return { storeList, context, payableTotalVnd, snapshotHash };
+  }
+
   async quoteCheckout(
     input: OperationInputs['quoteCheckout']['body'],
     auth: any,
@@ -356,29 +410,25 @@ export class OrderService {
 
     const orderRepo = new OrderRepository(database.manager);
 
-    const { storeList, totalPayableVnd } = await this.calculateQuote(
+    const { storeList, payableTotalVnd, snapshotHash } = await this.resolveQuoteSnapshot(
       cartItemIds,
-      userId,
+      addressId,
       input.store_vouchers,
       input.platform_voucher_code,
+      auth,
       correlation,
       orderRepo
     );
 
-    const context=await this.getInternalClients().call('ResolveCheckoutContext',{
-      token:accessToken(auth),address_id:addressId,store_ids:storeList.map(s=>s.store_id),
-    },correlation);
-    for(const store of storeList) {
-      const snapshot=context.stores.find(s=>s.id===store.store_id);
-      if(!snapshot) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Lookup thiếu Store.');
-      store.shipping_vnd=moneyNumber(snapshot.shipping_fee_vnd);
-      store.payable_vnd=moneyNumber(BigInt(store.goods_vnd)-BigInt(store.store_discount_vnd)-BigInt(store.platform_discount_vnd)+BigInt(store.shipping_vnd));
-    }
-    const payable=moneyNumber(storeList.reduce((sum,s)=>sum+BigInt(s.payable_vnd),0n));
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    const quoteId = randomUUID();
+    await this.quoteStore.put(quoteId, {
+      user_id: userId,
+      request_hash: fingerprint(this.quoteInput(input)),
+      snapshot_hash: snapshotHash,
+      expires_at: expiresAt,
+    });
 
-    const quoteId=randomUUID();
-    await this.quoteStore.put(quoteId,{user_id:userId,request_hash:fingerprint(this.quoteInput(input)),snapshot_hash:fingerprint({storeList,context}),expires_at:expiresAt});
     return {
       quote_id: quoteId,
       stores: storeList.map(store => ({
@@ -392,18 +442,74 @@ export class OrderService {
         },
         items: store.items,
       })),
-      payable_total_vnd: payable,
+      payable_total_vnd: payableTotalVnd,
       expires_at: expiresAt,
     };
   }
 
-  async confirmCheckout(input:OperationInputs['confirmCheckout']['body'],key:string|undefined,auth:any,_correlation:string):Promise<OperationOutputs['confirmCheckout']> {
-    if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
-    if(!key?.trim()) throw new ApiError(422,'VALIDATION_FAILED','Thiếu Idempotency-Key.');
-    const quote=await this.quoteStore.get(input.quote_id);
-    if(!quote || quote.user_id!==auth.user_id) throw new ApiError(404,'QUOTE_NOT_FOUND','Không tìm thấy quote của Customer.');
-    if(Date.parse(quote.expires_at)<=Date.now()) throw new ApiError(409,'QUOTE_EXPIRED','Quote đã hết hạn.');
-    if(quote.request_hash!==fingerprint(this.quoteInput(input))) throw new ApiError(409,'QUOTE_CHANGED','Nội dung khác quote.');
+  async revalidateQuoteSnapshot(
+    quote: CheckoutQuoteRecord,
+    input: OperationInputs['confirmCheckout']['body'],
+    auth: any,
+    correlation: string,
+    orderRepo?: OrderRepository
+  ): Promise<{
+    storeList: StoreCalculation[];
+    context: any;
+    payableTotalVnd: number;
+  }> {
+    const { storeList, context, payableTotalVnd, snapshotHash } = await this.resolveQuoteSnapshot(
+      input.cart_item_ids,
+      input.address_id,
+      input.store_vouchers,
+      input.platform_voucher_code,
+      auth,
+      correlation,
+      orderRepo
+    );
+
+    if (snapshotHash !== quote.snapshot_hash) {
+      throw new ApiError(
+        409,
+        'QUOTE_CHANGED',
+        'Dữ liệu sản phẩm, giá, tồn kho hoặc vận chuyển đã thay đổi so với báo giá; vui lòng tạo báo giá mới.'
+      );
+    }
+
+    if (input.expected_payable_total_vnd !== payableTotalVnd) {
+      throw new ApiError(
+        409,
+        'QUOTE_CHANGED',
+        `Tổng tiền thanh toán không khớp báo giá (mong muốn: ${input.expected_payable_total_vnd}, thực tế: ${payableTotalVnd}).`
+      );
+    }
+
+    return { storeList, context, payableTotalVnd };
+  }
+
+  async confirmCheckout(
+    input: OperationInputs['confirmCheckout']['body'],
+    key: string | undefined,
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['confirmCheckout']> {
+    if (!auth?.user_id) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    if (!key?.trim()) throw new ApiError(422, 'VALIDATION_FAILED', 'Thiếu Idempotency-Key.');
+    const quote = await this.quoteStore.get(input.quote_id);
+    if (!quote || quote.user_id !== auth.user_id) {
+      throw new ApiError(404, 'QUOTE_NOT_FOUND', 'Không tìm thấy quote của Customer.');
+    }
+    if (Date.parse(quote.expires_at) <= Date.now()) {
+      throw new ApiError(409, 'QUOTE_EXPIRED', 'Quote đã hết hạn.');
+    }
+    if (quote.request_hash !== fingerprint(this.quoteInput(input))) {
+      throw new ApiError(409, 'QUOTE_CHANGED', 'Nội dung khác quote.');
+    }
+
+    // BUG-QUOTE-01 fix: reload current upstream snapshot and reject stale data before reserve/writes
+    const orderRepo = new OrderRepository(database.manager);
+    await this.revalidateQuoteSnapshot(quote, input, auth, correlation, orderRepo);
+
     // Reject before reserve/DB writes until the Payment port and durable inventory orchestration are implemented.
     return notImplemented('confirmCheckout: cần PaymentPort và orchestration kho bền vững');
   }
