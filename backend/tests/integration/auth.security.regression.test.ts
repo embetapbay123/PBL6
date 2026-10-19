@@ -25,9 +25,10 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
   const userId = randomUUID();
   const email = `auth-regression-${userId}@example.test`;
   const delivered: Array<{ kind: string; email: string; token: string }> = [];
+  let failDelivery = false;
   const adapter: IEmailAdapter = {
-    async sendVerificationEmail(to, token) { delivered.push({ kind: 'verify', email: to, token }); },
-    async sendPasswordResetEmail(to, token) { delivered.push({ kind: 'reset', email: to, token }); },
+    async sendVerificationEmail(to, token) { if (failDelivery) throw new Error('provider rejected message'); delivered.push({ kind: 'verify', email: to, token }); },
+    async sendPasswordResetEmail(to, token) { if (failDelivery) throw new Error('provider rejected message'); delivered.push({ kind: 'reset', email: to, token }); },
   };
 
   beforeAll(async () => {
@@ -153,6 +154,24 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     expect(await source.query('SELECT id FROM "user" WHERE email=$1', [missingEmail])).toHaveLength(0);
   });
 
+  test('SMTP/provider failure is returned safely and never claims email delivery', async () => {
+    const email = `delivery-failure-${randomUUID()}@example.test`;
+    failDelivery = true;
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email, password: 'Registration-123' });
+    failDelivery = false;
+    expect(response.status).toBe(503);
+    expect(response.body.code).toBe('EMAIL_DELIVERY_UNAVAILABLE');
+    expect(JSON.stringify(response.body)).not.toContain('provider rejected');
+    const [created] = await source.query('SELECT id,status FROM "user" WHERE email=$1', [email]);
+    expect(created.status).toBe('PENDING');
+    const [token] = await source.query(`SELECT consumed_at FROM one_time_token WHERE user_id=$1 AND purpose='EMAIL_VERIFICATION'`, [created.id]);
+    expect(token.consumed_at).not.toBeNull();
+    await source.query('DELETE FROM one_time_token WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM customer_profile WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM user_role WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM "user" WHERE id=$1', [created.id]);
+  });
+
   test('HTTP registration sends verification through the injected adapter without returning the token', async () => {
     const newEmail = `verify-${randomUUID()}@example.test`;
     const response = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: newEmail, password: 'Registration-123' });
@@ -165,6 +184,52 @@ describePostgres('Authentication PostgreSQL and HTTP regressions', () => {
     const tokenRows = await source.query("SELECT token_hash FROM one_time_token WHERE user_id=$1 AND purpose='EMAIL_VERIFICATION'", [created.id]);
     expect(tokenRows).toHaveLength(1);
     expect(tokenRows[0].token_hash).toBe(digest(deliveredToken!));
+    await source.query('DELETE FROM one_time_token WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM customer_profile WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM user_role WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM "user" WHERE id=$1', [created.id]);
+  });
+
+  test('email verification activates once and rejects invalid, expired, replayed, and concurrent tokens', async () => {
+    const newEmail = `verify-once-${randomUUID()}@example.test`;
+    const response = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: newEmail, password: 'Registration-123' });
+    expect(response.status).toBe(201);
+    const rawToken = delivered.find(item => item.kind === 'verify' && item.email === newEmail)!.token;
+    const [created] = await source.query('SELECT id,status FROM "user" WHERE email=$1', [newEmail]);
+    expect(created.status).toBe('PENDING');
+    expect((await request(app.getHttpServer()).post('/api/v1/auth/verify-email').send({ token: 'invalid-token' })).status).toBe(400);
+    const race = await Promise.all([
+      request(app.getHttpServer()).post('/api/v1/auth/verify-email').send({ token: rawToken }),
+      request(app.getHttpServer()).post('/api/v1/auth/verify-email').send({ token: rawToken }),
+    ]);
+    expect(race.filter(result => result.status === 200)).toHaveLength(1);
+    expect(race.filter(result => result.status === 400)).toHaveLength(1);
+    expect((await source.query('SELECT status,email_verified_at FROM "user" WHERE id=$1', [created.id]))[0]).toMatchObject({ status: 'ACTIVE' });
+    expect((await request(app.getHttpServer()).post('/api/v1/auth/verify-email').send({ token: rawToken })).status).toBe(400);
+    const expired = 'expired-email-token';
+    await source.query(`INSERT INTO one_time_token(id,user_id,purpose,token_hash,expires_at,created_at) VALUES($1,$2,'EMAIL_VERIFICATION',$3,now()-interval '1 second',now())`, [randomUUID(), created.id, digest(expired)]);
+    const expiredResponse = await request(app.getHttpServer()).post('/api/v1/auth/verify-email').send({ token: expired });
+    expect(expiredResponse.status).toBe(400);
+    expect(expiredResponse.body.code).toBe('TOKEN_EXPIRED');
+    await source.query('DELETE FROM one_time_token WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM customer_profile WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM user_role WHERE user_id=$1', [created.id]);
+    await source.query('DELETE FROM "user" WHERE id=$1', [created.id]);
+  });
+
+  test('duplicate registration does not reveal account identifiers and pending duplicate can be verified', async () => {
+    const newEmail = `duplicate-${randomUUID()}@example.test`;
+    const first = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: newEmail, password: 'Registration-123' });
+    expect(first.status).toBe(201);
+    const second = await request(app.getHttpServer()).post('/api/v1/auth/register').send({ email: newEmail, password: 'Registration-123' });
+    expect(second.status).toBe(201);
+    expect(second.body).not.toHaveProperty('user_id');
+    const [created] = await source.query('SELECT id FROM "user" WHERE email=$1', [newEmail]);
+    const pending = await source.query(`SELECT token_hash,consumed_at FROM one_time_token WHERE user_id=$1 AND purpose='EMAIL_VERIFICATION'`, [created.id]);
+    expect(pending).toHaveLength(2);
+    expect(pending.filter((row: any) => row.consumed_at === null)).toHaveLength(1);
+    const latest = delivered.filter(item => item.kind === 'verify' && item.email === newEmail).at(-1)!;
+    expect((await request(app.getHttpServer()).post('/api/v1/auth/verify-email').send({ token: latest.token })).status).toBe(200);
     await source.query('DELETE FROM one_time_token WHERE user_id=$1', [created.id]);
     await source.query('DELETE FROM customer_profile WHERE user_id=$1', [created.id]);
     await source.query('DELETE FROM user_role WHERE user_id=$1', [created.id]);

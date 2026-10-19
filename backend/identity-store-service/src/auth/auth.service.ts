@@ -22,6 +22,14 @@ export class AuthService {
     if (!user || user.status !== 'ACTIVE') throw new ApiError(401,'SESSION_REVOKED','Phiên đăng nhập đã bị thu hồi.');
     const roleRows = await database.query('SELECT r.code FROM user_role ur JOIN role r ON r.id=ur.role_id WHERE ur.user_id=$1 AND r.status=\'ACTIVE\'',[userId]);
     const roles: string[] = roleRows.map((r: any) => r.code);
+    const rolePermissionRows = await database.query(
+      `SELECT DISTINCT p.code FROM user_role ur
+       JOIN role r ON r.id=ur.role_id AND r.status='ACTIVE'
+       JOIN role_permission rp ON rp.role_id=r.id
+       JOIN permission p ON p.id=rp.permission_id WHERE ur.user_id=$1 ORDER BY p.code`,
+      [userId],
+    );
+    const rolePermissions: string[] = rolePermissionRows.map((r: any) => r.code);
     const [member] = await database.query(
       `SELECT m.id AS membership_id,m.store_id,m.role,m.status
        FROM store_membership m
@@ -39,7 +47,7 @@ export class AuthService {
        WHERE mp.membership_id=$1`,
       [member.membership_id],
     )).map((p: any)=>p.code) : [];
-    return {user_id:user.id, roles:[...new Set(roles)], token_version:user.version,
+    return {user_id:user.id, roles:[...new Set(roles)], role_permissions:rolePermissions, token_version:user.version,
       ...(member ? {store_membership:{store_id:member.store_id,role:member.role,status:member.status,permissions}} : {})};
   }
   async resolve(token: string) {
@@ -58,15 +66,19 @@ export class AuthService {
     if (existing) {
       if (existing.status === 'PENDING') {
         const rawToken = randomBytes(32).toString('base64url');
+        await database.query(`UPDATE one_time_token SET consumed_at=now() WHERE user_id=$1 AND purpose='EMAIL_VERIFICATION' AND consumed_at IS NULL`, [existing.id]);
         await database.query(
           `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
            VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '15 minutes', now())`,
           [randomUUID(), existing.id, digest(rawToken)]
         );
-        await adapter.sendVerificationEmail(email, rawToken);
+        try { await adapter.sendVerificationEmail(email, rawToken); }
+        catch (error) {
+          await database.query(`UPDATE one_time_token SET consumed_at=now() WHERE token_hash=$1 AND purpose='EMAIL_VERIFICATION' AND consumed_at IS NULL`, [digest(rawToken)]);
+          throw error instanceof ApiError ? error : new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Email delivery is temporarily unavailable.');
+        }
       }
       return {
-        user_id: existing.id,
         email_verified: false,
         message: 'Nếu email chưa được đăng ký, một liên kết xác thực đã được gửi.'
       };
@@ -99,7 +111,11 @@ export class AuthService {
       );
     });
 
-    await adapter.sendVerificationEmail(email, rawToken);
+    try { await adapter.sendVerificationEmail(email, rawToken); }
+    catch (error) {
+      await database.query(`UPDATE one_time_token SET consumed_at=now() WHERE token_hash=$1 AND purpose='EMAIL_VERIFICATION' AND consumed_at IS NULL`, [digest(rawToken)]);
+      throw error instanceof ApiError ? error : new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Email delivery is temporarily unavailable.');
+    }
     return {
       user_id: userId,
       email_verified: false,

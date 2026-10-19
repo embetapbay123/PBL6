@@ -12,11 +12,15 @@ import { ApiError, ErrorFilter } from './errors';
 import { RequestContractInterceptor } from './request-contract';
 import contractBundle from './contracts.runtime.generated.json';
 import { AuthService } from '../../identity-store-service/src/auth/auth.service';
+import { createEmailAdapter } from '../../identity-store-service/src/auth/smtp-email.adapter';
 
 const registry = new Registry();
 collectDefaultMetrics({ register: registry });
 const requests = new Counter({ name: 'pbl6_http_requests_total', help: 'HTTP responses', labelNames: ['service','route','status'], registers: [registry] });
 const latency = new Histogram({ name: 'pbl6_http_duration_seconds', help: 'HTTP latency', labelNames: ['service','route'], registers: [registry] });
+export function createRuntimeAuthService(id: ServiceId, env: NodeJS.ProcessEnv = process.env) {
+  return id === 'M3' ? new AuthService(createEmailAdapter(env)) : new AuthService();
+}
 @Controller()
 class HealthController {
   @Get('health/live') live() { return { status: 'alive', service: process.env.SERVICE_ID }; }
@@ -30,8 +34,10 @@ class HealthController {
 }
 export async function bootstrap(id: ServiceId, controllers: any[]) {
   const c = config(id);
+  // M3 must have a real, explicitly configured delivery service before accepting traffic.
+  const authService = createRuntimeAuthService(id);
   await initializeDatabase();
-  @Module({ controllers: [HealthController, ...controllers], providers: [AuthService] }) class ApplicationModule {}
+  @Module({ controllers: [HealthController, ...controllers], providers: [{ provide: AuthService, useValue: authService }] }) class ApplicationModule {}
   const app = await NestFactory.create(ApplicationModule, { rawBody: true, logger: ['error','warn'] });
   app.enableShutdownHooks();
   const redis = new Redis(c.redisUrl, { maxRetriesPerRequest: 1, enableOfflineQueue: false });

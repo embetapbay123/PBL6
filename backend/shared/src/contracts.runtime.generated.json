@@ -228,6 +228,14 @@
                   },
                   "maxItems": 100
                 },
+                "role_permissions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "maxItems": 100
+                },
                 "store_membership": {
                   "type": "object",
                   "properties": {
@@ -265,6 +273,7 @@
               "required": [
                 "user_id",
                 "roles",
+                "role_permissions",
                 "token_version"
               ],
               "additionalProperties": false
@@ -352,6 +361,14 @@
                   },
                   "maxItems": 100
                 },
+                "role_permissions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "maxItems": 100
+                },
                 "store_membership": {
                   "type": "object",
                   "properties": {
@@ -389,6 +406,7 @@
               "required": [
                 "user_id",
                 "roles",
+                "role_permissions",
                 "token_version"
               ],
               "additionalProperties": false
@@ -715,6 +733,14 @@
               },
               "maxItems": 100
             },
+            "role_permissions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "maxItems": 100
+            },
             "store_membership": {
               "type": "object",
               "properties": {
@@ -752,6 +778,7 @@
           "required": [
             "user_id",
             "roles",
+            "role_permissions",
             "token_version"
           ],
           "additionalProperties": false
@@ -12366,6 +12393,14 @@
               },
               "maxItems": 100
             },
+            "role_permissions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "maxItems": 100
+            },
             "store_membership": {
               "type": "object",
               "properties": {
@@ -12403,6 +12438,7 @@
           "required": [
             "user_id",
             "roles",
+            "role_permissions",
             "token_version"
           ],
           "additionalProperties": false

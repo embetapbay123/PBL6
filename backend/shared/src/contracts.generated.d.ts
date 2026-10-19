@@ -2019,6 +2019,7 @@ export interface components {
             /** Format: uuid */
             user_id: string;
             roles: ("CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN")[];
+            role_permissions: string[];
             store_membership?: {
                 /** Format: uuid */
                 store_id?: string;

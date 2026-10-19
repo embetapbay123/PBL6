@@ -91,7 +91,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /admin/stores/{id}` | updateStoreState | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `GET /admin/orders` | listAllOrders | M2 / report | Hoa | IMPLEMENTED |
 | `GET /admin/dashboard` | getPlatformDashboard | M2 / report | Hoa | NOT_IMPLEMENTED |
-| `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | NOT_IMPLEMENTED |
+| `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | IMPLEMENTED |
 | `POST /chat/sessions` | createChatSession | M4 / chat | Công | IMPLEMENTED_SAMPLE |
 | `POST /chat/sessions/{id}/messages` | sendChatMessage | M4 / chat | Công | IMPLEMENTED_SAMPLE |
 | `GET /me/chat/sessions` | listOwnChatSessions | M4 / chat | Công | IMPLEMENTED_SAMPLE |
@@ -115,4 +115,4 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
 
 
-`updateRole` is deliberately disabled with HTTP 501 `FEATURE_NOT_IMPLEMENTED`; effective permission enforcement and revocation for existing sessions remain pending. The endpoint does not write `role_permission` or emit a success audit event.
+`updateRole` replaces a role's global permissions with an optimistic version check and audit. `AuthContext` resolves active role permissions from PostgreSQL on each request; `AuthGuard` requires `platform.admin` for ADMIN routes, so revocations apply to existing sessions immediately. The permission is seeded by M3 migration 006.

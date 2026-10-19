@@ -114,13 +114,13 @@ export interface OperationInputs {
 export interface OperationOutputs {
   register: {"user_id": string; "email_verified": boolean; "message"?: string};
   verifyEmail: {"status": string; "message"?: string; "correlation_id"?: string};
-  login: {"access_token": string; "refresh_token"?: string; "expires_at": string; "context"?: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number}};
-  refresh: {"access_token": string; "refresh_token"?: string; "expires_at": string; "context"?: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number}};
+  login: {"access_token": string; "refresh_token"?: string; "expires_at": string; "context"?: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "role_permissions": Array<string>; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number}};
+  refresh: {"access_token": string; "refresh_token"?: string; "expires_at": string; "context"?: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "role_permissions": Array<string>; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number}};
   logout: {"status": string; "message"?: string; "correlation_id"?: string};
   resetPassword: {"status": string; "message"?: string; "correlation_id"?: string};
   confirmResetPassword: {"status": string; "message"?: string; "correlation_id"?: string};
   changePassword: {"status": string; "message"?: string; "correlation_id"?: string};
-  getAuthContext: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number};
+  getAuthContext: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "role_permissions": Array<string>; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number};
   getProfile: {"user_id": string; "email": string; "display_name"?: string | null; "phone"?: string | null; "email_verified_at"?: string | null};
   updateProfile: {"user_id": string; "email": string; "display_name"?: string | null; "phone"?: string | null; "email_verified_at"?: string | null};
   listAddresses: {"items": Array<{"id"?: string; "recipient_name": string; "phone": string; "line1": string; "ward": string; "district": string; "city": string; "is_default"?: boolean}>; "total": number; "page": number; "size": number};
@@ -211,7 +211,7 @@ export interface OperationOutputs {
   getPersonalizationConsent: {"status": "GRANTED" | "WITHDRAWN"; "version": number; "changed_at"?: string};
   updatePersonalizationConsent: {"status": "GRANTED" | "WITHDRAWN"; "version": number; "changed_at"?: string};
   sepayCallback: {"success": boolean};
-  ResolveContext: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number};
+  ResolveContext: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "role_permissions": Array<string>; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number};
   ActiveStores: {"ids": Array<string>};
   QuoteVariants: {"items": Array<{"variant_id": string; "store_id": string; "quantity": number; "price_vnd": number; "available_quantity": number; "version": number}>};
   ReserveInventory: {"reservations": Array<{"id": string; "order_id": string; "variant_id": string; "quantity": number; "expires_at": string}>};
