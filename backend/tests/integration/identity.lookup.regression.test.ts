@@ -64,10 +64,11 @@ test('Internal checkout and AI scope validate tokens, snapshots, caller allowlis
   const source = new DataSource({ type: 'postgres', url: process.env.M3_DATABASE_URL }); await source.initialize();
   const customer = await login('customer1@pbl6.test'), other = await login('customer2@pbl6.test'), owner = await login('owner@pbl6.test'), admin = await login('admin@pbl6.test');
   const context = await (await fetch(base + '/me/context', { headers: headers(customer) })).json() as any;
+  const ownerContext = await (await fetch(base + '/me/context', { headers: headers(owner) })).json() as any;
   schema('getAuthContext', context);
   expect(context.access_token).toBeUndefined();
-  const [store] = await source.query("SELECT id FROM store WHERE status='ACTIVE' LIMIT 1");
-  const [membership] = await source.query("SELECT id,status FROM store_membership WHERE store_id=$1 AND role='OWNER' AND status='ACTIVE' LIMIT 1", [store.id]);
+  const [store] = await source.query("SELECT id FROM store WHERE id=$1 AND status='ACTIVE'", [ownerContext.store_membership.store_id]);
+  const [membership] = await source.query("SELECT id,status FROM store_membership WHERE store_id=$1 AND user_id=$2 AND role='OWNER' AND status='ACTIVE' LIMIT 1", [store.id, ownerContext.user_id]);
   const id = randomUUID();
   try {
     await source.query("INSERT INTO address(id,customer_user_id,recipient_name,phone,line1,ward,district,city,is_default,status) VALUES($1,$2,'A','0900000000','L','W','D','C',false,'ACTIVE')", [id, context.user_id]);
