@@ -78,6 +78,6 @@ describe('AdministrationRepository event contracts', () => {
     await expect(new AdministrationRepository().updateRole('role-1', ['missing-permission'], 4, 'actor', 'corr'))
       .rejects.toMatchObject({ status: 422, response: expect.objectContaining({ code: 'VALIDATION_FAILED' }) });
     expect(manager.query).toHaveBeenCalledTimes(3);
-    expect(manager.query.mock.calls[2][0]).toContain('SELECT id FROM permission');
+    expect(manager.query.mock.calls[2][0]).toContain('FROM permission WHERE id = ANY($1::uuid[])');
   });
 });
