@@ -250,4 +250,17 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     const second=await checkout();const result=await second.s.confirmCheckout(second.input,'healthy-order',auth,'corr');await service().recoverOrders();
     expect((await db.query('SELECT status FROM "order" WHERE id=$1',[result.order_ids[0]]))[0].status).toBe('PENDING');expect((await db.query('SELECT last_error FROM order_inventory_state WHERE order_id=$1',[p.order_id]))[0].last_error).toBe('ORDER_RECONCILIATION_REQUIRED');
   });
+  test('more than one batch of unpaid Orders cannot starve a newly paid Order',async()=>{
+    // Explicit legacy fixtures with no commands: only reconciliation scheduling is exercised.
+    for(let i=0;i<20;i++){
+      const id=randomUUID();await db.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,payment_expires_at,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd)
+        VALUES($1,$2,$3,$4,'AWAITING_PAYMENT','SANDBOX',now()+interval '1 hour',1000,0,0,0,1000)`,[id,randomUUID(),user,store]);
+      await db.query("INSERT INTO payment(order_id,method,status,payable_vnd,collectible_vnd) VALUES($1,'SANDBOX','PENDING',1000,0)",[id]);
+      await db.query("INSERT INTO order_inventory_state(order_id,reservation_ids,items_json,state,correlation_id,next_attempt_at) VALUES($1,$2,'[]','RESERVED','fixture',now()-interval '1 day')",[id,[randomUUID()]]);
+    }
+    const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'after-batch',auth,'corr');const [p]=await db.query('SELECT * FROM payment WHERE order_id=$1',[result.order_ids[0]]);
+    await db.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'SUCCEEDED',1000)",[p.id,randomUUID()]);await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd WHERE id=$1",[p.id]);
+    await service().recoverOrders();expect(effects.get('ConsumeReservation')).toBeUndefined();
+    await service().recoverOrders();expect(effects.get('ConsumeReservation')).toBe(1);expect((await db.query('SELECT status FROM "order" WHERE id=$1',[p.order_id]))[0].status).toBe('PENDING');
+  });
 });
