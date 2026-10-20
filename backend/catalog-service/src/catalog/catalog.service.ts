@@ -7,6 +7,15 @@ import { CatalogRepository } from './catalog.repository';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { optionalUserId, recordInteraction } from './catalog.telemetry';
+
+/** Owner always manages the Store catalogue; a Seller needs the product.store permission group. */
+export function hasProductPermission(role:string|undefined,permissions:string[]):boolean {
+  if(role!=='OWNER' && role!=='SELLER') return false;
+  return role==='OWNER'
+    || permissions.includes('product.store.*')
+    || permissions.some(code=>code.startsWith('product.store.'));
+}
+
 export class CatalogService {
   private async stores(correlation:string) {
     const c=config('M1');return (await new InternalClients('M1',c.internalKeys.M1,{M1:c.catalogUrl,M2:'',M3:c.identityUrl}).call('ActiveStores',undefined,correlation)).ids;
@@ -44,6 +53,46 @@ export class CatalogService {
 
   async listProductTypes(query:OperationInputs['listProductTypes']['query']):Promise<OperationOutputs['listProductTypes']> {
     return new CatalogRepository(database.manager).pageProductTypes(query.page ?? 1,query.size ?? 20);
+  }
+
+  /**
+   * Store scope for catalogue management comes from the resolved membership, never from the
+   * request, and the permission is checked on the live context so a revoked grant stops working on
+   * the next call even while an old JWT is still valid.
+   */
+  private requireProductScope(context:any):string {
+    const membership=context?.store_membership;
+    if(!membership?.store_id)throw new ApiError(403,'FORBIDDEN','Tài khoản không thuộc Store đang hoạt động nào.');
+    if(!hasProductPermission(membership.role,membership.permissions ?? []))
+      throw new ApiError(403,'FORBIDDEN','Cần quyền quản lý sản phẩm của Store.');
+    return membership.store_id;
+  }
+
+  /**
+   * listOwnStoreProducts — danh sách **quản lý** của chính Store người gọi.
+   *
+   * Khác hẳn danh sách công khai: trả cả DRAFT/STOPPED và HIDDEN để Seller còn thấy sản phẩm của
+   * mình, và trả variant/ảnh ở mọi trạng thái. Store lấy từ membership nên hai Store không thể đọc
+   * dữ liệu quản lý của nhau dù có đoán id.
+   */
+  async listOwnStoreProducts(query:OperationInputs['listOwnStoreProducts']['query'],context:any):
+  Promise<OperationOutputs['listOwnStoreProducts']> {
+    const storeId=this.requireProductScope(context);
+    return new CatalogRepository(database.manager).pageOwnStore(storeId,query.page ?? 1,query.size ?? 20);
+  }
+
+  /**
+   * listStoreProducts — danh sách **công khai** của một Store.
+   *
+   * Dùng lại đúng predicate của catalog công khai (ACTIVE + VISIBLE + Store đang bán), nên một
+   * Product DRAFT/HIDDEN không bao giờ lọt ra ngoài. Store do M3 báo ngừng hoạt động thì trả 404
+   * thay vì một trang rỗng, để không ai tưởng Store đó vẫn đang bán.
+   */
+  async listStoreProducts(id:string,query:OperationInputs['listStoreProducts']['query'],correlation:string):
+  Promise<OperationOutputs['listStoreProducts']> {
+    if(!(await this.stores(correlation)).includes(id))
+      throw new ApiError(404,'NOT_FOUND','Không tìm thấy Store đang bán.');
+    return new CatalogRepository(database.manager).page([id],{page:query.page ?? 1,size:query.size ?? 20});
   }
 
   async update(id:string,input:OperationInputs['updateProduct']['body'],context:any,correlation:string) {
