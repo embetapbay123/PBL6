@@ -61,7 +61,7 @@ export class CatalogService {
       if(await repository.skuTakenInStore(storeId,variant.sku,variant.id ?? null))
         throw new ApiError(409,'SKU_CONFLICT','SKU đã tồn tại trong Store.',[{field:'sku:'+variant.sku}]);
       if(variant.id) {
-        await repository.updateVariantFields(variant.id,{sku:variant.sku,priceVnd:variant.price_vnd,
+        await repository.updateVariantFields(variant.id,productId,storeId,{sku:variant.sku,priceVnd:variant.price_vnd,
           variantValues:variant.variant_values,signature:variantSignature(variant.variant_values),
           isDefault:variant.is_default,status:variant.status});
       } else {
@@ -118,6 +118,12 @@ export class CatalogService {
   Promise<OperationOutputs['createProduct']> {
     const {storeId,actorUserId}=await this.writableStore(context,correlation);
     this.validateVariantPayload(input.variants);
+    // Creating a Product must never address an existing Variant. `ProductCreate.variants` reuses the
+    // `ProductVariant` schema, so the runtime contract accepts an `id`; letting it through would let
+    // one Store rewrite another Store's Variant by id. An existing Variant is only editable through
+    // updateProduct, which proves ownership first, and the repository scopes the SQL as well.
+    if(input.variants?.some(variant=>variant.id!==undefined))
+      throw new ApiError(422,'VARIANT_ID_NOT_ALLOWED','Tạo Product không nhận Variant có id; chỉ gửi Variant mới.');
     return database.transaction(async manager=>{
       const repository=new CatalogRepository(manager);
       await this.validateTaxonomy(repository,input.product_type_id,input.attributes);
@@ -150,7 +156,12 @@ export class CatalogService {
       if(!before)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
       if(before.version!==input.expected_version)throw new ApiError(409,'VERSION_CONFLICT','Dữ liệu đã thay đổi. Vui lòng tải lại.');
       const current=await repository.productRowForStore(id,storeId);
-      await this.validateTaxonomy(repository,input.product_type_id ?? current.product_type_id,input.attributes);
+      // Validate the state that will actually be stored: changing only `product_type_id` keeps the
+      // current attribute map, so validating `input.attributes` alone would let a Product end up
+      // missing a required attribute of its new type, or keeping keys that belong only to the old one.
+      const finalProductTypeId=input.product_type_id ?? current.product_type_id;
+      const finalAttributes=input.attributes ?? current.attributes;
+      await this.validateTaxonomy(repository,finalProductTypeId,finalAttributes);
 
       const after=await repository.updateProductFields(id,{productTypeId:input.product_type_id,title:input.title,
         description:input.description,attributes:input.attributes,status:input.status});
@@ -165,7 +176,7 @@ export class CatalogService {
         const keptSkus=new Set(input.variants.map(variant=>variant.sku));
         for(const row of existing) {
           if(keptIds.has(row.id) || keptSkus.has(row.sku)) continue;
-          if(row.status!=='STOPPED') await repository.stopVariant(row.id);
+          if(row.status!=='STOPPED') await repository.stopVariant(row.id,id,storeId);
         }
       }
 

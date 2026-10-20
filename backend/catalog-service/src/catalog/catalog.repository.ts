@@ -167,14 +167,20 @@ export class CatalogRepository extends OwnedRepository {
     return row;
   }
 
-  async updateVariantFields(id:string,fields:{sku?:string;priceVnd?:number;variantValues?:Record<string,unknown>;
-    signature?:string;isDefault?:boolean;status?:string}) {
+  /**
+   * The caller has already proved the Variant belongs to this Product, but the SQL repeats the
+   * Product and Store condition. A write addressed by Variant id alone would let one Store change
+   * another Store's Variant, so the scope is enforced where the row is actually touched.
+   */
+  async updateVariantFields(id:string,productId:string,storeId:string,
+    fields:{sku?:string;priceVnd?:number;variantValues?:Record<string,unknown>;
+      signature?:string;isDefault?:boolean;status?:string}) {
     await this.manager.query(
-      `UPDATE product_variant SET sku=coalesce($2,sku), price_vnd=coalesce($3,price_vnd),
-              variant_values_json=coalesce($4::jsonb,variant_values_json),
-              variant_signature=coalesce($5,variant_signature), is_default=coalesce($6,is_default),
-              status=coalesce($7,status) WHERE id=$1`,
-      [id,fields.sku ?? null,fields.priceVnd ?? null,
+      `UPDATE product_variant SET sku=coalesce($4,sku), price_vnd=coalesce($5,price_vnd),
+              variant_values_json=coalesce($6::jsonb,variant_values_json),
+              variant_signature=coalesce($7,variant_signature), is_default=coalesce($8,is_default),
+              status=coalesce($9,status) WHERE id=$1 AND product_id=$2 AND store_id=$3`,
+      [id,productId,storeId,fields.sku ?? null,fields.priceVnd ?? null,
         fields.variantValues===undefined ? null : JSON.stringify(fields.variantValues),
         fields.signature ?? null,fields.isDefault ?? null,fields.status ?? null]);
   }
@@ -188,8 +194,10 @@ export class CatalogRepository extends OwnedRepository {
    * A Variant that disappears from a payload is stopped, not deleted: `reservation_item` and
    * `stock_movement` keep referencing it, and deleting would destroy stock history.
    */
-  async stopVariant(id:string) {
-    await this.manager.query("UPDATE product_variant SET status='STOPPED' WHERE id=$1",[id]);
+  async stopVariant(id:string,productId:string,storeId:string) {
+    await this.manager.query(
+      "UPDATE product_variant SET status='STOPPED' WHERE id=$1 AND product_id=$2 AND store_id=$3",
+      [id,productId,storeId]);
   }
 
   /** A new Variant starts with zero stock so it is visible to inventory and quotable at once. */

@@ -11,6 +11,11 @@ let owner = '';
 let customer = '';
 let attributeDefinition = '';
 let foreignProduct = '';
+let foreignVariant = '';
+let ownOtherProduct = '';
+let ownOtherVariant = '';
+let strictProductType = '';
+let strictAttribute = '';
 let createdProducts: string[] = [];
 let correlations: string[] = [];
 
@@ -53,6 +58,24 @@ async function seed() {
   foreignProduct = randomUUID();
   await m1.query(`INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version)
     VALUES($1,$2,$3,'Sản phẩm Store khác','other','{}','ACTIVE','VISIBLE',0)`, [foreignProduct, STORE_B, PRODUCT_TYPE]);
+  // Two Variant rows that a hijacked `variants[].id` would target: one owned by another Store, one
+  // owned by another Product of the same Store.
+  foreignVariant = randomUUID();
+  await m1.query(`INSERT INTO product_variant(id,product_id,store_id,sku,price_vnd,variant_values_json,variant_signature,is_default,status)
+    VALUES($1,$2,$3,'FOREIGN-SKU',777000,'{}','sig-foreign',true,'ACTIVE')`, [foreignVariant, foreignProduct, STORE_B]);
+  ownOtherProduct = randomUUID();
+  ownOtherVariant = randomUUID();
+  await m1.query(`INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version)
+    VALUES($1,$2,$3,'Sản phẩm khác cùng Store','other','{}','ACTIVE','VISIBLE',0)`, [ownOtherProduct, STORE_A, PRODUCT_TYPE]);
+  await m1.query(`INSERT INTO product_variant(id,product_id,store_id,sku,price_vnd,variant_values_json,variant_signature,is_default,status)
+    VALUES($1,$2,$3,'OWN-OTHER-SKU',888000,'{}','sig-own-other',true,'ACTIVE')`, [ownOtherVariant, ownOtherProduct, STORE_A]);
+  // A second Product type that requires an attribute the demo type does not have.
+  strictProductType = randomUUID();
+  await m1.query(`INSERT INTO product_type(id,category_id,name,status)
+    VALUES($1,'10000000-0000-4000-8000-000000000070','Strict type','ACTIVE')`, [strictProductType]);
+  strictAttribute = randomUUID();
+  await m1.query(`INSERT INTO attribute_definition(id,product_type_id,code,name,data_type,required,variant_factor,allowed_values,unit)
+    VALUES($1,$2,'required_review','Duyệt','STRING',true,false,NULL,NULL)`, [strictAttribute, strictProductType]);
 }
 
 async function reset() {
@@ -66,8 +89,14 @@ async function reset() {
     await m1.query('DELETE FROM product WHERE id = ANY($1::uuid[])', [createdProducts]);
   }
   if (attributeDefinition) await m1.query('DELETE FROM attribute_definition WHERE id=$1', [attributeDefinition]);
+  if (strictAttribute) await m1.query('DELETE FROM attribute_definition WHERE id=$1', [strictAttribute]);
+  if (foreignVariant) await m1.query('DELETE FROM product_variant WHERE id=$1', [foreignVariant]);
+  if (ownOtherVariant) await m1.query('DELETE FROM product_variant WHERE id=$1', [ownOtherVariant]);
   if (foreignProduct) await m1.query('DELETE FROM product WHERE id=$1', [foreignProduct]);
+  if (ownOtherProduct) await m1.query('DELETE FROM product WHERE id=$1', [ownOtherProduct]);
+  if (strictProductType) await m1.query('DELETE FROM product_type WHERE id=$1', [strictProductType]);
   createdProducts = []; correlations = []; attributeDefinition = ''; foreignProduct = '';
+  foreignVariant = ''; ownOtherProduct = ''; ownOtherVariant = ''; strictProductType = ''; strictAttribute = '';
 }
 
 beforeAll(async () => {
@@ -223,4 +252,53 @@ test('writing needs a Store member with product permission', async () => {
   // A Customer holds no Store membership, so the role guard refuses before any validation.
   expect((await call('POST', '/store/products', createBody(), customer)).status).toBe(403);
   expect((await call('PATCH', `/store/products/${foreignProduct}`, { expected_version: 0 }, customer)).status).toBe(403);
+});
+
+test('createProduct refuses a Variant id and cannot rewrite a foreign Variant', async () => {
+  const before = correlations.length;
+  // `ProductCreate.variants` reuses the ProductVariant schema, so the contract accepts an id here.
+  const response = await call('POST', '/store/products', createBody({
+    variants: [{ id: foreignVariant, sku: 'FOREIGN-SKU', price_vnd: 1, variant_values: {} }] }), owner);
+  expect(response.status).toBe(422);
+  expect((await response.json() as any).code).toBe('VARIANT_ID_NOT_ALLOWED');
+
+  // The other Store's Variant keeps its price, owner and Product.
+  expect(await m1.query('SELECT price_vnd::text AS price, store_id, product_id FROM product_variant WHERE id=$1', [foreignVariant]))
+    .toEqual([{ price: '777000', store_id: STORE_B, product_id: foreignProduct }]);
+  // The rejected create wrote nothing: no Product, no audit, no outbox.
+  expect(await m1.query("SELECT count(*)::int AS n FROM product WHERE title='Sản phẩm mới'")).toEqual([{ n: 0 }]);
+  const correlation = correlations[before];
+  expect(await m1.query('SELECT id FROM m1_audit WHERE request_id=$1', [correlation])).toHaveLength(0);
+  expect(await m1.query('SELECT id FROM outbox WHERE correlation_id=$1', [correlation])).toHaveLength(0);
+});
+
+test('createProduct refuses a Variant id of another Product in the same Store', async () => {
+  const response = await call('POST', '/store/products', createBody({
+    variants: [{ id: ownOtherVariant, sku: 'OWN-OTHER-SKU', price_vnd: 1, variant_values: {} }] }), owner);
+  expect(response.status).toBe(422);
+  expect((await response.json() as any).code).toBe('VARIANT_ID_NOT_ALLOWED');
+  expect(await m1.query('SELECT price_vnd::text AS price FROM product_variant WHERE id=$1', [ownOtherVariant]))
+    .toEqual([{ price: '888000' }]);
+});
+
+test('updateProduct validates the final attributes when the Product type changes', async () => {
+  const product = await createProduct();               // attributes { color: 'red' } on the demo type
+  const before = correlations.length;
+  // Switching type alone would keep { color } and drop the required attribute of the new type.
+  const rejected = await call('PATCH', `/store/products/${product.id}`,
+    { product_type_id: strictProductType, expected_version: 0 }, owner);
+  expect(rejected.status).toBe(422);
+  expect((await rejected.json() as any).code).toBe('INVALID_ATTRIBUTES');
+  expect(await m1.query('SELECT product_type_id, version, attributes_json FROM product WHERE id=$1', [product.id]))
+    .toEqual([{ product_type_id: PRODUCT_TYPE, version: 0, attributes_json: { color: 'red' } }]);
+  const correlation = correlations[before];
+  expect(await m1.query('SELECT id FROM m1_audit WHERE request_id=$1', [correlation])).toHaveLength(0);
+  expect(await m1.query('SELECT id FROM outbox WHERE correlation_id=$1', [correlation])).toHaveLength(0);
+
+  // Supplying the final attribute map is accepted, so the rule rejects invalid state, not the change.
+  const accepted = await call('PATCH', `/store/products/${product.id}`,
+    { product_type_id: strictProductType, attributes: { required_review: 'yes' }, expected_version: 0 }, owner);
+  expect(accepted.status).toBe(200);
+  expect(await accepted.json() as any).toMatchObject({ product_type_id: strictProductType,
+    attributes: { required_review: 'yes' }, version: 1 });
 });
