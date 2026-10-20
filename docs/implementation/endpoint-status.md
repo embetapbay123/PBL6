@@ -21,7 +21,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /auth/logout` | logout | M3 / auth | Trí | IMPLEMENTED_SAMPLE |
 | `POST /auth/reset-password` | resetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `POST /auth/reset-password/confirm` | confirmResetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
-| `POST /auth/change-password` | changePassword | M3 / auth | Trí | IMPLEMENTED |
+| `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
@@ -59,7 +59,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `DELETE /cart/items/{id}` | removeCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `POST /checkout/quotes` | quoteCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | IMPLEMENTED |
 | `GET /orders/batches/{id}` | getPurchaseGroupOrders | M2 / order | Hoa | IMPLEMENTED |
 | `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | IMPLEMENTED |
 | `GET /payments/{id}` | getPayment | M2 / payment | Công | IMPLEMENTED |
@@ -113,6 +113,3 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
-
-
-`updateRole` is deliberately disabled with HTTP 501 `FEATURE_NOT_IMPLEMENTED`; effective permission enforcement and revocation for existing sessions remain pending. The endpoint does not write `role_permission` or emit a success audit event.

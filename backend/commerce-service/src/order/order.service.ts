@@ -13,6 +13,7 @@ import { EntityManager } from 'typeorm';
 import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { audit } from '../../../shared/src/audit';
+import { VoucherRepository } from '../voucher/voucher.repository';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
@@ -49,15 +50,26 @@ export class OrderService {
       key: string,
       urls: Record<'M1' | 'M2' | 'M3', string>
     ) => InternalClients,
-    private readonly dependencies: {catalog?:CatalogDirectory;quotes?:QuoteStore;payments?:(manager:EntityManager)=>PaymentPort} = {},
-  ) {this.quoteStore=dependencies.quotes ?? new RedisQuoteStore();this.catalog=dependencies.catalog ?? new CatalogClient();}
+    private readonly dependencies: {
+      catalog?: CatalogDirectory;
+      quotes?: QuoteStore;
+      payments?: (manager: EntityManager) => PaymentPort;
+      vouchers?: (manager: EntityManager) => VoucherRepository;
+    } = {},
+  ) {
+    this.quoteStore = dependencies.quotes ?? new RedisQuoteStore();
+    this.catalog = dependencies.catalog ?? new CatalogClient();
+  }
 
-  private readonly quoteStore:QuoteStore;
-  private readonly catalog:CatalogDirectory;
-  private payments(manager:EntityManager):PaymentPort {
-    const port=this.dependencies.payments?.(manager) ?? new PaymentService(manager);
-    if(port.manager!==manager) throw new Error('TRANSACTION_MANAGER_MISMATCH');
+  private readonly quoteStore: QuoteStore;
+  private readonly catalog: CatalogDirectory;
+  private payments(manager: EntityManager): PaymentPort {
+    const port = this.dependencies.payments?.(manager) ?? new PaymentService(manager);
+    if (port.manager !== manager) throw new Error('TRANSACTION_MANAGER_MISMATCH');
     return port;
+  }
+  private vouchers(manager: EntityManager): VoucherRepository {
+    return this.dependencies.vouchers?.(manager) ?? new VoucherRepository(manager);
   }
 
   private getInternalClients(): InternalClients {
@@ -331,11 +343,18 @@ export class OrderService {
     return { storeList, totalPayableVnd, platformVoucherId };
   }
 
-  async quoteCheckout(
+  async revalidateQuote(
     input: OperationInputs['quoteCheckout']['body'],
     auth: any,
-    correlation: string
-  ): Promise<OperationOutputs['quoteCheckout']> {
+    correlation: string,
+    orderRepo: OrderRepository
+  ): Promise<{
+    storeList: StoreCalculation[];
+    context: any;
+    payable: number;
+    platformVoucherId?: string;
+    snapshotHash: string;
+  }> {
     const userId = auth?.user_id;
     if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
 
@@ -354,9 +373,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'address_id không hợp lệ.');
     }
 
-    const orderRepo = new OrderRepository(database.manager);
-
-    const { storeList, totalPayableVnd } = await this.calculateQuote(
+    const { storeList, platformVoucherId } = await this.calculateQuote(
       cartItemIds,
       userId,
       input.store_vouchers,
@@ -365,20 +382,46 @@ export class OrderService {
       orderRepo
     );
 
-    const context=await this.getInternalClients().call('ResolveCheckoutContext',{
-      token:accessToken(auth),address_id:addressId,store_ids:storeList.map(s=>s.store_id),
-    },correlation);
-    for(const store of storeList) {
-      const snapshot=context.stores.find(s=>s.id===store.store_id);
-      if(!snapshot) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Lookup thiếu Store.');
-      store.shipping_vnd=moneyNumber(snapshot.shipping_fee_vnd);
-      store.payable_vnd=moneyNumber(BigInt(store.goods_vnd)-BigInt(store.store_discount_vnd)-BigInt(store.platform_discount_vnd)+BigInt(store.shipping_vnd));
+    const context = await this.getInternalClients().call('ResolveCheckoutContext', {
+      token: accessToken(auth),
+      address_id: addressId,
+      store_ids: storeList.map(s => s.store_id),
+    }, correlation);
+
+    for (const store of storeList) {
+      const snapshot = context.stores?.find((s: any) => s.id === store.store_id);
+      if (!snapshot) throw new ApiError(503, 'DEPENDENCY_CONTRACT_INVALID', 'Lookup thiếu Store.');
+      store.shipping_vnd = moneyNumber(snapshot.shipping_fee_vnd);
+      store.payable_vnd = moneyNumber(BigInt(store.goods_vnd) - BigInt(store.store_discount_vnd) - BigInt(store.platform_discount_vnd) + BigInt(store.shipping_vnd));
     }
-    const payable=moneyNumber(storeList.reduce((sum,s)=>sum+BigInt(s.payable_vnd),0n));
+
+    const payable = moneyNumber(storeList.reduce((sum, s) => sum + BigInt(s.payable_vnd), 0n));
+    const snapshotHash = fingerprint({ storeList, context });
+
+    return { storeList, context, payable, platformVoucherId, snapshotHash };
+  }
+
+  async quoteCheckout(
+    input: OperationInputs['quoteCheckout']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['quoteCheckout']> {
+    const orderRepo = new OrderRepository(database.manager);
+    const { storeList, payable, snapshotHash } = await this.revalidateQuote(
+      input,
+      auth,
+      correlation,
+      orderRepo
+    );
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    const quoteId=randomUUID();
-    await this.quoteStore.put(quoteId,{user_id:userId,request_hash:fingerprint(this.quoteInput(input)),snapshot_hash:fingerprint({storeList,context}),expires_at:expiresAt});
+    const quoteId = randomUUID();
+    await this.quoteStore.put(quoteId, {
+      user_id: auth.user_id,
+      request_hash: fingerprint(this.quoteInput(input)),
+      snapshot_hash: snapshotHash,
+      expires_at: expiresAt,
+    });
     return {
       quote_id: quoteId,
       stores: storeList.map(store => ({
@@ -397,15 +440,340 @@ export class OrderService {
     };
   }
 
-  async confirmCheckout(input:OperationInputs['confirmCheckout']['body'],key:string|undefined,auth:any,_correlation:string):Promise<OperationOutputs['confirmCheckout']> {
-    if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
-    if(!key?.trim()) throw new ApiError(422,'VALIDATION_FAILED','Thiếu Idempotency-Key.');
-    const quote=await this.quoteStore.get(input.quote_id);
-    if(!quote || quote.user_id!==auth.user_id) throw new ApiError(404,'QUOTE_NOT_FOUND','Không tìm thấy quote của Customer.');
-    if(Date.parse(quote.expires_at)<=Date.now()) throw new ApiError(409,'QUOTE_EXPIRED','Quote đã hết hạn.');
-    if(quote.request_hash!==fingerprint(this.quoteInput(input))) throw new ApiError(409,'QUOTE_CHANGED','Nội dung khác quote.');
-    // Reject before reserve/DB writes until the Payment port and durable inventory orchestration are implemented.
-    return notImplemented('confirmCheckout: cần PaymentPort và orchestration kho bền vững');
+  async confirmCheckout(
+    input: OperationInputs['confirmCheckout']['body'],
+    key: string | undefined,
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['confirmCheckout']> {
+    const userId = auth?.user_id;
+    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    if (!key?.trim()) throw new ApiError(422, 'VALIDATION_FAILED', 'Thiếu Idempotency-Key.');
+
+    const idempotencyKey = key.trim();
+    const requestPayloadHash = fingerprint({
+      cart_item_ids: [...input.cart_item_ids].sort(),
+      address_id: input.address_id,
+      payment_methods: input.payment_methods,
+      platform_voucher_code: input.platform_voucher_code,
+      store_vouchers: input.store_vouchers,
+      quote_id: input.quote_id,
+      expected_payable_total_vnd: input.expected_payable_total_vnd,
+    });
+
+    const rootRepo = new OrderRepository(database.manager);
+
+    const existingRecord = await rootRepo.findIdempotencyRecord(idempotencyKey, userId);
+    if (existingRecord) {
+      if (existingRecord.payload_hash !== requestPayloadHash) {
+        throw new ApiError(409, 'IDEMPOTENCY_CONFLICT', 'Idempotency-Key đã dùng với payload khác.');
+      }
+      return existingRecord.response_json as OperationOutputs['confirmCheckout'];
+    }
+
+    const quote = await this.quoteStore.get(input.quote_id);
+    if (!quote || quote.user_id !== userId) {
+      throw new ApiError(404, 'QUOTE_NOT_FOUND', 'Không tìm thấy quote của Customer.');
+    }
+    if (Date.parse(quote.expires_at) <= Date.now()) {
+      throw new ApiError(409, 'QUOTE_EXPIRED', 'Quote đã hết hạn.');
+    }
+    if (quote.request_hash !== fingerprint(this.quoteInput(input))) {
+      throw new ApiError(409, 'QUOTE_CHANGED', 'Nội dung khác quote.');
+    }
+
+    // BUG-QUOTE-01: Revalidate quote against current upstream data before reserve or DB effects
+    const { storeList, context, payable, platformVoucherId, snapshotHash } = await this.revalidateQuote(
+      input,
+      auth,
+      correlation,
+      rootRepo
+    );
+
+    if (snapshotHash !== quote.snapshot_hash) {
+      throw new ApiError(409, 'QUOTE_CHANGED', 'Dữ liệu sản phẩm, giá hoặc địa chỉ đã thay đổi. Vui lòng tạo quote mới.');
+    }
+
+    if (input.expected_payable_total_vnd !== payable) {
+      throw new ApiError(409, 'QUOTE_CHANGED', 'Tổng tiền thanh toán không khớp với quote.');
+    }
+
+    for (const store of storeList) {
+      const method = input.payment_methods?.[store.store_id];
+      if (!method || !['COD', 'SANDBOX'].includes(method)) {
+        throw new ApiError(422, 'VALIDATION_FAILED', `Thiếu hoặc không hợp lệ phương thức thanh toán cho Store ${store.store_id}.`);
+      }
+    }
+
+    const purchaseGroupId = randomUUID();
+    const now = new Date();
+    const storeOrders = storeList.map(store => {
+      const orderId = randomUUID();
+      const method = input.payment_methods[store.store_id] as 'COD' | 'SANDBOX';
+      const status = method === 'COD' ? 'PREPARING' : 'AWAITING_PAYMENT';
+      const paymentExpiresAt = method === 'SANDBOX' ? new Date(now.getTime() + 15 * 60 * 1000) : null;
+      return {
+        ...store,
+        orderId,
+        paymentMethod: method,
+        status,
+        paymentExpiresAt,
+      };
+    });
+
+    const reservationItems: Array<{
+      variant_id: string;
+      store_id: string;
+      order_id: string;
+      quantity: number;
+    }> = [];
+    for (const store of storeOrders) {
+      for (const item of store.items) {
+        reservationItems.push({
+          variant_id: item.variant_id,
+          store_id: store.store_id,
+          order_id: store.orderId,
+          quantity: item.quantity,
+        });
+      }
+    }
+
+    const reservationExpiresAt = new Date(now.getTime() + 15 * 60 * 1000);
+    const reserveOpId = randomUUID();
+    const reserveResult = await this.getInternalClients().call('ReserveInventory', {
+      operation_id: reserveOpId,
+      purchase_group_id: purchaseGroupId,
+      items: reservationItems,
+      expires_at: reservationExpiresAt.toISOString(),
+    }, correlation);
+
+    try {
+      return await database.transaction(async manager => {
+        await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [
+          'M2.Confirm:' + userId + ':' + idempotencyKey,
+        ]);
+
+        const repo = new OrderRepository(manager);
+        const existingTxRecord = await repo.findIdempotencyRecord(idempotencyKey, userId);
+        if (existingTxRecord) {
+          if (existingTxRecord.payload_hash !== requestPayloadHash) {
+            throw new ApiError(409, 'IDEMPOTENCY_CONFLICT', 'Idempotency-Key đã dùng với payload khác.');
+          }
+          return existingTxRecord.response_json as OperationOutputs['confirmCheckout'];
+        }
+
+        const voucherRepo = this.vouchers(manager);
+        const voucherHolds: Array<{
+          voucher_id: string;
+          purchase_group_id: string;
+          customer_user_id: string;
+          store_id?: string | null;
+          discount_vnd: number;
+          expires_at: Date;
+        }> = [];
+
+        for (const store of storeOrders) {
+          if (store.voucher_id && store.store_discount_vnd > 0) {
+            voucherHolds.push({
+              voucher_id: store.voucher_id,
+              purchase_group_id: purchaseGroupId,
+              customer_user_id: userId,
+              store_id: store.store_id,
+              discount_vnd: store.store_discount_vnd,
+              expires_at: reservationExpiresAt,
+            });
+          }
+        }
+
+        const totalPlatformDiscountVnd = storeOrders.reduce((acc, s) => acc + s.platform_discount_vnd, 0);
+        if (platformVoucherId && totalPlatformDiscountVnd > 0) {
+          voucherHolds.push({
+            voucher_id: platformVoucherId,
+            purchase_group_id: purchaseGroupId,
+            customer_user_id: userId,
+            store_id: null,
+            discount_vnd: totalPlatformDiscountVnd,
+            expires_at: reservationExpiresAt,
+          });
+        }
+
+        // When reserving multiple vouchers, call in sorted voucher_id order
+        voucherHolds.sort((a, b) => a.voucher_id.localeCompare(b.voucher_id));
+        for (const hold of voucherHolds) {
+          await voucherRepo.reserveVoucher(hold);
+        }
+
+        for (const store of storeOrders) {
+          await repo.createOrder({
+            id: store.orderId,
+            purchase_group_id: purchaseGroupId,
+            customer_user_id: userId,
+            store_id: store.store_id,
+            address_snapshot: context.address_snapshot ?? {},
+            status: store.status,
+            payment_method: store.paymentMethod,
+            payment_expires_at: store.paymentExpiresAt,
+            goods_vnd: store.goods_vnd,
+            store_discount_vnd: store.store_discount_vnd,
+            platform_discount_vnd: store.platform_discount_vnd,
+            shipping_vnd: store.shipping_vnd,
+            payable_vnd: store.payable_vnd,
+            version: 0,
+          });
+
+          for (const item of store.items) {
+            await repo.createOrderItem({
+              order_id: store.orderId,
+              product_id: item.product_id,
+              variant_id: item.variant_id,
+              product_snapshot: { title: item.product_title },
+              sku_snapshot: item.sku ?? '',
+              unit_price_vnd: item.unit_price_vnd,
+              quantity: item.quantity,
+              line_total_vnd: item.line_total_vnd,
+            });
+          }
+
+          await manager.query(
+            `INSERT INTO order_status_history (id, order_id, from_status, to_status, actor_user_id, reason, operation_id, created_at)
+             VALUES (gen_random_uuid(), $1, NULL, $2, $3, 'ORDER_CREATED', gen_random_uuid(), NOW())`,
+            [store.orderId, store.status, userId]
+          );
+        }
+
+        const redemptionRows: Array<{
+          voucher_id: string;
+          order_id: string;
+          customer_user_id: string;
+          discount_vnd: number;
+        }> = [];
+
+        for (const store of storeOrders) {
+          if (store.voucher_id && store.store_discount_vnd > 0) {
+            redemptionRows.push({
+              voucher_id: store.voucher_id,
+              order_id: store.orderId,
+              customer_user_id: userId,
+              discount_vnd: store.store_discount_vnd,
+            });
+          }
+          if (platformVoucherId && store.platform_discount_vnd > 0) {
+            redemptionRows.push({
+              voucher_id: platformVoucherId,
+              order_id: store.orderId,
+              customer_user_id: userId,
+              discount_vnd: store.platform_discount_vnd,
+            });
+          }
+        }
+
+        await voucherRepo.commitVoucherRedemptions(purchaseGroupId, redemptionRows);
+
+        const paymentPort = this.payments(manager);
+        for (const store of storeOrders) {
+          await paymentPort.createForOrder({
+            order_id: store.orderId,
+            method: store.paymentMethod,
+            payable_vnd: BigInt(store.payable_vnd),
+            operation_id: randomUUID(),
+            correlation_id: correlation,
+          });
+        }
+
+        await repo.removeCartItems(input.cart_item_ids, userId);
+
+        for (const store of storeOrders) {
+          await audit(
+            manager,
+            'M2',
+            userId,
+            'Order',
+            store.orderId,
+            'CONFIRM_CHECKOUT',
+            correlation,
+            {},
+            { id: store.orderId, status: store.status, payable_vnd: store.payable_vnd }
+          );
+
+          await emitEvent(
+            manager,
+            'OrderCreated',
+            {
+              order_id: store.orderId,
+              purchase_group_id: purchaseGroupId,
+              store_id: store.store_id,
+              customer_user_id: userId,
+              payable_vnd: store.payable_vnd,
+            },
+            correlation
+          );
+        }
+
+        const responseDto: OperationOutputs['confirmCheckout'] = {
+          purchase_group_id: purchaseGroupId,
+          order_ids: storeOrders.map(s => s.orderId),
+          orders: storeOrders.map(store => ({
+            id: store.orderId,
+            purchase_group_id: purchaseGroupId,
+            store_id: store.store_id,
+            status: store.status as any,
+            version: 0,
+            payment_method: store.paymentMethod as any,
+            payment_expires_at: store.paymentExpiresAt ? store.paymentExpiresAt.toISOString() : undefined,
+            amounts: {
+              goods_vnd: store.goods_vnd,
+              store_discount_vnd: store.store_discount_vnd,
+              platform_discount_vnd: store.platform_discount_vnd,
+              shipping_vnd: store.shipping_vnd,
+              payable_vnd: store.payable_vnd,
+            },
+            items: store.items.map(it => ({
+              product_id: it.product_id,
+              variant_id: it.variant_id,
+              product_snapshot: { title: it.product_title },
+              sku_snapshot: it.sku ?? '',
+              unit_price_vnd: it.unit_price_vnd,
+              quantity: it.quantity,
+              line_total_vnd: it.line_total_vnd,
+            })),
+          })),
+          payable_total_vnd: payable,
+        };
+
+        await repo.saveIdempotencyRecord({
+          customer_user_id: userId,
+          key: idempotencyKey,
+          payload_hash: requestPayloadHash,
+          purchase_group_id: purchaseGroupId,
+          response_json: responseDto as any,
+          expires_at: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+        });
+
+        return responseDto;
+      });
+    } catch (dbError) {
+      if (reserveResult?.reservations?.length) {
+        const orderReservations = new Map<string, string[]>();
+        for (const r of reserveResult.reservations) {
+          const list = orderReservations.get(r.order_id) ?? [];
+          list.push(r.id);
+          orderReservations.set(r.order_id, list);
+        }
+        for (const [orderId, resIds] of orderReservations.entries()) {
+          try {
+            await this.getInternalClients().call('ReleaseReservation', {
+              operation_id: randomUUID(),
+              order_id: orderId,
+              reservation_ids: [...new Set(resIds)],
+              reason: 'CONFIRM_FAILED',
+            }, correlation);
+          } catch {
+            // ignore compensation failure
+          }
+        }
+      }
+      throw dbError;
+    }
   }
 
   async getPurchaseGroupOrders(
