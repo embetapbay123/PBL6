@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { request, ApiError } from '../../api/client';
 
-
 interface Profile {
   id: string;
   email: string;
-  full_name: string;
+  display_name: string;
   phone: string | null;
 }
-type ProfileUpdate = Pick<Profile, 'full_name' | 'phone'>;
+
+type ProfileUpdate = {
+  display_name?: string;
+  phone?: string;
+};
 
 const PROFILE_PATH = '/me';
 
@@ -24,7 +27,7 @@ const describeError = (error: unknown): string => {
 
 export const ProfilePage: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
 
   const [loading, setLoading] = useState(true);
@@ -44,12 +47,11 @@ export const ProfilePage: React.FC = () => {
     };
   }, []);
 
- 
   const fetchProfile = useCallback(async (): Promise<Profile> => {
     const profile = await request<Profile>(PROFILE_PATH);
     if (mounted.current) {
       setEmail(profile.email);
-      setFullName(profile.full_name ?? '');
+      setDisplayName(profile.display_name ?? '');
       setPhone(profile.phone ?? '');
     }
     return profile;
@@ -80,11 +82,12 @@ export const ProfilePage: React.FC = () => {
     setIsSaved(false);
     window.clearTimeout(savedTimer.current);
 
-    
-    const payload: ProfileUpdate = {
-      full_name: fullName.trim(),
-      phone: phone.trim() || null,
-    };
+    const payload: ProfileUpdate = {};
+    const trimmedName = displayName.trim();
+    if (trimmedName) {
+      payload.display_name = trimmedName;
+    }
+    payload.phone = phone.trim(); // send string, never null
 
     try {
       await request<Profile>(PROFILE_PATH, {
@@ -98,7 +101,6 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
-   
     try {
       await fetchProfile();
       if (mounted.current) {
@@ -159,14 +161,14 @@ export const ProfilePage: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
         <div>
-          <label htmlFor="profile-full-name" className="block text-sm font-medium text-gray-700 mb-1">
-            Họ và tên
+          <label htmlFor="profile-display-name" className="block text-sm font-medium text-gray-700 mb-1">
+            Tên hiển thị
           </label>
           <input
-            id="profile-full-name"
+            id="profile-display-name"
             type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
             className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
             required
           />
@@ -195,7 +197,6 @@ export const ProfilePage: React.FC = () => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
-            required
           />
         </div>
 
