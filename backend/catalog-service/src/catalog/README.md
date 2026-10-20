@@ -8,10 +8,14 @@ Owner: Thịnh
 - `GET /products/{id}` — getProduct: **IMPLEMENTED**
 - `GET /stores/{id}/products` — listStoreProducts: **IMPLEMENTED**
 - `GET /store/products` — listOwnStoreProducts: **IMPLEMENTED**
-- `POST /store/products` — createProduct: **NOT_IMPLEMENTED**
-- `PATCH /store/products/{id}` — updateProduct: **IMPLEMENTED_SAMPLE**
+- `POST /store/products` — createProduct: **IMPLEMENTED**
+- `PATCH /store/products/{id}` — updateProduct: **IMPLEMENTED**
 - `POST /store/products/{id}/variants` — createVariant: **NOT_IMPLEMENTED**
 - `POST /store/products/{id}/images` — addProductImage: **NOT_IMPLEMENTED**
+
+## Bàn giao CAT-02
+
+Ghi Product đầy đủ ở [bàn giao CAT-02](../../../../docs/implementation/cat-02-handoff.md). `createProduct` tạo Product + Variant + tồn kho 0 + audit + `ProductChanged` trong **một** transaction (mặc định `DRAFT`). `updateProduct` nhận toàn bộ payload (title, description, attributes, product_type_id, status, variants) với `expected_version`; `variants` là **tập thay thế** — Variant biến mất khỏi payload bị `STOPPED` chứ không xoá để giữ lịch sử kho. Thuộc tính phải khớp `attribute_definition` của Product type.
 
 ## Bàn giao CAT-01
 

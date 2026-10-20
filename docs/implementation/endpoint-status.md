@@ -21,7 +21,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /auth/logout` | logout | M3 / auth | Trí | IMPLEMENTED_SAMPLE |
 | `POST /auth/reset-password` | resetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `POST /auth/reset-password/confirm` | confirmResetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
-| `POST /auth/change-password` | changePassword | M3 / auth | Trí | IMPLEMENTED |
+| `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
@@ -47,8 +47,8 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
-| `POST /store/products` | createProduct | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
+| `POST /store/products` | createProduct | M1 / catalog | Thịnh | IMPLEMENTED |
+| `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED |
 | `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `POST /store/products/{id}/images` | addProductImage | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | IMPLEMENTED |
@@ -113,6 +113,3 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
-
-
-`updateRole` is deliberately disabled with HTTP 501 `FEATURE_NOT_IMPLEMENTED`; effective permission enforcement and revocation for existing sessions remain pending. The endpoint does not write `role_permission` or emit a success audit event.

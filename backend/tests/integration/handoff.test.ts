@@ -31,7 +31,9 @@ test('public handlers run guard before strict request DTO validation',async()=>{
   // Structurally valid fixture IDs are not seeded entities; the real Catalog rejects them.
   expect((await call(fixtures.addCartItem.request.body)).status).toBe(404);
   const response=await fetch(base+'/products');assertSchema(await response.json(),bundle.operations.listProducts.responses['200']);
-  const malformed=await fetch(base+'/auth/login',{method:'POST',headers,body:'{"private-value'});
+  // Exercise the shared JSON parser without consuming the login brute-force budget shared by
+  // integration suites. Parsing malformed JSON still precedes the route guard and returns 400.
+  const malformed=await fetch(base+'/cart/items',{method:'POST',headers,body:'{"private-value'});
   expect(malformed.status).toBe(400);const error=await malformed.json() as any;
   expect(error.correlation_id).toBeTruthy();expect(error.message).not.toContain('private-value');expect(malformed.headers.get('X-Correlation-Id')).toBe(error.correlation_id);
 });
