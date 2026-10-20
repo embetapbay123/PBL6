@@ -154,3 +154,60 @@ test('concurrent Store/Admin Voucher creation returns a 409 business conflict, n
     expect(await source.query('SELECT id FROM voucher WHERE code=$1',[code.toUpperCase()])).toHaveLength(1);
   } finally {await source.query('DELETE FROM m2_audit WHERE target_id IN (SELECT id FROM voucher WHERE code=$1)',[code.toUpperCase()]);await source.query('DELETE FROM voucher WHERE code=$1',[code.toUpperCase()]);await source.destroy();}
 });
+
+test('Store Voucher usage reflects ledger counts and matches OpenAPI schema', async () => {
+  const source = new DataSource({ type: 'postgres', url: process.env.M2_DATABASE_URL });
+  await source.initialize();
+  const voucherId = randomUUID();
+  const purchaseGroup1 = randomUUID();
+  const purchaseGroup2 = randomUUID();
+  const orderId = randomUUID();
+  try {
+    const owner = await login('owner@pbl6.test');
+    const context = await (await fetch(base + '/me/context', { headers: headers(owner) })).json() as any;
+    const storeId = context.store_membership.store_id;
+
+    await source.query(
+      `INSERT INTO voucher (id, code, scope, store_id, owner_user_id, discount_type, discount_value, min_goods_vnd, starts_at, ends_at, usage_limit, per_customer_limit, status)
+       VALUES ($1, $2, 'STORE', $3, $4, 'FIXED', 10000, 50000, NOW() - interval '1 day', NOW() + interval '10 days', 20, 2, 'ACTIVE')`,
+      [voucherId, 'USAGE-' + randomUUID().slice(0, 8), storeId, context.user_id]
+    );
+
+    // Insert 1 active reservation
+    await source.query(
+      `INSERT INTO voucher_reservation (id, voucher_id, purchase_group_id, customer_user_id, store_id, status, discount_vnd, expires_at)
+       VALUES ($1, $2, $3, $4, $5, 'ACTIVE', 10000, NOW() + interval '15 minutes')`,
+      [randomUUID(), voucherId, purchaseGroup1, context.user_id, storeId]
+    );
+
+    // Insert 1 redemption (for a different purchase group)
+    await source.query(
+      `INSERT INTO "order" (id, purchase_group_id, customer_user_id, store_id, status, payment_method, goods_vnd, store_discount_vnd, platform_discount_vnd, shipping_vnd, payable_vnd)
+       VALUES ($1, $2, $3, $4, 'CONFIRMED', 'COD', 100000, 10000, 0, 0, 90000)`,
+      [orderId, purchaseGroup2, context.user_id, storeId]
+    );
+    await source.query(
+      `INSERT INTO voucher_redemption (id, voucher_id, purchase_group_id, order_id, customer_user_id, discount_vnd, redeemed_at)
+       VALUES ($1, $2, $3, $4, $5, 10000, NOW())`,
+      [randomUUID(), voucherId, purchaseGroup2, orderId, context.user_id]
+    );
+
+    const usageRes = await fetch(base + `/store/vouchers/${voucherId}/usage`, { headers: headers(owner) });
+    expect(usageRes.status).toBe(200);
+    const usage = await usageRes.json() as any;
+    expect(usage).toMatchObject({
+      voucher_id: voucherId,
+      reserved_count: 1,
+      redeemed_count: 1,
+      remaining_count: 18,
+    });
+    expect(schemaErrors(usage, bundle.operations.getStoreVoucherUsage.responses['200'])).toEqual([]);
+  } finally {
+    await source.query('DELETE FROM voucher_redemption WHERE voucher_id=$1', [voucherId]);
+    await source.query('DELETE FROM voucher_reservation WHERE voucher_id=$1', [voucherId]);
+    await source.query('DELETE FROM "order" WHERE id=$1', [orderId]);
+    await source.query('DELETE FROM voucher WHERE id=$1', [voucherId]);
+    await source.destroy();
+  }
+});
+

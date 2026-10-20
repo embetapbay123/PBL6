@@ -22,13 +22,28 @@ jobs:
       - run: python scripts/check_database_schema.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
-      - run: npm run infra:up && python scripts/wait_local.py
-      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
+      - name: Start infrastructure and wait for gateway
+        run: |
+          set -o pipefail
+          npm run infra:up
+          if ! python scripts/wait_local.py; then
+            docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml ps --all
+            docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml logs --no-color --tail=200 m1 m2 m3 m4 gateway
+            exit 1
+          fi
+      - name: Rebuild tools image from the checked out commit
+        run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build tools
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm -e PBL6_ISOLATED_TEST_REDIS=1 tools npm run test:integration
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
       - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
       - run: npm --prefix frontend run test:e2e
       - if: always()
-        run: npm run infra:down
+        run: |
+          if [ -f infrastructure/.env ]; then
+            npm run infra:down
+          else
+            echo "Skipping infrastructure teardown because setup_local.py did not create infrastructure/.env."
+          fi
   mobile:
     runs-on: ubuntu-latest
     steps:

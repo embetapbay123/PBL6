@@ -27,6 +27,8 @@ interface ProcessedItem {
   unit_price_vnd: number;
   quantity: number;
   line_total_vnd: number;
+  available_quantity?: number;
+  version?: number;
   [key: string]: unknown;
 }
 
@@ -68,9 +70,18 @@ export class OrderService {
     if (!items.length) return [];
     return (await this.getInternalClients().call('QuoteVariants',{items},correlation)).items;
   }
-  private quoteInput(input:OperationInputs['quoteCheckout']['body']) {
-    return {cart_item_ids:[...input.cart_item_ids].sort(),address_id:input.address_id,
-      payment_methods:input.payment_methods,store_vouchers:input.store_vouchers,platform_voucher_code:input.platform_voucher_code};
+  private quoteInput(input: OperationInputs['quoteCheckout']['body']) {
+    return {
+      cart_item_ids: [...input.cart_item_ids].sort(),
+      address_id: input.address_id,
+      payment_methods: input.payment_methods
+        ? Object.keys(input.payment_methods).sort().reduce((acc, k) => { acc[k] = input.payment_methods[k]; return acc; }, {} as any)
+        : undefined,
+      store_vouchers: input.store_vouchers
+        ? Object.keys(input.store_vouchers).sort().reduce((acc, k) => { acc[k] = input.store_vouchers![k]; return acc; }, {} as any)
+        : undefined,
+      platform_voucher_code: input.platform_voucher_code,
+    };
   }
 
   private mapOrderRowToDto(order: OrderRow & { items: OrderItemRow[] }): OperationOutputs['getOwnOrder'] {
@@ -126,6 +137,7 @@ export class OrderService {
       );
     }
 
+    cartItems.sort((a,b)=>a.store_id.localeCompare(b.store_id) || a.variant_id.localeCompare(b.variant_id));
     const quoteItemsInput = cartItems.map(ci => ({
       variant_id: ci.variant_id,
       store_id: ci.store_id,
@@ -185,6 +197,8 @@ export class OrderService {
         unit_price_vnd: unitPriceVnd,
         quantity: ci.quantity,
         line_total_vnd: lineTotalVnd,
+        available_quantity: m1Quote.available_quantity,
+        version: m1Quote.version,
       });
       storeCalc.goods_vnd = moneyNumber(BigInt(storeCalc.goods_vnd)+BigInt(lineTotalVnd));
     }
@@ -365,6 +379,9 @@ export class OrderService {
       correlation
     );
 
+    storeList.sort((a,b)=>a.store_id.localeCompare(b.store_id));
+    for(const store of storeList)store.items.sort((a,b)=>a.variant_id.localeCompare(b.variant_id));
+    context.stores.sort((a:any,b:any)=>a.id.localeCompare(b.id));
     for (const store of storeList) {
       const snapshot = context.stores.find((s: any) => s.id === store.store_id);
       if (!snapshot) throw new ApiError(503, 'DEPENDENCY_CONTRACT_INVALID', 'Lookup thiếu Store.');
@@ -440,7 +457,7 @@ export class OrderService {
           shipping_vnd: store.shipping_vnd,
           payable_vnd: store.payable_vnd,
         },
-        items: store.items,
+        items: store.items.map(({available_quantity,version,...item})=>item),
       })),
       payable_total_vnd: payableTotalVnd,
       expires_at: expiresAt,

@@ -2060,7 +2060,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "get": {
         "tags": [
@@ -2197,7 +2197,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/store-applications": {
@@ -2336,7 +2336,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/store-applications/{id}": {
@@ -2477,7 +2477,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store": {
@@ -2594,7 +2594,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "patch": {
         "tags": [
@@ -2718,7 +2718,7 @@
         "x-service-owner": "M3",
         "x-module": "store",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/staff": {
@@ -4231,7 +4231,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/products": {
@@ -4371,7 +4371,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -4504,7 +4504,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/products/{id}": {
@@ -4645,7 +4645,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "IMPLEMENTED_SAMPLE",
+        "x-implementation-status": "IMPLEMENTED",
         "x-supported-sample-fields": [
           "title",
           "description",
@@ -4795,7 +4795,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/products/{id}/images": {
@@ -4932,7 +4932,7 @@
         "x-service-owner": "M1",
         "x-module": "catalog",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/inventory": {
@@ -8081,7 +8081,7 @@
         "x-service-owner": "M2",
         "x-module": "voucher",
         "x-member-owner": "Hoa",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/vouchers": {

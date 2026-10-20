@@ -31,7 +31,7 @@ describe('AuthService', () => {
     query
       .mockResolvedValueOnce([{ id: 'user-1', email: 'user@example.test', status: 'ACTIVE', version: 4 }])
       .mockResolvedValueOnce([{ code: 'CUSTOMER' }])
-      .mockResolvedValueOnce([{ store_id: 'store-current', role: 'SELLER', status: 'ACTIVE' }])
+      .mockResolvedValueOnce([{ membership_id: 'membership-current', store_id: 'store-current', role: 'SELLER', status: 'ACTIVE' }])
       .mockResolvedValueOnce([{ code: 'product.store.read' }]);
 
     const context = await new AuthService().context('user-1');
@@ -44,7 +44,7 @@ describe('AuthService', () => {
         permissions: ['product.store.read'],
       },
     });
-    expect(query.mock.calls[3][1]).toEqual(['user-1', 'store-current']);
+    expect(query.mock.calls[3][1]).toEqual(['membership-current']);
     expect(query.mock.calls[3][0]).toContain('mp.membership_id');
     expect(query.mock.calls[3][0]).not.toContain('m.user_id=$1 AND m.status');
   });

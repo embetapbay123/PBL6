@@ -294,3 +294,27 @@ test('quota counts ledger, including per Customer, without decrementing configur
   expect(await new OrderRepository(manager as any).voucherAvailable(voucher,USER)).toBe(false);
   expect(voucher.usage_limit).toBe(1);
 });
+
+
+test.each([{available_quantity:9,version:0},{available_quantity:10,version:1}])('quote hash detects sufficient stock/version change %j',async change=>{
+  const s=service(),first=await s.quoteCheckout(input,customer,'first');
+  const original=call.getMockImplementation()!;
+  call.mockImplementation(async(op:string,...args:any[])=>op==='QuoteVariants'?{items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,...change}]}:original(op,...args));
+  const second=await s.quoteCheckout(input,customer,'second');
+  expect(records.get(first.quote_id)!.snapshot_hash).not.toBe(records.get(second.quote_id)!.snapshot_hash);
+  expect(schemaErrors(second,bundle.operations.quoteCheckout.responses['200'])).toEqual([]);
+});
+
+test('identical Cart rows in a different database order keep the same quote hash',async()=>{
+  const secondVariant=randomUUID(),secondItem=randomUUID();
+  const rows=[{id:ITEM,cart_id:randomUUID(),product_id:PRODUCT,variant_id:VARIANT,store_id:STORE,quantity:1},{id:secondItem,cart_id:randomUUID(),product_id:PRODUCT,variant_id:secondVariant,store_id:STORE,quantity:2}];
+  const s=service();
+  (s as any).catalog.product=async()=>({id:PRODUCT,store_id:STORE,title:'Product thật',variants:[{id:VARIANT,sku:'A'},{id:secondVariant,sku:'B'}]});
+  jest.spyOn(s,'quoteVariants').mockResolvedValue(rows.map(r=>({variant_id:r.variant_id,store_id:STORE,quantity:r.quantity,price_vnd:100000,available_quantity:10,version:0})));
+  const repository=jest.spyOn(OrderRepository.prototype,'findCartItemsWithOwnership').mockResolvedValue(rows);
+  const payload={...input,cart_item_ids:[ITEM,secondItem]};
+  const first=await s.quoteCheckout(payload,customer,'first');
+  repository.mockResolvedValue([...rows].reverse());
+  const second=await s.quoteCheckout({...payload,cart_item_ids:[secondItem,ITEM]},customer,'second');
+  expect(records.get(first.quote_id)!.snapshot_hash).toBe(records.get(second.quote_id)!.snapshot_hash);
+});
