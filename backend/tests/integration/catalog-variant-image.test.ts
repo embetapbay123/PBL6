@@ -5,10 +5,11 @@ const base = process.env.TEST_API_URL ?? 'http://gateway/api/v1';
 const STORE_A = '10000000-0000-4000-8000-000000000061';
 const STORE_B = '00000000-0000-4000-8000-0000000000c3';
 const PRODUCT_TYPE = '10000000-0000-4000-8000-000000000071';
+const OWNER_MEMBERSHIP = '10000000-0000-4000-8000-000000000062';
 
 let m1: DataSource;
+let m3: DataSource;
 let owner = '';
-let customer = '';
 let product = '';        // DRAFT Product of Store A that already has one Variant
 let emptyProduct = '';   // DRAFT Product of Store A with no Variant at all
 let foreignProduct = ''; // DRAFT Product of another Store
@@ -66,16 +67,21 @@ async function reset() {
     await m1.query('DELETE FROM product WHERE id = ANY($1::uuid[])', [ids]);
   }
   product = ''; emptyProduct = ''; foreignProduct = ''; correlations = [];
+  // A failed permission assertion must not leave the owner demoted for the next test.
+  await m3.query("UPDATE store_membership SET role='OWNER' WHERE id=$1 AND role<>'OWNER'", [OWNER_MEMBERSHIP]);
 }
 
 beforeAll(async () => {
   m1 = new DataSource({ type: 'postgres', url: process.env.M1_DATABASE_URL });
+  m3 = new DataSource({ type: 'postgres', url: process.env.M3_DATABASE_URL });
   await m1.initialize();
+  await m3.initialize();
+  // One login only: the integration suite shares a 30-per-minute login budget with every other
+  // suite, so a second account here pushes the whole run into 429s.
   owner = await login('owner@pbl6.test');
-  customer = await login('customer1@pbl6.test');
 });
 beforeEach(async () => { await reset(); await seed(); });
-afterAll(async () => { await reset(); await m1.destroy(); });
+afterAll(async () => { await reset(); await m3.destroy(); await m1.destroy(); });
 
 test('createVariant adds the Variant, zero stock, audit, outbox and a new Product version', async () => {
   const { status, body } = await addVariant({ is_default: true });
@@ -141,7 +147,16 @@ test('createVariant is scoped to the caller Store', async () => {
 
   expect((await call('POST', `/store/products/${randomUUID()}/variants`, variantBody(), owner)).status).toBe(404);
   expect((await call('POST', `/store/products/${product}/variants`, variantBody())).status).toBe(401);
-  expect((await call('POST', `/store/products/${product}/variants`, variantBody(), customer)).status).toBe(403);
+});
+
+test('a Store member without the product permission is refused', async () => {
+  // The role guard still admits a SELLER, so this exercises the permission check itself. It also
+  // proves a withdrawn grant takes effect on the very next call with the same still-valid token.
+  await m3.query("UPDATE store_membership SET role='SELLER' WHERE id=$1", [OWNER_MEMBERSHIP]);
+  const response = await call('POST', `/store/products/${product}/variants`, variantBody(), owner);
+  expect(response.status).toBe(403);
+  expect((await response.json() as any).code).toBe('FORBIDDEN');
+  await m3.query("UPDATE store_membership SET role='OWNER' WHERE id=$1", [OWNER_MEMBERSHIP]);
 });
 
 test('addProductImage appends by position and does not bump the Product version', async () => {
