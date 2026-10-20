@@ -221,4 +221,94 @@ export class CatalogRepository extends OwnedRepository {
       'INSERT INTO inventory(id,variant_id,store_id,quantity,reserved_quantity,version) VALUES(gen_random_uuid(),$1,$2,0,0,0)',
       [variantId,storeId]);
   }
+  /* ---------------------------------------------- CAT-03: Variant and image writes */
+
+  async productForWrite(id:string,storeId:string) {
+    const [row]=await this.manager.query(
+      'SELECT id,store_id,status,moderation_status,version FROM product WHERE id=$1 AND store_id=$2',[id,storeId]);
+    return row;
+  }
+
+  /**
+   * Serializes Variant writes for one Product. Without it two requests both read the old Variant set
+   * and both try to become the default, or both pass the same SKU/signature pre-check and then
+   * collide on a unique index. The lock is taken on the Product row, which is also the row
+   * `updateProduct` locks first, so both write paths share one lock order.
+   */
+  async lockProductForVariants(id:string,storeId:string) {
+    const [row]=await this.manager.query(
+      'SELECT id,store_id,status,moderation_status,version FROM product WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id,storeId]);
+    return row;
+  }
+
+  /**
+   * A Variant change alters price or availability, so the Product version advances and the
+   * `ProductChanged` event carries it. M4 uses that version to invalidate stale embeddings.
+   *
+   * The UPDATE and the read-back are separate statements on purpose: `manager.query()` does not
+   * return rows for `UPDATE ... RETURNING` on this driver, so `updateText` uses the same shape.
+   */
+  async touchProductRow(id:string) {
+    await this.manager.query('UPDATE product SET version=version+1 WHERE id=$1',[id]);
+    const [row]=await this.manager.query(
+      'SELECT id,store_id,status,moderation_status,version FROM product WHERE id=$1',[id]);
+    return row;
+  }
+
+  async skuUsedInStore(storeId:string,sku:string) {
+    const [row]=await this.manager.query(
+      'SELECT 1 AS found FROM product_variant WHERE store_id=$1 AND sku=$2 LIMIT 1',[storeId,sku]);
+    return row!==undefined;
+  }
+
+  /** `variant_signature_unique (product_id, variant_signature)` keeps one row per attribute set. */
+  async signatureUsedInProduct(productId:string,signature:string) {
+    const [row]=await this.manager.query(
+      'SELECT 1 AS found FROM product_variant WHERE product_id=$1 AND variant_signature=$2 LIMIT 1',[productId,signature]);
+    return row!==undefined;
+  }
+
+  /** `variant_default_unique` allows one default per Product, so a new default clears the old one. */
+  async unsetDefaultVariants(productId:string) {
+    await this.manager.query('UPDATE product_variant SET is_default=false WHERE product_id=$1 AND is_default',[productId]);
+  }
+
+  async addVariantRow(input:{productId:string;storeId:string;sku:string;priceVnd:number;
+    variantValues:Record<string,unknown>;signature:string;isDefault:boolean;status:string}) {
+    const [row]=await this.manager.query(
+      `INSERT INTO product_variant(id,product_id,store_id,sku,price_vnd,variant_values_json,variant_signature,is_default,status)
+       VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING id,sku,price_vnd,variant_values_json AS variant_values,is_default,status`,
+      [input.productId,input.storeId,input.sku,input.priceVnd,JSON.stringify(input.variantValues),
+        input.signature,input.isDefault,input.status]);
+    return row;
+  }
+
+  /** A new Variant starts at zero stock so inventory and quote can see it immediately. */
+  async addInventoryRow(variantId:string,storeId:string) {
+    await this.manager.query(
+      'INSERT INTO inventory(id,variant_id,store_id,quantity,reserved_quantity,version) VALUES(gen_random_uuid(),$1,$2,0,0,0)',
+      [variantId,storeId]);
+  }
+
+  async variantRowsOfProduct(productId:string) {
+    return this.manager.query('SELECT id,sku FROM product_variant WHERE product_id=$1',[productId]);
+  }
+
+  /** Appended images get the next free position so the order the Seller added them is preserved. */
+  async nextImagePosition(productId:string) {
+    const [row]=await this.manager.query(
+      'SELECT coalesce(max(position)+1,0)::int AS position FROM product_image WHERE product_id=$1',[productId]);
+    return row.position;
+  }
+
+  async addImageRow(input:{productId:string;variantId:string|null;url:string;position:number}) {
+    const [row]=await this.manager.query(
+      `INSERT INTO product_image(id,product_id,variant_id,url,position,status)
+       VALUES(gen_random_uuid(),$1,$2,$3,$4,'ACTIVE')
+       RETURNING id,product_id,url AS image_url,position`,
+      [input.productId,input.variantId,input.url,input.position]);
+    return row;
+  }
 }

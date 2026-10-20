@@ -4009,7 +4009,7 @@
       "route": "/store/products/{id}/variants",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4109,7 +4109,7 @@
       "route": "/store/products/{id}/images",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",

@@ -440,7 +440,7 @@
     "service": "M1",
     "module": "catalog",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "SELLER",
       "STORE_OWNER"
@@ -453,7 +453,7 @@
     "service": "M1",
     "module": "catalog",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "SELLER",
       "STORE_OWNER"

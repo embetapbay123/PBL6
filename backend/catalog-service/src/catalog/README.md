@@ -10,8 +10,8 @@ Owner: Thịnh
 - `GET /store/products` — listOwnStoreProducts: **IMPLEMENTED**
 - `POST /store/products` — createProduct: **IMPLEMENTED**
 - `PATCH /store/products/{id}` — updateProduct: **IMPLEMENTED**
-- `POST /store/products/{id}/variants` — createVariant: **NOT_IMPLEMENTED**
-- `POST /store/products/{id}/images` — addProductImage: **NOT_IMPLEMENTED**
+- `POST /store/products/{id}/variants` — createVariant: **IMPLEMENTED**
+- `POST /store/products/{id}/images` — addProductImage: **IMPLEMENTED**
 
 ## Bàn giao CAT-02
 
@@ -20,6 +20,10 @@ Ghi Product đầy đủ ở [bàn giao CAT-02](../../../../docs/implementation/
 ## Bàn giao CAT-01
 
 Danh sách quản lý và danh sách công khai theo Store ở [bàn giao CAT-01](../../../../docs/implementation/cat-01-handoff.md). `store/products` là **view quản lý**: trả cả `DRAFT`/`STOPPED`/`HIDDEN` và variant/ảnh ở mọi trạng thái, Store lấy từ membership nên hai Store không đọc được dữ liệu của nhau. `stores/{id}/products` là **view công khai**: dùng đúng predicate của catalog (ACTIVE + VISIBLE + Store đang bán), Store bị khóa trả 404.
+
+## Bàn giao CAT-03
+
+Variant và ảnh của Product ở [bàn giao CAT-03](../../../../docs/implementation/cat-03-handoff.md). `createVariant` thêm Variant với **tồn kho 0**, tự đặt mặc định cho Variant đầu tiên, từ chối SKU trùng trong Store (`409 SKU_CONFLICT`) và bộ thuộc tính trùng (`409 VARIANT_DUPLICATE`); mỗi thay đổi Variant làm `version` của Product tăng và phát `ProductChanged`. `addProductImage` gắn ảnh vào Product hoặc một Variant, tự nối `position` khi bỏ trống, và **không** tăng version vì ảnh không đổi giá hay tồn kho.
 
 ## Bàn giao CAT-04
 

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Patch, Body, Req, Param, UseGuards } from '@nestjs/common';
 import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
 import { CatalogService } from './catalog.service';
-import { CreateProductBodyDto, UpdateProductBodyDto } from '../../../shared/src/dtos.generated';
+import { AddProductImageBodyDto, CreateVariantBodyDto, CreateProductBodyDto, UpdateProductBodyDto } from '../../../shared/src/dtos.generated';
 /**
  * Public catalog and the Seller Product mutations.
  *
@@ -21,6 +21,10 @@ export class CatalogController {
   listOwnStoreProducts(@Req() request:any) {return this.service.listOwnStoreProducts(request.contract.query,request.auth);}
   @Post('store/products') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
   createProduct(@Body() dto: CreateProductBodyDto,@Req() request:any) {return this.service.createProduct(dto,request.auth,request.correlationId);}
+  @Post('store/products/:id/variants') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
+  createVariant(@Param('id') id:string,@Body() dto:CreateVariantBodyDto,@Req() request:any) {return this.service.createVariant(id,dto,request.auth,request.correlationId);}
+  @Post('store/products/:id/images') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
+  addProductImage(@Param('id') id:string,@Body() dto:AddProductImageBodyDto,@Req() request:any) {return this.service.addProductImage(id,dto,request.auth,request.correlationId);}
   @Patch('store/products/:id') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
   update(@Param('id') id:string,@Body() dto: UpdateProductBodyDto,@Req() request:any) {return this.service.updateProduct(id,dto,request.auth,request.correlationId);}
 }
