@@ -31,7 +31,9 @@ beforeEach(()=>{
     if(operation==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
     if(operation==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
     if(operation==='ReserveInventory') return {reservations:[{id:randomUUID(),order_id:payload?.items?.[0]?.order_id ?? randomUUID(),variant_id:VARIANT,quantity:1,expires_at:new Date(Date.now()+600000).toISOString()}]};
+    if(operation==='ConsumeReservation') return {operation_id:payload?.operation_id ?? randomUUID(),status:'APPLIED'};
     if(operation==='ReleaseReservation') return {operation_id:randomUUID(),status:'APPLIED'};
+    if(operation==='RestockOrder') return {operation_id:payload?.operation_id ?? randomUUID(),status:'APPLIED'};
     throw new Error('unexpected operation: '+operation);
   });
   jest.spyOn(OrderRepository.prototype,'findCartItemsWithOwnership').mockResolvedValue([{id:ITEM,cart_id:randomUUID(),product_id:PRODUCT,variant_id:VARIANT,store_id:STORE,quantity:1}]);
@@ -143,7 +145,7 @@ test('confirmCheckout creates complete Order group, Payment, reserves and commit
   const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
 
   manager.query.mockImplementation(async (sql: string, params: any[]) => {
-    if (sql.includes('SELECT pg_advisory_xact_lock')) return [];
+    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('pg_advisory_xact_lock')) return [];
     if (sql.includes('SELECT id, customer_user_id, key')) return [];
     if (sql.includes('SELECT * FROM "order" WHERE purchase_group_id')) return [];
     if (sql.includes('INSERT INTO "order"')) {
@@ -178,6 +180,8 @@ test('confirmCheckout creates complete Order group, Payment, reserves and commit
         line_total_vnd: params[8],
       }];
     }
+    if (sql.includes('UPDATE "order" SET status = \'PENDING\'')) return [];
+    if (sql.includes('INSERT INTO order_status_history')) return [];
     if (sql.includes('INSERT INTO idempotency_record')) return [];
     return [];
   });
@@ -185,10 +189,11 @@ test('confirmCheckout creates complete Order group, Payment, reserves and commit
   const res = await s.confirmCheckout(confirm, 'key-success-1', customer, 'corr');
   expect(res.payable_total_vnd).toBe(130000);
   expect(res.orders).toHaveLength(1);
-  expect(res.orders[0].status).toBe('PREPARING');
+  expect(res.orders[0].status).toBe('PENDING');
   expect(res.orders[0].payment_method).toBe('COD');
   expect(paymentCreated).toBeDefined();
   expect(paymentCreated.payable_vnd).toBe(130000n);
+  expect(call).toHaveBeenCalledWith('ConsumeReservation', expect.objectContaining({ order_id: res.orders[0].id }), 'corr');
   expect(schemaErrors(res, bundle.operations.confirmCheckout.responses['201'])).toEqual([]);
 
   // Replay with identical key and payload returns existing record without new writes
@@ -229,8 +234,9 @@ test('confirmCheckout compensates M1 reservation when database transaction fails
   const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
 
   manager.query.mockImplementation(async (sql: string) => {
-    if (sql.includes('SELECT pg_advisory_xact_lock')) return [];
+    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('SELECT pg_advisory_xact_lock')) return [];
     if (sql.includes('SELECT id, customer_user_id, key')) return [];
+    if (sql.includes('INSERT INTO idempotency_record')) return [];
     if (sql.includes('INSERT INTO "order"')) {
       throw new Error('SIMULATED_DB_FAILURE');
     }
@@ -269,8 +275,9 @@ test('online payment (SANDBOX) creates order in AWAITING_PAYMENT status with pay
   const confirm = { ...onlineInput, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
 
   manager.query.mockImplementation(async (sql: string, params: any[]) => {
-    if (sql.includes('SELECT pg_advisory_xact_lock')) return [];
+    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('SELECT pg_advisory_xact_lock')) return [];
     if (sql.includes('SELECT id, customer_user_id, key')) return [];
+    if (sql.includes('INSERT INTO idempotency_record')) return [];
     if (sql.includes('INSERT INTO "order"')) {
       return [{
         id: params[0],
@@ -353,4 +360,164 @@ test('quota counts ledger, including per Customer, without decrementing configur
   manager.query.mockResolvedValue([{total:1,customer:1}]);
   expect(await new OrderRepository(manager as any).voucherAvailable(voucher,USER)).toBe(false);
   expect(voucher.usage_limit).toBe(1);
+});
+
+test('BUG-QUOTE-01: available_quantity 10->9 changes snapshot and rejects confirm with 409 QUOTE_CHANGED without reserve', async () => {
+  const s = service(), q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'QuoteVariants') {
+      return { items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 9, version: 0 }] };
+    }
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-stock-reduced', customer, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'QUOTE_CHANGED' },
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+});
+
+test('BUG-QUOTE-01: version 0->1 changes snapshot and rejects confirm with 409 QUOTE_CHANGED without reserve', async () => {
+  const s = service(), q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'QuoteVariants') {
+      return { items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 1 }] };
+    }
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-version-changed', customer, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'QUOTE_CHANGED' },
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+});
+
+test('BUG-QUOTE-01: Cart rows returned in reverse order keep identical canonical snapshot hash', async () => {
+  const ITEM_2 = randomUUID(), VARIANT_2 = randomUUID(), PRODUCT_2 = randomUUID();
+  const twoItemInput = {
+    cart_item_ids: [ITEM, ITEM_2],
+    address_id: ADDRESS,
+    payment_methods: { [STORE]: 'COD' as const },
+  };
+  const catalogDir = {
+    product: async (id: string) => ({
+      id, store_id: STORE, title: 'Product ' + id, variants: [{ id: id === PRODUCT ? VARIANT : VARIANT_2, sku: 'SKU-' + id, price_vnd: 100000 }],
+    } as any),
+  };
+  const s = new OrderService((()=>({call})) as any, {
+    catalog: catalogDir,
+    quotes: { put: async(id, record)=>{ records.set(id, record); }, get: async id=>records.get(id) },
+  });
+  call.mockImplementation(async (op: string) => {
+    if (op === 'QuoteVariants') {
+      return {
+        items: [
+          { variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 0 },
+          { variant_id: VARIANT_2, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 0 },
+        ],
+      };
+    }
+    if (op === 'ResolveCheckoutContext') {
+      return { address_snapshot: { id: ADDRESS }, stores: [{ id: STORE, name: 'Store thật', shipping_fee_vnd: 30000, version: 1 }] };
+    }
+    throw new Error('unexpected: ' + op);
+  });
+
+  // First order in forward SQL order
+  jest.spyOn(OrderRepository.prototype, 'findCartItemsWithOwnership').mockResolvedValueOnce([
+    { id: ITEM, cart_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, store_id: STORE, quantity: 1 },
+    { id: ITEM_2, cart_id: randomUUID(), product_id: PRODUCT_2, variant_id: VARIANT_2, store_id: STORE, quantity: 1 },
+  ]);
+  const q1 = await s.quoteCheckout(twoItemInput, customer, 'corr');
+
+  // Second order in reverse SQL order
+  jest.spyOn(OrderRepository.prototype, 'findCartItemsWithOwnership').mockResolvedValueOnce([
+    { id: ITEM_2, cart_id: randomUUID(), product_id: PRODUCT_2, variant_id: VARIANT_2, store_id: STORE, quantity: 1 },
+    { id: ITEM, cart_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, store_id: STORE, quantity: 1 },
+  ]);
+  const q2 = await s.quoteCheckout(twoItemInput, customer, 'corr');
+
+  expect(records.get(q1.quote_id)!.snapshot_hash).toBe(records.get(q2.quote_id)!.snapshot_hash);
+});
+
+test('confirmCheckout keeps order in PREPARING when COD ConsumeReservation fails', async () => {
+  const paymentPort: PaymentPort = {
+    manager: manager as any,
+    createForOrder: jest.fn(async (p: any) => ({
+      id: randomUUID(),
+      order_id: p.order_id,
+      method: p.method,
+      status: 'PENDING',
+      payable_vnd: Number(p.payable_vnd),
+      collectible_vnd: Number(p.payable_vnd),
+      collected_vnd: 0,
+      refunded_vnd: 0,
+    })),
+    recordCodCollection: jest.fn(),
+    requestRefund: jest.fn(),
+  };
+  const s = service(() => paymentPort);
+  const q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+
+  manager.query.mockImplementation(async (sql: string, params: any[]) => {
+    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('pg_advisory_xact_lock')) return [];
+    if (sql.includes('SELECT id, customer_user_id, key')) return [];
+    if (sql.includes('INSERT INTO "order"')) {
+      return [{
+        id: params[0], purchase_group_id: params[1], customer_user_id: params[2], store_id: params[3],
+        address_snapshot: JSON.parse(params[4]), status: params[5], payment_method: params[6],
+        payment_expires_at: params[7], goods_vnd: params[8], store_discount_vnd: params[9],
+        platform_discount_vnd: params[10], shipping_vnd: params[11], payable_vnd: params[12],
+        version: 0, created_at: new Date(),
+      }];
+    }
+    if (sql.includes('INSERT INTO order_item') || sql.includes('INSERT INTO idempotency_record')) return [];
+    return [];
+  });
+
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'ConsumeReservation') throw new ApiError(503, 'INVENTORY_UNAVAILABLE', 'Network failure');
+    return originalCall(op, payload);
+  });
+
+  const res = await s.confirmCheckout(confirm, 'key-cod-fail', customer, 'corr');
+  expect(res.orders[0].status).toBe('PREPARING');
+});
+
+test('confirmCheckout records compensation status when DB fails and ReleaseReservation fails', async () => {
+  const s = service();
+  const q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+
+  manager.query.mockImplementation(async (sql: string) => {
+    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('pg_advisory_xact_lock')) return [];
+    if (sql.includes('SELECT id, customer_user_id, key')) return [];
+    if (sql.includes('INSERT INTO idempotency_record')) return [];
+    if (sql.includes('INSERT INTO "order"')) throw new Error('SIMULATED_DB_ERROR');
+    return [];
+  });
+
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'ReleaseReservation') throw new Error('M1_RELEASE_NETWORK_DOWN');
+    return originalCall(op, payload);
+  });
+
+  let savedIdempotency: any;
+  jest.spyOn(OrderRepository.prototype, 'saveIdempotencyRecord').mockImplementation(async (data: any) => {
+    savedIdempotency = data;
+  });
+
+  await expect(s.confirmCheckout(confirm, 'key-fail-both', customer, 'corr')).rejects.toThrow('SIMULATED_DB_ERROR');
+  expect(savedIdempotency).toBeDefined();
+  expect(savedIdempotency.response_json.status).toBe('COMPENSATION_FAILED');
+  expect(savedIdempotency.response_json.failed_releases).toBeDefined();
 });
