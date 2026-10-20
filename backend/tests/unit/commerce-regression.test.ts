@@ -163,10 +163,11 @@ test('wrong Payment manager is rejected',async()=>{
   jest.spyOn(OrderRepository.prototype,'lockPaymentByOrderId').mockResolvedValue({status:'PENDING',collectible_vnd:'130000'} as any);
   await expect(service(()=>({manager:{}} as any)).collectCod(randomUUID(),{expected_version:1,amount_collected_vnd:130000},seller,'corr')).rejects.toThrow('TRANSACTION_MANAGER_MISMATCH');
 });
-test('cancellation leaves data untouched while compensation worker is not delivered',async()=>{
+test('cancellation leaves data untouched when real inventory context is missing',async()=>{
   jest.spyOn(OrderRepository.prototype,'lockCustomerOrderById').mockResolvedValue(order('PENDING'));
+  jest.spyOn(OrderRepository.prototype,'lockPaymentByOrderId').mockResolvedValue({id:randomUUID(),method:'COD',status:'PENDING',collected_vnd:'0'} as any);
   const write=jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory');
-  await expect(service().cancelOwnOrder(randomUUID(),{expected_version:1},customer,'corr')).rejects.toMatchObject({status:501});
+  await expect(service().cancelOwnOrder(randomUUID(),{expected_version:1},customer,'corr')).rejects.toMatchObject({status:409,response:{code:'INVENTORY_CONTEXT_MISSING'}});
   expect(write).not.toHaveBeenCalled();
 });
 test('quota counts ledger, including per Customer, without decrementing configured limit',async()=>{

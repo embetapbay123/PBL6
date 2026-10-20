@@ -2,16 +2,16 @@
 
 Owner: Hoa
 
-- `POST /checkout/quotes` — quoteCheckout: **NOT_IMPLEMENTED**
+- `POST /checkout/quotes` — quoteCheckout: **IMPLEMENTED**
 - `POST /orders/batches` — confirmCheckout: **IMPLEMENTED**
 - `GET /orders/batches/{id}` — getPurchaseGroupOrders: **IMPLEMENTED**
 - `GET /me/orders` — listOwnOrders: **IMPLEMENTED**
 - `GET /me/orders/{id}` — getOwnOrder: **IMPLEMENTED**
-- `POST /me/orders/{id}/cancel` — cancelOwnOrder: **NOT_IMPLEMENTED**
+- `POST /me/orders/{id}/cancel` — cancelOwnOrder: **IMPLEMENTED**
 - `GET /store/orders` — listStoreOrders: **IMPLEMENTED**
 - `GET /store/orders/{id}` — getStoreOrder: **IMPLEMENTED**
 - `PATCH /store/orders/{id}/status` — transitionStoreOrder: **IMPLEMENTED**
-- `POST /store/orders/{id}/cancel` — cancelStoreOrder: **NOT_IMPLEMENTED**
+- `POST /store/orders/{id}/cancel` — cancelStoreOrder: **IMPLEMENTED**
 - `POST /store/orders/{id}/cod-collection` — collectCod: **NOT_IMPLEMENTED**
 - `POST /internal/reviews/eligibility` — VerifyReviewEligibility: **IMPLEMENTED**, HTTP 200, caller M1.
 
@@ -19,4 +19,4 @@ Owner: Hoa
 
 Quote validates the current M1 price/stock/version and M3 address/shipping snapshot before any Inventory write. Confirm now persists its attempt and exact Reserve payload before network effects, then creates Orders, Payment, Voucher redemptions, Cart removal and its saved response atomically. COD returns PREPARING until the durable Consume ACK; online Orders wait for proven Payment success. Timeout/restart recovery uses actual reservation IDs and immutable command payloads. See [Order recovery](../../../../docs/implementation/order-recovery.md) for migration 010, worker deployment, retry behavior and test limits.
 
-Cancellation remains 501 in this Confirm PR; #117 connects it to the same durable release/restock/refund queue. Do not implement provider calls in Order or fake a successful refund. Existing transition, Shipment, COD and review eligibility behavior stays in place. Broad task acceptance and Android/provider demos remain separate from passing coordinator tests.
+Cancellation now locks scoped Order/Payment/inventory rows, validates version/state and payment certainty, closes pending Payment bookkeeping, and queues immutable Release/Restock work in the same transaction. Unknown Consume outcomes are replayed before Restock; real reservation IDs are required. Successful online payments request Refund through the Payment port without claiming provider completion. Committed Voucher quota and sibling Orders are preserved. See the recovery runbook and PostgreSQL tests for the operational limits. Existing transition, Shipment, COD and review eligibility behavior stays in place. Broad task acceptance and Android/provider demos remain separate from passing coordinator tests.

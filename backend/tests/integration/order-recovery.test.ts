@@ -139,6 +139,9 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     expect((await db.query('SELECT status FROM voucher_reservation'))[0].status).toBe('RESERVED');
     expect(schemaErrors(result,bundle.operations.confirmCheckout.responses['201'])).toEqual([]);
     await s.recoverOrders();expect((await db.query("SELECT status FROM \"order\" WHERE payment_method='COD'"))[0].status).toBe('PENDING');expect(effects.get('ConsumeReservation')).toBe(1);
+    const online=result.orders.find(x=>x.payment_method==='SANDBOX')!;await s.cancelOwnOrder(online.id,{expected_version:online.version},auth,'cancel-one-store');
+    expect(await count('voucher_redemption')).toBe(2);expect((await db.query('SELECT status FROM voucher_reservation'))[0].status).toBe('RESERVED');
+    expect((await db.query("SELECT status FROM \"order\" WHERE payment_method='COD'"))[0].status).toBe('PENDING');
   });
   test('stale inventory lease cannot finalize a command twice after a replacement worker acknowledges it',async()=>{
     const {s,input}=await checkout();const result=await s.confirmCheckout(input,'lease',auth,'corr');const id=result.order_ids[0];
@@ -162,6 +165,11 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     await service().recoverOrders();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('RECOVERING');expect(effects.get('ReleaseReservation')).toBeUndefined();
     expect((await db.query('SELECT status FROM payment_attempt'))[0].status).toBe('UNKNOWN');
   });
+  test('successful Payment with mismatched attempt amount requires reconciliation instead of consuming stock',async()=>{
+    const {s,input}=await checkout('SANDBOX');await s.confirmCheckout(input,'wrong-proof',auth,'corr');const [p]=await db.query('SELECT * FROM payment');
+    await db.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'SUCCEEDED',1)",[p.id,randomUUID()]);await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd");
+    await service().recoverOrders();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('RECOVERING');expect(effects.get('ConsumeReservation')).toBeUndefined();expect(effects.get('ReleaseReservation')).toBeUndefined();
+  });
   test('expired unpaid order releases stock; late proved payment queues an actual Refund and never reports it succeeded',async()=>{
     const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'expired',auth,'corr');await db.query("UPDATE \"order\" SET payment_expires_at=now()-interval '1 second'");
     await service().recoverOrders();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('EXPIRED');expect(effects.get('ReleaseReservation')).toBe(1);
@@ -179,5 +187,80 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     const runner=new CheckoutRunner(db,call,async()=>{commits++;throw new Error('process interrupted');});
     await expect(runner.confirm(user,'ready','hash','corr',async()=>plan)).rejects.toMatchObject({status:503});
     await due();await new CheckoutRunner(db,call,async()=>response).tick();expect((await db.query("SELECT phase,response_json FROM checkout_attempt WHERE key='ready'"))[0]).toMatchObject({phase:'COMMITTED',response_json:response});expect(commits).toBe(1);expect(effects.get('ReserveInventory')).toBe(1);
+  });
+  test('cancel unpaid online persists actual Release context, closes pending attempts and recovers a lost Release ACK',async()=>{
+    const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'cancel-online',auth,'corr');const id=result.order_ids[0], [p]=await db.query('SELECT * FROM payment');
+    await db.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'PENDING',1000)",[p.id,randomUUID()]);
+    const cancelled=await s.cancelOwnOrder(id,{expected_version:0,reason:'Changed my mind'},auth,'cancel-correlation');expect(cancelled.status).toBe('CANCELLED');expect(cancelled.payment_status).toBe('CANCELLED');
+    expect(schemaErrors(cancelled,bundle.operations.cancelOwnOrder.responses['200'])).toEqual([]);expect(calls.filter(x=>x.op==='ReleaseReservation')).toHaveLength(0);
+    expect((await db.query('SELECT status FROM payment_attempt'))[0].status).toBe('CANCELLED');expect(await count('refund')).toBe(0);
+    lost.add('ReleaseReservation');await s.recoverOrders();await due();await service().recoverOrders();const releases=calls.filter(x=>x.op==='ReleaseReservation');expect(releases).toHaveLength(2);expect(releases[0]).toEqual(releases[1]);expect(effects.get('ReleaseReservation')).toBe(1);
+    expect(releases[0].body.reservation_ids).not.toEqual([id]);expect((await db.query('SELECT state,command_kind FROM order_inventory_state'))[0]).toEqual({state:'RELEASED',command_kind:null});
+    await expect(service().cancelOwnOrder(id,{expected_version:0},auth,'retry')).rejects.toMatchObject({status:409});
+  });
+  test('cancel consumed COD persists Restock, cancels collection and replays a lost ACK without duplicating history',async()=>{
+    const {s,input}=await checkout();const result=await s.confirmCheckout(input,'cancel-cod',auth,'corr');await s.recoverOrders();const [o]=await db.query('SELECT * FROM "order"');
+    const seller={user_id:randomUUID(),store_membership:{store_id:store,role:'SELLER',permissions:['order.store.read_status_cancel']}};
+    await expect(s.cancelStoreOrder(o.id,{expected_version:o.version},{...seller,store_membership:{...seller.store_membership,store_id:randomUUID()}},'corr')).rejects.toMatchObject({status:404});
+    const cancelled=await s.cancelStoreOrder(o.id,{expected_version:o.version},seller,'seller-cancel');expect(cancelled.status).toBe('CANCELLED');expect((await db.query('SELECT status FROM c_o_d_collection'))[0].status).toBe('CANCELLED');
+    const history=await count('order_status_history');lost.add('RestockOrder');await service().recoverOrders();await due();await service().recoverOrders();
+    const restocks=calls.filter(x=>x.op==='RestockOrder');expect(restocks).toHaveLength(2);expect(restocks[0]).toEqual(restocks[1]);expect(effects.get('RestockOrder')).toBe(1);expect(await count('order_status_history')).toBe(history);expect(await count('refund')).toBe(0);
+    expect(restocks[0].body.items).toEqual([{variant_id:variant,store_id:store,quantity:1}]);expect(result.order_ids).toContain(o.id);
+  });
+  test('paid online cancellation queues Refund with caller transaction and preserves pending Consume before Restock',async()=>{
+    const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'cancel-paid',auth,'corr'),id=result.order_ids[0];const [p]=await db.query('SELECT * FROM payment');
+    const attempt=randomUUID();await db.query("INSERT INTO payment_attempt(id,payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,$3,'SUCCEEDED',1000)",[attempt,p.id,randomUUID()]);await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd WHERE id=$1",[p.id]);
+    await db.query("INSERT INTO payment_followup(attempt_id,payment_id,order_id,kind,correlation_id) VALUES($1,$2,$3,'CONSUME_REQUIRED','corr')",[attempt,p.id,id]);
+    // Simulate an in-flight Consume that reached M1 before Cancel commits.
+    await db.transaction(async m=>{const {queueInventoryCommand}=await import('../../commerce-service/src/order/order-inventory.runner');await queueInventoryCommand(m,id,'CONSUME','consume-correlation');});
+    const [before]=await db.query('SELECT command_json FROM order_inventory_state');
+    const cancelled=await s.cancelOwnOrder(id,{expected_version:0},auth,'paid-cancel');expect(cancelled.refund_status).toBe('REQUESTED');expect(await count('refund_job')).toBe(1);
+    expect((await db.query('SELECT command_json FROM order_inventory_state'))[0].command_json).toEqual(before.command_json);
+    await service().recoverOrders();expect((await db.query('SELECT command_kind FROM order_inventory_state'))[0].command_kind).toBe('RESTOCK');
+    await due();await service().recoverOrders();expect(effects.get('ConsumeReservation')).toBe(1);expect(effects.get('RestockOrder')).toBe(1);expect(effects.get('ReleaseReservation')).toBeUndefined();
+    expect((await db.query('SELECT status,kind FROM payment_followup'))[0]).toEqual({status:'PENDING',kind:'REFUND_REQUIRED'});expect((await db.query('SELECT status FROM refund'))[0].status).toBe('REQUESTED');expect(await count('refund')).toBe(1);
+  });
+  test('concurrent cancellation, wrong Customer, stale version and collected COD have no duplicate effects',async()=>{
+    const {s,input}=await checkout();const result=await s.confirmCheckout(input,'race-cancel',auth,'corr');await s.recoverOrders();const [o]=await db.query('SELECT * FROM "order"');
+    await expect(s.cancelOwnOrder(o.id,{expected_version:o.version},{...auth,user_id:randomUUID()},'corr')).rejects.toMatchObject({status:404});
+    await expect(s.cancelOwnOrder(o.id,{expected_version:99},auth,'corr')).rejects.toMatchObject({status:409});
+    await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd");
+    await expect(s.cancelOwnOrder(o.id,{expected_version:o.version},auth,'corr')).rejects.toMatchObject({status:409,response:{code:'COD_ALREADY_COLLECTED'}});await db.query("UPDATE payment SET status='PENDING',collected_vnd=0");
+    const attempts=await Promise.allSettled([s.cancelOwnOrder(o.id,{expected_version:o.version},auth,'a'),service().cancelOwnOrder(o.id,{expected_version:o.version},auth,'b')]);expect(attempts.filter(x=>x.status==='fulfilled')).toHaveLength(1);
+    expect((await db.query("SELECT count(*)::int AS n FROM order_status_history WHERE to_status='CANCELLED'"))[0].n).toBe(1);await s.recoverOrders();expect(effects.get('RestockOrder')).toBe(1);expect(result.order_ids).toContain(o.id);
+  });
+  test('UNKNOWN Payment or missing successful payment proof prevents cancellation and rolls back every effect',async()=>{
+    const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'cancel-unknown',auth,'corr'),id=result.order_ids[0];const [p]=await db.query('SELECT * FROM payment');
+    await db.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'UNKNOWN',1000)",[p.id,randomUUID()]);const history=await count('order_status_history'),audit=await count('m2_audit');
+    await expect(s.cancelOwnOrder(id,{expected_version:0},auth,'corr')).rejects.toMatchObject({status:409,response:{code:'PAYMENT_RECONCILIATION_REQUIRED'}});
+    await db.query('DELETE FROM payment_attempt');await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd");
+    await expect(s.cancelOwnOrder(id,{expected_version:0},auth,'corr')).rejects.toMatchObject({status:409,response:{code:'REFUND_RECONCILIATION_REQUIRED'}});
+    expect((await db.query('SELECT status,version FROM "order"'))[0]).toEqual({status:'AWAITING_PAYMENT',version:0});expect(await count('order_status_history')).toBe(history);expect(await count('m2_audit')).toBe(audit);expect(await count('refund')).toBe(0);expect((await db.query('SELECT command_kind FROM order_inventory_state'))[0].command_kind).toBeNull();
+  });
+  test('definitively expired Consume closes the Order and durably releases its hold',async()=>{
+    const {s,input}=await checkout();await s.confirmCheckout(input,'expired-reserve',auth,'corr');
+    const runner=new OrderInventoryRunner(db,async(op,body,corr)=>{if(op==='ConsumeReservation')throw new ApiError(409,'RESERVATION_EXPIRED','Expired');return call(op,body,corr);});
+    await runner.tick();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('EXPIRED');expect((await db.query('SELECT command_kind FROM order_inventory_state'))[0].command_kind).toBe('RELEASE');
+    await runner.tick();expect(effects.get('ReleaseReservation')).toBe(1);expect((await db.query('SELECT status FROM payment'))[0].status).toBe('CANCELLED');
+  });
+  test('a reconciliation error on one Order does not prevent another Order consuming its stock',async()=>{
+    const first=await checkout('SANDBOX');await first.s.confirmCheckout(first.input,'broken-order',auth,'corr');const [p]=await db.query('SELECT * FROM payment');
+    // A corrupt legacy success with no successful attempt cannot be refunded or called done.
+    await db.query("UPDATE \"order\" SET status='CANCELLED'");await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd WHERE id=$1",[p.id]);
+    const second=await checkout();const result=await second.s.confirmCheckout(second.input,'healthy-order',auth,'corr');await service().recoverOrders();
+    expect((await db.query('SELECT status FROM "order" WHERE id=$1',[result.order_ids[0]]))[0].status).toBe('PENDING');expect((await db.query('SELECT last_error FROM order_inventory_state WHERE order_id=$1',[p.order_id]))[0].last_error).toBe('ORDER_RECONCILIATION_REQUIRED');
+  });
+  test('more than one batch of unpaid Orders cannot starve a newly paid Order',async()=>{
+    // Explicit legacy fixtures with no commands: only reconciliation scheduling is exercised.
+    for(let i=0;i<20;i++){
+      const id=randomUUID();await db.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,payment_expires_at,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd)
+        VALUES($1,$2,$3,$4,'AWAITING_PAYMENT','SANDBOX',now()+interval '1 hour',1000,0,0,0,1000)`,[id,randomUUID(),user,store]);
+      await db.query("INSERT INTO payment(order_id,method,status,payable_vnd,collectible_vnd) VALUES($1,'SANDBOX','PENDING',1000,0)",[id]);
+      await db.query("INSERT INTO order_inventory_state(order_id,reservation_ids,items_json,state,correlation_id,next_attempt_at) VALUES($1,$2,'[]','RESERVED','fixture',now()-interval '1 day')",[id,[randomUUID()]]);
+    }
+    const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'after-batch',auth,'corr');const [p]=await db.query('SELECT * FROM payment WHERE order_id=$1',[result.order_ids[0]]);
+    await db.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'SUCCEEDED',1000)",[p.id,randomUUID()]);await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd WHERE id=$1",[p.id]);
+    await service().recoverOrders();expect(effects.get('ConsumeReservation')).toBeUndefined();
+    await service().recoverOrders();expect(effects.get('ConsumeReservation')).toBe(1);expect((await db.query('SELECT status FROM "order" WHERE id=$1',[p.order_id]))[0].status).toBe('PENDING');
   });
 });

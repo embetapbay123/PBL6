@@ -65,15 +65,23 @@ export class OrderInventoryRunner {
         return;
       }
       if(order.payment_method!=='SANDBOX' || !['AWAITING_PAYMENT','RECOVERING'].includes(order.status))return;
-      const successful=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='SUCCEEDED'",[payment?.id]);
-      if(payment?.status==='SUCCEEDED' && payment.collected_vnd===payment.payable_vnd && successful.length){
+      const successful=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='SUCCEEDED' AND amount_vnd=$2",[payment?.id,order.payable_vnd]);
+      if(payment?.status==='SUCCEEDED' && payment.method===order.payment_method && BigInt(payment.collected_vnd)===BigInt(payment.payable_vnd) && BigInt(payment.payable_vnd)===BigInt(order.payable_vnd) && successful.length){
         if(!stock.command_kind && stock.state==='RESERVED')await queueInventoryCommand(manager,id,'CONSUME',stock.correlation_id);
         await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_RECEIVED',stock.correlation_id);
         return;
       }
-      if(!order.payment_expires_at || new Date(order.payment_expires_at).getTime()>Date.now())return;
+      if(successful.length || payment?.status==='SUCCEEDED'){
+        await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_RECONCILIATION_REQUIRED',stock.correlation_id);
+        await manager.query("UPDATE order_inventory_state SET last_error='PAYMENT_RECONCILIATION_REQUIRED',next_attempt_at=now()+interval '30 seconds' WHERE order_id=$1",[id]);
+        return;
+      }
+      if(!order.payment_expires_at || new Date(order.payment_expires_at).getTime()>Date.now()){
+        await manager.query("UPDATE order_inventory_state SET next_attempt_at=now()+interval '1 second' WHERE order_id=$1",[id]);
+        return;
+      }
       const uncertain=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='UNKNOWN'",[payment?.id]);
-      if(uncertain.length || successful.length || payment?.status==='SUCCEEDED'){
+      if(uncertain.length){
         await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_RECONCILIATION_REQUIRED',stock.correlation_id);
         await manager.query("UPDATE order_inventory_state SET last_error='PAYMENT_RECONCILIATION_REQUIRED',next_attempt_at=now()+interval '30 seconds' WHERE order_id=$1",[id]);
         return;
@@ -135,9 +143,9 @@ export class OrderInventoryRunner {
     });
   }
   async tick() {
-    const reconcile=await this.source.query(`SELECT DISTINCT o.id FROM "order" o JOIN order_inventory_state s ON s.order_id=o.id
+    const reconcile=await this.source.query(`SELECT o.id FROM "order" o JOIN order_inventory_state s ON s.order_id=o.id
       WHERE s.next_attempt_at<=now() AND (o.status IN ('CANCELLED','EXPIRED') OR
-        o.payment_method='SANDBOX' AND o.status IN ('AWAITING_PAYMENT','RECOVERING')) LIMIT 20`);
+        o.payment_method='SANDBOX' AND o.status IN ('AWAITING_PAYMENT','RECOVERING')) ORDER BY s.next_attempt_at,o.id LIMIT 20`);
     for(const row of reconcile)try {await this.reconcile(row.id);} catch {await this.defer(row.id);}
     const rows=await this.source.query("SELECT order_id FROM order_inventory_state WHERE command_kind IS NOT NULL AND next_attempt_at<=now() AND (lease_until IS NULL OR lease_until<=now()) ORDER BY updated_at LIMIT 20");
     for(const row of rows)try {await this.process(row.order_id);} catch {await this.defer(row.order_id);}

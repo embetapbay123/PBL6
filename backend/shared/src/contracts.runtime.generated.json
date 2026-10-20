@@ -6101,7 +6101,7 @@
       "route": "/me/orders/{id}/cancel",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -6769,7 +6769,7 @@
       "route": "/store/orders/{id}/cancel",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",

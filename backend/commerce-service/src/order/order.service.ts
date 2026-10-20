@@ -1,8 +1,8 @@
 import { CheckoutRunner, CheckoutPlan, commandId, recoveryPending } from './checkout.runner';
-import { OrderInventoryRunner, queueInventoryCommand } from './order-inventory.runner';
+import { OrderInventoryRunner, queueInventoryCommand, changeOrderStatus, requestClosedRefund } from './order-inventory.runner';
 import { randomUUID } from 'node:crypto';
 import { database } from '../../../shared/src/database';
-import { ApiError, notImplemented } from '../../../shared/src/errors';
+import { ApiError } from '../../../shared/src/errors';
 import { config } from '../../../shared/src/config';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { moneyNumber } from '../../../shared/src/money';
@@ -839,23 +839,44 @@ export class OrderService {
     });
   }
 
-  async cancelOwnOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelOwnOrder']> {
+  async cancelOwnOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,correlation:string):Promise<OperationOutputs['cancelOwnOrder']> {
     if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
-    return this.source.transaction(async manager=>{
-      const order=await new OrderRepository(manager).lockCustomerOrderById(id,auth.user_id);
-      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
-      this.checkCancellation(order,input.expected_version);
-      return notImplemented('cancelOwnOrder: cần worker release/restock/refund bền vững');
-    });
+    return this.cancelOrder(id,input,auth,correlation);
   }
 
-  async cancelStoreOrder(id:string,input:OperationInputs['cancelStoreOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelStoreOrder']> {
+  async cancelStoreOrder(id:string,input:OperationInputs['cancelStoreOrder']['body'],auth:any,correlation:string):Promise<OperationOutputs['cancelStoreOrder']> {
     const storeId=requireStorePermission(auth,'order.store.read_status_cancel');
+    return this.cancelOrder(id,input,auth,correlation,storeId);
+  }
+  private async cancelOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,correlation:string,storeId?:string):Promise<OperationOutputs['cancelOwnOrder']> {
+    if(!UUID_REGEX.test(id) || !Number.isInteger(input?.expected_version) || input.expected_version<0 ||
+      input.reason!==undefined && (typeof input.reason!=='string' || input.reason.length>200))
+      throw new ApiError(422,'VALIDATION_FAILED','Yêu cầu hủy không hợp lệ.');
     return this.source.transaction(async manager=>{
-      const order=await new OrderRepository(manager).lockStoreOrderById(id,storeId);
+      const repo=new OrderRepository(manager);
+      const order=storeId?await repo.lockStoreOrderById(id,storeId):await repo.lockCustomerOrderById(id,auth.user_id);
       if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
       this.checkCancellation(order,input.expected_version);
-      return notImplemented('cancelStoreOrder: cần worker release/restock/refund bền vững');
+      const payment=await repo.lockPaymentByOrderId(id);
+      if(!payment)throw new ApiError(409,'PAYMENT_CONTEXT_MISSING','Order thiếu Payment; cần đối soát.');
+      const uncertain=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='UNKNOWN'",[payment.id]);
+      if(uncertain.length)throw new ApiError(409,'PAYMENT_RECONCILIATION_REQUIRED','Giao dịch chưa rõ kết quả; cần đối soát trước khi hủy.');
+      if(payment.method==='COD' && (payment.status==='SUCCEEDED' || BigInt(payment.collected_vnd)>0n))
+        throw new ApiError(409,'COD_ALREADY_COLLECTED','Đơn đã thu COD cần đối soát hoàn tiền.');
+      const [stock]=await manager.query('SELECT * FROM order_inventory_state WHERE order_id=$1 FOR UPDATE',[id]);
+      if(!stock)throw new ApiError(409,'INVENTORY_CONTEXT_MISSING','Order thiếu reservation thực; cần đối soát.');
+      const reason=input.reason?.trim() || (storeId?'STORE_CANCELLED':'CUSTOMER_CANCELLED');
+      const updated=await changeOrderStatus(manager,order,'CANCELLED',reason,correlation,auth.user_id);
+      await requestClosedRefund(manager,updated,payment,correlation);
+      // Never overwrite an uncertain Consume: first replay it, then Restock if it applied.
+      if(!stock.command_kind){
+        if(stock.state==='RESERVED')await queueInventoryCommand(manager,id,'RELEASE',correlation);
+        else if(stock.state==='CONSUMED')await queueInventoryCommand(manager,id,'RESTOCK',correlation);
+      }
+      await this.vouchers(manager).releaseVoucherReservations(order.purchase_group_id);
+      const current=storeId?await repo.findStoreOrderById(id,storeId):await repo.findCustomerOrderById(id,auth.user_id);
+      if(!current)throw new ApiError(409,'ORDER_STATE_CONFLICT','Không đọc được Order sau khi hủy.');
+      return this.mapOrderRowToDto(current);
     });
   }
   private checkCancellation(order:OrderRow,version:number):void {
