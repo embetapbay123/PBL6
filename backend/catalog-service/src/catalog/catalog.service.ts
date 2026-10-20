@@ -1,14 +1,25 @@
+import { createHash } from 'node:crypto';
+import { moneyNumber } from '../../../shared/src/money';
 import { database } from '../../../shared/src/database';
 import { config } from '../../../shared/src/config';
 import { audit } from '../../../shared/src/audit';
 import { emitEvent } from '../../../shared/src/events';
 import { ApiError } from '../../../shared/src/errors';
 import { CatalogRepository } from './catalog.repository';
+import { attributeErrors, defaultVariantCount, variantSignature } from './catalog.validation';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { optionalUserId, recordInteraction } from './catalog.telemetry';
-import { moneyNumber } from '../../../shared/src/money';
-import { createHash } from 'node:crypto';
+
+type VariantPayload = NonNullable<OperationInputs['createProduct']['body']['variants']>[number];
+
+/** Owner always manages the Store catalogue; a Seller needs the product.store permission group. */
+export function hasProductPermission(role:string|undefined,permissions:string[]):boolean {
+  if(role!=='OWNER' && role!=='SELLER') return false;
+  return role==='OWNER'
+    || permissions.includes('product.store.*')
+    || permissions.some(code=>code.startsWith('product.store.'));
+}
 
 /**
  * `product_variant.variant_signature` is NOT NULL and unique per Product, so the same combination of
@@ -45,6 +56,63 @@ export class CatalogService {
   }
 
   /**
+   * Write scope for catalogue mutations. Store comes from the resolved membership, the permission
+   * from the live context (so a revoked grant stops working on the next call), and the Store itself
+   * must still be sellable before anything is written.
+   */
+  private async writableStore(context:any,correlation:string):Promise<{storeId:string;actorUserId:string}> {
+    const membership=context?.store_membership;
+    if(!membership?.store_id)throw new ApiError(403,'FORBIDDEN','Tài khoản không thuộc Store đang hoạt động nào.');
+    const permissions:string[]=membership.permissions ?? [];
+    if(membership.role!=='OWNER' && !permissions.includes('product.store.*') && !permissions.some(code=>code.startsWith('product.store.')))
+      throw new ApiError(403,'FORBIDDEN','Cần quyền quản lý sản phẩm của Store.');
+    if(!(await this.stores(correlation)).includes(membership.store_id))
+      throw new ApiError(403,'STORE_UNAVAILABLE','Store không được phép bán.');
+    return {storeId:membership.store_id,actorUserId:context.user_id};
+  }
+
+  /** A Product may only use an active Product type, and its attributes must match that taxonomy. */
+  private async validateTaxonomy(repository:CatalogRepository,productTypeId:string,
+    attributes:Record<string,unknown>|undefined):Promise<void> {
+    const type=await repository.productTypeForWrite(productTypeId);
+    if(!type || type.status!=='ACTIVE')throw new ApiError(422,'INVALID_PRODUCT_TYPE','Product type không tồn tại hoặc đã ngừng dùng.');
+    if(attributes===undefined)return;
+    const problems=attributeErrors(attributes,await repository.attributeDefinitions(productTypeId));
+    if(problems.length)throw new ApiError(422,'INVALID_ATTRIBUTES','Thuộc tính không khớp taxonomy của Product type.',problems.map(field=>({field})));
+  }
+
+  private validateVariantPayload(variants:VariantPayload[]|undefined):void {
+    if(!variants)return;
+    const skus=new Set<string>();
+    for(const variant of variants) {
+      if(skus.has(variant.sku))throw new ApiError(422,'DUPLICATE_SKU','SKU trùng trong cùng một Product.',[{field:'sku:'+variant.sku}]);
+      skus.add(variant.sku);
+    }
+    if(defaultVariantCount(variants)>1)throw new ApiError(422,'MULTIPLE_DEFAULT_VARIANTS','Chỉ một Variant được là mặc định.');
+  }
+
+  /** Insert or update the submitted Variants and give every new Variant a zero-stock inventory row. */
+  private async writeVariants(repository:CatalogRepository,productId:string,storeId:string,
+    variants:VariantPayload[],markSoleDefault:boolean):Promise<void> {
+    if(!variants.length)return;
+    if(variants.some(variant=>variant.is_default===true))await repository.clearDefaultVariants(productId);
+    for(const [index,variant] of variants.entries()) {
+      if(await repository.skuTakenInStore(storeId,variant.sku,variant.id ?? null))
+        throw new ApiError(409,'SKU_CONFLICT','SKU đã tồn tại trong Store.',[{field:'sku:'+variant.sku}]);
+      if(variant.id) {
+        await repository.updateVariantFields(variant.id,productId,storeId,{sku:variant.sku,priceVnd:variant.price_vnd,
+          variantValues:variant.variant_values,signature:variantSignature(variant.variant_values),
+          isDefault:variant.is_default,status:variant.status});
+      } else {
+        const row=await repository.insertVariant({productId,storeId,sku:variant.sku,priceVnd:variant.price_vnd,
+          variantValues:variant.variant_values,signature:variantSignature(variant.variant_values),
+          isDefault:variant.is_default ?? (markSoleDefault && index===0),status:variant.status ?? 'ACTIVE'});
+        await repository.insertInventoryForVariant(row.id,storeId);
+      }
+    }
+  }
+
+  /**
    * Public list. Store visibility comes from M3 `ActiveStores`, so a locked Store disappears from
    * the catalog even though its rows still exist. Search telemetry is only written for an
    * authenticated caller with a non-empty query: guests never produce personal behaviour, and a
@@ -78,6 +146,129 @@ export class CatalogService {
     return new CatalogRepository(database.manager).pageProductTypes(query.page ?? 1,query.size ?? 20);
   }
 
+  /**
+   * Store scope for catalogue management comes from the resolved membership, never from the
+   * request, and the permission is checked on the live context so a revoked grant stops working on
+   * the next call even while an old JWT is still valid.
+   */
+  private requireProductScope(context:any):string {
+    const membership=context?.store_membership;
+    if(!membership?.store_id)throw new ApiError(403,'FORBIDDEN','Tài khoản không thuộc Store đang hoạt động nào.');
+    if(!hasProductPermission(membership.role,membership.permissions ?? []))
+      throw new ApiError(403,'FORBIDDEN','Cần quyền quản lý sản phẩm của Store.');
+    return membership.store_id;
+  }
+
+  /**
+   * listOwnStoreProducts — danh sách **quản lý** của chính Store người gọi.
+   *
+   * Khác hẳn danh sách công khai: trả cả DRAFT/STOPPED và HIDDEN để Seller còn thấy sản phẩm của
+   * mình, và trả variant/ảnh ở mọi trạng thái. Store lấy từ membership nên hai Store không thể đọc
+   * dữ liệu quản lý của nhau dù có đoán id.
+   */
+  async listOwnStoreProducts(query:OperationInputs['listOwnStoreProducts']['query'],context:any):
+  Promise<OperationOutputs['listOwnStoreProducts']> {
+    const storeId=this.requireProductScope(context);
+    return new CatalogRepository(database.manager).pageOwnStore(storeId,query.page ?? 1,query.size ?? 20);
+  }
+
+  /**
+   * listStoreProducts — danh sách **công khai** của một Store.
+   *
+   * Dùng lại đúng predicate của catalog công khai (ACTIVE + VISIBLE + Store đang bán), nên một
+   * Product DRAFT/HIDDEN không bao giờ lọt ra ngoài. Store do M3 báo ngừng hoạt động thì trả 404
+   * thay vì một trang rỗng, để không ai tưởng Store đó vẫn đang bán.
+   */
+  async listStoreProducts(id:string,query:OperationInputs['listStoreProducts']['query'],correlation:string):
+  Promise<OperationOutputs['listStoreProducts']> {
+    if(!(await this.stores(correlation)).includes(id))
+      throw new ApiError(404,'NOT_FOUND','Không tìm thấy Store đang bán.');
+    return new CatalogRepository(database.manager).page([id],{page:query.page ?? 1,size:query.size ?? 20});
+  }
+
+  /**
+   * createProduct — tạo Product (và Variant đi kèm) trong một transaction.
+   *
+   * Product mới mặc định `DRAFT` để Seller soạn xong mới đăng bán. Product, Variant, tồn kho 0,
+   * audit và outbox `ProductChanged` cùng commit hoặc cùng rollback, nên không có Product "mồ côi"
+   * hay một event báo thay đổi cho thứ chưa được lưu.
+   */
+  async createProduct(input:OperationInputs['createProduct']['body'],context:any,correlation:string):
+  Promise<OperationOutputs['createProduct']> {
+    const {storeId,actorUserId}=await this.writableStore(context,correlation);
+    this.validateVariantPayload(input.variants);
+    // Creating a Product must never address an existing Variant. `ProductCreate.variants` reuses the
+    // `ProductVariant` schema, so the runtime contract accepts an `id`; letting it through would let
+    // one Store rewrite another Store's Variant by id. An existing Variant is only editable through
+    // updateProduct, which proves ownership first, and the repository scopes the SQL as well.
+    if(input.variants?.some(variant=>variant.id!==undefined))
+      throw new ApiError(422,'VARIANT_ID_NOT_ALLOWED','Tạo Product không nhận Variant có id; chỉ gửi Variant mới.');
+    return database.transaction(async manager=>{
+      const repository=new CatalogRepository(manager);
+      await this.validateTaxonomy(repository,input.product_type_id,input.attributes);
+      const created=await repository.insertProduct({storeId,productTypeId:input.product_type_id,title:input.title,
+        description:input.description ?? null,attributes:input.attributes,status:input.status ?? 'DRAFT'});
+      const variants=input.variants ?? [];
+      await this.writeVariants(repository,created.id,storeId,variants,variants.length===1);
+      await audit(manager,'M1',actorUserId,'Product',created.id,'CREATE',correlation,null,
+        {id:created.id,title:created.title,status:created.status,version:created.version});
+      await emitEvent(manager,'ProductChanged',{product_id:created.id,store_id:storeId,version:created.version,
+        sale_status:created.status,moderation_status:created.moderation_status},correlation);
+      return (await repository.withAllVariants([created]))[0];
+    });
+  }
+
+  /**
+   * updateProduct — sửa Product đầy đủ (không còn giới hạn title/description).
+   *
+   * `expected_version` chống ghi đè khi hai người sửa cùng lúc. `variants` là **tập thay thế**:
+   * Variant có `id` được cập nhật, không có `id` thì thêm mới theo SKU, và Variant biến mất khỏi
+   * payload bị **STOPPED** chứ không xoá — xoá sẽ phá lịch sử reservation và stock movement.
+   */
+  async updateProduct(id:string,input:OperationInputs['updateProduct']['body'],context:any,correlation:string):
+  Promise<OperationOutputs['updateProduct']> {
+    const {storeId,actorUserId}=await this.writableStore(context,correlation);
+    this.validateVariantPayload(input.variants);
+    return database.transaction(async manager=>{
+      const repository=new CatalogRepository(manager);
+      const before=await repository.lockProduct(id,storeId);
+      if(!before)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+      if(before.version!==input.expected_version)throw new ApiError(409,'VERSION_CONFLICT','Dữ liệu đã thay đổi. Vui lòng tải lại.');
+      const current=await repository.productRowForStore(id,storeId);
+      // Validate the state that will actually be stored: changing only `product_type_id` keeps the
+      // current attribute map, so validating `input.attributes` alone would let a Product end up
+      // missing a required attribute of its new type, or keeping keys that belong only to the old one.
+      const finalProductTypeId=input.product_type_id ?? current.product_type_id;
+      const finalAttributes=input.attributes ?? current.attributes;
+      await this.validateTaxonomy(repository,finalProductTypeId,finalAttributes);
+
+      const after=await repository.updateProductFields(id,{productTypeId:input.product_type_id,title:input.title,
+        description:input.description,attributes:input.attributes,status:input.status});
+
+      if(input.variants) {
+        const existing=await repository.variantsOfProduct(id);
+        const owned=new Set(existing.map((row:any)=>row.id));
+        for(const variant of input.variants) if(variant.id && !owned.has(variant.id))
+          throw new ApiError(404,'VARIANT_NOT_FOUND','Variant không thuộc sản phẩm này.');
+        await this.writeVariants(repository,id,storeId,input.variants,input.variants.length===1);
+        const keptIds=new Set(input.variants.map(variant=>variant.id).filter(Boolean));
+        const keptSkus=new Set(input.variants.map(variant=>variant.sku));
+        for(const row of existing) {
+          if(keptIds.has(row.id) || keptSkus.has(row.sku)) continue;
+          if(row.status!=='STOPPED') await repository.stopVariant(row.id,id,storeId);
+        }
+      }
+
+      await audit(manager,'M1',actorUserId,'Product',id,'UPDATE',correlation,
+        {product_type_id:current.product_type_id,title:current.title,description:current.description,
+          attributes:current.attributes,status:current.status,version:current.version},
+        {product_type_id:after.product_type_id,title:after.title,description:after.description,
+          attributes:after.attributes,status:after.status,version:after.version});
+      await emitEvent(manager,'ProductChanged',{product_id:id,store_id:storeId,version:after.version,
+        sale_status:after.status,moderation_status:after.moderation_status},correlation);
+      return (await repository.withAllVariants([after]))[0];
+    });
+  }
   /**
    * Write scope for catalogue mutations. Store comes from the resolved membership, the permission
    * from the live context, and the Store must still be sellable before anything is written.
@@ -166,22 +357,5 @@ export class CatalogService {
     });
   }
 
-  async update(id:string,input:OperationInputs['updateProduct']['body'],context:any,correlation:string) {
-    const membership=context.store_membership;
-    if(!membership || (membership.role!=='OWNER' && !membership.permissions.includes('product.store.*')))throw new ApiError(403,'FORBIDDEN','Không có quyền quản lý sản phẩm.');
-    if(Object.entries(input).some(([key,value])=>value!==undefined && !['title','description','expected_version'].includes(key)))throw new ApiError(501,'FEATURE_NOT_IMPLEMENTED','Mẫu Product chỉ hỗ trợ title/description; owner hoàn thiện các trường còn lại.');
-    if(input.title===undefined && input.description===undefined)throw new ApiError(422,'VALIDATION_FAILED','Cần trường thay đổi.');
-    const active=await this.stores(correlation);
-    if(!active.includes(membership.store_id))throw new ApiError(403,'STORE_UNAVAILABLE','Store không được phép bán.');
-    return database.transaction(async manager=>{
-      const repository=new CatalogRepository(manager);
-      const before=await repository.lockProduct(id,membership.store_id);
-      if(!before)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
-      if(before.version!==input.expected_version)throw new ApiError(409,'VERSION_CONFLICT','Dữ liệu đã thay đổi. Vui lòng tải lại.');
-      const after=await repository.updateText(id,input.title,input.description);
-      await audit(manager,'M1',context.user_id,'Product',id,'BOOTSTRAP_UPDATE',correlation,before,{id,title:after.title,description:after.description,version:after.version});
-      await emitEvent(manager,'bootstrap.example.v1',{product_id:id,version:after.version},correlation);
-      return (await repository.withRelations([after]))[0];
-    });
-  }
+
 }
