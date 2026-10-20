@@ -65,15 +65,20 @@ export class OrderInventoryRunner {
         return;
       }
       if(order.payment_method!=='SANDBOX' || !['AWAITING_PAYMENT','RECOVERING'].includes(order.status))return;
-      const successful=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='SUCCEEDED'",[payment?.id]);
-      if(payment?.status==='SUCCEEDED' && payment.collected_vnd===payment.payable_vnd && successful.length){
+      const successful=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='SUCCEEDED' AND amount_vnd=$2",[payment?.id,order.payable_vnd]);
+      if(payment?.status==='SUCCEEDED' && payment.method===order.payment_method && BigInt(payment.collected_vnd)===BigInt(payment.payable_vnd) && BigInt(payment.payable_vnd)===BigInt(order.payable_vnd) && successful.length){
         if(!stock.command_kind && stock.state==='RESERVED')await queueInventoryCommand(manager,id,'CONSUME',stock.correlation_id);
         await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_RECEIVED',stock.correlation_id);
         return;
       }
+      if(successful.length || payment?.status==='SUCCEEDED'){
+        await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_RECONCILIATION_REQUIRED',stock.correlation_id);
+        await manager.query("UPDATE order_inventory_state SET last_error='PAYMENT_RECONCILIATION_REQUIRED',next_attempt_at=now()+interval '30 seconds' WHERE order_id=$1",[id]);
+        return;
+      }
       if(!order.payment_expires_at || new Date(order.payment_expires_at).getTime()>Date.now())return;
       const uncertain=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='UNKNOWN'",[payment?.id]);
-      if(uncertain.length || successful.length || payment?.status==='SUCCEEDED'){
+      if(uncertain.length){
         await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_RECONCILIATION_REQUIRED',stock.correlation_id);
         await manager.query("UPDATE order_inventory_state SET last_error='PAYMENT_RECONCILIATION_REQUIRED',next_attempt_at=now()+interval '30 seconds' WHERE order_id=$1",[id]);
         return;

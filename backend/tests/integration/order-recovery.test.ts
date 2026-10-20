@@ -165,6 +165,11 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     await service().recoverOrders();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('RECOVERING');expect(effects.get('ReleaseReservation')).toBeUndefined();
     expect((await db.query('SELECT status FROM payment_attempt'))[0].status).toBe('UNKNOWN');
   });
+  test('successful Payment with mismatched attempt amount requires reconciliation instead of consuming stock',async()=>{
+    const {s,input}=await checkout('SANDBOX');await s.confirmCheckout(input,'wrong-proof',auth,'corr');const [p]=await db.query('SELECT * FROM payment');
+    await db.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'SUCCEEDED',1)",[p.id,randomUUID()]);await db.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=payable_vnd");
+    await service().recoverOrders();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('RECOVERING');expect(effects.get('ConsumeReservation')).toBeUndefined();expect(effects.get('ReleaseReservation')).toBeUndefined();
+  });
   test('expired unpaid order releases stock; late proved payment queues an actual Refund and never reports it succeeded',async()=>{
     const {s,input}=await checkout('SANDBOX');const result=await s.confirmCheckout(input,'expired',auth,'corr');await db.query("UPDATE \"order\" SET payment_expires_at=now()-interval '1 second'");
     await service().recoverOrders();expect((await db.query('SELECT status FROM "order"'))[0].status).toBe('EXPIRED');expect(effects.get('ReleaseReservation')).toBe(1);
