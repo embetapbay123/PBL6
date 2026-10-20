@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-20",
+  "timezone": "Asia/Bangkok",
+  "scope": "Catalog merge and Week 4 planning; not full demo acceptance",
+  "merged_prs": [
+    {
+      "headRefOid": "35ce67177ba90cacc6b477a009d6d8f43d413d37",
+      "mergeCommit": {
+        "oid": "95267d93d6265aa5c0848b8e0f2192d01cec3034"
+      },
+      "mergedAt": "2026-10-20T02:15:56Z",
+      "number": 111,
+      "state": "MERGED",
+      "url": "https://github.com/embetapbay123/PBL6/pull/111"
+    },
+    {
+      "headRefOid": "0ad7a9c0f620542616e9c9856867df2517edd2e6",
+      "mergeCommit": {
+        "oid": "f63e594d7546dd908a7249e9c137431460cb27f6"
+      },
+      "mergedAt": "2026-10-20T02:48:36Z",
+      "number": 112,
+      "state": "MERGED",
+      "url": "https://github.com/embetapbay123/PBL6/pull/112"
+    },
+    {
+      "headRefOid": "32b7f32c9db4db9af21bf5002cf6ffa097542ae1",
+      "mergeCommit": {
+        "oid": "2f73f8c305046972ebb95095779db1d5639cd3ce"
+      },
+      "mergedAt": "2026-10-20T03:07:18Z",
+      "number": 113,
+      "state": "MERGED",
+      "url": "https://github.com/embetapbay123/PBL6/pull/113"
+    }
+  ],
+  "validation": {
+    "backend_build": "PASS",
+    "frontend_build": "PASS",
+    "backend_unit_tests": {
+      "suites": 22,
+      "passed": 210
+    },
+    "contracts_docs_runtime_drift": "PASS before docs rollout; docs links rechecked on final branch",
+    "isolated_postgresql": {
+      "scope": "Exact combined Catalog source; injected active-Store lookup, actual transactions in a temporary M1 schema",
+      "passed": [
+        "management/public Store isolation and pagination",
+        "permission/inactive Store denial",
+        "foreign Variant protection",
+        "final retained/required attribute validation",
+        "concurrent default Variants",
+        "same-Product duplicate SKU",
+        "forced cross-Product Store-wide SKU race maps to 409"
+      ],
+      "cleanup": "temporary schema dropped"
+    },
+    "final_catalog_ci": [
+      "https://github.com/embetapbay123/PBL6/actions/runs/39359673698",
+      "https://github.com/embetapbay123/PBL6/actions/runs/39359679921",
+      "https://github.com/embetapbay123/PBL6/actions/runs/39362208117",
+      "https://github.com/embetapbay123/PBL6/actions/runs/39362213697"
+    ],
+    "not_counted_as_pass": "Five Store integration cases skip without M3_TEST_DATABASE_URL; a dedicated test DB run remains required",
+    "ci_login_isolation": "Explicit disposable-Redis opt-in resets only rate:M3:login:* between integration suites; application limits unchanged"
+  },
+  "issue_decisions": {
+    "2": "Done: accepted scoped list scope",
+    "9": "Open / In progress: Seller forms and full acceptance remain",
+    "10": "Open / In progress: Seller forms and image criteria remain"
+  },
+  "deployed_runtime_updated": false,
+  "live_demo_data_modified": false,
+  "real_provider_or_payment_run_in_this_task": false,
+  "root_user_edits": "preserved in original checkout"
+}

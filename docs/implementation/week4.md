@@ -1,6 +1,6 @@
 # Week 4 — 20–26/10/2026 — khép các luồng để demo đủ chức năng
 
-Cập nhật **20/10/2026**. Demo **thứ Ba 03/11/2026**; gate chức năng **26/10**, freeze **27/10**. [Kanban](https://github.com/users/embetapbay123/projects/1/views/3) · [Roadmap toàn bộ 71 task](roadmap.md) · [Gate demo](demo-2026-11-03.md) · [Week 5](week5.md). Các mốc dưới đây là kế hoạch phải kiểm chứng, không phải kết quả đã đạt. Không mặc định làm cuối tuần; năm phiên là 20, 21, 22, 23 và 26/10.
+Cập nhật **20/10/2026**. Demo **thứ Ba 03/11/2026**; gate chức năng **26/10**, freeze **27/10**. [Kanban](https://github.com/users/embetapbay123/projects/1/views/3) · [Roadmap toàn bộ 71 task](roadmap.md) · [Gate demo](demo-2026-11-03.md) · [Week 5](week5.md). [Bằng chứng merge Catalog](evidence/2026-10-20-catalog-merge.json). Các mốc dưới đây là kế hoạch phải kiểm chứng, không phải kết quả đã đạt. Không mặc định làm cuối tuần; năm phiên là 20, 21, 22, 23 và 26/10.
 
 ## Điểm xuất phát và việc không làm lại
 
@@ -25,7 +25,7 @@ Cập nhật **20/10/2026**. Demo **thứ Ba 03/11/2026**; gate chức năng **2
 3. **20–23/10: [AI-01 #55](https://github.com/embetapbay123/PBL6/issues/55), [AI-03 #57](https://github.com/embetapbay123/PBL6/issues/57).** Kiểm grant/revoke consent, inbox/dedup và tracking thật; bàn giao chat/history/error cùng payload cho Web/Android. Tạo tập dữ liệu có nguồn, ghi giới hạn mẫu; chạy model thật cho phần đánh giá, ghi prompt/index/model và latency/token/cost. Không gọi API trả phí chỉ để lặp lại smoke không cần thiết.
 4. **23–26/10: [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56), [AI-04 #58](https://github.com/embetapbay123/PBL6/issues/58), [OPS-01 #59](https://github.com/embetapbay123/PBL6/issues/59), [OPS-02 #60](https://github.com/embetapbay123/PBL6/issues/60).** Chạy ALS/related/fallback với dataset/split/baseline có nguồn; kiểm metrics scope Admin/Owner, quality/cost/billing và vòng security/load/recovery đầu tiên. Chuẩn bị ma trận còn thiếu cho [DEMO-01 #61](https://github.com/embetapbay123/PBL6/issues/61).
 
-Đọc: [Payment README](../../backend/commerce-service/src/payment/README.md), [Payment guide](../../backend/commerce-service/src/payment/README.md), [AI runtime](ai-runtime-handoff.md), [AI evaluation](../ai-evaluation.md), [recovery](observability-and-recovery.md). **Bàn giao:** run/evidence có version và outcome thật; blocker còn thiếu có owner/ngày, không báo toàn bộ task Done chỉ vì adapter đã có.
+Đọc: [Payment README](../../backend/commerce-service/src/payment/README.md), [callback handoff](payment-callback-handoff.md), [AI runtime](ai-runtime-handoff.md), [AI evaluation](../ai-evaluation.md), [recovery](observability-and-recovery.md). **Bàn giao:** run/evidence có version và outcome thật; blocker còn thiếu có owner/ngày, không báo toàn bộ task Done chỉ vì adapter đã có.
 
 ### Hoa — mimidangeiu
 
