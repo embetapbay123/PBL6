@@ -61,6 +61,40 @@ const PAGE_SIZE = 100;
 // Safety guard against an endless loop if the backend returns a bad total/page.
 const MAX_PAGES = 200;
 
+/**
+ * Helper to fetch authenticated user ID dynamically to namespace storage keys 
+ * and prevent multi-account data leakage.
+ */
+const getCurrentUserId = (): string => {
+  try {
+    // Check common storage tokens or user payloads if available, else fallback
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    if (token) {
+      // Decode user ID sub or payload if JWT, or fallback to a deterministic identifier base
+      const base64Url = token.split('.')[1];
+      if (base64Url) {
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const payload = JSON.parse(jsonPayload);
+        if (payload && (payload.sub || payload.id)) {
+          return payload.sub || payload.id;
+        }
+      }
+    }
+  } catch {
+    /* ignore decoding errors */
+  }
+  return 'default_customer';
+};
+
+const getAttemptKey = () => `${ATTEMPT_KEY}_${getCurrentUserId()}`;
+const getSelectionKey = () => `${SELECTION_KEY}_${getCurrentUserId()}`;
+
 const describe = (error: unknown): string => {
   if (error instanceof ApiError) {
     return error.correlationId ? `${error.message} (${error.correlationId})` : error.message;
@@ -85,7 +119,7 @@ const newUuid = (): string =>
 
 const readAttempt = (): Attempt | null => {
   try {
-    const raw = sessionStorage.getItem(ATTEMPT_KEY);
+    const raw = sessionStorage.getItem(getAttemptKey());
     if (!raw) return null;
     const a = JSON.parse(raw) as Partial<Attempt> | null;
     if (
@@ -107,7 +141,7 @@ const readAttempt = (): Attempt | null => {
 
 const persistAttempt = (attempt: Attempt) => {
   try {
-    sessionStorage.setItem(ATTEMPT_KEY, JSON.stringify(attempt));
+    sessionStorage.setItem(getAttemptKey(), JSON.stringify(attempt));
   } catch {
     /* storage unavailable: recovery is limited to this page's lifetime */
   }
@@ -115,7 +149,7 @@ const persistAttempt = (attempt: Attempt) => {
 
 const clearAttempt = () => {
   try {
-    sessionStorage.removeItem(ATTEMPT_KEY);
+    sessionStorage.removeItem(getAttemptKey());
   } catch {
     /* ignore */
   }
@@ -131,14 +165,14 @@ const isQuoteConflict = (error: unknown): error is ApiError =>
 
 /**
  * Uncertain: the order may or may not have been created, so keep the attempt
- * and retry with the same key. Network failures, 5xx, 408 and any other 409
- * (e.g. an idempotent request still in progress) are treated as uncertain.
+ * and retry with the same key. Network failures (status 0), timeouts, 5xx, 408 
+ * and any other 409 are treated as uncertain.
  */
-const isUncertain = (error: unknown): boolean =>
-  !(error instanceof ApiError) ||
-  error.status >= 500 ||
-  error.status === 408 ||
-  error.status === 409;
+const isUncertain = (error: unknown): boolean => {
+  if (!(error instanceof ApiError)) return true;
+  if (error.status === 0) return true; // Network drops / aborts
+  return error.status >= 500 || error.status === 408 || error.status === 409;
+};
 
 /* ----------------------- cart loading ----------------------- */
 
@@ -164,7 +198,7 @@ const readSelection = (state: unknown): string[] => {
     return fromState.filter((value): value is string => typeof value === 'string');
   }
   try {
-    const raw = sessionStorage.getItem(SELECTION_KEY);
+    const raw = sessionStorage.getItem(getSelectionKey());
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
   } catch {
@@ -219,8 +253,6 @@ export const CheckoutPage: React.FC = () => {
   }, [items]);
 
   // 1) Load the selected cart items and the address book.
-  //    Skipped while an uncertain attempt is pending: the attempt carries its own snapshot,
-  //    and the cart may already have been emptied if that order was actually created.
   useEffect(() => {
     if (hasAttempt || selectedIds.length === 0) return;
     let cancelled = false;
@@ -237,7 +269,6 @@ export const CheckoutPage: React.FC = () => {
         if (cancelled) return;
         const wanted = new Set(selectedIds);
         const chosen = cart.filter((item) => wanted.has(item.id));
-        // Reject a partially missing selection instead of quoting a subset.
         if (chosen.length !== wanted.size) {
           setLoadError(
             `${wanted.size - chosen.length} sản phẩm đã chọn không còn trong giỏ hàng. Vui lòng quay lại giỏ hàng và chọn lại.`,
@@ -267,7 +298,6 @@ export const CheckoutPage: React.FC = () => {
   }, [hasAttempt, selectedIds, reloadTick]);
 
   // 2) Ask the backend for a quote whenever the items or address change.
-  //    Never while an uncertain attempt is pending: that attempt must be resolved first.
   useEffect(() => {
     if (hasAttempt || items.length === 0 || !addressId) return;
     let cancelled = false;
@@ -300,7 +330,7 @@ export const CheckoutPage: React.FC = () => {
   const dropAttempt = () => {
     clearAttempt();
     setAttempt(null);
-    setItems([]); // forces the cart/address reload, then a fresh quote
+    setItems([]);
     setQuote(null);
   };
 
@@ -310,7 +340,6 @@ export const CheckoutPage: React.FC = () => {
     let current = attempt;
     if (!current) {
       if (!quote || !addressId) return;
-      // Locally expired quote: nothing was sent, so just recalculate.
       if (Date.parse(quote.expires_at) <= Date.now()) {
         setStaleTotal(quote.payable_total_vnd);
         setConflictNotice('Báo giá đã hết hạn. Đang tính lại, vui lòng kiểm tra tổng mới rồi xác nhận lại.');
@@ -332,7 +361,6 @@ export const CheckoutPage: React.FC = () => {
           expected_payable_total_vnd: quote.payable_total_vnd,
         },
       };
-      // Persist the whole attempt BEFORE sending, so a lost response is recoverable.
       persistAttempt(current);
       setAttempt(current);
     }
@@ -348,17 +376,15 @@ export const CheckoutPage: React.FC = () => {
         headers: { 'Idempotency-Key': current.key },
         body: JSON.stringify(current.payload),
       });
-      // Definitive success.
       clearAttempt();
       try {
-        sessionStorage.removeItem(SELECTION_KEY);
+        sessionStorage.removeItem(getSelectionKey());
       } catch {
         /* ignore */
       }
       setCreated(true);
     } catch (error) {
       if (isQuoteConflict(error)) {
-        // Definitive: this quote was rejected, nothing was created. Recalculate.
         setStaleTotal(current.quote.payable_total_vnd);
         setConflictNotice(
           error.code === 'QUOTE_EXPIRED'
@@ -367,13 +393,11 @@ export const CheckoutPage: React.FC = () => {
         );
         dropAttempt();
       } else if (isUncertain(error)) {
-        // Uncertain: keep the same quote, payload and key so the next click is a true retry.
         setConfirmError(
           `${describe(error)} Chưa xác định được đơn hàng đã được tạo hay chưa. ` +
             'Nhấn "Xác nhận đặt hàng" để thử lại: hệ thống dùng cùng mã idempotency nên sẽ không tạo đơn trùng.',
         );
       } else {
-        // Other definitive rejection (4xx): nothing was created.
         setConfirmError(describe(error));
         dropAttempt();
       }
@@ -392,8 +416,8 @@ export const CheckoutPage: React.FC = () => {
         <h1 className="text-2xl font-bold">Đã tạo nhóm đơn hàng</h1>
         <p className="text-gray-600">Đơn hàng của bạn đã được ghi nhận.</p>
         <Link to="/" className="text-indigo-600 hover:underline">
-  Tiếp tục mua sắm
-</Link>
+          Tiếp tục mua sắm
+        </Link>
       </div>
     );
   }
@@ -540,7 +564,7 @@ export const CheckoutPage: React.FC = () => {
               disabled={submitting || (!hasAttempt && (!quote || quoting))}
               className="w-full bg-indigo-600 text-white py-3 rounded-md font-bold hover:bg-indigo-700 transition disabled:opacity-50"
             >
-             {submitting ? 'Đang xử lý đơn hàng...' : 'Xác nhận đặt hàng'}
+              {submitting ? 'Đang xử lý đơn hàng...' : 'Xác nhận đặt hàng'}
             </button>
           </div>
         </div>
