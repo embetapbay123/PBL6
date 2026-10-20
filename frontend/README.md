@@ -1,6 +1,8 @@
 # PBL6 Multi-Store Marketplace — UI & Mock Data Demo
 
-Mặc định chạy khung React gọi API thật cho auth/profile/catalog. `/?mode=mock` mở UI mô phỏng cũ với localStorage; không đại diện nghiệp vụ backend đã hoàn thiện. Xem [bàn giao khung](../docs/implementation/README.md) và [README gốc](../README.md). Các mô tả demo bên dưới thuộc chế độ mock.
+Store Application pages use the real backend operations by default. Browser fixtures are selected explicitly with `VITE_API_MODE=fixture` during development (`npm run dev`); production builds always use API mode. Fixture submissions and reviews only alter browser data and never create a persisted Store or owner membership. API failures, including duplicate submission HTTP 409 responses, are shown without localStorage fallback.
+
+The frontend uses the real API by default. Set `VITE_API_MODE=fixture` only during development to select browser fixtures.
 
 ---
 

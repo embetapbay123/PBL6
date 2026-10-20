@@ -260,4 +260,43 @@ export class InventoryRepository extends OwnedRepository {
         input.deltaQuantity, input.deltaReserved, input.reason, input.actorUserId]);
   }
 
+  /* --------------------------------------------- INV-03: restock a consumed Order */
+
+  /** Restock returns physical stock after a consumed Order is cancelled; the hold is already cleared. */
+  async restockStock(inventoryId: string, quantity: number): Promise<void> {
+    await this.manager.query(
+      'UPDATE inventory SET quantity=quantity+$2, version=version+1 WHERE id=$1', [inventoryId, quantity]);
+  }
+
+  /**
+   * Business-state guard for restock. `stock_movement` is the durable record of what already
+   * happened, so an Order restocked once cannot be restocked again through a different operation
+   * id — `once()` by itself only covers retries of the same id.
+   */
+  async hasRestockMovement(orderId: string): Promise<boolean> {
+    const [row] = await this.manager.query(
+      "SELECT 1 AS found FROM stock_movement WHERE order_id=$1 AND reason='RESTOCK' LIMIT 1", [orderId]);
+    return row !== undefined;
+  }
+
+  /**
+   * Overdue holds that are still ACTIVE, with the quantity they are holding.
+   *
+   * Read-only on purpose: BR-23 lets an Order expire/release its stock only after M2 has
+   * reconciled that no Payment Attempt succeeded. M1 cannot read M2's database, so it reports the
+   * overdue holds and leaves the decision — and the `ReleaseReservation` call — to M2.
+   */
+  async overdueReservations(limit: number): Promise<{ reservation_id: string; order_id: string;
+    expires_at: Date | string; reserved_quantity: number }[]> {
+    return this.manager.query(
+      `SELECT r.id AS reservation_id, r.order_id, r.expires_at,
+              coalesce(sum(ri.quantity) FILTER (WHERE ri.status='ACTIVE'),0)::int AS reserved_quantity
+         FROM inventory_reservation r JOIN reservation_item ri ON ri.reservation_id=r.id
+        WHERE r.status='ACTIVE' AND r.expires_at <= now()
+        GROUP BY r.id, r.order_id, r.expires_at
+       HAVING coalesce(sum(ri.quantity) FILTER (WHERE ri.status='ACTIVE'),0) > 0
+        ORDER BY r.expires_at, r.id LIMIT $1`,
+      [limit]);
+  }
+
 }

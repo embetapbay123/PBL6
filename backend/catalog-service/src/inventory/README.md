@@ -16,9 +16,9 @@ Store scope lấy từ `store_membership` hiện hành trong context chứ khôn
 - `POST /internal/inventory/reserve` — ReserveInventory: **IMPLEMENTED** — giữ hàng nhiều SKU/mọi Store nguyên tử theo `operation_id`; một reservation mỗi Order; không oversell.
 - `POST /internal/inventory/consume` — ConsumeReservation: **IMPLEMENTED** — trừ tồn thật và giải phóng hold; gọi lặp trả `ALREADY_APPLIED`.
 - `POST /internal/inventory/release` — ReleaseReservation: **IMPLEMENTED** — chỉ giải phóng hold, không đổi tồn thật.
-- `POST /internal/inventory/restock` — RestockOrder: **NOT_IMPLEMENTED** (INV-03 #15).
+- `POST /internal/inventory/restock` — RestockOrder: **IMPLEMENTED** — hoàn kho cho Order đã `CONSUMED`, một lần mỗi Order (guard bằng movement RESTOCK); từ chối reservation chưa consume và **không** tự giải phóng hold quá hạn (BR-23).
 
-Chi tiết: [bàn giao INV-02](../../../../docs/implementation/inv-02-handoff.md).
+Chi tiết: [bàn giao INV-02](../../../../docs/implementation/inv-02-handoff.md), [bàn giao INV-03](../../../../docs/implementation/inv-03-handoff.md).
 
 ## Bàn giao CAT-QUOTE-01
 

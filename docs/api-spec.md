@@ -6,7 +6,7 @@
 
 | Nhóm | Endpoint chính | Quyền và ý nghĩa |
 | --- | --- | --- |
-| Auth | POST /auth/register, /auth/verify-email, /auth/login, /auth/reset-password, /auth/reset-password/confirm, /auth/change-password | M3 lưu token một lần dạng hash; demo nhận link trong mock mailbox, không trả token qua response |
+| Auth | POST /auth/register, /auth/verify-email, /auth/login, /auth/reset-password, /auth/reset-password/confirm, /auth/change-password | M3 lưu token một lần dạng hash; registration/reset email requires explicit adapter configuration, unavailable by default, and no real email integration is included |
 | Store/staff | /me/store-applications, /admin/store-applications, /store/staff/invitations, /me/invitations | Duyệt Store, lời mời theo email đã xác minh, Owner thu hồi PENDING |
 | Catalog/inventory | /products, /store/products, /store/inventory | Giá Variant và tồn hiện hành, kiểm tra Store/permission |
 | Cart/quote | /cart/items, POST /checkout/quotes | Chọn item nhiều Store, một địa chỉ, payment_methods theo store_id, voucher Store/sàn; quote trả StoreQuote và tổng tham khảo |
