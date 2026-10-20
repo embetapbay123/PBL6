@@ -5,10 +5,11 @@ const base = process.env.TEST_API_URL ?? 'http://gateway/api/v1';
 const STORE_A = '10000000-0000-4000-8000-000000000061';       // Demo Store from seed
 const PRODUCT_TYPE = '10000000-0000-4000-8000-000000000071';  // Demo type, ACTIVE
 const STORE_B = '00000000-0000-4000-8000-0000000000b1';       // a Store the caller does not belong to
+const OWNER_MEMBERSHIP = '10000000-0000-4000-8000-000000000062';
 
 let m1: DataSource;
+let m3: DataSource;
 let owner = '';
-let customer = '';
 let attributeDefinition = '';
 let foreignProduct = '';
 let foreignVariant = '';
@@ -97,16 +98,21 @@ async function reset() {
   if (strictProductType) await m1.query('DELETE FROM product_type WHERE id=$1', [strictProductType]);
   createdProducts = []; correlations = []; attributeDefinition = ''; foreignProduct = '';
   foreignVariant = ''; ownOtherProduct = ''; ownOtherVariant = ''; strictProductType = ''; strictAttribute = '';
+  // A failed permission assertion must not leave the owner demoted for the next test.
+  await m3.query("UPDATE store_membership SET role='OWNER' WHERE id=$1 AND role<>'OWNER'", [OWNER_MEMBERSHIP]);
 }
 
 beforeAll(async () => {
   m1 = new DataSource({ type: 'postgres', url: process.env.M1_DATABASE_URL });
+  m3 = new DataSource({ type: 'postgres', url: process.env.M3_DATABASE_URL });
   await m1.initialize();
+  await m3.initialize();
+  // One login only: the integration suite shares a 30-per-minute login budget with every other
+  // suite, so a second account here pushes the whole run into 429s.
   owner = await login('owner@pbl6.test');
-  customer = await login('customer1@pbl6.test');
 });
 beforeEach(async () => { await reset(); await seed(); });
-afterAll(async () => { await reset(); await m1.destroy(); });
+afterAll(async () => { await reset(); await m3.destroy(); await m1.destroy(); });
 
 test('createProduct writes the Product, its Variant, stock, audit and outbox together', async () => {
   const product = await createProduct({ status: 'ACTIVE', variants: [
@@ -249,9 +255,19 @@ test('a rejected Variant id does not touch the Product', async () => {
 
 test('writing needs a Store member with product permission', async () => {
   expect((await call('POST', '/store/products', createBody(), undefined)).status).toBe(401);
-  // A Customer holds no Store membership, so the role guard refuses before any validation.
-  expect((await call('POST', '/store/products', createBody(), customer)).status).toBe(403);
-  expect((await call('PATCH', `/store/products/${foreignProduct}`, { expected_version: 0 }, customer)).status).toBe(403);
+  // The role guard still admits a SELLER, so demoting the owner membership exercises the permission
+  // check itself, with the same still-valid token.
+  await m3.query("UPDATE store_membership SET role='SELLER' WHERE id=$1", [OWNER_MEMBERSHIP]);
+  const denied = await call('POST', '/store/products', createBody(), owner);
+  expect(denied.status).toBe(403);
+  expect((await denied.json() as any).code).toBe('FORBIDDEN');
+  // A contract-valid body on purpose: the runtime DTO check runs before the handler and would answer
+  // 422 for an empty change, which would hide the permission check this test is about.
+  const patchResponse = await call('PATCH', `/store/products/${foreignProduct}`,
+    { title: 'Không được phép', expected_version: 0 }, owner);
+  const patchBody = await patchResponse.json() as any;
+  expect({ status: patchResponse.status, code: patchBody.code }).toEqual({ status: 403, code: 'FORBIDDEN' });
+  await m3.query("UPDATE store_membership SET role='OWNER' WHERE id=$1", [OWNER_MEMBERSHIP]);
 });
 
 test('createProduct refuses a Variant id and cannot rewrite a foreign Variant', async () => {
