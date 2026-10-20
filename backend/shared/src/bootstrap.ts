@@ -11,6 +11,7 @@ import { database, initializeDatabase } from './database';
 import { ApiError, ErrorFilter } from './errors';
 import { RequestContractInterceptor } from './request-contract';
 import contractBundle from './contracts.runtime.generated.json';
+import { AuthService } from '../../identity-store-service/src/auth/auth.service';
 
 const registry = new Registry();
 collectDefaultMetrics({ register: registry });
@@ -30,7 +31,7 @@ class HealthController {
 export async function bootstrap(id: ServiceId, controllers: any[]) {
   const c = config(id);
   await initializeDatabase();
-  @Module({ controllers: [HealthController, ...controllers] }) class ApplicationModule {}
+  @Module({ controllers: [HealthController, ...controllers], providers: [AuthService] }) class ApplicationModule {}
   const app = await NestFactory.create(ApplicationModule, { rawBody: true, logger: ['error','warn'] });
   app.enableShutdownHooks();
   const redis = new Redis(c.redisUrl, { maxRetriesPerRequest: 1, enableOfflineQueue: false });

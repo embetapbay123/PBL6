@@ -6,7 +6,7 @@ import { InternalClients } from '../../../shared/src/internal-clients';
 import { once } from '../../../shared/src/idempotency';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InventoryRepository, InventoryRow, QuoteVariantRow, ReservationRow } from './inventory.repository';
-import { inventoryBalance, quoteItemResponse, stockMovementView, reservationView } from './inventory.mapper';
+import { inventoryBalance, isoTime, quoteItemResponse, stockMovementView, reservationView } from './inventory.mapper';
 
 /** Owner always manages stock; a Seller needs the store inventory permission group (RBAC). */
 export function hasInventoryPermission(role: string | undefined, permissions: string[]): boolean {
@@ -23,6 +23,24 @@ export interface ActiveStoreDirectory {
 
 const SYSTEM_ACTOR = '00000000-0000-0000-0000-000000000000';
 function millis(value: Date | string): number { return value instanceof Date ? value.getTime() : Date.parse(value); }
+
+function tally(lines: { variant_id: string; quantity: number }[]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const line of lines) totals.set(line.variant_id, (totals.get(line.variant_id) ?? 0) + line.quantity);
+  return totals;
+}
+
+/**
+ * A restock request only identifies what to return; the consumed reservation lines decide how much.
+ * Quantities are summed per Variant, so splitting one line into two does not slip past the check.
+ */
+export function restockMatches(consumed: { variant_id: string; quantity: number }[],
+  requested: { variant_id: string; quantity: number }[]): boolean {
+  const expected = tally(consumed);
+  const actual = tally(requested);
+  return expected.size === actual.size
+    && [...expected].every(([variantId, quantity]) => actual.get(variantId) === quantity);
+}
 
 // Extension point for inventory; controller delegates here after implementation.
 export class InventoryService {
@@ -253,5 +271,64 @@ export class InventoryService {
         return { operation_id: input.operation_id, status: 'APPLIED' as const };
       });
     });
+  }
+
+  /**
+   * RestockOrder — trả tồn cho Order đã consume (hủy đơn/hoàn hàng).
+   *
+   * Chỉ restock reservation đã CONSUMED: reservation chưa consume chưa từng trừ tồn, nên hoàn kho
+   * lúc đó là tạo hàng từ hư không. Đây cũng là lý do M1 **không** tự hoàn kho cho một hold quá
+   * hạn mà M2 chưa kết luận tiền: M1 chỉ đọc DB của mình nên không được suy đoán Payment (BR-23).
+   * Guard "một lần" dựa trên movement RESTOCK đã ghi cho Order, nên nếu M2 gọi lại bằng operation
+   * ID khác thì trả ALREADY_APPLIED thay vì cộng tồn lần hai.
+   */
+  async restockOrder(input: OperationInputs['RestockOrder']['body']): Promise<OperationOutputs['RestockOrder']> {
+    return database.transaction(async manager => {
+      const repository = new InventoryRepository(manager);
+      return once(manager, 'M2.Inventory.restock', input.operation_id, input, async () => {
+        // Serialize against reserve/release/restock for the same Order, even on disjoint stock rows.
+        await repository.lockReservationOrders([input.order_id]);
+        const reservation = await repository.reservationByOrder(input.order_id);
+        if (!reservation) throw new ApiError(404, 'RESERVATION_NOT_FOUND', 'Không tìm thấy reservation của Order.');
+
+        const items = await repository.reservationItems([reservation.id]);
+        const consumed = items.filter(item => item.status === 'CONSUMED');
+        if (!consumed.length || consumed.length !== items.length)
+          throw new ApiError(409, 'RESTOCK_NOT_ALLOWED', 'Chỉ hoàn kho cho reservation đã consume.');
+
+        // Stored consumed lines are the source of truth; the request only has to match them.
+        if (!restockMatches(consumed, input.items))
+          throw new ApiError(409, 'RESTOCK_MISMATCH', 'Danh sách hoàn kho không khớp reservation đã consume.');
+
+        if (await repository.hasRestockMovement(input.order_id))
+          return { operation_id: input.operation_id, status: 'ALREADY_APPLIED' as const };
+
+        await repository.lockInventoryById([...new Set(consumed.map(item => item.inventory_id))]);
+        for (const item of consumed) {
+          await repository.restockStock(item.inventory_id, item.quantity);
+          await repository.insertMovement({ inventoryId: item.inventory_id, reservationItemId: item.id,
+            orderId: input.order_id, operationId: input.operation_id, deltaQuantity: item.quantity,
+            deltaReserved: 0, reason: 'RESTOCK', actorUserId: SYSTEM_ACTOR });
+        }
+        return { operation_id: input.operation_id, status: 'APPLIED' as const };
+      });
+    });
+  }
+
+  /**
+   * Đối soát reservation quá hạn — **chỉ đọc**.
+   *
+   * BR-23: Order AWAITING_PAYMENT chỉ được expire/release tồn sau khi M2 đối soát rằng chưa có
+   * Payment Attempt thành công. M1 không đọc DB M2, nên hàm này chỉ báo cáo các hold quá hạn còn
+   * ACTIVE kèm số lượng đang giữ; việc giải phóng vẫn là lệnh `ReleaseReservation` tường minh của
+   * M2. Nhờ vậy một Payment đến muộn không làm mất hàng đã giữ, và không có đường nào để M1 tự
+   * quyết định tiền.
+   */
+  async overdueReservations(limit = 100): Promise<{ reservation_id: string; order_id: string;
+    expires_at: string; reserved_quantity: number }[]> {
+    const rows = await new InventoryRepository(database.manager)
+      .overdueReservations(Math.min(Math.max(limit, 1), 100));
+    return rows.map(row => ({ reservation_id: row.reservation_id, order_id: row.order_id,
+      expires_at: isoTime(row.expires_at), reserved_quantity: row.reserved_quantity }));
   }
 }

@@ -440,5 +440,42 @@ export class VoucherService {
       remaining_count: Math.max(0, voucher.usage_limit - counts.reserved_count - counts.redeemed_count),
     };
   }
+
+  async reserveVoucher(
+    manager: EntityManager,
+    data: {
+      voucher_id: string;
+      purchase_group_id: string;
+      customer_user_id: string;
+      store_id?: string | null;
+      discount_vnd: number;
+      expires_at: Date;
+    }
+  ): Promise<{ id: string }> {
+    const repo = new VoucherRepository(manager);
+    return repo.reserveVoucher(data);
+  }
+
+  async commitVoucherRedemptions(
+    manager: EntityManager,
+    purchaseGroupId: string,
+    redemptions: Array<{
+      voucher_id: string;
+      order_id: string;
+      customer_user_id: string;
+      discount_vnd: number;
+    }>
+  ): Promise<void> {
+    const repo = new VoucherRepository(manager);
+    return repo.commitVoucherRedemptions(purchaseGroupId, redemptions);
+  }
+
+  async releaseVoucherReservations(
+    manager: EntityManager,
+    purchaseGroupId: string
+  ): Promise<void> {
+    const repo = new VoucherRepository(manager);
+    return repo.releaseVoucherReservations(purchaseGroupId);
+  }
 }
 
