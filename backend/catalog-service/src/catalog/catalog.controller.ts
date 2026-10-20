@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Req, Param, UseGuards } from '@nestjs/common';
-import { AuthGuard, Roles } from '../../../shared/src/auth';
+import { AuthGuard, Public, Roles } from '../../../shared/src/auth';
 import { CatalogService } from './catalog.service';
 import { CreateProductBodyDto, UpdateProductBodyDto } from '../../../shared/src/dtos.generated';
 /**
@@ -15,6 +15,10 @@ export class CatalogController {
   @Get('product-types') listProductTypes(@Req() request:any) {return this.service.listProductTypes(request.contract.query);}
   @Get('products') list(@Req() request:any) {return this.service.list(request.contract.query,request.headers.authorization,request.correlationId);}
   @Get('products/:id') detail(@Param('id') id:string,@Req() request:any) {return this.service.detail(id,request.headers.authorization,request.correlationId);}
+  @Get('stores/:id/products') @Public()
+  listStoreProducts(@Param('id') id:string,@Req() request:any) {return this.service.listStoreProducts(id,request.contract.query,request.correlationId);}
+  @Get('store/products') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
+  listOwnStoreProducts(@Req() request:any) {return this.service.listOwnStoreProducts(request.contract.query,request.auth);}
   @Post('store/products') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
   createProduct(@Body() dto: CreateProductBodyDto,@Req() request:any) {return this.service.createProduct(dto,request.auth,request.correlationId);}
   @Patch('store/products/:id') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')

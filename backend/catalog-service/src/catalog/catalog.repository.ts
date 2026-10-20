@@ -88,6 +88,21 @@ export class CatalogRepository extends OwnedRepository {
     return rows.map(row=>productResponse(row,variants,images));
   }
 
+  /* ------------------------------------------- CAT-01: Store product lists */
+
+  /**
+   * Seller management page: **every** Product of the Store, including DRAFT/STOPPED and HIDDEN.
+   * The Store id is a required argument because it always comes from the resolved membership, never
+   * from the request — this is the view that must stay invisible to another Store.
+   */
+  async pageOwnStore(storeId:string,page:number,size:number) {
+    const [count]=await this.manager.query('SELECT count(*)::int AS total FROM product WHERE store_id=$1',[storeId]);
+    const rows=await this.manager.query(
+      `SELECT ${PRODUCT_COLUMNS} FROM product p WHERE p.store_id=$1
+        ORDER BY p.title ASC, p.id LIMIT $2 OFFSET $3`,[storeId,size,(page-1)*size]);
+    return {items:await this.withAllVariants(rows),total:count.total,page,size};
+  }
+
   /** Management read-back: variants and images in every status, so a write response is truthful. */
   async withAllVariants(rows:any[]) {
     if(!rows.length) return [];
