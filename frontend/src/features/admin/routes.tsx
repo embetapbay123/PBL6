@@ -3,7 +3,8 @@ import type { RouteObject } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { request, ApiError } from '../../api/client';
 import {storeApplicationAdminRoutes} from './StoreApplicationAdminPage';
-import { AdminAiMetrics, AdminCatalogManagement, AdminDashboardSummary, AdminOrders, AdminVouchers } from './AdminOperations';
+import { AdminAiMetrics, AdminDashboardSummary, AdminOrders } from './AdminLiveData';
+import { AdminCatalogManagement, AdminVouchers } from './AdminOperations';
 
 interface AdminUser {
   id: string;

@@ -96,6 +96,7 @@ export function AdminCatalogManagement() {
 export function AdminVouchers() {
   const [items, setItems] = useState<Voucher[]>([]); const [page, setPage] = useState(1); const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>();
+  const [usage, setUsage] = useState<{ voucher_id: string; reserved_count: number; redeemed_count: number; remaining_count: number }>();
   const [code, setCode] = useState(''); const [discountType, setDiscountType] = useState<'FIXED' | 'PERCENT'>('FIXED'); const [discountValue, setDiscountValue] = useState(10000);
   const [usageLimit, setUsageLimit] = useState(100); const [perCustomerLimit, setPerCustomerLimit] = useState(1);
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16)); const [endsAt, setEndsAt] = useState(new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 16));
@@ -111,6 +112,7 @@ export function AdminVouchers() {
   const stop = async (voucher: Voucher) => { if (!voucher.id) return; setBusy(true); setError(undefined); try {
     await request(`/admin/vouchers/${voucher.id}`, { method: 'PATCH', body: JSON.stringify({ status: 'STOPPED', expected_version: voucher.version }) }); await load();
   } catch (cause) { setError(cause); } finally { setBusy(false); } };
+  const showUsage = async (voucher: Voucher) => { if (!voucher.id) return; setError(undefined); try { setUsage(await request<{ voucher_id: string; reserved_count: number; redeemed_count: number; remaining_count: number }>(`/admin/vouchers/${voucher.id}/usage`)); } catch (cause) { setError(cause); } };
   return <section className="boot-card"><h3>Voucher toàn sàn</h3>{error !== undefined && <ErrorView error={error} />}
     <form onSubmit={create} style={{ display: 'grid', gap: '.5rem', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))' }}>
       <label>Mã voucher<input required maxLength={50} value={code} onChange={event => setCode(event.target.value.toUpperCase())} /></label>
@@ -122,8 +124,9 @@ export function AdminVouchers() {
       <label>Kết thúc<input type="datetime-local" required value={endsAt} onChange={event => setEndsAt(event.target.value)} /></label>
       <button disabled={busy}>Tạo voucher</button>
     </form>
+    {usage && <p role="status">Voucher usage: reserved {usage.reserved_count}, redeemed {usage.redeemed_count}, remaining {usage.remaining_count}</p>}
     {loading ? <Loading /> : <><div style={{ overflowX: 'auto' }}><table><thead><tr><th>Mã</th><th>Ưu đãi</th><th>Hiệu lực</th><th>Trạng thái</th><th></th></tr></thead><tbody>
-      {items.map(item => <tr key={item.id}><td>{item.code}</td><td>{item.discount_type === 'PERCENT' ? `${item.discount_value}%` : money(item.discount_value)}</td><td>{new Date(item.starts_at).toLocaleDateString()} – {new Date(item.ends_at).toLocaleDateString()}</td><td>{item.status}</td><td>{item.status === 'ACTIVE' && <button disabled={busy} onClick={() => stop(item)}>Dừng</button>}</td></tr>)}
+      {items.map(item => <tr key={item.id}><td>{item.code}</td><td>{item.discount_type === 'PERCENT' ? `${item.discount_value}%` : money(item.discount_value)}</td><td>{new Date(item.starts_at).toLocaleDateString()} – {new Date(item.ends_at).toLocaleDateString()}</td><td>{item.status}</td><td><button disabled={busy} onClick={() => void showUsage(item)}>Usage</button>{' '}{item.status === 'ACTIVE' && <button disabled={busy} onClick={() => stop(item)}>Dừng</button>}</td></tr>)}
     </tbody></table></div><Pagination page={page} size={20} total={total} onPage={setPage} /></>}
   </section>;
 }
