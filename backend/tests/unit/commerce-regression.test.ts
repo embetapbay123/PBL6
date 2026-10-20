@@ -68,11 +68,177 @@ test('expired or changed quote is rejected',async()=>{
   records.get(q.quote_id)!.expires_at=new Date(0).toISOString();
   await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:409,response:{code:'QUOTE_EXPIRED'}});
 });
-test('valid confirm remains 501 before any reservation or DB writes while ports are missing',async()=>{
+test('valid confirm reloads upstream snapshot and remains 501 before any reservation or DB writes',async()=>{
   const s=service(),q=await s.quoteCheckout(input,customer,'corr');
   manager.query.mockClear();call.mockClear();
   await expect(s.confirmCheckout({...input,quote_id:q.quote_id,expected_payable_total_vnd:130000},'key',customer,'corr')).rejects.toMatchObject({status:501});
-  expect(manager.query).not.toHaveBeenCalled();expect(call).not.toHaveBeenCalled();
+  expect(manager.query).not.toHaveBeenCalled();
+  expect(call).toHaveBeenCalledTimes(2);
+});
+test('BUG-QUOTE-01: unchanged request rejects when M1 price changes without DB writes',async()=>{
+  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
+  const confirm={...input,quote_id:q.quote_id,expected_payable_total_vnd:130000};
+  manager.query.mockClear();
+  call.mockImplementation(async(op:string)=>{
+    if(op==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:120000,available_quantity:10,version:1}]};
+    if(op==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
+    throw new Error('unexpected');
+  });
+  await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:409,response:{code:'QUOTE_CHANGED'}});
+  expect(manager.query).not.toHaveBeenCalled();
+});
+test('BUG-QUOTE-01: unchanged request rejects when M1 stock is insufficient without DB writes',async()=>{
+  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
+  const confirm={...input,quote_id:q.quote_id,expected_payable_total_vnd:130000};
+  manager.query.mockClear();
+  call.mockImplementation(async(op:string)=>{
+    if(op==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:0,version:1}]};
+    if(op==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
+    throw new Error('unexpected');
+  });
+  await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:409,response:{code:'INSUFFICIENT_STOCK'}});
+  expect(manager.query).not.toHaveBeenCalled();
+});
+test('BUG-QUOTE-01: unchanged request rejects when M3 shipping fee changes without DB writes',async()=>{
+  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
+  const confirm={...input,quote_id:q.quote_id,expected_payable_total_vnd:130000};
+  manager.query.mockClear();
+  call.mockImplementation(async(op:string)=>{
+    if(op==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
+    if(op==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:40000,version:3}]};
+    throw new Error('unexpected');
+  });
+  await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:409,response:{code:'QUOTE_CHANGED'}});
+  expect(manager.query).not.toHaveBeenCalled();
+});
+test('BUG-QUOTE-01: unchanged request rejects when M3 address ownership fails without DB writes',async()=>{
+  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
+  const confirm={...input,quote_id:q.quote_id,expected_payable_total_vnd:130000};
+  manager.query.mockClear();
+  call.mockImplementation(async(op:string)=>{
+    if(op==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
+    if(op==='ResolveCheckoutContext') throw new ApiError(404,'ADDRESS_NOT_FOUND','Address removed');
+    throw new Error('unexpected');
+  });
+  await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:404,response:{code:'ADDRESS_NOT_FOUND'}});
+  expect(manager.query).not.toHaveBeenCalled();
+});
+test('BUG-QUOTE-01: unchanged request rejects when M3 Store is missing without DB writes',async()=>{
+  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
+  const confirm={...input,quote_id:q.quote_id,expected_payable_total_vnd:130000};
+  manager.query.mockClear();
+  call.mockImplementation(async(op:string)=>{
+    if(op==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
+    if(op==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[]};
+    throw new Error('unexpected');
+  });
+  await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:503,response:{code:'DEPENDENCY_CONTRACT_INVALID'}});
+  expect(manager.query).not.toHaveBeenCalled();
+});
+test('BUG-QUOTE-01: unchanged request rejects when M3 permission/token is revoked without DB writes',async()=>{
+  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
+  const confirm={...input,quote_id:q.quote_id,expected_payable_total_vnd:130000};
+  manager.query.mockClear();
+  call.mockImplementation(async(op:string)=>{
+    if(op==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
+    if(op==='ResolveCheckoutContext') throw new ApiError(403,'FORBIDDEN','Quyền đã bị thu hồi');
+    throw new Error('unexpected');
+  });
+  await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:403,response:{code:'FORBIDDEN'}});
+  expect(manager.query).not.toHaveBeenCalled();
+});
+test('multi-Store quote calculates distinct stores, allocates vouchers, and revalidates upstream snapshot without DB writes',async()=>{
+  const STORE_B=randomUUID(), PRODUCT_B=randomUUID(), VARIANT_B=randomUUID(), ITEM_B=randomUUID();
+  const multiInput = {
+    cart_item_ids: [ITEM, ITEM_B],
+    address_id: ADDRESS,
+    payment_methods: { [STORE]: 'COD' as const, [STORE_B]: 'COD' as const },
+    store_vouchers: { [STORE]: 'STORE10' },
+    platform_voucher_code: 'PLATFORM20',
+  };
+  const catalogDir = {
+    product: async (id: string) => {
+      if (id === PRODUCT) return { id: PRODUCT, store_id: STORE, title: 'Product A', variants: [{ id: VARIANT, sku: 'SKU-A', price_vnd: 100000 }] } as any;
+      if (id === PRODUCT_B) return { id: PRODUCT_B, store_id: STORE_B, title: 'Product B', variants: [{ id: VARIANT_B, sku: 'SKU-B', price_vnd: 50000 }] } as any;
+      throw new ApiError(404, 'NOT_FOUND', 'Not found');
+    }
+  };
+  const s = new OrderService((()=>({call})) as any, {
+    catalog: catalogDir,
+    quotes: { put: async(id, record)=>{ records.set(id, record); }, get: async id=>records.get(id) },
+  });
+
+  jest.spyOn(OrderRepository.prototype, 'findCartItemsWithOwnership').mockResolvedValue([
+    { id: ITEM, cart_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, store_id: STORE, quantity: 1 },
+    { id: ITEM_B, cart_id: randomUUID(), product_id: PRODUCT_B, variant_id: VARIANT_B, store_id: STORE_B, quantity: 2 },
+  ]);
+  const VOUCHER_A_ID = randomUUID(), VOUCHER_PLAT_ID = randomUUID();
+  jest.spyOn(OrderRepository.prototype, 'findStoreVoucherByCode').mockImplementation(async (code, storeId) => {
+    if (code === 'STORE10' && storeId === STORE) {
+      return { id: VOUCHER_A_ID, code: 'STORE10', store_id: STORE, status: 'ACTIVE', starts_at: new Date(Date.now() - 10000).toISOString(), ends_at: new Date(Date.now() + 100000).toISOString(), min_goods_vnd: '50000', discount_type: 'FIXED', discount_value: '10000', max_discount_vnd: null } as any;
+    }
+    return null;
+  });
+  jest.spyOn(OrderRepository.prototype, 'findPlatformVoucherByCode').mockImplementation(async code => {
+    if (code === 'PLATFORM20') {
+      return { id: VOUCHER_PLAT_ID, code: 'PLATFORM20', status: 'ACTIVE', starts_at: new Date(Date.now() - 10000).toISOString(), ends_at: new Date(Date.now() + 100000).toISOString(), min_goods_vnd: '100000', discount_type: 'FIXED', discount_value: '20000', max_discount_vnd: null } as any;
+    }
+    return null;
+  });
+  jest.spyOn(OrderRepository.prototype, 'voucherAvailable').mockResolvedValue(true);
+
+  call.mockImplementation(async (op: string) => {
+    if (op === 'QuoteVariants') {
+      return {
+        items: [
+          { variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 0 },
+          { variant_id: VARIANT_B, store_id: STORE_B, quantity: 2, price_vnd: 50000, available_quantity: 5, version: 0 },
+        ],
+      };
+    }
+    if (op === 'ResolveCheckoutContext') {
+      return {
+        address_snapshot: { id: ADDRESS },
+        stores: [
+          { id: STORE, name: 'Store A', shipping_fee_vnd: 30000, version: 1 },
+          { id: STORE_B, name: 'Store B', shipping_fee_vnd: 25000, version: 1 },
+        ],
+      };
+    }
+    throw new Error('unexpected: ' + op);
+  });
+
+  const quote = await s.quoteCheckout(multiInput, customer, 'corr');
+  expect(quote.stores).toHaveLength(2);
+  expect(quote.payable_total_vnd).toBe(225000);
+
+  manager.query.mockClear();
+  const confirm = { ...multiInput, quote_id: quote.quote_id, expected_payable_total_vnd: quote.payable_total_vnd };
+  await expect(s.confirmCheckout(confirm, 'key-multi', customer, 'corr')).rejects.toMatchObject({ status: 501 });
+  expect(manager.query).not.toHaveBeenCalled();
+
+  call.mockImplementation(async (op: string) => {
+    if (op === 'QuoteVariants') {
+      return {
+        items: [
+          { variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 0 },
+          { variant_id: VARIANT_B, store_id: STORE_B, quantity: 2, price_vnd: 50000, available_quantity: 5, version: 0 },
+        ],
+      };
+    }
+    if (op === 'ResolveCheckoutContext') {
+      return {
+        address_snapshot: { id: ADDRESS },
+        stores: [
+          { id: STORE, name: 'Store A', shipping_fee_vnd: 30000, version: 1 },
+          { id: STORE_B, name: 'Store B', shipping_fee_vnd: 35000, version: 2 },
+        ],
+      };
+    }
+    throw new Error('unexpected: ' + op);
+  });
+  await expect(s.confirmCheckout(confirm, 'key-multi-changed', customer, 'corr')).rejects.toMatchObject({ status: 409, response: { code: 'QUOTE_CHANGED' } });
+  expect(manager.query).not.toHaveBeenCalled();
 });
 test('revoked Seller permission blocks reading Store orders',async()=>{
   await expect(service().listStoreOrders({}, {...seller,store_membership:{...seller.store_membership,permissions:[]}},'corr')).rejects.toMatchObject({status:403});
@@ -127,4 +293,28 @@ test('quota counts ledger, including per Customer, without decrementing configur
   manager.query.mockResolvedValue([{total:1,customer:1}]);
   expect(await new OrderRepository(manager as any).voucherAvailable(voucher,USER)).toBe(false);
   expect(voucher.usage_limit).toBe(1);
+});
+
+
+test.each([{available_quantity:9,version:0},{available_quantity:10,version:1}])('quote hash detects sufficient stock/version change %j',async change=>{
+  const s=service(),first=await s.quoteCheckout(input,customer,'first');
+  const original=call.getMockImplementation()!;
+  call.mockImplementation(async(op:string,...args:any[])=>op==='QuoteVariants'?{items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,...change}]}:original(op,...args));
+  const second=await s.quoteCheckout(input,customer,'second');
+  expect(records.get(first.quote_id)!.snapshot_hash).not.toBe(records.get(second.quote_id)!.snapshot_hash);
+  expect(schemaErrors(second,bundle.operations.quoteCheckout.responses['200'])).toEqual([]);
+});
+
+test('identical Cart rows in a different database order keep the same quote hash',async()=>{
+  const secondVariant=randomUUID(),secondItem=randomUUID();
+  const rows=[{id:ITEM,cart_id:randomUUID(),product_id:PRODUCT,variant_id:VARIANT,store_id:STORE,quantity:1},{id:secondItem,cart_id:randomUUID(),product_id:PRODUCT,variant_id:secondVariant,store_id:STORE,quantity:2}];
+  const s=service();
+  (s as any).catalog.product=async()=>({id:PRODUCT,store_id:STORE,title:'Product thật',variants:[{id:VARIANT,sku:'A'},{id:secondVariant,sku:'B'}]});
+  jest.spyOn(s,'quoteVariants').mockResolvedValue(rows.map(r=>({variant_id:r.variant_id,store_id:STORE,quantity:r.quantity,price_vnd:100000,available_quantity:10,version:0})));
+  const repository=jest.spyOn(OrderRepository.prototype,'findCartItemsWithOwnership').mockResolvedValue(rows);
+  const payload={...input,cart_item_ids:[ITEM,secondItem]};
+  const first=await s.quoteCheckout(payload,customer,'first');
+  repository.mockResolvedValue([...rows].reverse());
+  const second=await s.quoteCheckout({...payload,cart_item_ids:[secondItem,ITEM]},customer,'second');
+  expect(records.get(first.quote_id)!.snapshot_hash).toBe(records.get(second.quote_id)!.snapshot_hash);
 });
