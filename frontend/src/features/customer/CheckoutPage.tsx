@@ -370,7 +370,7 @@ export const CheckoutPage: React.FC = () => {
         // Uncertain: keep the same quote, payload and key so the next click is a true retry.
         setConfirmError(
           `${describe(error)} Chưa xác định được đơn hàng đã được tạo hay chưa. ` +
-            'Nhấn "Thử lại xác nhận": hệ thống dùng cùng mã idempotency nên sẽ không tạo đơn trùng.',
+            'Nhấn "Xác nhận đặt hàng" để thử lại: hệ thống dùng cùng mã idempotency nên sẽ không tạo đơn trùng.',
         );
       } else {
         // Other definitive rejection (4xx): nothing was created.
@@ -425,8 +425,7 @@ export const CheckoutPage: React.FC = () => {
 
       {hasAttempt && !confirmError && (
         <div role="status" className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded mb-4 text-sm">
-          Có một lần xác nhận đặt hàng trước đó chưa rõ kết quả. Nhấn &quot;Thử lại xác nhận&quot; để kiểm tra
-          và hoàn tất; hệ thống sẽ không tạo đơn trùng.
+          Có một lần xác nhận đặt hàng trước đó chưa rõ kết quả. Nhấn &quot;Xác nhận đặt hàng&quot; để kiểm tra
         </div>
       )}
 
@@ -541,7 +540,7 @@ export const CheckoutPage: React.FC = () => {
               disabled={submitting || (!hasAttempt && (!quote || quoting))}
               className="w-full bg-indigo-600 text-white py-3 rounded-md font-bold hover:bg-indigo-700 transition disabled:opacity-50"
             >
-              {submitting ? 'Đang xử lý đơn hàng...' : hasAttempt ? 'Thử lại xác nhận' : 'Xác nhận đặt hàng'}
+             {submitting ? 'Đang xử lý đơn hàng...' : 'Xác nhận đặt hàng'}
             </button>
           </div>
         </div>
