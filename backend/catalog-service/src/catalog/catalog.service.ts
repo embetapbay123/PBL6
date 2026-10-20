@@ -19,6 +19,26 @@ function variantSignatureOf(values:Record<string,unknown>):string {
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
 }
 
+const UNIQUE_CONFLICTS:Record<string,{code:string;message:string}> = {
+  sku_store_unique:{code:'SKU_CONFLICT',message:'SKU đã tồn tại trong Store.'},
+  variant_signature_unique:{code:'VARIANT_DUPLICATE',message:'Product đã có Variant với cùng bộ thuộc tính.'},
+  variant_default_unique:{code:'VARIANT_DEFAULT_CONFLICT',message:'Variant mặc định vừa thay đổi bởi yêu cầu khác. Vui lòng thử lại.'},
+};
+
+/**
+ * A race that slips past the pre-checks must still answer a business status. By the time the unique
+ * index fires the transaction has already aborted, so translating PostgreSQL 23505 on a known
+ * constraint into the documented 409 is the only remaining honest response; anything else would
+ * surface a raw driver error as a 500.
+ */
+function uniqueConflictError(error:unknown):ApiError|undefined {
+  const source=error as any;
+  const databaseError=source?.driverError ?? source;
+  if(databaseError?.code!=='23505')return undefined;
+  const mapped=UNIQUE_CONFLICTS[String(databaseError.constraint)];
+  return mapped ? new ApiError(409,mapped.code,mapped.message) : undefined;
+}
+
 export class CatalogService {
   private async stores(correlation:string) {
     const c=config('M1');return (await new InternalClients('M1',c.internalKeys.M1,{M1:c.catalogUrl,M2:'',M3:c.identityUrl}).call('ActiveStores',undefined,correlation)).ids;
@@ -85,26 +105,36 @@ export class CatalogService {
     const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
     return database.transaction(async manager=>{
       const repository=new CatalogRepository(manager);
-      const product=await repository.productForWrite(id,storeId);
+      // Lock the Product before reading or changing its Variants. `updateProduct` locks the same row
+      // first, so the two write paths share one lock order.
+      const product=await repository.lockProductForVariants(id,storeId);
       if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
-      if(await repository.skuUsedInStore(storeId,input.sku))
-        throw new ApiError(409,'SKU_CONFLICT','SKU đã tồn tại trong Store.',[{field:'sku:'+input.sku}]);
-      const signature=variantSignatureOf(input.variant_values);
-      if(await repository.signatureUsedInProduct(id,signature))
-        throw new ApiError(409,'VARIANT_DUPLICATE','Product đã có Variant với cùng bộ thuộc tính.');
-      const existing=await repository.variantRowsOfProduct(id);
-      const isDefault=input.is_default ?? existing.length===0;
-      if(isDefault)await repository.unsetDefaultVariants(id);
-      const variant=await repository.addVariantRow({productId:id,storeId,sku:input.sku,priceVnd:input.price_vnd,
-        variantValues:input.variant_values,signature,isDefault,status:'ACTIVE'});
-      await repository.addInventoryRow(variant.id,storeId);
-      const after=await repository.touchProductRow(id);
-      await audit(manager,'M1',actorUserId,'Product',id,'VARIANT_ADD',correlation,
-        {version:product.version},{variant_id:variant.id,sku:variant.sku,version:after.version});
-      await emitEvent(manager,'ProductChanged',{product_id:id,store_id:storeId,version:after.version,
-        sale_status:after.status,moderation_status:after.moderation_status},correlation);
-      return {id:variant.id,sku:variant.sku,price_vnd:moneyNumber(variant.price_vnd),
-        variant_values:variant.variant_values,is_default:variant.is_default,status:variant.status};
+      try {
+        if(await repository.skuUsedInStore(storeId,input.sku))
+          throw new ApiError(409,'SKU_CONFLICT','SKU đã tồn tại trong Store.',[{field:'sku:'+input.sku}]);
+        const signature=variantSignatureOf(input.variant_values);
+        if(await repository.signatureUsedInProduct(id,signature))
+          throw new ApiError(409,'VARIANT_DUPLICATE','Product đã có Variant với cùng bộ thuộc tính.');
+        const existing=await repository.variantRowsOfProduct(id);
+        const isDefault=input.is_default ?? existing.length===0;
+        if(isDefault)await repository.unsetDefaultVariants(id);
+        const variant=await repository.addVariantRow({productId:id,storeId,sku:input.sku,priceVnd:input.price_vnd,
+          variantValues:input.variant_values,signature,isDefault,status:'ACTIVE'});
+        await repository.addInventoryRow(variant.id,storeId);
+        const after=await repository.touchProductRow(id);
+        await audit(manager,'M1',actorUserId,'Product',id,'VARIANT_ADD',correlation,
+          {version:product.version},{variant_id:variant.id,sku:variant.sku,version:after.version});
+        await emitEvent(manager,'ProductChanged',{product_id:id,store_id:storeId,version:after.version,
+          sale_status:after.status,moderation_status:after.moderation_status},correlation);
+        return {id:variant.id,sku:variant.sku,price_vnd:moneyNumber(variant.price_vnd),
+          variant_values:variant.variant_values,is_default:variant.is_default,status:variant.status};
+      } catch(error) {
+        // The Product lock serialises writes for one Product, but a SKU is unique across the whole
+        // Store, so another Product can still take it first and a unique violation can escape the
+        // pre-checks. The transaction has already aborted at that point, so answer the documented
+        // conflict rather than letting a raw driver error become a 500.
+        throw uniqueConflictError(error) ?? error;
+      }
     });
   }
 

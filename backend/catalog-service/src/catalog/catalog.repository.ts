@@ -97,6 +97,19 @@ export class CatalogRepository extends OwnedRepository {
   }
 
   /**
+   * Serializes Variant writes for one Product. Without it two requests both read the old Variant set
+   * and both try to become the default, or both pass the same SKU/signature pre-check and then
+   * collide on a unique index. The lock is taken on the Product row, which is also the row
+   * `updateProduct` locks first, so both write paths share one lock order.
+   */
+  async lockProductForVariants(id:string,storeId:string) {
+    const [row]=await this.manager.query(
+      'SELECT id,store_id,status,moderation_status,version FROM product WHERE id=$1 AND store_id=$2 FOR UPDATE',
+      [id,storeId]);
+    return row;
+  }
+
+  /**
    * A Variant change alters price or availability, so the Product version advances and the
    * `ProductChanged` event carries it. M4 uses that version to invalidate stale embeddings.
    *

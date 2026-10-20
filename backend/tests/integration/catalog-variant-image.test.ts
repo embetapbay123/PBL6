@@ -191,3 +191,65 @@ test('the DTO rejects an image url that is not a URI', async () => {
   expect(await m1.query('SELECT count(*)::int AS n FROM product_image WHERE product_id=$1', [product]))
     .toEqual([{ n: 0 }]);
 });
+
+/* ----------------------------------------------------------------- concurrency */
+
+async function post(path: string, body: unknown) {
+  const response = await call('POST', path, body, owner);
+  return { status: response.status, body: await response.json() as any };
+}
+
+test('concurrent default Variants never surface a unique violation', async () => {
+  const before = correlations.length;
+  const [first, second] = await Promise.all([
+    post(`/store/products/${product}/variants`, variantBody({ is_default: true, variant_values: { color: 'a' } })),
+    post(`/store/products/${product}/variants`, variantBody({ is_default: true, variant_values: { color: 'b' } })),
+  ]);
+  const statuses = [first.status, second.status];
+  // Every answer is a business status: accepted, or the documented conflict. Never a raw 5xx.
+  expect(statuses.filter(status => status !== 201 && status !== 409)).toEqual([]);
+  const accepted = statuses.filter(status => status === 201).length;
+  expect(accepted).toBeGreaterThanOrEqual(1);
+
+  // The invariant the unique index enforces still holds after the race.
+  expect(await m1.query('SELECT count(*)::int AS n FROM product_variant WHERE product_id=$1 AND is_default', [product]))
+    .toEqual([{ n: 1 }]);
+  // A rejected request left no partial write. The seeded Variant deliberately has no stock row, so
+  // every inventory row here belongs to an accepted call.
+  expect(await m1.query('SELECT count(*)::int AS n FROM product_variant WHERE product_id=$1', [product]))
+    .toEqual([{ n: 1 + accepted }]);
+  expect(await m1.query(
+    'SELECT count(*)::int AS n FROM inventory i JOIN product_variant v ON v.id=i.variant_id WHERE v.product_id=$1',
+    [product])).toEqual([{ n: accepted }]);
+  const round = correlations.slice(before);
+  expect(await m1.query(
+    "SELECT count(*)::int AS n FROM m1_audit WHERE request_id = ANY($1::text[]) AND action='VARIANT_ADD'", [round]))
+    .toEqual([{ n: accepted }]);
+  expect(await m1.query('SELECT count(*)::int AS n FROM outbox WHERE correlation_id = ANY($1::text[])', [round]))
+    .toEqual([{ n: accepted }]);
+});
+
+test('concurrent identical SKU requests answer one success and one conflict', async () => {
+  const sku = 'RACE-' + randomUUID().slice(0, 8);
+  const [first, second] = await Promise.all([
+    post(`/store/products/${product}/variants`, variantBody({ sku, variant_values: { color: 'x' } })),
+    post(`/store/products/${product}/variants`, variantBody({ sku, variant_values: { color: 'y' } })),
+  ]);
+  expect([first.status, second.status].sort()).toEqual([201, 409]);
+  expect((first.status === 409 ? first : second).body.code).toBe('SKU_CONFLICT');
+  expect(await m1.query('SELECT count(*)::int AS n FROM product_variant WHERE product_id=$1 AND sku=$2', [product, sku]))
+    .toEqual([{ n: 1 }]);
+});
+
+test('concurrent identical attribute sets answer one success and one conflict', async () => {
+  const values = { size: 'L', color: 'green' };
+  const [first, second] = await Promise.all([
+    post(`/store/products/${product}/variants`, variantBody({ variant_values: values })),
+    post(`/store/products/${product}/variants`, variantBody({ variant_values: { ...values } })),
+  ]);
+  expect([first.status, second.status].sort()).toEqual([201, 409]);
+  expect((first.status === 409 ? first : second).body.code).toBe('VARIANT_DUPLICATE');
+  expect(await m1.query(
+    'SELECT count(*)::int AS n FROM product_variant WHERE product_id=$1 AND variant_values_json=$2::jsonb',
+    [product, JSON.stringify(values)])).toEqual([{ n: 1 }]);
+});
