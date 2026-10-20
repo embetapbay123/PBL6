@@ -33,7 +33,7 @@ jobs:
           fi
       - name: Rebuild tools image from the checked out commit
         run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build tools
-      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
+      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm -e PBL6_ISOLATED_TEST_REDIS=1 tools npm run test:integration
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
       - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
       - run: npm --prefix frontend run test:e2e

@@ -10,7 +10,7 @@ import bundle from '../../shared/src/contracts.runtime.generated.json';
 import { CheckoutQuoteRecord } from '../../commerce-service/src/order/quote-store';
 
 const manager={query:jest.fn(),queryRunner:{isTransactionActive:true}};
-jest.mock('../../shared/src/database',()=>({database:{get manager(){return manager;},transaction:jest.fn(async(work:any)=>work(manager))}}));
+jest.mock('../../shared/src/database',()=>({database:{get manager(){return manager;},query:(...args:any[])=>manager.query(...args),transaction:jest.fn(async(work:any)=>work(manager))}}));
 const USER=randomUUID(),STORE=randomUUID(),PRODUCT=randomUUID(),VARIANT=randomUUID(),ITEM=randomUUID(),ADDRESS=randomUUID();
 const customer={user_id:USER,access_token:'current-token',roles:['CUSTOMER']};
 const seller={user_id:USER,store_membership:{store_id:STORE,role:'SELLER',permissions:['order.store.read_status_cancel','cod.store.collect']}};
@@ -26,7 +26,7 @@ function service(payments?:(m:any)=>PaymentPort) {
 const order=(status='SHIPPED')=>({id:randomUUID(),purchase_group_id:randomUUID(),customer_user_id:USER,store_id:STORE,status,version:1,payment_method:'COD',
   address_snapshot:{},goods_vnd:'100000',store_discount_vnd:'0',platform_discount_vnd:'0',shipping_vnd:'30000',payable_vnd:'130000',payment_expires_at:null,created_at:new Date(),items:[]} as any);
 beforeEach(()=>{
-  jest.restoreAllMocks();manager.query.mockReset();records=new Map();
+  jest.restoreAllMocks();manager.query.mockReset();manager.query.mockResolvedValue([]);records=new Map();
   call=jest.fn(async(operation:string,payload:any)=>{
     if(operation==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
     if(operation==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
@@ -120,193 +120,9 @@ test('BUG-QUOTE-01: Confirm revalidates quote and rejects changed price/stock/ad
   expect(manager.query).not.toHaveBeenCalledWith(expect.stringMatching(/INSERT INTO/i), expect.anything());
 });
 
-test('confirmCheckout creates complete Order group, Payment, reserves and commits vouchers, and replays idempotently', async () => {
-  let paymentCreated: any;
-  const paymentPort: PaymentPort = {
-    manager: manager as any,
-    createForOrder: jest.fn(async (p: any) => {
-      paymentCreated = p;
-      return {
-        id: randomUUID(),
-        order_id: p.order_id,
-        method: p.method,
-        status: 'PENDING',
-        payable_vnd: Number(p.payable_vnd),
-        collectible_vnd: p.method === 'COD' ? Number(p.payable_vnd) : 0,
-        collected_vnd: 0,
-        refunded_vnd: 0,
-      };
-    }),
-    recordCodCollection: jest.fn(),
-    requestRefund: jest.fn(),
-  };
-  const s = service(() => paymentPort);
-  const q = await s.quoteCheckout(input, customer, 'corr');
-  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+// Checkout transaction, concurrency and compensation assertions use real PostgreSQL
+// in tests/integration/order-recovery.test.ts rather than SQL-return stubs.
 
-  manager.query.mockImplementation(async (sql: string, params: any[]) => {
-    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('pg_advisory_xact_lock')) return [];
-    if (sql.includes('SELECT id, customer_user_id, key')) return [];
-    if (sql.includes('SELECT * FROM "order" WHERE purchase_group_id')) return [];
-    if (sql.includes('INSERT INTO "order"')) {
-      return [{
-        id: params[0],
-        purchase_group_id: params[1],
-        customer_user_id: params[2],
-        store_id: params[3],
-        address_snapshot: JSON.parse(params[4]),
-        status: params[5],
-        payment_method: params[6],
-        payment_expires_at: params[7],
-        goods_vnd: params[8],
-        store_discount_vnd: params[9],
-        platform_discount_vnd: params[10],
-        shipping_vnd: params[11],
-        payable_vnd: params[12],
-        version: 0,
-        created_at: new Date(),
-      }];
-    }
-    if (sql.includes('INSERT INTO order_item')) {
-      return [{
-        id: randomUUID(),
-        order_id: params[1],
-        product_id: params[2],
-        variant_id: params[3],
-        product_snapshot: JSON.parse(params[4]),
-        sku_snapshot: params[5],
-        unit_price_vnd: params[6],
-        quantity: params[7],
-        line_total_vnd: params[8],
-      }];
-    }
-    if (sql.includes('UPDATE "order" SET status = \'PENDING\'')) return [];
-    if (sql.includes('INSERT INTO order_status_history')) return [];
-    if (sql.includes('INSERT INTO idempotency_record')) return [];
-    return [];
-  });
-
-  const res = await s.confirmCheckout(confirm, 'key-success-1', customer, 'corr');
-  expect(res.payable_total_vnd).toBe(130000);
-  expect(res.orders).toHaveLength(1);
-  expect(res.orders[0].status).toBe('PENDING');
-  expect(res.orders[0].payment_method).toBe('COD');
-  expect(paymentCreated).toBeDefined();
-  expect(paymentCreated.payable_vnd).toBe(130000n);
-  expect(call).toHaveBeenCalledWith('ConsumeReservation', expect.objectContaining({ order_id: res.orders[0].id }), 'corr');
-  expect(schemaErrors(res, bundle.operations.confirmCheckout.responses['201'])).toEqual([]);
-
-  // Replay with identical key and payload returns existing record without new writes
-  manager.query.mockImplementation(async (sql: string) => {
-    if (sql.includes('SELECT id, customer_user_id, key')) {
-      return [{
-        id: randomUUID(),
-        customer_user_id: USER,
-        key: 'key-success-1',
-        payload_hash: fingerprint({
-          cart_item_ids: [...confirm.cart_item_ids].sort(),
-          address_id: confirm.address_id,
-          payment_methods: confirm.payment_methods,
-          platform_voucher_code: (confirm as any).platform_voucher_code,
-          store_vouchers: (confirm as any).store_vouchers,
-          quote_id: confirm.quote_id,
-          expected_payable_total_vnd: confirm.expected_payable_total_vnd,
-        }),
-        purchase_group_id: res.purchase_group_id,
-        response_json: res,
-        expires_at: new Date(Date.now() + 86400000),
-      }];
-    }
-    return [];
-  });
-
-  const replay = await s.confirmCheckout(confirm, 'key-success-1', customer, 'corr');
-  expect(replay).toEqual(res);
-
-  // Replay with different payload throws 409 IDEMPOTENCY_CONFLICT
-  await expect(s.confirmCheckout({ ...confirm, expected_payable_total_vnd: 999999 }, 'key-success-1', customer, 'corr'))
-    .rejects.toMatchObject({ status: 409, response: { code: 'IDEMPOTENCY_CONFLICT' } });
-});
-
-test('confirmCheckout compensates M1 reservation when database transaction fails', async () => {
-  const s = service();
-  const q = await s.quoteCheckout(input, customer, 'corr');
-  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
-
-  manager.query.mockImplementation(async (sql: string) => {
-    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('SELECT pg_advisory_xact_lock')) return [];
-    if (sql.includes('SELECT id, customer_user_id, key')) return [];
-    if (sql.includes('INSERT INTO idempotency_record')) return [];
-    if (sql.includes('INSERT INTO "order"')) {
-      throw new Error('SIMULATED_DB_FAILURE');
-    }
-    return [];
-  });
-
-  await expect(s.confirmCheckout(confirm, 'key-fail-comp', customer, 'corr')).rejects.toThrow('SIMULATED_DB_FAILURE');
-  expect(call).toHaveBeenCalledWith('ReleaseReservation', expect.objectContaining({
-    reason: 'CONFIRM_FAILED',
-  }), 'corr');
-});
-
-test('online payment (SANDBOX) creates order in AWAITING_PAYMENT status with payment_expires_at', async () => {
-  let paymentCreated: any;
-  const paymentPort: PaymentPort = {
-    manager: manager as any,
-    createForOrder: jest.fn(async (p: any) => {
-      paymentCreated = p;
-      return {
-        id: randomUUID(),
-        order_id: p.order_id,
-        method: p.method,
-        status: 'PENDING',
-        payable_vnd: Number(p.payable_vnd),
-        collectible_vnd: 0,
-        collected_vnd: 0,
-        refunded_vnd: 0,
-      };
-    }),
-    recordCodCollection: jest.fn(),
-    requestRefund: jest.fn(),
-  };
-  const s = service(() => paymentPort);
-  const onlineInput = { ...input, payment_methods: { [STORE]: 'SANDBOX' as const } };
-  const q = await s.quoteCheckout(onlineInput, customer, 'corr');
-  const confirm = { ...onlineInput, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
-
-  manager.query.mockImplementation(async (sql: string, params: any[]) => {
-    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('SELECT pg_advisory_xact_lock')) return [];
-    if (sql.includes('SELECT id, customer_user_id, key')) return [];
-    if (sql.includes('INSERT INTO idempotency_record')) return [];
-    if (sql.includes('INSERT INTO "order"')) {
-      return [{
-        id: params[0],
-        purchase_group_id: params[1],
-        customer_user_id: params[2],
-        store_id: params[3],
-        address_snapshot: JSON.parse(params[4]),
-        status: params[5],
-        payment_method: params[6],
-        payment_expires_at: params[7],
-        goods_vnd: params[8],
-        store_discount_vnd: params[9],
-        platform_discount_vnd: params[10],
-        shipping_vnd: params[11],
-        payable_vnd: params[12],
-        version: 0,
-        created_at: new Date(),
-      }];
-    }
-    if (sql.includes('INSERT INTO order_item')) return [{ id: randomUUID() }];
-    return [];
-  });
-
-  const res = await s.confirmCheckout(confirm, 'key-sandbox-1', customer, 'corr');
-  expect(res.orders[0].status).toBe('AWAITING_PAYMENT');
-  expect(res.orders[0].payment_method).toBe('SANDBOX');
-  expect(res.orders[0].payment_expires_at).toBeDefined();
-  expect(paymentCreated.method).toBe('SANDBOX');
-});
 test('revoked Seller permission blocks reading Store orders',async()=>{
   await expect(service().listStoreOrders({}, {...seller,store_membership:{...seller.store_membership,permissions:[]}},'corr')).rejects.toMatchObject({status:403});
 });
@@ -444,80 +260,4 @@ test('BUG-QUOTE-01: Cart rows returned in reverse order keep identical canonical
   const q2 = await s.quoteCheckout(twoItemInput, customer, 'corr');
 
   expect(records.get(q1.quote_id)!.snapshot_hash).toBe(records.get(q2.quote_id)!.snapshot_hash);
-});
-
-test('confirmCheckout keeps order in PREPARING when COD ConsumeReservation fails', async () => {
-  const paymentPort: PaymentPort = {
-    manager: manager as any,
-    createForOrder: jest.fn(async (p: any) => ({
-      id: randomUUID(),
-      order_id: p.order_id,
-      method: p.method,
-      status: 'PENDING',
-      payable_vnd: Number(p.payable_vnd),
-      collectible_vnd: Number(p.payable_vnd),
-      collected_vnd: 0,
-      refunded_vnd: 0,
-    })),
-    recordCodCollection: jest.fn(),
-    requestRefund: jest.fn(),
-  };
-  const s = service(() => paymentPort);
-  const q = await s.quoteCheckout(input, customer, 'corr');
-  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
-
-  manager.query.mockImplementation(async (sql: string, params: any[]) => {
-    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('pg_advisory_xact_lock')) return [];
-    if (sql.includes('SELECT id, customer_user_id, key')) return [];
-    if (sql.includes('INSERT INTO "order"')) {
-      return [{
-        id: params[0], purchase_group_id: params[1], customer_user_id: params[2], store_id: params[3],
-        address_snapshot: JSON.parse(params[4]), status: params[5], payment_method: params[6],
-        payment_expires_at: params[7], goods_vnd: params[8], store_discount_vnd: params[9],
-        platform_discount_vnd: params[10], shipping_vnd: params[11], payable_vnd: params[12],
-        version: 0, created_at: new Date(),
-      }];
-    }
-    if (sql.includes('INSERT INTO order_item') || sql.includes('INSERT INTO idempotency_record')) return [];
-    return [];
-  });
-
-  const originalCall = call.getMockImplementation()!;
-  call.mockImplementation(async (op: string, payload: any) => {
-    if (op === 'ConsumeReservation') throw new ApiError(503, 'INVENTORY_UNAVAILABLE', 'Network failure');
-    return originalCall(op, payload);
-  });
-
-  const res = await s.confirmCheckout(confirm, 'key-cod-fail', customer, 'corr');
-  expect(res.orders[0].status).toBe('PREPARING');
-});
-
-test('confirmCheckout records compensation status when DB fails and ReleaseReservation fails', async () => {
-  const s = service();
-  const q = await s.quoteCheckout(input, customer, 'corr');
-  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
-
-  manager.query.mockImplementation(async (sql: string) => {
-    if (sql.includes('pg_advisory_lock') || sql.includes('pg_advisory_unlock') || sql.includes('pg_advisory_xact_lock')) return [];
-    if (sql.includes('SELECT id, customer_user_id, key')) return [];
-    if (sql.includes('INSERT INTO idempotency_record')) return [];
-    if (sql.includes('INSERT INTO "order"')) throw new Error('SIMULATED_DB_ERROR');
-    return [];
-  });
-
-  const originalCall = call.getMockImplementation()!;
-  call.mockImplementation(async (op: string, payload: any) => {
-    if (op === 'ReleaseReservation') throw new Error('M1_RELEASE_NETWORK_DOWN');
-    return originalCall(op, payload);
-  });
-
-  let savedIdempotency: any;
-  jest.spyOn(OrderRepository.prototype, 'saveIdempotencyRecord').mockImplementation(async (data: any) => {
-    savedIdempotency = data;
-  });
-
-  await expect(s.confirmCheckout(confirm, 'key-fail-both', customer, 'corr')).rejects.toThrow('SIMULATED_DB_ERROR');
-  expect(savedIdempotency).toBeDefined();
-  expect(savedIdempotency.response_json.status).toBe('COMPENSATION_FAILED');
-  expect(savedIdempotency.response_json.failed_releases).toBeDefined();
 });
