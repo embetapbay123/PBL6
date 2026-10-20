@@ -32,6 +32,7 @@ beforeEach(()=>{
     if(operation==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
     if(operation==='ReserveInventory') return {reservations:[{id:randomUUID(),order_id:payload?.items?.[0]?.order_id ?? randomUUID(),variant_id:VARIANT,quantity:1,expires_at:new Date(Date.now()+600000).toISOString()}]};
     if(operation==='ReleaseReservation') return {operation_id:randomUUID(),status:'APPLIED'};
+    if(operation==='RestockOrder') return {operation_id:randomUUID(),status:'APPLIED'};
     throw new Error('unexpected operation: '+operation);
   });
   jest.spyOn(OrderRepository.prototype,'findCartItemsWithOwnership').mockResolvedValue([{id:ITEM,cart_id:randomUUID(),product_id:PRODUCT,variant_id:VARIANT,store_id:STORE,quantity:1}]);
@@ -340,11 +341,104 @@ test('wrong Payment manager is rejected',async()=>{
   jest.spyOn(OrderRepository.prototype,'lockPaymentByOrderId').mockResolvedValue({status:'PENDING',collectible_vnd:'130000'} as any);
   await expect(service(()=>({manager:{}} as any)).collectCod(randomUUID(),{expected_version:1,amount_collected_vnd:130000},seller,'corr')).rejects.toThrow('TRANSACTION_MANAGER_MISMATCH');
 });
-test('cancellation leaves data untouched while compensation worker is not delivered',async()=>{
-  jest.spyOn(OrderRepository.prototype,'lockCustomerOrderById').mockResolvedValue(order('PENDING'));
-  const write=jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory');
-  await expect(service().cancelOwnOrder(randomUUID(),{expected_version:1},customer,'corr')).rejects.toMatchObject({status:501});
-  expect(write).not.toHaveBeenCalled();
+test('cancelOwnOrder cancels PENDING order, restocks inventory, and records outbox and audit', async () => {
+  const o = {
+    ...order('PENDING'),
+    items: [{ id: randomUUID(), order_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, unit_price_vnd: 100000, quantity: 1, line_total_vnd: 100000 }],
+  };
+  jest.spyOn(OrderRepository.prototype, 'lockCustomerOrderById').mockResolvedValue(o);
+  jest.spyOn(OrderRepository.prototype, 'lockPaymentByOrderId').mockResolvedValue({ id: randomUUID(), order_id: o.id, method: 'COD', status: 'PENDING', payable_vnd: '100000', collectible_vnd: '100000', collected_vnd: '0', refunded_vnd: '0', version: 0 });
+  const write = jest.spyOn(OrderRepository.prototype, 'updateOrderStatusWithHistory').mockResolvedValue({ ...o, status: 'CANCELLED', version: 2 });
+
+  const res = await service().cancelOwnOrder(o.id, { expected_version: 1, reason: 'Khách đổi ý' }, customer, 'corr');
+  expect(res.status).toBe('CANCELLED');
+  expect(res.version).toBe(2);
+  expect(write).toHaveBeenCalledWith(expect.objectContaining({
+    order_id: o.id,
+    from_status: 'PENDING',
+    to_status: 'CANCELLED',
+    expected_version: 1,
+    reason: 'Khách đổi ý',
+  }));
+  expect(call).toHaveBeenCalledWith('RestockOrder', expect.objectContaining({
+    order_id: o.id,
+    items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1 }],
+  }), 'corr');
+});
+
+test('cancelOwnOrder cancels AWAITING_PAYMENT order and releases inventory hold', async () => {
+  const o = {
+    ...order('AWAITING_PAYMENT'),
+    payment_method: 'SANDBOX',
+    items: [{ id: randomUUID(), order_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, unit_price_vnd: 100000, quantity: 1, line_total_vnd: 100000 }],
+  };
+  jest.spyOn(OrderRepository.prototype, 'lockCustomerOrderById').mockResolvedValue(o);
+  jest.spyOn(OrderRepository.prototype, 'lockPaymentByOrderId').mockResolvedValue({ id: randomUUID(), order_id: o.id, method: 'SANDBOX', status: 'PENDING', payable_vnd: '100000', collectible_vnd: '0', collected_vnd: '0', refunded_vnd: '0', version: 0 });
+  jest.spyOn(OrderRepository.prototype, 'updateOrderStatusWithHistory').mockResolvedValue({ ...o, status: 'CANCELLED', version: 2 });
+
+  const res = await service().cancelOwnOrder(o.id, { expected_version: 1 }, customer, 'corr');
+  expect(res.status).toBe('CANCELLED');
+  expect(call).toHaveBeenCalledWith('ReleaseReservation', expect.objectContaining({
+    order_id: o.id,
+    reason: 'ORDER_CANCELLED',
+  }), 'corr');
+});
+
+test('cancelOwnOrder on paid SANDBOX order requests refund', async () => {
+  const o = {
+    ...order('PENDING'),
+    payment_method: 'SANDBOX',
+    items: [{ id: randomUUID(), order_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, unit_price_vnd: 100000, quantity: 1, line_total_vnd: 100000 }],
+  };
+  const refundReq = jest.fn(async () => ({ id: randomUUID(), payment_id: 'pay-1', order_id: o.id, amount_vnd: 130000, status: 'REQUESTED' as const }));
+  const paymentPort: PaymentPort = {
+    manager: manager as any,
+    createForOrder: jest.fn(),
+    recordCodCollection: jest.fn(),
+    requestRefund: refundReq,
+  };
+  jest.spyOn(OrderRepository.prototype, 'lockCustomerOrderById').mockResolvedValue(o);
+  jest.spyOn(OrderRepository.prototype, 'lockPaymentByOrderId').mockResolvedValue({ id: 'pay-1', order_id: o.id, method: 'SANDBOX', status: 'SUCCEEDED', payable_vnd: '130000', collectible_vnd: '0', collected_vnd: '130000', refunded_vnd: '0', version: 1 });
+  jest.spyOn(OrderRepository.prototype, 'updateOrderStatusWithHistory').mockResolvedValue({ ...o, status: 'CANCELLED', version: 2 });
+
+  const res = await service(() => paymentPort).cancelOwnOrder(o.id, { expected_version: 1 }, customer, 'corr');
+  expect(res.status).toBe('CANCELLED');
+  expect(refundReq).toHaveBeenCalledWith(expect.objectContaining({
+    order_id: o.id,
+    payment_id: 'pay-1',
+    amount_vnd: 130000n,
+  }));
+});
+
+test('cancelStoreOrder verifies permission, rejects version/state conflict, and cancels', async () => {
+  const o = {
+    ...order('CONFIRMED'),
+    items: [{ id: randomUUID(), order_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, unit_price_vnd: 100000, quantity: 1, line_total_vnd: 100000 }],
+  };
+  jest.spyOn(OrderRepository.prototype, 'lockStoreOrderById').mockResolvedValue(o);
+  jest.spyOn(OrderRepository.prototype, 'lockPaymentByOrderId').mockResolvedValue(undefined);
+  jest.spyOn(OrderRepository.prototype, 'updateOrderStatusWithHistory').mockResolvedValue({ ...o, status: 'CANCELLED', version: 2 });
+
+  // Wrong version
+  await expect(service().cancelStoreOrder(o.id, { expected_version: 99 }, seller, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'VERSION_CONFLICT' },
+  });
+
+  // State cannot be cancelled (e.g. PROCESSING, SHIPPED)
+  jest.spyOn(OrderRepository.prototype, 'lockStoreOrderById').mockResolvedValueOnce({ ...o, status: 'PROCESSING' });
+  await expect(service().cancelStoreOrder(o.id, { expected_version: 1 }, seller, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'ORDER_CANNOT_BE_CANCELLED' },
+  });
+
+  // Successful store cancellation
+  const res = await service().cancelStoreOrder(o.id, { expected_version: 1, reason: 'Hết hàng' }, seller, 'corr');
+  expect(res.status).toBe('CANCELLED');
+  expect(call).toHaveBeenCalledWith('RestockOrder', expect.objectContaining({
+    order_id: o.id,
+    items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1 }],
+  }), 'corr');
 });
 test('quota counts ledger, including per Customer, without decrementing configured limit',async()=>{
   manager.query.mockResolvedValue([{total:0,customer:0}]);

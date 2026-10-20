@@ -67,11 +67,11 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /orders/{id}/refund` | getOrderRefund | M2 / payment | Công | IMPLEMENTED |
 | `GET /me/orders` | listOwnOrders | M2 / order | Hoa | IMPLEMENTED |
 | `GET /me/orders/{id}` | getOwnOrder | M2 / order | Hoa | IMPLEMENTED |
-| `POST /me/orders/{id}/cancel` | cancelOwnOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /me/orders/{id}/cancel` | cancelOwnOrder | M2 / order | Hoa | IMPLEMENTED |
 | `GET /store/orders` | listStoreOrders | M2 / order | Hoa | IMPLEMENTED |
 | `GET /store/orders/{id}` | getStoreOrder | M2 / order | Hoa | IMPLEMENTED |
 | `PATCH /store/orders/{id}/status` | transitionStoreOrder | M2 / order | Hoa | IMPLEMENTED |
-| `POST /store/orders/{id}/cancel` | cancelStoreOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /store/orders/{id}/cancel` | cancelStoreOrder | M2 / order | Hoa | IMPLEMENTED |
 | `POST /store/orders/{id}/cod-collection` | collectCod | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /vouchers/validate` | validateVouchers | M2 / voucher | Hoa | IMPLEMENTED |
 | `GET /store/vouchers` | listStoreVouchers | M2 / voucher | Hoa | IMPLEMENTED |

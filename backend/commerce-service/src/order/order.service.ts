@@ -1038,28 +1038,184 @@ export class OrderService {
     });
   }
 
-  async cancelOwnOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelOwnOrder']> {
-    if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
-    return database.transaction(async manager=>{
-      const order=await new OrderRepository(manager).lockCustomerOrderById(id,auth.user_id);
-      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
-      this.checkCancellation(order,input.expected_version);
-      return notImplemented('cancelOwnOrder: cần worker release/restock/refund bền vững');
-    });
+  async cancelOwnOrder(
+    id: string,
+    input: OperationInputs['cancelOwnOrder']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['cancelOwnOrder']> {
+    if (!auth?.user_id) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    return this.cancelOrderInternal(id, input, auth, correlation, false);
   }
 
-  async cancelStoreOrder(id:string,input:OperationInputs['cancelStoreOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelStoreOrder']> {
-    const storeId=requireStorePermission(auth,'order.store.read_status_cancel');
-    return database.transaction(async manager=>{
-      const order=await new OrderRepository(manager).lockStoreOrderById(id,storeId);
-      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
-      this.checkCancellation(order,input.expected_version);
-      return notImplemented('cancelStoreOrder: cần worker release/restock/refund bền vững');
-    });
+  async cancelStoreOrder(
+    id: string,
+    input: OperationInputs['cancelStoreOrder']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['cancelStoreOrder']> {
+    const storeId = requireStorePermission(auth, 'order.store.read_status_cancel');
+    return this.cancelOrderInternal(id, input, auth, correlation, true, storeId);
   }
-  private checkCancellation(order:OrderRow,version:number):void {
-    if(order.version!==version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
-    if(!['AWAITING_PAYMENT','PENDING','CONFIRMED'].includes(order.status)) throw new ApiError(409,'ORDER_CANNOT_BE_CANCELLED','Không thể hủy ở trạng thái này.');
+
+  private async cancelOrderInternal(
+    id: string,
+    input: OperationInputs['cancelOwnOrder']['body'],
+    auth: any,
+    correlation: string,
+    isStore: boolean,
+    storeId?: string
+  ): Promise<OperationOutputs['cancelOwnOrder']> {
+    if (!id || !UUID_REGEX.test(id)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'id không hợp lệ.');
+    }
+    if (input?.expected_version === undefined || typeof input.expected_version !== 'number' || !Number.isInteger(input.expected_version)) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'expected_version phải là số nguyên.');
+    }
+    if (input.reason !== undefined && typeof input.reason !== 'string') {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'reason không hợp lệ.');
+    }
+    if (input.reason && input.reason.length > 200) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Lý do hủy không được quá 200 ký tự.');
+    }
+
+    const cancelOpId = randomUUID();
+    let originalStatus = '';
+    let originalStoreId = '';
+    let originalItems: OrderItemRow[] = [];
+    let shouldRestock = false;
+    let shouldRelease = false;
+
+    const result = await database.transaction(async manager => {
+      const repo = new OrderRepository(manager);
+      const order = isStore
+        ? await repo.lockStoreOrderById(id, storeId!)
+        : await repo.lockCustomerOrderById(id, auth.user_id);
+
+      if (!order) {
+        throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy Order.');
+      }
+
+      this.checkCancellation(order, input.expected_version);
+
+      originalStatus = order.status;
+      originalStoreId = order.store_id;
+      originalItems = order.items ?? [];
+      if (['PENDING', 'CONFIRMED'].includes(order.status)) {
+        shouldRestock = true;
+      } else if (order.status === 'AWAITING_PAYMENT') {
+        shouldRelease = true;
+      }
+
+      const defaultReason = isStore ? 'Hủy bởi Cửa hàng' : 'Hủy bởi Khách hàng';
+      const reason = input.reason?.trim() || defaultReason;
+
+      const updated = await repo.updateOrderStatusWithHistory({
+        order_id: id,
+        from_status: order.status,
+        to_status: 'CANCELLED',
+        expected_version: input.expected_version,
+        actor_user_id: auth.user_id,
+        reason,
+      });
+
+      if (!updated) {
+        throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
+      }
+
+      const payment = await repo.lockPaymentByOrderId(id);
+      let paymentStatus = payment?.status;
+      let refundStatus = order.refund_status;
+
+      if (payment) {
+        if (order.payment_method === 'SANDBOX' && payment.status === 'SUCCEEDED') {
+          const refundResult = await this.payments(manager).requestRefund({
+            order_id: id,
+            payment_id: payment.id,
+            amount_vnd: BigInt(payment.collected_vnd || payment.payable_vnd),
+            operation_id: randomUUID(),
+            correlation_id: correlation,
+          });
+          refundStatus = refundResult.status;
+        } else if (payment.status === 'PENDING') {
+          await manager.query("UPDATE payment SET status='CANCELLED', version=version+1 WHERE id=$1", [payment.id]);
+          paymentStatus = 'CANCELLED';
+          if (payment.method === 'COD') {
+            await manager.query("UPDATE c_o_d_collection SET status='CANCELLED' WHERE order_id=$1 AND status='PENDING'", [id]);
+          }
+        }
+      }
+
+      await audit(
+        manager,
+        'M2',
+        auth.user_id,
+        'Order',
+        id,
+        'CANCEL_ORDER',
+        correlation,
+        { status: order.status, version: order.version },
+        { status: updated.status, version: updated.version }
+      );
+
+      await emitEvent(
+        manager,
+        'OrderCancelled',
+        {
+          order_id: id,
+          purchase_group_id: order.purchase_group_id,
+          store_id: order.store_id,
+          customer_user_id: order.customer_user_id,
+          from_status: order.status,
+          version: updated.version,
+          reason,
+        },
+        correlation
+      );
+
+      return this.mapOrderRowToDto({
+        ...updated,
+        items: order.items,
+        payment_status: paymentStatus,
+        refund_status: refundStatus,
+      });
+    });
+
+    if (shouldRestock && originalItems.length > 0) {
+      try {
+        await this.getInternalClients().call('RestockOrder', {
+          operation_id: cancelOpId,
+          order_id: id,
+          items: originalItems.map(it => ({
+            variant_id: it.variant_id,
+            store_id: originalStoreId,
+            quantity: it.quantity,
+          })),
+        }, correlation);
+      } catch {
+        // Handled/retried by worker
+      }
+    } else if (shouldRelease) {
+      try {
+        await this.getInternalClients().call('ReleaseReservation', {
+          operation_id: cancelOpId,
+          order_id: id,
+          reservation_ids: [id],
+          reason: 'ORDER_CANCELLED',
+        }, correlation);
+      } catch {
+        // Handled/retried by worker
+      }
+    }
+
+    return result;
+  }
+
+  private checkCancellation(order: OrderRow, version: number): void {
+    if (order.version !== version) throw new ApiError(409, 'VERSION_CONFLICT', 'Order đã thay đổi.');
+    if (!['AWAITING_PAYMENT', 'PENDING', 'CONFIRMED'].includes(order.status)) {
+      throw new ApiError(409, 'ORDER_CANNOT_BE_CANCELLED', 'Không thể hủy ở trạng thái này.');
+    }
   }
 
   async collectCod(id:string,input:OperationInputs['collectCod']['body'],auth:any,_correlation:string):Promise<OperationOutputs['collectCod']> {
