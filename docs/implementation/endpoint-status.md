@@ -58,8 +58,8 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /cart/items` | addCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `DELETE /cart/items/{id}` | removeCartItem | M2 / cart | Hoa | IMPLEMENTED |
-| `POST /checkout/quotes` | quoteCheckout | M2 / order | Hoa | IMPLEMENTED |
-| `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /checkout/quotes` | quoteCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | IMPLEMENTED |
 | `GET /orders/batches/{id}` | getPurchaseGroupOrders | M2 / order | Hoa | IMPLEMENTED |
 | `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | IMPLEMENTED |
 | `GET /payments/{id}` | getPayment | M2 / payment | Công | IMPLEMENTED |
