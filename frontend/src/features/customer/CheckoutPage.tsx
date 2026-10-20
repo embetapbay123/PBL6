@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ApiError, request } from '../../api/client';
 
@@ -12,6 +12,9 @@ interface CartItem {
 
 interface CartList {
   items: CartItem[];
+  page: number;
+  size: number;
+  total: number;
 }
 
 interface Address {
@@ -31,8 +34,32 @@ interface Quote {
   expires_at: string;
 }
 
+interface ConfirmPayload {
+  cart_item_ids: string[];
+  address_id: string;
+  payment_methods: Record<string, 'COD'>;
+  quote_id: string;
+  expected_payable_total_vnd: number;
+}
+
+/**
+ * One complete confirmation attempt. Persisted BEFORE the confirm request is sent,
+ * so that if the response is lost (503 / network drop / reload) the exact same
+ * quote + payload + Idempotency-Key can be retried instead of creating a new order.
+ */
+interface Attempt {
+  quote: Quote;
+  payload: ConfirmPayload;
+  key: string;
+  items: CartItem[];
+  addressLabel: string;
+}
+
 const SELECTION_KEY = 'pbl6_checkout_selection';
-const idempotencyStorageKey = (quoteId: string) => `pbl6_checkout_idem_${quoteId}`;
+const ATTEMPT_KEY = 'pbl6_checkout_attempt';
+const PAGE_SIZE = 100;
+// Safety guard against an endless loop if the backend returns a bad total/page.
+const MAX_PAGES = 200;
 
 const describe = (error: unknown): string => {
   if (error instanceof ApiError) {
@@ -43,6 +70,8 @@ const describe = (error: unknown): string => {
 
 const shortId = (id: string) => id.slice(0, 8);
 const formatVnd = (value: number) => `${value.toLocaleString('vi-VN')} ₫`;
+const formatAddress = (a: Address) =>
+  `${a.recipient_name} (${a.phone}) — ${a.line1}, ${a.ward}, ${a.district}, ${a.city}`;
 
 const newUuid = (): string =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -52,19 +81,82 @@ const newUuid = (): string =>
         return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
       });
 
-// One key per quote: retrying the same confirmation (even after a reload) reuses it,
-// so the backend can deduplicate. A new quote gets a new key.
-const idempotencyKeyFor = (quoteId: string): string => {
+/* ----------------------- attempt persistence ----------------------- */
+
+const readAttempt = (): Attempt | null => {
   try {
-    const saved = sessionStorage.getItem(idempotencyStorageKey(quoteId));
-    if (saved) return saved;
-    const key = newUuid();
-    sessionStorage.setItem(idempotencyStorageKey(quoteId), key);
-    return key;
+    const raw = sessionStorage.getItem(ATTEMPT_KEY);
+    if (!raw) return null;
+    const a = JSON.parse(raw) as Partial<Attempt> | null;
+    if (
+      a &&
+      a.quote &&
+      a.payload &&
+      Array.isArray(a.payload.cart_item_ids) &&
+      typeof a.key === 'string' &&
+      Array.isArray(a.items) &&
+      typeof a.addressLabel === 'string'
+    ) {
+      return a as Attempt;
+    }
   } catch {
-    return newUuid();
+    /* corrupted or unavailable storage: treat as no attempt */
+  }
+  return null;
+};
+
+const persistAttempt = (attempt: Attempt) => {
+  try {
+    sessionStorage.setItem(ATTEMPT_KEY, JSON.stringify(attempt));
+  } catch {
+    /* storage unavailable: recovery is limited to this page's lifetime */
   }
 };
+
+const clearAttempt = () => {
+  try {
+    sessionStorage.removeItem(ATTEMPT_KEY);
+  } catch {
+    /* ignore */
+  }
+};
+
+/* ----------------------- error classification ----------------------- */
+
+/** Definitive: the backend rejected this quote, so nothing was created. */
+const isQuoteConflict = (error: unknown): error is ApiError =>
+  error instanceof ApiError &&
+  error.status === 409 &&
+  (error.code === 'QUOTE_CHANGED' || error.code === 'QUOTE_EXPIRED');
+
+/**
+ * Uncertain: the order may or may not have been created, so keep the attempt
+ * and retry with the same key. Network failures, 5xx, 408 and any other 409
+ * (e.g. an idempotent request still in progress) are treated as uncertain.
+ */
+const isUncertain = (error: unknown): boolean =>
+  !(error instanceof ApiError) ||
+  error.status >= 500 ||
+  error.status === 408 ||
+  error.status === 409;
+
+/* ----------------------- cart loading ----------------------- */
+
+/** Load every page of /cart/items until `total` is exhausted; never returns a partial cart. */
+async function fetchAllCartItems(): Promise<CartItem[]> {
+  const byId = new Map<string, CartItem>();
+  let total = 0;
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const data = await request<CartList>(`/cart/items?page=${page}&size=${PAGE_SIZE}`);
+    total = data.total;
+    for (const item of data.items) byId.set(item.id, item);
+    if (byId.size >= total || data.items.length === 0) break;
+  }
+  if (byId.size < total) {
+    throw new Error(`Không thể tải đầy đủ giỏ hàng (${byId.size}/${total} mục). Vui lòng thử lại.`);
+  }
+  return Array.from(byId.values());
+}
 
 const readSelection = (state: unknown): string[] => {
   const fromState = (state as { cartItemIds?: unknown } | null)?.cartItemIds;
@@ -82,11 +174,17 @@ const readSelection = (state: unknown): string[] => {
 
 export const CheckoutPage: React.FC = () => {
   const location = useLocation();
-  const [selectedIds] = useState<string[]>(() => readSelection(location.state));
 
-  const [items, setItems] = useState<CartItem[]>([]);
+  // A pending (uncertain) attempt always wins over a fresh selection.
+  const [attempt, setAttempt] = useState<Attempt | null>(() => readAttempt());
+  const hasAttempt = attempt !== null;
+  const [selectedIds] = useState<string[]>(() =>
+    attempt ? attempt.payload.cart_item_ids : readSelection(location.state),
+  );
+
+  const [items, setItems] = useState<CartItem[]>(() => attempt?.items ?? []);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [addressId, setAddressId] = useState<string>('');
+  const [addressId, setAddressId] = useState<string>(() => attempt?.payload.address_id ?? '');
   const [quote, setQuote] = useState<Quote | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -97,8 +195,12 @@ export const CheckoutPage: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [conflictNotice, setConflictNotice] = useState<string | null>(null);
+  const [staleTotal, setStaleTotal] = useState<number | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
   const [quoteTick, setQuoteTick] = useState(0);
+
+  const inFlight = useRef(false);
 
   // Every Store in the selection is paid by COD, keyed by Store id.
   const paymentMethods = useMemo(
@@ -117,8 +219,10 @@ export const CheckoutPage: React.FC = () => {
   }, [items]);
 
   // 1) Load the selected cart items and the address book.
+  //    Skipped while an uncertain attempt is pending: the attempt carries its own snapshot,
+  //    and the cart may already have been emptied if that order was actually created.
   useEffect(() => {
-    if (selectedIds.length === 0) return;
+    if (hasAttempt || selectedIds.length === 0) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -127,13 +231,17 @@ export const CheckoutPage: React.FC = () => {
       setQuoteError(null);
       try {
         const [cart, book] = await Promise.all([
-          request<CartList>('/cart/items?page=1&size=100'),
+          fetchAllCartItems(),
           request<{ items: Address[] }>('/me/addresses?page=1&size=100'),
         ]);
         if (cancelled) return;
-        const chosen = cart.items.filter((item) => selectedIds.includes(item.id));
-        if (chosen.length === 0) {
-          setLoadError('Các sản phẩm đã chọn không còn trong giỏ hàng.');
+        const wanted = new Set(selectedIds);
+        const chosen = cart.filter((item) => wanted.has(item.id));
+        // Reject a partially missing selection instead of quoting a subset.
+        if (chosen.length !== wanted.size) {
+          setLoadError(
+            `${wanted.size - chosen.length} sản phẩm đã chọn không còn trong giỏ hàng. Vui lòng quay lại giỏ hàng và chọn lại.`,
+          );
           return;
         }
         if (book.items.length === 0) {
@@ -148,7 +256,7 @@ export const CheckoutPage: React.FC = () => {
             : (book.items.find((a) => a.is_default) ?? book.items[0]).id,
         );
       } catch (error) {
-        if (!cancelled) setLoadError(describe(error));
+        if (!cancelled) setLoadError(error instanceof Error && !(error instanceof ApiError) ? error.message : describe(error));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -156,11 +264,12 @@ export const CheckoutPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedIds, reloadTick]);
+  }, [hasAttempt, selectedIds, reloadTick]);
 
   // 2) Ask the backend for a quote whenever the items or address change.
+  //    Never while an uncertain attempt is pending: that attempt must be resolved first.
   useEffect(() => {
-    if (items.length === 0 || !addressId) return;
+    if (hasAttempt || items.length === 0 || !addressId) return;
     let cancelled = false;
     setQuote(null);
     setQuoteError(null);
@@ -185,40 +294,96 @@ export const CheckoutPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [items, addressId, paymentMethods, quoteTick]);
+  }, [hasAttempt, items, addressId, paymentMethods, quoteTick]);
+
+  /** A definitive outcome: forget the attempt and recalculate from the cart with the same selection. */
+  const dropAttempt = () => {
+    clearAttempt();
+    setAttempt(null);
+    setItems([]); // forces the cart/address reload, then a fresh quote
+    setQuote(null);
+  };
 
   const confirmOrder = async () => {
-    if (!quote || !addressId || submitting) return;
-    setSubmitting(true);
-    setConfirmError(null);
-    const key = idempotencyKeyFor(quote.quote_id);
-    try {
-      await request('/orders/batches', {
-        method: 'POST',
-        headers: { 'Idempotency-Key': key },
-        body: JSON.stringify({
+    if (inFlight.current) return;
+
+    let current = attempt;
+    if (!current) {
+      if (!quote || !addressId) return;
+      // Locally expired quote: nothing was sent, so just recalculate.
+      if (Date.parse(quote.expires_at) <= Date.now()) {
+        setStaleTotal(quote.payable_total_vnd);
+        setConflictNotice('Báo giá đã hết hạn. Đang tính lại, vui lòng kiểm tra tổng mới rồi xác nhận lại.');
+        setQuote(null);
+        setQuoteTick((n) => n + 1);
+        return;
+      }
+      const address = addresses.find((a) => a.id === addressId);
+      current = {
+        quote,
+        key: newUuid(),
+        items,
+        addressLabel: address ? formatAddress(address) : addressId,
+        payload: {
           cart_item_ids: items.map((item) => item.id),
           address_id: addressId,
           payment_methods: paymentMethods,
           quote_id: quote.quote_id,
           expected_payable_total_vnd: quote.payable_total_vnd,
-        }),
+        },
+      };
+      // Persist the whole attempt BEFORE sending, so a lost response is recoverable.
+      persistAttempt(current);
+      setAttempt(current);
+    }
+
+    inFlight.current = true;
+    setSubmitting(true);
+    setConfirmError(null);
+    setConflictNotice(null);
+    setStaleTotal(null);
+    try {
+      await request('/orders/batches', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': current.key },
+        body: JSON.stringify(current.payload),
       });
+      // Definitive success.
+      clearAttempt();
       try {
-        sessionStorage.removeItem(idempotencyStorageKey(quote.quote_id));
         sessionStorage.removeItem(SELECTION_KEY);
       } catch {
         /* ignore */
       }
       setCreated(true);
     } catch (error) {
-      // Keep the same key and payload so the next click is a true retry.
-      setConfirmError(describe(error));
+      if (isQuoteConflict(error)) {
+        // Definitive: this quote was rejected, nothing was created. Recalculate.
+        setStaleTotal(current.quote.payable_total_vnd);
+        setConflictNotice(
+          error.code === 'QUOTE_EXPIRED'
+            ? 'Báo giá đã hết hạn. Đã tính lại, vui lòng kiểm tra tổng mới rồi xác nhận lại.'
+            : 'Giá hoặc tồn kho đã thay đổi. Đã tính lại, vui lòng kiểm tra tổng mới rồi xác nhận lại.',
+        );
+        dropAttempt();
+      } else if (isUncertain(error)) {
+        // Uncertain: keep the same quote, payload and key so the next click is a true retry.
+        setConfirmError(
+          `${describe(error)} Chưa xác định được đơn hàng đã được tạo hay chưa. ` +
+            'Nhấn "Thử lại xác nhận": hệ thống dùng cùng mã idempotency nên sẽ không tạo đơn trùng.',
+        );
+      } else {
+        // Other definitive rejection (4xx): nothing was created.
+        setConfirmError(describe(error));
+        dropAttempt();
+      }
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
     }
   };
 
+  const shownQuote = attempt ? attempt.quote : quote;
   const error = confirmError ?? loadError ?? quoteError;
 
   if (created) {
@@ -258,6 +423,19 @@ export const CheckoutPage: React.FC = () => {
         </div>
       )}
 
+      {hasAttempt && !confirmError && (
+        <div role="status" className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded mb-4 text-sm">
+          Có một lần xác nhận đặt hàng trước đó chưa rõ kết quả. Nhấn &quot;Thử lại xác nhận&quot; để kiểm tra
+          và hoàn tất; hệ thống sẽ không tạo đơn trùng.
+        </div>
+      )}
+
+      {conflictNotice && !hasAttempt && (
+        <div role="status" className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded mb-4 text-sm">
+          {conflictNotice}
+        </div>
+      )}
+
       {loading && <p className="text-gray-500">Đang tải thông tin thanh toán...</p>}
 
       {!loading && loadError && (
@@ -276,24 +454,30 @@ export const CheckoutPage: React.FC = () => {
           <div className="md:col-span-2 space-y-6">
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-lg font-bold mb-3">1. Địa chỉ nhận hàng</h2>
-              <select
-                aria-label="Địa chỉ nhận hàng"
-                value={addressId}
-                onChange={(event) => {
-                  setConfirmError(null);
-                  setAddressId(event.target.value);
-                }}
-                className="w-full border rounded p-2 text-sm"
-              >
-                {addresses.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {`${a.recipient_name} (${a.phone}) — ${a.line1}, ${a.ward}, ${a.district}, ${a.city}`}
-                  </option>
-                ))}
-              </select>
-              <Link to="/customer/addresses" className="text-xs text-indigo-600 hover:underline mt-2 inline-block">
-                Quản lý địa chỉ
-              </Link>
+              {attempt ? (
+                <p className="text-sm text-gray-700">{attempt.addressLabel}</p>
+              ) : (
+                <>
+                  <select
+                    aria-label="Địa chỉ nhận hàng"
+                    value={addressId}
+                    onChange={(event) => {
+                      setConfirmError(null);
+                      setAddressId(event.target.value);
+                    }}
+                    className="w-full border rounded p-2 text-sm"
+                  >
+                    {addresses.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {formatAddress(a)}
+                      </option>
+                    ))}
+                  </select>
+                  <Link to="/customer/addresses" className="text-xs text-indigo-600 hover:underline mt-2 inline-block">
+                    Quản lý địa chỉ
+                  </Link>
+                </>
+              )}
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow space-y-4">
@@ -324,19 +508,24 @@ export const CheckoutPage: React.FC = () => {
 
             {quoting && <p className="text-sm text-gray-500">Đang tính báo giá...</p>}
 
-            {quote && (
+            {shownQuote && (
               <div className="text-sm space-y-2">
+                {staleTotal !== null && staleTotal !== shownQuote.payable_total_vnd && (
+                  <p className="text-xs text-amber-700">
+                    Tổng cũ {formatVnd(staleTotal)} &rarr; tổng mới {formatVnd(shownQuote.payable_total_vnd)}
+                  </p>
+                )}
                 <div className="flex justify-between font-bold text-base text-gray-900">
                   <span>Tổng thanh toán</span>
-                  <span className="text-indigo-600">{formatVnd(quote.payable_total_vnd)}</span>
+                  <span className="text-indigo-600">{formatVnd(shownQuote.payable_total_vnd)}</span>
                 </div>
                 <p className="text-xs text-gray-400">
-                  Báo giá hết hạn lúc {new Date(quote.expires_at).toLocaleTimeString('vi-VN')}
+                  Báo giá hết hạn lúc {new Date(shownQuote.expires_at).toLocaleTimeString('vi-VN')}
                 </p>
               </div>
             )}
 
-            {quoteError && !quoting && (
+            {!hasAttempt && !quoting && (quoteError || conflictNotice) && (
               <button
                 type="button"
                 onClick={() => setQuoteTick((n) => n + 1)}
@@ -349,10 +538,10 @@ export const CheckoutPage: React.FC = () => {
             <button
               type="button"
               onClick={() => void confirmOrder()}
-              disabled={!quote || quoting || submitting}
+              disabled={submitting || (!hasAttempt && (!quote || quoting))}
               className="w-full bg-indigo-600 text-white py-3 rounded-md font-bold hover:bg-indigo-700 transition disabled:opacity-50"
             >
-              {submitting ? 'Đang xử lý đơn hàng...' : 'Xác nhận đặt hàng'}
+              {submitting ? 'Đang xử lý đơn hàng...' : hasAttempt ? 'Thử lại xác nhận' : 'Xác nhận đặt hàng'}
             </button>
           </div>
         </div>

@@ -20,10 +20,36 @@ interface CartList {
 // Checkout reads the selected cart item ids from here (also survives a reload).
 const SELECTION_KEY = 'pbl6_checkout_selection';
 
+const PAGE_SIZE = 100;
+// Safety guard against an endless loop if the backend returns a bad total/page.
+const MAX_PAGES = 200;
+
+/**
+ * Load every page of /cart/items until `total` is exhausted.
+ * A failed page or an incomplete result throws, so a partial cart is never shown.
+ */
+async function fetchAllCartItems(): Promise<CartItem[]> {
+  const byId = new Map<string, CartItem>();
+  let total = 0;
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const data = await request<CartList>(`/cart/items?page=${page}&size=${PAGE_SIZE}`);
+    total = data.total;
+    for (const item of data.items) byId.set(item.id, item);
+    if (byId.size >= total || data.items.length === 0) break;
+  }
+
+  if (byId.size < total) {
+    throw new Error(`Không thể tải đầy đủ giỏ hàng (${byId.size}/${total} mục). Vui lòng thử lại.`);
+  }
+  return Array.from(byId.values());
+}
+
 const describe = (error: unknown): string => {
   if (error instanceof ApiError) {
     return error.correlationId ? `${error.message} (${error.correlationId})` : error.message;
   }
+  if (error instanceof Error && error.message) return error.message;
   return 'Đã xảy ra lỗi không xác định.';
 };
 
@@ -43,9 +69,10 @@ export const CartPage: React.FC = () => {
     setLoadError(null);
     setActionError(null);
     try {
-      const data = await request<CartList>('/cart/items?page=1&size=100');
-      setItems(data.items);
-      setSelected(new Set(data.items.map((item) => item.id)));
+      // โหลดทุกหน้าจนครบ total; ถ้าได้ไม่ครบจะ throw แทนที่จะแสดงบางส่วน
+      const all = await fetchAllCartItems();
+      setItems(all);
+      setSelected(new Set(all.map((item) => item.id)));
     } catch (error) {
       // A failed load must never look like an empty cart.
       setItems(null);
