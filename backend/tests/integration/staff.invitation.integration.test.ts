@@ -1,9 +1,10 @@
-// Uses the real M3 PostgreSQL database and migrations when M3_DATABASE_URL is available.
-if (!process.env.M3_DATABASE_URL) {
-  describe.skip('Staff invitation PostgreSQL integration (requires M3_DATABASE_URL)', () => {
+// Uses only the dedicated M3 test PostgreSQL database and migrations.
+if (!process.env.M3_TEST_DATABASE_URL) {
+  describe.skip('Staff invitation PostgreSQL integration (requires M3_TEST_DATABASE_URL)', () => {
     test('requires PostgreSQL', () => {});
   });
 } else {
+  process.env.M3_DATABASE_URL = process.env.M3_TEST_DATABASE_URL;
   process.env.SERVICE_ID = 'M3';
   const { randomUUID } = require('node:crypto');
   const dbModule = require('../../shared/src/database');

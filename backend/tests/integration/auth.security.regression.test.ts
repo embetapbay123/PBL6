@@ -15,7 +15,7 @@ import { ErrorFilter } from '../../shared/src/errors';
 import { RequestContractInterceptor } from '../../shared/src/request-contract';
 import { database } from '../../shared/src/database';
 
-const dbUrl = process.env.M3_DATABASE_URL;
+const dbUrl = process.env.M3_TEST_DATABASE_URL;
 const describePostgres = dbUrl ? describe : describe.skip;
 
 describePostgres('Authentication PostgreSQL and HTTP regressions', () => {

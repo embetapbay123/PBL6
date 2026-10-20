@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { audit } from '../../../shared/src/audit';
+import { emitEvent } from '../../../shared/src/events';
 import { returnedRow } from '../../../shared/src/postgres-returning';
 import { digest } from '../auth/auth.service';
 
@@ -98,6 +99,7 @@ export class StaffRepository {
          WHERE mp.membership_id=$1 ORDER BY p.code`, [membershipId])).map((row: any) => row.code);
       await audit(manager, 'M3', userId, 'StoreMembership', membershipId, 'STAFF_MEMBERSHIP_UPDATED', correlationId,
         { status: member.status, version: member.version }, { status, permissions: updatedPermissions, version });
+      await emitEvent(manager, 'MembershipChanged', { user_id: updated.user_id, store_id: storeId, version }, correlationId);
       return { id: updated.id, store_id: storeId, user_id: updated.user_id, email: member.email, role: 'SELLER',
         status: updated.status, permissions: updatedPermissions, version: updated.version };
     });
@@ -188,6 +190,20 @@ export class StaffRepository {
     });
     if (result.expired) throw new ApiError(409, 'INVITATION_EXPIRED', 'Lời mời đã hết hạn.');
     return result.invitation;
+  }
+
+  async failInvitationDelivery(storeId: string, id: string, correlationId: string) {
+    await database.transaction(async manager => {
+      const [row] = await manager.query(
+        `SELECT id,status,version,invited_by_user_id FROM staff_invitation WHERE id=$1 AND store_id=$2 FOR UPDATE`, [id, storeId]);
+      // Delivery can fail after a concurrent accept/revoke. Preserve the completed transition.
+      if (!row || row.status !== 'PENDING') return;
+      const [updated] = await manager.query(
+        `UPDATE staff_invitation SET status='REVOKED',revoked_at=now(),version=version+1
+         WHERE id=$1 AND status='PENDING' RETURNING version`, [id]);
+      if (updated) await audit(manager, 'M3', row.invited_by_user_id, 'StaffInvitation', id, 'STAFF_INVITATION_DELIVERY_FAILED', correlationId,
+        { status: 'PENDING', version: row.version }, { status: 'REVOKED', version: updated.version });
+    });
   }
 
   async listOwnInvitations(userId: string, page = 1, size = 20) {

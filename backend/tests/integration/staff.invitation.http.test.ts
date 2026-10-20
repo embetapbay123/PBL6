@@ -1,6 +1,6 @@
 // Real HTTP/guard coverage; requires the Compose gateway and seeded accounts.
-if (!process.env.TEST_API_URL || !process.env.M3_DATABASE_URL || !process.env.SEED_PASSWORD) {
-  describe.skip('Staff invitation HTTP integration (requires Compose gateway, M3 PostgreSQL and seed password)', () => {
+if (!process.env.TEST_API_URL || !process.env.M3_TEST_DATABASE_URL || !process.env.SEED_PASSWORD) {
+  describe.skip('Staff invitation HTTP integration (requires dedicated M3 test PostgreSQL, matching HTTP stack and seed password)', () => {
     test('requires the real M3 HTTP stack', () => {});
   });
 } else {
@@ -17,7 +17,7 @@ if (!process.env.TEST_API_URL || !process.env.M3_DATABASE_URL || !process.env.SE
   }
 
   test('HTTP guards and all invitation routes enforce authenticated Owner and verified receiver scope', async () => {
-    const db = new DataSource({ type: 'postgres', url: process.env.M3_DATABASE_URL }); await db.initialize();
+    const db = new DataSource({ type: 'postgres', url: process.env.M3_TEST_DATABASE_URL }); await db.initialize();
     const owner = await login('owner@pbl6.test'), receiver = await login('customer1@pbl6.test'), other = await login('customer2@pbl6.test');
     const context = await (await fetch(`${base}/me/context`, { headers: headers(receiver) })).json() as any;
     const ownerContext = await (await fetch(`${base}/me/context`, { headers: headers(owner) })).json() as any;

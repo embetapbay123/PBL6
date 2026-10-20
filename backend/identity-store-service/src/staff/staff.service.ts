@@ -17,7 +17,14 @@ export class StaffService {
   private async createAndNotifyInvitation(userId: string, storeId: string,
     input: { invited_email: string; permissions: string[] }, correlationId: string) {
     const invitation = await this.repository.createInvitation(userId, storeId, input, correlationId);
-    if (this.sendInvitationEmail) await this.sendInvitationEmail(invitation.invited_email);
+    if (this.sendInvitationEmail) {
+      try {
+        await this.sendInvitationEmail(invitation.invited_email);
+      } catch (error) {
+        await this.repository.failInvitationDelivery(storeId, invitation.id, correlationId);
+        throw error;
+      }
+    }
     return invitation;
   }
   revokeInvitation(userId: string, storeId: string, id: string, correlationId: string) {

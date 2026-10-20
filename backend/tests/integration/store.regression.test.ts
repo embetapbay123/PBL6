@@ -176,16 +176,28 @@ describePostgres('Store PostgreSQL regressions', () => {
     expect(rollbackAudits.total).toBe(0);
   });
 
-  test('HTTP role permission update is 501 and does not mutate role_permission or audit', async () => {
-    const [before] = await source.query('SELECT count(*)::int AS total FROM role_permission');
-    const response = await supertest(app.getHttpServer()).patch(`/api/v1/admin/roles/${randomUUID()}`).send({
-      permission_ids: [], expected_version: 0,
-    }).set('X-Correlation-Id', `${corr}-rbac`);
-    expect(response.status).toBe(501);
-    expect(response.body.code).toBe('FEATURE_NOT_IMPLEMENTED');
-    const [after] = await source.query('SELECT count(*)::int AS total FROM role_permission');
-    expect(after.total).toBe(before.total);
-    const [audit] = await source.query('SELECT count(*)::int AS total FROM m3_audit WHERE request_id=$1', [`${corr}-rbac`]);
-    expect(audit.total).toBe(0);
+  test('HTTP role permission update persists permissions and audit through the real controller', async () => {
+    const roleId = randomUUID();
+    const permissionId = randomUUID();
+    const requestId = `${corr}-rbac`;
+    await source.query(`INSERT INTO role(id,code,scope,status,version) VALUES($1,$2,'PLATFORM','ACTIVE',0)`, [roleId, `REGRESSION_${roleId}`]);
+    await source.query(`INSERT INTO permission(id,code,resource,action) VALUES($1,$2,'regression','read')`, [permissionId, `regression.${permissionId}`]);
+    try {
+      const response = await supertest(app.getHttpServer()).patch(`/api/v1/admin/roles/${roleId}`).send({
+        permission_ids: [permissionId], expected_version: 0,
+      }).set('X-Correlation-Id', requestId);
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({ id: roleId, permission_ids: [permissionId], version: 1 });
+      const grants = await source.query('SELECT permission_id FROM role_permission WHERE role_id=$1', [roleId]);
+      expect(grants).toEqual([{ permission_id: permissionId }]);
+      const [audit] = await source.query('SELECT action,before_json,after_json FROM m3_audit WHERE request_id=$1', [requestId]);
+      expect(audit.action).toBe('ROLE_PERMISSIONS_UPDATED');
+      expect(audit.after_json).toMatchObject({ permission_ids: [permissionId], version: 1 });
+    } finally {
+      await source.query('DELETE FROM m3_audit WHERE request_id=$1', [requestId]);
+      await source.query('DELETE FROM role_permission WHERE role_id=$1', [roleId]);
+      await source.query('DELETE FROM permission WHERE id=$1', [permissionId]);
+      await source.query('DELETE FROM role WHERE id=$1', [roleId]);
+    }
   });
 });
