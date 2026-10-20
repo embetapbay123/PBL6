@@ -391,9 +391,9 @@ export const CheckoutPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl space-y-4">
         <h1 className="text-2xl font-bold">Đã tạo nhóm đơn hàng</h1>
         <p className="text-gray-600">Đơn hàng của bạn đã được ghi nhận.</p>
-        <Link to="/customer/orders" className="text-indigo-600 hover:underline">
-          Xem đơn hàng
-        </Link>
+        <Link to="/" className="text-indigo-600 hover:underline">
+  Tiếp tục mua sắm
+</Link>
       </div>
     );
   }
