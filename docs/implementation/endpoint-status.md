@@ -45,8 +45,8 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED |
-| `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
+| `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
 | `POST /store/products` | createProduct | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
 | `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
 | `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
