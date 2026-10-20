@@ -1,7 +1,7 @@
 import { request, ApiError } from './client';
 import registry from './operations.registry.generated.json';
 import type { OperationId, OperationInputs, OperationOutputs } from './operations.generated';
-const fixtureMode=import.meta.env.VITE_API_MODE==='fixture';
+const fixtureMode=import.meta.env.DEV && import.meta.env.VITE_API_MODE==='fixture';
 export const dataMode=fixtureMode?'fixture':'api';
 const monetaryCommands=new Set(['confirmCheckout','createPaymentAttempt','sepayCallback','sandboxCallback','collectCod']);
 

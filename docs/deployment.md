@@ -12,14 +12,14 @@
 | M1 | `M1_DATABASE_URL`, `RESERVATION_TTL_SECONDS=900` | DB catalog/kho, TTL giữ tồn |
 | M2 | `M2_DATABASE_URL`, `IDEMPOTENCY_TTL_SECONDS=86400`, `RECOVERY_ALERT_AFTER_ATTEMPTS=5` | DB giao dịch, key retry và cảnh báo |
 | M3 | `M3_DATABASE_URL` | DB danh tính/Store/quyền |
-| M3 demo mailbox | `MOCK_MAILBOX_ENABLED=true`, `MOCK_MAILBOX_URL`, `STAFF_INVITATION_TTL_SECONDS=604800` | M3 ghi link reset/lời mời vào mailbox cục bộ của demo; tester dùng mailbox theo email seed, không gửi email thật |
+| M3 email | Explicit adapter injection | No email adapter is configured in this repository. Registration and password reset fail closed until a delivery adapter is supplied; no real email integration is included. |
 | M4 | `M4_DATABASE_URL`, `LLM_API_KEY`, `EMBEDDING_MODEL`, `RECOMMENDATION_MODEL_URI` | AI và model version |
 | Sandbox | `SANDBOX_CALLBACK_SECRET`, `SANDBOX_BASE_URL` | Xác thực callback mock |
 | Kênh | `PUBLIC_API_BASE_URL`, `APP_TIMEZONE=Asia/Bangkok` | Gateway và múi giờ hiển thị |
 
 Không đưa secret vào Git, tài liệu, log hoặc prompt LLM. Migration chạy riêng theo thứ tự M3 → M1 → M2 → M4 cho seed tham chiếu logic; schema giữa service không tạo FK. Seed demo gồm hai Store active, hai Seller/Owner, hai Customer, Product có/không biến thể, tồn, voucher Store/toàn sàn, đơn COD/sandbox và dữ liệu AI giả lập được đánh dấu demo.
 
-Để demo, tester mở mock mailbox theo email tài khoản seed để lấy link xác minh email khi đăng ký hoặc mã/link đặt lại mật khẩu; API reset luôn trả phản hồi giống nhau kể cả email không tồn tại, không trả token trong body hoặc log. `POST /auth/verify-email` ghi `email_verified_at` khi link hợp lệ. Lời mời nhân viên hiện trong `GET /me/invitations` sau khi người được mời đăng nhập bằng email đã xác minh; nếu chưa có tài khoản, tester đăng ký rồi xác minh cùng email trước. Mock mailbox chỉ dùng trong môi trường demo có kiểm soát, tắt ở môi trường triển khai thật cho tới khi có kênh email được thiết kế và kiểm thử. Worker M3 chuyển lời mời PENDING quá hạn thành EXPIRED; API cũng kiểm tra `expires_at` tại thời điểm nhận nên không phụ thuộc worker.
+Registration and password reset require an explicitly configured email delivery adapter. This repository has no real email integration or demo mailbox, so those flows remain pending until an adapter is supplied and verified. Tokens are not returned in API responses or logs. `POST /auth/verify-email` records `email_verified_at` when given a valid token. Staff invitation delivery is also not available until its email integration is implemented. Worker M3 expires pending invitations; the API also checks `expires_at` at acceptance time.
 
 Readiness của M2 cần DB và kết nối M1/M3 tối thiểu; M4 lỗi không chặn catalog/tạo Order. Worker đối soát Order AWAITING_PAYMENT hết hạn, sandbox RECOVERING, COD PREPARING, reservation, callback trùng và Refund FAILED. Health/metric ghi latency API, retry, thời gian index, Payment Success nhưng Order chưa PENDING, tồn giữ quá hạn và payable Order lệch Payment. Demo: tạo hai Store, áp voucher hai lớp, tạo A COD và B SANDBOX cùng purchase_group_id, xử lý A trước khi trả B, thử B hết hạn, hủy một Order, xem Refund/COD, quyền Seller và AI. Chỉ đánh dấu đạt sau khi [Test Plan](test-plan.md) có log thực thi.
 

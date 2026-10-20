@@ -1,8 +1,7 @@
 import { Controller, Post, UseGuards, Body, Req, HttpCode } from '@nestjs/common';
 import { ServiceGuard,ServiceCallers } from '../../../shared/src/auth';
-import { notImplemented } from '../../../shared/src/errors';
 import { ListLowStockVariantsBodyDto, QuoteVariantsBodyDto, ReserveInventoryBodyDto,
-  ConsumeReservationBodyDto, ReleaseReservationBodyDto } from '../../../shared/src/dtos.generated';
+  ConsumeReservationBodyDto, ReleaseReservationBodyDto, RestockOrderBodyDto } from '../../../shared/src/dtos.generated';
 import { InventoryService } from './inventory.service';
 // Logic remains Thịnh's tasks; contract is docs/contracts/internal-api.json.
 @Controller('internal') @UseGuards(ServiceGuard) @ServiceCallers('M2')
@@ -20,5 +19,6 @@ export class InventoryInternalController {
   // ConsumeReservation/ReleaseReservation: chỉ tác động item còn ACTIVE nên gọi lặp không lặp hiệu ứng.
   @Post('inventory/consume') @HttpCode(200) consume(@Body() dto: ConsumeReservationBodyDto) {return this.service.consume(dto);}
   @Post('inventory/release') @HttpCode(200) release(@Body() dto: ReleaseReservationBodyDto) {return this.service.release(dto);}
-  @Post('inventory/restock') restock():never {return notImplemented('RestockOrder');}
+  // RestockOrder: chỉ hoàn kho cho reservation đã CONSUMED, một lần cho mỗi Order; guard nằm trong service.
+  @Post('inventory/restock') @HttpCode(200) restock(@Body() dto: RestockOrderBodyDto) {return this.service.restockOrder(dto);}
 }

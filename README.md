@@ -58,6 +58,8 @@ Toàn bộ **71 task của5 member** đã giao trước trên [bảng tổng Kan
 | Thịnh | INV-02: reserve/consume/release; tiếp inventory/Catalog | M1 và Seller Web |
 | Hoa | ORDER-01/02: quote thật rồi confirm/quota, phối hợp COD | M2 Cart/Order/Voucher/report và Customer Android |
 | Trí | AUTH-01/02/03: Auth/token/session; tiếp RBAC/Store | M3 và Admin Web |
+
+AUTH-01/AUTH-02 and affected RBAC completion claims remain pending. Registration/reset email delivery is unavailable until a real adapter is configured and verified; see [endpoint status](docs/implementation/endpoint-status.md).
 | Hatsaphone | Chốt WEB-01, detail/Profile/Address/Cart theo Week 2 | Customer Web theo từng màn và API bàn giao |
 
 Clone repo và tạo branch theo task, ví dụ cho ID-01:
