@@ -2,7 +2,7 @@
 
 Schema, DTO và contract đã có để bắt đầu task. Member hoàn thiện service/repository và giao diện theo issue; không cần tự thiết kế lại các điểm nối. **99 API công khai + 11 API nội bộ** có validation runtime và fixture. Trạng thái nghiệp vụ hiện là 49 IMPLEMENTED, 11 IMPLEMENTED_SAMPLE, 39 NOT_IMPLEMENTED ở public API; internal có 1 sample và 10 IMPLEMENTED (QuoteVariants, ReserveInventory, ConsumeReservation, ReleaseReservation, RestockOrder, ListLowStockVariants, VerifyReviewEligibility, ResolveCheckoutContext, ResolveAiMetricsScope), không còn stub. Xem [trạng thái API](endpoint-status.md) và [M4 runtime](ai-runtime-handoff.md); có mode real không đồng nghĩa provider/chất lượng AI đã nghiệm thu.
 
-CORE-01 #1 và CORE-02 #50 đã self-review theo ủy quyền của chủ repo và chuyển Done ngày 07/10/2026. FLOW-01 #6 vẫn giữ mở cho phần ingress/producer thật chưa đủ; đóng task nền không đóng các task nghiệp vụ của member.
+CORE-01 #1 và CORE-02 #50 đã self-review theo ủy quyền của chủ repo và chuyển Done ngày 07/10/2026. FLOW-01 #6 đã Done sau audit ngày 20/10/2026: contract/interface/producer handoff đã đủ phạm vi task nền. Các task nghiệp vụ Order/Payment/AI vẫn mở theo acceptance riêng; đóng task nền không đóng thay chúng.
 
 ## Chạy và kiểm tra nền
 
