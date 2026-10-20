@@ -27,4 +27,10 @@ describe('SMTP email configuration and runtime wiring', () => {
     expect(() => createEmailAdapter({ NODE_ENV: 'production', EMAIL_ADAPTER: 'mock' })).toThrow('EMAIL_ADAPTER');
     expect(() => createEmailAdapter({ NODE_ENV: 'development', EMAIL_ADAPTER: 'unexpected' })).toThrow('EMAIL_ADAPTER');
   });
+
+  test('development mock fails closed instead of claiming a message was delivered', async () => {
+    const mock = new DevelopmentMockEmailAdapter();
+    await expect(mock.sendVerificationEmail('user@example.test', 'secret-token')).rejects.toMatchObject({ status: 503 });
+    await expect(mock.sendPasswordResetEmail('user@example.test', 'secret-token')).rejects.toMatchObject({ status: 503 });
+  });
 });

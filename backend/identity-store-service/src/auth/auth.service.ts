@@ -95,27 +95,34 @@ export class AuthService {
     const rawToken = randomBytes(32).toString('base64url');
     const name = displayName || email.split('@')[0];
 
-    await database.transaction(async manager => {
-      await manager.query(
-        'INSERT INTO "user"(id, email, password_hash, status, created_at, version) VALUES($1, $2, $3, \'PENDING\', now(), 0)',
-        [userId, email, hash]
-      );
-      await manager.query(
-        'INSERT INTO customer_profile(id, user_id, display_name, phone, updated_at) VALUES($1, $2, $3, NULL, now())',
-        [randomUUID(), userId, name]
-      );
-      const [customerRole] = await manager.query('SELECT id FROM role WHERE code=\'CUSTOMER\' AND status=\'ACTIVE\'');
-      if (!customerRole) throw new Error('Required CUSTOMER role is not seeded');
-      await manager.query(
-        'INSERT INTO user_role(user_id, role_id, granted_at) VALUES($1, $2, now())',
-        [userId, customerRole.id]
-      );
-      await manager.query(
-        `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
-         VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '15 minutes', now())`,
-        [randomUUID(), userId, digest(rawToken)]
-      );
-    });
+    try {
+      await database.transaction(async manager => {
+        await manager.query(
+          'INSERT INTO "user"(id, email, password_hash, status, created_at, version) VALUES($1, $2, $3, \'PENDING\', now(), 0)',
+          [userId, email, hash]
+        );
+        await manager.query(
+          'INSERT INTO customer_profile(id, user_id, display_name, phone, updated_at) VALUES($1, $2, $3, NULL, now())',
+          [randomUUID(), userId, name]
+        );
+        const [customerRole] = await manager.query('SELECT id FROM role WHERE code=\'CUSTOMER\' AND status=\'ACTIVE\'');
+        if (!customerRole) throw new Error('Required CUSTOMER role is not seeded');
+        await manager.query(
+          'INSERT INTO user_role(user_id, role_id, granted_at) VALUES($1, $2, now())',
+          [userId, customerRole.id]
+        );
+        await manager.query(
+          `INSERT INTO one_time_token(id, user_id, purpose, token_hash, expires_at, created_at)
+           VALUES($1, $2, 'EMAIL_VERIFICATION', $3, now() + interval '15 minutes', now())`,
+          [randomUUID(), userId, digest(rawToken)]
+        );
+      });
+    } catch (error: any) {
+      if (error?.code === '23505' && error?.constraint === 'user_email_lower_unique') {
+        return { email_verified: false, message: 'Nếu email chưa được đăng ký, một liên kết xác thực đã được gửi.' };
+      }
+      throw error;
+    }
 
     try { await adapter.sendVerificationEmail(email, rawToken); }
     catch (error) {

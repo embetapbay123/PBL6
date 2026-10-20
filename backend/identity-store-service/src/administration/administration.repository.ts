@@ -177,11 +177,15 @@ export class AdministrationRepository {
 
       const uniquePermissionIds = [...new Set(permissionIds)];
       const allowed = uniquePermissionIds.length ? await manager.query(
-        'SELECT id FROM permission WHERE id = ANY($1::uuid[])',
+        'SELECT id,code FROM permission WHERE id = ANY($1::uuid[])',
         [uniquePermissionIds],
       ) : [];
       if (allowed.length !== uniquePermissionIds.length) {
         throw new ApiError(422, 'VALIDATION_FAILED', 'Một hoặc nhiều quyền không tồn tại.');
+      }
+      const includesPlatformAdmin = allowed.some((permission: any) => permission.code === 'platform.admin');
+      if (includesPlatformAdmin && role.code !== 'ADMIN') {
+        throw new ApiError(422, 'VALIDATION_FAILED', 'platform.admin may be assigned only to the ADMIN role.');
       }
       await manager.query('DELETE FROM role_permission WHERE role_id=$1', [id]);
       for (const pid of uniquePermissionIds) {

@@ -62,10 +62,15 @@ export async function bootstrap(id: ServiceId, controllers: any[]) {
     if (!req.path.startsWith('/api/v1')) return next();
     try {
       const login = req.path === '/api/v1/auth/login';
-      const bucket = Math.floor(Date.now()/60000);
-      const key = `rate:${id}:${login ? 'login' : 'api'}:${req.ip}:${bucket}`;
-      const count = Number(await redis.eval("local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],60) end; return n",1,key));
-      if (count > (login ? 30 : 600)) { res.setHeader('Retry-After','60'); return res.status(429).json({code:'RATE_LIMITED',message:'Vui lòng thử lại sau.',correlation_id:req.correlationId,details:[]}); }
+      const emailAction = ['/api/v1/auth/register', '/api/v1/auth/reset-password'].includes(req.path);
+      const tokenAction = ['/api/v1/auth/verify-email', '/api/v1/auth/reset-password/confirm'].includes(req.path);
+      const windowSeconds = emailAction ? 3600 : 60;
+      const bucket = Math.floor(Date.now()/(windowSeconds*1000));
+      const category = login ? 'login' : emailAction ? 'email-action' : tokenAction ? 'token-action' : 'api';
+      const limit = login ? 30 : emailAction ? 10 : tokenAction ? 30 : 600;
+      const key = `rate:${id}:${category}:${req.ip}:${bucket}`;
+      const count = Number(await redis.eval(`local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],${windowSeconds}) end; return n`,1,key));
+      if (count > limit) { res.setHeader('Retry-After',String(windowSeconds)); return res.status(429).json({code:'RATE_LIMITED',message:'Please retry later.',correlation_id:req.correlationId,details:[]}); }
       next();
     } catch { res.status(503).json({code:'DEPENDENCY_UNAVAILABLE',message:'Bộ giới hạn truy cập chưa sẵn sàng.',correlation_id:req.correlationId,details:[]}); }
   });

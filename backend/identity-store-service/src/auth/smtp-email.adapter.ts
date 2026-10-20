@@ -12,9 +12,12 @@ export function emailActionLink(settings: Pick<SmtpSettings, 'publicUrl'>, path:
 }
 
 export class DevelopmentMockEmailAdapter implements IEmailAdapter {
-  async sendVerificationEmail(_email: string, _token: string): Promise<void> { /* Explicit local no delivery. */ }
-  async sendPasswordResetEmail(_email: string, _token: string): Promise<void> { /* Explicit local no delivery. */ }
-  async sendStaffInvitationEmail(_email: string): Promise<void> { /* Explicit local no delivery. */ }
+  private unavailable(): never {
+    throw new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Mock email mode does not deliver messages. Configure SMTP or inject a test capture adapter.');
+  }
+  async sendVerificationEmail(_email: string, _token: string): Promise<void> { this.unavailable(); }
+  async sendPasswordResetEmail(_email: string, _token: string): Promise<void> { this.unavailable(); }
+  async sendStaffInvitationEmail(_email: string): Promise<void> { this.unavailable(); }
 }
 
 export function createEmailAdapter(env: NodeJS.ProcessEnv = process.env): IEmailAdapter {

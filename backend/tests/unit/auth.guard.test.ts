@@ -34,4 +34,18 @@ describe('AuthGuard live role permission enforcement', () => {
       response: expect.objectContaining({ code: 'FORBIDDEN' }),
     });
   });
+
+  test('rechecks an old token against current effective permissions on every request', async () => {
+    reflector.getAllAndOverride.mockImplementation((key: string) => key === 'roles' ? ['STAFF'] : key === 'permissions' ? ['orders.manage'] : undefined);
+    const guard = new AuthGuard(reflector as any);
+    internal.mockResolvedValueOnce({ user_id: 'u1', roles: ['STAFF'], role_permissions: ['orders.manage'] });
+    await expect(guard.canActivate(executionContext)).resolves.toBe(true);
+
+    // Same bearer token, same session; the live identity context now reflects a permission revoke.
+    internal.mockResolvedValueOnce({ user_id: 'u1', roles: ['STAFF'], role_permissions: [] });
+    await expect(guard.canActivate(executionContext)).rejects.toMatchObject({
+      status: 403,
+      response: expect.objectContaining({ code: 'FORBIDDEN' }),
+    });
+  });
 });
