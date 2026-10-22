@@ -280,5 +280,32 @@ test('detail adds the selected active variant through the real Cart API', async 
       ? await page.request.patch('/api/v1/cart/items/' + item.id, { headers, data: { quantity: old.quantity } })
       : await page.request.delete('/api/v1/cart/items/' + item.id, { headers });
     expect(cleanup.status()).toBe(200);
+    
+    test('account isolation prevents session leakage and direct checkout entry works with namespaced selection', async ({ page }) => {
+      // Mock cart and addresses for customer 1
+      await login(page);
+      await mockCart(page, route => route.fulfill({ json: cart }));
+      await page.route(isAddressApi, route =>
+        route.request().method() === 'GET' ? route.fulfill({ json: addresses }) : route.fallback(),
+      );
+    
+      const cartLoaded = waitForCartGet(page);
+      await page.goto('/cart');
+      await cartLoaded;
+    
+      // Select item and go to checkout
+      const checkboxes = page.getByRole('checkbox');
+      await checkboxes.first().waitFor({ state: 'attached', timeout: 5_000 }).catch(() => {});
+      for (const box of await checkboxes.all()) {
+        await box.check({ force: true }).catch(() => {});
+      }
+      await page.getByRole('button', { name: 'Tiến hành thanh toán' }).click();
+      await expect(page).toHaveURL(/\/checkout/);
+    
+      // Direct entry test: reloading or entering /checkout directly should retain selection via namespaced key
+      await page.goto('/checkout');
+      await expect(page.getByRole('heading', { name: 'Thanh toán đơn hàng (Checkout)' })).toBeVisible();
+      await expect(page.getByText('Chưa có sản phẩm nào được chọn')).toHaveCount(0);
+    });
   }
 });

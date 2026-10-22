@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ApiError, request } from '../../api/client';
+import { useAuth } from '../../api/auth-context';
 
 interface CartItem {
   id: string;
@@ -42,58 +43,20 @@ interface ConfirmPayload {
   expected_payable_total_vnd: number;
 }
 
-/**
- * One complete confirmation attempt. Persisted BEFORE the confirm request is sent,
- * so that if the response is lost (503 / network drop / reload) the exact same
- * quote + payload + Idempotency-Key can be retried instead of creating a new order.
- */
 interface Attempt {
   quote: Quote;
   payload: ConfirmPayload;
   key: string;
   items: CartItem[];
   addressLabel: string;
+  userId?: string;
 }
 
-const SELECTION_KEY = 'pbl6_checkout_selection';
-const ATTEMPT_KEY = 'pbl6_checkout_attempt';
 const PAGE_SIZE = 100;
-// Safety guard against an endless loop if the backend returns a bad total/page.
 const MAX_PAGES = 200;
 
-/**
- * Helper to fetch authenticated user ID dynamically to namespace storage keys 
- * and prevent multi-account data leakage.
- */
-const getCurrentUserId = (): string => {
-  try {
-    // Check common storage tokens or user payloads if available, else fallback
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    if (token) {
-      // Decode user ID sub or payload if JWT, or fallback to a deterministic identifier base
-      const base64Url = token.split('.')[1];
-      if (base64Url) {
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split('')
-            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-            .join('')
-        );
-        const payload = JSON.parse(jsonPayload);
-        if (payload && (payload.sub || payload.id)) {
-          return payload.sub || payload.id;
-        }
-      }
-    }
-  } catch {
-    /* ignore decoding errors */
-  }
-  return 'default_customer';
-};
-
-const getAttemptKey = () => `${ATTEMPT_KEY}_${getCurrentUserId()}`;
-const getSelectionKey = () => `${SELECTION_KEY}_${getCurrentUserId()}`;
+const getAttemptKey = (userId?: string) => (userId ? `pbl6_checkout_attempt_${userId}` : null);
+const getSelectionKey = (userId?: string) => (userId ? `pbl6_checkout_selection_${userId}` : null);
 
 const describe = (error: unknown): string => {
   if (error instanceof ApiError) {
@@ -115,11 +78,12 @@ const newUuid = (): string =>
         return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
       });
 
-/* ----------------------- attempt persistence ----------------------- */
-
-const readAttempt = (): Attempt | null => {
+const readAttempt = (userId?: string): Attempt | null => {
+  if (!userId) return null;
   try {
-    const raw = sessionStorage.getItem(getAttemptKey());
+    const key = getAttemptKey(userId);
+    if (!key) return null;
+    const raw = sessionStorage.getItem(key);
     if (!raw) return null;
     const a = JSON.parse(raw) as Partial<Attempt> | null;
     if (
@@ -129,54 +93,50 @@ const readAttempt = (): Attempt | null => {
       Array.isArray(a.payload.cart_item_ids) &&
       typeof a.key === 'string' &&
       Array.isArray(a.items) &&
-      typeof a.addressLabel === 'string'
+      typeof a.addressLabel === 'string' &&
+      (!a.userId || a.userId === userId)
     ) {
       return a as Attempt;
     }
   } catch {
-    /* corrupted or unavailable storage: treat as no attempt */
+    /* ignore */
   }
   return null;
 };
 
-const persistAttempt = (attempt: Attempt) => {
+const persistAttempt = (userId: string | undefined, attempt: Attempt) => {
+  if (!userId) return;
   try {
-    sessionStorage.setItem(getAttemptKey(), JSON.stringify(attempt));
-  } catch {
-    /* storage unavailable: recovery is limited to this page's lifetime */
-  }
-};
-
-const clearAttempt = () => {
-  try {
-    sessionStorage.removeItem(getAttemptKey());
+    const key = getAttemptKey(userId);
+    if (key) {
+      sessionStorage.setItem(key, JSON.stringify({ ...attempt, userId }));
+    }
   } catch {
     /* ignore */
   }
 };
 
-/* ----------------------- error classification ----------------------- */
+const clearAttempt = (userId?: string) => {
+  if (!userId) return;
+  try {
+    const key = getAttemptKey(userId);
+    if (key) sessionStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+};
 
-/** Definitive: the backend rejected this quote, so nothing was created. */
 const isQuoteConflict = (error: unknown): error is ApiError =>
   error instanceof ApiError &&
   error.status === 409 &&
   (error.code === 'QUOTE_CHANGED' || error.code === 'QUOTE_EXPIRED');
 
-/**
- * Uncertain: the order may or may not have been created, so keep the attempt
- * and retry with the same key. Network failures (status 0), timeouts, 5xx, 408 
- * and any other 409 are treated as uncertain.
- */
 const isUncertain = (error: unknown): boolean => {
   if (!(error instanceof ApiError)) return true;
-  if (error.status === 0) return true; // Network drops / aborts
+  if (error.status === 0) return true;
   return error.status >= 500 || error.status === 408 || error.status === 409;
 };
 
-/* ----------------------- cart loading ----------------------- */
-
-/** Load every page of /cart/items until `total` is exhausted; never returns a partial cart. */
 async function fetchAllCartItems(): Promise<CartItem[]> {
   const byId = new Map<string, CartItem>();
   let total = 0;
@@ -192,13 +152,16 @@ async function fetchAllCartItems(): Promise<CartItem[]> {
   return Array.from(byId.values());
 }
 
-const readSelection = (state: unknown): string[] => {
+const readSelection = (userId?: string, state?: unknown): string[] => {
   const fromState = (state as { cartItemIds?: unknown } | null)?.cartItemIds;
   if (Array.isArray(fromState) && fromState.length > 0) {
     return fromState.filter((value): value is string => typeof value === 'string');
   }
+  if (!userId) return [];
   try {
-    const raw = sessionStorage.getItem(getSelectionKey());
+    const key = getSelectionKey(userId);
+    if (!key) return [];
+    const raw = sessionStorage.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
   } catch {
@@ -207,13 +170,23 @@ const readSelection = (state: unknown): string[] => {
 };
 
 export const CheckoutPage: React.FC = () => {
+  const { session } = useAuth();
+  const userId = session?.context?.user_id;
+
+  return <CheckoutInner key={userId} userId={userId} />;
+};
+
+interface InnerProps {
+  userId?: string;
+}
+
+const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
   const location = useLocation();
 
-  // A pending (uncertain) attempt always wins over a fresh selection.
-  const [attempt, setAttempt] = useState<Attempt | null>(() => readAttempt());
+  const [attempt, setAttempt] = useState<Attempt | null>(() => readAttempt(userId));
   const hasAttempt = attempt !== null;
   const [selectedIds] = useState<string[]>(() =>
-    attempt ? attempt.payload.cart_item_ids : readSelection(location.state),
+    attempt ? attempt.payload.cart_item_ids : readSelection(userId, location.state),
   );
 
   const [items, setItems] = useState<CartItem[]>(() => attempt?.items ?? []);
@@ -236,7 +209,6 @@ export const CheckoutPage: React.FC = () => {
 
   const inFlight = useRef(false);
 
-  // Every Store in the selection is paid by COD, keyed by Store id.
   const paymentMethods = useMemo(
     () =>
       items.reduce<Record<string, 'COD'>>((acc, item) => {
@@ -252,9 +224,8 @@ export const CheckoutPage: React.FC = () => {
     return Array.from(groups.entries());
   }, [items]);
 
-  // 1) Load the selected cart items and the address book.
   useEffect(() => {
-    if (hasAttempt || selectedIds.length === 0) return;
+    if (!userId || hasAttempt || selectedIds.length === 0) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -295,9 +266,8 @@ export const CheckoutPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [hasAttempt, selectedIds, reloadTick]);
+  }, [userId, hasAttempt, selectedIds, reloadTick]);
 
-  // 2) Ask the backend for a quote whenever the items or address change.
   useEffect(() => {
     if (hasAttempt || items.length === 0 || !addressId) return;
     let cancelled = false;
@@ -326,16 +296,15 @@ export const CheckoutPage: React.FC = () => {
     };
   }, [hasAttempt, items, addressId, paymentMethods, quoteTick]);
 
-  /** A definitive outcome: forget the attempt and recalculate from the cart with the same selection. */
   const dropAttempt = () => {
-    clearAttempt();
+    clearAttempt(userId);
     setAttempt(null);
     setItems([]);
     setQuote(null);
   };
 
   const confirmOrder = async () => {
-    if (inFlight.current) return;
+    if (inFlight.current || !userId) return;
 
     let current = attempt;
     if (!current) {
@@ -353,6 +322,7 @@ export const CheckoutPage: React.FC = () => {
         key: newUuid(),
         items,
         addressLabel: address ? formatAddress(address) : addressId,
+        userId,
         payload: {
           cart_item_ids: items.map((item) => item.id),
           address_id: addressId,
@@ -361,7 +331,7 @@ export const CheckoutPage: React.FC = () => {
           expected_payable_total_vnd: quote.payable_total_vnd,
         },
       };
-      persistAttempt(current);
+      persistAttempt(userId, current);
       setAttempt(current);
     }
 
@@ -376,11 +346,14 @@ export const CheckoutPage: React.FC = () => {
         headers: { 'Idempotency-Key': current.key },
         body: JSON.stringify(current.payload),
       });
-      clearAttempt();
-      try {
-        sessionStorage.removeItem(getSelectionKey());
-      } catch {
-        /* ignore */
+      clearAttempt(userId);
+      const selKey = getSelectionKey(userId);
+      if (selKey) {
+        try {
+          sessionStorage.removeItem(selKey);
+        } catch {
+          /* ignore */
+        }
       }
       setCreated(true);
     } catch (error) {

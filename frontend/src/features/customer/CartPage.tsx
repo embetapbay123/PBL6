@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError, request } from '../../api/client';
+import { useAuth } from '../../api/auth-context';
 
 interface CartItem {
   id: string;
@@ -17,17 +18,11 @@ interface CartList {
   total: number;
 }
 
-// Checkout reads the selected cart item ids from here (also survives a reload).
-const SELECTION_KEY = 'pbl6_checkout_selection';
-
 const PAGE_SIZE = 100;
-// Safety guard against an endless loop if the backend returns a bad total/page.
 const MAX_PAGES = 200;
 
-/**
- * Load every page of /cart/items until `total` is exhausted.
- * A failed page or an incomplete result throws, so a partial cart is never shown.
- */
+const getSelectionKey = (userId?: string) => (userId ? `pbl6_checkout_selection_${userId}` : null);
+
 async function fetchAllCartItems(): Promise<CartItem[]> {
   const byId = new Map<string, CartItem>();
   let total = 0;
@@ -57,6 +52,9 @@ const shortId = (id: string) => id.slice(0, 8);
 
 export const CartPage: React.FC = () => {
   const navigate = useNavigate();
+  const { session } = useAuth();
+  const userId = session?.context?.user_id;
+
   const [items, setItems] = useState<CartItem[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -69,12 +67,10 @@ export const CartPage: React.FC = () => {
     setLoadError(null);
     setActionError(null);
     try {
-      // โหลดทุกหน้าจนครบ total; ถ้าได้ไม่ครบจะ throw แทนที่จะแสดงบางส่วน
       const all = await fetchAllCartItems();
       setItems(all);
       setSelected(new Set(all.map((item) => item.id)));
     } catch (error) {
-      // A failed load must never look like an empty cart.
       setItems(null);
       setLoadError(describe(error));
     } finally {
@@ -139,10 +135,13 @@ export const CartPage: React.FC = () => {
   const goCheckout = () => {
     const cartItemIds = Array.from(selected);
     if (cartItemIds.length === 0) return;
-    try {
-      sessionStorage.setItem(SELECTION_KEY, JSON.stringify(cartItemIds));
-    } catch {
-      /* storage can be unavailable; router state below is the fallback */
+    const key = getSelectionKey(userId);
+    if (key) {
+      try {
+        sessionStorage.setItem(key, JSON.stringify(cartItemIds));
+      } catch {
+        /* storage can be unavailable */
+      }
     }
     navigate('/checkout', { state: { cartItemIds } });
   };
