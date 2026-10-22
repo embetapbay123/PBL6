@@ -4,7 +4,7 @@ Owner: Công. Liên quan [AI-02 #56](https://github.com/embetapbay123/PBL6/issue
 
 ## Cấu hình và chạy
 
-Chạy setup/build/migration/seed theo [README](../../README.md). Migration mới là `backend/ai-service/migrations/006_ai_runtime.sql`; không sửa migration cũ. Sau migration, đặt `AI_MODE=real`, `CHAT_PROVIDER=none` trong cấu hình local được ignore rồi recreate M4. `AI_MODE=mock` vẫn là chế độ mẫu có nhãn riêng. Không commit `.env` hoặc key.
+Chạy setup/build/migration/seed theo [README](../../README.md). Migration runtime là `backend/ai-service/migrations/006_ai_runtime.sql`, trace provider dùng migration 007; không sửa migration cũ. Runtime dùng `AI_MODE=real`, provider/model theo [bàn giao Week 3](cong-week3-handoff.md). Runner nghiệm thu tự cấu hình `CHAT_PROVIDER=none` trong stack riêng. `AI_MODE=mock` vẫn là chế độ mẫu có nhãn riêng. Không commit `.env` hoặc key.
 
 ```powershell
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build m4 worker-m4 tools
