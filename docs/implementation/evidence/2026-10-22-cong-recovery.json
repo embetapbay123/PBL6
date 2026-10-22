@@ -1,0 +1,94 @@
+{
+  "run_id": "pbl6-acceptance-544880e00823",
+  "revision": "45dd07963b51f837c51c5bc3c0a9494d9d04aff4",
+  "dirty": false,
+  "source_sha256": "84f78dcbacb1ceccbacbd387d53392ab7d3d42fc281809c03e1cb3eec5e9c13d",
+  "started_at": "2026-10-22T08:08:35Z",
+  "scope": "Private real M1/M2/M3 HTTP and PostgreSQL; local signed callback only",
+  "not_run": [
+    "SePay dashboard delivery/bank transfer",
+    "Refund provider execution",
+    "M4/model evaluation",
+    "100-user NFR",
+    "public gateway/UI/APK",
+    "backup restore"
+  ],
+  "status": "PASS",
+  "phases": [
+    {
+      "phase": "expiry",
+      "status": "PASS",
+      "checks": [
+        "M1 database belongs to this run",
+        "M2 database belongs to this run",
+        "M3 database belongs to this run",
+        "Expired order restores reserved availability",
+        "Late callback queues Refund without claiming money returned",
+        "Refund follow-up stays pending without a provider",
+        "Late callback never consumes closed order stock",
+        "Unrelated Order is unchanged"
+      ],
+      "duration_ms": 2262,
+      "sha256": "8c4ce32cbc1fa313a22348ebb60e45d5f12098ff56dec52d374bcb10e89d8c63"
+    },
+    {
+      "phase": "payment",
+      "status": "PASS",
+      "checks": [
+        "M1 starts with an empty acceptance ledger",
+        "M1 database belongs to this run",
+        "M2 starts with an empty acceptance ledger",
+        "M2 database belongs to this run",
+        "M3 starts with an empty acceptance ledger",
+        "M3 database belongs to this run",
+        "Online Order initially waits for payment",
+        "Rejected callbacks have no persisted receipt",
+        "Payment is durable before inventory success",
+        "Rejected Consume leaves real inventory unchanged",
+        "Follow-up is pending while inventory is unavailable",
+        "Lost acknowledgement leaves M2 recovery pending",
+        "Real M1 stock is consumed once",
+        "Follow-up completes after real Consume",
+        "Retries preserve operation ID, payload hash and correlation",
+        "Concurrent/replayed callback produces one receipt/event",
+        "Confirm replays its saved response",
+        "Second Customer cannot read Order or Payment",
+        "Replays preserve one consume effect"
+      ],
+      "duration_ms": 6963,
+      "sha256": "d1a8467b00fd8b85d7c5dad7d899555be19c85388ba82f198baf0426c3ad5cb2"
+    },
+    {
+      "phase": "rollback-prepare",
+      "status": "PASS",
+      "checks": [
+        "M1 database belongs to this run",
+        "M2 database belongs to this run",
+        "M3 database belongs to this run",
+        "Database failure preserves durable READY attempt",
+        "Payment failure rolls back Order/items/history/Payment/COD/audit transaction",
+        "Rollback keeps Cart item",
+        "Real M1 reservation survives uncertain database outcome"
+      ],
+      "duration_ms": 532,
+      "sha256": "40e0058741f66ef17af3d920cdcb75e029e11d848a48993ab9aa4a3b9c199853"
+    },
+    {
+      "phase": "rollback-recover",
+      "status": "PASS",
+      "checks": [
+        "M1 database belongs to this run",
+        "M2 database belongs to this run",
+        "M3 database belongs to this run",
+        "Restart resumes same Order/attempt",
+        "Restart creates exactly one Payment",
+        "Restart consumes actual stock once",
+        "Restart removes only the committed Cart item",
+        "Checkout attempt is durably COMMITTED"
+      ],
+      "duration_ms": 204,
+      "sha256": "c90539819bb9c1fb571ba3cde5359093457329c8c357c5a21583b8f484c97526"
+    }
+  ],
+  "cleanup": "PASS"
+}
