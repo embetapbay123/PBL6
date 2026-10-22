@@ -1,4 +1,4 @@
-"""Run real M1/M2/M3 recovery checks in a disposable, private Compose project.
+"""Run real M1/M2/M3/M4 recovery and privacy checks in a private Compose project.
 
 Never reads infrastructure/.env, publishes a port, calls a bank, or uses demo volumes.
 Requires Docker Compose and Node.js. Only evidence/report.json is safe to publish.
@@ -16,6 +16,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+PHASES = ("payment", "rollback-prepare", "rollback-recover", "expiry", "tracking", "chat")
 
 
 def source_digest() -> str:
@@ -83,6 +84,8 @@ def make_config(project: str, folder: Path) -> dict:
         "m2": service("M2", ["node", "dist/commerce-service/src/main.js"]),
         "m3": service("M3", ["node", "dist/identity-store-service/src/main.js"]),
         "worker-m2": service("M2", ["node", "dist/shared/src/worker.js"]),
+        "worker-m1": service("M1", ["node", "dist/shared/src/worker.js"]),
+        "worker-m3": service("M3", ["node", "dist/shared/src/worker.js"]),
         "inventory-fault": service("M1", ["node", "tests/acceptance/inventory-fault.cjs"]),
         "tools": service("M3", ["node", "tests/acceptance/run.cjs"]),
     }
@@ -95,6 +98,12 @@ def make_config(project: str, folder: Path) -> dict:
     services["tools"]["volumes"] = [public_key, f"{(folder / 'evidence').as_posix()}:/evidence"]
     services["tools"]["environment"].update(database_urls)
     del services["inventory-fault"]["environment"]["M1_DATABASE_URL"]
+    ai = {"image": f"{project}-ai:local", "build": {
+        "context": ROOT.as_posix(), "dockerfile": "backend/ai-service/Dockerfile"},
+        "environment": {**common, "SERVICE_ID": "M4", "M4_DATABASE_URL": database_urls["M4_DATABASE_URL"],
+                        "AI_MODE": "real", "CHAT_PROVIDER": "none"}, "restart": "no"}
+    services["m4"] = ai
+    services["worker-m4"] = {**ai, "command": ["python", "-m", "app.tracking.worker"]}
     # Compose creates only project-scoped resources. No host port, external volume or network.
     return {"name": project, "services": services,
             "volumes": {name: {} for name in ("pgdata", "redisdata", "rabbitdata")}}
@@ -134,9 +143,9 @@ def main() -> int:
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip())
     report = {"run_id": project, "revision": revision, "dirty": dirty, "source_sha256": source_digest(),
               "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-              "scope": "Private real M1/M2/M3 HTTP and PostgreSQL; local signed callback only",
+              "scope": "Private real M1/M2/M3/M4 HTTP, PostgreSQL and RabbitMQ; local callback; no model calls",
               "not_run": ["SePay dashboard delivery/bank transfer", "Refund provider execution",
-                          "M4/model evaluation", "100-user NFR", "public gateway/UI/APK", "backup restore"],
+                          "Real behavior dataset/model quality evaluation", "100-user NFR", "public gateway/UI/APK", "backup restore"],
               "status": "FAIL", "phases": []}
 
     with (folder / "docker.private.log").open("w", encoding="utf-8") as log:
@@ -148,16 +157,19 @@ def main() -> int:
                 raise RuntimeError(f"{label}: exit {result.returncode}; inspect local private log")
 
         try:
-            run("Build the checked-out backend", "build", "tools", timeout=900)
+            run("Build the checked-out Node and AI backends", "build", "tools", "m4", timeout=900)
             run("Start isolated databases/queue", "up", "-d", "--wait", "postgres", "redis", "rabbitmq")
             run("Apply migrations", "run", "--rm", "tools", "node", "dist/shared/src/migrate.js")
             run("Seed only the isolated databases", "run", "--rm", "tools", "node", "dist/shared/src/seed.js")
-            run("Start real services and recovery worker", "up", "-d", "m1", "m2", "m3", "inventory-fault", "worker-m2")
-            for phase in ("payment", "rollback-prepare", "rollback-recover", "expiry"):
+            run("Start real services and event/recovery workers", "up", "-d", "m1", "m2", "m3", "m4",
+                "inventory-fault", "worker-m1", "worker-m2", "worker-m3", "worker-m4")
+            for phase in PHASES:
                 if phase == "rollback-prepare":
                     run("Stop isolated recovery worker", "stop", "worker-m2")
                 if phase == "rollback-recover":
                     run("Restart isolated recovery worker", "start", "worker-m2")
+                if phase == "chat":
+                    run("Build index from the isolated live Catalog", "exec", "-T", "m4", "python", "-m", "app.chat.retrieval")
                 run(f"Acceptance: {phase}", "run", "--rm", "tools", "node", "tests/acceptance/run.cjs", phase)
                 try:
                     result = json.loads((evidence / f"{phase}.json").read_text(encoding="utf-8"))
@@ -165,6 +177,9 @@ def main() -> int:
                     raise RuntimeError(f"Acceptance: {phase}: missing or incomplete result") from error
                 if result.get("phase") != phase or result.get("status") != "PASS" or not result.get("checks"):
                     raise RuntimeError(f"Acceptance: {phase}: result did not pass")
+            run("AI PostgreSQL consent/chat contract regressions", "exec", "-T", "m4", "python", "-m", "pytest",
+                "-q", "-p", "no:cacheprovider", "tests/test_ai_runtime.py", "tests/test_consent_tracking.py")
+            report["ai_regressions"] = "PASS"
             if source_digest() != report["source_sha256"]:
                 raise RuntimeError("Backend source changed during acceptance; rerun the immutable candidate")
             report["status"] = "PASS"
@@ -172,7 +187,7 @@ def main() -> int:
             report["failure"] = str(error) if isinstance(error, RuntimeError) else "Docker phase timed out"
         finally:
             for result_file in sorted(evidence.glob("*.json")):
-                if result_file.stem not in ("payment", "rollback-prepare", "rollback-recover", "expiry"):
+                if result_file.stem not in PHASES:
                     continue
                 try:
                     result = json.loads(result_file.read_text(encoding="utf-8"))
@@ -185,7 +200,7 @@ def main() -> int:
             try:
                 run("Remove only isolated containers and volumes", "down", "--volumes", "--remove-orphans")
                 # Unique acceptance tag only; never remove the shared demo image or base images.
-                subprocess.run(["docker", "image", "rm", f"{project}-node:local"], cwd=ROOT,
+                subprocess.run(["docker", "image", "rm", f"{project}-node:local", f"{project}-ai:local"], cwd=ROOT,
                                stdout=log, stderr=subprocess.STDOUT, timeout=60, check=False)
                 report["cleanup"] = "PASS"
             except (subprocess.TimeoutExpired, RuntimeError):

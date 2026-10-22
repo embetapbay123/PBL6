@@ -48,12 +48,20 @@ class AcceptanceIsolation(unittest.TestCase):
         self.assertEqual(env["SEPAY_TEST_ACCOUNT"], "0000000000")
 
     def test_services_keep_separate_database_credentials(self):
-        for service in ("m1", "m2", "m3", "worker-m2"):
+        for service in ("m1", "m2", "m3", "m4", "worker-m1", "worker-m2", "worker-m3", "worker-m4"):
             env = self.config["services"][service]["environment"]
             keys = [key for key in env if key.endswith("_DATABASE_URL")]
             self.assertEqual(keys, [env["SERVICE_ID"] + "_DATABASE_URL"])
         self.assertFalse(any(key.endswith("_DATABASE_URL") for key in
                              self.config["services"]["inventory-fault"]["environment"]))
+
+    def test_ai_does_not_inherit_operator_provider_or_credentials(self):
+        env = self.config["services"]["m4"]["environment"]
+        self.assertEqual(env["AI_MODE"], "real")
+        self.assertEqual(env["CHAT_PROVIDER"], "none")
+        self.assertNotIn("CHAT_API_KEY", env)
+        self.assertNotIn("CHAT_MODEL_URL", env)
+        self.assertEqual(self.config["services"]["m4"]["image"], self.config["services"]["worker-m4"]["image"])
 
 
 if __name__ == "__main__":
