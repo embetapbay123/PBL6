@@ -184,9 +184,22 @@ def test_generated_explanation_is_discarded_after_source_change(engine):
     s=ChatRuntime(engine,c,Selector());user=str(uuid.uuid4());session=s.create(user,'ip')
     response=asyncio.run(s.answer(session['id'],user,None,'máy ảnh','test'))
     assert response['fallback_reason']=='CATALOG_CHANGED' and 'Lời giải thích cũ' not in response['content']
+    assert not schema_errors(response,OPERATIONS['sendChatMessage']['responses']['200'])
     with engine.connect() as db:
         row=db.execute(text('SELECT model_name,prompt_version,fallback_reason FROM ai_request_trace')).one()
         assert tuple(row)==('test-model','catalog-answer-v3','CATALOG_CHANGED')
+
+
+def test_generated_answer_matches_public_response_contract(engine):
+    from app.chat.provider import Selection
+    class Selector:
+        async def select(self,q,products,*args):
+            return Selection((products[0]['id'],),False,'MODEL_GENERATED','openai_compatible',50,
+                             'Sản phẩm phù hợp từ Catalog.', 'test-model')
+    service=ChatRuntime(engine,Catalog(),Selector());user=str(uuid.uuid4());session=service.create(user,'ip')
+    response=asyncio.run(service.answer(session['id'],user,None,'máy ảnh','contract-generation'))
+    assert response['fallback_reason']=='MODEL_GENERATED' and response['fallback'] is False
+    assert not schema_errors(response,OPERATIONS['sendChatMessage']['responses']['200'])
 
 def test_metrics_partial_tokens_and_cost_are_unknown(engine):
     with engine.begin() as db:

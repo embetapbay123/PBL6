@@ -12,9 +12,9 @@ if (process.env.PBL6_ACCEPTANCE_ISOLATED !== '1' || !/^pbl6-acceptance-[a-f0-9]{
   throw new Error('ACCEPTANCE_ISOLATION_REQUIRED');
 }
 const phase = process.argv[2];
-if (!['payment', 'rollback-prepare', 'rollback-recover', 'expiry'].includes(phase)) throw new Error('INVALID_PHASE');
+if (!['payment', 'rollback-prepare', 'rollback-recover', 'expiry', 'tracking', 'chat'].includes(phase)) throw new Error('INVALID_PHASE');
 const uid = n => `10000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
-const urls = { M1: 'http://m1:3101', M2: 'http://m2:3102', M3: 'http://m3:3103' };
+const urls = { M1: 'http://m1:3101', M2: 'http://m2:3102', M3: 'http://m3:3103', M4: 'http://m4:3104' };
 const checks = [];
 let correlation = 'acceptance-' + randomUUID();
 const db = {};
@@ -34,9 +34,10 @@ async function wait(name, read, accept, seconds = 45) {
 }
 async function query(service, sql, args = []) { return (await db[service].query(sql, args)).rows; }
 async function row(service, sql, args = []) { return (await query(service, sql, args))[0]; }
-async function request(operation, { body, token, id, headers = {}, status } = {}) {
+async function request(operation, { body, token, id, headers = {}, status, query: params = {} } = {}) {
   const spec = operations[operation];
-  const route = spec.route.replace('{id}', id);
+  const search = new URLSearchParams(params).toString();
+  const route = spec.route.replace('{id}', id) + (search ? '?' + search : '');
   const response = await fetch(urls[spec.service] + (spec.internal ? '' : '/api/v1') + route, {
     method: spec.method, headers: { 'content-type': 'application/json', 'x-correlation-id': correlation,
       ...(token ? { authorization: 'Bearer ' + token } : {}), ...headers },
@@ -207,26 +208,29 @@ async function expiry(token) {
   check('Unrelated Order is unchanged', JSON.stringify(await row('M2', 'SELECT id,status,version FROM "order" WHERE id=$1', [sibling.id])) === JSON.stringify(sibling));
 }
 async function main() {
-  for (const service of ['M1', 'M2', 'M3']) {
+  for (const service of ['M1', 'M2', 'M3', 'M4']) {
     db[service] = new Client({ connectionString: process.env[service + '_DATABASE_URL'], statement_timeout: 10000 });
     await db[service].connect();
     if (phase === 'payment') {
       // Empty transactional ledgers are mandatory before claiming this fresh database.
-      const table = service === 'M1' ? 'stock_movement' : service === 'M2' ? 'checkout_attempt' : 'address';
+      const table = { M1: 'stock_movement', M2: 'checkout_attempt', M3: 'address', M4: 'inbox' }[service];
       check(service + ' starts with an empty acceptance ledger', (await row(service, `SELECT count(*)::int AS n FROM ${table}`)).n === 0);
       await db[service].query('CREATE SCHEMA acceptance; CREATE TABLE acceptance.environment(run_id text PRIMARY KEY,fail_payment boolean NOT NULL DEFAULT false)');
       await db[service].query('INSERT INTO acceptance.environment(run_id) VALUES($1)', [runId]);
     }
     check(service + ' database belongs to this run', (await row(service, 'SELECT run_id FROM acceptance.environment')).run_id === runId);
   }
-  for (const service of ['M1', 'M2', 'M3']) {
+  for (const service of ['M1', 'M2', 'M3', 'M4']) {
     await wait(service + ' ready', async () => {
       try { return (await fetch(urls[service] + '/health/ready', { signal: AbortSignal.timeout(2000) })).status; }
       catch { return 0; }
     }, status => status === 200);
   }
-  const token = await login();
-  await ({ payment, 'rollback-prepare': rollbackPrepare, 'rollback-recover': rollbackRecover, expiry }[phase])(token);
+  const token = await login(phase === 'chat' ? 'customer2@pbl6.test' : undefined);
+  if (phase === 'tracking' || phase === 'chat') {
+    await require('./' + phase + '.cjs')({ token, db, check, wait, query, row, request, login, uid,
+      correlation: () => correlation, newCorrelation: () => (correlation = 'acceptance-' + randomUUID()) });
+  } else await ({ payment, 'rollback-prepare': rollbackPrepare, 'rollback-recover': rollbackRecover, expiry }[phase])(token);
 }
 const started = Date.now();
 main().then(() => {

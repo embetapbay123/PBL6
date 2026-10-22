@@ -2171,7 +2171,7 @@ export interface components {
             /** @enum {string} */
             role?: "ASSISTANT" | "USER" | "SYSTEM";
             /** @enum {string} */
-            fallback_reason?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED";
+            fallback_reason?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED" | "MODEL_GENERATED" | "CATALOG_CHANGED";
         };
         RecommendationResult: {
             model_version?: string;

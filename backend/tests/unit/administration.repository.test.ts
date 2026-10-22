@@ -51,6 +51,16 @@ describe('AdministrationRepository event contracts', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
+  test('activating a User does not emit a lock that withdraws fresh personalization consent', async () => {
+    const manager = { query: jest.fn()
+      .mockResolvedValueOnce([{ id: 'user-1', version: 2, status: 'LOCKED' }])
+      .mockResolvedValueOnce([{ id: 'user-1', version: 3, status: 'ACTIVE' }])
+      .mockResolvedValue([]) };
+    transaction.mockImplementation(async (callback: any) => callback(manager));
+    await new AdministrationRepository().updateUserState('user-1', 'ACTIVE', 'reason', 2, 'actor', 'corr');
+    expect(emit).not.toHaveBeenCalled();
+  });
+
   test('role permission update is explicitly disabled without touching the repository', () => {
     const repository = { updateRole: jest.fn() };
     const service = new AdministrationService(repository as any);

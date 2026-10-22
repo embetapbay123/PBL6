@@ -1,4 +1,4 @@
-name: Cross-service recovery acceptance
+name: Cross-service recovery and privacy acceptance
 on:
   push:
   pull_request:

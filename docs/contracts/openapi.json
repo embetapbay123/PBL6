@@ -14625,7 +14625,9 @@
               "PROVIDER_UNAVAILABLE",
               "PROVIDER_INVALID_RESPONSE",
               "NO_MATCH",
-              "MODEL_SELECTED"
+              "MODEL_SELECTED",
+              "MODEL_GENERATED",
+              "CATALOG_CHANGED"
             ]
           }
         },
