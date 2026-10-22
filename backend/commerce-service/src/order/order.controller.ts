@@ -16,6 +16,7 @@ export class OrderController {
   private readonly service = new OrderService();
 
   @Post('checkout/quotes')
+  @HttpCode(200)
   @Roles('CUSTOMER')
   quoteCheckout(@Body() dto: QuoteCheckoutBodyDto, @Req() req: any) {
     return this.service.quoteCheckout(dto, req.auth, req.correlationId);
