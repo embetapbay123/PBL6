@@ -52,7 +52,7 @@ function checkout(create) {
   const body = { ...input, quote_id: quote.json.quote_id, expected_payable_total_vnd: quote.json.payable_total_vnd };
   const key = `capacity-${__VU}-${__ITER}-${Date.now()}`;
   const result = api('confirmCheckout', '/orders/batches', 'POST', body, { 'idempotency-key': key });
-  if (result.status === 503) uncertain = { body, key };
+  if (result.status === 0 || result.status >= 500) uncertain = { body, key };
 }
 export default function () {
   try {
@@ -60,7 +60,7 @@ export default function () {
     if (uncertain) {
       flows.add(1, { flow: 'same-key-recovery' });
       const result = api('confirmReplay', '/orders/batches', 'POST', uncertain.body, { 'idempotency-key': uncertain.key });
-      if (result.status !== 503) uncertain = undefined;
+      if (result.status > 0 && result.status < 500) uncertain = undefined;
       return;
     }
     const choice = (__ITER * 37 + __VU * 13) % 100;

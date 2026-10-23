@@ -124,7 +124,10 @@ def main():
             report['hardware'] = subprocess.check_output(['docker','info','--format','{{.NCPU}} CPUs; {{.MemTotal}} bytes memory; {{.ServerVersion}}'],text=True).strip()
             thread = threading.Thread(target=observe); thread.start()
             print('Run authenticated 100-client workload (' + args.profile + ')', flush=True)
+            load_started = time.monotonic()
             result = subprocess.run(compose + ['run', '--rm', '--no-deps', 'load'], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=1500)
+            report['load_elapsed_seconds'] = round(time.monotonic() - load_started, 3)
+            report['requested_duration_seconds'] = 60 if args.profile == 'quick' else 1320
             report['load_exit_code'] = result.returncode
             summary_file = evidence / 'k6-summary.json'
             if not summary_file.is_file(): raise RuntimeError('Load did not produce a summary; inspect private log')
@@ -158,6 +161,8 @@ def main():
             if report['observed_client_ips'] != 100: raise RuntimeError('Did not observe 100 actual source addresses')
             if result.returncode or report['remaining_work'] or any(report['invariants'].values()) or not report['created_orders']:
                 raise RuntimeError('Capacity thresholds or business invariants failed')
+            if report['load_elapsed_seconds'] < report['requested_duration_seconds'] - 1:
+                raise RuntimeError('Workload ended before the requested duration')
             if digest() != report['source_sha256']: raise RuntimeError('Source changed during capacity run')
             report['status'] = 'PASS'
         except (subprocess.SubprocessError, RuntimeError, ValueError, OSError) as error:

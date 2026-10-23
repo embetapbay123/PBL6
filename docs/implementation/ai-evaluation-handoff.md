@@ -4,6 +4,8 @@ Owner: Công. Scope [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56)
 
 ## Đã có
 
+**Follow-up 23/10:** explicit `CHAT_THINKING=disabled` was accepted on the configured OpenCode Go `deepseek-v4-flash`: 3/4 generated answers, p95 2126 ms, outside-domain NO_MATCH, current source/card/budget checks passed. The evaluator now reuses the runtime HTTP pool. This is a separate small read-only sample, not a replacement for the failed 4837/6328-ms observations, provider concurrency, human quality or billing review. Requested mode is recorded by append-only migration 008. [Sanitized development evidence](evidence/2026-10-23-cong-full-acceptance.json) · [runtime configuration](ai-runtime-handoff.md).
+
 **Cập nhật 23/10:** runtime đã dùng `deepseek-v4-flash` qua OpenCode Go và sinh hai câu trả lời thật trong mẫu bốn case; xem [runtime handoff](cong-week4-handoff.md). Mẫu có fallback rõ, p95 4837 ms chưa đạt 4 giây và cost chưa đối soát. Prompt `catalog-answer-v4` yêu cầu tối đa hai câu ngắn, tránh giải thích sai rằng giá/ngân sách chưa được kiểm khi server đã lọc candidate và ghép giá hiện hành. Token usage hợp lệ từ provider được giữ cả khi prose bị guard từ chối; usage thiếu/sai vẫn null. Runner synthetic vẫn giữ none.
 
 - [Dataset generator](../../backend/ai-service/app/evaluation/dataset.py): version cố định, UUID synthetic, 60 user/72 product/1.200 interaction; timestamp cố định, 6 nhóm sở thích. Product fixture validate theo OpenAPI; event IDs không trùng. Đây không phải dữ liệu người dùng đã consent thực.
