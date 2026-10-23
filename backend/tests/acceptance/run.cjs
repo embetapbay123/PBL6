@@ -115,6 +115,10 @@ async function payment(token) {
   await control({ path: '/internal/inventory/consume', order_id: id, mode: 'reject' });
   await Promise.all([callback(payload), callback(payload), callback(payload)]);
   await wait('recovering after actual inventory outage', () => order(id), o => o.status === 'RECOVERING');
+  // The callback can persist RECOVERING before the worker actually sends Consume.
+  // Observe the rejected transport attempt before changing the fault to lose-ack.
+  await wait('actual Consume reaches the rejecting proxy', control,
+    result => result.calls.some(c => c.path.endsWith('/consume') && c.outcome === 'REJECTED'));
   const paid = await row('M2', 'SELECT status,collected_vnd,payable_vnd FROM payment WHERE order_id=$1', [id]);
   check('Payment is durable before inventory success', paid.status === 'SUCCEEDED' &&
     paid.collected_vnd === paid.payable_vnd && paid.collected_vnd === String(result.payable_total_vnd));
