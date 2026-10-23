@@ -6,6 +6,8 @@ Owner: Hoa. M1 owns Inventory commands; Công owns the M2 Payment/Refund provide
 
 Apply the append-only M2 migration `010_checkout_recovery.sql` through the existing migration command before starting M2 and its worker. Migrations 001–003 are unchanged. Deploy API and worker from the same revision. The existing `worker-m2` Compose service runs `OrderService.recoverOrders()` after each outbox batch.
 
+Use the [candidate deployment and restore runbook](demo-deployment.md) to update an existing demo safely from a clean worktree while retaining local configuration and persistent data. It also starts the M3 outbox publisher.
+
 Existing Orders without `order_inventory_state` are not retroactively assigned invented reservation IDs. Reconcile those Orders against M1 before enabling cancellation; missing context returns 409. An incomplete legacy idempotency record returns 503 and needs reconciliation; a saved legacy success response remains replayable.
 
 ## Confirm flow
