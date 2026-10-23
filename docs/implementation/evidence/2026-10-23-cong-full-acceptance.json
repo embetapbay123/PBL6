@@ -1,0 +1,788 @@
+{
+  "date": "2026-10-23",
+  "status": "PARTIAL_ACCEPTANCE",
+  "development_runs_only": true,
+  "functional": {
+    "run_id": "pbl6-acceptance-9e74b3f61cf5",
+    "revision": "3233f06754dc9ca9aea91ca170b1dfb4489fd8a8",
+    "dirty": true,
+    "source_sha256": "4cc16d2ffc894d55e6015b5d637c81c11fc0379a96df2f2f400fd1d55b60180e",
+    "started_at": "2026-10-23T03:40:37Z",
+    "scope": "Private real M1/M2/M3/M4 HTTP, PostgreSQL and RabbitMQ; local callback; no model calls",
+    "not_run": [
+      "SePay dashboard delivery/bank transfer",
+      "Refund provider execution",
+      "Real behavior dataset/model quality evaluation",
+      "100-user NFR",
+      "public gateway/UI/APK",
+      "backup restore"
+    ],
+    "status": "PASS",
+    "phases": [
+      {
+        "phase": "authorization",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Guest is rejected across M1/M2/M3/M4 protected APIs",
+          "Global Admin, Customer and Store roles do not imply one another",
+          "Live Store membership scopes every returned Product",
+          "Live Store membership scopes every returned Product",
+          "Live Store membership scopes every returned Product",
+          "Live Store membership scopes every returned Product",
+          "Cross-Customer Order/group/Payment/Refund/Address/Cart access is hidden as 404",
+          "Cross-Store Product writes, Orders, COD and Voucher usage are denied",
+          "Existing Seller JWT immediately loses product.store.read_write after live grant revocation",
+          "Existing Seller JWT immediately loses inventory.store.read_adjust after live grant revocation",
+          "Existing Seller JWT immediately loses order.store.read_status_cancel after live grant revocation",
+          "Existing Seller JWT immediately loses cod.store.collect after live grant revocation",
+          "Membership lock is effective on the old JWT without revoking unrelated Customers",
+          "Actual Store lock blocks only its own Store and current public/Related reads",
+          "Actual User lock revokes the old session even after unlock and requires fresh login",
+          "Mass-assignment is rejected and auth/role guards precede malformed input",
+          "Internal caller allowlists precede DTOs and preserve live ownership errors"
+        ],
+        "duration_ms": 2173,
+        "sha256": "15bf9762c8595c57c862a04943f2ac9539ed8b7df97062e6282499769ab9b91f"
+      },
+      {
+        "phase": "chat",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Authenticated chat session belongs to the live Customer",
+          "Another authenticated User cannot read or write this chat",
+          "Index was built from actual Catalog before invalidation",
+          "No configured model is explicitly disclosed in the API",
+          "Stale index cannot return cached title or price",
+          "History is owned, paginated and does not replay old cards as current quotes",
+          "Current stopped Product is excluded despite stale embeddings/history",
+          "Recommendation excludes stopped Products and does not claim trained-model quality",
+          "Guest capability is returned once and stored only as a hash",
+          "Guest answer needs the correct private capability and remains explicit fallback",
+          "Admin and Owner metrics match actual global and exact-Store trace scopes",
+          "Actual metrics keep unknown tokens/cost null and evaluation NOT_RUN",
+          "Persisted chat budget fails closed without writing a half-turn",
+          "Expired sessions are inaccessible before periodic deletion runs"
+        ],
+        "duration_ms": 1550,
+        "sha256": "267376d0ee621296ce1921adb61af6f39cbd4d63a8e113ce8695bc545b78b578"
+      },
+      {
+        "phase": "expiry",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Expired order restores reserved availability",
+          "Late callback queues Refund without claiming money returned",
+          "Refund follow-up stays pending without a provider",
+          "Late callback never consumes closed order stock",
+          "Unrelated Order is unchanged"
+        ],
+        "duration_ms": 2503,
+        "sha256": "a237911c882679d508894d208dd9a1001f9e6be06be12ed40deffcd0d794216d"
+      },
+      {
+        "phase": "multistore",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Two-Store quote preserves exact integer discounts and shipping",
+          "One real Confirm commits two Store Orders and correct methods",
+          "Store and platform voucher allocations commit atomically with both Payments",
+          "Online Store remains reserved while COD Store consumes independently",
+          "Paid cancellation requests Refund without inventing provider success",
+          "Lost Restock ACK preserves its immutable pending command",
+          "Restock replay has one effect and restores only the canceled Store stock",
+          "Cancel/recovery leaves the sibling Order, Payment and stock unchanged",
+          "Cancellation preserves committed voucher redemptions and group quota",
+          "Callback/cancel replay cannot duplicate Refund or mark money returned",
+          "Group Confirm replay returns the immutable original response without reopening canceled Orders",
+          "Owned group read exposes current statuses and exact total",
+          "Store COD cancellation follows the 200 contract, restores stock and creates no Refund"
+        ],
+        "duration_ms": 8154,
+        "sha256": "d422ce41325bc32825cb2b3577a6e5bc67f3f3b22b099d82d0ec6a2e1da6352a"
+      },
+      {
+        "phase": "payment",
+        "status": "PASS",
+        "checks": [
+          "M1 starts with an empty acceptance ledger",
+          "M1 database belongs to this run",
+          "M2 starts with an empty acceptance ledger",
+          "M2 database belongs to this run",
+          "M3 starts with an empty acceptance ledger",
+          "M3 database belongs to this run",
+          "M4 starts with an empty acceptance ledger",
+          "M4 database belongs to this run",
+          "Online Order initially waits for payment",
+          "Rejected callbacks have no persisted receipt",
+          "Payment is durable before inventory success",
+          "Rejected Consume leaves real inventory unchanged",
+          "Follow-up is pending while inventory is unavailable",
+          "Lost acknowledgement leaves M2 recovery pending",
+          "Real M1 stock is consumed once",
+          "Follow-up completes after real Consume",
+          "Retries preserve operation ID, payload hash and correlation",
+          "Concurrent/replayed callback produces one receipt/event",
+          "Confirm replays its saved response",
+          "Second Customer cannot read Order or Payment",
+          "Replays preserve one consume effect"
+        ],
+        "duration_ms": 7192,
+        "sha256": "b11a97cdf1aa95e0cb0d29c291274757eb7d29a249379987f890a9e132b1317c"
+      },
+      {
+        "phase": "rollback-prepare",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Database failure preserves durable READY attempt",
+          "Payment failure rolls back Order/items/history/Payment/COD/audit transaction",
+          "Rollback keeps Cart item",
+          "Real M1 reservation survives uncertain database outcome"
+        ],
+        "duration_ms": 589,
+        "sha256": "a3b9478aeb3f50177e9886bae5d0513145c7d7a6cad1e2eff13a816898c3bee7"
+      },
+      {
+        "phase": "rollback-recover",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Restart resumes same Order/attempt",
+          "Restart creates exactly one Payment",
+          "Restart consumes actual stock once",
+          "Restart removes only the committed Cart item",
+          "Checkout attempt is durably COMMITTED"
+        ],
+        "duration_ms": 416,
+        "sha256": "ec0f1d1d7d692c64bb6099634b02f8c821fa8d0b8b6fdc8e03fd9decfff2b8ea"
+      },
+      {
+        "phase": "tracking",
+        "status": "PASS",
+        "checks": [
+          "M1 database belongs to this run",
+          "M2 database belongs to this run",
+          "M3 database belongs to this run",
+          "M4 database belongs to this run",
+          "Consent defaults to WITHDRAWN/version 0 over live M3 authentication",
+          "M1 writes actual SearchRecorded to its outbox",
+          "M1 publisher acknowledges its outbox row",
+          "No-consent search is received but never saved as personal history",
+          "Consent grant is versioned",
+          "Customer cannot grant consent on behalf of another User",
+          "M1 writes actual SearchRecorded to its outbox",
+          "M1 publisher acknowledges its outbox row",
+          "M1 writes actual InteractionRecorded to its outbox",
+          "M1 publisher acknowledges its outbox row",
+          "M2 writes actual InteractionRecorded to its outbox",
+          "M2 publisher acknowledges its outbox row",
+          "Real search is stored exactly once",
+          "Actual search/view/cart advance the versioned behavior dataset once each",
+          "Real M1 VIEW and M2 CART have the contracted weights",
+          "Consented live behavior enables recent views without inventing model evaluation",
+          "Guest Catalog reads do not emit personal telemetry",
+          "Purchase acceptance starts with real paid-online and COD Orders",
+          "M2 writes actual OrderCompleted to its outbox",
+          "M2 publisher acknowledges its outbox row",
+          "M2 writes actual OrderCompleted to its outbox",
+          "M2 publisher acknowledges its outbox row",
+          "Actual online/COD completion produces one PURCHASE per Order item",
+          "Purchase tombstones retain no Customer/items payload",
+          "Broker redelivery and new-envelope Order replay do not duplicate behavior",
+          "Duplicate deliveries do not advance dataset revision",
+          "DLQ contains the exact rejected event rather than an unrelated message",
+          "Wrong-producer event cannot enter inbox",
+          "Database failure rolls back inbox and search effect together",
+          "Recovered event is recorded exactly once",
+          "Retention removes only aged fixtures and keeps current behavior",
+          "M1 writes actual InteractionRecorded to its outbox",
+          "M1 publisher acknowledges its outbox row",
+          "Withdrawal immediately erases personal searches/interactions/preferences",
+          "Withdrawal preserves another consented Customer behavior",
+          "Withdrawn consent serves explicit non-personalized fallback",
+          "M1 writes actual SearchRecorded to its outbox",
+          "M1 publisher acknowledges its outbox row",
+          "M2 writes actual InteractionRecorded to its outbox",
+          "M2 publisher acknowledges its outbox row",
+          "New traffic while withdrawn is received but not stored personally",
+          "Regrant cannot resurrect delayed pre-grant behavior",
+          "M1 writes actual InteractionRecorded to its outbox",
+          "M1 publisher acknowledges its outbox row",
+          "An ACTIVE user update does not falsely emit UserLocked",
+          "M3 writes actual UserLocked to its outbox",
+          "M3 publisher acknowledges its outbox row",
+          "Actual M3 UserLocked withdraws consent and purges behavior",
+          "Live M3 revocation rejects the locked Customer token",
+          "M3 writes actual StoreStatusChanged to its outbox",
+          "M3 publisher acknowledges its outbox row",
+          "Live Store suspension removes only its Products from recommendation",
+          "Related relies on authoritative M1 visibility and rejects a locked Store Product",
+          "M3 writes actual StoreStatusChanged to its outbox",
+          "M3 publisher acknowledges its outbox row",
+          "Actual StoreStatusChanged versions preserve the latest reactivation"
+        ],
+        "duration_ms": 12709,
+        "sha256": "91ed44e539dc7a3d02cbef6fff2afe21f402eea4010ce9b44bc686b189731ec6"
+      }
+    ],
+    "ai_regressions": "PASS",
+    "cleanup": "PASS"
+  },
+  "provider_smoke": {
+    "created_at": "2026-10-23T03:57:04.695866+00:00",
+    "provider": "openai_compatible",
+    "model": "deepseek-v4-flash",
+    "thinking_mode": "disabled",
+    "prompt_version": "catalog-answer-v4",
+    "index_version": "live-lexical-v1",
+    "catalog_sha256": "6f54d3ba3f67ffef6329cc40cdd6a668e08b18022e4d6c4f59ebdd26d3f28fd0",
+    "catalog_products": 3,
+    "status": "PASS",
+    "generation_status": "PASS",
+    "human_review_status": "REQUIRED",
+    "latency_status": "PASS",
+    "latency_target_ms": 4000,
+    "cost_usd": null,
+    "metrics": {
+      "cases": 4,
+      "generated_answers": 3,
+      "fallback_rate": 0.25,
+      "latency_p95_ms": 2126,
+      "token_samples": 3
+    },
+    "limits": [
+      "Small smoke sample, not a load test or marketplace quality certification.",
+      "Human review must verify prose claims against the captured Catalog.",
+      "Costs are unknown until provider billing is reconciled.",
+      "Catalog may change between retrieval and final verification."
+    ]
+  },
+  "provider_cases": [
+    {
+      "case_id": "need",
+      "latency_ms": 2126,
+      "fallback": false,
+      "reason": "MODEL_GENERATED",
+      "actual_tokens": 455,
+      "checks": {
+        "allowed_ids": true,
+        "current_cards": true,
+        "budget": true,
+        "fresh_source": true
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "budget",
+      "latency_ms": 1693,
+      "fallback": false,
+      "reason": "MODEL_GENERATED",
+      "actual_tokens": 346,
+      "checks": {
+        "allowed_ids": true,
+        "current_cards": true,
+        "budget": true,
+        "fresh_source": true
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "injection",
+      "latency_ms": 1991,
+      "fallback": false,
+      "reason": "MODEL_GENERATED",
+      "actual_tokens": 501,
+      "checks": {
+        "allowed_ids": true,
+        "current_cards": true,
+        "budget": true,
+        "fresh_source": true
+      },
+      "status": "PASS"
+    },
+    {
+      "case_id": "outside-domain",
+      "latency_ms": 3,
+      "fallback": true,
+      "reason": "NO_MATCH",
+      "actual_tokens": null,
+      "checks": {
+        "allowed_ids": true,
+        "current_cards": true,
+        "budget": true,
+        "fresh_source": true
+      },
+      "status": "PASS"
+    }
+  ],
+  "negative_capacity_runs": [
+    {
+      "project": "pbl6-acceptance-ec19736c5ac3",
+      "profile": "quick",
+      "status": "FAIL",
+      "source_sha256": "20a38f74d3b17f63905a1459ccce92f4dc4d55e503d14d8a86b4788a87f82398",
+      "revision": "3233f06754dc9ca9aea91ca170b1dfb4489fd8a8",
+      "dirty": true,
+      "workload": "50% Catalog / 20% Cart / 15% Order reads / 10% Quote / 5% COD creation workflows; each workflow may make multiple API requests; 1s think time",
+      "not_run": [
+        "Provider or RAG load",
+        "Actual sales/Refund",
+        "Web/Android rendering",
+        "Login hash/email throughput",
+        "Production Cloudflare client-IP topology",
+        "60-minute soak"
+      ],
+      "started_at": "2026-10-23T03:53:01Z",
+      "dataset": {
+        "version": "capacity-volume-v1",
+        "source": "SYNTHETIC_VOLUME_ONLY",
+        "stores": 10,
+        "customers": 1000,
+        "products": 10000,
+        "variants": 20000,
+        "historical_orders": 50000,
+        "auth": "Isolated signed 15-minute sessions; live context and refresh; login cost excluded",
+        "limits": [
+          "Synthetic volume is not actual sales, financial evidence, consented behavior or AI quality data",
+          "No serving model is trained or published"
+        ]
+      },
+      "hardware": "16 CPUs; 7902412800 bytes memory; 28.5.1",
+      "load_exit_code": 99,
+      "load": {
+        "http_reqs": {
+          "count": 5392,
+          "rate": 88.10738278865172
+        },
+        "http_req_duration": {
+          "min": 15.187008,
+          "med": 375.034556,
+          "max": 2332.349765,
+          "p(90)": 921.0274460000013,
+          "p(95)": 1135.48496615,
+          "avg": 455.85054890356173,
+          "thresholds": {
+            "p(95)<2000": false
+          }
+        },
+        "http_req_failed": {
+          "passes": 174,
+          "fails": 5218,
+          "thresholds": {
+            "rate<0.01": true
+          },
+          "value": 0.0322700296735905
+        },
+        "checks": {
+          "passes": 6997,
+          "fails": 174,
+          "thresholds": {
+            "rate>0.99": true
+          },
+          "value": 0.975735601729187
+        },
+        "iterations": {
+          "count": 3614,
+          "rate": 59.05416939877361
+        }
+      },
+      "raw_summary_sha256": "4d0b77e9dd23ea6b90fa3177461b04aa3cc8264a2278dae753308d708a50c2e5",
+      "workflow_note": "Workflow proportions are declared choices, not exact HTTP request proportions; all HTTP failures remain failures, including 409/503.",
+      "remaining_work": 0,
+      "invariants": {
+        "inventory_bounds": 0,
+        "inventory_movement_conservation": 0,
+        "payment_money_bounds": 0,
+        "new_order_payment_state": 0,
+        "orphan_payments": 0
+      },
+      "created_orders": 140,
+      "observed_client_ips": 100,
+      "source_addresses_spoofed": false,
+      "failure": "Capacity thresholds or business invariants failed",
+      "observation_samples": 4,
+      "observation_sha256": "77b154982005d4137a657273061ac12125f7ac1fe5269531a1e5892d1b14247c",
+      "cleanup": "PASS"
+    },
+    {
+      "project": "pbl6-acceptance-5a34d6b52366",
+      "profile": "quick",
+      "status": "FAIL",
+      "source_sha256": "d089444bc3ab0b07d9d018d66d8daa88be12dec63d0db120b70149a86d47a1e3",
+      "revision": "3233f06754dc9ca9aea91ca170b1dfb4489fd8a8",
+      "dirty": true,
+      "workload": "50% Catalog / 20% Cart / 15% Order reads / 10% Quote / 5% COD creation workflows; each workflow may make multiple API requests; 1s think time",
+      "not_run": [
+        "Provider or RAG load",
+        "Actual sales/Refund",
+        "Web/Android rendering",
+        "Login hash/email throughput",
+        "Production Cloudflare client-IP topology",
+        "60-minute soak"
+      ],
+      "started_at": "2026-10-23T03:58:16Z",
+      "dataset": {
+        "version": "capacity-volume-v1",
+        "source": "SYNTHETIC_VOLUME_ONLY",
+        "stores": 10,
+        "customers": 1000,
+        "products": 10000,
+        "variants": 20000,
+        "historical_orders": 50000,
+        "auth": "Isolated signed 15-minute sessions; live context and refresh; login cost excluded",
+        "limits": [
+          "Synthetic volume is not actual sales, financial evidence, consented behavior or AI quality data",
+          "No serving model is trained or published"
+        ]
+      },
+      "hardware": "16 CPUs; 7902412800 bytes memory; 28.5.1",
+      "load_exit_code": 99,
+      "load": {
+        "http_reqs": {
+          "count": 4697,
+          "rate": 76.31787152861803
+        },
+        "http_req_duration": {
+          "min": 13.098442,
+          "med": 559.850323,
+          "max": 3273.602548,
+          "p(90)": 1084.1667848000002,
+          "p(95)": 1321.1396081999999,
+          "avg": 621.312655923566,
+          "thresholds": {
+            "p(95)<2000": false
+          }
+        },
+        "http_req_failed": {
+          "passes": 249,
+          "fails": 4448,
+          "thresholds": {
+            "rate<0.01": true
+          },
+          "value": 0.05301256120928252
+        },
+        "checks": {
+          "fails": 249,
+          "passes": 6004,
+          "thresholds": {
+            "rate>0.99": true
+          },
+          "value": 0.9601791140252679
+        },
+        "iterations": {
+          "count": 3166,
+          "rate": 51.44185251428671
+        }
+      },
+      "failure_counts": {
+        "failed_updateCartItem": 8,
+        "failed_listProducts": 17,
+        "failed_addCartItem": 81,
+        "failed_listOwnOrders": 19,
+        "failed_getOwnOrder": 4,
+        "failed_status_503": 249,
+        "failed_confirmCheckout": 9,
+        "failed_removeCartItem": 24,
+        "failed_listCartItems": 18,
+        "failed_quoteCheckout": 54,
+        "failed_confirmReplay": 15
+      },
+      "service_http_errors": {
+        "m1:3101": [
+          "pbl6_http_requests_total{service=\"M1\",route=\"/api/v1/products\",status=\"503\"} 17",
+          "pbl6_http_requests_total{service=\"M1\",route=\"/api/v1/products/:id\",status=\"503\"} 3",
+          "pbl6_http_requests_total{service=\"M1\",route=\"/internal/variants/quote\",status=\"503\"} 2",
+          "pbl6_http_requests_total{service=\"M1\",route=\"unmatched\",status=\"429\"} 90"
+        ],
+        "m2:3102": [
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/cart/items\",status=\"503\"} 99",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/cart/items/:id\",status=\"503\"} 32",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/me/orders\",status=\"503\"} 19",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/me/orders/:id\",status=\"503\"} 4",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/checkout/quotes\",status=\"503\"} 54",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/orders/batches\",status=\"503\"} 24"
+        ],
+        "m3:3103": []
+      },
+      "raw_summary_sha256": "f03dcef2c44c2b2938ceb4d606860a8528271bc84b9e83f00c1ea2f54cdc01e5",
+      "workflow_note": "Workflow proportions are declared choices, not exact HTTP request proportions; all HTTP failures remain failures, including 409/503.",
+      "remaining_work": 0,
+      "invariants": {
+        "inventory_bounds": 0,
+        "inventory_movement_conservation": 0,
+        "payment_money_bounds": 0,
+        "new_order_payment_state": 0,
+        "orphan_payments": 0
+      },
+      "created_orders": 111,
+      "observed_client_ips": 100,
+      "source_addresses_spoofed": false,
+      "failure": "Capacity thresholds or business invariants failed",
+      "observation_samples": 4,
+      "observation_sha256": "dc97cd5bbe1cb73d9b8a82d8ff825e3c64d37c55b86dd338e475bdfca0b3f198",
+      "cleanup": "PASS"
+    },
+    {
+      "project": "pbl6-acceptance-4af8f59cb728",
+      "profile": "quick",
+      "status": "FAIL",
+      "source_sha256": "bbd64b42314a22bad23bfdad0e58db45982d8679b2728d3a840d91b47c5c1171",
+      "revision": "3233f06754dc9ca9aea91ca170b1dfb4489fd8a8",
+      "dirty": true,
+      "workload": "50% Catalog / 20% Cart / 15% Order reads / 10% Quote / 5% COD creation workflows; each workflow may make multiple API requests; 1s think time",
+      "not_run": [
+        "Provider or RAG load",
+        "Actual sales/Refund",
+        "Web/Android rendering",
+        "Login hash/email throughput",
+        "Production Cloudflare client-IP topology",
+        "60-minute soak"
+      ],
+      "started_at": "2026-10-23T04:02:08Z",
+      "dataset": {
+        "version": "capacity-volume-v1",
+        "source": "SYNTHETIC_VOLUME_ONLY",
+        "stores": 10,
+        "customers": 1000,
+        "products": 10000,
+        "variants": 20000,
+        "historical_orders": 50000,
+        "auth": "Isolated signed 15-minute sessions; live context and refresh; login cost excluded",
+        "limits": [
+          "Synthetic volume is not actual sales, financial evidence, consented behavior or AI quality data",
+          "No serving model is trained or published"
+        ]
+      },
+      "hardware": "16 CPUs; 7902412800 bytes memory; 28.5.1",
+      "load_exit_code": 99,
+      "load": {
+        "http_reqs": {
+          "rate": 84.82013446258085,
+          "count": 5259
+        },
+        "http_req_duration": {
+          "max": 2201.113292,
+          "p(90)": 933.9116773999999,
+          "p(95)": 1156.5676320999994,
+          "avg": 513.3077336035365,
+          "min": 16.14071,
+          "med": 449.644306,
+          "thresholds": {
+            "p(95)<2000": false
+          }
+        },
+        "http_req_failed": {
+          "passes": 65,
+          "fails": 5194,
+          "thresholds": {
+            "rate<0.01": true
+          },
+          "value": 0.012359764213728846
+        },
+        "checks": {
+          "fails": 65,
+          "passes": 6895,
+          "thresholds": {
+            "rate>0.99": false
+          },
+          "value": 0.9906609195402298
+        },
+        "iterations": {
+          "rate": 55.03067099949151,
+          "count": 3412
+        }
+      },
+      "failure_counts": {
+        "failed_listOwnOrders": 8,
+        "failed_removeCartItem": 2,
+        "failed_updateCartItem": 4,
+        "failed_listProducts": 2,
+        "failed_addCartItem": 14,
+        "failed_status_503": 65,
+        "failed_listCartItems": 12,
+        "failed_quoteCheckout": 14,
+        "failed_confirmCheckout": 5,
+        "failed_getOwnOrder": 4
+      },
+      "service_http_errors": {
+        "m1:3101": [
+          "pbl6_http_requests_total{service=\"M1\",route=\"/api/v1/products\",status=\"503\"} 2",
+          "pbl6_http_requests_total{service=\"M1\",route=\"/api/v1/products/:id\",status=\"503\"} 2"
+        ],
+        "m2:3102": [
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/cart/items\",status=\"503\"} 26",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/me/orders/:id\",status=\"503\"} 4",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/me/orders\",status=\"503\"} 8",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/cart/items/:id\",status=\"503\"} 6",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/checkout/quotes\",status=\"503\"} 14",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/orders/batches\",status=\"503\"} 5"
+        ],
+        "m3:3103": []
+      },
+      "raw_summary_sha256": "1cb706a07cce150dbf92613f60d6c6f8422721fc31ed324104a90dd9e9883921",
+      "workflow_note": "Workflow proportions are declared choices, not exact HTTP request proportions; all HTTP failures remain failures, including 409/503.",
+      "remaining_work": 0,
+      "invariants": {
+        "inventory_bounds": 0,
+        "inventory_movement_conservation": 0,
+        "payment_money_bounds": 0,
+        "new_order_payment_state": 0,
+        "orphan_payments": 0
+      },
+      "created_orders": 158,
+      "observed_client_ips": 100,
+      "source_addresses_spoofed": false,
+      "failure": "Capacity thresholds or business invariants failed",
+      "observation_samples": 4,
+      "observation_sha256": "048fe57cb133b6726aed3df24a254f1ea63710ea6de1793665bf4cecdce141c7",
+      "cleanup": "PASS"
+    },
+    {
+      "project": "pbl6-acceptance-0dc352eb03fa",
+      "profile": "quick",
+      "status": "FAIL",
+      "source_sha256": "d0e83dc4f2855ecc3146cf92af6da702ec5aad6271ee36347030adfa4ae2bc32",
+      "revision": "3233f06754dc9ca9aea91ca170b1dfb4489fd8a8",
+      "dirty": true,
+      "workload": "50% Catalog / 20% Cart / 15% Order reads / 10% Quote / 5% COD creation workflows; each workflow may make multiple API requests; 1s think time",
+      "not_run": [
+        "Provider or RAG load",
+        "Actual sales/Refund",
+        "Web/Android rendering",
+        "Login hash/email throughput",
+        "Production Cloudflare client-IP topology",
+        "60-minute soak"
+      ],
+      "started_at": "2026-10-23T04:05:32Z",
+      "dataset": {
+        "version": "capacity-volume-v1",
+        "source": "SYNTHETIC_VOLUME_ONLY",
+        "stores": 10,
+        "customers": 1000,
+        "products": 10000,
+        "variants": 20000,
+        "historical_orders": 50000,
+        "auth": "Isolated signed 15-minute sessions; live context and refresh; login cost excluded",
+        "limits": [
+          "Synthetic volume is not actual sales, financial evidence, consented behavior or AI quality data",
+          "No serving model is trained or published"
+        ]
+      },
+      "hardware": "16 CPUs; 7902412800 bytes memory; 28.5.1",
+      "load_exit_code": 99,
+      "load": {
+        "http_reqs": {
+          "count": 5258,
+          "rate": 84.67349050102236
+        },
+        "http_req_duration": {
+          "avg": 502.024973578737,
+          "min": 16.399619,
+          "med": 374.156126,
+          "max": 3401.655695,
+          "p(90)": 1034.3637894,
+          "p(95)": 1222.6638337999984,
+          "thresholds": {
+            "p(95)<2000": false
+          }
+        },
+        "http_req_failed": {
+          "passes": 244,
+          "fails": 5014,
+          "thresholds": {
+            "rate<0.01": true
+          },
+          "value": 0.04640547736782046
+        },
+        "checks": {
+          "passes": 6701,
+          "fails": 244,
+          "thresholds": {
+            "rate>0.99": true
+          },
+          "value": 0.9648668106551476
+        },
+        "iterations": {
+          "count": 3463,
+          "rate": 55.76726846805637
+        }
+      },
+      "failure_counts": {
+        "failed_confirmCheckout": 5,
+        "failed_getOwnOrder": 7,
+        "failed_quoteCheckout": 35,
+        "failed_removeCartItem": 18,
+        "failed_confirmReplay": 7,
+        "failed_listOwnOrders": 27,
+        "failed_status_503": 244,
+        "failed_updateCartItem": 22,
+        "failed_listCartItems": 55,
+        "failed_addCartItem": 45,
+        "failed_listProducts": 23
+      },
+      "service_http_errors": {
+        "m1:3101": [
+          "pbl6_http_requests_total{service=\"M1\",route=\"/internal/variants/quote\",status=\"503\"} 2",
+          "pbl6_http_requests_total{service=\"M1\",route=\"/api/v1/products\",status=\"503\"} 23",
+          "pbl6_http_requests_total{service=\"M1\",route=\"/api/v1/products/:id\",status=\"503\"} 2"
+        ],
+        "m2:3102": [
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/cart/items/:id\",status=\"503\"} 40",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/me/orders/:id\",status=\"503\"} 7",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/cart/items\",status=\"503\"} 100",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/me/orders\",status=\"503\"} 27",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/checkout/quotes\",status=\"503\"} 35",
+          "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/orders/batches\",status=\"503\"} 12"
+        ],
+        "m3:3103": []
+      },
+      "raw_summary_sha256": "2f7a5d5abae2dde41f7f676a2e5c9f1783168561187e38ab5f8a17fc8724c274",
+      "workflow_note": "Workflow proportions are declared choices, not exact HTTP request proportions; all HTTP failures remain failures, including 409/503.",
+      "remaining_work": 0,
+      "invariants": {
+        "inventory_bounds": 0,
+        "inventory_movement_conservation": 0,
+        "payment_money_bounds": 0,
+        "new_order_payment_state": 0,
+        "orphan_payments": 0
+      },
+      "created_orders": 154,
+      "observed_client_ips": 100,
+      "source_addresses_spoofed": false,
+      "failure": "Capacity thresholds or business invariants failed",
+      "observation_samples": 4,
+      "observation_sha256": "c6305c2e17add76f1be7961418ba529f5bed4802fdc7e5e35d64f6fa3ea476b3",
+      "cleanup": "PASS"
+    }
+  ],
+  "remaining": [
+    "Clean exact-head CI and target-profile capacity result",
+    "Live deployment of the new candidate and migration 008",
+    "Fresh Checkout plus SePay dashboard simulation",
+    "Supported outbound Refund provider",
+    "Representative consented dataset, training and quality/billing review",
+    "Member-owned full UI/APK and complete FR/NFR rehearsals"
+  ]
+}
