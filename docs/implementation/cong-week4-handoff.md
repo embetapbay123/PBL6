@@ -1,0 +1,25 @@
+# Công — runtime handoff, 23 October 2026
+
+[Evidence](evidence/2026-10-23-cong-deployment.json) · [Deploy/restore runbook](demo-deployment.md) · [Week 4](week4.md). Demo remains 3 November, feature gate 26 October. This is a partial acceptance report; original issue criteria and other owners remain unchanged.
+
+## Delivered and verified
+
+- The existing demo now runs clean candidate `2a2e376959d956257a722fcca35954e2fe572ecf` across all ten API/Web/worker containers. Node services share one image; M4 and tracking share one image. Postgres/Redis/RabbitMQ container IDs and persistent volumes were preserved. No seed/reset or provider payment was run.
+- M2 migration `010_checkout_recovery.sql` is applied. API and durable recovery worker match. Default Compose now includes M3's publisher for UserLocked/StoreStatusChanged and other outbox events; RabbitMQ has the actual M4 consumer.
+- All four database backups were restored into new isolated databases and passed backup hashes, schema/constraints/migrations, counts, row hashes and defined inventory/Payment/address/chat invariants. Checks compare against backup-time metadata rather than changing live tables. This does not prove an atomic four-service/provider snapshot.
+- Public Web and Catalog returned 200; the JavaScript bundle from `https://demo.congnguyen.me` matched the candidate byte-for-byte. The Cart navigation points to `/cart`. This fixes integration glue; the complete member-owned Customer/Seller/Admin interfaces are still separate work.
+- Runtime audit: **50 checks passed**, one existing-Order ownership check NOT_RUN because that Customer has no Order. Checks use real M3 sessions through the gateway: four demo identities, role separation, cookie flags, CSRF, refresh rotation/replay revocation, guard-before-validation, AI scope, unsigned callback rejection and internal-route protection. Fresh audit sessions are revoked afterward. Seller/two-Store/revoked-permission and all-resource ownership acceptance is not covered by these 50 checks.
+- Exact candidate CI passed contracts/docs/generated drift, Node/Python/integration, six real-service acceptance phases, Web and Flutter. [Scaffold run](https://github.com/embetapbay123/PBL6/actions/runs/39887539111) · [Recovery run](https://github.com/embetapbay123/PBL6/actions/runs/39887539052).
+
+## Results that still need work
+
+| Task | Observed result | Next acceptance requirement |
+| --- | --- | --- |
+| [OPS-01 #59](https://github.com/embetapbay123/PBL6/issues/59) | Bounded 100-VU, 30-second reads with 20-second think time on three seeded Products: Catalog 200 requests, p95 709 ms, 0% errors; Related 201 requests including setup, p95 1421 ms, **5 errors / 2.49%**, all five observed as M4 503. | Resolve the Related overload and rerun. Record the negative result; no full NFR PASS. Full target dataset/mixed workload, DB/queue/CPU/RAM observations and all-role permission matrix remain. |
+| [AI-03 #57](https://github.com/embetapbay123/PBL6/issues/57) | Configured OpenCode Go/DeepSeek generated two of four smoke answers from current Catalog. Injection was rejected to explicit fallback; outside-domain had no match. Validated current cards/budget/source versions. p95 **4837 ms**, beyond 4-second target; billing remains null. | Improve generation latency/response quality, run a representative grounded question set and review prose; no marketplace-quality or cost acceptance from this smoke. |
+| [PAY-02 #52](https://github.com/embetapbay123/PBL6/issues/52) / [OPS-02 #60](https://github.com/embetapbay123/PBL6/issues/60) | Durable recovery code is now deployed, with restore and real-service isolated acceptance available. | A new real Checkout followed by a fresh SePay dashboard simulation and final stock/Order/recovery evidence; mixed-Store/Voucher and remaining uncertain-outcome boundaries. The old temporary provider reference was cleaned and must not be replayed. |
+| [PAY-03 #53](https://github.com/embetapbay123/PBL6/issues/53) | Refund/reconciliation kernel is present; provider remains disabled. | Supply an actual supported outbound refund provider/test environment. Inbound SePay configuration is not a refund contract. Never label REQUESTED/PENDING as successful money movement. |
+| [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56) / [AI-04 #58](https://github.com/embetapbay123/PBL6/issues/58) | Consent/tracking acceptance and explicit fallbacks are delivered. | Representative consented data, actual training/split/baseline quality and reconciled billing. Synthetic controls are not serving-quality evidence. |
+| [DEMO-01 #61](https://github.com/embetapbay123/PBL6/issues/61) | Runtime and bounded audit evidence are reproducible. | Original 98 FR / 28 NFR matrix, member UI/device delivery, actual online Payment/Refund and full rehearsals. No full-demo readiness is claimed. |
+
+Keep #52/#55 in Review; #57/#59/#60 in progress; #53/#56/#58 Blocked until the actual external/data conditions change. Deployment does not automatically close broad issues.

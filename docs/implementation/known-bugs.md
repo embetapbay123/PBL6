@@ -4,6 +4,8 @@ Confirmed defects and implementation gaps are visible in their existing issues a
 
 ## Open findings and remaining implementation gaps
 
+**23/10 — Công / OPS-01 #59:** deployed revision `2a2e376` returned 5 Related 503s in 201 requests (100-VU bounded read smoke). Catalog passed; Related failed the 1% error threshold despite p95 1421 ms. Admission tuning and a repeat gateway run are required; preserve the failed baseline in [evidence](evidence/2026-10-23-cong-deployment.json). AI-03 #57 also measured p95 4837 ms against the 4000-ms target. Neither result is hidden by CI PASS or successful generation.
+
 | ID | Severity | Task / owner | Current finding and trigger | Evidence / next verification |
 | --- | --- | --- | --- | --- |
 | BUG-WEB-01 | P1 | [#66](https://github.com/embetapbay123/PBL6/issues/66) / Hatsaphone | Main still lacks complete attempt recovery. #114 fixes HTTP 503 + reload, but a real fetch failure becomes ApiError(status=0), drops the saved attempt and creates a new key/quote on retry. | Chromium reproduction on a05f2f5 with an actual fetch abort and intercepted APIs. Preserve uncertain network/timeout outcomes and regress reload. No real duplicate Order was created. [#114 review](https://github.com/embetapbay123/PBL6/pull/114#pullrequestreview-5579973663). |

@@ -24,7 +24,7 @@ def test_compatible_api_generates_prose_and_keeps_key_out_of_payload_and_shared_
     assert result.actual_tokens==80 and result.model=='account-model'
     content,cards=compose(result,PRODUCTS)
     assert content.startswith(result.answer) and cards[0]['current_price_vnd']==100
-    assert PROMPT_VERSION=='catalog-answer-v3'
+    assert PROMPT_VERSION=='catalog-answer-v4'
 
 @pytest.mark.parametrize('answer',['Giá chỉ 1 VND','<script>alert()</script>','https://evil.invalid','[click](evil)','api_key=private','', 'x'*901])
 def test_unsafe_or_unbounded_prose_is_rejected(answer):
@@ -35,6 +35,20 @@ def test_unsafe_or_unbounded_prose_is_rejected(answer):
 def test_truncated_malformed_or_foreign_response_falls_back(body):
     result=asyncio.run(selector(lambda r:httpx.Response(200,json=body)).select('camera',PRODUCTS))
     assert result.fallback and result.reason=='PROVIDER_INVALID_RESPONSE'
+
+
+@pytest.mark.parametrize('body',[envelope(answer='Giá chỉ 1 VND'),envelope(finish_reason='length'),envelope(ids=['foreign']),
+    {'choices':[{'finish_reason':'stop','message':{'content':'not-json'}}],'usage':{'total_tokens':80}}])
+def test_rejected_provider_content_retains_known_billable_token_usage(body):
+    result=asyncio.run(selector(lambda r:httpx.Response(200,json=body)).select('camera',PRODUCTS))
+    assert result.fallback and result.answer is None and result.actual_tokens==80
+
+
+@pytest.mark.parametrize('usage',[None,{},True,-1,100001,'80'])
+def test_missing_or_invalid_usage_does_not_invalidate_an_otherwise_valid_answer(usage):
+    body=envelope();body['usage']={'total_tokens':usage} if usage is not None else None
+    result=asyncio.run(selector(lambda r:httpx.Response(200,json=body)).select('camera',PRODUCTS))
+    assert not result.fallback and result.actual_tokens is None
 
 @pytest.mark.parametrize('status',[301,401,402,429,500])
 def test_no_retry_or_redirect_on_provider_error(status):

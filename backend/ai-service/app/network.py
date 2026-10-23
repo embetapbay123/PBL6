@@ -5,7 +5,7 @@ import httpx
 
 class CatalogAdmission:
     """Bound fan-out before HTTP pool acquisition; no caching or retries."""
-    def __init__(self,limit=8,wait_seconds=1):
+    def __init__(self,limit=16,wait_seconds=1):
         self.slots=asyncio.Semaphore(limit);self.wait_seconds=wait_seconds
     @asynccontextmanager
     async def enter(self):

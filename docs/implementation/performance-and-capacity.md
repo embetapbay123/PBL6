@@ -48,6 +48,8 @@ Related gồm một request setup Catalog. Hai run cuối có 400/400 checks; 10
 
 M4 dùng client lifespan/pool50/keep-alive20, timeout mỗi dependency1 giây; reference trong page hiện hành được dùng lại, ActiveStores kiểm một lần trong cùng request. Không cache quyền/giá qua request. Resources/queue snapshot không đo peak; cần monitor time-series/DB/queue age và dataset đích khi nghiệm thu chính thức.
 
+Ngày 23/10, bản runtime mới vẫn gặp 5/201 lỗi Related 503 trong cold burst 100 VU (p95 1421 ms). Admission 8 slot gần chạm deadline chờ 1 giây; so sánh trực tiếp 100 lời gọi M1/M3 đạt p95 957 ms với 8 slot, 853 ms với 16 slot. Default được nâng lên **16 slot**, vẫn tối đa 32 fan-out HTTP trong pool 50 và giữ deadline 1 giây, không retry/cache hoặc nới rate limit. Đây là tuning từ workload seed nhỏ; phải chạy lại gateway và không suy ra NFR marketplace đạt chỉ từ probe này. [Bản ghi baseline](cong-week4-handoff.md).
+
 ```powershell
 New-Item -ItemType Directory -Force artifacts/load/read-smoke | Out-Null
 docker run --rm --network pbl6_default -v "${PWD}/infrastructure/load:/scripts:ro" -v "${PWD}/artifacts/load/read-smoke:/artifacts" grafana/k6:0.57.0 run -e PROFILE=smoke -e WORKLOAD=related --summary-export /artifacts/summary.json --out json=/artifacts/raw.json /scripts/catalog.k6.js

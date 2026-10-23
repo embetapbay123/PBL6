@@ -28,3 +28,12 @@ Backups compare stable before/after table contents and schema; they are not an a
 ## Remaining acceptance
 
 After deployment, verify authenticated roles/two Stores, checkout/payment/recovery, consent and real UI/device flows using their own issue criteria. A public 200 or matching image revision cannot close OPS-01, OPS-02 or DEMO-01 by itself. Refund remains disabled until an actual supported provider is configured and tested. Representative AI quality, measured load and the Android/full-demo rehearsals require separate evidence.
+
+For an existing seeded demo with `AI_MODE=real`, run the bounded read-only authentication audit:
+
+```powershell
+Get-Content scripts/verify_demo_runtime.cjs -Raw | docker exec -i pbl6-m3-1 node
+if ($LASTEXITCODE -ne 0) { throw 'Runtime audit failed' }
+```
+
+It reads local credentials inside M3, creates/revokes fresh Web sessions, verifies roles, cookie flags, CSRF/rotation/replay, guard-before-validation, AI scope, unsigned callback and internal-route protection. It never prints tokens/PII or mutates business records. An existing cross-Customer Order check reports NOT_RUN when there is no matching Order; do not seed an invented Order to turn it green. Full Seller/two-Store/permission-revocation and device tests remain separate.

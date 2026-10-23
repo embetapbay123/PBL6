@@ -41,6 +41,8 @@ async def evaluate(engine,catalog,selector,allow_provider_calls=False):
     rows=report['raw'];generated=sum(r.get('reason')=='MODEL_GENERATED' for r in rows)
     samples=sorted(r['latency_ms'] for r in rows)
     report['metrics']={'cases':len(rows),'generated_answers':generated,'fallback_rate':sum(r.get('fallback',False) for r in rows)/len(rows),'latency_p95_ms':samples[math.ceil(.95*len(samples))-1],'token_samples':sum(r.get('actual_tokens') is not None for r in rows)}
+    report['latency_target_ms']=4000
+    report['latency_status']='PASS' if report['metrics']['latency_p95_ms']<4000 else 'FAIL'
     report['generation_status']='PASS' if generated else 'FAIL'
     report['status']='PASS' if all(r['status']=='PASS' for r in rows) and generated else 'FAIL'
     return report
