@@ -1,5 +1,7 @@
 # Week 4 — 20–26/10/2026 — khép các luồng để demo đủ chức năng
 
+**Runtime 23/10:** xem [bàn giao Công](cong-week4-handoff.md), [deploy/restore](demo-deployment.md) và [matrix 98 FR/28 NFR](demo-acceptance-matrix.md). API/worker và migration phục hồi đã lên demo; không còn ghi việc deploy lần đầu là dependency chưa làm. Các tiêu chí provider, mixed-Store, chất lượng AI, tải đích và UI/device vẫn cần bằng chứng riêng.
+
 Cập nhật **22/10/2026**. Demo **thứ Ba 03/11/2026**; gate chức năng **26/10**, freeze **27/10**. [Kanban](https://github.com/users/embetapbay123/projects/1/views/3) · [Roadmap toàn bộ 71 task](roadmap.md) · [Gate demo](demo-2026-11-03.md) · [Week 5](week5.md). [Bằng chứng merge Catalog](evidence/2026-10-20-catalog-merge.json). Các mốc dưới đây là kế hoạch phải kiểm chứng, không phải kết quả đã đạt. Không mặc định làm cuối tuần; năm phiên là 20, 21, 22, 23 và 26/10.
 
 ## Điểm xuất phát và việc không làm lại

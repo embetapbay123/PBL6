@@ -127,7 +127,7 @@ def main():
             try:
                 for name, port in (('m1', 3101), ('m2', 3102), ('m3', 3103)):
                     capture(command + ['exec', '-T', name, 'node', '-e',
-                        f"fetch('http://127.0.0.1:{port}/health/ready').then(r=>{{if(!r.ok)process.exit(1)}}).catch(()=>process.exit(1))"])
+                        f"fetch('http://127.0.0.1:{port}/health/ready',{{signal:AbortSignal.timeout(2000)}}).then(r=>{{if(!r.ok)process.exit(1)}}).catch(()=>process.exit(1))"])
                 capture(command + ['exec', '-T', 'm4', 'python', '-c',
                     "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3104/health/ready', timeout=2)"])
                 break

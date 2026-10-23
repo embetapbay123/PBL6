@@ -187,7 +187,7 @@ def test_generated_explanation_is_discarded_after_source_change(engine):
     assert not schema_errors(response,OPERATIONS['sendChatMessage']['responses']['200'])
     with engine.connect() as db:
         row=db.execute(text('SELECT model_name,prompt_version,fallback_reason FROM ai_request_trace')).one()
-        assert tuple(row)==('test-model','catalog-answer-v3','CATALOG_CHANGED')
+        assert tuple(row)==('test-model','catalog-answer-v4','CATALOG_CHANGED')
 
 
 def test_generated_answer_matches_public_response_contract(engine):

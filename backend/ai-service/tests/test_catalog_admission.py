@@ -9,9 +9,9 @@ def test_catalog_fanout_is_bounded_without_dropping_concurrent_callers():
             nonlocal active,peak
             async with admission.enter():
                 active+=1;peak=max(peak,active)
-                # A 100-caller burst must fit the one-second admission deadline.
+                # A 100-caller burst must fit the bounded admission deadline.
                 # This is a deterministic slow-I/O control, not load/NFR evidence.
-                await asyncio.sleep(.1);active-=1;return i
+                await asyncio.sleep(.15);active-=1;return i
         assert await asyncio.gather(*(read(i) for i in range(100)))==list(range(100))
         assert peak==16 and active==0
     asyncio.run(run())

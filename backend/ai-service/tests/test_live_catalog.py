@@ -49,5 +49,18 @@ def test_related_context_reuses_verified_page_and_fetches_missing_reference(monk
             assert product==reference and candidates==([reference] if in_page else [])
             assert not pool.is_closed
     asyncio.run(run())
-    assert calls.count('stores')==1
-    assert len(calls)==(2 if in_page else 3)
+    assert calls.count('stores')==0
+    assert len(calls)==(1 if in_page else 2)
+
+
+def test_related_context_fails_closed_when_m1_excludes_a_locked_store(monkeypatch):
+    monkeypatch.setenv('CATALOG_URL','http://catalog')
+    class Identity:
+        async def call(self,*args):raise AssertionError('M1 owns public Store visibility')
+    def handler(request):
+        if request.url.path=='/api/v1/products':return httpx.Response(200,json={'items':[],'total':0,'page':1,'size':100})
+        return httpx.Response(404,json={})
+    catalog=LiveCatalog(transport=httpx.MockTransport(handler),internal=Identity())
+    with pytest.raises(InternalError) as caught:
+        asyncio.run(catalog.related_context(str(uuid.uuid4()),'locked-store'))
+    assert caught.value.status==404

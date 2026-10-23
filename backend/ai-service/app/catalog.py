@@ -1,10 +1,11 @@
-import os, asyncio
+import os, asyncio, logging
 import httpx
 from .internal_client import InternalClient, InternalError
 from .runtime_contracts import OPERATIONS, schema_errors
 from .safety import price
 from .network import session
 from functools import wraps
+log=logging.getLogger('pbl6.catalog')
 
 def admitted(fn):
     @wraps(fn)
@@ -27,7 +28,9 @@ class LiveCatalog:
             result=response.json()
             if schema_errors(result,OPERATIONS[operation]['responses']['200']):raise ValueError()
             return result
-        except httpx.HTTPError:raise InternalError(503,'DEPENDENCY_UNAVAILABLE','Catalog không phản hồi.')
+        except httpx.HTTPError:
+            log.warning('CATALOG_HTTP_UNAVAILABLE')
+            raise InternalError(503,'DEPENDENCY_UNAVAILABLE','Catalog không phản hồi.')
         except ValueError:raise InternalError(503,'DEPENDENCY_CONTRACT_INVALID','Catalog không phản hồi đúng contract.')
     @admitted
     async def snapshot(self,correlation,*,pages=1):
@@ -48,11 +51,12 @@ class LiveCatalog:
 
     @admitted
     async def related_context(self,id,correlation):
-        # Reuse a freshly validated public reference already present in this request's page.
-        first,active=await asyncio.gather(self._get('/products','listProducts',correlation,{'page':1,'size':100}),self.internal.call('ActiveStores',None,correlation))
+        # M1's public list/detail already resolve live M3 ActiveStores and exclude locked
+        # Stores. Use that authoritative read rather than duplicating the same M3 lookup.
+        # This is request-local data, never a cached visibility/price decision.
+        first=await self._get('/products','listProducts',correlation,{'page':1,'size':100})
         product=next((p for p in first['items'] if p['id']==id),None)
         if product is None:product=await self._get('/products/'+id,'getProduct',correlation)
-        ids=set(active['ids'])
-        def eligible(p):return p.get('status')=='ACTIVE' and p.get('moderation_status')=='VISIBLE' and p.get('store_id') in ids and price(p) is not None
+        def eligible(p):return p.get('status')=='ACTIVE' and p.get('moderation_status')=='VISIBLE' and price(p) is not None
         if not eligible(product):raise InternalError(404,'NOT_FOUND','Product không còn công khai.')
         return product,[p for p in first['items'] if eligible(p)]
