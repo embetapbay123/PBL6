@@ -4,7 +4,9 @@ Confirmed defects and implementation gaps are visible in their existing issues a
 
 ## Open findings and remaining implementation gaps
 
-**23/10 — Công / OPS-01 #59:** deployed revision `2a2e376` returned 5 Related 503s in 201 requests (100-VU bounded read smoke). Catalog passed; Related failed the 1% error threshold despite p95 1421 ms. Admission tuning and a repeat gateway run are required; preserve the failed baseline in [evidence](evidence/2026-10-23-cong-deployment.json). AI-03 #57 also measured p95 4837 ms against the 4000-ms target. Neither result is hidden by CI PASS or successful generation.
+**23/10 — Công / AI-03 #57:** real-provider smoke still exceeds the 4000-ms target: initial p95 4837 ms; prompt v4 measured 6328 ms while overlapping the intermediate read load. Generation/guard checks PASS does not mean latency/quality PASS. Billing remains unknown. Keep the measured failure visible in [evidence](evidence/2026-10-23-cong-deployment.json).
+
+**Related read-smoke fix — OPS-01 #59:** revisions `2a2e376`/`49ce825` had failed runs (5/201 and 59/201 503s). The final deployed `a6483a1` removes duplicate M3 visibility lookup using authoritative public M1 reads and bounds admission. Two subsequent gateway runs each passed 201 requests with zero errors, p95 1030/618 ms; actual locked-Store rejection passed CI. This resolves the observed small read-smoke defect, not full marketplace capacity acceptance. Negative runs remain in evidence.
 
 | ID | Severity | Task / owner | Current finding and trigger | Evidence / next verification |
 | --- | --- | --- | --- | --- |
