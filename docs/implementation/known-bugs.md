@@ -4,6 +4,10 @@ Confirmed defects and implementation gaps are visible in their existing issues a
 
 ## Open findings and remaining implementation gaps
 
+**23/10 — Công / AI-03 #57:** real-provider smoke still exceeds the 4000-ms target: initial p95 4837 ms; prompt v4 measured 6328 ms while overlapping the intermediate read load. Generation/guard checks PASS does not mean latency/quality PASS. Billing remains unknown. Keep the measured failure visible in [evidence](evidence/2026-10-23-cong-deployment.json).
+
+**Related read-smoke fix — OPS-01 #59:** revisions `2a2e376`/`49ce825` had failed runs (5/201 and 59/201 503s). The final deployed `a6483a1` removes duplicate M3 visibility lookup using authoritative public M1 reads and bounds admission. Two subsequent gateway runs each passed 201 requests with zero errors, p95 1030/618 ms; actual locked-Store rejection passed CI. This resolves the observed small read-smoke defect, not full marketplace capacity acceptance. Negative runs remain in evidence.
+
 | ID | Severity | Task / owner | Current finding and trigger | Evidence / next verification |
 | --- | --- | --- | --- | --- |
 | BUG-WEB-01 | P1 | [#66](https://github.com/embetapbay123/PBL6/issues/66) / Hatsaphone | Main still lacks complete attempt recovery. #114 fixes HTTP 503 + reload, but a real fetch failure becomes ApiError(status=0), drops the saved attempt and creates a new key/quote on retry. | Chromium reproduction on a05f2f5 with an actual fetch abort and intercepted APIs. Preserve uncertain network/timeout outcomes and regress reload. No real duplicate Order was created. [#114 review](https://github.com/embetapbay123/PBL6/pull/114#pullrequestreview-5579973663). |

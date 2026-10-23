@@ -156,6 +156,8 @@ module.exports = async function tracking(t) {
   } }));
   const suspended = await request('getForYou', { token: other });
   check('Live Store suspension removes its Products from recommendation', suspended.product_ids.length === 0 && suspended.recently_viewed_product_ids.length === 0);
+  await request('getRelatedProducts', { id: uid(80), status: 404 });
+  check('Related relies on authoritative M1 visibility and rejects a locked Store Product', true);
   await ingest('M3', 'StoreStatusChanged', () => request('updateStoreState', { token: admin, id: uid(61), body: {
     expected_version: storeVersion.version + 1, status: 'ACTIVE', reason: 'Restore isolated fixture Store',
   } }));

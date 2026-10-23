@@ -1,0 +1,522 @@
+{
+  "date": "2026-10-23",
+  "runtime_revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+  "status": "PARTIAL_ACCEPTANCE",
+  "deployment": {
+    "status": "PASS",
+    "steps": [
+      "config",
+      "build",
+      "stop-ingress",
+      "stop-writers",
+      "backup",
+      "restore-drill",
+      "migrate",
+      "start-apps",
+      "open-ingress"
+    ],
+    "containers": {
+      "m1": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "m2": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "m3": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "worker-m1": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "worker-m2": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "worker-m3": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "worker-refund": {
+        "image_id": "sha256:b0fcde2a22614c805f7efd2e55a8ba4f4317d2c538c42487efdfa8f72a0b26ff",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "m4": {
+        "image_id": "sha256:a12b35ee680723b7608114533a67da186c7a733c0bcfe2a5577a829f11459d16",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "worker-m4": {
+        "image_id": "sha256:a12b35ee680723b7608114533a67da186c7a733c0bcfe2a5577a829f11459d16",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      },
+      "web": {
+        "image_id": "sha256:8305972f62803f3e02b073428490e62f8b4b76102f59871a875e0179710a3194",
+        "revision": "a6483a1bf0bef6fc32af663f05097e83019294ee",
+        "restart_count": 0
+      }
+    },
+    "migrations": {
+      "m1": [
+        "001_initial.sql",
+        "002_correlation_text.sql",
+        "003_schema_baseline.sql"
+      ],
+      "m2": [
+        "001_initial.sql",
+        "002_correlation_text.sql",
+        "003_schema_baseline.sql",
+        "004_cart_product_reference.sql",
+        "005_payment_foundation.sql",
+        "006_payment_callback_receipts.sql",
+        "007_payment_followup_integrity.sql",
+        "008_refund_runtime.sql",
+        "009_refund_job_integrity.sql",
+        "010_checkout_recovery.sql"
+      ],
+      "m3": [
+        "001_initial.sql",
+        "002_correlation_text.sql",
+        "003_schema_baseline.sql",
+        "004_role_version.sql",
+        "005_one_pending_store_application.sql"
+      ],
+      "m4": [
+        "001_initial.sql",
+        "002_correlation_text.sql",
+        "003_schema_baseline.sql",
+        "004_consent_tracking.sql",
+        "005_consent_audit.sql",
+        "006_ai_runtime.sql",
+        "007_chat_provider_trace.sql"
+      ]
+    }
+  },
+  "restore": {
+    "databases": 4,
+    "status": "PASS",
+    "checks": [
+      "backup SHA256",
+      "schema/constraints/migrations",
+      "counts",
+      "table row hashes",
+      "inventory/payment/address/chat invariants"
+    ],
+    "limit": "Per-database backup; not an atomic cross-service/provider snapshot"
+  },
+  "public": {
+    "web_http": 200,
+    "bundle_sha256": "f15c524df55b77558da514707b440b107187d53b9913f7299437fc3e25a81c8c",
+    "matches_candidate_bundle": true,
+    "catalog_http": 200
+  },
+  "security": {
+    "status": "PASS",
+    "checks": [
+      {
+        "name": "Public Catalog is available",
+        "status": "PASS"
+      },
+      {
+        "name": "Guest cannot read Cart",
+        "status": "PASS"
+      },
+      {
+        "name": "Authentication precedes malformed Order path validation",
+        "status": "PASS"
+      },
+      {
+        "name": "Invalid bearer token is rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "M3 internal endpoint requires caller identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Public gateway does not expose internal JSON endpoint",
+        "status": "PASS"
+      },
+      {
+        "name": "Unsigned payment callback is rejected before body validation",
+        "status": "PASS"
+      },
+      {
+        "name": "WEB login rejects a foreign Origin",
+        "status": "PASS"
+      },
+      {
+        "name": "Web login keeps refresh token out of JSON",
+        "status": "PASS"
+      },
+      {
+        "name": "Refresh cookie is HttpOnly and SameSite Strict",
+        "status": "PASS"
+      },
+      {
+        "name": "HTTPS demo uses Secure refresh cookies",
+        "status": "PASS"
+      },
+      {
+        "name": "Web login keeps refresh token out of JSON",
+        "status": "PASS"
+      },
+      {
+        "name": "Refresh cookie is HttpOnly and SameSite Strict",
+        "status": "PASS"
+      },
+      {
+        "name": "HTTPS demo uses Secure refresh cookies",
+        "status": "PASS"
+      },
+      {
+        "name": "Web login keeps refresh token out of JSON",
+        "status": "PASS"
+      },
+      {
+        "name": "Refresh cookie is HttpOnly and SameSite Strict",
+        "status": "PASS"
+      },
+      {
+        "name": "HTTPS demo uses Secure refresh cookies",
+        "status": "PASS"
+      },
+      {
+        "name": "Web login keeps refresh token out of JSON",
+        "status": "PASS"
+      },
+      {
+        "name": "Refresh cookie is HttpOnly and SameSite Strict",
+        "status": "PASS"
+      },
+      {
+        "name": "HTTPS demo uses Secure refresh cookies",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer reads only its current profile",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer profile matches live identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Other Customer reads only its current profile",
+        "status": "PASS"
+      },
+      {
+        "name": "Other Customer profile matches live identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Owner reads only its current profile",
+        "status": "PASS"
+      },
+      {
+        "name": "Owner profile matches live identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin reads only its current profile",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin profile matches live identity",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer reads own Cart",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer cannot read Admin Users",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer role guard precedes invalid Admin query validation",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer cannot read Store management",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin role alone does not grant Store management",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin reads platform Users",
+        "status": "PASS"
+      },
+      {
+        "name": "Owner reads own Store Products",
+        "status": "PASS"
+      },
+      {
+        "name": "Owner Product list is scoped to live membership",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer cannot read AI metrics",
+        "status": "PASS"
+      },
+      {
+        "name": "Owner reads Store AI metrics",
+        "status": "PASS"
+      },
+      {
+        "name": "Owner cannot select an unrelated AI Store scope",
+        "status": "PASS"
+      },
+      {
+        "name": "Admin reads platform AI metrics",
+        "status": "PASS"
+      },
+      {
+        "name": "Unknown AI costs are not reported as zero",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer reads own Orders",
+        "status": "PASS"
+      },
+      {
+        "name": "Cross-Customer existing Order ownership",
+        "status": "NOT_RUN",
+        "reason": "NO_EXISTING_CUSTOMER_ORDER"
+      },
+      {
+        "name": "Cookie logout rejects missing CSRF",
+        "status": "PASS"
+      },
+      {
+        "name": "Cookie refresh rejects foreign Origin",
+        "status": "PASS"
+      },
+      {
+        "name": "Cookie refresh rotates credentials",
+        "status": "PASS"
+      },
+      {
+        "name": "Refresh cookie changes after rotation",
+        "status": "PASS"
+      },
+      {
+        "name": "Old refresh replay is rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "Refresh replay revokes the replacement session",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer UUID validation remains strict",
+        "status": "PASS"
+      },
+      {
+        "name": "Customer pagination is bounded",
+        "status": "PASS"
+      }
+    ],
+    "limits": [
+      "Existing demo data only; no seed/reset or business state mutation",
+      "Seller/two-Store/revoked-permission/upload/load/device/provider acceptance is separate"
+    ]
+  },
+  "security_runner_sha256": "33fc573e4250318a7b9201250fc3f12bbbf082e6184149263a46c1e10f156178",
+  "read_load": {
+    "profile": "100 VU,30 seconds,20-second think time,3 seeded Products",
+    "results": [
+      {
+        "name": "related-1",
+        "exit_code": 0,
+        "requests": 201,
+        "p95_ms": 1029.917613,
+        "error_rate": 0,
+        "checks_rate": 1,
+        "raw_sha256": "e315ded1b28c0e95992921999ea82718b58143a7de0998dd9e9cc0f2325babd0"
+      },
+      {
+        "name": "related-2",
+        "exit_code": 0,
+        "requests": 201,
+        "p95_ms": 618.145105,
+        "error_rate": 0,
+        "checks_rate": 1,
+        "raw_sha256": "e3e0cb4187ef74ee4223a5ec717739d7f1150fd86e6f744d6075c39ef1b66c5a"
+      },
+      {
+        "name": "catalog",
+        "exit_code": 0,
+        "requests": 200,
+        "p95_ms": 602.7950632999998,
+        "error_rate": 0,
+        "checks_rate": 1,
+        "raw_sha256": "19ef38f1fed3099c47eaec3af9c5ed12e32f390431aa81897b3d20241c4ba186"
+      }
+    ],
+    "invariants_before": {
+      "inventory": {
+        "quantity": 30,
+        "reserved": 0,
+        "invalid": 0
+      },
+      "payment": {
+        "payments": 0,
+        "collected": 0,
+        "refunded": 0,
+        "invalid": 0
+      }
+    },
+    "invariants_after": {
+      "inventory": {
+        "quantity": 30,
+        "reserved": 0,
+        "invalid": 0
+      },
+      "payment": {
+        "payments": 0,
+        "collected": 0,
+        "refunded": 0,
+        "invalid": 0
+      }
+    },
+    "business_aggregates_unchanged": true,
+    "limits": [
+      "Read smoke only; not target marketplace/mixed workload",
+      "Resource samples are point observations, not continuous peak/queue/DB acceptance",
+      "No provider/model call overlaps these runs"
+    ],
+    "resource_observations": {
+      "sample_count": 18,
+      "point_sample_maxima": {
+        "pbl6-m1-1": {
+          "sampled_cpu_percent_max": 68.14,
+          "sampled_memory_mib_max": 82.53
+        },
+        "pbl6-m3-1": {
+          "sampled_cpu_percent_max": 33.62,
+          "sampled_memory_mib_max": 69.08
+        },
+        "pbl6-m4-1": {
+          "sampled_cpu_percent_max": 23.66,
+          "sampled_memory_mib_max": 87.02
+        },
+        "pbl6-postgres-1": {
+          "sampled_cpu_percent_max": 33.9,
+          "sampled_memory_mib_max": 267.0
+        },
+        "pbl6-redis-1": {
+          "sampled_cpu_percent_max": 3.44,
+          "sampled_memory_mib_max": 15.14
+        },
+        "pbl6-rabbitmq-1": {
+          "sampled_cpu_percent_max": 323.79,
+          "sampled_memory_mib_max": 165.3
+        }
+      },
+      "docker_cpus": 16,
+      "docker_memory_bytes": 7902412800,
+      "raw_sha256": "0923f419860a93875ba1775f88c9210ed754ec9331cdbd8b1c414b45032d7099"
+    },
+    "status": "PASS_BOUNDED_READ_SMOKE"
+  },
+  "ai": {
+    "status": "PASS",
+    "prompt_version": "catalog-answer-v4",
+    "generation_status": "PASS",
+    "latency_status": "FAIL",
+    "latency_target_ms": 4000,
+    "human_review_status": "REQUIRED",
+    "catalog_products": 3,
+    "metrics": {
+      "cases": 4,
+      "generated_answers": 2,
+      "fallback_rate": 0.5,
+      "latency_p95_ms": 6328,
+      "token_samples": 3
+    },
+    "cost_usd": null
+  },
+  "ai_limit": "Four-case real provider smoke overlapping intermediate read load; two generated answers, explicit guarded injection/no-match fallbacks. Three token samples now retained including rejected prose. p95 6328ms exceeds 4s target; no representative dataset, human quality acceptance or reconciled billing.",
+  "remaining": [
+    "Target marketplace dataset/mixed-workload capacity and continuous DB/queue/resource evidence; bounded read-smoke overload is fixed",
+    "Supported Refund provider and actual transfer/refund reconciliation",
+    "Full role/two-Store/revoked-permission/upload matrix",
+    "Representative consented AI dataset/model/quality and measured generation latency/cost",
+    "Mixed-Store/Voucher/uncertain-state recovery and actual SePay dashboard Checkout",
+    "Full Web/Android device and 98 FR/28 NFR rehearsal",
+    "AI generation latency still exceeds 4 seconds; no full NFR acceptance"
+  ],
+  "baseline": {
+    "runtime_revision": "2a2e376959d956257a722fcca35954e2fe572ecf",
+    "read_load": {
+      "profile": "smoke",
+      "vus": 100,
+      "duration_seconds": 30,
+      "think_seconds": 20,
+      "catalog_products": 3,
+      "catalog": {
+        "requests": 200,
+        "p95_ms": 708.8463514999999,
+        "failure_rate": 0,
+        "checks_rate": 1,
+        "raw_sha256": "99518b2ce8fce63008c990e82244ca16500afe37bcf6ffbc73f06d218fd955a4"
+      },
+      "related": {
+        "requests": 201,
+        "p95_ms": 1421.057028,
+        "failure_rate": 0.024875621890547265,
+        "checks_rate": 0.975,
+        "raw_sha256": "6115a150d0875f93b71dc1f6d697c8cc90fa2bf6b456378260a44a232c299ec0"
+      },
+      "status": "FAIL_RELATED_ERROR_THRESHOLD",
+      "limit": "Small seeded read workload; not full 100-user marketplace/mixed workload NFR acceptance"
+    },
+    "ai": {
+      "status": "PASS",
+      "generation_status": "PASS",
+      "human_review_status": "REQUIRED",
+      "catalog_products": 3,
+      "metrics": {
+        "cases": 4,
+        "generated_answers": 2,
+        "fallback_rate": 0.5,
+        "latency_p95_ms": 4837,
+        "token_samples": 2
+      },
+      "cost_usd": null
+    },
+    "ai_limit": "Four-case real provider smoke; two generated answers, invalid-response injection fallback and no-match fallback; p95 4837ms exceeds 4s target. No representative recommendation data or reconciled billing."
+  },
+  "intermediate": {
+    "revision": "49ce825c99240dff525d1f93556954ab685b2edd",
+    "related_runs": [
+      {
+        "name": "related-1",
+        "requests": 201,
+        "p95_ms": 1605.595538,
+        "error_rate": 0.2935323383084577
+      },
+      {
+        "name": "related-2",
+        "requests": 201,
+        "p95_ms": 1197.418179,
+        "error_rate": 0.004975124378109453
+      }
+    ],
+    "ai_note": "Prompt v4 evaluation overlapped the intermediate read smoke; not an isolated provider benchmark."
+  }
+}
