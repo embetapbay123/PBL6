@@ -3227,7 +3227,7 @@
       "route": "/stores/{id}/products",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -3433,7 +3433,7 @@
       "route": "/store/products",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -3632,7 +3632,7 @@
       "route": "/store/products",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -3865,7 +3865,7 @@
       "route": "/store/products/{id}",
       "internal": false,
       "service": "M1",
-      "status": "IMPLEMENTED_SAMPLE",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4111,7 +4111,7 @@
       "route": "/store/products/{id}/variants",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -4211,7 +4211,7 @@
       "route": "/store/products/{id}/images",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -5101,7 +5101,7 @@
       "route": "/orders/batches",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -6203,7 +6203,7 @@
       "route": "/me/orders/{id}/cancel",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -6871,7 +6871,7 @@
       "route": "/store/orders/{id}/cancel",
       "internal": false,
       "service": "M2",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -9644,7 +9644,7 @@
       "route": "/admin/roles/{id}",
       "internal": false,
       "service": "M3",
-      "status": "IMPLEMENTED",
+      "status": "NOT_IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -9858,7 +9858,9 @@
                           "PROVIDER_UNAVAILABLE",
                           "PROVIDER_INVALID_RESPONSE",
                           "NO_MATCH",
-                          "MODEL_SELECTED"
+                          "MODEL_SELECTED",
+                          "MODEL_GENERATED",
+                          "CATALOG_CHANGED"
                         ]
                       }
                     },
@@ -10024,7 +10026,9 @@
                 "PROVIDER_UNAVAILABLE",
                 "PROVIDER_INVALID_RESPONSE",
                 "NO_MATCH",
-                "MODEL_SELECTED"
+                "MODEL_SELECTED",
+                "MODEL_GENERATED",
+                "CATALOG_CHANGED"
               ]
             }
           },
@@ -10189,7 +10193,9 @@
                                 "PROVIDER_UNAVAILABLE",
                                 "PROVIDER_INVALID_RESPONSE",
                                 "NO_MATCH",
-                                "MODEL_SELECTED"
+                                "MODEL_SELECTED",
+                                "MODEL_GENERATED",
+                                "CATALOG_CHANGED"
                               ]
                             }
                           },

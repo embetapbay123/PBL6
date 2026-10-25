@@ -4,7 +4,7 @@ Owner: Công. Liên quan [AI-02 #56](https://github.com/embetapbay123/PBL6/issue
 
 ## Cấu hình và chạy
 
-Chạy setup/build/migration/seed theo [README](../../README.md). Migration mới là `backend/ai-service/migrations/006_ai_runtime.sql`; không sửa migration cũ. Sau migration, đặt `AI_MODE=real`, `CHAT_PROVIDER=none` trong cấu hình local được ignore rồi recreate M4. `AI_MODE=mock` vẫn là chế độ mẫu có nhãn riêng. Không commit `.env` hoặc key.
+Chạy setup/build/migration/seed theo [README](../../README.md). Migration runtime là `backend/ai-service/migrations/006_ai_runtime.sql`, trace provider dùng migration 007; không sửa migration cũ. Runtime dùng `AI_MODE=real`, provider/model theo [bàn giao Week 3](cong-week3-handoff.md). Runner nghiệm thu tự cấu hình `CHAT_PROVIDER=none` trong stack riêng. `AI_MODE=mock` vẫn là chế độ mẫu có nhãn riêng. Không commit `.env` hoặc key.
 
 ```powershell
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build m4 worker-m4 tools
@@ -13,7 +13,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up 
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
 ```
 
-Provider chưa được chọn: `CHAT_PROVIDER=none` không gọi model, trả `fallback=true` và `fallback_reason=PROVIDER_NOT_CONFIGURED`. Đây là gợi ý từ Catalog thật với câu trả lời do server tạo, không phải chất lượng LLM được nghiệm thu. Chỉ lỗi provider cho phép fallback; Catalog/identity lỗi trả lỗi dependency, không dùng fixture hoặc giá cache thay thế.
+OpenCode Go đã có một lượt generation thật ngày 13/10, xem [cấu hình/bằng chứng Week 3](cong-week3-handoff.md); quality/latency/billing acceptance vẫn còn. `CHAT_PROVIDER=none` là lựa chọn rõ cho môi trường chưa cấu hình model hoặc bộ nghiệm thu cô lập: không gọi model, trả `fallback=true` và `fallback_reason=PROVIDER_NOT_CONFIGURED` khi có candidate. Đây là gợi ý từ Catalog thật với câu trả lời do server tạo, không phải chất lượng LLM được nghiệm thu. Chỉ lỗi provider cho phép fallback; Catalog/identity lỗi trả lỗi dependency, không dùng fixture hoặc giá cache thay thế.
 
 Khi có Ollama, cấu hình `CHAT_PROVIDER=ollama`, `CHAT_MODEL_URL=http://host.docker.internal:11434`, `CHAT_MODEL=<model đã cài>`. Adapter không cài/download model hoặc gửi API key. URL do operator cấu hình, không nhận từ request. [Ollama Chat API](https://docs.ollama.com/api/chat) dùng structured output, non-streaming và temperature 0. Model chỉ chọn tối đa 3 ID từ tối đa 8 Product; server tạo chữ/giá/card sau khi lookup lại Catalog. Không cho model gọi tool hoặc sửa dữ liệu nghiệp vụ. Model có timeout tổng 2 giây, không retry; response bị giới hạn 64 KiB. Toàn luồng có deadline 4 giây cho dependency/network; thời gian DB chờ pool/transaction nằm ngoài deadline này và phải đo khi test tải.
 
@@ -38,7 +38,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exe
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m app.chat.retention
 ```
 
-Retention job xóa message/session sau 30 ngày, telemetry sau 7 ngày, budget quá 2 ngày. Hệ thống loại phiên quá 30 ngày khỏi API ngay cả trước khi job chạy. Operator phải chạy job định kỳ; chưa có scheduler tự động.
+Retention job xóa message/session sau 30 ngày, telemetry sau 7 ngày, budget quá 2 ngày. Hệ thống loại phiên quá 30 ngày khỏi API ngay cả trước khi job chạy. `worker-m4` chạy retention mỗi 10 phút, kể cả queue nhàn rỗi; lệnh CLI trên dùng khi operator muốn chạy riêng. Worker phải hoạt động; đây không phải scheduler ngoài tiến trình.
 
 ## Recommendation và evaluation
 
@@ -58,7 +58,7 @@ Evaluation chia timestamp theo từng User 60/20/20, timestamp bằng nhau nằm
 
 Metrics phải resolve scope qua M3. Admin xem platform/lọc Store; Owner chỉ Store của mình. Trace nhiều Store hoặc không Store bị loại khỏi aggregate Owner; không trả model/global evaluation/dataset count cho Owner. Evaluation riêng Store chưa được tạo bởi job global, nên Owner có thể `NOT_RUN`; không đẩy metric toàn sàn vào response Store.
 
-Các test PostgreSQL dùng schema cô lập, Catalog/provider test double có nhãn test. Test không chứng minh model ngoài đời, độ chính xác RAG trên câu hỏi thật, hay producer M1/M2 đầy đủ. Các issue rộng giữ mở đến khi đủ bằng chứng riêng: producer thật #55; dataset/quality/report #56/#58; provider và latency/cost benchmark #57; checkout/Refund/recovery giữ đúng owner và scope #52/#53.
+Các test PostgreSQL dùng schema cô lập, Catalog/provider test double có nhãn test. Bộ [nghiệm thu bốn service](cross-service-acceptance.md) bổ sung M1 search/view/ProductChanged, M2 Cart/online/COD OrderCompleted và M3 UserLocked thật qua RabbitMQ, cùng live consent/session/history/index invalidation/current cards/metrics scope. Toàn bộ traffic này là kiểm thử có kiểm soát, không phải dataset người dùng hoặc quality/cost benchmark. Store/membership lifecycle còn theo owner M3; dataset/quality/report #56/#58, generated answer benchmark #57 và checkout/Refund/recovery #52/#53 giữ các tiêu chí riêng.
 
 
 ## Evaluation controls cập nhật 07/10/2026

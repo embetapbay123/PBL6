@@ -1,5 +1,7 @@
 # Week 3 — 13–19/10 — hoàn thiện BE, provider và các điểm nối
 
+> Chốt lại ngày **20/10/2026**: phần dưới là kế hoạch lịch sử 13–19/10. Công việc hiện tại theo [Week 4](week4.md). Catalog #111–113, M3 #109, OpenCode Go #106 và Voucher #105 đã merge; domain/SePay Test webhook đã xác minh. Confirm/Cancel, email/effective permission, Refund/evaluation và UI/APK chưa đủ nghiệm thu vẫn giữ issue mở theo owner, không coi gate 19/10 đã đạt. FLOW-01 và WEB-01 đã Done sau audit; không làm lại task nền.
+
 Cập nhật **13/10/2026**. Demo đầy đủ vào **thứ Ba 03/11/2026**. [Phạm vi/gate demo](demo-2026-11-03.md) · [Roadmap 71 task](roadmap.md) · [Kanban](https://github.com/users/embetapbay123/projects/1/views/3). Giữ owner và acceptance; không dùng lịch làm bằng chứng Done. Tuần gồm 5 phiên làm việc trong khoảng lịch dưới đây.
 
 ## Việc từng người

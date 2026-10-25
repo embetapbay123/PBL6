@@ -56,7 +56,7 @@ export class AdministrationRepository {
         { status: updated.status, version: updated.version, reason }
       );
 
-      await emitEvent(
+      if (updated.status !== 'ACTIVE') await emitEvent(
         manager,
         'UserLocked',
         {

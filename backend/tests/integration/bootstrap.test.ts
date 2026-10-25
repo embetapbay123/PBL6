@@ -47,7 +47,7 @@ test('sample product write checks role, version and commits audit/outbox atomica
  const owner=await login('owner@pbl6.test'),customer=await login();
  const patch=(token:string,body:unknown,id=product.id)=>fetch(base+'/store/products/'+id,{method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json','X-Correlation-Id':'integration-product-write'},body:JSON.stringify(body)});
  expect((await patch(customer.access_token,{title:product.title,expected_version:product.version})).status).toBe(403);
- expect((await patch(owner.access_token,{status:'STOPPED',expected_version:product.version})).status).toBe(501);
+ expect((await patch(owner.access_token,{status:'UNKNOWN_STATUS',expected_version:product.version})).status).toBe(422);
  expect((await patch(owner.access_token,{title:product.title,expected_version:product.version},randomUUID())).status).toBe(404);
  const result=await patch(owner.access_token,{title:product.title,expected_version:product.version});expect(result.status).toBe(200);
  expect((await result.json() as any).version).toBe(product.version+1);

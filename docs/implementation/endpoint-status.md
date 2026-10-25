@@ -21,7 +21,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /auth/logout` | logout | M3 / auth | Trí | IMPLEMENTED_SAMPLE |
 | `POST /auth/reset-password` | resetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `POST /auth/reset-password/confirm` | confirmResetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
-| `POST /auth/change-password` | changePassword | M3 / auth | Trí | IMPLEMENTED |
+| `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
@@ -45,12 +45,12 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /product-types` | listProductTypes | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /products` | listProducts | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /products/{id}` | getProduct | M1 / catalog | Thịnh | IMPLEMENTED |
-| `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `POST /store/products` | createProduct | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED_SAMPLE |
-| `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
-| `POST /store/products/{id}/images` | addProductImage | M1 / catalog | Thịnh | NOT_IMPLEMENTED |
+| `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
+| `POST /store/products` | createProduct | M1 / catalog | Thịnh | IMPLEMENTED |
+| `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED |
+| `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | IMPLEMENTED |
+| `POST /store/products/{id}/images` | addProductImage | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /store/inventory` | listStoreInventory | M1 / inventory | Thịnh | IMPLEMENTED |
 | `POST /store/inventory/adjustments` | adjustInventory | M1 / inventory | Thịnh | IMPLEMENTED |
 | `GET /store/inventory/movements` | listStockMovements | M1 / inventory | Thịnh | IMPLEMENTED |
@@ -59,7 +59,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /cart/items/{id}` | updateCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `DELETE /cart/items/{id}` | removeCartItem | M2 / cart | Hoa | IMPLEMENTED |
 | `POST /checkout/quotes` | quoteCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
-| `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /orders/batches` | confirmCheckout | M2 / order | Hoa | IMPLEMENTED |
 | `GET /orders/batches/{id}` | getPurchaseGroupOrders | M2 / order | Hoa | IMPLEMENTED |
 | `POST /orders/{id}/payment-attempts` | createPaymentAttempt | M2 / payment | Công | IMPLEMENTED |
 | `GET /payments/{id}` | getPayment | M2 / payment | Công | IMPLEMENTED |
@@ -67,11 +67,11 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /orders/{id}/refund` | getOrderRefund | M2 / payment | Công | IMPLEMENTED |
 | `GET /me/orders` | listOwnOrders | M2 / order | Hoa | IMPLEMENTED |
 | `GET /me/orders/{id}` | getOwnOrder | M2 / order | Hoa | IMPLEMENTED |
-| `POST /me/orders/{id}/cancel` | cancelOwnOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /me/orders/{id}/cancel` | cancelOwnOrder | M2 / order | Hoa | IMPLEMENTED |
 | `GET /store/orders` | listStoreOrders | M2 / order | Hoa | IMPLEMENTED |
 | `GET /store/orders/{id}` | getStoreOrder | M2 / order | Hoa | IMPLEMENTED |
 | `PATCH /store/orders/{id}/status` | transitionStoreOrder | M2 / order | Hoa | IMPLEMENTED |
-| `POST /store/orders/{id}/cancel` | cancelStoreOrder | M2 / order | Hoa | NOT_IMPLEMENTED |
+| `POST /store/orders/{id}/cancel` | cancelStoreOrder | M2 / order | Hoa | IMPLEMENTED |
 | `POST /store/orders/{id}/cod-collection` | collectCod | M2 / order | Hoa | NOT_IMPLEMENTED |
 | `POST /vouchers/validate` | validateVouchers | M2 / voucher | Hoa | IMPLEMENTED |
 | `GET /store/vouchers` | listStoreVouchers | M2 / voucher | Hoa | IMPLEMENTED |
@@ -92,7 +92,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /admin/orders` | listAllOrders | M2 / report | Hoa | IMPLEMENTED |
 | `GET /admin/dashboard` | getPlatformDashboard | M2 / report | Hoa | NOT_IMPLEMENTED |
 | `GET /admin/roles` | listRoles | M3 / administration | Trí | IMPLEMENTED |
-| `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | IMPLEMENTED |
+| `PATCH /admin/roles/{id}` | updateRole | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `POST /chat/sessions` | createChatSession | M4 / chat | Công | IMPLEMENTED_SAMPLE |
 | `POST /chat/sessions/{id}/messages` | sendChatMessage | M4 / chat | Công | IMPLEMENTED_SAMPLE |
 | `GET /me/chat/sessions` | listOwnChatSessions | M4 / chat | Công | IMPLEMENTED_SAMPLE |
@@ -115,6 +115,6 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
 
-updateRole checks optimistic versions and audits changes. Live role permissions are resolved from PostgreSQL for each request; platform.admin is required on ADMIN routes. Store staff permissions and status are resolved from active membership, so revocation applies immediately.
+Live role permissions are resolved from PostgreSQL for each authenticated request; platform.admin is required on ADMIN routes. Store staff permissions and status are resolved from active membership, so revocation applies immediately. Role permission mutation remains NOT_IMPLEMENTED on the current main baseline.
 
 Admin Web now exposes the M1 taxonomy/moderation workflows, but their API operations remain NOT_IMPLEMENTED; the UI will show the API error until M1 handlers are delivered. The AI metrics page reads the existing IMPLEMENTED_SAMPLE operation and does not replace the AI evaluation/provider acceptance.

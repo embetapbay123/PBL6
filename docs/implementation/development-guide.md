@@ -76,10 +76,12 @@ The M3 PostgreSQL and HTTP regression suites require a disposable `m3_test` data
 
 ```powershell
 python scripts/setup_local.py
+npm run build:backend
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml build m3 tools
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration up -d --wait postgres redis rabbitmq m3-test-postgres
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml run --rm -e MIGRATE_SERVICES=M3 -e MIGRATE_M3_TEST_DATABASE=1 tools node dist/shared/src/migrate.js
-docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml run --rm tools node dist/shared/src/seed-m3-test.js
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration run --rm -e MIGRATE_SERVICES=M3 -e MIGRATE_M3_TEST_DATABASE=1 tools node dist/shared/src/migrate.js
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration run --rm tools node dist/shared/src/seed-m3-test.js
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration up -d
 python scripts/wait_local.py
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration run --rm tools npm run test:integration -- --ci

@@ -52,11 +52,24 @@ describe('AdministrationRepository event contracts', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  test('role permission update delegates to the repository', () => {
+  test('activating a User does not emit a lock that withdraws fresh personalization consent', async () => {
+    const manager = { query: jest.fn()
+      .mockResolvedValueOnce([{ id: 'user-1', version: 2, status: 'LOCKED' }])
+      .mockResolvedValueOnce([{ id: 'user-1', version: 3, status: 'ACTIVE' }])
+      .mockResolvedValue([]) };
+    transaction.mockImplementation(async (callback: any) => callback(manager));
+    await new AdministrationRepository().updateUserState('user-1', 'ACTIVE', 'reason', 2, 'actor', 'corr');
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  test('role permission update is explicitly disabled without touching the repository', () => {
     const repository = { updateRole: jest.fn() };
     const service = new AdministrationService(repository as any);
-    service.updateRole('role-1', ['perm-1'], 3, 'actor', 'corr');
-    expect(repository.updateRole).toHaveBeenCalledWith('role-1', ['perm-1'], 3, 'actor', 'corr');
+    let error: any;
+    try { service.updateRole('role-1', ['perm-1'], 3, 'actor', 'corr'); } catch (cause) { error = cause; }
+    expect(error.getStatus()).toBe(501);
+    expect(error.getResponse()).toMatchObject({ code: 'FEATURE_NOT_IMPLEMENTED' });
+    expect(repository.updateRole).not.toHaveBeenCalled();
   });
 
   test('role permission update rejects a stale version before changing permissions', async () => {

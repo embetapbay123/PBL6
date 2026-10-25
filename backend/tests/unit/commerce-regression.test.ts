@@ -9,8 +9,8 @@ import { schemaErrors } from '../../shared/src/contract-validation';
 import bundle from '../../shared/src/contracts.runtime.generated.json';
 import { CheckoutQuoteRecord } from '../../commerce-service/src/order/quote-store';
 
-const manager={query:jest.fn()};
-jest.mock('../../shared/src/database',()=>({database:{get manager(){return manager;},transaction:jest.fn(async(work:any)=>work(manager))}}));
+const manager={query:jest.fn(),queryRunner:{isTransactionActive:true}};
+jest.mock('../../shared/src/database',()=>({database:{get manager(){return manager;},query:(...args:any[])=>manager.query(...args),transaction:jest.fn(async(work:any)=>work(manager))}}));
 const USER=randomUUID(),STORE=randomUUID(),PRODUCT=randomUUID(),VARIANT=randomUUID(),ITEM=randomUUID(),ADDRESS=randomUUID();
 const customer={user_id:USER,access_token:'current-token',roles:['CUSTOMER']};
 const seller={user_id:USER,store_membership:{store_id:STORE,role:'SELLER',permissions:['order.store.read_status_cancel','cod.store.collect']}};
@@ -26,11 +26,15 @@ function service(payments?:(m:any)=>PaymentPort) {
 const order=(status='SHIPPED')=>({id:randomUUID(),purchase_group_id:randomUUID(),customer_user_id:USER,store_id:STORE,status,version:1,payment_method:'COD',
   address_snapshot:{},goods_vnd:'100000',store_discount_vnd:'0',platform_discount_vnd:'0',shipping_vnd:'30000',payable_vnd:'130000',payment_expires_at:null,created_at:new Date(),items:[]} as any);
 beforeEach(()=>{
-  jest.restoreAllMocks();manager.query.mockReset();records=new Map();
-  call=jest.fn(async(operation:string)=>{
+  jest.restoreAllMocks();manager.query.mockReset();manager.query.mockResolvedValue([]);records=new Map();
+  call=jest.fn(async(operation:string,payload:any)=>{
     if(operation==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
     if(operation==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
-    throw new Error('unexpected operation');
+    if(operation==='ReserveInventory') return {reservations:[{id:randomUUID(),order_id:payload?.items?.[0]?.order_id ?? randomUUID(),variant_id:VARIANT,quantity:1,expires_at:new Date(Date.now()+600000).toISOString()}]};
+    if(operation==='ConsumeReservation') return {operation_id:payload?.operation_id ?? randomUUID(),status:'APPLIED'};
+    if(operation==='ReleaseReservation') return {operation_id:randomUUID(),status:'APPLIED'};
+    if(operation==='RestockOrder') return {operation_id:payload?.operation_id ?? randomUUID(),status:'APPLIED'};
+    throw new Error('unexpected operation: '+operation);
   });
   jest.spyOn(OrderRepository.prototype,'findCartItemsWithOwnership').mockResolvedValue([{id:ITEM,cart_id:randomUUID(),product_id:PRODUCT,variant_id:VARIANT,store_id:STORE,quantity:1}]);
 });
@@ -68,12 +72,57 @@ test('expired or changed quote is rejected',async()=>{
   records.get(q.quote_id)!.expires_at=new Date(0).toISOString();
   await expect(s.confirmCheckout(confirm,'key',customer,'corr')).rejects.toMatchObject({status:409,response:{code:'QUOTE_EXPIRED'}});
 });
-test('valid confirm remains 501 before any reservation or DB writes while ports are missing',async()=>{
-  const s=service(),q=await s.quoteCheckout(input,customer,'corr');
-  manager.query.mockClear();call.mockClear();
-  await expect(s.confirmCheckout({...input,quote_id:q.quote_id,expected_payable_total_vnd:130000},'key',customer,'corr')).rejects.toMatchObject({status:501});
-  expect(manager.query).not.toHaveBeenCalled();expect(call).not.toHaveBeenCalled();
+test('BUG-QUOTE-01: Confirm revalidates quote and rejects changed price/stock/address before reserve or DB effects', async () => {
+  const s = service(), q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+
+  // Upstream price change
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'QuoteVariants') {
+      return { items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 120000, available_quantity: 10, version: 1 }] };
+    }
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-price', customer, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'QUOTE_CHANGED' },
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+  expect(manager.query).not.toHaveBeenCalledWith(expect.stringMatching(/INSERT INTO/i), expect.anything());
+
+  // Upstream stock exhausted (INSUFFICIENT_STOCK)
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'QuoteVariants') {
+      return { items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 0, version: 1 }] };
+    }
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-stock', customer, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'INSUFFICIENT_STOCK' },
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+  expect(manager.query).not.toHaveBeenCalledWith(expect.stringMatching(/INSERT INTO/i), expect.anything());
+
+  // Upstream address invalid / deleted (404)
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'ResolveCheckoutContext') throw new ApiError(404, 'ADDRESS_NOT_FOUND', 'Not found');
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-addr', customer, 'corr')).rejects.toMatchObject({
+    status: 404,
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+  expect(manager.query).not.toHaveBeenCalledWith(expect.stringMatching(/INSERT INTO/i), expect.anything());
 });
+
+// Checkout transaction, concurrency and compensation assertions use real PostgreSQL
+// in tests/integration/order-recovery.test.ts rather than SQL-return stubs.
+
 test('revoked Seller permission blocks reading Store orders',async()=>{
   await expect(service().listStoreOrders({}, {...seller,store_membership:{...seller.store_membership,permissions:[]}},'corr')).rejects.toMatchObject({status:403});
 });
@@ -114,10 +163,11 @@ test('wrong Payment manager is rejected',async()=>{
   jest.spyOn(OrderRepository.prototype,'lockPaymentByOrderId').mockResolvedValue({status:'PENDING',collectible_vnd:'130000'} as any);
   await expect(service(()=>({manager:{}} as any)).collectCod(randomUUID(),{expected_version:1,amount_collected_vnd:130000},seller,'corr')).rejects.toThrow('TRANSACTION_MANAGER_MISMATCH');
 });
-test('cancellation leaves data untouched while compensation worker is not delivered',async()=>{
+test('cancellation leaves data untouched when real inventory context is missing',async()=>{
   jest.spyOn(OrderRepository.prototype,'lockCustomerOrderById').mockResolvedValue(order('PENDING'));
+  jest.spyOn(OrderRepository.prototype,'lockPaymentByOrderId').mockResolvedValue({id:randomUUID(),method:'COD',status:'PENDING',collected_vnd:'0'} as any);
   const write=jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory');
-  await expect(service().cancelOwnOrder(randomUUID(),{expected_version:1},customer,'corr')).rejects.toMatchObject({status:501});
+  await expect(service().cancelOwnOrder(randomUUID(),{expected_version:1},customer,'corr')).rejects.toMatchObject({status:409,response:{code:'INVENTORY_CONTEXT_MISSING'}});
   expect(write).not.toHaveBeenCalled();
 });
 test('quota counts ledger, including per Customer, without decrementing configured limit',async()=>{
@@ -127,4 +177,88 @@ test('quota counts ledger, including per Customer, without decrementing configur
   manager.query.mockResolvedValue([{total:1,customer:1}]);
   expect(await new OrderRepository(manager as any).voucherAvailable(voucher,USER)).toBe(false);
   expect(voucher.usage_limit).toBe(1);
+});
+
+test('BUG-QUOTE-01: available_quantity 10->9 changes snapshot and rejects confirm with 409 QUOTE_CHANGED without reserve', async () => {
+  const s = service(), q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'QuoteVariants') {
+      return { items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 9, version: 0 }] };
+    }
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-stock-reduced', customer, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'QUOTE_CHANGED' },
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+});
+
+test('BUG-QUOTE-01: version 0->1 changes snapshot and rejects confirm with 409 QUOTE_CHANGED without reserve', async () => {
+  const s = service(), q = await s.quoteCheckout(input, customer, 'corr');
+  const confirm = { ...input, quote_id: q.quote_id, expected_payable_total_vnd: 130000 };
+  const originalCall = call.getMockImplementation()!;
+  call.mockImplementation(async (op: string, payload: any) => {
+    if (op === 'QuoteVariants') {
+      return { items: [{ variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 1 }] };
+    }
+    return originalCall(op, payload);
+  });
+  manager.query.mockClear();
+  await expect(s.confirmCheckout(confirm, 'key-version-changed', customer, 'corr')).rejects.toMatchObject({
+    status: 409,
+    response: { code: 'QUOTE_CHANGED' },
+  });
+  expect(call).not.toHaveBeenCalledWith('ReserveInventory', expect.anything(), expect.anything());
+});
+
+test('BUG-QUOTE-01: Cart rows returned in reverse order keep identical canonical snapshot hash', async () => {
+  const ITEM_2 = randomUUID(), VARIANT_2 = randomUUID(), PRODUCT_2 = randomUUID();
+  const twoItemInput = {
+    cart_item_ids: [ITEM, ITEM_2],
+    address_id: ADDRESS,
+    payment_methods: { [STORE]: 'COD' as const },
+  };
+  const catalogDir = {
+    product: async (id: string) => ({
+      id, store_id: STORE, title: 'Product ' + id, variants: [{ id: id === PRODUCT ? VARIANT : VARIANT_2, sku: 'SKU-' + id, price_vnd: 100000 }],
+    } as any),
+  };
+  const s = new OrderService((()=>({call})) as any, {
+    catalog: catalogDir,
+    quotes: { put: async(id, record)=>{ records.set(id, record); }, get: async id=>records.get(id) },
+  });
+  call.mockImplementation(async (op: string) => {
+    if (op === 'QuoteVariants') {
+      return {
+        items: [
+          { variant_id: VARIANT, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 0 },
+          { variant_id: VARIANT_2, store_id: STORE, quantity: 1, price_vnd: 100000, available_quantity: 10, version: 0 },
+        ],
+      };
+    }
+    if (op === 'ResolveCheckoutContext') {
+      return { address_snapshot: { id: ADDRESS }, stores: [{ id: STORE, name: 'Store thật', shipping_fee_vnd: 30000, version: 1 }] };
+    }
+    throw new Error('unexpected: ' + op);
+  });
+
+  // First order in forward SQL order
+  jest.spyOn(OrderRepository.prototype, 'findCartItemsWithOwnership').mockResolvedValueOnce([
+    { id: ITEM, cart_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, store_id: STORE, quantity: 1 },
+    { id: ITEM_2, cart_id: randomUUID(), product_id: PRODUCT_2, variant_id: VARIANT_2, store_id: STORE, quantity: 1 },
+  ]);
+  const q1 = await s.quoteCheckout(twoItemInput, customer, 'corr');
+
+  // Second order in reverse SQL order
+  jest.spyOn(OrderRepository.prototype, 'findCartItemsWithOwnership').mockResolvedValueOnce([
+    { id: ITEM_2, cart_id: randomUUID(), product_id: PRODUCT_2, variant_id: VARIANT_2, store_id: STORE, quantity: 1 },
+    { id: ITEM, cart_id: randomUUID(), product_id: PRODUCT, variant_id: VARIANT, store_id: STORE, quantity: 1 },
+  ]);
+  const q2 = await s.quoteCheckout(twoItemInput, customer, 'corr');
+
+  expect(records.get(q1.quote_id)!.snapshot_hash).toBe(records.get(q2.quote_id)!.snapshot_hash);
 });
