@@ -18,6 +18,8 @@ services:
   m3:
     environment:
       M3_DATABASE_URL: postgresql://m3_test:${M3_TEST_DB_PASSWORD:?M3_TEST_DB_PASSWORD is required}@m3-test-postgres:5432/m3_test
+      EMAIL_ADAPTER: capture
+      PBL6_REQUIRE_M3_INTEGRATION: '1'
     depends_on:
       m3-test-postgres:
         condition: service_healthy

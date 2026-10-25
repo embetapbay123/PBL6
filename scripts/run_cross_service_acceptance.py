@@ -43,6 +43,7 @@ def make_config(project: str, folder: Path) -> dict:
                   "SEED_PASSWORD", "SEPAY_WEBHOOK_SECRET", "ACCEPTANCE_CONTROL_KEY")}
     common.update({
         "NODE_ENV": "development", "PBL6_ACCEPTANCE_ISOLATED": "1",
+        "EMAIL_ADAPTER": "mock",
         "ACCEPTANCE_RUN_ID": project, "WEB_ORIGIN": "http://acceptance.invalid",
         "COOKIE_SECURE": "false", "REDIS_URL": "redis://redis:6379",
         "RABBITMQ_URL": f"amqp://pbl6:{values['RABBIT_PASSWORD']}@rabbitmq:5672",

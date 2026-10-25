@@ -2,7 +2,7 @@ import { createServer, Server as NetServer } from 'node:net';
 import { connect as connectTls, createServer as createTlsServer, ConnectionOptions, Server as TlsServer, TLSSocket } from 'node:tls';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SmtpEmailAdapter, SmtpSettings } from '../../identity-store-service/src/auth/smtp-email.adapter';
+import { createEmailAdapter, IntegrationCaptureEmailAdapter, SmtpEmailAdapter, SmtpSettings } from '../../identity-store-service/src/auth/smtp-email.adapter';
 
 const key = readFileSync(join(__dirname, 'fixtures/smtp-test-key.pem'));
 const cert = readFileSync(join(__dirname, 'fixtures/smtp-test-cert.pem'));
@@ -48,6 +48,14 @@ function adapter(port: number) {
 }
 
 describe('SmtpEmailAdapter local SMTP exchange', () => {
+  it('allows capture delivery only for the explicitly isolated M3 integration runtime', async () => {
+    expect(() => createEmailAdapter({ NODE_ENV: 'development', EMAIL_ADAPTER: 'capture' } as NodeJS.ProcessEnv))
+      .toThrow('Invalid EMAIL_ADAPTER configuration');
+    const capture = createEmailAdapter({ NODE_ENV: 'development', EMAIL_ADAPTER: 'capture', PBL6_REQUIRE_M3_INTEGRATION: '1' } as NodeJS.ProcessEnv);
+    expect(capture).toBeInstanceOf(IntegrationCaptureEmailAdapter);
+    await expect(capture.sendStaffInvitationEmail?.('staff@example.test')).resolves.toBeUndefined();
+  });
+
   it('sends verification, password reset, and staff invitation through complete SMTP exchanges', async () => {
     const peer = smtpPeer();
     const port = await listen(peer.server);

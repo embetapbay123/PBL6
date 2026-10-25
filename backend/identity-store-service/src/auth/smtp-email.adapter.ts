@@ -20,9 +20,17 @@ export class DevelopmentMockEmailAdapter implements IEmailAdapter {
   async sendStaffInvitationEmail(_email: string): Promise<void> { this.unavailable(); }
 }
 
+// Only the disposable M3 HTTP integration stack can select this no-network adapter.
+export class IntegrationCaptureEmailAdapter implements IEmailAdapter {
+  async sendVerificationEmail(_email: string, _token: string): Promise<void> {}
+  async sendPasswordResetEmail(_email: string, _token: string): Promise<void> {}
+  async sendStaffInvitationEmail(_email: string): Promise<void> {}
+}
+
 export function createEmailAdapter(env: NodeJS.ProcessEnv = process.env): IEmailAdapter {
   const mode = env.EMAIL_ADAPTER ?? 'smtp';
   if (mode === 'mock' && env.NODE_ENV === 'development') return new DevelopmentMockEmailAdapter();
+  if (mode === 'capture' && env.NODE_ENV === 'development' && env.PBL6_REQUIRE_M3_INTEGRATION === '1') return new IntegrationCaptureEmailAdapter();
   if (mode !== 'smtp') throw new Error('Invalid EMAIL_ADAPTER configuration');
   return new SmtpEmailAdapter(smtpSettings(env));
 }
