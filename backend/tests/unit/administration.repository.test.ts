@@ -62,14 +62,12 @@ describe('AdministrationRepository event contracts', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  test('role permission update is explicitly disabled without touching the repository', () => {
-    const repository = { updateRole: jest.fn() };
+  test('role permission update delegates to the repository implementation', async () => {
+    const updated = { id: 'role-1', permission_ids: ['perm-1'], version: 4 };
+    const repository = { updateRole: jest.fn().mockResolvedValue(updated) };
     const service = new AdministrationService(repository as any);
-    let error: any;
-    try { service.updateRole('role-1', ['perm-1'], 3, 'actor', 'corr'); } catch (cause) { error = cause; }
-    expect(error.getStatus()).toBe(501);
-    expect(error.getResponse()).toMatchObject({ code: 'FEATURE_NOT_IMPLEMENTED' });
-    expect(repository.updateRole).not.toHaveBeenCalled();
+    await expect(service.updateRole('role-1', ['perm-1'], 3, 'actor', 'corr')).resolves.toEqual(updated);
+    expect(repository.updateRole).toHaveBeenCalledWith('role-1', ['perm-1'], 3, 'actor', 'corr');
   });
 
   test('role permission update rejects a stale version before changing permissions', async () => {
