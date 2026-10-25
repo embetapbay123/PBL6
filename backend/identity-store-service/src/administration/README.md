@@ -6,7 +6,7 @@ Owner: Trí
 - `PATCH /admin/users/{id}` — updateUserState: **IMPLEMENTED**
 - `GET /admin/stores` — listStores: **IMPLEMENTED**
 - `PATCH /admin/stores/{id}` — updateStoreState: **IMPLEMENTED**
-- `PATCH /admin/roles/{id}` - updateRole: **NOT_IMPLEMENTED** on the current main baseline (HTTP 501, no writes)
+- `PATCH /admin/roles/{id}` - updateRole: transactionally replaces role permissions, checks version and permission IDs, audits the change. Effective permissions are resolved from live database role assignments.
 
 Global role permissions are resolved from the database for each authenticated request. The `ADMIN` role also requires `platform.admin`; removing that permission takes effect on the next request without waiting for JWT expiry. Store permissions remain scoped to the active store membership.
 
