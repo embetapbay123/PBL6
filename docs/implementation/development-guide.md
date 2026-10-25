@@ -69,3 +69,20 @@ M1/M2/M3/worker dùng image pbl6-node:local; rebuild m1 cập nhật image chung
 Trên Linux, setup ghi LOCAL_UID/LOCAL_GID của người chạy vào cấu hình local để M3 đọc khóa private bind-mount có mode0600; Windows dùng1000:1000. Chạy setup bằng cùng tài khoản tạo cấu hình/khóa. Không commit khóa hoặc đổi private key thành world-readable để sửa lỗi quyền file.
 
 Member bàn giao module, migration, contract change, test result và lỗi chưa xử lý. Công review shared/infrastructure và luồng tích hợp. Xem [verification plan](verification-plan.md).
+
+## Isolated M3 integration tests
+
+The M3 PostgreSQL and HTTP regression suites require a disposable `m3_test` database and the Compose M3 service pointed at that database. They never use the demo M3 database. To provision the local prerequisites, run:
+
+```powershell
+python scripts/setup_local.py
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration up -d --wait postgres redis rabbitmq m3-test-postgres
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml run --rm -e MIGRATE_SERVICES=M3 -e MIGRATE_M3_TEST_DATABASE=1 tools node dist/shared/src/migrate.js
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml run --rm tools node dist/shared/src/seed-m3-test.js
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration up -d
+python scripts/wait_local.py
+docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration run --rm tools npm run test:integration -- --ci
+```
+
+`setup_local.py` generates the isolated database password and seed password in the ignored `infrastructure/.env`; do not commit that file. The Compose test overlay is opt-in and does not alter the normal demo stack. If these prerequisites are absent, local Jest reports gated integration suites as skipped; CI sets `PBL6_REQUIRE_M3_INTEGRATION=1`, which fails before tests when a required URL, seed credential, or isolated database target is missing.

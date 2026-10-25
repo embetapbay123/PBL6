@@ -19,13 +19,19 @@ jobs:
       - run: python scripts/setup_local.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up -d --wait postgres redis rabbitmq
+      - name: Start disposable M3 integration PostgreSQL
+        run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration up -d --wait m3-test-postgres
       - run: python scripts/check_database_schema.py
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/migrate.js
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools node dist/shared/src/seed.js
+      - name: Migrate and seed isolated M3 integration database
+        run: |
+          docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml run --rm -e MIGRATE_SERVICES=M3 -e MIGRATE_M3_TEST_DATABASE=1 tools node dist/shared/src/migrate.js
+          docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml run --rm tools node dist/shared/src/seed-m3-test.js
       - name: Start infrastructure and wait for gateway
         run: |
           set -o pipefail
-          npm run infra:up
+          docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration up -d
           if ! python scripts/wait_local.py; then
             docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml ps --all
             docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml logs --no-color --tail=200 m1 m2 m3 m4 gateway
@@ -33,14 +39,15 @@ jobs:
           fi
       - name: Rebuild tools image from the checked out commit
         run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml build tools
-      - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration
+      - name: Run PostgreSQL and HTTP integration suites without skips
+        run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration run --rm tools npm run test:integration -- --ci
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
       - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
       - run: npm --prefix frontend run test:e2e
       - if: always()
         run: |
           if [ -f infrastructure/.env ]; then
-            npm run infra:down
+            docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration down --volumes --remove-orphans
           else
             echo "Skipping infrastructure teardown because setup_local.py did not create infrastructure/.env."
           fi

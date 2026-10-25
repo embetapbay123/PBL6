@@ -107,6 +107,7 @@ services:
       M2_DATABASE_URL: postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2
       M3_DATABASE_URL: postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3
       M4_DATABASE_URL: postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4
+      AI_MODE: '${AI_MODE:-mock}'
     restart: 'no'
     command: [node, dist/shared/src/migrate.js]
 volumes:

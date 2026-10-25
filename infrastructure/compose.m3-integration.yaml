@@ -1,0 +1,30 @@
+# Opt-in overlay for the backend's isolated M3 PostgreSQL/HTTP integration suite.
+# Keep this out of the normal demo stack; tests get their own disposable database.
+services:
+  m3-test-postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    profiles: [m3-integration]
+    environment:
+      POSTGRES_DB: m3_test
+      POSTGRES_USER: m3_test
+      POSTGRES_PASSWORD: ${M3_TEST_DB_PASSWORD:?M3_TEST_DB_PASSWORD is required}
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -h 127.0.0.1 -U m3_test -d m3_test']
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    restart: 'no'
+
+  m3:
+    environment:
+      M3_DATABASE_URL: postgresql://m3_test:${M3_TEST_DB_PASSWORD:?M3_TEST_DB_PASSWORD is required}@m3-test-postgres:5432/m3_test
+    depends_on:
+      m3-test-postgres:
+        condition: service_healthy
+
+  tools:
+    environment:
+      M3_TEST_DATABASE_URL: postgresql://m3_test:${M3_TEST_DB_PASSWORD:?M3_TEST_DB_PASSWORD is required}@m3-test-postgres:5432/m3_test
+      TEST_API_URL: http://gateway/api/v1
+      PBL6_REQUIRE_M3_INTEGRATION: '1'
+      PBL6_ISOLATED_TEST_REDIS: '1'

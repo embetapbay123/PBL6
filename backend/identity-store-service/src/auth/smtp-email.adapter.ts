@@ -1,4 +1,4 @@
-import { connect as connectTls, TLSSocket } from 'node:tls';
+import { connect as connectTls, ConnectionOptions, TLSSocket } from 'node:tls';
 import { randomUUID } from 'node:crypto';
 import { ApiError } from '../../../shared/src/errors';
 import type { IEmailAdapter } from './auth.service';
@@ -45,7 +45,7 @@ export function smtpSettings(env: NodeJS.ProcessEnv = process.env): SmtpSettings
 
 // Small SMTP client: implicit TLS is required so credentials are never sent in clear text.
 export class SmtpEmailAdapter implements IEmailAdapter {
-  constructor(private readonly settings: SmtpSettings) {}
+  constructor(private readonly settings: SmtpSettings, private readonly connect: (options: ConnectionOptions) => TLSSocket = connectTls) {}
 
   sendVerificationEmail(email: string, token: string) {
     return this.send(email, 'Verify your PBL6 email', 'verify-email', token, 'Verify email');
@@ -82,31 +82,50 @@ export class SmtpEmailAdapter implements IEmailAdapter {
   }
 
   private async deliver(to: string, message: string): Promise<void> {
-    const socket = connectTls({ host: this.settings.host, port: this.settings.port, servername: this.settings.host });
+    const socket = this.connect({ host: this.settings.host, port: this.settings.port, servername: this.settings.host });
     socket.setTimeout(15000, () => socket.destroy(new Error('SMTP timeout')));
     const lines: string[] = [];
     let pending = '';
-    const waiters: Array<(line: string) => void> = [];
+    const waiters: Array<{ resolve: (line: string) => void; reject: (error: Error) => void; timer: NodeJS.Timeout }> = [];
+    let socketError: Error | undefined;
     socket.on('data', chunk => {
       pending += chunk.toString('utf8');
       let at: number;
       while ((at = pending.indexOf('\r\n')) >= 0) {
-        const line = pending.slice(0, at); pending = pending.slice(at + 2); lines.push(line);
-        const waiter = waiters.shift(); if (waiter) waiter(line);
+        const line = pending.slice(0, at); pending = pending.slice(at + 2);
+        const waiter = waiters.shift();
+        if (waiter) { clearTimeout(waiter.timer); waiter.resolve(line); }
+        else lines.push(line);
       }
     });
+    socket.on('error', error => {
+      socketError = error;
+      for (const waiter of waiters.splice(0)) { clearTimeout(waiter.timer); waiter.reject(error); }
+    });
     const read = async () => {
+      if (socketError) throw socketError;
       if (lines.length) return lines.shift()!;
       return new Promise<string>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('SMTP timeout')), 15000);
-        waiters.push(line => { clearTimeout(timer); resolve(line); });
-        socket.once('error', reject);
+        const waiter = { resolve, reject, timer: undefined as unknown as NodeJS.Timeout };
+        waiter.timer = setTimeout(() => {
+          const index = waiters.indexOf(waiter);
+          if (index >= 0) waiters.splice(index, 1);
+          reject(new Error('SMTP timeout'));
+        }, 15000);
+        waiters.push(waiter);
       });
     };
     const reply = async (codes: number[]) => {
       let line = await read();
-      const code = Number(line.slice(0, 3));
-      while (line[3] === '-') line = await read();
+      const match = /^(\d{3})([ -])/.exec(line);
+      if (!match) throw new Error('Invalid SMTP response');
+      const code = Number(match[1]);
+      while (match[2] === '-') {
+        line = await read();
+        const continuation = /^(\d{3})([ -])/.exec(line);
+        if (!continuation || Number(continuation[1]) !== code) throw new Error('Invalid SMTP response');
+        match[2] = continuation[2];
+      }
       if (!codes.includes(code)) throw new Error('SMTP rejected command');
     };
     const command = async (line: string, codes: number[]) => { socket.write(`${line}\r\n`); await reply(codes); };

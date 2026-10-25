@@ -83,6 +83,20 @@ test('Internal checkout and AI scope validate tokens, snapshots, caller allowlis
     expect((await internal('/internal/checkout/context', 'M2', { ...body, token: owner })).status).toBe(404);
     expect((await internal('/internal/checkout/context', 'M2', { ...body, store_ids: [randomUUID()] })).status).toBe(409);
     const platform = await internal('/internal/ai/metrics-scope', 'M4', { token: admin }); expect(platform.status).toBe(200); const platformBody = await platform.json() as any; schema('ResolveAiMetricsScope', platformBody); expect(platformBody.scope).toBe('PLATFORM');
+    const [adminRole] = await source.query("SELECT id FROM role WHERE code='ADMIN'");
+    const [adminPermission] = await source.query("SELECT p.id FROM permission p WHERE p.code='platform.admin'");
+    const [rolePermission] = await source.query('SELECT role_id,permission_id FROM role_permission WHERE role_id=$1 AND permission_id=$2', [adminRole.id, adminPermission.id]);
+    expect(rolePermission).toBeTruthy();
+    await source.query('DELETE FROM role_permission WHERE role_id=$1 AND permission_id=$2', [adminRole.id, adminPermission.id]);
+    try {
+      // Reuse the already issued access token: current effective permission must be resolved again.
+      expect((await internal('/internal/ai/metrics-scope', 'M4', { token: admin })).status).toBe(403);
+      if (process.env.AI_MODE === 'real') {
+        expect((await fetch(`${base}/ai/metrics`, { headers: headers(admin) })).status).toBe(403);
+      }
+    } finally {
+      await source.query('INSERT INTO role_permission(role_id,permission_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [adminRole.id, adminPermission.id]);
+    }
     const own = await internal('/internal/ai/metrics-scope', 'M4', { token: owner, store_id: store.id }); expect(own.status).toBe(200); const ownBody = await own.json() as any; schema('ResolveAiMetricsScope', ownBody); expect(ownBody.scope).toBe('STORE');
     expect((await internal('/internal/ai/metrics-scope', 'M4', { token: customer, store_id: store.id })).status).toBe(403);
     expect((await internal('/internal/ai/metrics-scope', 'M2', { token: admin })).status).toBe(401);
