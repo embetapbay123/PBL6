@@ -9,6 +9,7 @@ import {sellerRoutes} from '../features/seller/routes';
 import {adminRoutes} from '../features/admin/routes';
 import { ErrorView } from './components';
 import { dataMode } from '../api/operations';
+import {CustomerChatWidget} from '../features/customer/CustomerChatWidget';
 const queryClient=new QueryClient({defaultOptions:{queries:{retry:false,staleTime:15000}}});
 function Login() {
   const auth=useAuth();const [email,setEmail]=useState('customer1@pbl6.test');const [password,setPassword]=useState('');const [error,setError]=useState<unknown>();const [busy,setBusy]=useState(false);
