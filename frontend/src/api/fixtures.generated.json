@@ -54,6 +54,7 @@
       "context": {
         "user_id": "11111111-1111-4111-8111-111111111111",
         "roles": [],
+        "role_permissions": [],
         "store_membership": {
           "store_id": "11111111-1111-4111-8111-111111111111",
           "role": "SELLER",
@@ -82,6 +83,7 @@
       "context": {
         "user_id": "11111111-1111-4111-8111-111111111111",
         "roles": [],
+        "role_permissions": [],
         "store_membership": {
           "store_id": "11111111-1111-4111-8111-111111111111",
           "role": "SELLER",
@@ -174,6 +176,7 @@
     "response": {
       "user_id": "11111111-1111-4111-8111-111111111111",
       "roles": [],
+      "role_permissions": [],
       "store_membership": {
         "store_id": "11111111-1111-4111-8111-111111111111",
         "role": "SELLER",
@@ -494,7 +497,8 @@
       "invited_email": "fixture@example.invalid",
       "permissions": [],
       "status": "PENDING",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "store_name": "fixture-value"
     },
     "status": 201
   },
@@ -514,7 +518,8 @@
       "invited_email": "fixture@example.invalid",
       "permissions": [],
       "status": "PENDING",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "store_name": "fixture-value"
     },
     "status": 200
   },
@@ -553,7 +558,8 @@
       "invited_email": "fixture@example.invalid",
       "permissions": [],
       "status": "PENDING",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "store_name": "fixture-value"
     },
     "status": 200
   },
@@ -1784,6 +1790,20 @@
     },
     "status": 200
   },
+  "listRoles": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "roles": [],
+      "permissions": []
+    },
+    "status": 200
+  },
   "updateRole": {
     "mode": "fixture",
     "request": {
@@ -1929,9 +1949,14 @@
       "headers": {}
     },
     "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "email": "fixture@example.invalid",
+      "role": "SELLER",
       "status": "ACTIVE",
       "permissions": [],
-      "expected_version": 0
+      "version": 0
     },
     "status": 200
   },

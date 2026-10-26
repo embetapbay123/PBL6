@@ -43,6 +43,7 @@ describe('AdministrationRepository event contracts', () => {
     const manager = { query: jest.fn()
       .mockResolvedValueOnce([{ id: 'role-1', code: 'CUSTOMER', version: 1 }])
       .mockResolvedValueOnce([{ permission_id: 'perm-old' }])
+      .mockResolvedValueOnce([{ id: 'perm-old' }])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([]) };
@@ -61,13 +62,33 @@ describe('AdministrationRepository event contracts', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  test('role permission update is explicitly disabled without touching the repository', () => {
-    const repository = { updateRole: jest.fn() };
+  test('role permission update delegates to the repository implementation', async () => {
+    const updated = { id: 'role-1', permission_ids: ['perm-1'], version: 4 };
+    const repository = { updateRole: jest.fn().mockResolvedValue(updated) };
     const service = new AdministrationService(repository as any);
-    let error: any;
-    try { service.updateRole('role-1', [], 0, 'actor', 'corr'); } catch (cause) { error = cause; }
-    expect(error.getStatus()).toBe(501);
-    expect(error.getResponse()).toMatchObject({ code: 'FEATURE_NOT_IMPLEMENTED' });
-    expect(repository.updateRole).not.toHaveBeenCalled();
+    await expect(service.updateRole('role-1', ['perm-1'], 3, 'actor', 'corr')).resolves.toEqual(updated);
+    expect(repository.updateRole).toHaveBeenCalledWith('role-1', ['perm-1'], 3, 'actor', 'corr');
+  });
+
+  test('role permission update rejects a stale version before changing permissions', async () => {
+    const manager = { query: jest.fn().mockResolvedValueOnce([{ id: 'role-1', version: 4 }]) };
+    transaction.mockImplementation(async (callback: any) => callback(manager));
+
+    await expect(new AdministrationRepository().updateRole('role-1', [], 3, 'actor', 'corr'))
+      .rejects.toMatchObject({ status: 409, response: expect.objectContaining({ code: 'VERSION_CONFLICT' }) });
+    expect(manager.query).toHaveBeenCalledTimes(1);
+  });
+
+  test('role permission update validates IDs before deleting current grants', async () => {
+    const manager = { query: jest.fn()
+      .mockResolvedValueOnce([{ id: 'role-1', code: 'ADMIN', version: 4 }])
+      .mockResolvedValueOnce([{ permission_id: 'perm-current' }])
+      .mockResolvedValueOnce([]) };
+    transaction.mockImplementation(async (callback: any) => callback(manager));
+
+    await expect(new AdministrationRepository().updateRole('role-1', ['missing-permission'], 4, 'actor', 'corr'))
+      .rejects.toMatchObject({ status: 422, response: expect.objectContaining({ code: 'VALIDATION_FAILED' }) });
+    expect(manager.query).toHaveBeenCalledTimes(3);
+    expect(manager.query.mock.calls[2][0]).toContain('FROM permission WHERE id = ANY($1::uuid[])');
   });
 });

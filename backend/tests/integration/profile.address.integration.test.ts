@@ -1,9 +1,9 @@
 // Integration tests for ProfileRepository address behavior.
-// These tests run only when M3_DATABASE_URL is set in the environment.
+// These tests run only against the dedicated M3 test database.
 
-if (!process.env.M3_DATABASE_URL) {
+if (!process.env.M3_TEST_DATABASE_URL) {
   // eslint-disable-next-line no-console
-  console.warn('Skipping profile.address.integration tests because M3_DATABASE_URL is not set');
+  console.warn('Skipping profile.address.integration tests because M3_TEST_DATABASE_URL is not set');
   // create a trivial skipped test suite so jest reports skip
   describe.skip('ProfileRepository integration tests (skipped)', () => {
     test('skipped', () => {});
@@ -18,6 +18,7 @@ if (!process.env.M3_DATABASE_URL) {
   describe('ProfileRepository integration (addresses)', () => {
     let userId: string;
     beforeAll(async () => {
+      process.env.M3_DATABASE_URL = process.env.M3_TEST_DATABASE_URL;
       await dbModule.initializeDatabase();
       database = dbModule.database;
       userId = randomUUID();

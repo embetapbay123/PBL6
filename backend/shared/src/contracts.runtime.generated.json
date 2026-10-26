@@ -228,6 +228,14 @@
                   },
                   "maxItems": 100
                 },
+                "role_permissions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "maxItems": 100
+                },
                 "store_membership": {
                   "type": "object",
                   "properties": {
@@ -265,6 +273,7 @@
               "required": [
                 "user_id",
                 "roles",
+                "role_permissions",
                 "token_version"
               ],
               "additionalProperties": false
@@ -352,6 +361,14 @@
                   },
                   "maxItems": 100
                 },
+                "role_permissions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "maxItems": 100
+                },
                 "store_membership": {
                   "type": "object",
                   "properties": {
@@ -389,6 +406,7 @@
               "required": [
                 "user_id",
                 "roles",
+                "role_permissions",
                 "token_version"
               ],
               "additionalProperties": false
@@ -602,7 +620,7 @@
       "route": "/auth/change-password",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -715,6 +733,14 @@
               },
               "maxItems": 100
             },
+            "role_permissions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "maxItems": 100
+            },
             "store_membership": {
               "type": "object",
               "properties": {
@@ -752,6 +778,7 @@
           "required": [
             "user_id",
             "roles",
+            "role_permissions",
             "token_version"
           ],
           "additionalProperties": false
@@ -1934,24 +1961,40 @@
                     "type": "string",
                     "format": "uuid"
                   },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254
+                  },
                   "role": {
                     "type": "string",
-                    "maxLength": 200
+                    "enum": [
+                      "SELLER"
+                    ]
                   },
                   "status": {
                     "type": "string",
-                    "maxLength": 200
+                    "enum": [
+                      "ACTIVE",
+                      "LOCKED"
+                    ]
                   },
                   "permissions": {
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 200
+                      "enum": [
+                        "product.store.read_write",
+                        "inventory.store.read_adjust",
+                        "order.store.read_status_cancel",
+                        "cod.store.collect"
+                      ]
                     },
                     "maxItems": 100
                   },
                   "version": {
                     "type": "integer",
+                    "minimum": 0,
                     "maximum": 9007199254740991
                   }
                 },
@@ -1959,8 +2002,11 @@
                   "id",
                   "store_id",
                   "user_id",
+                  "email",
                   "role",
-                  "status"
+                  "status",
+                  "permissions",
+                  "version"
                 ],
                 "additionalProperties": false
               },
@@ -1994,7 +2040,7 @@
       "route": "/store/staff/invitations",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2055,7 +2101,13 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 200
+                      "maxLength": 200,
+                      "enum": [
+                        "product.store.read_write",
+                        "inventory.store.read_adjust",
+                        "order.store.read_status_cancel",
+                        "cod.store.collect"
+                      ]
                     },
                     "maxItems": 100
                   },
@@ -2071,6 +2123,10 @@
                   "expires_at": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "store_name": {
+                    "type": "string",
+                    "maxLength": 200
                   }
                 },
                 "required": [
@@ -2109,7 +2165,7 @@
       "route": "/store/staff/invitations",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -2123,7 +2179,13 @@
             "type": "array",
             "items": {
               "type": "string",
-              "maxLength": 200
+              "maxLength": 200,
+              "enum": [
+                "product.store.read_write",
+                "inventory.store.read_adjust",
+                "order.store.read_status_cancel",
+                "cod.store.collect"
+              ]
             },
             "maxItems": 100
           }
@@ -2175,7 +2237,13 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "maxLength": 200
+                "maxLength": 200,
+                "enum": [
+                  "product.store.read_write",
+                  "inventory.store.read_adjust",
+                  "order.store.read_status_cancel",
+                  "cod.store.collect"
+                ]
               },
               "maxItems": 100
             },
@@ -2191,6 +2259,10 @@
             "expires_at": {
               "type": "string",
               "format": "date-time"
+            },
+            "store_name": {
+              "type": "string",
+              "maxLength": 200
             }
           },
           "required": [
@@ -2206,7 +2278,7 @@
       "route": "/store/staff/invitations/{id}/revoke",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2256,7 +2328,13 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "maxLength": 200
+                "maxLength": 200,
+                "enum": [
+                  "product.store.read_write",
+                  "inventory.store.read_adjust",
+                  "order.store.read_status_cancel",
+                  "cod.store.collect"
+                ]
               },
               "maxItems": 100
             },
@@ -2272,6 +2350,10 @@
             "expires_at": {
               "type": "string",
               "format": "date-time"
+            },
+            "store_name": {
+              "type": "string",
+              "maxLength": 200
             }
           },
           "required": [
@@ -2287,7 +2369,7 @@
       "route": "/me/invitations",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2348,7 +2430,13 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "maxLength": 200
+                      "maxLength": 200,
+                      "enum": [
+                        "product.store.read_write",
+                        "inventory.store.read_adjust",
+                        "order.store.read_status_cancel",
+                        "cod.store.collect"
+                      ]
                     },
                     "maxItems": 100
                   },
@@ -2364,6 +2452,10 @@
                   "expires_at": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "store_name": {
+                    "type": "string",
+                    "maxLength": 200
                   }
                 },
                 "required": [
@@ -2402,7 +2494,7 @@
       "route": "/me/invitations/{id}/accept",
       "internal": false,
       "service": "M3",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -2452,7 +2544,13 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "maxLength": 200
+                "maxLength": 200,
+                "enum": [
+                  "product.store.read_write",
+                  "inventory.store.read_adjust",
+                  "order.store.read_status_cancel",
+                  "cod.store.collect"
+                ]
               },
               "maxItems": 100
             },
@@ -2468,6 +2566,10 @@
             "expires_at": {
               "type": "string",
               "format": "date-time"
+            },
+            "store_name": {
+              "type": "string",
+              "maxLength": 200
             }
           },
           "required": [
@@ -9436,6 +9538,113 @@
         }
       }
     },
+    "listRoles": {
+      "method": "GET",
+      "route": "/admin/roles",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "roles": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "permission_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "maxItems": 100
+                  },
+                  "version": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "version"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 100
+            },
+            "permissions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "resource": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "action": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "resource",
+                  "action"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 1000
+            }
+          },
+          "required": [
+            "roles",
+            "permissions"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
     "updateRole": {
       "method": "PATCH",
       "route": "/admin/roles/{id}",
@@ -10417,8 +10626,30 @@
       "responses": {
         "200": {
           "type": "object",
-          "minProperties": 2,
           "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "user_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "maxLength": 254
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "SELLER"
+              ]
+            },
             "status": {
               "type": "string",
               "enum": [
@@ -10430,19 +10661,30 @@
               "type": "array",
               "items": {
                 "type": "string",
-                "maxLength": 200
+                "enum": [
+                  "product.store.read_write",
+                  "inventory.store.read_adjust",
+                  "order.store.read_status_cancel",
+                  "cod.store.collect"
+                ]
               },
               "maxItems": 100
             },
-            "expected_version": {
+            "version": {
               "type": "integer",
               "minimum": 0,
-              "description": "Phiên bản hiện tại mà client đã đọc.",
               "maximum": 9007199254740991
             }
           },
           "required": [
-            "expected_version"
+            "id",
+            "store_id",
+            "user_id",
+            "email",
+            "role",
+            "status",
+            "permissions",
+            "version"
           ],
           "additionalProperties": false
         }
@@ -12322,6 +12564,14 @@
               },
               "maxItems": 100
             },
+            "role_permissions": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "maxItems": 100
+            },
             "store_membership": {
               "type": "object",
               "properties": {
@@ -12359,6 +12609,7 @@
           "required": [
             "user_id",
             "roles",
+            "role_permissions",
             "token_version"
           ],
           "additionalProperties": false
