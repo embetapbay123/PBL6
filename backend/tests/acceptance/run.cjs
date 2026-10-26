@@ -48,7 +48,7 @@ async function request(operation, { body, token, id, headers = {}, status, query
   if (response.status !== expected) {
     // Never print arbitrary response bodies, tokens, bank fields or addresses.
     const code = /^[A-Z_]{1,100}$/.test(json.code || '') ? json.code : 'REDACTED';
-    throw new Error(`HTTP_FAILED:${operation}:${response.status}:${code}:expected_${expected}`);
+    throw Object.assign(new Error(`HTTP_FAILED:${operation}:${response.status}:${code}:expected_${expected}`),{status:response.status,code});
   }
   if (response.status < 300) {
     const errors = schemaErrors(json, spec.responses[String(response.status)]);
@@ -80,6 +80,7 @@ async function prepare(token, variant = 90, method = 'SANDBOX') {
     expected_payable_total_vnd: quote.payable_total_vnd }, correlation };
 }
 async function confirm(token, prepared, status = 201) {
+  if(status===201)return require('./replay-confirm.cjs')(request,{token,body:prepared.input,key:prepared.key});
   return request('confirmCheckout', { token, body: prepared.input,
     headers: { 'idempotency-key': prepared.key }, status });
 }
