@@ -10,7 +10,7 @@ import { sepayTestQr } from './qr.provider';
 import { mapRefund } from './refund.service';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 function mapAttempt(row:AttemptRow):OperationOutputs['createPaymentAttempt'] {
-  return {id:row.id,status:row.status,provider:'SEPAY_TEST',provider_reference:row.provider_reference,payment_code:row.provider_reference,
+  return {id:row.id,payment_id:row.payment_id,status:row.status,provider:'SEPAY_TEST',provider_reference:row.provider_reference,payment_code:row.provider_reference,
     ...(row.qr_url?{qr_url:row.qr_url}:{}),...(row.expires_at?{expires_at:new Date(row.expires_at).toISOString()}: {})};
 }
 export class PaymentApiService {
