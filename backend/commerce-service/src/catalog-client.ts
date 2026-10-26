@@ -11,8 +11,9 @@ export interface CatalogDirectory {product(id:string,correlation:string):Promise
 export class CatalogClient implements CatalogDirectory {
   async product(id: string, correlation: string): Promise<CatalogProduct> {
     try {
-      const response = await fetch(`${config('M2').catalogUrl}/api/v1/products/${encodeURIComponent(id)}`, {
-        headers: { 'X-Correlation-Id': correlation }, signal: AbortSignal.timeout(1000),
+      const c = config('M2');
+      const response = await fetch(`${c.catalogUrl}/api/v1/products/${encodeURIComponent(id)}`, {
+        headers: { 'X-Correlation-Id': correlation, 'X-Service-Id': 'M2', 'X-Service-Key': c.internalKeys.M2 }, signal: AbortSignal.timeout(1000), redirect: 'error',
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({})) as any;

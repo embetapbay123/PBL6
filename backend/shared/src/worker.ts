@@ -1,3 +1,4 @@
+import { OrderService } from '../../commerce-service/src/order/order.service';
 import amqp from 'amqplib';
 import { randomUUID } from 'node:crypto';
 import { initializeDatabase,database } from './database';
@@ -5,7 +6,7 @@ import { required } from './config';
 import { applyEvent,validSampleEnvelope } from './events';
 async function main() {
   await initializeDatabase();
-  const id=required('SERVICE_ID');const connection=await amqp.connect(required('RABBITMQ_URL'));
+  const id=required('SERVICE_ID');const orders=id==='M2'?new OrderService():undefined;const connection=await amqp.connect(required('RABBITMQ_URL'));
   const channel=await connection.createConfirmChannel();
   await channel.assertExchange('pbl6.events','topic',{durable:true});
   const queue=`pbl6.${id.toLowerCase()}.bootstrap.v1`;
@@ -44,6 +45,7 @@ async function main() {
           }
         }
       });
+      if(orders)await orders.recoverOrders();
     } catch {console.error(JSON.stringify({service:id,code:'WORKER_DEPENDENCY_UNAVAILABLE'}));} finally {running=false;}
   };
   const timer=setInterval(tick,1000);await tick();

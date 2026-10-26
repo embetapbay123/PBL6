@@ -853,5 +853,22 @@ describe('VOUCHER-03: validateVouchers, getStoreVoucherUsage & getPlatformVouche
       expect(storeUsage.remaining_count).toBe(100);
     });
   });
-});
 
+  describe('Voucher lifecycle transaction boundary', () => {
+    test('all mutations reject a global manager before issuing SQL', async () => {
+      const manager = { query: mockQuery } as any;
+      await expect(service.reserveVoucher(manager, { voucher_id: voucherId, purchase_group_id: voucherId,
+        customer_user_id: voucherId, discount_vnd: 1, expires_at: new Date() }))
+        .rejects.toThrow('VOUCHER_REQUIRES_CALLER_TRANSACTION');
+      await expect(service.commitVoucherRedemptions(manager, voucherId, [])).rejects.toThrow('VOUCHER_REQUIRES_CALLER_TRANSACTION');
+      await expect(service.releaseVoucherReservations(manager, voucherId)).rejects.toThrow('VOUCHER_REQUIRES_CALLER_TRANSACTION');
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+    test.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])('rejects an unsafe discount %s before issuing SQL', async discount => {
+      const manager = { query: mockQuery, queryRunner: { isTransactionActive: true } } as any;
+      await expect(service.reserveVoucher(manager, { voucher_id: voucherId, purchase_group_id: voucherId,
+        customer_user_id: voucherId, discount_vnd: discount, expires_at: new Date() })).rejects.toMatchObject({ status: 422 });
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+  });
+});

@@ -2,10 +2,12 @@
 
 Owner: Trí
 
-- `GET /admin/users` — listUsers: **NOT_IMPLEMENTED**
-- `PATCH /admin/users/{id}` — updateUserState: **NOT_IMPLEMENTED**
-- `GET /admin/stores` — listStores: **NOT_IMPLEMENTED**
-- `PATCH /admin/stores/{id}` — updateStoreState: **NOT_IMPLEMENTED**
-- `PATCH /admin/roles/{id}` — updateRole: **NOT_IMPLEMENTED**
+- `GET /admin/users` — listUsers: **IMPLEMENTED**
+- `PATCH /admin/users/{id}` — updateUserState: **IMPLEMENTED**
+- `GET /admin/stores` — listStores: **IMPLEMENTED**
+- `PATCH /admin/stores/{id}` — updateStoreState: **IMPLEMENTED**
+- `PATCH /admin/roles/{id}` - updateRole: transactionally replaces role permissions, checks version and permission IDs, audits the change. Effective permissions are resolved from live database role assignments.
 
-Xem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.
+Global role permissions are resolved from the database for each authenticated request. The `ADMIN` role also requires `platform.admin`; removing that permission takes effect on the next request without waiting for JWT expiry. Store permissions remain scoped to the active store membership.
+
+Migration `006_platform_admin_permission.sql` grants `platform.admin` to the `ADMIN` role on fresh and existing databases. Effective role permissions are read from the database on every authenticated request, so a revoked permission stops working immediately, including when the caller reuses an older access token. The `platform.admin` permission cannot be granted to another role.

@@ -16,6 +16,7 @@ export class OrderController {
   private readonly service = new OrderService();
 
   @Post('checkout/quotes')
+  @HttpCode(200)
   @Roles('CUSTOMER')
   quoteCheckout(@Body() dto: QuoteCheckoutBodyDto, @Req() req: any) {
     return this.service.quoteCheckout(dto, req.auth, req.correlationId);
@@ -62,6 +63,7 @@ export class OrderController {
   }
 
   @Post('me/orders/:id/cancel')
+  @HttpCode(200)
   @Roles('CUSTOMER')
   cancelOwnOrder(@Param('id') id: string, @Body() dto: CancelOwnOrderBodyDto, @Req() req: any) {
     return this.service.cancelOwnOrder(id, dto, req.auth, req.correlationId);
@@ -101,6 +103,7 @@ export class OrderController {
   }
 
   @Post('store/orders/:id/cancel')
+  @HttpCode(200)
   @Roles('SELLER', 'STORE_OWNER')
   cancelStoreOrder(
     @Param('id') id: string,

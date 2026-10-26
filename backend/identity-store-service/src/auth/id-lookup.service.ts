@@ -5,7 +5,7 @@ import type { OperationInputs, OperationOutputs } from '../../../shared/src/oper
 import { AuthService } from './auth.service';
 
 type Queryable = { query(sql: string, parameters?: unknown[]): Promise<any[]> };
-type Context = { user_id: string; roles: string[]; token_version: number };
+type Context = { user_id: string; roles: string[]; role_permissions?: string[]; token_version: number };
 type Resolver = { resolve(token: string): Promise<Context> };
 
 export class IdLookupService {
@@ -39,7 +39,10 @@ export class IdLookupService {
 
   async resolveAiMetricsScope(input: OperationInputs['ResolveAiMetricsScope']['body']): Promise<OperationOutputs['ResolveAiMetricsScope']> {
     const context = await this.auth.resolve(input.token);
-    if (context.roles.includes('ADMIN')) {
+    // `resolve` returns the live context from AuthService, including current role
+    // permissions. A stale ADMIN role is insufficient after platform.admin revocation.
+    const hasPlatformAdmin = context.roles.includes('ADMIN') && context.role_permissions?.includes('platform.admin') === true;
+    if (hasPlatformAdmin) {
       if (input.store_id) {
         const [store] = await this.db.query("SELECT id FROM store WHERE id=$1 AND status='ACTIVE'", [input.store_id]);
         if (!store) throw new ApiError(404, 'STORE_NOT_FOUND', 'Không tìm thấy Store hoạt động.');

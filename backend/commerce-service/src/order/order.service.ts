@@ -1,6 +1,8 @@
+import { CheckoutRunner, CheckoutPlan, commandId, recoveryPending } from './checkout.runner';
+import { OrderInventoryRunner, queueInventoryCommand, changeOrderStatus, requestClosedRefund } from './order-inventory.runner';
 import { randomUUID } from 'node:crypto';
 import { database } from '../../../shared/src/database';
-import { ApiError, notImplemented } from '../../../shared/src/errors';
+import { ApiError } from '../../../shared/src/errors';
 import { config } from '../../../shared/src/config';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { moneyNumber } from '../../../shared/src/money';
@@ -9,14 +11,17 @@ import { CatalogClient, CatalogDirectory } from '../catalog-client';
 import { requireStorePermission, accessToken } from '../scope';
 import { PaymentService } from '../payment/payment.service';
 import { PaymentPort } from '../payment/payment.port';
-import { EntityManager } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { audit } from '../../../shared/src/audit';
+import { VoucherRepository } from '../voucher/voucher.repository';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export { commandId as deterministicUuid } from './checkout.runner';
 
 interface ProcessedItem {
   product_id: string;
@@ -27,6 +32,8 @@ interface ProcessedItem {
   unit_price_vnd: number;
   quantity: number;
   line_total_vnd: number;
+  available_quantity?: number;
+  version?: number;
   [key: string]: unknown;
 }
 
@@ -49,15 +56,28 @@ export class OrderService {
       key: string,
       urls: Record<'M1' | 'M2' | 'M3', string>
     ) => InternalClients,
-    private readonly dependencies: {catalog?:CatalogDirectory;quotes?:QuoteStore;payments?:(manager:EntityManager)=>PaymentPort} = {},
-  ) {this.quoteStore=dependencies.quotes ?? new RedisQuoteStore();this.catalog=dependencies.catalog ?? new CatalogClient();}
+    private readonly dependencies: {
+      source?: DataSource;
+      catalog?: CatalogDirectory;
+      quotes?: QuoteStore;
+      payments?: (manager: EntityManager) => PaymentPort;
+      vouchers?: (manager: EntityManager) => VoucherRepository;
+    } = {},
+  ) {
+    this.quoteStore = dependencies.quotes ?? new RedisQuoteStore();
+    this.catalog = dependencies.catalog ?? new CatalogClient();
+  }
 
-  private readonly quoteStore:QuoteStore;
-  private readonly catalog:CatalogDirectory;
-  private payments(manager:EntityManager):PaymentPort {
-    const port=this.dependencies.payments?.(manager) ?? new PaymentService(manager);
-    if(port.manager!==manager) throw new Error('TRANSACTION_MANAGER_MISMATCH');
+  private get source():DataSource { return this.dependencies.source ?? database; }
+  private readonly quoteStore: QuoteStore;
+  private readonly catalog: CatalogDirectory;
+  private payments(manager: EntityManager): PaymentPort {
+    const port = this.dependencies.payments?.(manager) ?? new PaymentService(manager);
+    if (port.manager !== manager) throw new Error('TRANSACTION_MANAGER_MISMATCH');
     return port;
+  }
+  private vouchers(manager: EntityManager): VoucherRepository {
+    return this.dependencies.vouchers?.(manager) ?? new VoucherRepository(manager);
   }
 
   private getInternalClients(): InternalClients {
@@ -68,9 +88,18 @@ export class OrderService {
     if (!items.length) return [];
     return (await this.getInternalClients().call('QuoteVariants',{items},correlation)).items;
   }
-  private quoteInput(input:OperationInputs['quoteCheckout']['body']) {
-    return {cart_item_ids:[...input.cart_item_ids].sort(),address_id:input.address_id,
-      payment_methods:input.payment_methods,store_vouchers:input.store_vouchers,platform_voucher_code:input.platform_voucher_code};
+  private quoteInput(input: OperationInputs['quoteCheckout']['body']) {
+    return {
+      cart_item_ids: [...input.cart_item_ids].sort(),
+      address_id: input.address_id,
+      payment_methods: input.payment_methods
+        ? Object.keys(input.payment_methods).sort().reduce((acc, k) => { acc[k] = input.payment_methods[k]; return acc; }, {} as any)
+        : undefined,
+      store_vouchers: input.store_vouchers
+        ? Object.keys(input.store_vouchers).sort().reduce((acc, k) => { acc[k] = input.store_vouchers![k]; return acc; }, {} as any)
+        : undefined,
+      platform_voucher_code: input.platform_voucher_code,
+    };
   }
 
   private mapOrderRowToDto(order: OrderRow & { items: OrderItemRow[] }): OperationOutputs['getOwnOrder'] {
@@ -126,6 +155,7 @@ export class OrderService {
       );
     }
 
+    cartItems.sort((a,b)=>a.store_id.localeCompare(b.store_id) || a.variant_id.localeCompare(b.variant_id));
     const quoteItemsInput = cartItems.map(ci => ({
       variant_id: ci.variant_id,
       store_id: ci.store_id,
@@ -180,11 +210,15 @@ export class OrderService {
 
       const storeCalc = storeMap.get(storeId)!;
       storeCalc.items.push({
-        product_id:product.id,product_title:product.title,sku:variant.sku,
+        product_id: product.id,
+        product_title: product.title,
+        sku: variant.sku,
         variant_id: ci.variant_id,
         unit_price_vnd: unitPriceVnd,
         quantity: ci.quantity,
         line_total_vnd: lineTotalVnd,
+        available_quantity: m1Quote.available_quantity,
+        version: m1Quote.version,
       });
       storeCalc.goods_vnd = moneyNumber(BigInt(storeCalc.goods_vnd)+BigInt(lineTotalVnd));
     }
@@ -331,11 +365,18 @@ export class OrderService {
     return { storeList, totalPayableVnd, platformVoucherId };
   }
 
-  async quoteCheckout(
+  async revalidateQuote(
     input: OperationInputs['quoteCheckout']['body'],
     auth: any,
-    correlation: string
-  ): Promise<OperationOutputs['quoteCheckout']> {
+    correlation: string,
+    orderRepo: OrderRepository
+  ): Promise<{
+    storeList: StoreCalculation[];
+    context: any;
+    payable: number;
+    platformVoucherId?: string;
+    snapshotHash: string;
+  }> {
     const userId = auth?.user_id;
     if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
 
@@ -354,9 +395,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'address_id không hợp lệ.');
     }
 
-    const orderRepo = new OrderRepository(database.manager);
-
-    const { storeList, totalPayableVnd } = await this.calculateQuote(
+    const { storeList, platformVoucherId } = await this.calculateQuote(
       cartItemIds,
       userId,
       input.store_vouchers,
@@ -365,20 +404,82 @@ export class OrderService {
       orderRepo
     );
 
-    const context=await this.getInternalClients().call('ResolveCheckoutContext',{
-      token:accessToken(auth),address_id:addressId,store_ids:storeList.map(s=>s.store_id),
-    },correlation);
-    for(const store of storeList) {
-      const snapshot=context.stores.find(s=>s.id===store.store_id);
-      if(!snapshot) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Lookup thiếu Store.');
-      store.shipping_vnd=moneyNumber(snapshot.shipping_fee_vnd);
-      store.payable_vnd=moneyNumber(BigInt(store.goods_vnd)-BigInt(store.store_discount_vnd)-BigInt(store.platform_discount_vnd)+BigInt(store.shipping_vnd));
+    const context = await this.getInternalClients().call('ResolveCheckoutContext', {
+      token: accessToken(auth),
+      address_id: addressId,
+      store_ids: storeList.map(s => s.store_id),
+    }, correlation);
+
+    // Canonical sorting of storeList and items for snapshot stability
+    storeList.sort((a, b) => a.store_id.localeCompare(b.store_id));
+    for (const store of storeList) {
+      store.items.sort((a, b) => a.variant_id.localeCompare(b.variant_id));
     }
-    const payable=moneyNumber(storeList.reduce((sum,s)=>sum+BigInt(s.payable_vnd),0n));
+
+    const contextStores = Array.isArray(context?.stores)
+      ? [...context.stores].sort((a: any, b: any) => (a.id ?? '').localeCompare(b.id ?? ''))
+      : context?.stores;
+
+    for (const store of storeList) {
+      const snapshot = contextStores?.find((s: any) => s.id === store.store_id);
+      if (!snapshot) throw new ApiError(503, 'DEPENDENCY_CONTRACT_INVALID', 'Lookup thiếu Store.');
+      store.shipping_vnd = moneyNumber(snapshot.shipping_fee_vnd);
+      store.payable_vnd = moneyNumber(BigInt(store.goods_vnd) - BigInt(store.store_discount_vnd) - BigInt(store.platform_discount_vnd) + BigInt(store.shipping_vnd));
+    }
+
+    const canonicalSnapshot = {
+      stores: storeList.map(s => ({
+        store_id: s.store_id,
+        goods_vnd: s.goods_vnd,
+        store_discount_vnd: s.store_discount_vnd,
+        net_goods_vnd: s.net_goods_vnd,
+        platform_discount_vnd: s.platform_discount_vnd,
+        shipping_vnd: s.shipping_vnd,
+        payable_vnd: s.payable_vnd,
+        voucher_id: s.voucher_id,
+        items: s.items.map(it => ({
+          product_id: it.product_id,
+          variant_id: it.variant_id,
+          unit_price_vnd: it.unit_price_vnd,
+          quantity: it.quantity,
+          line_total_vnd: it.line_total_vnd,
+          available_quantity: it.available_quantity,
+          version: it.version,
+        })),
+      })),
+      context: {
+        address_snapshot: context?.address_snapshot,
+        stores: contextStores,
+      },
+    };
+
+    const payable = moneyNumber(storeList.reduce((sum, s) => sum + BigInt(s.payable_vnd), 0n));
+    const snapshotHash = fingerprint(canonicalSnapshot);
+
+    return { storeList, context, payable, platformVoucherId, snapshotHash };
+  }
+
+  async quoteCheckout(
+    input: OperationInputs['quoteCheckout']['body'],
+    auth: any,
+    correlation: string
+  ): Promise<OperationOutputs['quoteCheckout']> {
+    const orderRepo = new OrderRepository(this.source.manager);
+    const { storeList, payable, snapshotHash } = await this.revalidateQuote(
+      input,
+      auth,
+      correlation,
+      orderRepo
+    );
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    const quoteId=randomUUID();
-    await this.quoteStore.put(quoteId,{user_id:userId,request_hash:fingerprint(this.quoteInput(input)),snapshot_hash:fingerprint({storeList,context}),expires_at:expiresAt});
+    const quoteId = randomUUID();
+    await this.quoteStore.put(quoteId, {
+      user_id: auth.user_id,
+      request_hash: fingerprint(this.quoteInput(input)),
+      snapshot_hash: snapshotHash,
+      expires_at: expiresAt,
+    });
     return {
       quote_id: quoteId,
       stores: storeList.map(store => ({
@@ -390,22 +491,90 @@ export class OrderService {
           shipping_vnd: store.shipping_vnd,
           payable_vnd: store.payable_vnd,
         },
-        items: store.items,
+        items: store.items.map(({available_quantity,version,...item})=>item),
       })),
       payable_total_vnd: payable,
       expires_at: expiresAt,
     };
   }
 
-  async confirmCheckout(input:OperationInputs['confirmCheckout']['body'],key:string|undefined,auth:any,_correlation:string):Promise<OperationOutputs['confirmCheckout']> {
-    if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
-    if(!key?.trim()) throw new ApiError(422,'VALIDATION_FAILED','Thiếu Idempotency-Key.');
-    const quote=await this.quoteStore.get(input.quote_id);
-    if(!quote || quote.user_id!==auth.user_id) throw new ApiError(404,'QUOTE_NOT_FOUND','Không tìm thấy quote của Customer.');
-    if(Date.parse(quote.expires_at)<=Date.now()) throw new ApiError(409,'QUOTE_EXPIRED','Quote đã hết hạn.');
-    if(quote.request_hash!==fingerprint(this.quoteInput(input))) throw new ApiError(409,'QUOTE_CHANGED','Nội dung khác quote.');
-    // Reject before reserve/DB writes until the Payment port and durable inventory orchestration are implemented.
-    return notImplemented('confirmCheckout: cần PaymentPort và orchestration kho bền vững');
+  private checkoutRunner() {
+    return new CheckoutRunner(this.source,(op,body,corr)=>this.getInternalClients().call(op,body,corr),
+      (plan,reservations,manager)=>this.commitCheckout(plan,reservations,manager));
+  }
+
+  async recoverOrders() {
+    await this.checkoutRunner().tick();
+    await new OrderInventoryRunner(this.source,(op,body,corr)=>this.getInternalClients().call(op,body,corr)).tick();
+  }
+
+  async confirmCheckout(input:OperationInputs['confirmCheckout']['body'],key:string|undefined,auth:any,correlation:string):Promise<OperationOutputs['confirmCheckout']> {
+    if(!auth?.user_id)throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
+    if(!key?.trim() || key.trim().length>200)throw new ApiError(422,'VALIDATION_FAILED','Idempotency-Key không hợp lệ.');
+    const normalized={...input,cart_item_ids:[...input.cart_item_ids].sort()};
+    try {
+      return await this.checkoutRunner().confirm(auth.user_id,key.trim(),fingerprint(normalized),correlation,async()=>{
+        const quote=await this.quoteStore.get(input.quote_id);
+        if(!quote || quote.user_id!==auth.user_id)throw new ApiError(404,'QUOTE_NOT_FOUND','Không tìm thấy quote của Customer.');
+        if(Date.parse(quote.expires_at)<=Date.now())throw new ApiError(409,'QUOTE_EXPIRED','Quote đã hết hạn.');
+        if(quote.request_hash!==fingerprint(this.quoteInput(input)))throw new ApiError(409,'QUOTE_CHANGED','Nội dung khác quote.');
+        const calculated=await this.revalidateQuote(input,auth,correlation,new OrderRepository(this.source.manager));
+        if(calculated.snapshotHash!==quote.snapshot_hash || calculated.payable!==input.expected_payable_total_vnd)
+          throw new ApiError(409,'QUOTE_CHANGED','Giá, tồn kho hoặc địa chỉ đã thay đổi; vui lòng tạo quote mới.');
+        const storeIds=new Set(calculated.storeList.map(x=>x.store_id));
+        if(Object.keys(input.payment_methods).length!==storeIds.size || Object.keys(input.payment_methods).some(x=>!storeIds.has(x)))
+          throw new ApiError(422,'PAYMENT_SCOPE_MISMATCH','Phương thức thanh toán phải khớp đúng các Store đã chọn.');
+        const purchaseGroupId=randomUUID();
+        const storeOrders=calculated.storeList.map(store=>({ ...store,orderId:randomUUID(),paymentMethod:input.payment_methods[store.store_id],
+          status:input.payment_methods[store.store_id]==='COD'?'PREPARING':'AWAITING_PAYMENT',
+          paymentExpiresAt:input.payment_methods[store.store_id]==='COD'?null:quote.expires_at }));
+        return {userId:auth.user_id,purchaseGroupId,correlation,input:normalized,storeOrders,context:calculated.context,payable:calculated.payable,platformVoucherId:calculated.platformVoucherId,
+          reserve:{operation_id:commandId('reserve:'+purchaseGroupId),purchase_group_id:purchaseGroupId,expires_at:quote.expires_at,
+            items:storeOrders.flatMap(store=>store.items.map(item=>({variant_id:item.variant_id,store_id:store.store_id,order_id:store.orderId,quantity:item.quantity})))}};
+      });
+    } catch(e) {if(e instanceof ApiError)throw e;throw recoveryPending();}
+  }
+
+  private async commitCheckout(plan:CheckoutPlan,result:any,manager:EntityManager):Promise<OperationOutputs['confirmCheckout']> {
+    const repo=new OrderRepository(manager),{storeOrders,purchaseGroupId,userId}=plan;
+    // A second key must not purchase a Cart snapshot already removed or edited by another checkout.
+    await manager.query(`SELECT ci.id FROM cart_item ci JOIN cart c ON c.id=ci.cart_id
+      WHERE ci.id=ANY($1::uuid[]) AND c.customer_user_id=$2 ORDER BY ci.id FOR UPDATE OF ci`,[plan.input.cart_item_ids,userId]);
+    const current=await repo.findCartItemsWithOwnership(plan.input.cart_item_ids,userId);
+    if(current.length!==plan.input.cart_item_ids.length || current.some(ci=>!plan.reserve.items.some(line=>line.variant_id===ci.variant_id && line.store_id===ci.store_id && line.quantity===ci.quantity)))
+      throw new ApiError(409,'CART_CHANGED','Giỏ hàng đã thay đổi trong lúc xác nhận.');
+    const voucherRepo=this.vouchers(manager),holds:any[]=[],redemptions:any[]=[];
+    for(const store of storeOrders){
+      if(store.voucher_id && store.store_discount_vnd>0){
+        holds.push({voucher_id:store.voucher_id,purchase_group_id:purchaseGroupId,customer_user_id:userId,store_id:store.store_id,discount_vnd:store.store_discount_vnd,expires_at:new Date(plan.reserve.expires_at)});
+        redemptions.push({voucher_id:store.voucher_id,order_id:store.orderId,customer_user_id:userId,discount_vnd:store.store_discount_vnd});
+      }
+      if(plan.platformVoucherId && store.platform_discount_vnd>0)redemptions.push({voucher_id:plan.platformVoucherId,order_id:store.orderId,customer_user_id:userId,discount_vnd:store.platform_discount_vnd});
+    }
+    const platformTotal=storeOrders.reduce((sum,x)=>sum+x.platform_discount_vnd,0);
+    if(plan.platformVoucherId && platformTotal>0)holds.push({voucher_id:plan.platformVoucherId,purchase_group_id:purchaseGroupId,customer_user_id:userId,store_id:null,discount_vnd:platformTotal,expires_at:new Date(plan.reserve.expires_at)});
+    holds.sort((a,b)=>a.voucher_id.localeCompare(b.voucher_id));
+    for(const hold of holds)await voucherRepo.reserveVoucher(hold);
+    for(const store of storeOrders){
+      await repo.createOrder({id:store.orderId,purchase_group_id:purchaseGroupId,customer_user_id:userId,store_id:store.store_id,address_snapshot:plan.context.address_snapshot,
+        status:store.status,payment_method:store.paymentMethod,payment_expires_at:store.paymentExpiresAt?new Date(store.paymentExpiresAt):null,
+        goods_vnd:store.goods_vnd,store_discount_vnd:store.store_discount_vnd,platform_discount_vnd:store.platform_discount_vnd,shipping_vnd:store.shipping_vnd,payable_vnd:store.payable_vnd,version:0});
+      for(const item of store.items)await repo.createOrderItem({order_id:store.orderId,product_id:item.product_id,variant_id:item.variant_id,product_snapshot:{title:item.product_title},sku_snapshot:item.sku,
+        unit_price_vnd:item.unit_price_vnd,quantity:item.quantity,line_total_vnd:item.line_total_vnd});
+      await manager.query(`INSERT INTO order_status_history(order_id,from_status,to_status,actor_user_id,reason,operation_id)
+        VALUES($1,NULL,$2,$3,'ORDER_CREATED',$4)`,[store.orderId,store.status,userId,commandId('created:'+store.orderId)]);
+      await this.payments(manager).createForOrder({order_id:store.orderId,method:store.paymentMethod,payable_vnd:BigInt(store.payable_vnd),operation_id:commandId('payment:'+store.orderId),correlation_id:plan.correlation});
+      const ids=[...new Set<string>(result.reservations.filter((r:any)=>r.order_id===store.orderId).map((r:any)=>r.id))].sort();
+      const items=store.items.map((x:any)=>({variant_id:x.variant_id,store_id:store.store_id,quantity:x.quantity}));
+      await manager.query(`INSERT INTO order_inventory_state(order_id,reservation_ids,items_json,state,correlation_id)
+        VALUES($1,$2,$3,'RESERVED',$4)`,[store.orderId,ids,JSON.stringify(items),plan.correlation]);
+      if(store.paymentMethod==='COD')await queueInventoryCommand(manager,store.orderId,'CONSUME',plan.correlation);
+      await audit(manager,'M2',userId,'Order',store.orderId,'CONFIRM_CHECKOUT',plan.correlation,{}, {status:store.status,payable_vnd:store.payable_vnd});
+    }
+    await voucherRepo.commitVoucherRedemptions(purchaseGroupId,redemptions);
+    await repo.removeCartItems(plan.input.cart_item_ids,userId);
+    const orders=await repo.findOrdersByPurchaseGroupId(purchaseGroupId,userId);
+    return {purchase_group_id:purchaseGroupId,order_ids:storeOrders.map(x=>x.orderId),orders:orders.map(o=>this.mapOrderRowToDto(o)),payable_total_vnd:plan.payable};
   }
 
   async getPurchaseGroupOrders(
@@ -420,7 +589,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'purchase_group_id không hợp lệ.');
     }
 
-    const repo = new OrderRepository(database.manager);
+    const repo = new OrderRepository(this.source.manager);
     const ordersWithItems = await repo.findOrdersByPurchaseGroupId(purchaseGroupId, userId);
 
     if (!ordersWithItems.length) {
@@ -482,7 +651,7 @@ export class OrderService {
     const page = Math.max(1, Number(query?.page ?? 1));
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
-    const repo = new OrderRepository(database.manager);
+    const repo = new OrderRepository(this.source.manager);
     const { items, total } = await repo.pageCustomerOrders(userId, page, size);
 
     return {
@@ -505,7 +674,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
     }
 
-    const repo = new OrderRepository(database.manager);
+    const repo = new OrderRepository(this.source.manager);
     const order = await repo.findCustomerOrderById(id, userId);
     if (!order) {
       throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng hoặc đơn hàng không thuộc quyền sở hữu của bạn.');
@@ -527,7 +696,7 @@ export class OrderService {
     const page = Math.max(1, Number(query?.page ?? 1));
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
-    const repo = new OrderRepository(database.manager);
+    const repo = new OrderRepository(this.source.manager);
     const { items, total } = await repo.pageStoreOrders(storeId, page, size);
 
     return {
@@ -552,7 +721,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Mã đơn hàng id không hợp lệ.');
     }
 
-    const repo = new OrderRepository(database.manager);
+    const repo = new OrderRepository(this.source.manager);
     const order = await repo.findStoreOrderById(id, storeId);
     if (!order) {
       throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
@@ -588,7 +757,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', `to_status không hợp lệ: ${toStatus}`);
     }
 
-    return database.transaction(async manager => {
+    return this.source.transaction(async manager => {
       const repo = new OrderRepository(manager);
       const order = await repo.lockStoreOrderById(id, storeId);
       if (!order) {
@@ -670,23 +839,44 @@ export class OrderService {
     });
   }
 
-  async cancelOwnOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelOwnOrder']> {
+  async cancelOwnOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,correlation:string):Promise<OperationOutputs['cancelOwnOrder']> {
     if(!auth?.user_id) throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
-    return database.transaction(async manager=>{
-      const order=await new OrderRepository(manager).lockCustomerOrderById(id,auth.user_id);
-      if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
-      this.checkCancellation(order,input.expected_version);
-      return notImplemented('cancelOwnOrder: cần worker release/restock/refund bền vững');
-    });
+    return this.cancelOrder(id,input,auth,correlation);
   }
 
-  async cancelStoreOrder(id:string,input:OperationInputs['cancelStoreOrder']['body'],auth:any,_correlation:string):Promise<OperationOutputs['cancelStoreOrder']> {
+  async cancelStoreOrder(id:string,input:OperationInputs['cancelStoreOrder']['body'],auth:any,correlation:string):Promise<OperationOutputs['cancelStoreOrder']> {
     const storeId=requireStorePermission(auth,'order.store.read_status_cancel');
-    return database.transaction(async manager=>{
-      const order=await new OrderRepository(manager).lockStoreOrderById(id,storeId);
+    return this.cancelOrder(id,input,auth,correlation,storeId);
+  }
+  private async cancelOrder(id:string,input:OperationInputs['cancelOwnOrder']['body'],auth:any,correlation:string,storeId?:string):Promise<OperationOutputs['cancelOwnOrder']> {
+    if(!UUID_REGEX.test(id) || !Number.isInteger(input?.expected_version) || input.expected_version<0 ||
+      input.reason!==undefined && (typeof input.reason!=='string' || input.reason.length>200))
+      throw new ApiError(422,'VALIDATION_FAILED','Yêu cầu hủy không hợp lệ.');
+    return this.source.transaction(async manager=>{
+      const repo=new OrderRepository(manager);
+      const order=storeId?await repo.lockStoreOrderById(id,storeId):await repo.lockCustomerOrderById(id,auth.user_id);
       if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
       this.checkCancellation(order,input.expected_version);
-      return notImplemented('cancelStoreOrder: cần worker release/restock/refund bền vững');
+      const payment=await repo.lockPaymentByOrderId(id);
+      if(!payment)throw new ApiError(409,'PAYMENT_CONTEXT_MISSING','Order thiếu Payment; cần đối soát.');
+      const uncertain=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='UNKNOWN'",[payment.id]);
+      if(uncertain.length)throw new ApiError(409,'PAYMENT_RECONCILIATION_REQUIRED','Giao dịch chưa rõ kết quả; cần đối soát trước khi hủy.');
+      if(payment.method==='COD' && (payment.status==='SUCCEEDED' || BigInt(payment.collected_vnd)>0n))
+        throw new ApiError(409,'COD_ALREADY_COLLECTED','Đơn đã thu COD cần đối soát hoàn tiền.');
+      const [stock]=await manager.query('SELECT * FROM order_inventory_state WHERE order_id=$1 FOR UPDATE',[id]);
+      if(!stock)throw new ApiError(409,'INVENTORY_CONTEXT_MISSING','Order thiếu reservation thực; cần đối soát.');
+      const reason=input.reason?.trim() || (storeId?'STORE_CANCELLED':'CUSTOMER_CANCELLED');
+      const updated=await changeOrderStatus(manager,order,'CANCELLED',reason,correlation,auth.user_id);
+      await requestClosedRefund(manager,updated,payment,correlation);
+      // Never overwrite an uncertain Consume: first replay it, then Restock if it applied.
+      if(!stock.command_kind){
+        if(stock.state==='RESERVED')await queueInventoryCommand(manager,id,'RELEASE',correlation);
+        else if(stock.state==='CONSUMED')await queueInventoryCommand(manager,id,'RESTOCK',correlation);
+      }
+      await this.vouchers(manager).releaseVoucherReservations(order.purchase_group_id);
+      const current=storeId?await repo.findStoreOrderById(id,storeId):await repo.findCustomerOrderById(id,auth.user_id);
+      if(!current)throw new ApiError(409,'ORDER_STATE_CONFLICT','Không đọc được Order sau khi hủy.');
+      return this.mapOrderRowToDto(current);
     });
   }
   private checkCancellation(order:OrderRow,version:number):void {
@@ -696,7 +886,7 @@ export class OrderService {
 
   async collectCod(id:string,input:OperationInputs['collectCod']['body'],auth:any,_correlation:string):Promise<OperationOutputs['collectCod']> {
     const storeId=requireStorePermission(auth,'cod.store.collect');
-    return database.transaction(async manager=>{
+    return this.source.transaction(async manager=>{
       const repo=new OrderRepository(manager),order=await repo.lockStoreOrderById(id,storeId);
       if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
       if(order.version!==input.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
@@ -729,7 +919,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'product_id không hợp lệ.');
     }
 
-    const repo = new OrderRepository(database.manager);
+    const repo = new OrderRepository(this.source.manager);
     const item = await repo.findOrderItemEligibility(orderItemId);
 
     if (!item) {

@@ -1,10 +1,12 @@
 # AI evaluation — bàn giao bộ kiểm soát độc lập
 
-Owner: Công. Scope [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56), [AI-03 #57](https://github.com/embetapbay123/PBL6/issues/57), [AI-04 #58](https://github.com/embetapbay123/PBL6/issues/58). Provider vẫn `none` theo lựa chọn hiện tại; bộ này không gọi model, không dùng data giả để publish model serving.
+Owner: Công. Scope [AI-02 #56](https://github.com/embetapbay123/PBL6/issues/56), [AI-03 #57](https://github.com/embetapbay123/PBL6/issues/57), [AI-04 #58](https://github.com/embetapbay123/PBL6/issues/58). Bộ synthetic này dùng `none`, không gọi model hoặc publish dữ liệu giả lên serving. Runtime demo hiện đã cấu hình OpenCode Go/DeepSeek; kết quả real provider được ghi riêng.
 
 ## Đã có
 
-**Cập nhật 13/10:** chủ repo chọn API OpenCode/DeepSeek; generation adapter đã có, model ID/key chưa cấu hình. Runner synthetic vẫn giữ none; [live runner/cấu hình/evidence](cong-week3-handoff.md) tách riêng. Provider none trong ghi nhận 07/10 không còn là hướng provider cuối cùng.
+**Follow-up 23/10:** explicit `CHAT_THINKING=disabled` was accepted on the configured OpenCode Go `deepseek-v4-flash`: 3/4 generated answers, p95 2126 ms, outside-domain NO_MATCH, current source/card/budget checks passed. The evaluator now reuses the runtime HTTP pool. This is a separate small read-only sample, not a replacement for the failed 4837/6328-ms observations, provider concurrency, human quality or billing review. Requested mode is recorded by append-only migration 008. [Sanitized development evidence](evidence/2026-10-23-cong-full-acceptance.json) · [runtime configuration](ai-runtime-handoff.md).
+
+**Cập nhật 23/10:** runtime đã dùng `deepseek-v4-flash` qua OpenCode Go và sinh hai câu trả lời thật trong mẫu bốn case; xem [runtime handoff](cong-week4-handoff.md). Mẫu có fallback rõ, p95 4837 ms chưa đạt 4 giây và cost chưa đối soát. Prompt `catalog-answer-v4` yêu cầu tối đa hai câu ngắn, tránh giải thích sai rằng giá/ngân sách chưa được kiểm khi server đã lọc candidate và ghép giá hiện hành. Token usage hợp lệ từ provider được giữ cả khi prose bị guard từ chối; usage thiếu/sai vẫn null. Runner synthetic vẫn giữ none.
 
 - [Dataset generator](../../backend/ai-service/app/evaluation/dataset.py): version cố định, UUID synthetic, 60 user/72 product/1.200 interaction; timestamp cố định, 6 nhóm sở thích. Product fixture validate theo OpenAPI; event IDs không trùng. Đây không phải dữ liệu người dùng đã consent thực.
 - [Pipeline](../../backend/ai-service/app/evaluation/pipeline.py) dùng chung với DB training job: 60/20/20 theo timestamp từng user, giữ timestamp trùng cùng fold; chọn regularization bằng validation NDCG@10, chỉ đánh giá test sau lựa chọn. Config ghi đầy đủ factors/iterations/alpha/regularization/seed.
@@ -41,7 +43,7 @@ Dataset version là cố định; không đổi split/seed sau khi xem test đ�
 
 1. #55: nguồn hành vi thật M1/M2/M3 và consent, dedup/retention đủ; owner producer giữ Thịnh/Hoa/Trí.
 2. #56/#58: chạy job với dữ liệu đủ và candidate Catalog thật; báo coverage/cold start/giới hạn lịch sử cùng raw metrics. Không import synthetic controls vào bảng serving để giả model tốt.
-3. #57: chọn model/provider rồi đo generation/semantic retrieval/cost/latency thực. Pronoun-only context chưa được chứng minh bởi multi-turn có từ khóa rõ. Lập bộ câu hỏi phù hợp Catalog thực; người chấm đánh giá groundedness/relevance/hallucination và ghi bất đồng. Không nhận fallback là LLM quality PASS.
+3. #57: đo generation/semantic retrieval/cost/latency thực với provider đã cấu hình. Live runner báo `latency_status` riêng theo mốc 4000 ms; `status=PASS` của contract/generation không thay thế chỉ tiêu latency, human review hay quality. Pronoun-only context chưa được chứng minh bởi multi-turn có từ khóa rõ. Lập bộ câu hỏi phù hợp Catalog thực; người chấm đánh giá groundedness/relevance/hallucination và ghi bất đồng. Không nhận fallback là LLM quality PASS.
 4. #59: benchmark tải gateway/provider và dataset đích; thời gian chạy control trong schema riêng không chứng minh NFR.
 
 Không đổi metadata endpoint thành IMPLEMENTED hoặc đóng issue rộng vì có benchmark synthetic. Các task khác giữ owner và Status kế hoạch hiện có.
