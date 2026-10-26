@@ -2,7 +2,7 @@
 
 Confirmed defects and implementation gaps are visible in their existing issues and the `bug` label on [Kanban](https://github.com/users/embetapbay123/projects/1/views/3). This register distinguishes main from unmerged PR code. Missing acceptance alone is not a bug; a green CI or a merged partial fix does not complete a broad task. [Week 4](week4.md) defines the next actions and dates.
 
-**27/10 current source status:** [verified PR fixes and remaining dependencies](pr-fixes-2026-10-27.md) supersede the historical PR findings below. #119/#124/#125/#126/#127 source fixes are merged; #107/#108 fixes are verified candidates until their final CI/merge gate. Main and the deployed runtime remain separate. Review backend #16 remains 501 under Thịnh; #69 stays blocked for real acceptance.
+**27/10 source verification:** [verified PR fixes and remaining dependencies](pr-fixes-2026-10-27.md) supersede the historical PR findings below. Fixes are identified by their reviewed PR heads and final CI/merge gate; linked PRs show their merge state. Main and the deployed runtime remain separate. Review backend #16 remains 501 under Thịnh; #69 stays blocked for real acceptance.
 
 ## Open findings and remaining implementation gaps
 
