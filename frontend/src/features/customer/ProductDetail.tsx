@@ -6,6 +6,7 @@ import { ApiError } from '../../api/client';
 import { useAuth } from '../../api/auth-context';
 import { ErrorView, Loading } from '../../bootstrap/components';
 import { ProductReviews } from './ProductReviews'; // 1. Nhập component đánh giá sản phẩm
+import {CustomerRecommendations} from './CustomerRecommendations';
 
 type Product = OperationOutputs['getProduct'];
 
@@ -67,6 +68,7 @@ export function ProductDetail() {
       
       {/* 2. Hiển thị phần đánh giá sản phẩm (Product Reviews) */}
       {product?.id && <ProductReviews productId={product.id} />}
+      {product?.id && <CustomerRecommendations productId={product.id}/>}
 
       <div className="mt-4 space-x-4">
         <Link to="/cart">Giỏ hàng</Link>
