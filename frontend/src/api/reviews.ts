@@ -13,8 +13,8 @@ export async function listProductReviews(productId: string, query?: ListProductR
 export type CreateReviewBody = operations["createReview"]["requestBody"]["content"]["application/json"];
 export type CreateReviewResponse = operations["createReview"]["responses"]["201"]["content"]["application/json"];
 
-export async function createProductReview(productId: string, body: CreateReviewBody): Promise<CreateReviewResponse> {
-  return await callOperation('createReview', { path: { id: productId }, body });
+export async function createProductReview(body: CreateReviewBody): Promise<CreateReviewResponse> {
+  return await callOperation('createReview', { body });
 }
 
 // 3. Sửa đánh giá
