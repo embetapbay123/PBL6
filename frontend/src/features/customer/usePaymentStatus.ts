@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 export type PaymentPhase =
-  | 'idle' | 'waiting' | 'succeeded' | 'failed' | 'unknown' | 'expired' | 'error';
+  | 'idle' | 'waiting' | 'succeeded' | 'refunded' | 'failed' | 'unknown' | 'expired' | 'error';
 
 interface Options {
   enabled: boolean;
@@ -17,7 +17,9 @@ function classify(status: string): PaymentPhase {
     case 'SUCCEEDED': return 'succeeded';
     case 'FAILED': return 'failed';
     case 'UNKNOWN': return 'unknown';
-    default: return 'waiting';
+    case 'REFUNDED': return 'refunded';
+    case 'PENDING': return 'waiting';
+    default: return 'unknown';
   }
 }
 
@@ -38,6 +40,7 @@ export function usePaymentStatus({ enabled, fetchStatus, expiresAt, intervalMs =
     let cancelled = false;
 
     setPhase('waiting');
+    setRawStatus(null);setLastError(null);
 
     const tick = async () => {
       if (cancelled) return;

@@ -83,6 +83,8 @@ test('attempt concurrency/retry reuse server amount/reference; QR is never a pay
   const args=[id,{expected_order_version:0},{user_id:user},'payment-attempt-test'] as const;
   const results=await Promise.all([service.createPaymentAttempt(...args),service.createPaymentAttempt(...args)]);
   expect(results[0]).toEqual(results[1]);expect(results[0].status).toBe('PENDING');expect(schemaErrors(results[0],bundle.operations.createPaymentAttempt.responses['201'])).toEqual([]);
+  expect(results[0].payment_id).toBe(p.id);expect(results[0].id).not.toBe(p.id);
+  expect((await service.getPayment(results[0].payment_id,{user_id:user})).id).toBe(p.id);
   const qr=new URL(results[0].qr_url!);expect(qr.searchParams.get('amount')).toBe('100');expect(qr.searchParams.get('des')).toBe(results[0].provider_reference);
   expect((await service.getPayment(p.id,{user_id:user})).status).toBe('PENDING');
   await source.query("UPDATE payment_attempt SET status='UNKNOWN' WHERE id=$1",[results[0].id]);

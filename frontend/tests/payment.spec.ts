@@ -1,7 +1,14 @@
 import { test, expect, Page } from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const fixtures=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
+
+test.beforeEach(async({page})=>{
+  for(const action of ['login','refresh']) await page.route('**/api/v1/auth/'+action,route=>route.fulfill({json:{...fixtures.login.response,context:{user_id:ORDER_ID,roles:['CUSTOMER'],token_version:0}},headers:{'set-cookie':'pbl6_csrf=fixture-only; Path=/; SameSite=Strict'}}));
+});
 
 const ORDER_ID = '44444444-4444-4444-8444-444444444444';
 const ATTEMPT_ID = '55555555-5555-4555-8555-555555555555';
+const PAYMENT_ID = '66666666-6666-4666-8666-666666666666';
 const QR = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect width=%2240%22 height=%2240%22/%3E%3C/svg%3E';
 
 const order = (over: Record<string, unknown> = {}) => ({
@@ -11,11 +18,11 @@ const order = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 const attempt = () => ({
-  id: ATTEMPT_ID, status: 'PENDING', provider: 'SEPAY_TEST', payment_code: 'PBL6TEST', qr_url: QR,
+  id: ATTEMPT_ID, payment_id: PAYMENT_ID, status: 'PENDING', provider: 'SEPAY_TEST', provider_reference:'PBL6TEST', payment_code: 'PBL6TEST', qr_url: QR,
   expires_at: new Date(Date.now() + 10 * 60000).toISOString(),
 });
 const payment = (status: string) => ({
-  id: ATTEMPT_ID, order_id: ORDER_ID, method: 'SANDBOX', status, payable_vnd: 100000, collectible_vnd: 100000,
+  id: PAYMENT_ID, order_id: ORDER_ID, method: 'SANDBOX', status, payable_vnd: 100000, collectible_vnd: 0, collected_vnd:status==='SUCCEEDED'?100000:0, refunded_vnd:0,
 });
 
 type Reply = { status?: number; json: unknown };
@@ -40,6 +47,7 @@ async function open(page: Page, o: {
     return route.fulfill(o.attempt ?? { json: attempt() });
   });
   await page.route('**/api/v1/payments/*', route => {
+    expect(new URL(route.request().url()).pathname).toBe('/api/v1/payments/'+PAYMENT_ID);
     c.payments++;
     return route.fulfill(o.payment(c.payments));
   });
@@ -112,4 +120,15 @@ test('repeated polling failures end in an error and never in success', async ({ 
   }
   await expect(page.getByTestId('payment-poll-error')).toBeVisible();
   await expect(page.getByTestId('payment-succeeded')).toHaveCount(0);
+});
+
+test('expired code stops polling and cannot extend the Order deadline',async({page})=>{
+ await login(page);const c=await open(page,{attempt:{json:{...attempt(),expires_at:new Date(Date.now()-1000).toISOString()}},payment:()=>({json:payment('PENDING')})});
+ await expect(page.getByTestId('payment-expired')).toBeVisible();await page.clock.runFor(12000);expect(c.payments).toBe(1);await expect(page.getByRole('button',{name:'Tạo mã mới'})).toHaveCount(0);
+});
+test('REFUNDED is terminal and is not presented as payment success',async({page})=>{
+ await login(page);const c=await open(page,{payment:()=>({json:payment('REFUNDED')})});await expect(page.getByTestId('payment-refunded')).toBeVisible();await page.clock.runFor(12000);expect(c.payments).toBe(1);await expect(page.getByTestId('payment-succeeded')).toHaveCount(0);
+});
+test('already paid Order is read without creating a payment attempt',async({page})=>{
+ await login(page);const c=await open(page,{order:{json:order({status:'CONFIRMED',payment_status:'SUCCEEDED'})},payment:()=>({json:payment('PENDING')})});await expect(page.getByTestId('payment-succeeded')).toBeVisible();expect(c.attempts).toBe(0);
 });

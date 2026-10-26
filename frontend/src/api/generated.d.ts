@@ -1918,6 +1918,11 @@ export interface components {
             qr_url?: string;
             /** Format: date-time */
             expires_at?: string;
+            /**
+             * Format: uuid
+             * @description Owned Payment ID used by GET /payments/{id}; distinct from the PaymentAttempt ID.
+             */
+            payment_id: string;
         };
         PaymentCallback: {
             provider_event_id: string;

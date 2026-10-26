@@ -5,7 +5,7 @@ const fixtureMode=import.meta.env.DEV && import.meta.env.VITE_API_MODE==='fixtur
 export const dataMode=fixtureMode?'fixture':'api';
 const monetaryCommands=new Set(['confirmCheckout','createPaymentAttempt','sepayCallback','sandboxCallback','collectCod']);
 
-export async function callOperation<K extends OperationId>(operation:K,input:Partial<OperationInputs[K]>={}):Promise<OperationOutputs[K]> {
+export async function callOperation<K extends OperationId>(operation:K,input:Partial<OperationInputs[K]>={},options:Pick<RequestInit,'signal'>={}):Promise<OperationOutputs[K]> {
   const record=registry[operation];
   if(record.internal)throw new ApiError(0,'INTERNAL_API_BLOCKED','Web không gọi API nội bộ.');
   if(fixtureMode) {
@@ -22,6 +22,6 @@ export async function callOperation<K extends OperationId>(operation:K,input:Par
   const params=new URLSearchParams();
   for(const [key,value] of Object.entries(input.query ?? {}))if(value!==undefined && value!==null)params.set(key,String(value));
   if(params.size)path+='?'+params;
-  return request<OperationOutputs[K]>(path,{method:record.method,headers:input.headers as Record<string,string>,
+  return request<OperationOutputs[K]>(path,{method:record.method,headers:input.headers as Record<string,string>,signal:options.signal,
     ...(input.body!==undefined?{body:JSON.stringify(input.body)}:{})});
 }

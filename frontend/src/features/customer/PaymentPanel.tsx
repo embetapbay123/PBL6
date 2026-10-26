@@ -49,7 +49,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
           path: { id: orderId },
           body: { expected_order_version: o.version },
         });
-        if (!cancelled) setAttempt(a);
+        if (!cancelled) { setNow(Date.now()); setAttempt(a); }
       } catch (e) {
         if (!cancelled) setSetupError(e);
       } finally {
@@ -59,11 +59,10 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
     return () => { cancelled = true; };
   }, [orderId, round]);
 
-  // TODO: xác nhận với Công ว่า id của getPayment là attempt.id hay Payment id
   const { phase, rawStatus, lastError } = usePaymentStatus({
     enabled: !!attempt,
     expiresAt: attempt?.expires_at,
-    fetchStatus: () => callOperation('getPayment', { path: { id: attempt!.id } }),
+    fetchStatus: signal => callOperation('getPayment', { path: { id: attempt!.payment_id } }, {signal}),
   });
 
   useEffect(() => {
@@ -85,9 +84,12 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
   }
 
   if (!attempt) {
+    if (order?.payment_status==='SUCCEEDED') return <p data-testid="payment-succeeded">Đã nhận thanh toán.</p>;
+    if (order?.payment_status==='REFUNDED' || order?.refund_status==='SUCCEEDED') return <p data-testid="payment-refunded">Đã hoàn tiền.</p>;
     return (
       <p data-testid="payment-not-awaiting">
         Đơn hàng không ở trạng thái chờ thanh toán{order ? ` (${order.status})` : ''}.
+        {order?.refund_status && ' Yêu cầu hoàn tiền đang được đối soát; chưa xác nhận hoàn tiền.'}
       </p>
     );
   }
@@ -97,6 +99,8 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
   switch (phase) {
     case 'succeeded':
       return <p data-testid="payment-succeeded">Đã nhận thanh toán.</p>;
+    case 'refunded':
+      return <p data-testid="payment-refunded">Đã hoàn tiền.</p>;
     case 'failed':
       return (
         <div role="alert" data-testid="payment-failed">
@@ -114,7 +118,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
       return (
         <div role="alert" data-testid="payment-expired">
           <p>Mã thanh toán đã hết hạn.</p>
-          <button onClick={() => setRound(r => r + 1)}>Tạo mã mới</button>
+          <p>Không thanh toán bằng mã đã hết hạn. Hãy kiểm tra lại đơn hàng.</p>
         </div>
       );
     case 'error':
