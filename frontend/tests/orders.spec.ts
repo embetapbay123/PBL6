@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 const f=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
 const id='45000000-0000-4000-8000-000000000001';
 async function setup(page:Page,{status='CONFIRMED',conflict=false,missing=false,unavailable=false}={}){
- let current={...f.getOwnOrder.response,id,status,version:7,payment_method:'SANDBOX',payment_status:'SUCCEEDED',items:[{id,product_id:id,title:'Actual purchased product',quantity:2,unit_price_vnd:100000}],amounts:{goods_vnd:200000,shipping_vnd:15000,store_discount_vnd:10000,platform_discount_vnd:5000,payable_vnd:200000}};
+ let current={...f.getOwnOrder.response,id,status,version:7,payment_method:'SANDBOX',payment_status:'SUCCEEDED',items:[{id,product_id:id,product_snapshot:{title:'Actual purchased product'},quantity:2,unit_price_vnd:100000}],amounts:{goods_vnd:200000,shipping_vnd:15000,store_discount_vnd:10000,platform_discount_vnd:5000,payable_vnd:200000}};
  const writes:any[]=[],pages:string[]=[];
  await page.route('**/api/v1/**',route=>{const req=route.request(),url=new URL(req.url()),path=url.pathname;
   if(path.endsWith('/auth/login')||path.endsWith('/auth/refresh'))return route.fulfill({json:{...f.login.response,context:{user_id:id,roles:['CUSTOMER'],role_permissions:[],token_version:0}},headers:{'set-cookie':'pbl6_csrf=fixture; Path=/; SameSite=Strict'}});
