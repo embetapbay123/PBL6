@@ -1,7 +1,7 @@
 {
   "date": "2026-10-23",
   "status": "PARTIAL_ACCEPTANCE",
-  "development_runs_only": true,
+  "development_runs_only": false,
   "functional": {
     "run_id": "pbl6-acceptance-9e74b3f61cf5",
     "revision": "3233f06754dc9ca9aea91ca170b1dfb4489fd8a8",
@@ -778,11 +778,11 @@
     }
   ],
   "remaining": [
-    "Clean exact-head CI and target-profile capacity result",
-    "Live deployment of the new candidate and migration 008",
+    "Deploy the reviewed candidate and verify live migration/runtime",
     "Fresh Checkout plus SePay dashboard simulation",
     "Supported outbound Refund provider",
     "Representative consented dataset, training and quality/billing review",
+    "Provider/RAG concurrency, complete security matrix, Tunnel IP topology and soak",
     "Member-owned full UI/APK and complete FR/NFR rehearsals"
   ],
   "ci_before_key_fix": [
@@ -1221,5 +1221,213 @@
     "observation_samples": 4,
     "observation_sha256": "66846d3a47b32690eb44c6d6c5cfd46a51397e86b616a6d2b87b909b0cdfcd1e",
     "cleanup": "PASS"
+  },
+  "reviewed_at": "2026-10-26",
+  "clean_target_after_key_fix": {
+    "project": "pbl6-acceptance-126b630847d7",
+    "profile": "target",
+    "status": "PASS",
+    "source_sha256": "5ed9d8b9ec22726c157db8efcf181f956f5c6ef8052ee87ed43599675dbba109",
+    "revision": "258aa03c822ea7c85736d3e3a2633befe75ab0f7",
+    "dirty": false,
+    "workload": "50% Catalog / 20% Cart / 15% Order reads / 10% Quote / 5% COD creation workflows; each workflow may make multiple API requests; 1s think time",
+    "not_run": [
+      "Provider or RAG load",
+      "Actual sales/Refund",
+      "Web/Android rendering",
+      "Login hash/email throughput",
+      "Production Cloudflare client-IP topology",
+      "60-minute soak"
+    ],
+    "started_at": "2026-10-23T04:28:30Z",
+    "dataset": {
+      "version": "capacity-volume-v1",
+      "source": "SYNTHETIC_VOLUME_ONLY",
+      "stores": 10,
+      "customers": 1000,
+      "products": 10000,
+      "variants": 20000,
+      "historical_orders": 50000,
+      "auth": "Isolated signed 15-minute sessions; live context and refresh; login cost excluded",
+      "limits": [
+        "Synthetic volume is not actual sales, financial evidence, consented behavior or AI quality data",
+        "No serving model is trained or published"
+      ]
+    },
+    "hardware": "16 CPUs; 7902412800 bytes memory; 28.5.1",
+    "load_elapsed_seconds": 1325.36,
+    "requested_duration_seconds": 1320,
+    "load_exit_code": 0,
+    "load": {
+      "http_reqs": {
+        "count": 155290,
+        "rate": 117.54888227178928
+      },
+      "http_req_duration": {
+        "avg": 44.22245389024343,
+        "min": 6.075489,
+        "med": 34.5602215,
+        "max": 1981.472697,
+        "p(90)": 78.0558408,
+        "p(95)": 106.33324179999995,
+        "thresholds": {
+          "p(95)<2000": false
+        }
+      },
+      "http_req_failed": {
+        "passes": 15,
+        "fails": 155275,
+        "thresholds": {
+          "rate<0.01": false
+        },
+        "value": 9.659347028140898e-05
+      },
+      "checks": {
+        "fails": 15,
+        "passes": 205308,
+        "thresholds": {
+          "rate>0.99": false
+        },
+        "value": 0.9999269443754475
+      },
+      "iterations": {
+        "count": 100112,
+        "rate": 75.78114303556809
+      }
+    },
+    "failure_counts": {
+      "failed_confirmCheckout": 15,
+      "failed_status_503": 15,
+      "failed_code_OTHER": 15
+    },
+    "route_duration_ms": {
+      "listCartItems": {
+        "avg": 20.582218977724597,
+        "min": 6.075489,
+        "med": 12.928002500000002,
+        "max": 840.20425,
+        "p(90)": 36.41227250000001,
+        "p(95)": 54.12040435000002
+      },
+      "quoteCheckout": {
+        "med": 40.793821,
+        "max": 1123.726631,
+        "p(90)": 96.56832980000004,
+        "p(95)": 135.29495559999995,
+        "avg": 55.95086418564863,
+        "min": 19.756141
+      },
+      "confirmReplay": {
+        "min": 7.85767,
+        "med": 17.075527,
+        "max": 458.326299,
+        "p(90)": 118.5531902,
+        "p(95)": 222.92846639999965,
+        "avg": 61.11372459999999
+      },
+      "updateCartItem": {
+        "min": 12.988519,
+        "med": 26.822055,
+        "max": 1066.247262,
+        "p(90)": 65.39928990000003,
+        "p(95)": 94.67233250000001,
+        "avg": 38.88091398906224
+      },
+      "listOwnOrders": {
+        "min": 11.934453,
+        "med": 21.147398,
+        "max": 1074.073692,
+        "p(90)": 46.97881180000003,
+        "p(95)": 65.40869239999992,
+        "avg": 29.181580593847794
+      },
+      "refresh": {
+        "med": 183.84732400000001,
+        "max": 335.41063,
+        "p(90)": 305.2134398,
+        "p(95)": 317.1663028,
+        "avg": 166.1285865,
+        "min": 14.105632
+      },
+      "listProducts": {
+        "med": 45.592634,
+        "max": 425.444311,
+        "p(90)": 76.25658160000003,
+        "p(95)": 92.81297119999999,
+        "avg": 51.451864763535994,
+        "min": 21.049434
+      },
+      "getOwnOrder": {
+        "avg": 23.764623131337352,
+        "min": 10.205234,
+        "med": 17.4992715,
+        "max": 497.721485,
+        "p(90)": 39.9718431,
+        "p(95)": 56.17909495
+      },
+      "addCartItem": {
+        "max": 1042.116748,
+        "p(90)": 92.56792080000001,
+        "p(95)": 134.07763019999996,
+        "avg": 53.728932437063186,
+        "min": 18.477212,
+        "med": 37.510128
+      },
+      "confirmCheckout": {
+        "min": 43.023458,
+        "med": 97.09370849999999,
+        "max": 1981.472697,
+        "p(90)": 209.0921261000001,
+        "p(95)": 274.22054114999986,
+        "avg": 126.43443501757177
+      },
+      "removeCartItem": {
+        "med": 16.445968,
+        "max": 749.687793,
+        "p(90)": 45.69255440000002,
+        "p(95)": 66.12434489999998,
+        "avg": 24.630169352371354,
+        "min": 7.331428
+      }
+    },
+    "workflow_counts": {
+      "workflow_count": {
+        "count": 100112,
+        "rate": 75.78114303556809
+      },
+      "recovery_pending": {
+        "count": 15,
+        "rate": 0.01135445446633292
+      }
+    },
+    "service_http_errors": {
+      "m1:3101": [],
+      "m2:3102": [
+        "pbl6_http_requests_total{service=\"M2\",route=\"/api/v1/orders/batches\",status=\"503\"} 15"
+      ],
+      "m3:3103": []
+    },
+    "raw_summary_sha256": "9ff624209419186f73c4a8c3ff746be34c3552d3c29dba2b68350f49ab4c32b3",
+    "workflow_note": "Workflow proportions are declared choices, not exact HTTP request proportions; all HTTP failures remain failures, including 409/503.",
+    "remaining_work": 0,
+    "invariants": {
+      "inventory_bounds": 0,
+      "inventory_movement_conservation": 0,
+      "payment_money_bounds": 0,
+      "new_order_payment_state": 0,
+      "orphan_payments": 0
+    },
+    "created_orders": 5008,
+    "observed_client_ips": 100,
+    "source_addresses_spoofed": false,
+    "observation_samples": 75,
+    "observation_sha256": "a86c257e9eaed6f691ad6d18484042a1c0f9c7d9e727bf909b6186bf8c9fd64f",
+    "cleanup": "PASS"
+  },
+  "clean_revision_ci": {
+    "revision": "258aa03c822ea7c85736d3e3a2633befe75ab0f7",
+    "scaffold": "https://github.com/embetapbay123/PBL6/actions/runs/39900492608",
+    "real_service": "https://github.com/embetapbay123/PBL6/actions/runs/39900492774",
+    "status": "PASS"
   }
 }
