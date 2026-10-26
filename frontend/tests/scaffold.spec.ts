@@ -15,7 +15,8 @@ test('web login/profile survives reload and logout clears the session',async({pa
  await page.reload();await expect(page.getByText('customer1@pbl6.test',{exact:true})).toBeVisible();
  const cookies=await page.context().cookies();expect(cookies.find(c=>c.name==='pbl6_refresh')?.httpOnly).toBe(true);
  await page.getByRole('link',{name:'Đăng nhập',exact:true}).click();await page.getByRole('button',{name:'Đăng xuất'}).click();
- await expect(page.getByRole('heading',{name:'Đăng nhập API thật'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Đăng nhập',exact:true})).toBeVisible();
+ await expect(page.getByLabel('Mật khẩu',{exact:true})).toBeVisible();
  await page.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect(page.getByText('Đăng nhập để xem hồ sơ.')).toBeVisible();
 });
 test('legacy mock UI remains accessible',async({page})=>{
