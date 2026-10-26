@@ -1,4 +1,5 @@
 import {test,expect,Page} from '@playwright/test';
+import type {Route} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 const f=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
 async function setup(page:Page,{failure=false}={}){
@@ -27,4 +28,17 @@ test('delivery error remains an error with no success message',async({page})=>{
 });
 test('changing a password sends current/new values and clears the revoked local session',async({page})=>{
  const calls=await setup(page);await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('actual@example.test');await page.getByLabel('Mật khẩu',{exact:true}).fill('Test-password-123');await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập'})).toBeVisible();await page.getByRole('link',{name:'Đổi mật khẩu',exact:true}).click();await page.getByLabel('Mật khẩu hiện tại').fill('Test-password-123');await page.getByLabel('Mật khẩu mới',{exact:true}).fill('New-password-123');await page.getByRole('button',{name:'Đổi mật khẩu',exact:true}).click();await expect(page.getByText('Đăng nhập để tiếp tục.')).toBeVisible();expect(calls.find(c=>c.path.endsWith('/auth/change-password'))?.body).toEqual({current_password:'Test-password-123',new_password:'New-password-123'});expect(calls.some(c=>c.path.endsWith('/auth/logout'))).toBe(true);
+});
+test('a delayed refresh cannot overwrite the next account token or replay its private request',async({page})=>{
+ let oldRefresh:Route|undefined,profileReads=0;const reads:string[]=[];
+ const auth=(name:string)=>({...f.login.response,access_token:'fixture-token-'+name,context:{user_id:name==='A'?'44000000-0000-4000-8000-000000000001':'44000000-0000-4000-8000-000000000002',roles:['CUSTOMER'],role_permissions:[],token_version:0}});
+ await page.route('**/api/v1/**',route=>{const req=route.request(),path=new URL(req.url()).pathname;
+  if(path.endsWith('/auth/login'))return route.fulfill({json:auth(req.postDataJSON().email.startsWith('a@')?'A':'B'),headers:{'set-cookie':'pbl6_csrf=fixture; Path=/; SameSite=Strict'}});
+  if(path.endsWith('/auth/refresh')){oldRefresh=route;return}
+  if(path.endsWith('/auth/logout'))return route.fulfill({json:{status:'SUCCESS'}});
+  if(path==='/api/v1/me'){reads.push(req.headers().authorization);if(++profileReads===1)return route.fulfill({status:401,json:{code:'EXPIRED',message:'Expired',details:[]}});return route.fulfill({json:{...f.getOwnProfile?.response,display_name:'Account B profile',email:'b@example.test'}})}
+  return route.fulfill({status:404,json:{code:'NOT_FOUND',message:'Unconfigured fixture',details:[]}});
+ });
+ const login=async(email:string)=>{await page.getByLabel('Email',{exact:true}).fill(email);await page.getByLabel('Mật khẩu',{exact:true}).fill('Test-password-123');await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập'})).toBeVisible()};
+ await page.goto('/login');await login('a@example.test');await page.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect.poll(()=>!!oldRefresh).toBe(true);await page.getByRole('link',{name:'Đăng nhập',exact:true}).click();await page.getByRole('button',{name:'Đăng xuất',exact:true}).click();await expect(page.getByLabel('Email',{exact:true})).toBeVisible();await login('b@example.test');await oldRefresh!.fulfill({json:auth('A')});await page.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect(page.getByText('Account B profile',{exact:true})).toBeVisible();expect(reads).toEqual(['Bearer fixture-token-A','Bearer fixture-token-B']);
 });
