@@ -1,5 +1,8 @@
 name: Scaffold checks
 on: [push, pull_request]
+concurrency:
+  group: scaffold-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -44,7 +47,15 @@ jobs:
       - name: Run PostgreSQL and HTTP integration suites without skips
         run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.m3-integration.yaml --profile m3-integration run --rm -e PBL6_ISOLATED_TEST_REDIS=1 tools npm run test:integration -- --ci
       - run: docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T m4 python -m pytest -q -p no:cacheprovider
-      - run: node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
+      - name: Use available Chrome or install Chromium
+        timeout-minutes: 5
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            google-chrome --version
+            echo 'PLAYWRIGHT_CHANNEL=chrome' >> "$GITHUB_ENV"
+          else
+            node frontend/node_modules/@playwright/test/cli.js install --with-deps chromium
+          fi
       - run: npm --prefix frontend run test:e2e
       - if: always()
         run: |
