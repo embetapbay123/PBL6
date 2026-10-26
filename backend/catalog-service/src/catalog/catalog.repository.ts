@@ -58,7 +58,7 @@ export class CatalogRepository extends OwnedRepository {
   async pageCategories(page:number,size:number) {
     const [count]=await this.manager.query("SELECT count(*)::int AS total FROM category WHERE status='ACTIVE'");
     const rows=await this.manager.query(
-      "SELECT id,parent_id,name,status FROM category WHERE status='ACTIVE' ORDER BY name,id LIMIT $1 OFFSET $2",
+      "SELECT id,parent_id,name,status,version FROM category WHERE status='ACTIVE' ORDER BY name,id LIMIT $1 OFFSET $2",
       [size,(page-1)*size]);
     return {items:rows.map(categoryResponse),total:count.total,page,size};
   }
@@ -67,10 +67,10 @@ export class CatalogRepository extends OwnedRepository {
   async pageProductTypes(page:number,size:number) {
     const [count]=await this.manager.query("SELECT count(*)::int AS total FROM product_type WHERE status='ACTIVE'");
     const rows=await this.manager.query(
-      "SELECT id,category_id,name,status FROM product_type WHERE status='ACTIVE' ORDER BY name,id LIMIT $1 OFFSET $2",
+      "SELECT id,category_id,name,status,version FROM product_type WHERE status='ACTIVE' ORDER BY name,id LIMIT $1 OFFSET $2",
       [size,(page-1)*size]);
     const definitions=rows.length ? await this.manager.query(
-      `SELECT id,product_type_id,name,data_type,required,variant_factor,allowed_values,unit
+      `SELECT id,product_type_id,name,data_type,required,variant_factor,allowed_values,unit,version
          FROM attribute_definition WHERE product_type_id=ANY($1::uuid[]) ORDER BY name,id`,[rows.map((row:any)=>row.id)]) : [];
     return {items:rows.map((row:any)=>productTypeResponse(row,definitions)),total:count.total,page,size};
   }

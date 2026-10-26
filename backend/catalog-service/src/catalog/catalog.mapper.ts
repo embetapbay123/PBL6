@@ -15,13 +15,20 @@ export function productResponse(row:any,variants:any[],images:any[]=[]):Operatio
 
 /** `parent_id` is nullable in the database but typed as a string in the contract. */
 export function categoryResponse(row:any):OperationOutputs['listCategories']['items'][number] {
-  return {id:row.id,name:row.name,status:row.status,...(row.parent_id===null?{}:{parent_id:row.parent_id})};
+  return {id:row.id,name:row.name,status:row.status,...(row.parent_id==null?{}:{parent_id:row.parent_id}),
+    ...(row.version===undefined?{}:{version:row.version})};
+}
+
+export function attributeDefinitionResponse(d:any) {
+  return {id:d.id,product_type_id:d.product_type_id,name:d.name,data_type:d.data_type,
+    ...(d.unit==null?{}:{unit:d.unit}),required:d.required,variant_axis:d.variant_factor,
+    ...(Array.isArray(d.allowed_values)?{allowed_values:d.allowed_values}:{}),
+    ...(d.version===undefined?{}:{version:d.version})};
 }
 
 /** Product type with its attribute definitions; `variant_factor` is exposed as `variant_axis`. */
-export function productTypeResponse(row:any,definitions:any[]):OperationOutputs['listProductTypes']['items'][number] {
-  return {id:row.id,name:row.name,status:row.status,...(row.category_id===null?{}:{category_id:row.category_id}),
-    attribute_definitions:definitions.filter(d=>d.product_type_id===row.id).map(d=>({id:d.id,product_type_id:d.product_type_id,
-      name:d.name,data_type:d.data_type,...(d.unit===null?{}:{unit:d.unit}),required:d.required,variant_axis:d.variant_factor,
-      ...(Array.isArray(d.allowed_values)?{allowed_values:d.allowed_values}:{})}))};
+export function productTypeResponse(row:any,definitions:any[]=[]):OperationOutputs['listProductTypes']['items'][number] {
+  return {id:row.id,name:row.name,status:row.status,...(row.category_id==null?{}:{category_id:row.category_id}),
+    ...(row.version===undefined?{}:{version:row.version}),
+    attribute_definitions:definitions.filter(d=>d.product_type_id===row.id).map(attributeDefinitionResponse)};
 }

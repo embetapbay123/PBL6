@@ -24,7 +24,7 @@ export class ModerationRepository {
     if (!body.category_id) throw new ApiError(422,'VALIDATION_FAILED','category_id is required.');
     return database.transaction(async manager => {
       const [row] = await manager.query(`INSERT INTO product_type(id,category_id,name,status) VALUES($1,$2,$3,'ACTIVE') RETURNING *`, [randomUUID(), body.category_id, body.name.trim()]);
-      await this.audit(manager,'ProductType', row.id, 'PRODUCT_TYPE_CREATED', actor, requestId, {}, row, 'Created'); return row;
+      await this.audit(manager,'ProductType', row.id, 'PRODUCT_TYPE_CREATED', actor, requestId, {}, row, 'Created'); return {...row,attribute_definitions:[]};
     });
   }
   async updateProductType(id: string, body: any, actor: string, requestId: string) {
@@ -32,7 +32,9 @@ export class ModerationRepository {
       const [old] = await manager.query('SELECT * FROM product_type WHERE id=$1 FOR UPDATE', [id]); if (!old) throw new ApiError(404,'NOT_FOUND','Product type not found.');
       if (old.version !== body.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Product type version changed.');
       const [row] = await manager.query('UPDATE product_type SET name=coalesce($1,name),category_id=coalesce($2,category_id),version=version+1 WHERE id=$3 RETURNING *', [body.name?.trim() ?? null, body.category_id ?? null, id]);
-      await this.audit(manager,'ProductType', id, 'PRODUCT_TYPE_UPDATED', actor, requestId, old, row, 'Updated'); return row;
+      await this.audit(manager,'ProductType', id, 'PRODUCT_TYPE_UPDATED', actor, requestId, old, row, 'Updated');
+      const definitions=await manager.query('SELECT * FROM attribute_definition WHERE product_type_id=$1 ORDER BY name,id',[id]);
+      return {...row,attribute_definitions:definitions};
     });
   }
   async createAttributeDefinition(body: any, actor: string, requestId: string) {
