@@ -1,5 +1,15 @@
 # Công — runtime handoff, 23 October 2026
 
+## Review follow-up — 26 October 2026
+
+Candidate [PR #123](https://github.com/embetapbay123/PBL6/pull/123), application revision `258aa03c822ea7c85736d3e3a2633befe75ab0f7`, passes exact-head [Scaffold CI](https://github.com/embetapbay123/PBL6/actions/runs/39900492608) and [eight-phase real-service acceptance](https://github.com/embetapbay123/PBL6/actions/runs/39900492774). Additional phases cover mixed-Store COD/online/Voucher allocation, lost Restock ACK/cancellation, sibling/quota isolation and two-Customer/two-Store/role/old-token permission revocation. Fixture grant changes establish enforcement, not the permission-management API.
+
+The clean 22-minute capacity profile completed: 100 real source addresses, 15-minute 100-client hold, 10 Stores/10,000 Products/20,000 Variants/1,000 Customers/50,000 synthetic historical Orders. **155,290 requests, p95 106.33 ms, 15 recovery 503s (0.00966%), 5,008 new COD Orders**, 75 observation samples; recovery/outboxes drained, every declared stock/Payment invariant and cleanup passed. The 15 failures remain included. A preceding cold control passed 8,692 requests with zero errors, p95 132 ms. Immutable deployment-key caching removes repeated synchronous Windows PEM reads; public limits/dependency deadlines and live authorization remain unchanged. Key rotation at the same file path requires restarting all processes.
+
+OpenCode Go accepted explicit disabled thinking in a separate four-case read-only sample: three generated answers, p95 2126 ms, current Catalog/card/budget/source checks passed; no-match fallback was explicit. Requested mode is traced by append-only M4 migration 008. Human quality, billing and provider concurrency remain unaccepted.
+
+[Evidence with all preceding failures retained](evidence/2026-10-23-cong-full-acceptance.json) · [capacity runbook](capacity-acceptance.md). These results supersede the pending target/mixed-Store/Seller matrix statements in the dated baseline below. They do not claim the new candidate is deployed or close the full OPS/Payment/AI/demo issues. Provider Refund, fresh dashboard Checkout, representative consented data and full client/device/FR/NFR acceptance remain. The runtime revision in the 23 October baseline remains the recorded deployment until a new deployment report verifies replacement.
+
 [Evidence](evidence/2026-10-23-cong-deployment.json) · [Deploy/restore runbook](demo-deployment.md) · [Week 4](week4.md). Demo remains 3 November, feature gate 26 October. This is a partial acceptance report; original issue criteria and other owners remain unchanged.
 
 ## Delivered and verified

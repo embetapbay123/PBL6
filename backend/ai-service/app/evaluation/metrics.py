@@ -18,7 +18,7 @@ def read_metrics(engine,scope):
         metrics['sample_window']='ALL_RETAINED_TRACES'
         metrics['sample_limitations']='Seed/test traffic may be present; unknown costs/tokens are not zero. Owner excludes mixed-Store traces.'
         if evaluation:metrics['ranking']=evaluation
-        versions=db.execute(text('SELECT provider,model_name,prompt_version,index_version,count(*) AS samples FROM ai_request_trace '+condition+' GROUP BY provider,model_name,prompt_version,index_version ORDER BY samples DESC LIMIT 20'),params).mappings().all()
+        versions=db.execute(text('SELECT provider,model_name,prompt_version,index_version,thinking_mode,count(*) AS samples FROM ai_request_trace '+condition+' GROUP BY provider,model_name,prompt_version,index_version,thinking_mode ORDER BY samples DESC LIMIT 20'),params).mappings().all()
         metrics['versions']=[dict(v) for v in versions]
         # Model IDs/training dates and global dataset counts are Admin-only.
         model=None if store else db.execute(text("SELECT version,trained_at FROM model_version WHERE status='ACTIVE' ORDER BY trained_at DESC LIMIT 1")).mappings().first()

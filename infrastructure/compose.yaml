@@ -59,12 +59,12 @@ services:
     <<: *node
     # Match the Linux owner of the mode-0600 private-key bind mount.
     user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
-    environment: {<<: *app-env, SERVICE_ID: M3, PORT: '3103', M3_DATABASE_URL: 'postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3', JWT_PRIVATE_KEY_FILE: /run/secrets/jwt-private.pem}
+    environment: {<<: *app-env, SERVICE_ID: M3, PORT: '3103', M3_DATABASE_URL: 'postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3', JWT_PRIVATE_KEY_FILE: /run/secrets/jwt-private.pem, EMAIL_ADAPTER: '${EMAIL_ADAPTER:-smtp}', SMTP_HOST: '${SMTP_HOST:-}', SMTP_PORT: '${SMTP_PORT:-465}', SMTP_USER: '${SMTP_USER:-}', SMTP_PASSWORD: '${SMTP_PASSWORD:-}', SMTP_FROM: '${SMTP_FROM:-}'}
     volumes: [./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro, ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro]
     command: [node, dist/identity-store-service/src/main.js]
   m4:
     build: {context: .., dockerfile: backend/ai-service/Dockerfile}
-    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}', CHAT_API_KEY: '${CHAT_API_KEY:-}', CHAT_RESPONSE_FORMAT: '${CHAT_RESPONSE_FORMAT:-json_object}', CHAT_TIMEOUT_SECONDS: '${CHAT_TIMEOUT_SECONDS:-2}'}
+    environment: {<<: *app-env, SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}', CHAT_API_KEY: '${CHAT_API_KEY:-}', CHAT_THINKING: '${CHAT_THINKING:-auto}', CHAT_RESPONSE_FORMAT: '${CHAT_RESPONSE_FORMAT:-json_object}', CHAT_TIMEOUT_SECONDS: '${CHAT_TIMEOUT_SECONDS:-2}'}
     depends_on: {postgres: {condition: service_healthy}}
     restart: unless-stopped
   worker-m1:
@@ -112,6 +112,7 @@ services:
       M2_DATABASE_URL: postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2
       M3_DATABASE_URL: postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3
       M4_DATABASE_URL: postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4
+      AI_MODE: '${AI_MODE:-mock}'
     restart: 'no'
     command: [node, dist/shared/src/migrate.js]
 volumes:

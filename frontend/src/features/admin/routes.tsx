@@ -3,6 +3,8 @@ import type { RouteObject } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { request, ApiError } from '../../api/client';
 import {storeApplicationAdminRoutes} from './StoreApplicationAdminPage';
+import { AdminAiMetrics, AdminDashboardSummary, AdminOrders } from './AdminLiveData';
+import { AdminCatalogManagement, AdminVouchers } from './AdminOperations';
 
 interface AdminUser {
   id: string;
@@ -18,6 +20,77 @@ interface AdminStore {
   status: string;
   shipping_fee_vnd: number;
   version: number;
+}
+
+interface AdminRole { id: string; name: string; permission_ids: string[]; version: number }
+interface AdminPermission { id: string; code: string; resource: string; action: string }
+
+function RolesManagement() {
+  const [roles, setRoles] = useState<AdminRole[]>([]);
+  const [permissions, setPermissions] = useState<AdminPermission[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>();
+  const [notice, setNotice] = useState('');
+  const selectedRole = roles.find(role => role.id === selectedId);
+
+  const load = useCallback(async () => {
+    setLoading(true); setError(undefined); setNotice('');
+    try {
+      const result = await request<{ roles: AdminRole[]; permissions: AdminPermission[] }>('/admin/roles');
+      setRoles(result.roles); setPermissions(result.permissions);
+      setSelectedId(current => result.roles.some(role => role.id === current) ? current : result.roles[0]?.id ?? '');
+      const currentId = selectedId || result.roles[0]?.id;
+      setSelectedPermissionIds(result.roles.find(role => role.id === currentId)?.permission_ids ?? []);
+    } catch (e) { setError(e); }
+    finally { setLoading(false); }
+  }, [selectedId]);
+
+  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { setSelectedPermissionIds(selectedRole?.permission_ids ?? []); }, [selectedId, roles]);
+
+  const save = async () => {
+    if (!selectedRole) return;
+    setBusy(true); setError(undefined); setNotice('');
+    try {
+      await request(`/admin/roles/${selectedRole.id}`, { method: 'PATCH', body: JSON.stringify({
+        permission_ids: selectedPermissionIds, expected_version: selectedRole.version,
+      }) });
+      setNotice('Đã cập nhật quyền. Thay đổi có hiệu lực ở request tiếp theo.');
+      await load();
+    } catch (e) { setError(e); }
+    finally { setBusy(false); }
+  };
+
+  return <section className="boot-card">
+    <h3>Vai trò và quyền hệ thống</h3>
+    {error !== undefined && <ErrorView error={error} />}
+    {notice && <p role="status">{notice}</p>}
+    {loading ? <Loading /> : <>
+      <label>Vai trò <select value={selectedId} onChange={event => setSelectedId(event.target.value)}>
+        {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
+      </select></label>
+      {selectedRole && <>
+        <p>Phiên bản {selectedRole.version}. Quyền áp dụng trên mọi dịch vụ từ request tiếp theo.</p>
+        {selectedRole.name === 'ADMIN' && <p role="note">Nếu bỏ `platform.admin`, các màn quản trị sẽ bị từ chối cho thành viên của role ADMIN.</p>}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: '.5rem', margin: '1rem 0' }}>
+          {permissions.map(permission => <label key={permission.id} style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+            <input type="checkbox" checked={selectedPermissionIds.includes(permission.id)}
+              onChange={event => setSelectedPermissionIds(current => event.target.checked
+                ? [...new Set([...current, permission.id])]
+                : current.filter(id => id !== permission.id))} />
+            <span>{permission.code}</span>
+          </label>)}
+        </div>
+        <button disabled={busy || selectedRole.name === 'CUSTOMER'} onClick={save}>
+          {busy ? 'Đang lưu…' : 'Lưu quyền'}
+        </button>
+        {selectedRole.name === 'CUSTOMER' && <p>Không chỉnh trực tiếp quyền CUSTOMER trên màn quản trị.</p>}
+      </>}
+    </>}
+  </section>;
 }
 
 function UsersManagement() {
@@ -191,7 +264,7 @@ function StoresManagement() {
 }
 
 function AdminDashboard() {
-  const [tab, setTab] = useState<'users' | 'stores'>('users');
+  const [tab, setTab] = useState<'users' | 'stores' | 'roles' | 'catalog' | 'orders' | 'vouchers' | 'dashboard' | 'ai'>('users');
 
   return (
     <section style={{ maxWidth: '960px', margin: '0 auto', padding: '1rem' }}>
@@ -209,9 +282,19 @@ function AdminDashboard() {
         >
           Cửa hàng (Stores)
         </button>
+        <button style={{ fontWeight: tab === 'roles' ? 'bold' : 'normal' }} onClick={() => setTab('roles')}>
+          Vai trò và quyền
+        </button>
+        <button style={{ fontWeight: tab === 'catalog' ? 'bold' : 'normal' }} onClick={() => setTab('catalog')}>Taxonomy & moderation</button>
+        <button style={{ fontWeight: tab === 'orders' ? 'bold' : 'normal' }} onClick={() => setTab('orders')}>Đơn hàng</button>
+        <button style={{ fontWeight: tab === 'vouchers' ? 'bold' : 'normal' }} onClick={() => setTab('vouchers')}>Voucher sàn</button>
+        <button style={{ fontWeight: tab === 'dashboard' ? 'bold' : 'normal' }} onClick={() => setTab('dashboard')}>Dashboard</button>
+        <button style={{ fontWeight: tab === 'ai' ? 'bold' : 'normal' }} onClick={() => setTab('ai')}>AI metrics</button>
       </div>
 
-      {tab === 'users' ? <UsersManagement /> : <StoresManagement />}
+      {tab === 'users' ? <UsersManagement /> : tab === 'stores' ? <StoresManagement /> : tab === 'roles' ? <RolesManagement />
+        : tab === 'catalog' ? <AdminCatalogManagement /> : tab === 'orders' ? <AdminOrders /> : tab === 'vouchers' ? <AdminVouchers />
+          : tab === 'dashboard' ? <AdminDashboardSummary /> : <AdminAiMetrics />}
 
       <footer style={{ marginTop: '2rem', fontSize: '0.85rem', color: '#666' }}>
         <p>• Store Application (#40) và Staff Management (#42, #43) giữ theo issue riêng.</p>

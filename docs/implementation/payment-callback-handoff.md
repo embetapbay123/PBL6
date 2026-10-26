@@ -1,6 +1,6 @@
 # PAY-02 — nhận callback và bàn giao xử lý tiếp
 
-Owner Công, [issue #52](https://github.com/embetapbay123/PBL6/issues/52). Durable receipt/Payment đã có; consume/RECOVERING/Refund chưa nghiệm thu. Metadata callback giữ NOT_IMPLEMENTED cho toàn scope, không đóng issue chỉ vì ACK được callback.
+Owner Công, [issue #52](https://github.com/embetapbay123/PBL6/issues/52). Durable receipt/Payment, actual Consume/RECOVERING/retry và late/mixed-Store Refund REQUESTED đã có [nghiệm thu liên service](cross-service-acceptance.md). Còn fresh public Checkout với SePay dashboard và provider Refund có kết quả cuối. Metadata callback giữ NOT_IMPLEMENTED cho toàn scope, không đóng issue chỉ vì ACK được callback.
 
 ## Phần chạy thật
 
@@ -32,4 +32,4 @@ Migrate theo README thêm M2 006/007, build/recreate M2; không sửa 001–005/
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration -- --runTestsByPath tests/integration/payment.callback.test.ts
 ```
 
-12 test PostgreSQL + HTTP trên schema cô lập: signature/DTO/official fields, unsafe money, duplicate/concurrency, account/reference/amount, provider isolation, late/sibling, audit rollback, completion rollback/replay. Dashboard SePay Test đã gửi thành công giao dịch mô phỏng vào fixture ngày 20/10; fixture đó không phải Order tạo từ Checkout và đã dọn. Bộ `python scripts/run_cross_service_acceptance.py` bổ sung M1/M2/M3 thật cho callback ký local → RECOVERING → Consume/follow-up, rollback và restart. Còn phải nghiệm thu Checkout qua public runtime với dashboard, hai Store và Refund provider thật cùng #22/#53 trước nâng metadata/Done.
+12 test PostgreSQL + HTTP trên schema cô lập: signature/DTO/official fields, unsafe money, duplicate/concurrency, account/reference/amount, provider isolation, late/sibling, audit rollback, completion rollback/replay. Dashboard SePay Test đã gửi thành công giao dịch mô phỏng vào fixture ngày 20/10; fixture đó không phải Order tạo từ Checkout và đã dọn. Bộ `python scripts/run_cross_service_acceptance.py` bổ sung M1/M2/M3/M4 thật cho callback ký local → RECOVERING → Consume/follow-up, rollback/restart và hai Store COD/online có Voucher, cancel/Restock và sibling isolation. Còn phải nghiệm thu Checkout qua public runtime với dashboard và Refund provider thật cùng #22/#53 trước nâng metadata/Done.

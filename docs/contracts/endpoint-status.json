@@ -95,7 +95,7 @@
     "service": "M3",
     "module": "auth",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "AUTHENTICATED"
     ]
@@ -276,7 +276,7 @@
     "service": "M3",
     "module": "staff",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -288,7 +288,7 @@
     "service": "M3",
     "module": "staff",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -300,7 +300,7 @@
     "service": "M3",
     "module": "staff",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "STORE_OWNER"
     ]
@@ -312,7 +312,7 @@
     "service": "M3",
     "module": "staff",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -324,7 +324,7 @@
     "service": "M3",
     "module": "staff",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -944,6 +944,18 @@
     "module": "report",
     "owner": "Hoa",
     "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/roles",
+    "operation_id": "listRoles",
+    "service": "M3",
+    "module": "administration",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]

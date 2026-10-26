@@ -99,6 +99,18 @@ export class AdministrationRepository {
     };
   }
 
+  async listRoles() {
+    const [roles, permissions] = await Promise.all([
+      database.query(
+        `SELECT r.id,r.code AS name,r.version,
+          COALESCE(array_agg(rp.permission_id ORDER BY rp.permission_id) FILTER (WHERE rp.permission_id IS NOT NULL), ARRAY[]::uuid[]) AS permission_ids
+         FROM role r LEFT JOIN role_permission rp ON rp.role_id=r.id
+         GROUP BY r.id ORDER BY r.code`),
+      database.query('SELECT id,code,resource,action FROM permission ORDER BY resource,action,code'),
+    ]);
+    return { roles, permissions };
+  }
+
   async updateStoreState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
     return database.transaction(async manager => {
       const [store] = await manager.query('SELECT * FROM store WHERE id=$1 FOR UPDATE', [id]);
@@ -163,17 +175,20 @@ export class AdministrationRepository {
       );
       const oldPermissionIds = existing.map((r: any) => r.permission_id);
 
-      if (permissionIds.some(permissionId => !existing.some((row: any) => row.permission_id === permissionId))) {
-        const allowed = await manager.query(
-          'SELECT id FROM permission WHERE id = ANY($1::uuid[])',
-          [permissionIds],
-        );
-        if (allowed.length !== new Set(permissionIds).size) {
-          throw new ApiError(422, 'VALIDATION_FAILED', 'Một hoặc nhiều quyền không tồn tại.');
-        }
+      const uniquePermissionIds = [...new Set(permissionIds)];
+      const allowed = uniquePermissionIds.length ? await manager.query(
+        'SELECT id,code FROM permission WHERE id = ANY($1::uuid[])',
+        [uniquePermissionIds],
+      ) : [];
+      if (allowed.length !== uniquePermissionIds.length) {
+        throw new ApiError(422, 'VALIDATION_FAILED', 'Một hoặc nhiều quyền không tồn tại.');
+      }
+      const includesPlatformAdmin = allowed.some((permission: any) => permission.code === 'platform.admin');
+      if (includesPlatformAdmin && role.code !== 'ADMIN') {
+        throw new ApiError(422, 'VALIDATION_FAILED', 'platform.admin may be assigned only to the ADMIN role.');
       }
       await manager.query('DELETE FROM role_permission WHERE role_id=$1', [id]);
-      for (const pid of permissionIds) {
+      for (const pid of uniquePermissionIds) {
         await manager.query(
           'INSERT INTO role_permission(role_id, permission_id) VALUES($1, $2) ON CONFLICT DO NOTHING',
           [id, pid]
@@ -191,13 +206,13 @@ export class AdministrationRepository {
         'ROLE_PERMISSIONS_UPDATED',
         correlationId,
         { permission_ids: oldPermissionIds, version: expectedVersion },
-        { permission_ids: permissionIds, version: newVersion }
+        { permission_ids: uniquePermissionIds, version: newVersion }
       );
 
       return {
         id: role.id,
         name: role.code,
-        permission_ids: permissionIds,
+        permission_ids: uniquePermissionIds,
         version: newVersion,
       };
     });
