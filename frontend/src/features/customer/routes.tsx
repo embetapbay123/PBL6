@@ -8,6 +8,8 @@ import { AddressPage } from './AddressPage';
 import { storeApplicationCustomerRoutes } from './StoreApplicationPage';
 import { OwnerLanding, ProtectedRoute } from '../../bootstrap/components';
 import { InvitationsPage } from './InvitationsPage';
+import {OrderHistoryPage} from './OrderHistoryPage';
+import {OrderDetailPage} from './OrderDetailPage';
 
 export const customerRoutes: RouteObject[] = [
   { path: '/', element: <ProductsSample /> },
@@ -18,5 +20,7 @@ export const customerRoutes: RouteObject[] = [
   { path: '/customer/addresses', element: <ProtectedRoute roles={['CUSTOMER']}><AddressPage /></ProtectedRoute> },
   ...storeApplicationCustomerRoutes,
   { path: '/customer/invitations', element: <ProtectedRoute roles={['CUSTOMER']}><InvitationsPage /></ProtectedRoute> },
+  {path:'/customer/orders',element:<ProtectedRoute roles={['CUSTOMER']}><OrderHistoryPage/></ProtectedRoute>},
+  {path:'/customer/orders/:id',element:<ProtectedRoute roles={['CUSTOMER']}><OrderDetailPage/></ProtectedRoute>},
   { path: '/customer/*', element: <OwnerLanding owner="Hatsaphone" feature="User Web" /> },
 ];
