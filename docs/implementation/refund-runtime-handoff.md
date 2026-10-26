@@ -12,7 +12,7 @@ Migration mới: `backend/commerce-service/migrations/008_refund_runtime.sql` v�
 
 ## Worker và provider
 
-**Cập nhật 13/10:** Compose mặc định đã có `worker-refund` recovery/enqueue với provider disabled. Dòng “chưa thêm worker” trong ghi nhận ban đầu bên dưới là lịch sử; provider thật vẫn chưa có. [Bàn giao Week 3/test/blocker](cong-week3-handoff.md).
+Compose mặc định có `worker-refund` recovery/enqueue với provider disabled, cùng image Node của ứng viên deploy. [Bàn giao Week 3/test/blocker](cong-week3-handoff.md). Bộ [nghiệm thu tám giai đoạn](cross-service-acceptance.md) kiểm actual mixed-Store cancel → Restock mất ACK → một Refund REQUESTED/job, quota và sibling không đổi. Provider thật và chứng từ hoàn tiền vẫn chưa có.
 
 `refund.runner.ts` là kernel worker có provider interface; `refund.worker.ts` là CLI hiện dùng DisabledRefundProvider. **Chưa có adapter hoàn tiền ngân hàng thực được cấu hình.** Không cho chọn fake provider qua biến môi trường. Default disabled không gọi network hoặc đổi Payment thành REFUNDED, nhưng có thể enqueue REFUND_REQUIRED của Order đã đóng thành REQUESTED và đưa lease hết hạn về UNKNOWN để đối soát.
 
@@ -23,7 +23,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml up 
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm -e SERVICE_ID=M2 tools node dist/commerce-service/src/payment/refund.worker.js --once
 ```
 
-CLI không có `--once` sẽ poll recovery mỗi giây; operator tự triển khai process khi cần, chưa thêm worker vào Compose mặc định. Có provider thì inject implementation vào RefundRunner; adapter phải đảm bảo durable idempotency cùng operation_id và lookup authoritative, không dùng cache/lookup eventually consistent làm NOT_FOUND. Không invent endpoint hoàn tiền từ API tạo QR/SePay webhook. Provider command/lookup nhận operation_id/provider/payment_reference/amount cố định; network chạy ngoài transaction, deadline tổng 1 giây. Timeout không chứng minh ngân hàng chưa thực thi.
+CLI không có `--once` poll recovery mỗi giây; deployment chuẩn đã khởi động process qua `worker-refund`, còn `--once` dùng để kiểm vận hành khi cần. Có provider thì inject implementation vào RefundRunner; adapter phải đảm bảo durable idempotency cùng operation_id và lookup authoritative, không dùng cache/lookup eventually consistent làm NOT_FOUND. Không invent endpoint hoàn tiền từ API tạo QR/SePay webhook. Provider command/lookup nhận operation_id/provider/payment_reference/amount cố định; network chạy ngoài transaction, deadline tổng 1 giây. Timeout không chứng minh ngân hàng chưa thực thi.
 
 Trạng thái:
 

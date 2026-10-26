@@ -22,7 +22,7 @@ class LiveCatalog:
     async def _get(self,path,operation,correlation,params=None):
         try:
             async with session(self.http_client,self.transport) as client:
-                response=await client.get(os.environ['CATALOG_URL']+'/api/v1'+path,timeout=1,params=params,headers={'X-Correlation-Id':correlation})
+                response=await client.get(os.environ['CATALOG_URL']+'/api/v1'+path,timeout=1,params=params,follow_redirects=False,headers={'X-Correlation-Id':correlation,'X-Service-Id':'M4','X-Service-Key':os.environ['M4_INTERNAL_KEY']})
             if response.status_code==404:raise InternalError(404,'NOT_FOUND','Không tìm thấy Product.')
             if response.status_code!=200:raise InternalError(503,'DEPENDENCY_UNAVAILABLE','Không xác minh được Catalog.')
             result=response.json()

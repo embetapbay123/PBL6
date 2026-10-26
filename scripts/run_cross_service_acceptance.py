@@ -16,7 +16,7 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-PHASES = ("payment", "rollback-prepare", "rollback-recover", "expiry", "tracking", "chat")
+PHASES = ("payment", "rollback-prepare", "rollback-recover", "expiry", "multistore", "authorization", "tracking", "chat")
 
 
 def source_digest() -> str:

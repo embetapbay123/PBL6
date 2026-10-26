@@ -155,7 +155,8 @@ module.exports = async function tracking(t) {
     expected_version: storeVersion.version, status: 'LOCKED', reason: 'Controlled Store suspension',
   } }));
   const suspended = await request('getForYou', { token: other });
-  check('Live Store suspension removes its Products from recommendation', suspended.product_ids.length === 0 && suspended.recently_viewed_product_ids.length === 0);
+  check('Live Store suspension removes only its Products from recommendation', suspended.product_ids.every(id => ![uid(80), uid(81), uid(82)].includes(id)) &&
+    suspended.product_ids.includes(uid(1080)) && suspended.recently_viewed_product_ids.length === 0);
   await request('getRelatedProducts', { id: uid(80), status: 404 });
   check('Related relies on authoritative M1 visibility and rejects a locked Store Product', true);
   await ingest('M3', 'StoreStatusChanged', () => request('updateStoreState', { token: admin, id: uid(61), body: {

@@ -123,7 +123,9 @@ export class CatalogService {
     // optional, so the boundary normalises them once before they reach the repository.
     const page=await new CatalogRepository(database.manager).page(await this.stores(correlation),
       {...query,page:query.page ?? 1,size:query.size ?? 20});
-    const userId=await optionalUserId(authorization,correlation);
+    // A plain listing produces no personal event. Resolve live identity only when a
+    // search can actually be recorded; Store visibility above remains authoritative.
+    const userId=query.q ? await optionalUserId(authorization,correlation) : null;
     if(userId && query.q) await recordInteraction('SearchRecorded',{user_id:userId,query:query.q},correlation);
     return page;
   }

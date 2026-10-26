@@ -1,6 +1,12 @@
 import 'dotenv/config';
 import { readFileSync } from 'node:fs';
 export type ServiceId = 'M1' | 'M2' | 'M3';
+let publicKey: {file:string;value:string}|undefined;
+/** Deployment key material is immutable until service restart. Never cache auth context. */
+export function deploymentPublicKey(file:string):string {
+  if (publicKey?.file !== file) publicKey={file,value:readFileSync(file,'utf8')};
+  return publicKey.value;
+}
 export function required(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing configuration: ${name}`);
@@ -16,7 +22,7 @@ export function config(id: ServiceId) {
   return {
     id, databaseUrl: required(`${id}_DATABASE_URL`), redisUrl: required('REDIS_URL'),
     identityUrl: required('IDENTITY_URL'), catalogUrl: required('CATALOG_URL'),
-    publicKey: readFileSync(required('JWT_PUBLIC_KEY_FILE'), 'utf8'),
+    publicKey: deploymentPublicKey(required('JWT_PUBLIC_KEY_FILE')),
     internalKeys, audience: 'pbl6-clients', issuer: 'pbl6-identity',
     port: integer('PORT', { M1: 3101, M2: 3102, M3: 3103 }[id]),
     secureCookie: process.env.COOKIE_SECURE !== 'false', origin: required('WEB_ORIGIN'),

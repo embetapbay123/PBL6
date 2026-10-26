@@ -17,6 +17,8 @@ The sequence is: validate configuration and existing dependencies; build; stop g
 
 Default Compose includes `worker-m3`, so UserLocked and StoreStatusChanged events leave the M3 outbox. The gateway still excludes internal service routes. The existing Tunnel container is not recreated or removed; it reconnects to the same gateway service. Expect a maintenance window after builds finish: callbacks may receive a retryable transport error while ingress is closed. Inspect pending payment receipts/follow-ups after resuming; never manually mark them successful.
 
+Public key material is immutable within a process after its first configuration read. If key contents change at the same path, restart every API/worker with matching public/private material; replacing a mounted file alone does not rotate the cached verifier. User/session/permission/Store/consent checks remain live. Candidate migrations include append-only M4 `008_chat_thinking_trace.sql`; readiness and deployment migration inventory verify it before reopening ingress. `CHAT_THINKING=auto` remains the portable default; explicit DeepSeek modes require actual provider verification and local configuration.
+
 ## Evidence and failure handling
 
 Private artifacts are under `artifacts/deployments/<UTC>/`: non-secret override, stage logs, backup pointer and report. Database dumps/manifests are under `artifacts/backups/`; restore verification is under `artifacts/verification/`. Keep them ignored and access controlled: backups contain personal data, and private logs may contain configuration diagnostics. Only a sanitized summary may enter GitHub.
