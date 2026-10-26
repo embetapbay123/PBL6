@@ -437,7 +437,7 @@ Migration: [001](../../backend/commerce-service/migrations/001_initial.sql), [00
 
 ### M3 — identity-store-service
 
-Migration: [001](../../backend/identity-store-service/migrations/001_initial.sql), [002](../../backend/identity-store-service/migrations/002_correlation_text.sql), [003](../../backend/identity-store-service/migrations/003_schema_baseline.sql).
+Migration baseline: [001](../../backend/identity-store-service/migrations/001_initial.sql), [002](../../backend/identity-store-service/migrations/002_correlation_text.sql), [003](../../backend/identity-store-service/migrations/003_schema_baseline.sql). Append-only feature migrations: [004](../../backend/identity-store-service/migrations/004_role_version.sql) and [005](../../backend/identity-store-service/migrations/005_staff_invitations.sql) (invitation permissions/timestamps and indexes).
 
 #### user
 

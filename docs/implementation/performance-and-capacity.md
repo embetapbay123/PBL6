@@ -4,14 +4,20 @@ Nguồn: [28 NFR](../functional-requirements.md), [acceptance](../requirements-a
 
 | Nhóm | Mục tiêu / điều kiện | Trạng thái khung |
 | --- | --- | --- |
-| API | >=95% request <2 giây với tối thiểu 100 user đồng thời | Smoke Catalog/related PASS ngày 07/10; NFR toàn hệ thống NOT_RUN |
-| RAG | Mục tiêu <4 giây trong điều kiện MVP | Runtime real + fallback; model/provider benchmark NOT_RUN |
+| API | >=95% request <2 giây với tối thiểu 100 user đồng thời | Read smoke PASS; cold mixed 100-client runs FAIL; target profile tracked separately below |
+| RAG | Mục tiêu <4 giây trong điều kiện MVP | Real Go smoke: earlier FAIL; disabled-thinking sample p95 2126 ms, full quality/load not accepted |
 | Pagination | size <=100, query DB, hạn chế N+1 | List Product mẫu đã test; module khác chưa có |
 | Nhất quán | Không oversell/đơn/tiền/tồn lặp | Payment/COD/callback/Refund atomic đã test; checkout/kho toàn luồng chưa đạt |
 | DB | Index theo query thật; pool hữu hạn | Foundation index/pool Node10/M4 5; EXPLAIN chưa đo |
-| Error rate | Đề xuất <1% lỗi bất ngờ ở tải mục tiêu | Smoke read cuối 0%; workload đầy đủ chưa đo, tách 429/lỗi nghiệp vụ |
+| Error rate | Đề xuất <1% lỗi bất ngờ ở tải mục tiêu | Cold mixed runs 3.22%, 5.30%, 1.24%, 4.64% FAIL; retain every failure, including 429/409/503 |
 
 100 user không đồng nghĩa 100 request/giây. Báo cáo p95 theo route, throughput, think time, request không gửi được, CPU/RAM/lock/pool/queue age; không lấy trung bình thay p95.
+
+## Marketplace runner — 23/10/2026
+
+[Capacity acceptance](capacity-acceptance.md) now provides the real mixed workload, measured target-volume fixture, 100 actual client source addresses, refresh and durable workers, per-API timings/error counts, DB/queue/resource point samples and post-load invariants. Run `python scripts/run_capacity_acceptance.py --profile target` on a dedicated test machine. The 22-minute profile includes two-minute warm-up, three-minute ramp, fifteen-minute hold and two-minute down. It does not call the bank/model, raise public limits or treat synthetic history as AI quality data. [Development evidence, including failed cold bursts](evidence/2026-10-23-cong-full-acceptance.json).
+
+The cold diagnostic found M2's public Catalog reads exhausting one shared IP quota. Authenticated M2/M4 Catalog GETs now use bounded caller budgets; invalid identity is rejected and public/login limits remain 600/30 per minute per IP. A plain Product listing avoids resolving an unused personal identity, while current Store visibility and actual search telemetry remain enforced. Deadline is still one second per HTTP dependency. The cold bursts still failed after the quota fix; a warm target result must be reported separately and cannot erase cold behavior.
 
 ## Kịch bản khung
 

@@ -8,6 +8,7 @@
     "dev:m2": "npm run build && node dist/commerce-service/src/main.js",
     "dev:m3": "npm run build && node dist/identity-store-service/src/main.js",
     "migration": "tsx shared/src/migrate.ts",
+    "seed:m3-test": "tsx shared/src/seed-m3-test.ts",
     "seed": "tsx shared/src/seed.ts",
     "worker": "tsx shared/src/worker.ts",
     "test": "jest --runInBand",

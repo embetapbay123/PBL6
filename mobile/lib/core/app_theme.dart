@@ -6,7 +6,7 @@ class AppColors {
   static const Color primaryLight = Color(0xFFFFEBEE);
   static const Color primarySoft = Color(0xFFFFF1F1);
   static const Color accent = Color(0xFFFF5252);
-  
+
   static const Color background = Color(0xFFF7F8FA);
   static const Color surface = Colors.white;
   static const Color border = Color(0xFFEEEEEE);
@@ -15,7 +15,7 @@ class AppColors {
   static const Color textPrimary = Color(0xFF1F2937);
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textMuted = Color(0xFF9CA3AF);
-  
+
   static const Color star = Color(0xFFFFB300);
   static const Color badge = Color(0xFFE53935);
   static const Color green = Color(0xFF10B981);

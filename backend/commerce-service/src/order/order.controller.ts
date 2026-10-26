@@ -63,6 +63,7 @@ export class OrderController {
   }
 
   @Post('me/orders/:id/cancel')
+  @HttpCode(200)
   @Roles('CUSTOMER')
   cancelOwnOrder(@Param('id') id: string, @Body() dto: CancelOwnOrderBodyDto, @Req() req: any) {
     return this.service.cancelOwnOrder(id, dto, req.auth, req.correlationId);
@@ -102,6 +103,7 @@ export class OrderController {
   }
 
   @Post('store/orders/:id/cancel')
+  @HttpCode(200)
   @Roles('SELLER', 'STORE_OWNER')
   cancelStoreOrder(
     @Param('id') id: string,

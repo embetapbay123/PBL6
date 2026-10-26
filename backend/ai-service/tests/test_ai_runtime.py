@@ -180,14 +180,14 @@ def test_generated_explanation_is_discarded_after_source_change(engine):
         async def select(self,q,products,*args):
             selected=products[0]
             c.items=[dict(p,title='Sản phẩm thay đổi',version=2) if p['id']==selected['id'] else p for p in c.items]
-            return Selection((selected['id'],),False,'MODEL_GENERATED','openai_compatible',50,'Lời giải thích cũ.', 'test-model')
+            return Selection((selected['id'],),False,'MODEL_GENERATED','openai_compatible',50,'Lời giải thích cũ.', 'test-model','disabled')
     s=ChatRuntime(engine,c,Selector());user=str(uuid.uuid4());session=s.create(user,'ip')
     response=asyncio.run(s.answer(session['id'],user,None,'máy ảnh','test'))
     assert response['fallback_reason']=='CATALOG_CHANGED' and 'Lời giải thích cũ' not in response['content']
     assert not schema_errors(response,OPERATIONS['sendChatMessage']['responses']['200'])
     with engine.connect() as db:
-        row=db.execute(text('SELECT model_name,prompt_version,fallback_reason FROM ai_request_trace')).one()
-        assert tuple(row)==('test-model','catalog-answer-v4','CATALOG_CHANGED')
+        row=db.execute(text('SELECT model_name,prompt_version,fallback_reason,thinking_mode FROM ai_request_trace')).one()
+        assert tuple(row)==('test-model','catalog-answer-v4','CATALOG_CHANGED','disabled')
 
 
 def test_generated_answer_matches_public_response_contract(engine):
