@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { database } from '../../../shared/src/database';
 import type { EntityManager } from 'typeorm';
 import { ApiError } from '../../../shared/src/errors';
+import { returnedRow } from '../../../shared/src/postgres-returning';
 
 const slug = (value: string) => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -16,7 +17,7 @@ export class ModerationRepository {
     return database.transaction(async manager => {
       const [old] = await manager.query('SELECT * FROM category WHERE id=$1 FOR UPDATE', [id]); if (!old) throw new ApiError(404,'NOT_FOUND','Category not found.');
       if (old.version !== body.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Category version changed.');
-      const [row] = await manager.query(`UPDATE category SET name=coalesce($1,name),slug=coalesce($2,slug),parent_id=CASE WHEN $3 THEN $4 ELSE parent_id END,version=version+1 WHERE id=$5 RETURNING *`, [body.name?.trim() ?? null, body.name ? slug(body.name) : null, Object.hasOwn(body,'parent_id'), body.parent_id ?? null, id]);
+      const row = returnedRow<any>(await manager.query(`UPDATE category SET name=coalesce($1,name),slug=coalesce($2,slug),parent_id=CASE WHEN $3 THEN $4 ELSE parent_id END,version=version+1 WHERE id=$5 RETURNING *`, [body.name?.trim() ?? null, body.name ? slug(body.name) : null, Object.hasOwn(body,'parent_id'), body.parent_id ?? null, id])); if (!row) throw new Error("Taxonomy update returned no row");
       await this.audit(manager,'Category', id, 'CATEGORY_UPDATED', actor, requestId, old, row, 'Updated'); return row;
     });
   }
@@ -31,7 +32,7 @@ export class ModerationRepository {
     return database.transaction(async manager => {
       const [old] = await manager.query('SELECT * FROM product_type WHERE id=$1 FOR UPDATE', [id]); if (!old) throw new ApiError(404,'NOT_FOUND','Product type not found.');
       if (old.version !== body.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Product type version changed.');
-      const [row] = await manager.query('UPDATE product_type SET name=coalesce($1,name),category_id=coalesce($2,category_id),version=version+1 WHERE id=$3 RETURNING *', [body.name?.trim() ?? null, body.category_id ?? null, id]);
+      const row = returnedRow<any>(await manager.query('UPDATE product_type SET name=coalesce($1,name),category_id=coalesce($2,category_id),version=version+1 WHERE id=$3 RETURNING *', [body.name?.trim() ?? null, body.category_id ?? null, id])); if (!row) throw new Error("Taxonomy update returned no row");
       await this.audit(manager,'ProductType', id, 'PRODUCT_TYPE_UPDATED', actor, requestId, old, row, 'Updated');
       const definitions=await manager.query('SELECT * FROM attribute_definition WHERE product_type_id=$1 ORDER BY name,id',[id]);
       return {...row,attribute_definitions:definitions};
@@ -49,7 +50,7 @@ export class ModerationRepository {
     return database.transaction(async manager => {
       const [old] = await manager.query('SELECT * FROM attribute_definition WHERE id=$1 FOR UPDATE', [id]); if (!old) throw new ApiError(404,'NOT_FOUND','Attribute definition not found.');
       if (old.version !== body.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Attribute definition version changed.');
-      const [row] = await manager.query(`UPDATE attribute_definition SET name=coalesce($1,name),data_type=coalesce($2,data_type),required=coalesce($3,required),variant_factor=coalesce($4,variant_factor),allowed_values=coalesce($5::jsonb,allowed_values),unit=CASE WHEN $6 THEN $7 ELSE unit END,version=version+1 WHERE id=$8 RETURNING *`, [body.name?.trim() ?? null, body.data_type ?? null, body.required ?? null, body.variant_axis ?? null, body.allowed_values ? JSON.stringify(body.allowed_values) : null, Object.hasOwn(body,'unit'), body.unit ?? null, id]);
+      const row = returnedRow<any>(await manager.query(`UPDATE attribute_definition SET name=coalesce($1,name),data_type=coalesce($2,data_type),required=coalesce($3,required),variant_factor=coalesce($4,variant_factor),allowed_values=coalesce($5::jsonb,allowed_values),unit=CASE WHEN $6 THEN $7 ELSE unit END,version=version+1 WHERE id=$8 RETURNING *`, [body.name?.trim() ?? null, body.data_type ?? null, body.required ?? null, body.variant_axis ?? null, body.allowed_values ? JSON.stringify(body.allowed_values) : null, Object.hasOwn(body,'unit'), body.unit ?? null, id])); if (!row) throw new Error("Taxonomy update returned no row");
       await this.audit(manager,'AttributeDefinition', id, 'ATTRIBUTE_DEFINITION_UPDATED', actor, requestId, old, row, 'Updated'); return row;
     });
   }
@@ -59,7 +60,7 @@ export class ModerationRepository {
       const [old] = await manager.query('SELECT id,status,moderation_status,version FROM product WHERE id=$1 FOR UPDATE', [id]);
       if (!old) throw new ApiError(404,'NOT_FOUND','Product not found.');
       if (old.version !== body.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Product version changed.');
-      const [row] = await manager.query('UPDATE product SET moderation_status=$1,version=version+1 WHERE id=$2 RETURNING id,status,moderation_status,version', [visible ? 'VISIBLE' : 'HIDDEN', id]);
+      const row = returnedRow<any>(await manager.query('UPDATE product SET moderation_status=$1,version=version+1 WHERE id=$2 RETURNING id,status,moderation_status,version', [visible ? 'VISIBLE' : 'HIDDEN', id])); if (!row) throw new Error("Taxonomy update returned no row");
       await manager.query(`INSERT INTO m1_audit(actor_user_id,target_type,target_id,action,reason,request_id,before_json,after_json) VALUES($1,'Product',$2,$3,$4,$5,$6::jsonb,$7::jsonb)`, [actor,id,visible?'PRODUCT_RESTORED':'PRODUCT_HIDDEN',body.reason,requestId,JSON.stringify(old),JSON.stringify(row)]);
       return row;
     });
