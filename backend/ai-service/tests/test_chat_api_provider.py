@@ -104,3 +104,28 @@ def test_standalone_selector_has_stable_session_without_user_credentials():
     asyncio.run(client.select('camera',PRODUCTS))
     asyncio.run(client.select('camera',PRODUCTS))
     assert len(sessions[0])==32 and sessions[0]==sessions[1]
+
+
+@pytest.mark.parametrize('mode',['enabled','disabled'])
+def test_explicit_deepseek_thinking_control_is_sent_without_weakening_output_guards(mode):
+    def handler(request):
+        assert json.loads(request.content)['thinking']=={'type':mode}
+        return httpx.Response(200,json=envelope())
+    client=CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='deepseek-v4-flash',api_key='test-key',
+                          thinking_mode=mode,transport=httpx.MockTransport(handler))
+    result=asyncio.run(client.select('camera',PRODUCTS))
+    assert not result.fallback and result.thinking_mode==mode
+
+
+@pytest.mark.parametrize('mode',['none','true','bad'])
+def test_invalid_thinking_controls_are_configuration_errors(mode):
+    with pytest.raises(ValueError):CatalogSelector(provider='none',thinking_mode=mode)
+
+
+def test_thinking_extension_is_omitted_for_auto_and_rejected_for_unsupported_models():
+    def handler(request):
+        assert 'thinking' not in json.loads(request.content)
+        return httpx.Response(200,json=envelope())
+    assert not asyncio.run(selector(handler).select('camera',PRODUCTS)).fallback
+    with pytest.raises(ValueError):
+        CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='other-model',api_key='test',thinking_mode='disabled')

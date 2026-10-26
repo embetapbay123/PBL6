@@ -6,6 +6,8 @@
 
 Bằng chứng subset: [real-service recovery/consent/chat](cross-service-acceptance.md), [runtime + restore + security + read load + provider smoke](cong-week4-handoff.md), [evidence định lượng](evidence/2026-10-23-cong-deployment.json). Mỗi lần nghiệm thu cần bổ sung commit, môi trường, TC và kết quả thực, rồi mới đổi trạng thái. Failure load/latency phải giữ trong evidence khi chạy lại; Refund provider và AI dataset chưa có không được thay bằng kết quả giả.
 
+Update 23/10, PR #123: eight-phase acceptance adds mixed-Store COD/online/Voucher allocation, cancellation/Restock lost-ACK recovery and all-resource two-Customer/two-Store/role/revoked-grant controls. Permission-management API remains separate from fixture grant changes. The [target-volume capacity runner](capacity-acceptance.md) retains failed cold runs; a separate warm-profile result must not be treated as full-system NFR acceptance. No broad FR/NFR row becomes PASS from these subsets alone.
+
 | Yêu cầu | TC gốc | Owner BE/điều phối | Full acceptance | Phần còn cần chứng minh |
 | --- | --- | --- | --- | --- |
 | FR-ADDR-01 | TC-FR-ADDR-01 | Trí | PARTIAL | Có subset API/runtime controls; cần chạy đủ Given/When/Then, lỗi và các client của TC gốc. |
