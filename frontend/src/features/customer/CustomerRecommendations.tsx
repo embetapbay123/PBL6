@@ -1,76 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { getCustomerRecommendations } from '../../api/recommendationsChat';
-import { Link } from 'react-router-dom';
-
-interface CustomerRecommendationsProps {
-  productId?: string;
+import {useEffect,useState} from 'react';
+import {Link} from 'react-router-dom';
+import {getCustomerRecommendations,getRelatedProducts} from '../../api/recommendationsChat';
+import {callOperation} from '../../api/operations';
+import {ApiError} from '../../api/client';
+import type {OperationOutputs} from '../../api/operations.generated';
+import {useAuth} from '../../api/auth-context';
+import {ErrorView,Loading,Pagination} from '../../bootstrap/components';
+export function CustomerRecommendations({productId}:{productId?:string}){
+ const {session}=useAuth();const customer=session?.context?.roles.includes('CUSTOMER')?session.context.user_id:undefined;
+ if(!productId&&!customer)return null;
+ return <Recommendations key={(productId??'for-you')+':'+(customer??'guest')} productId={productId}/>;
 }
-
-export const CustomerRecommendations: React.FC<CustomerRecommendationsProps> = ({ productId }) => {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    getCustomerRecommendations({ limit: 4, product_id: productId })
-      .then((res: any) => {
-        if (!isMounted) return;
-     
-        const list = Array.isArray(res) ? res : res?.items || [];
-        setProducts(list);
-      })
-      .catch((err: any) => {
-        if (!isMounted) return;
-        setError(err?.message || 'Không thể tải danh sách gợi ý sản phẩm.');
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [productId]);
-
-  if (loading) return <div className="p-4 text-gray-500">Đang tải gợi ý sản phẩm...</div>;
-  if (error) return <div className="p-4 text-red-500">Lỗi: {error}</div>;
-  if (products.length === 0) return null;
-
-  return (
-    <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-xl font-bold text-gray-800 mb-4">
-        {productId ? 'Sản phẩm liên quan (Related Products)' : 'Dành cho bạn (For You)'}
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        {products.map((item) => (
-          <div key={item.id} className="border p-4 rounded-md flex flex-col justify-between">
-            <div>
-              {item.images?.[0]?.image_url && (
-                <img
-                  src={item.images[0].image_url}
-                  alt={item.title}
-                  className="w-full h-32 object-cover mb-2 rounded"
-                />
-              )}
-              <h4 className="font-semibold text-gray-700 truncate">{item.title}</h4>
-              <p className="text-sm text-gray-500 line-clamp-2">{item.description}</p>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-red-600 font-bold">
-                {item.variants?.[0]?.price_vnd ? `${item.variants[0].price_vnd.toLocaleString('vi-VN')} ₫` : 'Liên hệ'}
-              </span>
-              <Link
-                to={`/products/${item.id}`}
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-              >
-                Xem chi tiết
-              </Link>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+function Recommendations({productId}:{productId?:string}){
+ const [products,setProducts]=useState<OperationOutputs['getProduct'][]>([]),[error,setError]=useState<unknown>(),[loading,setLoading]=useState(true),[source,setSource]=useState(''),[page,setPage]=useState(1),[total,setTotal]=useState(0),[retry,setRetry]=useState(0);
+ useEffect(()=>{let active=true;setLoading(true);setError(undefined);setProducts([]);
+  (async()=>{
+   if(productId){const result=await getRelatedProducts(productId,page);if(active){setProducts(result.items);setTotal(result.total)}}
+   else{const result=await getCustomerRecommendations();const values=await Promise.all(result.product_ids.map(async id=>{try{return await callOperation('getProduct',{path:{id}})}catch(e){if(e instanceof ApiError&&e.status===404)return undefined;throw e}}));if(active){setProducts(values.filter((v):v is OperationOutputs['getProduct']=>!!v&&v.status==='ACTIVE'));setSource(result.source)}}
+  })().catch(e=>{if(active)setError(e)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false};
+ },[productId,page,retry]);
+ return <section className="boot-card" aria-label={productId?'Sản phẩm liên quan':'Dành cho bạn'}><h3>{productId?'Sản phẩm liên quan':'Dành cho bạn'}</h3>
+  {loading?<Loading/>:error?<ErrorView error={error} onRetry={()=>setRetry(n=>n+1)}/>:<>{source&&<small>Nguồn gợi ý: {source}</small>}{!products.length&&<p>Chưa có gợi ý phù hợp.</p>}
+   <div className="boot-grid">{products.map(p=><article key={p.id}><Link to={'/products/'+p.id}>{p.title}</Link><p>{p.variants?.[0]?.price_vnd?.toLocaleString('vi-VN')} ₫</p></article>)}</div>
+   {productId&&<Pagination page={page} size={4} total={total} onPage={setPage}/>}</>}
+ </section>;
+}
