@@ -6,7 +6,7 @@ import { applyEvent } from '../../shared/src/events';
 import { schemaErrors } from '../../shared/src/contract-validation';
 import contracts from '../../shared/src/contracts.runtime.generated.json';
 
-const m3Url = process.env.M3_DATABASE_URL;
+const m3Url = process.env.M3_TEST_DATABASE_URL;
 const m4Url = process.env.M4_DATABASE_URL;
 const describePostgres = m3Url && m4Url ? describe : describe.skip;
 

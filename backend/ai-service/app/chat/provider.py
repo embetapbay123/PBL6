@@ -28,14 +28,20 @@ class Selection:
     actual_tokens: int|None=None
     answer: str|None=None
     model: str|None=None
+    thinking_mode: str|None=None
 
 class CatalogSelector:
-    def __init__(self, *, provider=None, url=None, model=None, api_key=None, transport=None,http_client=None):
+    def __init__(self, *, provider=None, url=None, model=None, api_key=None, transport=None,http_client=None,thinking_mode=None):
         self.provider=provider or os.getenv('CHAT_PROVIDER','none')
         self.url=(url or os.getenv('CHAT_MODEL_URL','')).rstrip('/')
         self.model=model or os.getenv('CHAT_MODEL','')
         self.api_key=api_key if api_key is not None else os.getenv('CHAT_API_KEY','')
         self.response_format=os.getenv('CHAT_RESPONSE_FORMAT','json_object')
+        default_thinking=os.getenv('CHAT_THINKING','auto') if provider is None else 'auto'
+        self.thinking_mode=thinking_mode if thinking_mode is not None else default_thinking
+        if self.thinking_mode not in ('auto','enabled','disabled'):raise ValueError('CHAT_THINKING must be auto, enabled or disabled')
+        if self.thinking_mode!='auto' and (self.provider!='openai_compatible' or not self.model.lower().startswith('deepseek-')):
+            raise ValueError('Explicit CHAT_THINKING requires a DeepSeek OpenAI-compatible model')
         self.timeout=float(os.getenv('CHAT_TIMEOUT_SECONDS','2'))
         if not math.isfinite(self.timeout) or not 0<self.timeout<=30:raise ValueError('CHAT_TIMEOUT_SECONDS must be within (0, 30]')
         self.session_id=uuid.uuid4().hex
@@ -53,7 +59,7 @@ class CatalogSelector:
     async def select(self,question,products,history=(),correlation=None):
         products=products[:8];allowed={p['id'] for p in products}
         usage=None
-        fallback=lambda reason:Selection(tuple(p['id'] for p in products[:3]),True,reason,self.provider,actual_tokens=usage,model=self.model or None)
+        fallback=lambda reason:Selection(tuple(p['id'] for p in products[:3]),True,reason,self.provider,actual_tokens=usage,model=self.model or None,thinking_mode=self.thinking_mode)
         if not products:return fallback('NO_MATCH')
         if self.provider=='none':return fallback('PROVIDER_NOT_CONFIGURED')
         context=[{'id':p['id'],'title':redact(p.get('title'),200),'description':redact(p.get('description'),600)} for p in products]
@@ -71,6 +77,7 @@ class CatalogSelector:
             headers['Authorization']='Bearer '+self.api_key
             output_format={'type':'json_object'} if self.response_format=='json_object' else {'type':'json_schema','json_schema':{'name':'catalog_answer','strict':True,'schema':schema}}
             payload={'model':self.model,'messages':messages,'stream':False,'max_tokens':512,'response_format':output_format}
+            if self.thinking_mode!='auto':payload['thinking']={'type':self.thinking_mode}
         try:
             # Overall deadline includes streaming/chunked response; HTTP timeout alone is per I/O.
             async with asyncio.timeout(self.timeout):
@@ -103,7 +110,7 @@ class CatalogSelector:
                 if title and any(char.isalpha() for char in title):numeric_check=re.sub(r'(?<!\w)'+re.escape(title)+r'(?!\w)','',numeric_check)
             if set(answer)!={'product_ids','answer'} or not isinstance(ids,list) or len(ids)>3 or any(not isinstance(p,str) or p not in allowed for p in ids) or len(set(ids))!=len(ids) or not isinstance(prose,str) or not 1<=len(prose.strip())<=900 or re.search(r'\d',numeric_check) or re.search(r'[<>]|https?://|www\.|\]\(|[\x00-\x08\x0b\x0c\x0e-\x1f]',prose,re.I) or redact(prose)!=prose:
                 return fallback('PROVIDER_INVALID_RESPONSE')
-            return Selection(tuple(ids),False,'MODEL_GENERATED',self.provider,usage if type(usage) is int and 0<=usage<=100000 else None,prose.strip(),self.model)
+            return Selection(tuple(ids),False,'MODEL_GENERATED',self.provider,usage if type(usage) is int and 0<=usage<=100000 else None,prose.strip(),self.model,self.thinking_mode)
         except (httpx.HTTPError,TimeoutError):return fallback('PROVIDER_UNAVAILABLE')
         except (ValueError,TypeError,KeyError,IndexError,AttributeError):return fallback('PROVIDER_INVALID_RESPONSE')
 

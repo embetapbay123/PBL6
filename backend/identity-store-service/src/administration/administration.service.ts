@@ -1,5 +1,4 @@
 import { AdministrationRepository } from './administration.repository';
-import { notImplemented } from '../../../shared/src/errors';
 
 export class AdministrationService {
   constructor(private readonly repository = new AdministrationRepository()) {}
@@ -16,11 +15,15 @@ export class AdministrationService {
     return this.repository.listStores(page, size);
   }
 
+  listRoles() {
+    return this.repository.listRoles();
+  }
+
   updateStoreState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
     return this.repository.updateStoreState(id, status, reason, expectedVersion, actorUserId, correlationId);
   }
 
   updateRole(id: string, permissionIds: string[], expectedVersion: number, actorUserId: string, correlationId: string) {
-    return notImplemented('effective role permission updates');
+    return this.repository.updateRole(id, permissionIds, expectedVersion, actorUserId, correlationId);
   }
 }
