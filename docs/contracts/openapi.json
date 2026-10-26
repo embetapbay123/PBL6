@@ -13683,11 +13683,17 @@
           "expires_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "payment_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Owned Payment ID used by GET /payments/{id}; distinct from the PaymentAttempt ID."
           }
         },
         "required": [
           "id",
-          "status"
+          "status",
+          "payment_id"
         ],
         "additionalProperties": false
       },

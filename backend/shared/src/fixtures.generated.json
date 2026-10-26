@@ -1032,7 +1032,8 @@
       "provider": "SEPAY_TEST",
       "payment_code": "fixture-value",
       "qr_url": "https://example.invalid/fixture",
-      "expires_at": "2026-10-02T00:00:00Z"
+      "expires_at": "2026-10-02T00:00:00Z",
+      "payment_id": "11111111-1111-4111-8111-111111111111"
     },
     "status": 201
   },
