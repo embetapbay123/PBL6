@@ -1,6 +1,6 @@
 # PAY-02 — nhận callback và bàn giao xử lý tiếp
 
-Owner Công, [issue #52](https://github.com/embetapbay123/PBL6/issues/52). Durable receipt/Payment đã có; consume/RECOVERING/Refund chưa nghiệm thu. Metadata callback giữ NOT_IMPLEMENTED cho toàn scope, không đóng issue chỉ vì ACK được callback.
+Owner Công, [issue #52](https://github.com/embetapbay123/PBL6/issues/52). Durable receipt/Payment, actual Consume/RECOVERING/retry và late/mixed-Store Refund REQUESTED đã có [nghiệm thu liên service](cross-service-acceptance.md). Còn fresh public Checkout với SePay dashboard và provider Refund có kết quả cuối. Metadata callback giữ NOT_IMPLEMENTED cho toàn scope, không đóng issue chỉ vì ACK được callback.
 
 ## Phần chạy thật
 
@@ -12,7 +12,7 @@ Owner Công, [issue #52](https://github.com/embetapbay123/PBL6/issues/52). Durab
 
 ## Hoa tích hợp worker Order
 
-Đọc [callback service](../../backend/commerce-service/src/payment/payment.callback.service.ts), [follow-up port](../../backend/commerce-service/src/payment/payment.followup.port.ts), migration M2 006/007. PaymentFollowupPort.pending trả snapshot gồm operation_id ổn định, Order/Payment/Attempt và correlation_id; chỉ DB M2. **Chưa có worker chạy các job này**: Hoa tích hợp vào ORDER-02, không có consume success giả.
+Đọc [callback service](../../backend/commerce-service/src/payment/payment.callback.service.ts), [follow-up port](../../backend/commerce-service/src/payment/payment.followup.port.ts), migration M2 006/007/010 và [Order recovery](order-recovery.md). PaymentFollowupPort.pending trả snapshot gồm operation_id ổn định, Order/Payment/Attempt và correlation_id; chỉ DB M2. Durable `worker-m2` đã merge qua #116/#117: dùng actual reservation IDs, proof Payment/Attempt thành công rồi mới Consume và complete trong transaction. API/worker phải deploy cùng revision; không dùng consume success giả.
 
 | Kind | Việc cần xử lý |
 | --- | --- |
@@ -20,7 +20,7 @@ Owner Công, [issue #52](https://github.com/embetapbay123/PBL6/issues/52). Durab
 | RECONCILE_REQUIRED | Quá hạn chưa chứng minh release hoặc trạng thái chưa cho consume. Hoa/Công đối soát lifecycle/payment/kho rồi chọn consume/refund; không expire/release chỉ vì timestamp. |
 | REFUND_REQUIRED | Success sau EXPIRED/CANCELLED: không mở lại Order hoặc sửa sibling. Công PAY-03 thực hiện Refund; complete(..., REFUNDED) chỉ nhận khi Order đóng, Refund SUCCEEDED đúng snapshot và refunded_vnd đủ. |
 
-Complete yêu cầu caller transaction, kiểm DB, replay cùng resolution, khác resolution 409. Rollback Order cũng rollback marker. Port không gọi mạng hoặc ghi trạng thái Order thay Hoa. Test chuyển Order là fixture mô phỏng điểm nối, không chứng minh M1 đã consume.
+Complete yêu cầu caller transaction, kiểm DB, replay cùng resolution, khác resolution 409. Rollback Order cũng rollback marker. Port không gọi mạng hoặc ghi trạng thái Order thay Hoa. Các test port cũ dùng fixture chuyển Order; bộ [nghiệm thu liên service](cross-service-acceptance.md) bổ sung actual M1 Consume, mất ACK/retry và follow-up đúng thời điểm.
 
 PAY-03 còn đối soát receipt EXTRA_TRANSFER_RECONCILE_REQUIRED theo transaction/amount riêng; không đổi payable hoặc coi khoản trả thêm đã tự refund. Lát cắt này chỉ giữ bằng chứng tối thiểu.
 
@@ -32,4 +32,4 @@ Migrate theo README thêm M2 006/007, build/recreate M2; không sửa 001–005/
 docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run --rm tools npm run test:integration -- --runTestsByPath tests/integration/payment.callback.test.ts
 ```
 
-12 test PostgreSQL + HTTP trên schema cô lập: signature/DTO/official fields, unsafe money, duplicate/concurrency, account/reference/amount, provider isolation, late/sibling, audit rollback, completion rollback/replay. Chưa có webhook từ dashboard SePay Test, consume lỗi RECOVERING/restart hoặc Refund thực: bổ sung evidence cùng #14/#22/#53 trước nâng metadata/Done.
+12 test PostgreSQL + HTTP trên schema cô lập: signature/DTO/official fields, unsafe money, duplicate/concurrency, account/reference/amount, provider isolation, late/sibling, audit rollback, completion rollback/replay. Dashboard SePay Test đã gửi thành công giao dịch mô phỏng vào fixture ngày 20/10; fixture đó không phải Order tạo từ Checkout và đã dọn. Bộ `python scripts/run_cross_service_acceptance.py` bổ sung M1/M2/M3/M4 thật cho callback ký local → RECOVERING → Consume/follow-up, rollback/restart và hai Store COD/online có Voucher, cancel/Restock và sibling isolation. Còn phải nghiệm thu Checkout qua public runtime với dashboard và Refund provider thật cùng #22/#53 trước nâng metadata/Done.

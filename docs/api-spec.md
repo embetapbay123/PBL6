@@ -1,12 +1,12 @@
 # API contract 2.1 Draft — Order trước, trả tiền riêng
 
-**Khung 2.2:** [OpenAPI](contracts/openapi.json) hiện có 99 operation (baseline96 + consent GET/PATCH + SePay). [Trạng thái code](implementation/endpoint-status.md) và [provider/session ADR](implementation/scaffold-decisions.md) là nguồn bàn giao hiện hành.
+**Khung 2.2:** [OpenAPI](contracts/openapi.json) hiện có 100 operation (baseline96 + consent GET/PATCH + SePay + Admin roles lookup). [Trạng thái code](implementation/endpoint-status.md) và [provider/session ADR](implementation/scaffold-decisions.md) là nguồn bàn giao hiện hành.
 
 [OpenAPI 3.0 JSON](contracts/openapi.json) là danh mục operation và schema thiết kế. Base path /api/v1, JSON UTF-8, UUID, thời gian UTC, tiền nguyên VND. Lỗi dùng code/message/correlation_id/details. 401 chưa xác thực, 403 thiếu quyền, 404 ngoài scope, 409 xung đột giá/version/idempotency, 422 dữ liệu sai, 429 rate limit. Backend kiểm tra ownership và membership ở mỗi request.
 
 | Nhóm | Endpoint chính | Quyền và ý nghĩa |
 | --- | --- | --- |
-| Auth | POST /auth/register, /auth/verify-email, /auth/login, /auth/reset-password, /auth/reset-password/confirm, /auth/change-password | M3 lưu token một lần dạng hash; demo nhận link trong mock mailbox, không trả token qua response |
+| Auth | POST /auth/register, /auth/verify-email, /auth/login, /auth/reset-password, /auth/reset-password/confirm, /auth/change-password | M3 lưu token một lần dạng hash; registration/reset email requires explicit adapter configuration, unavailable by default, and no real email integration is included |
 | Store/staff | /me/store-applications, /admin/store-applications, /store/staff/invitations, /me/invitations | Duyệt Store, lời mời theo email đã xác minh, Owner thu hồi PENDING |
 | Catalog/inventory | /products, /store/products, /store/inventory | Giá Variant và tồn hiện hành, kiểm tra Store/permission |
 | Cart/quote | /cart/items, POST /checkout/quotes | Chọn item nhiều Store, một địa chỉ, payment_methods theo store_id, voucher Store/sàn; quote trả StoreQuote và tổng tham khảo |
@@ -41,7 +41,7 @@ Voucher sàn được tính trên tập Store tại xác nhận, phân bổ cố
 
 ## Quy ước chung để client và backend tích hợp
 
-OpenAPI hiện hành 2.2 có **99 operation** (96 baseline2.1 + consent GET/PATCH + SePay callback), schema request/response theo miền và ví dụ request cho các luồng quan trọng; các trường `x-required-roles` và `x-data-scope` ghi actor/scope thiết kế. JWT xác thực User, còn quyền Store/ownership phải kiểm tra **tại request**, kể cả khi token chưa hết hạn. API công khai hỗ trợ Guest; chat có thể dùng Guest anonymous key hoặc Customer token theo thiết kế đích; callback xác thực chữ ký provider, không dùng Bearer của Customer. Các `GET list` nhận `page` từ 1 và `size` mặc định 20, tối đa 100, trả `items,total,page,size`. Phạm vi mẫu/stub thực tế xem [endpoint status](implementation/endpoint-status.md).
+OpenAPI hiện hành 2.2 có **100 operation** (96 baseline2.1 + consent GET/PATCH + SePay callback + Admin roles lookup), schema request/response theo miền và ví dụ request cho các luồng quan trọng; các trường `x-required-roles` và `x-data-scope` ghi actor/scope thiết kế. JWT xác thực User, còn quyền Store/ownership phải kiểm tra **tại request**, kể cả khi token chưa hết hạn. API công khai hỗ trợ Guest; chat có thể dùng Guest anonymous key hoặc Customer token theo thiết kế đích; callback xác thực chữ ký provider, không dùng Bearer của Customer. Các `GET list` nhận `page` từ 1 và `size` mặc định 20, tối đa 100, trả `items,total,page,size`. Phạm vi mẫu/stub thực tế xem [endpoint status](implementation/endpoint-status.md).
 
 Tiền là số nguyên VND không âm; thời gian ISO 8601 UTC; ID là UUID. Các PATCH/decision có cạnh tranh như Order, Review, Product, Voucher, StoreApplication, StoreMembership và taxonomy gửi `expected_version` trong body; 409 `VERSION_CONFLICT` yêu cầu client tải lại bản hiện hành. Schema tạo mới và PATCH tách riêng để PATCH chỉ cần trường định sửa cùng phiên bản, không phải gửi lại toàn bộ dữ liệu. Client giữ nguyên Idempotency-Key và payload khi retry `POST /orders/batches`; nếu đã mất response, gọi `GET /orders/batches/{purchase_group_id}` hoặc tải lại danh sách Order. Không tạo PaymentAttempt mới chỉ vì màn hình chưa nhận callback.
 

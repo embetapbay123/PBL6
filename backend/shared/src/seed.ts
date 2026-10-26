@@ -10,6 +10,13 @@ async function main() {
   try {
     await m3.query('BEGIN');
     for(const [i,role] of ['CUSTOMER','ADMIN'].entries()) await m3.query('INSERT INTO role(id,code,scope,status) VALUES($1,$2,\'GLOBAL\',\'ACTIVE\') ON CONFLICT DO NOTHING',[uid(20+i),role]);
+    // Migration 006 can run before seed creates the ADMIN role on a fresh DB.
+    // Reapply this bootstrap grant here so fresh and existing databases agree.
+    await m3.query(`INSERT INTO permission(id,code,resource,action)
+      VALUES(gen_random_uuid(),'platform.admin','platform','admin') ON CONFLICT(code) DO NOTHING`);
+    await m3.query(`INSERT INTO role_permission(role_id,permission_id)
+      SELECT r.id,p.id FROM role r CROSS JOIN permission p
+      WHERE r.code='ADMIN' AND p.code='platform.admin' ON CONFLICT DO NOTHING`);
     for(const [i,email] of ['customer1@pbl6.test','customer2@pbl6.test','owner@pbl6.test','admin@pbl6.test'].entries()) {
       await m3.query('INSERT INTO "user"(id,email,email_verified_at,password_hash,status,created_at,version) VALUES($1,$2,now(),$3,\'ACTIVE\',now(),0) ON CONFLICT DO NOTHING',[uid(i+1),email,hash]);
       await m3.query('INSERT INTO customer_profile(id,user_id,display_name,phone,updated_at) VALUES($1,$2,$3,NULL,now()) ON CONFLICT DO NOTHING',[uid(40+i),uid(i+1),`Demo ${i+1}`]);

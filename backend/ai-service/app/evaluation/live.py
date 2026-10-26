@@ -3,7 +3,7 @@
 No training publication, guest secrets, User behavior, Orders or financial calls.
 Reports generation separately from human grounding/quality acceptance.
 """
-import argparse,asyncio,hashlib,json,math,os,time,uuid
+import argparse,asyncio,hashlib,json,math,os,time,uuid,httpx
 from datetime import datetime,timezone
 from pathlib import Path
 from sqlalchemy import create_engine
@@ -20,6 +20,7 @@ async def evaluate(engine,catalog,selector,allow_provider_calls=False):
     if not allow_provider_calls or selector.provider=='none':
         report['reason']='PROVIDER_CALLS_NOT_ENABLED' if not allow_provider_calls else 'PROVIDER_NOT_CONFIGURED'
         return report
+    report['thinking_mode']=getattr(selector,'thinking_mode',None)
     correlation='ai-eval-'+str(uuid.uuid4())
     try:products=await catalog.snapshot(correlation)
     except InternalError as e:report.update(status='FAIL',reason=e.code);return report
@@ -41,6 +42,8 @@ async def evaluate(engine,catalog,selector,allow_provider_calls=False):
     rows=report['raw'];generated=sum(r.get('reason')=='MODEL_GENERATED' for r in rows)
     samples=sorted(r['latency_ms'] for r in rows)
     report['metrics']={'cases':len(rows),'generated_answers':generated,'fallback_rate':sum(r.get('fallback',False) for r in rows)/len(rows),'latency_p95_ms':samples[math.ceil(.95*len(samples))-1],'token_samples':sum(r.get('actual_tokens') is not None for r in rows)}
+    report['latency_target_ms']=4000
+    report['latency_status']='PASS' if report['metrics']['latency_p95_ms']<4000 else 'FAIL'
     report['generation_status']='PASS' if generated else 'FAIL'
     report['status']='PASS' if all(r['status']=='PASS' for r in rows) and generated else 'FAIL'
     return report
@@ -48,7 +51,9 @@ async def evaluate(engine,catalog,selector,allow_provider_calls=False):
 async def main():
     parser=argparse.ArgumentParser();parser.add_argument('--allow-provider-calls',action='store_true');parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
     engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1),hide_parameters=True)
-    try:report=await evaluate(engine,LiveCatalog(),CatalogSelector(),args.allow_provider_calls)
+    try:
+        async with httpx.AsyncClient(limits=httpx.Limits(max_connections=50,max_keepalive_connections=20),follow_redirects=False) as pool:
+            report=await evaluate(engine,LiveCatalog(http_client=pool),CatalogSelector(http_client=pool),args.allow_provider_calls)
     finally:engine.dispose()
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({k:report[k] for k in ('status','generation_status','provider','model')}))

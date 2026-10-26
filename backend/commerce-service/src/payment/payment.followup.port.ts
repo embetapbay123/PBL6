@@ -9,6 +9,21 @@ export interface PaymentFollowup {
 // the same manager for its verified Order transition and this completion marker.
 export class PaymentFollowupPort {
   constructor(readonly manager:EntityManager) {}
+  // M2 Order owns the terminal decision; Payment owns its pending-attempt bookkeeping.
+  // This never declares an uncertain/successful transfer refunded or failed.
+  async closePending(orderId:string) {
+    if(!this.manager.queryRunner?.isTransactionActive)throw new Error('PAYMENT_REQUIRES_CALLER_TRANSACTION');
+    const [order]=await this.manager.query('SELECT status FROM "order" WHERE id=$1 FOR UPDATE',[orderId]);
+    if(!order || !['CANCELLED','EXPIRED'].includes(order.status))throw new ApiError(409,'ORDER_NOT_CLOSED','Order chưa đóng.');
+    const [payment]=await this.manager.query('SELECT * FROM payment WHERE order_id=$1 FOR UPDATE',[orderId]);
+    if(!payment)return;
+    if(payment.status==='PENDING') {
+      await this.manager.query("UPDATE payment SET status='CANCELLED',version=version+1 WHERE id=$1",[payment.id]);
+      await this.manager.query("UPDATE payment_attempt SET status=$2 WHERE payment_id=$1 AND status IN ('CREATED','PENDING')",[payment.id,order.status==='EXPIRED'?'EXPIRED':'CANCELLED']);
+      await this.manager.query("UPDATE c_o_d_collection SET status='CANCELLED' WHERE order_id=$1 AND status='PENDING'",[orderId]);
+    }
+    if(payment.status==='SUCCEEDED')await this.manager.query("UPDATE payment_followup SET kind='REFUND_REQUIRED' WHERE order_id=$1 AND status='PENDING'",[orderId]);
+  }
   async pending(limit=20):Promise<PaymentFollowup[]> {
     if(!Number.isInteger(limit) || limit<1 || limit>100)throw new Error('FOLLOWUP_LIMIT_INVALID');
     return this.manager.query("SELECT operation_id,attempt_id,payment_id,order_id,kind,correlation_id FROM payment_followup WHERE status='PENDING' ORDER BY created_at,operation_id LIMIT $1",[limit]);

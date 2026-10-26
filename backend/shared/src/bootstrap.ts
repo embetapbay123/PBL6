@@ -11,11 +11,17 @@ import { database, initializeDatabase } from './database';
 import { ApiError, ErrorFilter } from './errors';
 import { RequestContractInterceptor } from './request-contract';
 import contractBundle from './contracts.runtime.generated.json';
+import { AuthService } from '../../identity-store-service/src/auth/auth.service';
+import { createEmailAdapter } from '../../identity-store-service/src/auth/smtp-email.adapter';
+import { rateBudget } from './rate-budget';
 
 const registry = new Registry();
 collectDefaultMetrics({ register: registry });
 const requests = new Counter({ name: 'pbl6_http_requests_total', help: 'HTTP responses', labelNames: ['service','route','status'], registers: [registry] });
 const latency = new Histogram({ name: 'pbl6_http_duration_seconds', help: 'HTTP latency', labelNames: ['service','route'], registers: [registry] });
+export function createRuntimeAuthService(id: ServiceId, env: NodeJS.ProcessEnv = process.env) {
+  return id === 'M3' ? new AuthService(createEmailAdapter(env)) : new AuthService();
+}
 @Controller()
 class HealthController {
   @Get('health/live') live() { return { status: 'alive', service: process.env.SERVICE_ID }; }
@@ -29,8 +35,10 @@ class HealthController {
 }
 export async function bootstrap(id: ServiceId, controllers: any[]) {
   const c = config(id);
+  // M3 must have a real, explicitly configured delivery service before accepting traffic.
+  const authService = createRuntimeAuthService(id);
   await initializeDatabase();
-  @Module({ controllers: [HealthController, ...controllers] }) class ApplicationModule {}
+  @Module({ controllers: [HealthController, ...controllers], providers: [{ provide: AuthService, useValue: authService }] }) class ApplicationModule {}
   const app = await NestFactory.create(ApplicationModule, { rawBody: true, logger: ['error','warn'] });
   app.enableShutdownHooks();
   const redis = new Redis(c.redisUrl, { maxRetriesPerRequest: 1, enableOfflineQueue: false });
@@ -54,13 +62,21 @@ export async function bootstrap(id: ServiceId, controllers: any[]) {
   app.use(async (req: any, res: any, next: any) => {
     if (!req.path.startsWith('/api/v1')) return next();
     try {
-      const login = req.path === '/api/v1/auth/login';
-      const bucket = Math.floor(Date.now()/60000);
-      const key = `rate:${id}:${login ? 'login' : 'api'}:${req.ip}:${bucket}`;
-      const count = Number(await redis.eval("local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],60) end; return n",1,key));
-      if (count > (login ? 30 : 600)) { res.setHeader('Retry-After','60'); return res.status(429).json({code:'RATE_LIMITED',message:'Vui lòng thử lại sau.',correlation_id:req.correlationId,details:[]}); }
+      const budget = rateBudget(id, req.method, req.path, req.ip, req.headers, c.internalKeys);
+      const emailAction = ['/api/v1/auth/register', '/api/v1/auth/reset-password'].includes(req.path);
+      const tokenAction = ['/api/v1/auth/verify-email', '/api/v1/auth/reset-password/confirm'].includes(req.path);
+      const windowSeconds = emailAction ? 3600 : 60;
+      const bucket = Math.floor(Date.now()/(windowSeconds*1000));
+      const scope = emailAction ? 'email-action:'+req.ip : tokenAction ? 'token-action:'+req.ip : budget.scope;
+      const limit = emailAction ? 10 : tokenAction ? 30 : budget.limit;
+      const key = `rate:${id}:${scope}:${bucket}`;
+      const count = Number(await redis.eval(`local n=redis.call('INCR',KEYS[1]); if n==1 then redis.call('EXPIRE',KEYS[1],${windowSeconds}) end; return n`,1,key));
+      if (count > limit) { res.setHeader('Retry-After',String(windowSeconds)); return res.status(429).json({code:'RATE_LIMITED',message:'Please retry later.',correlation_id:req.correlationId,details:[]}); }
       next();
-    } catch { res.status(503).json({code:'DEPENDENCY_UNAVAILABLE',message:'Bộ giới hạn truy cập chưa sẵn sàng.',correlation_id:req.correlationId,details:[]}); }
+    } catch (error) {
+      if (error instanceof ApiError) return res.status(error.getStatus()).json({...error.getResponse() as object,correlation_id:req.correlationId});
+      res.status(503).json({code:'DEPENDENCY_UNAVAILABLE',message:'Bộ giới hạn truy cập chưa sẵn sàng.',correlation_id:req.correlationId,details:[]});
+    }
   });
   app.setGlobalPrefix('api/v1', { exclude: ['health/live','health/ready','metrics',...Object.values(contractBundle.operations).filter(r=>r.internal && r.service===id).map(r=>r.route.slice(1))] });
   app.useGlobalFilters(new ErrorFilter());

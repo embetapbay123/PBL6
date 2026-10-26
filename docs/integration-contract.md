@@ -20,6 +20,12 @@ Command ghi có operation_id UUID; correlation_id được truyền bằng heade
 | M1 → M4 | SearchRecorded, InteractionRecorded VIEW | user_id, query hoặc product_id | Ingress từ read xác thực; M4 kiểm consent/inbox; không thu hành vi Guest |
 | M2 → M4 | OrderCompleted, InteractionRecorded CART | user_id, product_id, event_type, event_id, time | Tín hiệu AI dedup và chỉ dùng khi PersonalizationConsent cho phép |
 
+## STAFF-01 — M3 invitations
+
+M3 implements `GET/POST /store/staff/invitations`, `POST /store/staff/invitations/{id}/revoke`, `GET /me/invitations`, `POST /me/invitations/{id}/accept`, plus scoped staff list/update per OpenAPI. Store scope comes from authenticated M3 membership context and is revalidated against the active Owner membership. Invitations are limited to the four Seller permission groups in `docs/rbac.md`, expire after seven days, and can only be accepted by an active user with a verified matching email. Accept writes the membership, permission grants, audit record, and `MembershipChanged` outbox row in one M3 transaction; permission/status updates do the same. PostgreSQL locks serialize accept and revoke. The configured M3 email adapter delivers the invitation link; delivery failure returns `503 EMAIL_DELIVERY_UNAVAILABLE` and revokes/audits an invitation that remains pending. See [staff handoff](../backend/identity-store-service/src/staff/README.md) for payloads, errors, and frontend fixture.
+
+Migration `005_staff_invitations.sql` is append-only. The current Auth context still selects one active membership rather than exposing a Store switcher; STORE-02 is required before a user can explicitly switch between multiple Stores.
+
 ## QuoteVariants đã bàn giao cho M2
 
 [CAT-QUOTE-01 #7](https://github.com/embetapbay123/PBL6/issues/7) đã merge qua [PR #86](https://github.com/embetapbay123/PBL6/pull/86) ngày 05/10/2026. M2 gọi `POST /internal/variants/quote` qua `InternalClients.call('QuoteVariants', { items }, correlationId)`; endpoint không đi qua public gateway. Caller duy nhất M2; typed client lấy service credentials từ cấu hình local.

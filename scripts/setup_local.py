@@ -17,9 +17,16 @@ if not env.exists():
  env.write_text('\n'.join(lines)+'\n',encoding='utf-8')
 else:
  text=env.read_text(encoding='utf-8')
- names={line.split('=',1)[0] for line in text.splitlines() if '=' in line and not line.startswith('#')}
+ lines=text.splitlines()
+ names=set()
+ for index,line in enumerate(lines):
+  if '=' not in line or line.startswith('#'): continue
+  name=line.split('=',1)[0]
+  names.add(name)
+  if name in local_ids: lines[index]=name+'='+local_ids[name]
  additions=[name+'='+value for name,value in local_ids.items() if name not in names]
- if additions: env.write_text(text.rstrip('\n')+'\n'+'\n'.join(additions)+'\n',encoding='utf-8')
+ if additions: lines.extend(additions)
+ env.write_text('\n'.join(lines)+'\n',encoding='utf-8')
 if not (keys/'jwt-private.pem').exists():
  code="const fs=require('fs'),c=require('crypto');const k=c.generateKeyPairSync('rsa',{modulusLength:2048,publicKeyEncoding:{type:'spki',format:'pem'},privateKeyEncoding:{type:'pkcs8',format:'pem'}});fs.writeFileSync('jwt-private.pem',k.privateKey,{mode:0o600});fs.writeFileSync('jwt-public.pem',k.publicKey);"
  subprocess.run(['node','-e',code],cwd=keys,check=True)

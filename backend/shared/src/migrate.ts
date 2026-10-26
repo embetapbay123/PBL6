@@ -4,8 +4,14 @@ import { resolve } from 'node:path';
 import { required } from './config';
 const services: Record<string,string>={M1:'catalog-service',M2:'commerce-service',M3:'identity-store-service',M4:'ai-service'};
 async function main() {
-  for(const id of ['M3','M1','M2','M4']) {
-    const client=new Client({connectionString:required(`${id}_DATABASE_URL`)}); await client.connect();
+  const all=['M3','M1','M2','M4'];
+  const selected=(process.env.MIGRATE_SERVICES ?? all.join(',')).split(',').map(value=>value.trim()).filter(Boolean);
+  if(!selected.length || selected.some(id=>!all.includes(id)) || new Set(selected).size!==selected.length) {
+    throw new Error('MIGRATE_SERVICES must be a comma-separated list of unique service IDs: M3,M1,M2,M4');
+  }
+  for(const id of selected) {
+    const urlName=id==='M3' && process.env.MIGRATE_M3_TEST_DATABASE==='1' ? 'M3_TEST_DATABASE_URL' : `${id}_DATABASE_URL`;
+    const client=new Client({connectionString:required(urlName)}); await client.connect();
     await client.query('CREATE TABLE IF NOT EXISTS schema_migration(version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
     await client.query('SELECT pg_advisory_lock(721602)');
     try {

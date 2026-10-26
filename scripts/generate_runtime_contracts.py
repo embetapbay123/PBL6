@@ -209,7 +209,9 @@ def main():
             file.write_text(text, encoding='utf-8')
     if drift:
         raise SystemExit('Generated contract drift: ' + ', '.join(drift))
-    print(f'{"Checked" if args.check else "Generated"} 99 public + 11 internal DTOs/types/fixtures, 7 events')
+    public_count = sum(not operation['internal'] for operation in records.values())
+    internal_count = len(records) - public_count
+    print(f'{"Checked" if args.check else "Generated"} {public_count} public + {internal_count} internal DTOs/types/fixtures, 7 events')
 
 
 if __name__ == '__main__':

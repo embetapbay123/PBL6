@@ -908,6 +908,124 @@ describe('OrderService.verifyReviewEligibility (REVIEW-ELIG-01 & BR-37)', () => 
       eligible: true,
     });
   });
+
+  describe('OrderService.cancelOwnOrder & cancelStoreOrder Business Logic (ORDER-04)', () => {
+    let orderService: OrderService;
+    const testOrderId = '44444444-4444-4444-8444-444444444444';
+    const customerAuth = { user_id: '11111111-1111-4111-8111-111111111111' };
+    const sellerStoreId = '22222222-2222-4222-8222-222222222222';
+    const sellerAuth = {
+      user_id: '33333333-3333-4333-8333-333333333333',
+      store_membership: {
+        store_id: sellerStoreId,
+        role: 'SELLER',
+        permissions: ['order.store.read_status_cancel'],
+      },
+    };
+    const correlation = 'corr-cancel-test';
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      orderService = new OrderService();
+    });
+
+    test('cancelOwnOrder throws 401 when unauthenticated', async () => {
+      await expect(
+        orderService.cancelOwnOrder(testOrderId, { expected_version: 1 }, null, correlation)
+      ).rejects.toMatchObject({
+        status: 401,
+        response: { code: 'UNAUTHENTICATED' },
+      });
+    });
+
+    test('cancelOwnOrder throws 422 when id is invalid UUID', async () => {
+      await expect(
+        orderService.cancelOwnOrder('not-a-uuid', { expected_version: 1 }, customerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VALIDATION_FAILED' },
+      });
+    });
+
+    test('cancelOwnOrder throws 422 when expected_version is missing or invalid', async () => {
+      await expect(
+        orderService.cancelOwnOrder(testOrderId, {} as any, customerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 422,
+        response: { code: 'VALIDATION_FAILED' },
+      });
+    });
+
+    test('cancelOwnOrder throws 404 when order does not exist or belongs to another user', async () => {
+      mockQuery.mockResolvedValueOnce([]); // SELECT FOR UPDATE
+      mockQuery.mockResolvedValueOnce([]); // findCustomerOrderById
+
+      await expect(
+        orderService.cancelOwnOrder(testOrderId, { expected_version: 1 }, customerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 404,
+        response: { code: 'NOT_FOUND' },
+      });
+    });
+
+    test('cancelOwnOrder throws 409 when expected_version conflict', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: testOrderId }]); // lock
+      mockQuery.mockResolvedValueOnce([{ // find
+        id: testOrderId,
+        customer_user_id: customerAuth.user_id,
+        status: 'PENDING',
+        version: 5,
+        items: [],
+      }]);
+      mockQuery.mockResolvedValueOnce([]); // order_item
+
+      await expect(
+        orderService.cancelOwnOrder(testOrderId, { expected_version: 1 }, customerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 409,
+        response: { code: 'VERSION_CONFLICT' },
+      });
+    });
+
+    test('cancelOwnOrder throws 409 when order is in non-cancellable status (e.g. SHIPPED)', async () => {
+      mockQuery.mockResolvedValueOnce([{ id: testOrderId }]); // lock
+      mockQuery.mockResolvedValueOnce([{ // find
+        id: testOrderId,
+        customer_user_id: customerAuth.user_id,
+        status: 'SHIPPED',
+        version: 1,
+        items: [],
+      }]);
+      mockQuery.mockResolvedValueOnce([]); // order_item
+
+      await expect(
+        orderService.cancelOwnOrder(testOrderId, { expected_version: 1 }, customerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 409,
+        response: { code: 'ORDER_CANNOT_BE_CANCELLED' },
+      });
+    });
+
+    test('cancelStoreOrder throws 403 when user has no store membership or permission', async () => {
+      await expect(
+        orderService.cancelStoreOrder(testOrderId, { expected_version: 1 }, { user_id: 'some-user' }, correlation)
+      ).rejects.toMatchObject({
+        status: 403,
+      });
+    });
+
+    test('cancelStoreOrder throws 404 when order does not belong to store', async () => {
+      mockQuery.mockResolvedValueOnce([]); // lock
+      mockQuery.mockResolvedValueOnce([]); // find
+
+      await expect(
+        orderService.cancelStoreOrder(testOrderId, { expected_version: 1 }, sellerAuth, correlation)
+      ).rejects.toMatchObject({
+        status: 404,
+        response: { code: 'NOT_FOUND' },
+      });
+    });
+  });
 });
 
 

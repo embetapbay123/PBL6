@@ -132,12 +132,20 @@ export class OrderRepository extends OwnedRepository {
   }
 
   async findIdempotencyRecord(key: string, customerUserId: string): Promise<IdempotencyRecordRow | undefined> {
-    const [row] = await this.manager.query(
+    const res = await this.manager.query(
       `SELECT id, customer_user_id, key, payload_hash, purchase_group_id, response_json, expires_at
        FROM idempotency_record
        WHERE key = $1 AND customer_user_id = $2`,
       [key, customerUserId]
     );
+    const row = Array.isArray(res) ? res[0] : undefined;
+    if (row && typeof row.response_json === 'string') {
+      try {
+        row.response_json = JSON.parse(row.response_json);
+      } catch {
+        // ignore
+      }
+    }
     return row;
   }
 
@@ -152,10 +160,10 @@ export class OrderRepository extends OwnedRepository {
   }): Promise<void> {
     await this.manager.query(
       `INSERT INTO idempotency_record (id, customer_user_id, key, payload_hash, purchase_group_id, response_json, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (id) DO UPDATE SET response_json = EXCLUDED.response_json`,
+       VALUES (COALESCE($1, gen_random_uuid()), $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (customer_user_id, key) DO UPDATE SET response_json = EXCLUDED.response_json`,
       [
-        data.id ?? undefined,
+        data.id ?? null,
         data.customer_user_id,
         data.key,
         data.payload_hash,

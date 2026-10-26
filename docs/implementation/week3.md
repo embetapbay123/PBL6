@@ -1,5 +1,7 @@
 # Week 3 — 13–19/10 — hoàn thiện BE, provider và các điểm nối
 
+> Chốt lại ngày **20/10/2026**: phần dưới là kế hoạch lịch sử 13–19/10. Công việc hiện tại theo [Week 4](week4.md). Catalog #111–113, M3 #109, OpenCode Go #106 và Voucher #105 đã merge; domain/SePay Test webhook đã xác minh. Confirm/Cancel, email/effective permission, Refund/evaluation và UI/APK chưa đủ nghiệm thu vẫn giữ issue mở theo owner, không coi gate 19/10 đã đạt. FLOW-01 và WEB-01 đã Done sau audit; không làm lại task nền.
+
 Cập nhật **13/10/2026**. Demo đầy đủ vào **thứ Ba 03/11/2026**. [Phạm vi/gate demo](demo-2026-11-03.md) · [Roadmap 71 task](roadmap.md) · [Kanban](https://github.com/users/embetapbay123/projects/1/views/3). Giữ owner và acceptance; không dùng lịch làm bằng chứng Done. Tuần gồm 5 phiên làm việc trong khoảng lịch dưới đây.
 
 ## Việc từng người
@@ -14,7 +16,7 @@ Cập nhật **13/10/2026**. Demo đầy đủ vào **thứ Ba 03/11/2026**. [Ph
 
 ## Nhịp làm và điều kiện bàn giao
 
-**Công — code 13/10:** [bàn giao Week 3](cong-week3-handoff.md) ghi generation OpenCode/DeepSeek, metrics/retention/body limit, fix tải M4, worker Refund, test/restore và blocker theo issue. Provider tiền chưa có; model ID/key local và dữ liệu consent/ALS chưa cấu hình. Không dùng CI/fallback để nghiệm thu online/Refund/generation.
+**Công — code 13/10:** [bàn giao Week 3](cong-week3-handoff.md) ghi generation OpenCode/DeepSeek, metrics/retention/body limit, fix tải M4, worker Refund, test/restore và blocker theo issue. Provider tiền chưa có; OpenCode Go đã cấu hình local và gateway smoke generation thật PASS (5.422 s); dữ liệu consent/ALS chưa cấu hình, human quality/billing/latency chưa nghiệm thu. Không dùng CI/fallback để nghiệm thu online/Refund/generation.
 
 **Kanban đã đồng bộ theo deadline full demo:** #9/#10 (Thịnh), #42/#43 (Trí), #56/#57 (Công), #36 (Hoa) chuyển Backlog → Todo để bắt đầu trong Week 3. Các thẻ Week 3 đã Todo/In progress/Review giữ nguyên; Todo là phần đã lên lịch, member lấy theo thứ tự handoff trên bảng. Task chỉ bắt đầu Week 4–5 còn Backlog, không mở lại Done.
 

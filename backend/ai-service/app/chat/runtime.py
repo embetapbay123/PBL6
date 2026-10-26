@@ -4,7 +4,7 @@ from sqlalchemy import text
 from starlette.concurrency import run_in_threadpool
 from ..internal_client import InternalError
 from ..safety import redact,budget,price
-from .provider import CatalogSelector, compose, PROMPT_VERSION,request_estimate
+from .provider import CatalogSelector, compose, PROMPT_VERSION,request_estimate,CHAT_SESSION
 from .retrieval import retrieve,contextual_question
 
 def digest(value):return hashlib.sha256(value.encode()).hexdigest()
@@ -60,7 +60,7 @@ class ChatRuntime:
             if not changed:raise InternalError(409,'VERSION_CONFLICT','Phiên chat đã thay đổi; tải lại rồi gửi lại.')
             db.execute(text("INSERT INTO chat_message(session_id,role,content) VALUES(:s,'USER',:c)"),{'s':id,'c':redact(question)})
             db.execute(text("INSERT INTO chat_message(id,session_id,role,content,product_refs,response_meta) VALUES(:id,:s,'ASSISTANT',:c,CAST(:refs AS jsonb),CAST(:meta AS jsonb))"),{'id':response['id'],'s':id,'c':response['content'],'refs':json.dumps(response['product_cards']),'meta':json.dumps({'fallback':selection.fallback,'reason':selection.reason})})
-            db.execute(text("INSERT INTO ai_request_trace(operation,store_ids,latency_ms,fallback,provider,prompt_version,index_version,estimated_tokens,actual_tokens,model_name,fallback_reason) VALUES('chat',CAST(:stores AS jsonb),:ms,:fallback,:provider,:prompt,'live-lexical-v1',:estimate,:actual,:model,:reason)"),{'stores':json.dumps(stores),'ms':elapsed,'fallback':selection.fallback,'provider':selection.provider,'prompt':PROMPT_VERSION,'estimate':estimated,'actual':selection.actual_tokens,'model':getattr(selection,'model',None),'reason':selection.reason})
+            db.execute(text("INSERT INTO ai_request_trace(operation,store_ids,latency_ms,fallback,provider,prompt_version,index_version,estimated_tokens,actual_tokens,model_name,fallback_reason,thinking_mode) VALUES('chat',CAST(:stores AS jsonb),:ms,:fallback,:provider,:prompt,'live-lexical-v1',:estimate,:actual,:model,:reason,:thinking)"),{'stores':json.dumps(stores),'ms':elapsed,'fallback':selection.fallback,'provider':selection.provider,'prompt':PROMPT_VERSION,'estimate':estimated,'actual':selection.actual_tokens,'model':getattr(selection,'model',None),'reason':selection.reason,'thinking':getattr(selection,'thinking_mode',None)})
 
     async def answer(self,id,user,key,question,correlation):
         started=time.monotonic()
@@ -68,7 +68,7 @@ class ChatRuntime:
         scope='turn:'+str(user or digest(key))
         await run_in_threadpool(self.budget,scope)
         try:
-            async with asyncio.timeout(4):
+            async with asyncio.timeout(max(4,getattr(self.selector,'timeout',2)+2)):
                 candidates=await self.catalog.snapshot(correlation)
                 retrieved=await run_in_threadpool(retrieve,self.engine,contextual_question(question,history),candidates)
                 if user:
@@ -78,7 +78,9 @@ class ChatRuntime:
                     retrieved.sort(key=lambda p:order.get(p['id'],len(order)))
                 estimated=request_estimate(question,retrieved,history) if retrieved and getattr(self.selector,'provider','none')!='none' else 0
                 await run_in_threadpool(self.budget,scope,estimated,False)
-                selection=await self.selector.select(question,retrieved,history,correlation)
+                session_token=CHAT_SESSION.set(digest('session:'+str(id)))
+                try:selection=await self.selector.select(question,retrieved,history,correlation)
+                finally:CHAT_SESSION.reset(session_token)
                 # Resolve selected cards again after generation; no stale cached price or hidden card.
                 current=await asyncio.gather(*(self.catalog.product(p,correlation) for p in selection.ids))
                 maximum=budget(question)

@@ -1,0 +1,26 @@
+name: Cross-service recovery and privacy acceptance
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  real-service-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python scripts/test_cross_service_acceptance.py
+      - run: python scripts/run_cross_service_acceptance.py
+      - name: Upload sanitized acceptance report only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-service-recovery-${{ github.sha }}
+          path: artifacts/acceptance/*/evidence/report.json
+          if-no-files-found: warn
+          retention-days: 14

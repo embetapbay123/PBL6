@@ -4,14 +4,20 @@ Nguồn: [28 NFR](../functional-requirements.md), [acceptance](../requirements-a
 
 | Nhóm | Mục tiêu / điều kiện | Trạng thái khung |
 | --- | --- | --- |
-| API | >=95% request <2 giây với tối thiểu 100 user đồng thời | Smoke Catalog/related PASS ngày 07/10; NFR toàn hệ thống NOT_RUN |
-| RAG | Mục tiêu <4 giây trong điều kiện MVP | Runtime real + fallback; model/provider benchmark NOT_RUN |
+| API | >=95% request <2 giây với tối thiểu 100 user đồng thời | Read smoke PASS; cold mixed 100-client runs FAIL; target profile tracked separately below |
+| RAG | Mục tiêu <4 giây trong điều kiện MVP | Real Go smoke: earlier FAIL; disabled-thinking sample p95 2126 ms, full quality/load not accepted |
 | Pagination | size <=100, query DB, hạn chế N+1 | List Product mẫu đã test; module khác chưa có |
 | Nhất quán | Không oversell/đơn/tiền/tồn lặp | Payment/COD/callback/Refund atomic đã test; checkout/kho toàn luồng chưa đạt |
 | DB | Index theo query thật; pool hữu hạn | Foundation index/pool Node10/M4 5; EXPLAIN chưa đo |
-| Error rate | Đề xuất <1% lỗi bất ngờ ở tải mục tiêu | Smoke read cuối 0%; workload đầy đủ chưa đo, tách 429/lỗi nghiệp vụ |
+| Error rate | Đề xuất <1% lỗi bất ngờ ở tải mục tiêu | Cold mixed runs 3.22%, 5.30%, 1.24%, 4.64% FAIL; retain every failure, including 429/409/503 |
 
 100 user không đồng nghĩa 100 request/giây. Báo cáo p95 theo route, throughput, think time, request không gửi được, CPU/RAM/lock/pool/queue age; không lấy trung bình thay p95.
+
+## Marketplace runner — 23/10/2026
+
+[Capacity acceptance](capacity-acceptance.md) now provides the real mixed workload, measured target-volume fixture, 100 actual client source addresses, refresh and durable workers, per-API timings/error counts, DB/queue/resource point samples and post-load invariants. Run `python scripts/run_capacity_acceptance.py --profile target` on a dedicated test machine. The 22-minute profile includes two-minute warm-up, three-minute ramp, fifteen-minute hold and two-minute down. It does not call the bank/model, raise public limits or treat synthetic history as AI quality data. [Development evidence, including failed cold bursts](evidence/2026-10-23-cong-full-acceptance.json).
+
+The cold diagnostic found M2's public Catalog reads exhausting one shared IP quota. Authenticated M2/M4 Catalog GETs now use bounded caller budgets; invalid identity is rejected and public/login limits remain 600/30 per minute per IP. A plain Product listing avoids resolving an unused personal identity, while current Store visibility and actual search telemetry remain enforced. Deadline is still one second per HTTP dependency. The cold bursts still failed after the quota fix; a warm target result must be reported separately and cannot erase cold behavior.
 
 ## Kịch bản khung
 
@@ -47,6 +53,8 @@ Báo cáo lưu run ID/commit, tool/script, CPU/RAM/OS, số instance/worker/pool
 Related gồm một request setup Catalog. Hai run cuối có 400/400 checks; 100 interrupted iterations cuối run là VU đang think-time, không phải HTTP thất bại. Các tuning run FAIL khác vẫn lưu trong artifacts; Anonymous ForYou trả 401 do workload sai guard được loại khỏi capacity result. Không xóa FAIL hoặc nhận NFR đầy đủ từ một run nhỏ.
 
 M4 dùng client lifespan/pool50/keep-alive20, timeout mỗi dependency1 giây; reference trong page hiện hành được dùng lại, ActiveStores kiểm một lần trong cùng request. Không cache quyền/giá qua request. Resources/queue snapshot không đo peak; cần monitor time-series/DB/queue age và dataset đích khi nghiệm thu chính thức.
+
+Ngày 23/10, bản runtime mới vẫn gặp 5/201 lỗi Related 503 trong cold burst 100 VU (p95 1421 ms). Admission 8 slot gần chạm deadline chờ 1 giây; so sánh trực tiếp 100 lời gọi M1/M3 đạt p95 957 ms với 8 slot, 853 ms với 16 slot. Chỉ tăng slot vẫn có một run 59/201 lỗi khi trùng provider smoke, rồi 1/201 lỗi ở lần kế tiếp; kết quả FAIL được giữ. M4 Related hiện dùng public list/detail có kiểm Store trực tiếp ở M1 thay vì gọi dư ActiveStores lần nữa; không cache visibility/giá qua request. Default **16 slot**, chờ admission tối đa **1,5 giây**, từng HTTP dependency vẫn **1 giây**, pool 50 giữ nguyên và không retry/nới rate limit. Đây là tuning từ workload seed nhỏ; phải chạy lại gateway và không suy ra NFR marketplace đạt chỉ từ probe này. [Bản ghi baseline](cong-week4-handoff.md).
 
 ```powershell
 New-Item -ItemType Directory -Force artifacts/load/read-smoke | Out-Null
