@@ -80,6 +80,7 @@ async function prepare(token, variant = 90, method = 'SANDBOX') {
     expected_payable_total_vnd: quote.payable_total_vnd }, correlation };
 }
 async function confirm(token, prepared, status = 201) {
+  if(status===201)return require('./replay-confirm.cjs')(request,{token,body:prepared.input,key:prepared.key});
   return request('confirmCheckout', { token, body: prepared.input,
     headers: { 'idempotency-key': prepared.key }, status });
 }
