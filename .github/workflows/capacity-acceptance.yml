@@ -1,0 +1,32 @@
+name: Isolated marketplace capacity acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'quick = 100 clients/60s; target = warm/ramp/hold/down for 22 minutes'
+        required: true
+        default: quick
+        type: choice
+        options: [quick, target]
+permissions:
+  contents: read
+jobs:
+  capacity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python scripts/test_capacity_acceptance.py
+      - run: python scripts/run_capacity_acceptance.py --profile "${{ inputs.profile }}"
+      - name: Upload sanitized capacity report only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capacity-${{ github.sha }}-${{ inputs.profile }}
+          path: artifacts/capacity/*/evidence/report.json
+          if-no-files-found: warn
+          retention-days: 14
