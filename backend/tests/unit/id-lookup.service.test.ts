@@ -29,10 +29,20 @@ test('checkout rejects unsafe shipping fees', async () => {
   query.mockResolvedValueOnce([{}]).mockResolvedValueOnce([{ id: store, name: 'Store', shipping_fee_vnd: '9007199254740992', version: 7 }]);
   await expect(service.resolveCheckoutContext(input)).rejects.toMatchObject({ status: 500 });
 });
-test('only an actual Admin receives platform metrics', async () => {
-  resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN'], token_version: 4 });
+test('an Admin with the current effective platform.admin permission receives platform metrics', async () => {
+  resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN'], role_permissions: ['platform.admin'], token_version: 4 });
   await expect(service.resolveAiMetricsScope({ token: 'token' })).resolves.toEqual({ user_id: user, scope: 'PLATFORM', token_version: 4 });
   expect(query).not.toHaveBeenCalled();
+});
+test('an ADMIN role without effective platform.admin cannot receive platform scope', async () => {
+  resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN'], role_permissions: [], token_version: 4 });
+  query.mockResolvedValueOnce([]);
+  await expect(service.resolveAiMetricsScope({ token: 'token' })).rejects.toMatchObject({ status: 403, response: expect.objectContaining({ code: 'STORE_METRICS_FORBIDDEN' }) });
+});
+test('a user with a stale ADMIN role retains only legitimate active Owner store scope', async () => {
+  resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN', 'STORE_OWNER'], role_permissions: [], token_version: 4 });
+  query.mockResolvedValueOnce([{ store_id: store }]);
+  await expect(service.resolveAiMetricsScope({ token: 'token', store_id: store })).resolves.toEqual({ user_id: user, scope: 'STORE', store_id: store, token_version: 4 });
 });
 test('Seller or another Store membership cannot grant metrics scope', async () => {
   query.mockResolvedValueOnce([]);
@@ -49,7 +59,7 @@ test('multiple Owner memberships require an explicit store selection', async () 
   await expect(service.resolveAiMetricsScope({ token: 'token' })).rejects.toMatchObject({ status: 422 });
 });
 test('Admin requested store must exist and be active', async () => {
-  resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN'], token_version: 4 });
+  resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN'], role_permissions: ['platform.admin'], token_version: 4 });
   query.mockResolvedValueOnce([]);
   await expect(service.resolveAiMetricsScope({ token: 'token', store_id: store })).rejects.toMatchObject({ status: 404 });
 });

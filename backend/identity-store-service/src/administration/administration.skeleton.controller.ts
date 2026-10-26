@@ -26,6 +26,11 @@ export class AdministrationSkeletonController {
     return this.service.listStores(query.page, query.size);
   }
 
+  @Get('admin/roles') @Roles("ADMIN")
+  async listRoles() {
+    return this.service.listRoles();
+  }
+
   @Patch('admin/users/:id') @Roles("ADMIN")
   async updateUserState(
     @Param() params: UpdateUserStatePathDto,

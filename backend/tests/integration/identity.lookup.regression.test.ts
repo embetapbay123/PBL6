@@ -64,10 +64,11 @@ test('Internal checkout and AI scope validate tokens, snapshots, caller allowlis
   const source = new DataSource({ type: 'postgres', url: process.env.M3_DATABASE_URL }); await source.initialize();
   const customer = await login('customer1@pbl6.test'), other = await login('customer2@pbl6.test'), owner = await login('owner@pbl6.test'), admin = await login('admin@pbl6.test');
   const context = await (await fetch(base + '/me/context', { headers: headers(customer) })).json() as any;
+  const ownerContext = await (await fetch(base + '/me/context', { headers: headers(owner) })).json() as any;
   schema('getAuthContext', context);
   expect(context.access_token).toBeUndefined();
-  const [store] = await source.query("SELECT id FROM store WHERE status='ACTIVE' LIMIT 1");
-  const [membership] = await source.query("SELECT id,status FROM store_membership WHERE store_id=$1 AND role='OWNER' AND status='ACTIVE' LIMIT 1", [store.id]);
+  const [store] = await source.query("SELECT id FROM store WHERE id=$1 AND status='ACTIVE'", [ownerContext.store_membership.store_id]);
+  const [membership] = await source.query("SELECT id,status FROM store_membership WHERE store_id=$1 AND user_id=$2 AND role='OWNER' AND status='ACTIVE' LIMIT 1", [store.id, ownerContext.user_id]);
   const id = randomUUID();
   try {
     await source.query("INSERT INTO address(id,customer_user_id,recipient_name,phone,line1,ward,district,city,is_default,status) VALUES($1,$2,'A','0900000000','L','W','D','C',false,'ACTIVE')", [id, context.user_id]);
@@ -82,6 +83,20 @@ test('Internal checkout and AI scope validate tokens, snapshots, caller allowlis
     expect((await internal('/internal/checkout/context', 'M2', { ...body, token: owner })).status).toBe(404);
     expect((await internal('/internal/checkout/context', 'M2', { ...body, store_ids: [randomUUID()] })).status).toBe(409);
     const platform = await internal('/internal/ai/metrics-scope', 'M4', { token: admin }); expect(platform.status).toBe(200); const platformBody = await platform.json() as any; schema('ResolveAiMetricsScope', platformBody); expect(platformBody.scope).toBe('PLATFORM');
+    const [adminRole] = await source.query("SELECT id FROM role WHERE code='ADMIN'");
+    const [adminPermission] = await source.query("SELECT p.id FROM permission p WHERE p.code='platform.admin'");
+    const [rolePermission] = await source.query('SELECT role_id,permission_id FROM role_permission WHERE role_id=$1 AND permission_id=$2', [adminRole.id, adminPermission.id]);
+    expect(rolePermission).toBeTruthy();
+    await source.query('DELETE FROM role_permission WHERE role_id=$1 AND permission_id=$2', [adminRole.id, adminPermission.id]);
+    try {
+      // Reuse the already issued access token: current effective permission must be resolved again.
+      expect((await internal('/internal/ai/metrics-scope', 'M4', { token: admin })).status).toBe(403);
+      if (process.env.AI_MODE === 'real') {
+        expect((await fetch(`${base}/ai/metrics`, { headers: headers(admin) })).status).toBe(403);
+      }
+    } finally {
+      await source.query('INSERT INTO role_permission(role_id,permission_id) VALUES($1,$2) ON CONFLICT DO NOTHING', [adminRole.id, adminPermission.id]);
+    }
     const own = await internal('/internal/ai/metrics-scope', 'M4', { token: owner, store_id: store.id }); expect(own.status).toBe(200); const ownBody = await own.json() as any; schema('ResolveAiMetricsScope', ownBody); expect(ownBody.scope).toBe('STORE');
     expect((await internal('/internal/ai/metrics-scope', 'M4', { token: customer, store_id: store.id })).status).toBe(403);
     expect((await internal('/internal/ai/metrics-scope', 'M2', { token: admin })).status).toBe(401);
