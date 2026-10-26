@@ -48,7 +48,7 @@ async function request(operation, { body, token, id, headers = {}, status, query
   if (response.status !== expected) {
     // Never print arbitrary response bodies, tokens, bank fields or addresses.
     const code = /^[A-Z_]{1,100}$/.test(json.code || '') ? json.code : 'REDACTED';
-    throw new Error(`HTTP_FAILED:${operation}:${response.status}:${code}:expected_${expected}`);
+    throw Object.assign(new Error(`HTTP_FAILED:${operation}:${response.status}:${code}:expected_${expected}`),{status:response.status,code});
   }
   if (response.status < 300) {
     const errors = schemaErrors(json, spec.responses[String(response.status)]);

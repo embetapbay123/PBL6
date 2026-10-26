@@ -23,7 +23,9 @@ module.exports = async function multistore(t) {
     quote.stores.reduce((n, s) => n + s.amounts.platform_discount_vnd, 0) === 101 &&
     quote.stores.every(s => s.amounts.goods_vnd - s.amounts.store_discount_vnd - s.amounts.platform_discount_vnd + s.amounts.shipping_vnd === s.amounts.payable_vnd));
   const key = randomUUID(), body = { ...input, quote_id: quote.quote_id, expected_payable_total_vnd: quote.payable_total_vnd };
-  const result = await request('confirmCheckout', { token, body, headers: { 'idempotency-key': key } });
+  // A one-second internal timeout can leave a durable checkout pending. Reconcile the
+  // original command explicitly; never create another key or change its quote/body.
+  const result = await require('./replay-confirm.cjs')(request,{token,body,key});
   const cod = result.orders.find(o => o.store_id === storeA), online = result.orders.find(o => o.store_id === storeB);
   check('One real Confirm commits two Store Orders and correct methods', result.order_ids.length === 2 && cod.payment_method === 'COD' && online.payment_method === 'SANDBOX' &&
     result.payable_total_vnd === quote.payable_total_vnd && result.orders.every(o => isDeepStrictEqual(o.amounts, quote.stores.find(s => s.store_id === o.store_id).amounts)));
