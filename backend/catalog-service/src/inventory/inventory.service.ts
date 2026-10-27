@@ -6,6 +6,7 @@ import { InternalClients } from '../../../shared/src/internal-clients';
 import { once } from '../../../shared/src/idempotency';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InventoryRepository, InventoryRow, QuoteVariantRow, ReservationRow } from './inventory.repository';
+import {EntityManager} from 'typeorm';
 import { inventoryBalance, isoTime, quoteItemResponse, stockMovementView, reservationView } from './inventory.mapper';
 
 /** Owner always manages stock; a Seller needs the store inventory permission group (RBAC). */
@@ -107,11 +108,18 @@ export class InventoryService {
    */
   async adjustInventory(input: OperationInputs['adjustInventory']['body'], context: any, correlation: string):
   Promise<OperationOutputs['adjustInventory']> {
+    return database.transaction(manager=>this.applyAdjustment(manager,input,context,correlation));
+  }
+  async applyAdjustment(manager:EntityManager,input:OperationInputs['adjustInventory']['body'],context:any,correlation:string,requestedBy?:string,requestId?:string):Promise<OperationOutputs['adjustInventory']> {
+    if(!manager.queryRunner?.isTransactionActive)throw new Error('INVENTORY_REQUIRES_CALLER_TRANSACTION');
     const { storeId, actorUserId } = this.requireStoreScope(context);
-    return database.transaction(async manager => {
+    if(context?.store_membership?.role!=='OWNER')throw new ApiError(403,'OWNER_CONFIRMATION_REQUIRED','Chủ gian hàng phải xác nhận thay đổi tồn kho. Nhân viên gửi đề nghị để duyệt.');
+    if(input.adjustment_kind==='RECEIPT'&&(input.delta_quantity<=0||!input.received_at))throw new ApiError(422,'INVALID_RECEIPT','Nhập hàng cần số lượng dương và ngày nhận thực tế.');
+    if(input.delta_quantity===0)throw new ApiError(422,'EMPTY_ADJUSTMENT','Số lượng thay đổi phải khác 0.');
+    if(input.received_at && Date.parse(input.received_at)>Date.now()+300000)throw new ApiError(422,'INVALID_RECEIPT_DATE','Ngày nhận hàng không được ở tương lai.');
       const repository = new InventoryRepository(manager);
       // Store nằm trong fingerprint để cùng operation ID không thể dùng lại cho Store khác.
-      return once(manager, 'M1.Inventory.adjust', input.operation_id, { ...input, store_id: storeId }, async () => {
+      return once(manager, 'M1.Inventory.adjust', input.operation_id, { ...input, store_id: storeId,...(requestId?{approval_request_id:requestId}:{}) }, async () => {
         const row = await repository.lockStoreInventory(storeId, input.variant_id);
         if (!row) throw new ApiError(404, 'INVENTORY_NOT_FOUND', 'Không tìm thấy tồn kho cho Variant trong Store.');
         if (row.version !== input.expected_version) throw new ApiError(409, 'VERSION_CONFLICT', 'Dữ liệu đã thay đổi. Vui lòng tải lại.');
@@ -125,19 +133,21 @@ export class InventoryService {
         await repository.setQuantity(row.id, next);
         await repository.insertStockMovement({ inventoryId: row.id, operationId: input.operation_id,
           deltaQuantity: input.delta_quantity, reason: input.reason, actorUserId });
+        await manager.query('UPDATE stock_movement SET received_at=$2,supplier_name=$3,source_reference=$4,requested_by=$5,movement_kind=$7 WHERE operation_id=$1 AND inventory_id=$6',
+          [input.operation_id,input.received_at??null,input.supplier_name?.trim()??null,input.source_reference?.trim()??null,requestedBy??actorUserId,row.id,input.adjustment_kind??'CORRECTION']);
         await audit(manager, 'M1', actorUserId, 'Inventory', row.id, 'ADJUST', correlation,
           { quantity: row.quantity, reserved_quantity: row.reserved_quantity, version: row.version },
           { quantity: next, reserved_quantity: row.reserved_quantity, version: row.version + 1, reason: input.reason });
         return inventoryBalance({ variant_id: row.variant_id, quantity: next,
           reserved_quantity: row.reserved_quantity, version: row.version + 1 });
       });
-    });
   }
 
   /** listStockMovements — lịch sử nhập/xuất của Store, chỉ đọc. */
-  async listStockMovements(query: { page: number; size: number }, context: any): Promise<OperationOutputs['listStockMovements']> {
+  async listStockMovements(query: { page: number; size: number;from?:string;to?:string }, context: any): Promise<OperationOutputs['listStockMovements']> {
     const { storeId } = this.requireStoreScope(context);
-    const page = await new InventoryRepository(database.manager).pageMovements(storeId, query.page, query.size);
+    if(query.from&&query.to&&Date.parse(query.from)>=Date.parse(query.to))throw new ApiError(422,'INVALID_PERIOD','Ngày kết thúc phải sau ngày bắt đầu.');
+    const page = await new InventoryRepository(database.manager).pageMovements(storeId, query.page, query.size,query.from,query.to);
     return { items: page.items.map(stockMovementView), total: page.total, page: query.page, size: query.size };
   }
 

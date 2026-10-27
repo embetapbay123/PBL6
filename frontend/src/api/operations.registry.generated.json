@@ -499,6 +499,51 @@
     "path": "/payment-callbacks/sepay",
     "internal": false
   },
+  "suggestVouchers": {
+    "method": "POST",
+    "path": "/vouchers/suggestions",
+    "internal": false
+  },
+  "getInventorySummary": {
+    "method": "GET",
+    "path": "/store/inventory/summary",
+    "internal": false
+  },
+  "listStockRequests": {
+    "method": "GET",
+    "path": "/store/inventory/requests",
+    "internal": false
+  },
+  "createStockRequest": {
+    "method": "POST",
+    "path": "/store/inventory/requests",
+    "internal": false
+  },
+  "decideStockRequest": {
+    "method": "PATCH",
+    "path": "/store/inventory/requests/{id}",
+    "internal": false
+  },
+  "requestOrderReturn": {
+    "method": "POST",
+    "path": "/me/orders/{id}/returns",
+    "internal": false
+  },
+  "reportDeliveryReturn": {
+    "method": "POST",
+    "path": "/store/orders/{id}/returns",
+    "internal": false
+  },
+  "decideOrderReturn": {
+    "method": "PATCH",
+    "path": "/store/orders/{id}/returns",
+    "internal": false
+  },
+  "recordReturnCodRefund": {
+    "method": "POST",
+    "path": "/store/orders/{id}/returns/cod-refund",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",

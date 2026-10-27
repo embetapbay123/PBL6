@@ -1,5 +1,20 @@
 # Known bugs — 27/10/2026
 
+## Demo operations fixes — 27 October 2026
+
+Source fixes below are under verification; deployment and full provider acceptance are separate.
+
+| Defect | Correction and regression | Owner/scope |
+| --- | --- | --- |
+| BUG-DEMO-501: the local UI branch silently converted 501 into schema fixtures, including writes | API mode now preserves the actual error; fixtures require explicit development mode. Review and COD-refund browser regressions reject fabricated success. | Shared integration; original module owners unchanged |
+| BUG-DEMO-STOCK-CONFIRM: staff could apply inventory deltas without an Owner review or receipt context | Direct application requires Owner before validation; staff proposals, versioned approval, receipt/correction classification, metadata and atomic audit/ledger were added. Concurrent/replay/rollback PostgreSQL controls cover it. | Thịnh / #13, #19 |
+| BUG-DEMO-TRACE: saved address, Order creation/history timestamps and stock were not shown in detail | Scoped reads project actual metadata; Customer/Store show processing chain, actor/reason/times and separately authorized current stock. | Hoa / #23, #24; Hatsaphone / #67; Thịnh / #19 |
+| BUG-DEMO-RETURN: no safe distinction between approving a return and receiving goods; returned Orders were not recognized by refund/followup guards | Separate cases for failed delivery and post-delivery return; physical receipt/disposition gate restock and repayment. RETURNED is recognized by all terminal Order/refund checks. | M1 Thịnh / #15; M2 Hoa / #24; Payment Công / #53 |
+| BUG-DEMO-NAV-TEST: current navigation renamed links/added duplicates, invalidating older click selectors | Browser regressions select the actual main navigation/Admin sidebar without dropping functional assertions. | Frontend integration |
+
+The new extension does not claim an available online Refund provider, actual cash repayment, full Seller forms or Android return screens. See [operations](demo-operations.md) and [ADR](adr-demo-returns.md).
+
+
 Confirmed defects and implementation gaps are visible in their existing issues and the `bug` label on [Kanban](https://github.com/users/embetapbay123/projects/1/views/3). This register distinguishes main from unmerged PR code. Missing acceptance alone is not a bug; a green CI or a merged partial fix does not complete a broad task. [Week 4](week4.md) defines the next actions and dates.
 
 **27/10 source verification:** [verified PR fixes and remaining dependencies](pr-fixes-2026-10-27.md) supersede the historical PR findings below. Fixes are identified by their reviewed PR heads and final CI/merge gate; linked PRs show their merge state. Main and the deployed runtime remain separate. Review backend #16 remains 501 under Thịnh; #69 stays blocked for real acceptance.

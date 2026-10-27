@@ -1,6 +1,6 @@
 # Trạng thái endpoint của khung 2.2
 
-OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 100 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
+OpenAPI mô tả hợp đồng đích. `IMPLEMENTED_SAMPLE` có phạm vi nhỏ để làm mẫu; `MOCK_ONLY` không có AI thật; `NOT_IMPLEMENTED` chưa nghiệm thu đầy đủ; endpoint có thể kiểm quyền/nghiệp vụ rồi truyền lỗi dependency hoặc trả 501. `IMPLEMENTED` mô tả handler thật trong nhánh hiện tại, không tự đóng issue trước review/merge. DTO/runtime validation có đủ cho 109 public API; đó không phải nghiệp vụ đã hoàn thành. Chi tiết mẫu updateProduct: chỉ title/description/expected_version; trường hợp lệ ngoài phạm vi mẫu trả 501, input sai trả 422.
 
 AUTH-01/AUTH-02 and RBAC-01 remain **PENDING**. Registration and password-reset handlers require an explicitly injected delivery adapter and return 503 in the default runtime. No production email adapter or real provider delivery acceptance is configured. Password change is implemented and uses the authenticated session guard; its PostgreSQL/HTTP regression coverage is available but still needs to pass in the supported Compose environment before AUTH-02 acceptance can be considered complete. RBAC-01 separately requires effective permission enforcement and event regression evidence.
 
@@ -21,7 +21,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /auth/logout` | logout | M3 / auth | Trí | IMPLEMENTED_SAMPLE |
 | `POST /auth/reset-password` | resetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `POST /auth/reset-password/confirm` | confirmResetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
-| `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
+| `POST /auth/change-password` | changePassword | M3 / auth | Trí | IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
@@ -114,7 +114,12 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
-
-Live role permissions are resolved from PostgreSQL for each authenticated request; platform.admin is required on ADMIN routes. Store staff permissions and status are resolved from active membership, so revocation applies immediately. Role permission mutation remains NOT_IMPLEMENTED on the current main baseline.
-
-Admin Web now exposes the M1 taxonomy/moderation workflows, but their API operations remain NOT_IMPLEMENTED; the UI will show the API error until M1 handlers are delivered. The AI metrics page reads the existing IMPLEMENTED_SAMPLE operation and does not replace the AI evaluation/provider acceptance.
+| `POST /vouchers/suggestions` | suggestVouchers | M2 / voucher | Hoa | IMPLEMENTED |
+| `GET /store/inventory/summary` | getInventorySummary | M1 / inventory | Thịnh | IMPLEMENTED |
+| `GET /store/inventory/requests` | listStockRequests | M1 / inventory | Thịnh | IMPLEMENTED |
+| `POST /store/inventory/requests` | createStockRequest | M1 / inventory | Thịnh | IMPLEMENTED |
+| `PATCH /store/inventory/requests/{id}` | decideStockRequest | M1 / inventory | Thịnh | IMPLEMENTED |
+| `POST /me/orders/{id}/returns` | requestOrderReturn | M2 / order | Hoa | IMPLEMENTED |
+| `POST /store/orders/{id}/returns` | reportDeliveryReturn | M2 / order | Hoa | IMPLEMENTED |
+| `PATCH /store/orders/{id}/returns` | decideOrderReturn | M2 / order | Hoa | IMPLEMENTED |
+| `POST /store/orders/{id}/returns/cod-refund` | recordReturnCodRefund | M2 / order | Hoa | IMPLEMENTED |

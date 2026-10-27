@@ -481,7 +481,6 @@
     "owner": "Thịnh",
     "status": "IMPLEMENTED",
     "roles": [
-      "SELLER",
       "STORE_OWNER"
     ]
   },
@@ -1226,6 +1225,117 @@
     "status": "NOT_IMPLEMENTED",
     "roles": [
       "SEPAY_TEST"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/vouchers/suggestions",
+    "operation_id": "suggestVouchers",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/inventory/summary",
+    "operation_id": "getInventorySummary",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/inventory/requests",
+    "operation_id": "listStockRequests",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/inventory/requests",
+    "operation_id": "createStockRequest",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/inventory/requests/{id}",
+    "operation_id": "decideStockRequest",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/orders/{id}/returns",
+    "operation_id": "requestOrderReturn",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/returns",
+    "operation_id": "reportDeliveryReturn",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/orders/{id}/returns",
+    "operation_id": "decideOrderReturn",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/returns/cod-refund",
+    "operation_id": "recordReturnCodRefund",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
     ]
   }
 ]

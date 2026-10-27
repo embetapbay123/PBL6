@@ -15,6 +15,7 @@ import { DataSource, EntityManager } from 'typeorm';
 import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { audit } from '../../../shared/src/audit';
+import {returnView} from './order-return.view';
 import { VoucherRepository } from '../voucher/voucher.repository';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
@@ -109,6 +110,11 @@ export class OrderService {
       store_id: order.store_id,
       status: order.status as any,
       version: order.version,
+      ...(order.inventory_state?{inventory_state:order.inventory_state}:{}),
+      ...(order.status_history?{status_history:order.status_history.map(h=>({id:h.id,to_status:h.to_status,actor_user_id:h.actor_user_id,created_at:new Date(h.created_at).toISOString(),...(h.from_status==null?{}:{from_status:h.from_status}),...(h.reason==null?{}:{reason:h.reason})}))}:{}),
+      ...(order.return_case?{return_case:returnView({...order.return_case,payment_method:order.payment_method,payment_status:order.payment_status,collected_vnd:order.collected_vnd,refunded_vnd:order.refunded_vnd,stock_state:order.inventory_state})}:{}),
+      ...(order.created_at?{created_at:new Date(order.created_at).toISOString()}:{}),
+      ...(order.address_snapshot?{address_snapshot:order.address_snapshot}:{}),
       payment_method: order.payment_method as any,
       payment_status: order.payment_status ?? undefined,
       refund_status: order.refund_status ?? undefined,
@@ -132,6 +138,25 @@ export class OrderService {
         line_total_vnd: moneyNumber(it.line_total_vnd),
       })),
     };
+  }
+
+  async suggestVouchers(input:OperationInputs['suggestVouchers']['body'],auth:any,correlation:string):Promise<OperationOutputs['suggestVouchers']>{
+    if(!auth?.user_id)throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
+    const baseline=await this.quoteCheckout({...input,platform_voucher_code:undefined},auth,correlation);
+    const rows=await this.source.query("SELECT * FROM voucher WHERE status='ACTIVE' AND starts_at<=now() AND ends_at>now() AND (scope='PLATFORM' OR store_id=ANY($1::uuid[])) ORDER BY ends_at,code LIMIT 101",[baseline.stores.map(s=>s.store_id)]);
+    const items:OperationOutputs['suggestVouchers']['items']=[];const repo=new OrderRepository(this.source.manager);
+    for(const row of rows.slice(0,100)){
+      const goods=row.scope==='STORE'?baseline.stores.find(s=>s.store_id===row.store_id)!.amounts.goods_vnd:moneyNumber(baseline.stores.reduce((sum,s)=>sum+BigInt(s.amounts.goods_vnd)-BigInt(s.amounts.store_discount_vnd),0n));
+      let reason='Có thể áp dụng';let eligible=true;
+      if(goods<moneyNumber(row.min_goods_vnd)){eligible=false;reason='Đơn hàng chưa đạt mức tối thiểu';}
+      else if(!await repo.voucherAvailable(row,auth.user_id)){eligible=false;reason='Đã hết lượt hoặc vượt giới hạn của bạn';}
+      let discount=row.discount_type==='PERCENT'?BigInt(goods)*BigInt(row.discount_value)/100n:BigInt(row.discount_value);
+      if(row.discount_type==='PERCENT'&&row.max_discount_vnd!=null&&discount>BigInt(row.max_discount_vnd))discount=BigInt(row.max_discount_vnd);
+      if(discount>BigInt(goods))discount=BigInt(goods);
+      items.push({voucher:{id:row.id,code:row.code,scope:row.scope,discount_type:row.discount_type,discount_value:moneyNumber(row.discount_value),min_goods_vnd:moneyNumber(row.min_goods_vnd),...(row.max_discount_vnd==null?{}:{max_discount_vnd:moneyNumber(row.max_discount_vnd)}),...(row.store_id==null?{}:{store_id:row.store_id}),starts_at:new Date(row.starts_at).toISOString(),ends_at:new Date(row.ends_at).toISOString(),usage_limit:row.usage_limit,per_customer_limit:row.per_customer_limit,status:row.status,version:row.version},eligible,reason,estimated_discount_vnd:eligible?moneyNumber(discount):0});
+    }
+    items.sort((a,b)=>Number(b.eligible)-Number(a.eligible)||b.estimated_discount_vnd-a.estimated_discount_vnd||a.voucher.code.localeCompare(b.voucher.code));
+    return {items,evaluated_at:new Date().toISOString(),truncated:rows.length>100};
   }
 
   private async calculateQuote(
@@ -764,6 +789,8 @@ export class OrderService {
         throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng trong cửa hàng của bạn.');
       }
 
+      const activeReturns=await manager.query("SELECT id FROM order_return WHERE order_id=$1 AND status IN ('REQUESTED','APPROVED')",[id]);
+      if(activeReturns.length)throw new ApiError(409,'RETURN_IN_PROGRESS','Đơn đang được xử lý trả hàng.');
       if (order.version !== input.expected_version) {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
       }
@@ -890,6 +917,8 @@ export class OrderService {
       const repo=new OrderRepository(manager),order=await repo.lockStoreOrderById(id,storeId);
       if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
       if(order.version!==input.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
+      const activeReturns=await manager.query("SELECT id FROM order_return WHERE order_id=$1 AND status IN ('REQUESTED','APPROVED')",[id]);
+      if(activeReturns.length)throw new ApiError(409,'RETURN_IN_PROGRESS','Đơn đang trả về; không thu COD.');
       if(order.status!=='SHIPPED' || order.payment_method!=='COD') throw new ApiError(409,'INVALID_STATE_TRANSITION','Chỉ thu COD cho đơn đang giao.');
       const payment=await repo.lockPaymentByOrderId(id);
       if(!payment || ['SUCCEEDED','CANCELLED'].includes(payment.status)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment không cho phép thu COD.');

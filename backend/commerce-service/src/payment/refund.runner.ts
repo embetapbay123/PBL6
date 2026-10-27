@@ -20,7 +20,7 @@ export class DisabledRefundProvider implements RefundProvider {
 export class RefundRunner {
   constructor(private readonly source:DataSource,private readonly provider:RefundProvider) {}
   async enqueueLatePayments() {
-    const rows=await this.source.query("SELECT f.* FROM payment_followup f JOIN \"order\" o ON o.id=f.order_id JOIN payment p ON p.id=f.payment_id LEFT JOIN refund r ON r.payment_id=p.id WHERE f.kind='REFUND_REQUIRED' AND f.status='PENDING' AND o.status IN ('CANCELLED','EXPIRED') AND p.status='SUCCEEDED' AND r.id IS NULL ORDER BY f.created_at LIMIT 20");
+    const rows=await this.source.query("SELECT f.* FROM payment_followup f JOIN \"order\" o ON o.id=f.order_id JOIN payment p ON p.id=f.payment_id LEFT JOIN refund r ON r.payment_id=p.id WHERE f.kind='REFUND_REQUIRED' AND f.status='PENDING' AND o.status IN ('CANCELLED','EXPIRED','RETURNED') AND p.status='SUCCEEDED' AND r.id IS NULL ORDER BY f.created_at LIMIT 20");
     for(const row of rows)await this.source.transaction(async manager=>{
       const [payment]=await manager.query('SELECT payable_vnd FROM payment WHERE id=$1',[row.payment_id]);
       await new PaymentService(manager).requestRefund({order_id:row.order_id,payment_id:row.payment_id,amount_vnd:BigInt(payment.payable_vnd),operation_id:row.operation_id,correlation_id:row.correlation_id});
@@ -51,7 +51,7 @@ export class RefundRunner {
       for(const candidate of candidates) {
         const {order,payment,refund,job}=await this.lock(manager,candidate.refund_id);
         if(!['PENDING','RECONCILE'].includes(job.status))continue;
-        if(!['CANCELLED','EXPIRED'].includes(order.status) || payment.status!=='SUCCEEDED' || payment.method!=='SANDBOX' || payment.refunded_vnd!=='0' || payment.collected_vnd!==job.amount_vnd || payment.payable_vnd!==job.amount_vnd || refund.amount_vnd!==job.amount_vnd || refund.operation_id!==job.operation_id) {
+        if(!['CANCELLED','EXPIRED','RETURNED'].includes(order.status) || payment.status!=='SUCCEEDED' || payment.method!=='SANDBOX' || payment.refunded_vnd!=='0' || payment.collected_vnd!==job.amount_vnd || payment.payable_vnd!==job.amount_vnd || refund.amount_vnd!==job.amount_vnd || refund.operation_id!==job.operation_id) {
           await manager.query("UPDATE refund_job SET status='FAILED',last_error='STATE_CHANGED',updated_at=now() WHERE refund_id=$1",[refund.id]);
           await manager.query("UPDATE refund SET status='FAILED' WHERE id=$1",[refund.id]);
           await audit(manager,'M2',order.customer_user_id,'Refund',refund.id,'STATE_CHANGED',job.correlation_id,{status:refund.status},{status:'FAILED'});
@@ -91,7 +91,7 @@ export class RefundRunner {
       if(state==='SUCCEEDED') {
         const receipt=result as Extract<RefundOutcome,{status:'SUCCEEDED'}>;
         const valid=receipt.operation_id===job.operation_id && receipt.provider===job.provider && receipt.payment_reference===job.payment_reference && receipt.amount_vnd===job.amount_vnd && typeof receipt.receipt_id==='string' && /^[A-Za-z0-9_.:-]{1,128}$/.test(receipt.receipt_id);
-        if(!valid || !['CANCELLED','EXPIRED'].includes(order.status) || payment.status!=='SUCCEEDED' || payment.refunded_vnd!=='0' || payment.collected_vnd!==job.amount_vnd || refund.amount_vnd!==job.amount_vnd)state='UNKNOWN';
+        if(!valid || !['CANCELLED','EXPIRED','RETURNED'].includes(order.status) || payment.status!=='SUCCEEDED' || payment.refunded_vnd!=='0' || payment.collected_vnd!==job.amount_vnd || refund.amount_vnd!==job.amount_vnd)state='UNKNOWN';
         else {
           await manager.query("UPDATE payment SET status='REFUNDED',refunded_vnd=$2,version=version+1 WHERE id=$1",[payment.id,job.amount_vnd]);
           await manager.query("INSERT INTO payment_event(payment_id,provider_event_id,event_type,payload_hash) VALUES($1,$2,'REFUNDED',$3)",[payment.id,'refund:'+job.operation_id,fingerprint(receipt)]);

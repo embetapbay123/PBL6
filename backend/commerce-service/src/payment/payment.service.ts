@@ -60,4 +60,18 @@ export class PaymentService implements PaymentPort {
     });
   }
   async requestRefund(input:RefundDraft):Promise<OperationOutputs['getOrderRefund']> {return new RefundService(this.manager).request(input);}
+  async recordCodRefund(input:CodDraft):Promise<OperationOutputs['getPayment']>{
+    this.transaction();const order=await this.repo.lockOrder(input.order_id);
+    if(!order||order.status!=='RETURNED'||order.payment_method!=='COD')throw new ApiError(409,'RETURN_STATE_CONFLICT','Đơn COD chưa được nhận trả.');
+    return once(this.manager,'M2.Payment.codRefund',input.operation_id,{order_id:input.order_id,amount_vnd:input.amount_vnd.toString(),actor_user_id:input.actor_user_id},async()=>{
+      const payment=await this.repo.byOrder(order.id);
+      if(!payment||payment.method!=='COD'||payment.status!=='SUCCEEDED'||BigInt(payment.refunded_vnd)!==0n)throw new ApiError(409,'REFUND_STATE_CONFLICT','Payment không cho phép hoàn COD.');
+      if(input.amount_vnd<=0n||input.amount_vnd!==BigInt(payment.collected_vnd)||input.amount_vnd!==BigInt(order.payable_vnd))throw new ApiError(422,'REFUND_AMOUNT_MISMATCH','Phải xác nhận đúng toàn bộ số tiền đã thu.');
+      const [existing]=await this.manager.query('SELECT id FROM refund WHERE payment_id=$1',[payment.id]);if(existing)throw new ApiError(409,'REFUND_ALREADY_REQUESTED','Payment đã có hồ sơ hoàn tiền.');
+      await this.manager.query("INSERT INTO refund(payment_id,order_id,amount_vnd,status,operation_id) VALUES($1,$2,$3,'SUCCEEDED',$4)",[payment.id,order.id,input.amount_vnd.toString(),input.operation_id]);
+      await this.manager.query("UPDATE payment SET status='REFUNDED',refunded_vnd=$2,version=version+1 WHERE id=$1",[payment.id,input.amount_vnd.toString()]);
+      await this.manager.query("INSERT INTO payment_event(payment_id,provider_event_id,event_type,payload_hash) VALUES($1,$2,'COD_REFUNDED',$3)",[payment.id,'cod-refund:'+input.operation_id,fingerprint({order_id:order.id,amount_vnd:input.amount_vnd.toString()})]);
+      const result=mapPayment({...payment,status:'REFUNDED',refunded_vnd:input.amount_vnd.toString()});await audit(this.manager,'M2',input.actor_user_id,'Payment',payment.id,'COD_REFUND_CONFIRMED',input.correlation_id??input.operation_id,mapPayment(payment),result);return result;
+    });
+  }
 }

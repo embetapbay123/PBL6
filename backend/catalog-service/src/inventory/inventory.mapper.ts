@@ -48,6 +48,13 @@ export function stockMovementView(row: StockMovementRow): OperationOutputs['list
     variant_id: row.variant_id,
     ...(row.order_id === null ? {} : { order_id: row.order_id }),
     delta_quantity: row.delta_quantity,
+    ...(row.movement_kind==null?{}:{movement_kind:row.movement_kind}),
+    ...(row.delta_reserved===undefined?{}:{delta_reserved:row.delta_reserved}),
+    ...(row.actor_user_id==null?{}:{actor_user_id:row.actor_user_id}),
+    ...(row.requested_by==null?{}:{requested_by:row.requested_by}),
+    ...(row.received_at==null?{}:{received_at:isoTime(row.received_at)}),
+    ...(row.supplier_name==null?{}:{supplier_name:row.supplier_name}),
+    ...(row.source_reference==null?{}:{source_reference:row.source_reference}),
     ...(row.reason === null ? {} : { reason: row.reason }),
     ...(row.occurred_at === null ? {} : { occurred_at: isoTime(row.occurred_at) }),
   };

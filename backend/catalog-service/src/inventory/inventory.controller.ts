@@ -16,6 +16,7 @@ export class InventoryController {
   listStoreInventory(@Req() request:any) {return this.service.listStoreInventory(request.contract.query,request.auth);}
 
   @Post('store/inventory/adjustments')
+  @Roles('STORE_OWNER')
   adjustInventory(@Body() dto: AdjustInventoryBodyDto,@Req() request:any) {
     return this.service.adjustInventory(dto,request.auth,request.correlationId);
   }

@@ -8,6 +8,7 @@ import type {
   OperationOutputs,
 } from "../../api/operations.generated";
 import { CartProduct } from "../../live/CartProduct";
+import { VoucherPicker } from "../../live/VoucherPicker";
 
 interface CartItem {
   id: string;
@@ -633,6 +634,36 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
 
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-lg font-bold mb-3">3. Mã ưu đãi</h2>
+              {!attempt && (
+                <VoucherPicker
+                  input={quoteInput}
+                  select={(voucher, remove) => {
+                    if (voucher.scope === "PLATFORM") {
+                      const code = remove ? "" : voucher.code;
+                      setPlatformDraft(code);
+                      setVouchers((old) => {
+                        const next = { ...old };
+                        if (code) next.platform_voucher_code = code;
+                        else delete next.platform_voucher_code;
+                        return next;
+                      });
+                    } else if (voucher.store_id) {
+                      const id = voucher.store_id,
+                        code = remove ? "" : voucher.code;
+                      setVoucherDraft((old) => ({ ...old, [id]: code }));
+                      setVouchers((old) => {
+                        const map = { ...old.store_vouchers };
+                        if (code) map[id] = code;
+                        else delete map[id];
+                        const next = { ...old };
+                        if (Object.keys(map).length) next.store_vouchers = map;
+                        else delete next.store_vouchers;
+                        return next;
+                      });
+                    }
+                  }}
+                />
+              )}
               {attempt ? (
                 <>
                   <p>
@@ -668,25 +699,6 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                         ? { store_vouchers }
                         : {}),
                     };
-                    if (voucherPayload.platform_voucher_code || voucherPayload.store_vouchers) {
-                      try {
-                        await callOperation("validateVouchers", {
-                          body: {
-                            cart_item_ids: items.map((it) => it.id),
-                            address_id: addressId,
-                            payment_methods: paymentMethods,
-                            ...voucherPayload,
-                          },
-                        });
-                      } catch (err) {
-                        // Nếu backend chưa triển khai (501) hoặc mock test chưa định nghĩa (404),
-                        // tiếp tục áp dụng để backend quote engine xử lý.
-                        if (!(err instanceof ApiError && (err.status === 404 || err.status === 501))) {
-                          setQuoteError(describe(err));
-                          return;
-                        }
-                      }
-                    }
                     setVouchers(voucherPayload);
                     setQuoteTick((n) => n + 1);
                   }}

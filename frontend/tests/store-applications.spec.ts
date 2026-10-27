@@ -32,7 +32,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [application], total: 1, page: 1, size: 10 } });
     }
   });
-  await page.locator('a[href="/customer/store-applications"]').click();
+  await page.getByRole('navigation',{name:'Điều hướng chính'}).locator('a[href="/customer/store-applications"]').click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -53,7 +53,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [], total: 0, page: 1, size: 10 } });
     }
   });
-  await page.locator('a[href="/customer/store-applications"]').click();
+  await page.getByRole('navigation',{name:'Điều hướng chính'}).locator('a[href="/customer/store-applications"]').click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -77,7 +77,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
     }
   });
   await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
-  await page.locator('a[href="/admin/store-applications"]').click();
+  await page.getByRole('complementary',{name:'Menu quản trị'}).locator('a[href="/admin/store-applications"]').click();
   await page.locator('.store-app-icon-button--approve').first().click();
   await page.locator('.store-app-dialog-actions .store-app-button--primary').click();
   await expect(page.locator('.store-app-notice')).toContainText('API Store');
@@ -93,7 +93,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   await signInAs(page, 'CUSTOMER');
   let apiWrites = 0;
   await page.route('**/api/v1/me/store-applications*', route => { apiWrites += 1; return route.continue(); });
-  await page.locator('a[href="/customer/store-applications"]').click();
+  await page.getByRole('navigation',{name:'Điều hướng chính'}).locator('a[href="/customer/store-applications"]').click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('Fixture Store');
   await inputs.nth(1).fill('fixture@example.test');
@@ -108,7 +108,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   let reviewCalls = 0;
   await page.route(url => new URL(url).pathname.startsWith('/api/v1/admin/store-applications'), route => { reviewCalls += 1; return route.continue(); });
   await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
-  await page.locator('a[href="/admin/store-applications"]').click();
+  await page.getByRole('complementary',{name:'Menu quản trị'}).locator('a[href="/admin/store-applications"]').click();
   await page.locator('.store-app-icon-button--approve').first().click();
   await page.locator('.store-app-dialog-actions .store-app-button--primary').click();
   await expect(page.locator('.store-app-notice')).toContainText('No real Store or membership was created');

@@ -5,7 +5,7 @@ import { getMockFallback } from './fallback';
 
 const fixtureMode = import.meta.env.DEV && import.meta.env.VITE_API_MODE === 'fixture';
 export const dataMode = fixtureMode ? 'fixture' : 'api';
-const monetaryCommands = new Set(['confirmCheckout', 'createPaymentAttempt', 'sepayCallback', 'sandboxCallback', 'collectCod']);
+const monetaryCommands = new Set(['confirmCheckout', 'createPaymentAttempt', 'sepayCallback', 'sandboxCallback', 'collectCod','recordReturnCodRefund','decideOrderReturn']);
 
 export async function callOperation<K extends OperationId>(
   operation: K,
@@ -33,23 +33,10 @@ export async function callOperation<K extends OperationId>(
   }
   if (params.size) path += '?' + params;
 
-  try {
-    return await request<OperationOutputs[K]>(path, {
+  return request<OperationOutputs[K]>(path, {
       method: record.method,
       headers: input.headers as Record<string, string>,
       signal: options.signal,
       ...(input.body !== undefined ? { body: JSON.stringify(input.body) } : {})
     });
-  } catch (error) {
-    // Graceful fallback for 501 NOT_IMPLEMENTED endpoints (except quoteCheckout which is tested for strict 501 error handling)
-    if (
-      error instanceof ApiError &&
-      (error.status === 501 || error.code === 'NOT_IMPLEMENTED') &&
-      operation !== 'quoteCheckout'
-    ) {
-      console.warn(`[PBL6 API Gateway] Operation '${operation}' is pending implementation (501). Serving valid OpenAPI schema fallback.`);
-      return getMockFallback(operation, input);
-    }
-    throw error;
-  }
 }

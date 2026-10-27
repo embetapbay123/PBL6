@@ -21,7 +21,7 @@ export class RefundService {
       if(!payment || payment.id!==input.payment_id)throw new ApiError(404,'NOT_FOUND','Payment không thuộc Order.');
       const [existing]=await this.manager.query('SELECT * FROM refund WHERE payment_id=$1 FOR UPDATE',[payment.id]);
       if(existing)throw new ApiError(409,'REFUND_ALREADY_REQUESTED','Payment đã có yêu cầu Refund; dùng cùng operation_id.');
-      if(!['CANCELLED','EXPIRED'].includes(order.status) || payment.method!=='SANDBOX' || payment.status!=='SUCCEEDED')throw new ApiError(409,'REFUND_STATE_CONFLICT','Chỉ hoàn Payment online đã thu của Order đóng.');
+      if(!['CANCELLED','EXPIRED','RETURNED'].includes(order.status) || payment.method!=='SANDBOX' || payment.status!=='SUCCEEDED')throw new ApiError(409,'REFUND_STATE_CONFLICT','Chỉ hoàn Payment online đã thu của Order đóng.');
       if(input.amount_vnd<=0n || input.amount_vnd!==BigInt(payment.collected_vnd) || input.amount_vnd!==BigInt(payment.payable_vnd) || input.amount_vnd!==BigInt(order.payable_vnd) || BigInt(payment.refunded_vnd)!==0n)throw new ApiError(422,'REFUND_AMOUNT_MISMATCH','Refund phải khớp toàn bộ tiền đã thu của Order.');
       moneyNumber(input.amount_vnd);
       const [attempt]=await this.manager.query("SELECT * FROM payment_attempt WHERE payment_id=$1 AND status='SUCCEEDED' ORDER BY created_at,id LIMIT 1 FOR UPDATE",[payment.id]);

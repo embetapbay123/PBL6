@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PBL6 Marketplace API",
-    "version": "2.2.1",
+    "version": "2.3.0",
     "description": "Four-service SOA skeleton. See x-implementation-status; schema is not proof of business implementation."
   },
   "servers": [
@@ -5031,7 +5031,7 @@
           "Inventory"
         ],
         "operationId": "adjustInventory",
-        "summary": "Nhập, xuất hoặc điều chỉnh tồn",
+        "summary": "Owner xác nhận nhập hoặc điều chỉnh tồn",
         "parameters": [],
         "responses": {
           "201": {
@@ -5148,11 +5148,10 @@
           }
         ],
         "x-required-roles": [
-          "SELLER",
           "STORE_OWNER"
         ],
         "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
-        "description": "Nhập, xuất hoặc điều chỉnh tồn. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: SELLER, STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Chỉ Owner được ghi nhận thay đổi thực tế. Seller tạo đề nghị tại /store/inventory/requests; Owner duyệt bằng phiên bản kho hiện hành.",
         "x-service-owner": "M1",
         "x-module": "inventory",
         "x-member-owner": "Thịnh",
@@ -5187,6 +5186,24 @@
               "minimum": 1,
               "maximum": 100,
               "default": 20
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
             }
           }
         ],
@@ -13220,6 +13237,1210 @@
         "x-member-owner": "Công",
         "x-implementation-status": "NOT_IMPLEMENTED"
       }
+    },
+    "/vouchers/suggestions": {
+      "post": {
+        "tags": [
+          "Voucher"
+        ],
+        "operationId": "suggestVouchers",
+        "summary": "Suggest currently eligible vouchers without reserving quota",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoucherSuggestions"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_CUSTOMER",
+        "description": "Suggest currently eligible vouchers without reserving quota",
+        "x-service-owner": "M2",
+        "x-module": "voucher",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/store/inventory/summary": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "getInventorySummary",
+        "summary": "Stock movements grouped by purpose and date",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "SELLER",
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Stock movements grouped by purpose and date",
+        "x-service-owner": "M1",
+        "x-module": "inventory",
+        "x-member-owner": "Thịnh",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/store/inventory/requests": {
+      "get": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "listStockRequests",
+        "summary": "List scoped stock adjustment proposals",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageStockRequests"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "SELLER",
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "List scoped stock adjustment proposals",
+        "x-service-owner": "M1",
+        "x-module": "inventory",
+        "x-member-owner": "Thịnh",
+        "x-implementation-status": "IMPLEMENTED"
+      },
+      "post": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "createStockRequest",
+        "summary": "Propose a stock change for Owner approval",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockRequest"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockRequestCreate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "SELLER",
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Propose a stock change for Owner approval",
+        "x-service-owner": "M1",
+        "x-module": "inventory",
+        "x-member-owner": "Thịnh",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/store/inventory/requests/{id}": {
+      "patch": {
+        "tags": [
+          "Inventory"
+        ],
+        "operationId": "decideStockRequest",
+        "summary": "Owner approves or rejects a versioned stock proposal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockRequest"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StockRequestDecision"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Owner approves or rejects a versioned stock proposal",
+        "x-service-owner": "M1",
+        "x-module": "inventory",
+        "x-member-owner": "Thịnh",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/me/orders/{id}/returns": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "requestOrderReturn",
+        "summary": "Request a full-order return after delivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnCreate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_CUSTOMER",
+        "description": "Request a full-order return after delivery",
+        "x-service-owner": "M2",
+        "x-module": "order",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/store/orders/{id}/returns": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "reportDeliveryReturn",
+        "summary": "Record failed delivery without prematurely restocking",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnCreate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Record failed delivery without prematurely restocking",
+        "x-service-owner": "M2",
+        "x-module": "order",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      },
+      "patch": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "decideOrderReturn",
+        "summary": "Approve reject or receive a physical return",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnDecision"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Approve reject or receive a physical return",
+        "x-service-owner": "M2",
+        "x-module": "order",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/store/orders/{id}/returns/cod-refund": {
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "operationId": "recordReturnCodRefund",
+        "summary": "Record an explicitly confirmed real COD cash repayment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnCashRefund"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Record an explicitly confirmed real COD cash repayment",
+        "x-service-owner": "M2",
+        "x-module": "order",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
     }
   },
   "components": {
@@ -13530,7 +14751,8 @@
               "COMPLETED",
               "CANCELLED",
               "EXPIRED",
-              "RECOVERING"
+              "RECOVERING",
+              "RETURNED"
             ]
           },
           "version": {
@@ -13566,6 +14788,27 @@
               "additionalProperties": true
             },
             "maxItems": 100
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "address_snapshot": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "status_history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderStatusEntry"
+            }
+          },
+          "return_case": {
+            "$ref": "#/components/schemas/OrderReturn"
+          },
+          "inventory_state": {
+            "type": "string",
+            "maxLength": 30
           }
         },
         "required": [
@@ -14405,6 +15648,25 @@
           "expected_version": {
             "type": "integer",
             "maximum": 9007199254740991
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "adjustment_kind": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "CORRECTION"
+            ]
           }
         },
         "required": [
@@ -14569,6 +15831,11 @@
               "additionalProperties": false
             },
             "maxItems": 100
+          },
+          "completed_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
           }
         },
         "required": [
@@ -15434,6 +16701,38 @@
           "occurred_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "actor_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requested_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delta_reserved": {
+            "type": "integer",
+            "minimum": -2147483647,
+            "maximum": 2147483647
+          },
+          "movement_kind": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "CORRECTION"
+            ]
           }
         },
         "required": [
@@ -16825,6 +18124,553 @@
           "total",
           "page",
           "size"
+        ],
+        "additionalProperties": false
+      },
+      "StockRequestCreate": {
+        "type": "object",
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delta_quantity": {
+            "type": "integer",
+            "maximum": 9007199254740991
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": "integer",
+            "maximum": 9007199254740991
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "adjustment_kind": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "CORRECTION"
+            ]
+          }
+        },
+        "required": [
+          "variant_id",
+          "delta_quantity",
+          "reason",
+          "operation_id",
+          "expected_version"
+        ],
+        "additionalProperties": false
+      },
+      "StockRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requested_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delta_quantity": {
+            "type": "integer",
+            "minimum": -2147483647,
+            "maximum": 2147483647
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "decided_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decision_reason": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "adjustment_kind": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "CORRECTION"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "store_id",
+          "variant_id",
+          "requested_by",
+          "delta_quantity",
+          "reason",
+          "created_at",
+          "status",
+          "version"
+        ],
+        "additionalProperties": false
+      },
+      "StockRequestDecision": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expected_inventory_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "decision",
+          "reason",
+          "expected_version",
+          "expected_inventory_version",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "PageStockRequests": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StockRequest"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "size"
+        ],
+        "additionalProperties": false
+      },
+      "InventorySummary": {
+        "type": "object",
+        "properties": {
+          "period_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "received_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "issued_to_orders_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "returned_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "adjusted_out_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "opening_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "adjusted_in_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "unclassified_in_units": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "period_start",
+          "period_end",
+          "received_units",
+          "issued_to_orders_units",
+          "returned_units",
+          "adjusted_out_units",
+          "opening_units",
+          "adjusted_in_units",
+          "unclassified_in_units"
+        ],
+        "additionalProperties": false
+      },
+      "VoucherSuggestion": {
+        "type": "object",
+        "properties": {
+          "voucher": {
+            "$ref": "#/components/schemas/Voucher"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "estimated_discount_vnd": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "voucher",
+          "eligible",
+          "reason",
+          "estimated_discount_vnd"
+        ],
+        "additionalProperties": false
+      },
+      "VoucherSuggestions": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VoucherSuggestion"
+            }
+          },
+          "evaluated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items",
+          "evaluated_at",
+          "truncated"
+        ],
+        "additionalProperties": false
+      },
+      "ReturnCreate": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "reason",
+          "operation_id",
+          "expected_order_version"
+        ],
+        "additionalProperties": false
+      },
+      "ReturnDecision": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "RECEIVE"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "restock": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action",
+          "reason",
+          "operation_id",
+          "expected_version",
+          "expected_order_version"
+        ],
+        "additionalProperties": false
+      },
+      "ReturnCashRefund": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "amount_vnd": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "cash_repaid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operation_id",
+          "expected_order_version",
+          "amount_vnd",
+          "cash_repaid"
+        ],
+        "additionalProperties": false
+      },
+      "OrderReturn": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "DELIVERY_FAILED",
+              "CUSTOMER_RETURN"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "REQUESTED",
+              "APPROVED",
+              "REJECTED",
+              "RECEIVED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "requested_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requested_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "decided_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "decided_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decision_reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "received_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "restock": {
+            "type": "boolean"
+          },
+          "stock_state": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "cash_refund_due_vnd": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "order_id",
+          "kind",
+          "status",
+          "reason",
+          "requested_by",
+          "requested_at",
+          "version",
+          "cash_refund_due_vnd"
+        ],
+        "additionalProperties": false
+      },
+      "OrderStatusEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "from_status": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "to_status": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "actor_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "to_status",
+          "actor_user_id",
+          "created_at"
         ],
         "additionalProperties": false
       }
