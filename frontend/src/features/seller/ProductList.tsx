@@ -28,6 +28,7 @@ export function SellerProductList(){
   return <section>
     <h2>Sản phẩm của Store</h2>
     <p><small>Bao gồm cả sản phẩm nháp, đã dừng bán và đang bị ẩn.</small></p>
+    <p><Link to="/seller/products/new">Tạo sản phẩm</Link></p>
     {isFetching && <Loading/>}
     {error && <ErrorView error={error} onRetry={()=>{void refetch();}} retryBusy={isFetching}/>}
     <div className="boot-grid">{data?.items.map(product=><article key={product.id} className="boot-card">
