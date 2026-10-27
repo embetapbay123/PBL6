@@ -4,7 +4,14 @@ import { ApiError } from '../api/client';
 import { useAuth } from '../api/auth-context';
 export function ErrorView({error,onRetry,retryBusy=false}:{error:unknown;onRetry?:()=>void;retryBusy?:boolean}) {
   const value=error instanceof ApiError?error:undefined;
-  return <p role="alert" className="boot-error">{value?.message ?? 'Có lỗi xảy ra.'}{value?.correlationId && <small>Mã yêu cầu: {value.correlationId}</small>}{onRetry && <button type="button" disabled={retryBusy} onClick={onRetry}>Thử lại</button>}</p>;
+  // Field-level rejections arrive in `details`; showing only the message forces the Seller to guess
+  // which input the server refused.
+  const fields=(value?.details ?? []).flatMap(detail=>{
+    if(!detail || typeof detail!=='object') return [];
+    const entry=detail as {field?:unknown;reason?:unknown};
+    return entry.field ? [{field:String(entry.field),reason:entry.reason?String(entry.reason):''}] : [];
+  });
+  return <div role="alert" className="boot-error">{value?.message ?? 'Có lỗi xảy ra.'}{fields.length>0 && <ul>{fields.map(item=><li key={item.field}>{item.field}{item.reason?': '+item.reason:''}</li>)}</ul>}{value?.correlationId && <small>Mã yêu cầu: {value.correlationId}</small>}{onRetry && <button type="button" disabled={retryBusy} onClick={onRetry}>Thử lại</button>}</div>;
 }
 export function Loading(){return <p role="status">Đang tải…</p>;}
 export function Empty({children}:{children:ReactNode}){return <p>{children}</p>;}
