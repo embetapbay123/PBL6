@@ -196,7 +196,7 @@ export function ProductDetail() {
           <div className="mt-6 border-t border-slate-100 pt-4">
             <h3>Thông tin sản phẩm</h3>
             <dl>
-              {Object.entries(product.attributes).map(([key, value]) => (
+              {Object.entries(product.attributes ?? {}).map(([key, value]) => (
                 <div className="flex gap-3" key={key}>
                   <dt>{key}</dt>
                   <dd>

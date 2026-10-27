@@ -206,6 +206,16 @@ test("the default storefront renders API products and responsive navigation, wit
   );
 });
 
+test('a minimal unavailable Product response does not crash the phone detail page', async ({page}) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await setup(page, 'CUSTOMER', (route, c) => c.path === '/products/' + product ? route.fulfill({json:{id:product,title:'Unavailable product',status:'ACTIVE',variants:[]}}) : undefined);
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/products/' + product);
+  await expect(page.getByRole('heading',{name:'Unavailable product',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Thêm vào giỏ hàng',exact:true})).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
 test("inventory retries preserve operation ID, payload and version across a reload", async ({
   page,
 }) => {
