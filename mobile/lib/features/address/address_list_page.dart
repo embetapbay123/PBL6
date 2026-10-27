@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
 import '../../main.dart';
 
 class AddressListPage extends ConsumerWidget {
@@ -20,6 +21,8 @@ class AddressListPage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         onPressed: () async {
           final created = await Navigator.pushNamed(context, '/address-form');
           if (created == true) {
@@ -127,7 +130,7 @@ class AddressListPage extends ConsumerWidget {
                 shape: RoundedRectangleBorder(
                   side: BorderSide(
                     color: isDefault
-                        ? const Color(0xff1648a8)
+                        ? AppColors.primary
                         : Colors.grey.shade200,
                     width: isDefault ? 1.5 : 1.0,
                   ),
@@ -163,7 +166,7 @@ class AddressListPage extends ConsumerWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xff1648a8),
+                                color: AppColors.primary,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Text(

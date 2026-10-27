@@ -343,12 +343,12 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Hồ sơ của tôi'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Tài khoản'), findsOneWidget);
       expect(find.text('Nguyễn Văn A'), findsOneWidget);
       expect(find.text('user@example.com'), findsOneWidget);
       expect(find.text('CUSTOMER'), findsOneWidget);
-      expect(find.text('Sổ địa chỉ nhận hàng'), findsOneWidget);
-      expect(find.text('Đổi mật khẩu'), findsOneWidget);
+      expect(find.text('Sổ địa chỉ nhận hàng', skipOffstage: false), findsOneWidget);
+      expect(find.text('Đổi mật khẩu', skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('EditProfilePage pre-fills initial values', (tester) async {
@@ -484,12 +484,12 @@ void main() {
         await tester.pump();
 
         expect(find.text('PBL6 E-Commerce'), findsOneWidget);
-        expect(find.text('Dành riêng cho bạn'), findsOneWidget);
-        expect(find.text('Gợi ý Baseline / Mock'), findsOneWidget);
-        expect(find.text('Thời trang'), findsOneWidget);
-        expect(find.text('Điện tử'), findsOneWidget);
-        expect(find.text('Áo thun thể thao Dry-Fit'), findsOneWidget);
-        expect(find.text('250000 ₫'), findsOneWidget);
+        expect(find.text('Dành riêng cho bạn', skipOffstage: false), findsOneWidget);
+        expect(find.text('Gợi ý Baseline / Mock', skipOffstage: false), findsOneWidget);
+        expect(find.text('Thời trang', skipOffstage: false), findsOneWidget);
+        expect(find.text('Điện tử', skipOffstage: false), findsOneWidget);
+        expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
+        expect(find.text('250000 ₫', skipOffstage: false), findsOneWidget);
       },
     );
 
@@ -521,7 +521,10 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Không tìm thấy sản phẩm nào'), findsOneWidget);
+      expect(
+        find.text('Không tìm thấy sản phẩm nào', skipOffstage: false),
+        findsOneWidget,
+      );
     });
 
     testWidgets(
