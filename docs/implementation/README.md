@@ -1,5 +1,7 @@
 # Bàn giao khung triển khai 2.2
 
+**Kế hoạch hoàn thiện sau audit 27/10:** [các gói trước demo 03/11 và mở rộng 04–17/11](ecommerce-completion-plan.md), [20 nhóm chức năng và khoảng thiếu](ecommerce-gap-audit-2026-10-27.md).
+
 **Nền để bắt đầu code:** [contract, DTO runtime, adapter/fixture và mẫu chạy được](foundation-handoff.md).
 
 **Web demo nối API:** [Customer, Store và Admin trong giao diện mặc định](live-demo-ui.md). Demo local-data cũ giữ riêng ở `/?mode=mock`; không dùng nó làm bằng chứng hoàn thành nghiệp vụ.
