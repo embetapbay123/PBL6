@@ -86,6 +86,7 @@ export class OrderReturnService {
               "RETURN_ALREADY_EXISTS",
               "Đơn đã có hồ sơ trả hàng.",
             );
+          if(failedDelivery)await manager.query("UPDATE shipment SET status='DELIVERY_FAILED' WHERE order_id=$1 AND status='SHIPPED'",[id]);
           const [row] = await manager.query(
             `INSERT INTO order_return(order_id,kind,status,reason,requested_by,decided_by,decided_at,decision_reason) VALUES($1,$2,$3,$4,$5,$6,CASE WHEN $6::uuid IS NULL THEN NULL ELSE now() END,$7) RETURNING id`,
             [
@@ -214,6 +215,7 @@ export class OrderReturnService {
               correlation,
               auth.user_id,
             );
+            if(row.kind==='DELIVERY_FAILED')await manager.query("UPDATE shipment SET status='RETURNED' WHERE order_id=$1 AND status='DELIVERY_FAILED'",[id]);
             if (input.restock)
               await queueInventoryCommand(manager, id, "RESTOCK", correlation);
             else

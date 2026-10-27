@@ -725,6 +725,18 @@ export class ListOwnOrdersQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["PREPARING", "AWAITING_PAYMENT", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED", "EXPIRED", "RECOVERING", "RETURNED"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["PREPARING", "AWAITING_PAYMENT", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED", "EXPIRED", "RECOVERING", "RETURNED"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "status"?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING" | "RETURNED";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "minLength": 8, "maxLength": 40, "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$", "example": "12345678"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 8, "maxLength": 40, "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$", "example": "12345678"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "q"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "from"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "to"?: string;
 }
 export class ListOwnOrdersHeadersDto {
 }
@@ -761,6 +773,18 @@ export class ListStoreOrdersQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["PREPARING", "AWAITING_PAYMENT", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED", "EXPIRED", "RECOVERING", "RETURNED"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["PREPARING", "AWAITING_PAYMENT", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED", "EXPIRED", "RECOVERING", "RETURNED"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "status"?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING" | "RETURNED";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "minLength": 8, "maxLength": 40, "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$", "example": "12345678"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 8, "maxLength": 40, "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$", "example": "12345678"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "q"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "from"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "to"?: string;
 }
 export class ListStoreOrdersHeadersDto {
 }
@@ -778,6 +802,10 @@ export class TransitionStoreOrderBodyDto {
   "to_status"!: "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED";
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
   "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": false, "required": ["carrier_name", "tracking_code"], "properties": {"carrier_name": {"type": "string", "minLength": 1, "maxLength": 120}, "tracking_code": {"type": "string", "minLength": 1, "maxLength": 200}, "dispatch_note": {"type": "string", "maxLength": 500}}},false),defaultMessage:()=> 'Invalid contract field'}})
+  "shipment"?: {"carrier_name": string; "tracking_code": string; "dispatch_note"?: string};
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": false, "required": ["confirmed", "note"], "properties": {"confirmed": {"type": "boolean", "enum": [true]}, "note": {"type": "string", "minLength": 1, "maxLength": 500}}},false),defaultMessage:()=> 'Invalid contract field'}})
+  "delivery_confirmation"?: {"confirmed": true; "note": string};
 }
 export class TransitionStoreOrderPathDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -1128,6 +1156,18 @@ export class ListAllOrdersQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["PREPARING", "AWAITING_PAYMENT", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED", "EXPIRED", "RECOVERING", "RETURNED"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["PREPARING", "AWAITING_PAYMENT", "PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED", "CANCELLED", "EXPIRED", "RECOVERING", "RETURNED"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "status"?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING" | "RETURNED";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "minLength": 8, "maxLength": 40, "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$", "example": "12345678"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 8, "maxLength": 40, "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$", "example": "12345678"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "q"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "from"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "to"?: string;
 }
 export class ListAllOrdersHeadersDto {
 }

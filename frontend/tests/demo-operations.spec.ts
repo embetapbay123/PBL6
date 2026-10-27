@@ -70,21 +70,21 @@ type Call = { path: string; method: string; body: any };
 type Handler = (route: Route, call: Call) => Promise<unknown> | undefined;
 async function setup(
   page: Page,
-  role: "CUSTOMER" | "OWNER" | "SELLER",
+  role: "CUSTOMER" | "OWNER" | "SELLER" | "ADMIN",
   handler?: Handler,
 ) {
   const calls: Call[] = [];
   const context = {
     user_id: user,
     roles:
-      role === "OWNER"
+      role === 'ADMIN' ? ['ADMIN'] : role === "OWNER"
         ? ["CUSTOMER", "STORE_OWNER"]
         : role === "SELLER"
           ? ["CUSTOMER", "SELLER"]
           : ["CUSTOMER"],
     role_permissions: [],
     token_version: 0,
-    ...(role === "CUSTOMER"
+    ...(role === "CUSTOMER" || role === 'ADMIN'
       ? {}
       : {
           store_membership: {
@@ -287,6 +287,68 @@ test("Customer selects eligible Store/platform vouchers and sees disabled inelig
     )
     .toBeUndefined();
   expect(calls.some((c) => c.path === "/orders/batches")).toBe(false);
+});
+
+test('Customer Order filters survive pagination and clear back to page one',async({page})=>{
+  const queries:URLSearchParams[]=[];
+  await setup(page,'CUSTOMER',(route,c)=>{
+    if(c.path==='/me/orders'){
+      const q=new URL(route.request().url()).searchParams;queries.push(q);
+      return route.fulfill({json:{items:[baseOrder],total:21,page:Number(q.get('page')??1),size:20}});
+    }
+  });
+  await page.goto('/customer/orders');await page.getByLabel('Mã đơn',{exact:true}).fill('PBL-00000003');
+  await page.getByLabel('Trạng thái đơn',{exact:true}).selectOption('SHIPPED');await page.getByLabel('Ngày tạo từ').fill('2026-10-20');await page.getByLabel('Đến ngày (bao gồm)').fill('2026-10-27');
+  await page.getByRole('button',{name:'Lọc đơn hàng',exact:true}).click();await expect.poll(()=>queries.at(-1)?.get('q')).toBe('PBL-00000003');
+  await page.getByRole('button',{name:'Trang sau',exact:true}).click();await expect.poll(()=>queries.at(-1)?.get('page')).toBe('2');
+  expect(queries.at(-1)?.get('status')).toBe('SHIPPED');expect(queries.at(-1)?.get('from')).toBeTruthy();expect(queries.at(-1)?.get('to')).toBeTruthy();
+  await page.getByRole('button',{name:'Xóa bộ lọc',exact:true}).click();await expect.poll(()=>queries.at(-1)?.get('page')).toBe('1');expect(queries.at(-1)?.has('q')).toBe(false);
+});
+
+test('Admin filters ignore an older response that arrives after the new result',async({page})=>{
+ let release:(()=>Promise<void>)|undefined;
+ await setup(page,'ADMIN',(route,c)=>{
+  if(c.path==='/admin/orders'){
+   if(!new URL(route.request().url()).searchParams.has('q'))return new Promise<void>(resolve=>{release=async()=>{await route.fulfill({json:{items:[{...baseOrder,id:id(44)}],total:99,page:1,size:20}});resolve()}});
+   return route.fulfill({json:pageData([baseOrder])});
+  }
+ });
+ await page.goto('/admin?tab=orders');await page.getByLabel('Mã đơn',{exact:true}).fill('PBL-00000003');await page.getByRole('button',{name:'Lọc đơn hàng',exact:true}).click();
+ await expect(page.getByText('PBL-00000003',{exact:true})).toBeVisible();expect(release).toBeDefined();await release!();
+ await expect(page.getByText('PBL-00000044',{exact:true})).toHaveCount(0);await expect(page.getByText('1 đơn khớp bộ lọc · trang 1.')).toBeVisible();
+});
+
+test('Seller ships only with carrier/reference and sends evidence in the existing transition command',async({page})=>{
+ let current:any={...baseOrder,status:'PROCESSING'};
+ const calls=await setup(page,'OWNER',(route,c)=>{
+  if(c.path==='/store/orders')return route.fulfill({json:pageData([current])});
+  if(c.path==='/store/orders/'+orderId)return route.fulfill({json:current});
+  if(c.path==='/store/orders/'+orderId+'/status'){
+   current={...current,status:'SHIPPED',version:5,shipment:{...c.body.shipment,status:'SHIPPED',source:'MANUAL',shipped_at:'2026-10-27T03:00:00Z',dispatched_by:user}};
+   return route.fulfill({json:current});
+  }
+ });
+ await page.goto('/seller/orders');await page.getByRole('button',{name:'Xem đơn',exact:true}).click();
+ const ship=page.getByRole('button',{name:'Chuyển sang SHIPPED',exact:true});await expect(ship).toBeDisabled();
+ await page.getByLabel('Đơn vị giao hàng',{exact:true}).fill('Store delivery');await expect(ship).toBeDisabled();
+ await page.getByLabel('Mã vận chuyển / reference',{exact:true}).fill('MANUAL-001');await page.getByLabel('Ghi chú bàn giao').fill('Collected at counter');await ship.click();
+ await expect(page.getByText('Mã vận chuyển / reference: MANUAL-001')).toBeVisible();
+ expect(calls.find(c=>c.path.endsWith('/status'))?.body).toEqual({to_status:'SHIPPED',expected_version:4,shipment:{carrier_name:'Store delivery',tracking_code:'MANUAL-001',dispatch_note:'Collected at counter'}});
+});
+
+test('paid Order completion still requires explicit receipt evidence',async({page})=>{
+ let current:any={...baseOrder,payment_status:'SUCCEEDED'};
+ const calls=await setup(page,'OWNER',(route,c)=>{
+  if(c.path==='/store/orders')return route.fulfill({json:pageData([current])});
+  if(c.path==='/store/orders/'+orderId)return route.fulfill({json:current});
+  if(c.path.endsWith('/status')){current={...current,status:'COMPLETED',version:5,shipment:{status:'DELIVERED',source:'MANUAL',delivery_note:c.body.delivery_confirmation.note}};return route.fulfill({json:current})}
+ });
+ await page.goto('/seller/orders');await page.getByRole('button',{name:'Xem đơn',exact:true}).click();
+ const complete=page.getByRole('button',{name:'Chuyển sang COMPLETED',exact:true});await expect(complete).toBeDisabled();
+ await page.getByLabel('Căn cứ giao nhận',{exact:true}).fill('Signed receipt checked');await expect(complete).toBeDisabled();
+ await page.getByRole('checkbox',{name:'Tôi đã kiểm tra và xác nhận khách đã nhận hàng'}).check();await complete.click();
+ await expect(page.getByText('Căn cứ giao nhận: Signed receipt checked')).toBeVisible();
+ expect(calls.find(c=>c.path.endsWith('/status'))?.body).toEqual({to_status:'COMPLETED',expected_version:4,delivery_confirmation:{confirmed:true,note:'Signed receipt checked'}});
 });
 test("Seller stock changes create a proposal with receipt metadata and never apply stock directly", async ({
   page,

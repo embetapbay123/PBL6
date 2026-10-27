@@ -16,6 +16,7 @@ import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { audit } from '../../../shared/src/audit';
 import {returnView} from './order-return.view';
+import {shipmentView} from './shipment.view';
 import { VoucherRepository } from '../voucher/voucher.repository';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
@@ -111,6 +112,7 @@ export class OrderService {
       status: order.status as any,
       version: order.version,
       ...(order.inventory_state?{inventory_state:order.inventory_state}:{}),
+      ...(order.shipment?{shipment:shipmentView(order.shipment)}:{}),
       ...(order.status_history?{status_history:order.status_history.map(h=>({id:h.id,to_status:h.to_status,actor_user_id:h.actor_user_id,created_at:new Date(h.created_at).toISOString(),...(h.from_status==null?{}:{from_status:h.from_status}),...(h.reason==null?{}:{reason:h.reason})}))}:{}),
       ...(order.return_case?{return_case:returnView({...order.return_case,payment_method:order.payment_method,payment_status:order.payment_status,collected_vnd:order.collected_vnd,refunded_vnd:order.refunded_vnd,stock_state:order.inventory_state})}:{}),
       ...(order.created_at?{created_at:new Date(order.created_at).toISOString()}:{}),
@@ -666,7 +668,7 @@ export class OrderService {
   // --- ORDER-03: Order Read Endpoints ---
 
   async listOwnOrders(
-    query: { page?: number; size?: number },
+    query: OperationInputs['listOwnOrders']['query'],
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['listOwnOrders']> {
@@ -677,7 +679,7 @@ export class OrderService {
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
     const repo = new OrderRepository(this.source.manager);
-    const { items, total } = await repo.pageCustomerOrders(userId, page, size);
+    const { items, total } = await repo.pageCustomerOrders(userId, page, size,query);
 
     return {
       items: items.map(this.mapOrderRowToDto),
@@ -709,7 +711,7 @@ export class OrderService {
   }
 
   async listStoreOrders(
-    query: { page?: number; size?: number },
+    query: OperationInputs['listStoreOrders']['query'],
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['listStoreOrders']> {
@@ -722,7 +724,7 @@ export class OrderService {
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
     const repo = new OrderRepository(this.source.manager);
-    const { items, total } = await repo.pageStoreOrders(storeId, page, size);
+    const { items, total } = await repo.pageStoreOrders(storeId, page, size,query);
 
     return {
       items: items.map(this.mapOrderRowToDto),
@@ -781,6 +783,8 @@ export class OrderService {
     if (!validTargetStatuses.includes(toStatus)) {
       throw new ApiError(422, 'VALIDATION_FAILED', `to_status không hợp lệ: ${toStatus}`);
     }
+    if(input.shipment && toStatus!=='SHIPPED' || input.delivery_confirmation && toStatus!=='COMPLETED')throw new ApiError(422,'SHIPMENT_INPUT_CONFLICT','Thông tin giao nhận không khớp bước chuyển trạng thái.');
+    if(toStatus==='SHIPPED' && (!input.shipment?.carrier_name.trim()||!input.shipment.tracking_code.trim()))throw new ApiError(422,'SHIPMENT_DETAILS_REQUIRED','Cần đơn vị giao hàng và mã vận chuyển hoặc reference giao thủ công.');
 
     return this.source.transaction(async manager => {
       const repo = new OrderRepository(manager);
@@ -819,6 +823,7 @@ export class OrderService {
       if(toStatus==='COMPLETED') {
         const payment=await repo.lockPaymentByOrderId(id);
         if(!payment || payment.status!=='SUCCEEDED' || BigInt(payment.collected_vnd)<BigInt(order.payable_vnd)) throw new ApiError(409,'PAYMENT_NOT_COLLECTED','Chưa thu đủ tiền.');
+        if(input.delivery_confirmation?.confirmed!==true||!input.delivery_confirmation.note.trim())throw new ApiError(422,'DELIVERY_CONFIRMATION_REQUIRED','Cần xác nhận đã giao thành công kèm căn cứ giao nhận; đã nhận tiền không tự chứng minh đã giao.');
       }
       const updated = await repo.updateOrderStatusWithHistory({
         order_id: id,
@@ -832,8 +837,8 @@ export class OrderService {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng đã thay đổi.');
       }
 
-      if(toStatus==='SHIPPED') await repo.ship(id);
-      if(toStatus==='COMPLETED') await repo.deliver(id);
+      if(toStatus==='SHIPPED') await repo.ship(id,input.shipment!,auth.user_id);
+      if(toStatus==='COMPLETED') await repo.deliver(id,input.delivery_confirmation!.note,auth.user_id);
       await audit(manager,'M2',auth.user_id,'Order',id,'TRANSITION_ORDER',correlation,
         {status:order.status,version:order.version},{status:updated.status,version:updated.version});
 
@@ -857,12 +862,9 @@ export class OrderService {
         );
       }
 
-      return this.mapOrderRowToDto({
-        ...updated,
-        items: order.items,
-        payment_status: order.payment_status,
-        refund_status: order.refund_status,
-      });
+      const current=await repo.findStoreOrderById(id,storeId);
+      if(!current)throw new Error('ORDER_DISAPPEARED_IN_TRANSACTION');
+      return this.mapOrderRowToDto(current);
     });
   }
 

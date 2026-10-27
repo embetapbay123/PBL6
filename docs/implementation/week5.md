@@ -1,5 +1,7 @@
 # Week 5 — 27/10–02/11 — đóng băng chức năng, kiểm chứng và diễn tập
 
+Lát cắt đang hoàn thiện ngày 27/10: [bộ lọc đơn và giao nhận thủ công](order-fulfillment.md), gồm màn Customer/Store/Admin và contract 2.4.1. Giữ owner/acceptance; CI, merge và domain evidence được ghi theo PR, không tự chuyển cả gói D5 thành Done. Test SePay được tạm dừng theo yêu cầu; tiếp tục các chức năng độc lập.
+
 **Kế hoạch phục hồi sau audit ngày 27/10:** [kế hoạch hoàn thiện TMĐT](ecommerce-completion-plan.md) cụ thể hóa các gói trước demo, owner, dependency và gate từng ngày; [audit](ecommerce-gap-audit-2026-10-27.md) phân biệt lỗi, thiếu triển khai và giới hạn thiết kế. Các bảng dưới giữ làm mốc kế hoạch cũ. Phạm vi bắt buộc còn thiếu tiếp tục phải khép trước 03/11; chỉ chiều sâu mở rộng được lên lịch 04–17/11. Lịch không tự đổi trạng thái issue/Kanban hoặc chứng minh đã đạt gate.
 
 Cập nhật **13/10/2026**. Demo đầy đủ vào **thứ Ba 03/11/2026**. [Phạm vi/gate demo](demo-2026-11-03.md) · [Roadmap 71 task](roadmap.md) · [Kanban](https://github.com/users/embetapbay123/projects/1/views/3). Giữ owner và acceptance; không dùng lịch làm bằng chứng Done. Tuần gồm 5 phiên làm việc trong khoảng lịch dưới đây.

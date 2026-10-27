@@ -38,6 +38,16 @@ export function OrderFacts({ order }: { order: Order }) {
       ) : (
         <p>Chưa có thông tin địa chỉ từ đơn hàng.</p>
       )}
+      <h3>Vận chuyển và giao nhận</h3>
+      {order.shipment?<>
+        <p>{{SHIPPED:'Đang giao',DELIVERED:'Đã giao',DELIVERY_FAILED:'Giao thất bại',RETURNED:'Đã nhận lại hàng'}[order.shipment.status]} · {order.shipment.source==='MANUAL'?'Store ghi nhận thủ công':'Dữ liệu vận chuyển cũ'}{order.shipment.delivered_by?' · Store đã xác nhận giao nhận':''}</p>
+        {order.shipment.carrier_name&&<p>Đơn vị giao: {order.shipment.carrier_name}</p>}
+        {order.shipment.tracking_code&&<p>Mã vận chuyển / reference: {order.shipment.tracking_code}</p>}
+        {order.shipment.shipped_at&&<p>Ghi nhận gửi: {timeLabel(order.shipment.shipped_at)} · {order.shipment.dispatched_by??'Chưa có tài khoản ghi nhận'}</p>}
+        {order.shipment.dispatch_note&&<p>{order.shipment.dispatch_note}</p>}
+        {order.shipment.delivered_at&&<p>Ghi nhận giao xong: {timeLabel(order.shipment.delivered_at)} · {order.shipment.delivered_by??'Chưa có tài khoản xác nhận'}</p>}
+        {order.shipment.delivery_note&&<p>Căn cứ giao nhận: {order.shipment.delivery_note}</p>}
+      </>:<p>Chưa có bản ghi vận chuyển cho đơn hàng.</p>}
       <h3>Chuỗi xử lý đơn hàng</h3>
       <ol className="market-order-chain">
         {["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED"].map(

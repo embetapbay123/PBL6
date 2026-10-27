@@ -1,5 +1,6 @@
 import { EntityManager } from 'typeorm';
 import { OwnedRepository } from '../../../shared/src/repository';
+import { OrderFilters,orderWhere } from '../order/order-filters';
 
 export interface OrderAdminRow {
   id: string;
@@ -47,8 +48,9 @@ export class ReportRepository extends OwnedRepository {
   }
 
   // --- Admin List All Orders ---
-  async pageAllOrders(page: number, size: number): Promise<{ items: OrderAdminRow[]; total: number }> {
-    const [countRow] = await this.manager.query(`SELECT count(*)::int AS total FROM "order"`);
+  async pageAllOrders(page: number, size: number,filters:OrderFilters={}): Promise<{ items: OrderAdminRow[]; total: number }> {
+    const where=orderWhere(filters);
+    const [countRow] = await this.manager.query(`SELECT count(*)::int AS total FROM "order" o WHERE ${where.sql}`,where.values);
     const offset = (page - 1) * size;
     const items = await this.manager.query(
       `SELECT 
@@ -69,9 +71,10 @@ export class ReportRepository extends OwnedRepository {
          p.refunded_vnd
        FROM "order" o
        LEFT JOIN "payment" p ON p.order_id = o.id
+       WHERE ${where.sql}
        ORDER BY o.created_at DESC, o.id ASC
-       LIMIT $1 OFFSET $2`,
-      [size, offset]
+       LIMIT $${where.values.length+1} OFFSET $${where.values.length+2}`,
+      [...where.values,size, offset]
     );
     return { items, total: countRow?.total ?? 0 };
   }

@@ -52,7 +52,7 @@ test('HTTP Order transitions and COD do not complete unpaid/cancelled orders',as
     const complete=await fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status:'COMPLETED',expected_version:0})});
     expect(complete.status).toBe(409);expect((await complete.json() as any).code).toBe('PAYMENT_NOT_COLLECTED');
     await source.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=100000 WHERE order_id=$1",[id]);
-    const paid=await fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status:'COMPLETED',expected_version:0})});
+    const paid=await fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status:'COMPLETED',expected_version:0,delivery_confirmation:{confirmed:true,note:'Customer receipt verified in test'}})});
     expect(paid.status).toBe(200);const completed=await paid.json() as any;
     expect(completed).toMatchObject({id,status:'COMPLETED',version:1});
     expect((await source.query('SELECT status,delivered_at FROM shipment WHERE order_id=$1',[id]))[0]).toMatchObject({status:'DELIVERED',delivered_at:expect.any(Date)});
@@ -123,7 +123,7 @@ test('Seller transitions create one Shipment; a shipment failure rolls back Orde
   const token=await login('owner@pbl6.test');
   const context=await (await fetch(base+'/me/context',{headers:headers(token)})).json() as any;
   const id=randomUUID(),store=context.store_membership.store_id;
-  const transition=(to_status:string,expected_version:number)=>fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status,expected_version})});
+  const transition=(to_status:string,expected_version:number)=>fetch(base+`/store/orders/${id}/status`,{method:'PATCH',headers:headers(token),body:JSON.stringify({to_status,expected_version,...(to_status==='SHIPPED'?{shipment:{carrier_name:'Test carrier',tracking_code:'TEST-DELIVERY'}}:{}),...(to_status==='COMPLETED'?{delivery_confirmation:{confirmed:true,note:'Verified recipient in test'}}:{})})});
   try {
     await source.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd) VALUES($1,$1,$2,$3,'PENDING','COD',100000,0,0,0,100000)`,[id,context.user_id,store]);
     expect((await transition('CONFIRMED',0)).status).toBe(200);
@@ -131,7 +131,7 @@ test('Seller transitions create one Shipment; a shipment failure rolls back Orde
     const concurrent=await Promise.all([transition('SHIPPED',2),transition('SHIPPED',2)]);
     expect(concurrent.map(r=>r.status).sort()).toEqual([200,409]);
     const shipment=await source.query('SELECT status,shipped_at,tracking_code FROM shipment WHERE order_id=$1',[id]);
-    expect(shipment).toHaveLength(1);expect(shipment[0]).toMatchObject({status:'SHIPPED',shipped_at:expect.any(Date),tracking_code:null});
+    expect(shipment).toHaveLength(1);expect(shipment[0]).toMatchObject({status:'SHIPPED',shipped_at:expect.any(Date),tracking_code:'TEST-DELIVERY'});
     await source.query("INSERT INTO payment(order_id,method,status,payable_vnd,collectible_vnd,collected_vnd) VALUES($1,'COD','SUCCEEDED',100000,100000,100000)",[id]);
     await source.query('DELETE FROM shipment WHERE order_id=$1',[id]);
     const failure=await transition('COMPLETED',3);expect(failure.status).toBe(409);

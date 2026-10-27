@@ -154,7 +154,8 @@ test.each([['PENDING','CONFIRMED'],['PROCESSING','SHIPPED']])('transition %s -> 
   jest.spyOn(OrderRepository.prototype,'lockStoreOrderById').mockResolvedValue(source);
   jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory').mockResolvedValue({...source,status:to,version:2});
   const ship=jest.spyOn(OrderRepository.prototype,'ship').mockResolvedValue();
-  await expect(service().transitionStoreOrder(source.id,{expected_version:1,to_status:to as any},seller,'corr')).resolves.toMatchObject({status:to,version:2});
+  jest.spyOn(OrderRepository.prototype,'findStoreOrderById').mockResolvedValue({...source,status:to,version:2});
+  await expect(service().transitionStoreOrder(source.id,{expected_version:1,to_status:to as any,...(to==='SHIPPED'?{shipment:{carrier_name:'Test carrier',tracking_code:'TEST-DELIVERY'}}:{})},seller,'corr')).resolves.toMatchObject({status:to,version:2});
   expect(call).not.toHaveBeenCalled();
   expect(ship).toHaveBeenCalledTimes(to==='SHIPPED'?1:0);
 });
