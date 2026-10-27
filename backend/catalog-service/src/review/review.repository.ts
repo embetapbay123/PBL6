@@ -6,7 +6,8 @@ import { EntityManager } from 'typeorm';
 const REVIEW_COLUMNS = 'id,order_item_id,product_id,rating,body,status,version';
 
 export class ReviewRepository {
-  constructor(private readonly manager:EntityManager=database.manager) {}
+  constructor(private readonly scopedManager?:EntityManager) {}
+  private get manager(){return this.scopedManager??database.manager}
   /**
    * Public list of one Product. Only `VISIBLE` reviews are readable, so a hidden review disappears
    * without leaking that it exists; the count and the page share the same predicate.

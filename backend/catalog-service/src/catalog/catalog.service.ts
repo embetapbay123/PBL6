@@ -53,7 +53,8 @@ function uniqueConflictError(error:unknown):ApiError|undefined {
 }
 
 export class CatalogService {
-  constructor(private readonly source:DataSource=database) {}
+  constructor(private readonly suppliedSource?:DataSource) {}
+  private get source(){return this.suppliedSource??database}
   private command<T>(caller:string,key:string|undefined,payload:unknown,effect:(manager:EntityManager)=>Promise<T>):Promise<T> {
     return this.source.transaction(manager=>key?once(manager,caller,key,payload,()=>effect(manager)):effect(manager));
   }
