@@ -540,7 +540,7 @@ export function OrderStock({
       ) : !data.data ? (
         <Loading />
       ) : (
-        <table>
+        <div className="market-table-scroll"><table>
           <thead>
             <tr>
               <th>Phân loại</th>
@@ -566,7 +566,7 @@ export function OrderStock({
               );
             })}
           </tbody>
-        </table>
+        </table></div>
       )}
     </section>
   );

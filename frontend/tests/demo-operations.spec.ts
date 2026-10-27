@@ -388,6 +388,8 @@ test("Store detail shows saved shipping, status times and available stock withou
     modal.getByRole("cell", { name: "10", exact: true }),
   ).toBeVisible();
   await expect(modal).toContainText("Tồn hiện tại cho các đơn mới");
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });
 test("failed delivery waits for physical receipt and disposition before creating a return receipt", async ({
   page,

@@ -9,7 +9,7 @@ from app.internal_client import InternalClient, InternalError
 FIXTURES=json.loads((Path(__file__).parents[1]/'app/fixtures.generated.json').read_text())
 
 def test_all_operation_fixtures_and_pydantic_models():
-    assert len(OPERATIONS)==111
+    assert len(OPERATIONS)==120
     assert len(DTO_REGISTRY)==111
     for name,fixture in FIXTURES.items():
         validate_operation(name,**fixture['request'])
