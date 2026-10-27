@@ -2080,6 +2080,7 @@ export interface components {
             status_history?: components["schemas"]["OrderStatusEntry"][];
             return_case?: components["schemas"]["OrderReturn"];
             inventory_state?: string;
+            shipment?: components["schemas"]["ShipmentView"];
         };
         Payment: {
             /** Format: uuid */
@@ -2144,6 +2145,16 @@ export interface components {
             /** @enum {string} */
             to_status: "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED";
             expected_version: number;
+            shipment?: {
+                carrier_name: string;
+                tracking_code: string;
+                dispatch_note?: string;
+            };
+            delivery_confirmation?: {
+                /** @enum {boolean} */
+                confirmed: true;
+                note: string;
+            };
         };
         CancelOrder: {
             expected_version: number;
@@ -3106,6 +3117,24 @@ export interface components {
                 variant_id: string;
                 available_quantity: number;
             }[];
+        };
+        ShipmentView: {
+            /** @enum {string} */
+            status: "SHIPPED" | "DELIVERED" | "DELIVERY_FAILED" | "RETURNED";
+            /** @enum {string} */
+            source: "MANUAL" | "LEGACY";
+            carrier_name?: string;
+            tracking_code?: string;
+            dispatch_note?: string;
+            delivery_note?: string;
+            /** Format: date-time */
+            shipped_at?: string;
+            /** Format: date-time */
+            delivered_at?: string;
+            /** Format: uuid */
+            dispatched_by?: string;
+            /** Format: uuid */
+            delivered_by?: string;
         };
     };
     responses: never;
@@ -8206,6 +8235,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                status?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING" | "RETURNED";
+                q?: string;
+                from?: string;
+                to?: string;
             };
             header?: never;
             path?: never;
@@ -8499,6 +8532,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                status?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING" | "RETURNED";
+                q?: string;
+                from?: string;
+                to?: string;
             };
             header?: never;
             path?: never;
@@ -10599,6 +10636,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                status?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING" | "RETURNED";
+                q?: string;
+                from?: string;
+                to?: string;
             };
             header?: never;
             path?: never;

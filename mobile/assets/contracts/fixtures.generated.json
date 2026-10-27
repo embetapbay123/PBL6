@@ -1138,7 +1138,11 @@
       "path": {},
       "query": {
         "page": 1,
-        "size": 20
+        "size": 20,
+        "status": "PREPARING",
+        "q": "12345678",
+        "from": "2026-10-02T00:00:00Z",
+        "to": "2026-10-02T00:00:00Z"
       },
       "headers": {}
     },
@@ -1199,7 +1203,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -1255,7 +1271,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -1266,7 +1294,11 @@
       "path": {},
       "query": {
         "page": 1,
-        "size": 20
+        "size": 20,
+        "status": "PREPARING",
+        "q": "12345678",
+        "from": "2026-10-02T00:00:00Z",
+        "to": "2026-10-02T00:00:00Z"
       },
       "headers": {}
     },
@@ -1327,7 +1359,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -1336,7 +1380,16 @@
     "request": {
       "body": {
         "to_status": "CONFIRMED",
-        "expected_version": 0
+        "expected_version": 0,
+        "shipment": {
+          "carrier_name": "fixture-value",
+          "tracking_code": "fixture-value",
+          "dispatch_note": "fixture-value"
+        },
+        "delivery_confirmation": {
+          "confirmed": true,
+          "note": "fixture-value"
+        }
       },
       "path": {
         "id": "11111111-1111-4111-8111-111111111111"
@@ -1383,7 +1436,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -1439,7 +1504,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -1495,7 +1572,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -1927,7 +2016,11 @@
       "path": {},
       "query": {
         "page": 1,
-        "size": 20
+        "size": 20,
+        "status": "PREPARING",
+        "q": "12345678",
+        "from": "2026-10-02T00:00:00Z",
+        "to": "2026-10-02T00:00:00Z"
       },
       "headers": {}
     },
@@ -2706,7 +2799,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 201
   },
@@ -2763,7 +2868,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 201
   },
@@ -2823,7 +2940,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 200
   },
@@ -2881,7 +3010,19 @@
         "stock_state": "fixture-value",
         "cash_refund_due_vnd": 0
       },
-      "inventory_state": "fixture-value"
+      "inventory_state": "fixture-value",
+      "shipment": {
+        "status": "SHIPPED",
+        "source": "MANUAL",
+        "carrier_name": "fixture-value",
+        "tracking_code": "fixture-value",
+        "dispatch_note": "fixture-value",
+        "delivery_note": "fixture-value",
+        "shipped_at": "2026-10-02T00:00:00Z",
+        "delivered_at": "2026-10-02T00:00:00Z",
+        "dispatched_by": "11111111-1111-4111-8111-111111111111",
+        "delivered_by": "11111111-1111-4111-8111-111111111111"
+      }
     },
     "status": 201
   },

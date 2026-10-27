@@ -5691,6 +5691,64 @@
                   "inventory_state": {
                     "type": "string",
                     "maxLength": 30
+                  },
+                  "shipment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "source"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SHIPPED",
+                          "DELIVERED",
+                          "DELIVERY_FAILED",
+                          "RETURNED"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "MANUAL",
+                          "LEGACY"
+                        ]
+                      },
+                      "carrier_name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "tracking_code": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "dispatch_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "delivery_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "shipped_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "delivered_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "dispatched_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "delivered_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -6015,6 +6073,64 @@
                   "inventory_state": {
                     "type": "string",
                     "maxLength": 30
+                  },
+                  "shipment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "source"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SHIPPED",
+                          "DELIVERED",
+                          "DELIVERY_FAILED",
+                          "RETURNED"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "MANUAL",
+                          "LEGACY"
+                        ]
+                      },
+                      "carrier_name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "tracking_code": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "dispatch_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "delivery_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "shipped_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "delivered_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "dispatched_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "delivered_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -6431,6 +6547,37 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PREPARING",
+              "AWAITING_PAYMENT",
+              "PENDING",
+              "CONFIRMED",
+              "PROCESSING",
+              "SHIPPED",
+              "COMPLETED",
+              "CANCELLED",
+              "EXPIRED",
+              "RECOVERING",
+              "RETURNED"
+            ]
+          },
+          "q": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 40,
+            "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$",
+            "example": "12345678"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [],
@@ -6688,6 +6835,64 @@
                   "inventory_state": {
                     "type": "string",
                     "maxLength": 30
+                  },
+                  "shipment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "source"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SHIPPED",
+                          "DELIVERED",
+                          "DELIVERY_FAILED",
+                          "RETURNED"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "MANUAL",
+                          "LEGACY"
+                        ]
+                      },
+                      "carrier_name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "tracking_code": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "dispatch_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "delivery_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "shipped_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "delivered_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "dispatched_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "delivered_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -7001,6 +7206,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -7307,6 +7570,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -7351,6 +7672,37 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PREPARING",
+              "AWAITING_PAYMENT",
+              "PENDING",
+              "CONFIRMED",
+              "PROCESSING",
+              "SHIPPED",
+              "COMPLETED",
+              "CANCELLED",
+              "EXPIRED",
+              "RECOVERING",
+              "RETURNED"
+            ]
+          },
+          "q": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 40,
+            "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$",
+            "example": "12345678"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [],
@@ -7608,6 +7960,64 @@
                   "inventory_state": {
                     "type": "string",
                     "maxLength": 30
+                  },
+                  "shipment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "source"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SHIPPED",
+                          "DELIVERED",
+                          "DELIVERY_FAILED",
+                          "RETURNED"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "MANUAL",
+                          "LEGACY"
+                        ]
+                      },
+                      "carrier_name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "tracking_code": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "dispatch_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "delivery_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "shipped_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "delivered_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "dispatched_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "delivered_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -7921,6 +8331,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -7958,6 +8426,51 @@
           "expected_version": {
             "type": "integer",
             "maximum": 9007199254740991
+          },
+          "shipment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "carrier_name",
+              "tracking_code"
+            ],
+            "properties": {
+              "carrier_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "tracking_code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "dispatch_note": {
+                "type": "string",
+                "maxLength": 500
+              }
+            }
+          },
+          "delivery_confirmation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "confirmed",
+              "note"
+            ],
+            "properties": {
+              "confirmed": {
+                "type": "boolean",
+                "enum": [
+                  true
+                ]
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            }
           }
         },
         "required": [
@@ -8237,6 +8750,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -8543,6 +9114,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -8851,6 +9480,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -10998,6 +11685,37 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PREPARING",
+              "AWAITING_PAYMENT",
+              "PENDING",
+              "CONFIRMED",
+              "PROCESSING",
+              "SHIPPED",
+              "COMPLETED",
+              "CANCELLED",
+              "EXPIRED",
+              "RECOVERING",
+              "RETURNED"
+            ]
+          },
+          "q": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 40,
+            "pattern": "^(?:PBL-)?[0-9A-Fa-f-]{8,36}$",
+            "example": "12345678"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [],
@@ -11255,6 +11973,64 @@
                   "inventory_state": {
                     "type": "string",
                     "maxLength": 30
+                  },
+                  "shipment": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "source"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "SHIPPED",
+                          "DELIVERED",
+                          "DELIVERY_FAILED",
+                          "RETURNED"
+                        ]
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "MANUAL",
+                          "LEGACY"
+                        ]
+                      },
+                      "carrier_name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "tracking_code": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "dispatch_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "delivery_note": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "shipped_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "delivered_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "dispatched_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "delivered_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -15446,6 +16222,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -15760,6 +16594,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -16092,6 +16984,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [
@@ -16410,6 +17360,64 @@
             "inventory_state": {
               "type": "string",
               "maxLength": 30
+            },
+            "shipment": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "source"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "SHIPPED",
+                    "DELIVERED",
+                    "DELIVERY_FAILED",
+                    "RETURNED"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "MANUAL",
+                    "LEGACY"
+                  ]
+                },
+                "carrier_name": {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                "tracking_code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dispatch_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "delivery_note": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "shipped_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "delivered_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "dispatched_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "delivered_by": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
             }
           },
           "required": [

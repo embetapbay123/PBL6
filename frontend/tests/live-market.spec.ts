@@ -357,7 +357,7 @@ test("COD requires explicit cash confirmation and a failed API never reports col
   await page.getByRole("button", { name: "Xem đơn", exact: true }).click();
   const collect = page.getByRole("button", { name: "Ghi nhận đã thu tiền" });
   await expect(collect).toBeDisabled();
-  await page.getByRole("checkbox").check();
+  await page.getByRole("checkbox",{name:/Tôi đã nhận đủ/}).check();
   await collect.click();
   await expect(page.getByRole("alert")).toContainText("Collection unavailable");
   await expect(collect).toBeDisabled();

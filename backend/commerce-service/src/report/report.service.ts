@@ -2,7 +2,7 @@ import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { moneyNumber } from '../../../shared/src/money';
 import { ReportRepository, OrderAdminRow } from './report.repository';
-import type { OperationOutputs } from '../../../shared/src/operations.generated';
+import type { OperationInputs,OperationOutputs } from '../../../shared/src/operations.generated';
 import { config } from '../../../shared/src/config';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { accessToken, requireStorePermission } from '../scope';
@@ -48,7 +48,7 @@ export class ReportService {
   }
 
   async listAllOrders(
-    query: { page?: number; size?: number },
+    query: OperationInputs['listAllOrders']['query'],
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['listAllOrders']> {
@@ -57,7 +57,7 @@ export class ReportService {
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
     const repo = new ReportRepository(database.manager);
-    const { items, total } = await repo.pageAllOrders(page, size);
+    const { items, total } = await repo.pageAllOrders(page, size,query);
 
     return {
       items: items.map(adminOrderResponse),

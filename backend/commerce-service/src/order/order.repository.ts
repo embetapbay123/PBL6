@@ -1,6 +1,7 @@
 import { EntityManager } from 'typeorm';
 import { OwnedRepository } from '../../../shared/src/repository';
 import { ApiError } from '../../../shared/src/errors';
+import { OrderFilters,orderWhere } from './order-filters';
 
 export interface CartItemCheckoutRow {
   id: string;
@@ -40,6 +41,7 @@ export interface IdempotencyRecordRow {
 }
 
 export interface OrderRow {
+  shipment?:any;
   status_history?:any[];
   return_case?:any;
   inventory_state?:string;
@@ -351,11 +353,13 @@ export class OrderRepository extends OwnedRepository {
   async pageCustomerOrders(
     customerUserId: string,
     page: number,
-    size: number
+    size: number,
+    filters:OrderFilters={}
   ): Promise<{ items: Array<OrderRow & { items: OrderItemRow[] }>; total: number }> {
+    const where=orderWhere(filters,{column:'o.customer_user_id',id:customerUserId});
     const [countRow] = await this.manager.query(
-      `SELECT count(*)::int AS total FROM "order" WHERE customer_user_id = $1`,
-      [customerUserId]
+      `SELECT count(*)::int AS total FROM "order" o WHERE ${where.sql}`,
+      where.values
     );
     const offset = (page - 1) * size;
     const orders: OrderRow[] = await this.manager.query(
@@ -369,10 +373,10 @@ export class OrderRepository extends OwnedRepository {
        LEFT JOIN LATERAL (
          SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
        ) r ON true
-       WHERE o.customer_user_id = $1
+       WHERE ${where.sql}
        ORDER BY o.created_at DESC, o.id ASC
-       LIMIT $2 OFFSET $3`,
-      [customerUserId, size, offset]
+       LIMIT $${where.values.length+1} OFFSET $${where.values.length+2}`,
+      [...where.values, size, offset]
     );
 
     if (!orders.length) {
@@ -415,6 +419,7 @@ export class OrderRepository extends OwnedRepository {
               o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,p.collected_vnd,p.refunded_vnd,
+              (SELECT to_jsonb(s) FROM shipment s WHERE s.order_id=o.id) AS shipment,
               (SELECT state FROM order_inventory_state si WHERE si.order_id=o.id) AS inventory_state,
               (SELECT to_jsonb(rt) FROM order_return rt WHERE rt.order_id=o.id) AS return_case,
               (SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY h.created_at,h.id),'[]'::jsonb) FROM order_status_history h WHERE h.order_id=o.id) AS status_history,
@@ -448,11 +453,13 @@ export class OrderRepository extends OwnedRepository {
   async pageStoreOrders(
     storeId: string,
     page: number,
-    size: number
+    size: number,
+    filters:OrderFilters={}
   ): Promise<{ items: Array<OrderRow & { items: OrderItemRow[] }>; total: number }> {
+    const where=orderWhere(filters,{column:'o.store_id',id:storeId});
     const [countRow] = await this.manager.query(
-      `SELECT count(*)::int AS total FROM "order" WHERE store_id = $1`,
-      [storeId]
+      `SELECT count(*)::int AS total FROM "order" o WHERE ${where.sql}`,
+      where.values
     );
     const offset = (page - 1) * size;
     const orders: OrderRow[] = await this.manager.query(
@@ -466,10 +473,10 @@ export class OrderRepository extends OwnedRepository {
        LEFT JOIN LATERAL (
          SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
        ) r ON true
-       WHERE o.store_id = $1
+       WHERE ${where.sql}
        ORDER BY o.created_at DESC, o.id ASC
-       LIMIT $2 OFFSET $3`,
-      [storeId, size, offset]
+       LIMIT $${where.values.length+1} OFFSET $${where.values.length+2}`,
+      [...where.values, size, offset]
     );
 
     if (!orders.length) {
@@ -512,6 +519,7 @@ export class OrderRepository extends OwnedRepository {
               o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,p.collected_vnd,p.refunded_vnd,
+              (SELECT to_jsonb(s) FROM shipment s WHERE s.order_id=o.id) AS shipment,
               (SELECT state FROM order_inventory_state si WHERE si.order_id=o.id) AS inventory_state,
               (SELECT to_jsonb(rt) FROM order_return rt WHERE rt.order_id=o.id) AS return_case,
               (SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY h.created_at,h.id),'[]'::jsonb) FROM order_status_history h WHERE h.order_id=o.id) AS status_history,
@@ -611,13 +619,13 @@ export class OrderRepository extends OwnedRepository {
     return updated ?? null;
   }
 
-  async ship(orderId:string):Promise<void> {
-    const [created]=await this.manager.query("INSERT INTO shipment(order_id,status,shipped_at) VALUES($1,'SHIPPED',now()) ON CONFLICT(order_id) DO NOTHING RETURNING id",[orderId]);
+  async ship(orderId:string,input:{carrier_name:string;tracking_code:string;dispatch_note?:string},actor:string):Promise<void> {
+    const [created]=await this.manager.query("INSERT INTO shipment(order_id,status,shipped_at,carrier_name,tracking_code,dispatch_note,dispatched_by,source) VALUES($1,'SHIPPED',now(),$2,$3,$4,$5,'MANUAL') ON CONFLICT(order_id) DO NOTHING RETURNING id",[orderId,input.carrier_name.trim(),input.tracking_code.trim(),input.dispatch_note?.trim()??null,actor]);
     if(!created) throw new ApiError(409,'SHIPMENT_STATE_CONFLICT','Order đã có Shipment; cần kiểm tra lại trạng thái.');
   }
 
-  async deliver(orderId:string):Promise<void> {
-    const updated=await this.updateReturning("UPDATE shipment SET status='DELIVERED',delivered_at=now() WHERE order_id=$1 AND status='SHIPPED' RETURNING id",[orderId]);
+  async deliver(orderId:string,note:string,actor:string):Promise<void> {
+    const updated=await this.updateReturning("UPDATE shipment SET status='DELIVERED',delivered_at=now(),delivery_note=$2,delivered_by=$3 WHERE order_id=$1 AND status='SHIPPED' RETURNING id",[orderId,note.trim(),actor]);
     if(!updated) throw new ApiError(409,'SHIPMENT_STATE_CONFLICT','Shipment chưa ở trạng thái đang giao.');
   }
 

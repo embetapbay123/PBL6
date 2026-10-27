@@ -47,10 +47,7 @@ export class OrderController {
     @Req() req: any
   ) {
     return this.service.listOwnOrders(
-      {
-        page: page !== undefined ? Number(page) : undefined,
-        size: size !== undefined ? Number(size) : undefined,
-      },
+      req.contract?.query??{page:page!==undefined?Number(page):undefined,size:size!==undefined?Number(size):undefined},
       req.auth,
       req.correlationId
     );
@@ -77,10 +74,7 @@ export class OrderController {
     @Req() req: any
   ) {
     return this.service.listStoreOrders(
-      {
-        page: page !== undefined ? Number(page) : undefined,
-        size: size !== undefined ? Number(size) : undefined,
-      },
+      req.contract?.query??{page:page!==undefined?Number(page):undefined,size:size!==undefined?Number(size):undefined},
       req.auth,
       req.correlationId
     );

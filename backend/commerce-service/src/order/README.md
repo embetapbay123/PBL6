@@ -2,6 +2,8 @@
 
 Owner: Hoa
 
+Order filters and manual Shipment evidence: see [fulfillment contract and UI](../../../../docs/implementation/order-fulfillment.md). Shipping requires carrier/reference; completing requires collected payment plus explicit delivery confirmation. Both use the existing transition endpoint and one caller-owned transaction. Apply additive migration 012 before deploying this API/UI pair.
+
 - `POST /checkout/quotes` — quoteCheckout: **IMPLEMENTED**
 - `POST /orders/batches` — confirmCheckout: **IMPLEMENTED**
 - `GET /orders/batches/{id}` — getPurchaseGroupOrders: **IMPLEMENTED**

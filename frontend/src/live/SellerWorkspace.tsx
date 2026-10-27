@@ -11,8 +11,9 @@ import type {
 import { ErrorView, Loading, Pagination } from "../bootstrap/components";
 import { formatMoney, useCommand, useStoreAccess } from "./useLiveData";
 import { StockOperationsPanel, OrderStock } from "./StockOperationsPanel";
-import { OrderFacts } from "./OrderFacts";
+import { OrderFacts,orderLabel } from "./OrderFacts";
 import { ReturnControls } from "./ReturnControls";
+import { OrderFilters,OrderQuery,orderCode } from './OrderFilters';
 
 export function SellerSubNav() {
   const access = useStoreAccess();
@@ -678,14 +679,15 @@ function StockAdjustment({
 
 type StoreOrder = OperationOutputs["getStoreOrder"];
 export function StoreOrders() {
+  const [filters,setFilters]=useState<OrderQuery>({});
   const access = useStoreAccess(),
     [page, setPage] = useState(1),
     [selected, setSelected] = useState<StoreOrder>(),
     [detailError, setDetailError] = useState<unknown>();
   const data = useQuery({
-    queryKey: ["store-orders", page],
+    queryKey: ["store-orders", page,filters],
     queryFn: () =>
-      callOperation("listStoreOrders", { query: { page, size: 20 } }),
+      callOperation("listStoreOrders", { query: { ...filters,page, size: 20 } }),
     enabled: access.can("order.store.read_status_cancel"),
   });
   async function open(id: string) {
@@ -712,6 +714,7 @@ export function StoreOrders() {
     <section>
       <SellerSubNav />
       <h1>Đơn hàng Store</h1>
+      <OrderFilters apply={query=>{setFilters(query);setPage(1)}}/>
       <p className="text-slate-500">
         Chỉ các đơn thuộc gian hàng đang hoạt động của bạn.
       </p>
@@ -736,9 +739,9 @@ export function StoreOrders() {
               <tbody>
                 {data.data.items.map((o) => (
                   <tr key={o.id}>
-                    <td>{o.id}</td>
+                    <td title={o.id}>{orderCode(o.id)}</td>
                     <td>
-                      <span className="market-badge">{o.status}</span>
+                      <span className="market-badge">{orderLabel[o.status]??o.status}</span>
                     </td>
                     <td>
                       {o.payment_method} · {o.payment_status ?? "Chưa xác nhận"}
@@ -798,6 +801,7 @@ function StoreOrderActions({
     [stale, setStale] = useState(false),
     [reason, setReason] = useState(""),
     [cash, setCash] = useState(false);
+  const [carrier,setCarrier]=useState(''),[tracking,setTracking]=useState(''),[dispatchNote,setDispatchNote]=useState(''),[delivered,setDelivered]=useState(false),[deliveryNote,setDeliveryNote]=useState('');
   const next: Record<
     string,
     "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED"
@@ -817,6 +821,8 @@ function StoreOrderActions({
             body: {
               to_status: next[order.status],
               expected_version: order.version,
+              ...(order.status==='PROCESSING'?{shipment:{carrier_name:carrier.trim(),tracking_code:tracking.trim(),dispatch_note:dispatchNote.trim()}}:{}),
+              ...(order.status==='SHIPPED'?{delivery_confirmation:{confirmed:true,note:deliveryNote.trim()}}:{}),
             },
           });
         else if (kind === "cancel")
@@ -833,6 +839,7 @@ function StoreOrderActions({
             },
           });
         setCash(false);
+        setDelivered(false);
         updated(result);
         command.setNotice("Đã cập nhật đơn hàng.");
       } catch (e) {
@@ -845,6 +852,7 @@ function StoreOrderActions({
       updated(await callOperation("getStoreOrder", { path: { id: order.id } }));
       setStale(false);
       setCash(false);
+      setDelivered(false);
     });
   return (
     <div>
@@ -894,6 +902,18 @@ function StoreOrderActions({
       {stale && (
         <p>Đọc lại đơn để xác minh trạng thái trước khi thực hiện tiếp.</p>
       )}
+      {order.status==='PROCESSING'&&<fieldset disabled={command.busy||stale}>
+        <legend>Ghi nhận bàn giao vận chuyển thủ công</legend>
+        <label>Đơn vị giao hàng<input maxLength={120} value={carrier} onChange={e=>setCarrier(e.target.value)} placeholder="Đơn vị giao hoặc tự giao"/></label>
+        <label>Mã vận chuyển / reference<input maxLength={200} value={tracking} onChange={e=>setTracking(e.target.value)}/></label>
+        <label>Ghi chú bàn giao<textarea maxLength={500} value={dispatchNote} onChange={e=>setDispatchNote(e.target.value)}/></label>
+      </fieldset>}
+      {order.status==='SHIPPED'&&<fieldset disabled={command.busy||stale}>
+        <legend>Xác nhận giao hàng thành công</legend>
+        <label>Căn cứ giao nhận<textarea maxLength={500} value={deliveryNote} onChange={e=>setDeliveryNote(e.target.value)} placeholder="Người nhận, phiếu giao hoặc bằng chứng đã kiểm tra"/></label>
+        <label><input type="checkbox" checked={delivered} onChange={e=>setDelivered(e.target.checked)}/> Tôi đã kiểm tra và xác nhận khách đã nhận hàng</label>
+        <p>Đây là xác nhận thủ công của Store; hệ thống chưa kết nối hãng vận chuyển.</p>
+      </fieldset>}
       {next[order.status] &&
         !["REQUESTED", "APPROVED"].includes(
           order.return_case?.status ?? "",
@@ -902,8 +922,9 @@ function StoreOrderActions({
             disabled={
               command.busy ||
               stale ||
+              (order.status==='PROCESSING'&&(!carrier.trim()||!tracking.trim())) ||
               (order.status === "SHIPPED" &&
-                order.payment_status !== "SUCCEEDED")
+                (order.payment_status !== "SUCCEEDED"||!delivered||!deliveryNote.trim()))
             }
             onClick={() => run("next")}
           >

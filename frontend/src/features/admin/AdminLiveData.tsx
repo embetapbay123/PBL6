@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { callOperation } from '../../api/operations';
 import { ErrorView, Loading, Pagination } from '../../bootstrap/components';
+import {OrderFilters,OrderQuery,orderCode} from '../../live/OrderFilters';
+import {orderLabel} from '../../live/OrderFacts';
 
 type AdminOrder = {
   id: string; purchase_group_id: string; store_id: string; status: string; version: number;
@@ -10,18 +12,20 @@ type AdminOrder = {
 const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
 
 export function AdminOrders() {
+  const requestId=useRef(0);
+  const [filters,setFilters]=useState<OrderQuery>({});
   const [items, setItems] = useState<AdminOrder[]>([]); const [total, setTotal] = useState(0); const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true); const [error, setError] = useState<unknown>();
   const load = useCallback(async () => {
-    setLoading(true); setError(undefined);
-    try { const result = await callOperation('listAllOrders', { query: { page, size: 20 } }); setItems(result.items as unknown as AdminOrder[]); setTotal(result.total); }
-    catch (cause) { setError(cause); } finally { setLoading(false); }
-  }, [page]);
+    const current=++requestId.current;setLoading(true); setError(undefined);
+    try { const result = await callOperation('listAllOrders', { query: { ...filters,page, size: 20 } }); if(current===requestId.current){setItems(result.items as unknown as AdminOrder[]); setTotal(result.total);} }
+    catch (cause) { if(current===requestId.current)setError(cause); } finally { if(current===requestId.current)setLoading(false); }
+  }, [page,filters]);
   useEffect(() => { void load(); }, [load]);
-  return <section className="boot-card"><h3>Đơn hàng toàn sàn</h3>{error !== undefined && <ErrorView error={error} />}{loading ? <Loading /> : <>
-    <p role="status">{total.toLocaleString('vi-VN')} đơn hàng · trang {page}. API hiện hỗ trợ phân trang.</p>
+  return <section className="boot-card"><h3>Đơn hàng toàn sàn</h3><OrderFilters apply={query=>{setFilters(query);setPage(1)}}/>{error !== undefined && <ErrorView error={error} />}{loading ? <Loading /> : <>
+    <p role="status">{total.toLocaleString('vi-VN')} đơn khớp bộ lọc · trang {page}.</p>
     <div style={{ overflowX: 'auto' }}><table><thead><tr><th>Order</th><th>Store</th><th>Trạng thái</th><th>Thanh toán</th><th>Hàng hóa</th><th>Giảm giá</th><th>Phí giao</th><th>Phải trả</th></tr></thead><tbody>
-      {items.map(order => <tr key={order.id}><td>{order.id}</td><td>{order.store_id}</td><td>{order.status}</td><td>{order.payment_method} · {order.payment_status ?? '—'}{order.refund_status ? ` · ${order.refund_status}` : ''}</td>
+      {items.map(order => <tr key={order.id}><td title={order.id}>{orderCode(order.id)}</td><td>{order.store_id}</td><td>{orderLabel[order.status]??order.status}</td><td>{order.payment_method} · {order.payment_status ?? '—'}{order.refund_status ? ` · ${order.refund_status}` : ''}</td>
         <td>{money(order.amounts.goods_vnd)}</td><td>{money(order.amounts.store_discount_vnd + order.amounts.platform_discount_vnd)}</td><td>{money(order.amounts.shipping_vnd)}</td><td>{money(order.amounts.payable_vnd)}</td></tr>)}
       {!items.length && <tr><td colSpan={8}>Không có đơn hàng ở trang này.</td></tr>}
     </tbody></table></div><button onClick={() => void load()}>Tải lại</button><Pagination page={page} size={20} total={total} onPage={setPage} />

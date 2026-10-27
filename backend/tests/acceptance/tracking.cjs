@@ -66,11 +66,17 @@ module.exports = async function tracking(t) {
           expected_version: current.version, amount_collected_vnd: Number(current.payable_vnd),
         } });
       }
-      const body = { to_status, expected_version: (await row('M2', 'SELECT version FROM "order" WHERE id=$1', [order.id])).version };
+      const body = { to_status, expected_version: (await row('M2', 'SELECT version FROM "order" WHERE id=$1', [order.id])).version,
+        ...(to_status === 'SHIPPED' ? { shipment: { carrier_name: 'Acceptance Store delivery', tracking_code: 'ACCEPTANCE-' + order.id } } : {}),
+        ...(to_status === 'COMPLETED' ? { delivery_confirmation: { confirmed: true, note: 'Synthetic acceptance recipient receipt verified' } } : {}),
+      };
       if (to_status === 'COMPLETED') purchases.push(await ingest('M2', 'OrderCompleted', () =>
         request('transitionStoreOrder', { token: owner, id: order.id, body })));
       else await request('transitionStoreOrder', { token: owner, id: order.id, body });
     }
+    const shipment = await row('M2', 'SELECT status,source,tracking_code,dispatched_by,delivered_by,delivery_note FROM shipment WHERE order_id=$1', [order.id]);
+    check('Real completion retains manual Shipment and explicit delivery evidence', shipment.status === 'DELIVERED' && shipment.source === 'MANUAL' &&
+      shipment.tracking_code === 'ACCEPTANCE-' + order.id && !!shipment.dispatched_by && shipment.delivered_by === shipment.dispatched_by && !!shipment.delivery_note);
   }
   const bought = await query('M4', "SELECT event_id,product_id,weight FROM recommendation_interaction WHERE user_id=$1 AND event_type='PURCHASE'", [user]);
   check('Actual online/COD completion produces one PURCHASE per Order item', bought.length === 2 && bought.every(b => b.weight === 5) &&

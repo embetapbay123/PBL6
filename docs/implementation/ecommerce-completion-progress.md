@@ -1,5 +1,15 @@
 # Hoàn thiện TMĐT — nhật ký kiểm chứng
 
+## Lát cắt Order/Shipment — 27/10
+
+Contract **2.4.1**, vẫn **111 public + 11 internal** operation. Đã bổ sung [bộ lọc đơn và giao nhận thủ công](order-fulfillment.md): Customer/Store/Admin lọc trên server, giữ bộ lọc qua phân trang; Shipment có actor/thời gian/reference; hoàn tất cần cả thu đủ tiền và xác nhận giao nhận. Response transition đọc lại trong transaction; giao thất bại và nhận lại hàng cập nhật Shipment qua Return hiện có. Admin bỏ qua response cũ khi đã đổi bộ lọc.
+
+Local: **267 unit tests / 32 suites**, **16 PostgreSQL controls** gồm fulfillment mới và regression kho/Return hiện có, **21 browser controls** với API intercept, backend/frontend build và contract/docs/drift đã đạt. CI/domain sẽ ghi tại PR; không coi local source là đã deploy. Giữ task nghiệp vụ và owner; chưa kết luận toàn D5, Cart hay Return từng dòng đã hoàn thành.
+
+Theo yêu cầu chủ dự án, tạm dừng bước test SePay trên Dashboard. Token/account lookup local đã có; Refund runtime vẫn `disabled`, chưa có bằng chứng hoàn tiền Sandbox trọn luồng. Adapter đang ở nhánh riêng, không gộp vào bản Order/Shipment này. SMTP TLS/AUTH đạt nhưng chưa tự chứng minh đã nhận mail đăng ký/reset.
+
+## Mốc Product/Review trước đó
+
 Candidate đầu tiên tích hợp source PR #129–133 và bổ sung Product/Review. Các PR thành viên được giữ lịch sử tác giả trong nhánh tích hợp; owner và nghiệm thu issue không đổi. Bản này chưa tự chứng minh các gói Order/Shipment/partial return/Notification/report đã hoàn thành.
 
 | Phần | Source / bằng chứng hiện có | Còn phải làm |
