@@ -9427,7 +9427,7 @@
         "x-service-owner": "M1",
         "x-module": "review",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/reviews/{id}/restore": {
@@ -9563,7 +9563,7 @@
         "x-service-owner": "M1",
         "x-module": "review",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/users": {
@@ -12735,7 +12735,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/products/{id}/restore": {
@@ -12871,7 +12871,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/ai/metrics": {

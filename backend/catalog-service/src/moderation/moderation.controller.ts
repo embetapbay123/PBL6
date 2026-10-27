@@ -2,14 +2,15 @@ import { Body, Controller, Param, Patch, Post, Req, UseGuards } from '@nestjs/co
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import {
   CreateAttributeDefinitionBodyDto, CreateCategoryBodyDto, CreateProductTypeBodyDto,
-  HideProductBodyDto, HideProductPathDto, RestoreProductBodyDto, RestoreProductPathDto,
+  HideProductBodyDto, HideProductPathDto, HideReviewBodyDto, HideReviewPathDto,
+  RestoreProductBodyDto, RestoreProductPathDto, RestoreReviewBodyDto, RestoreReviewPathDto,
   UpdateAttributeDefinitionBodyDto, UpdateAttributeDefinitionPathDto, UpdateCategoryBodyDto,
   UpdateCategoryPathDto, UpdateProductTypeBodyDto, UpdateProductTypePathDto,
 } from '../../../shared/src/dtos.generated';
 import { ModerationService } from './moderation.service';
 
 /**
- * Admin taxonomy and Product moderation.
+ * Admin taxonomy and moderation.
  *
  * Every route is ADMIN-only and scoped to M1's own tables; the service keeps one transaction per
  * mutation so the row and its audit entry always agree.
@@ -33,4 +34,8 @@ export class ModerationController {
   hideProduct(@Param() p: HideProductPathDto, @Body() b: HideProductBodyDto, @Req() r: any) { return this.service.hideProduct(p.id, b, r.auth.user_id, r.correlationId ?? ''); }
   @Post('admin/products/:id/restore') @Roles('ADMIN')
   restoreProduct(@Param() p: RestoreProductPathDto, @Body() b: RestoreProductBodyDto, @Req() r: any) { return this.service.restoreProduct(p.id, b, r.auth.user_id, r.correlationId ?? ''); }
+  @Post('admin/reviews/:id/hide') @Roles('ADMIN')
+  hideReview(@Param() p: HideReviewPathDto, @Body() b: HideReviewBodyDto, @Req() r: any) { return this.service.hideReview(p.id, b, r.auth.user_id, r.correlationId ?? ''); }
+  @Post('admin/reviews/:id/restore') @Roles('ADMIN')
+  restoreReview(@Param() p: RestoreReviewPathDto, @Body() b: RestoreReviewBodyDto, @Req() r: any) { return this.service.restoreReview(p.id, b, r.auth.user_id, r.correlationId ?? ''); }
 }
