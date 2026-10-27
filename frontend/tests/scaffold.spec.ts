@@ -17,7 +17,7 @@ test('web login/profile survives reload and logout clears the session',async({pa
  await page.getByTestId('account-link').click();await page.getByRole('button',{name:'Đăng xuất'}).click();
  await expect(page.getByRole('heading',{name:'Đăng nhập',exact:true})).toBeVisible();
  await expect(page.getByLabel('Mật khẩu',{exact:true})).toBeVisible();
- await page.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect(page.getByText('Đăng nhập để xem hồ sơ.')).toBeVisible();
+ await page.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect(page.getByText('Bạn chưa đăng nhập. Vui lòng đăng nhập để xem thông tin và lịch sử tài khoản.')).toBeVisible();
 });
 test('legacy mock UI remains accessible',async({page})=>{
  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
@@ -49,7 +49,8 @@ test('Owner edit sample writes through the real API and keeps optimistic version
  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('owner@pbl6.test');await page.getByLabel('Mật khẩu',{exact:true}).fill(process.env.SEED_PASSWORD!);
  await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập'})).toBeVisible();
  await page.getByRole('link',{name:'Sản phẩm',exact:true}).click();await page.getByRole('link',{name:'Sửa sản phẩm',exact:true}).first().click();
- await expect(page.getByRole('heading',{name:'Sửa sản phẩm',exact:true})).toBeVisible();const input=page.getByLabel('Tên sản phẩm');const original=await input.inputValue();
+ const productId=page.url().split('/').at(-2)!;
+ await expect(page.getByRole('heading',{name:'Sửa sản phẩm #'+productId,exact:true})).toBeVisible();const input=page.getByLabel('Tên sản phẩm');const original=await input.inputValue();
  try{
   await input.fill(original+' · mẫu');await page.getByRole('button',{name:'Lưu thay đổi'}).click();await expect(page.getByRole('status')).toHaveText('Đã lưu sản phẩm.');
   await page.reload();await expect(input).toHaveValue(original+' · mẫu');

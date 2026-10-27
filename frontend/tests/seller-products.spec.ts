@@ -50,7 +50,7 @@ test('seller list offers the editor only for publicly readable Products',async({
   // The enabled action really reaches the editor through the real API, so the difference above is
   // about visibility, not about a dead end for every row.
   await publicRow.getByRole('link',{name:'Sửa sản phẩm',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Sửa sản phẩm',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Sửa sản phẩm #'+PUBLIC_PRODUCT,exact:true})).toBeVisible();
   expect(await page.getByLabel('Tên sản phẩm').inputValue()).toContain('Sản phẩm');
   expect(errors).toEqual([]);
 });
