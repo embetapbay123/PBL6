@@ -179,12 +179,19 @@ function StoreSettingsForm({
 export function StoreInventory() {
   const access = useStoreAccess(),
     [page, setPage] = useState(1),
+    [movementsPage, setMovementsPage] = useState(1),
     [selected, setSelected] =
       useState<OperationOutputs["listStoreInventory"]["items"][number]>();
   const inventory = useQuery({
     queryKey: ["store-inventory", page],
     queryFn: () =>
       callOperation("listStoreInventory", { query: { page, size: 20 } }),
+    enabled: access.can("inventory.store.read_adjust"),
+  });
+  const movements = useQuery({
+    queryKey: ["store-stock-movements", movementsPage],
+    queryFn: () =>
+      callOperation("listStockMovements", { query: { page: movementsPage, size: 10 } }),
     enabled: access.can("inventory.store.read_adjust"),
   });
   const products = useQuery({
@@ -266,6 +273,47 @@ export function StoreInventory() {
             total={inventory.data.total}
             onPage={setPage}
           />
+          <div className="boot-card mt-8">
+            <h2>Lịch sử biến động kho</h2>
+            <p className="text-slate-500">Nhật ký các lần nhập, xuất và điều chỉnh kho.</p>
+            {movements.isPending && <Loading />}
+            {movements.error && <ErrorView error={movements.error} />}
+            {movements.data && (
+              <>
+                <div className="market-table-scroll mt-4">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Thời gian</th>
+                        <th>Phân loại / SKU</th>
+                        <th>Biến động</th>
+                        <th>Lý do</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {movements.data.items.map((m) => (
+                        <tr key={m.id}>
+                          <td>{m.occurred_at ? new Date(m.occurred_at).toLocaleString("vi-VN") : "—"}</td>
+                          <td>{variantName(m.variant_id)}</td>
+                          <td style={{ color: m.delta_quantity > 0 ? "green" : "crimson", fontWeight: 600 }}>
+                            {m.delta_quantity > 0 ? `+${m.delta_quantity}` : m.delta_quantity}
+                          </td>
+                          <td>{m.reason ?? "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {!movements.data.items.length && <p>Chưa có biến động kho nào được ghi nhận.</p>}
+                </div>
+                <Pagination
+                  page={movementsPage}
+                  size={movements.data.size}
+                  total={movements.data.total}
+                  onPage={setMovementsPage}
+                />
+              </>
+            )}
+          </div>
         </>
       )}
       {selected && (

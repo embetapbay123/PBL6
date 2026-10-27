@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { request } from '../../api/client';
+import { callOperation } from '../../api/operations';
 import { ErrorView, Loading } from '../../bootstrap/components';
 
 const sellerPermissions = [
@@ -25,10 +25,10 @@ export function StaffPage() {
     setLoading(true); setError(undefined);
     try {
       const [staffPage, invitationPage] = await Promise.all([
-        request<{ items: Staff[] }>('/store/staff?page=1&size=100'),
-        request<{ items: Invitation[] }>('/store/staff/invitations?page=1&size=100'),
+        callOperation('listStoreStaff', { query: { page: 1, size: 100 } }),
+        callOperation('listStaffInvitations', { query: { page: 1, size: 100 } }),
       ]);
-      setStaff(staffPage.items); setInvitations(invitationPage.items);
+      setStaff(staffPage.items as unknown as Staff[]); setInvitations(invitationPage.items as unknown as Invitation[]);
     } catch (cause) { setError(cause); }
     finally { setLoading(false); }
   }, []);
@@ -37,7 +37,12 @@ export function StaffPage() {
   const invite = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError(undefined); setNotice('');
     try {
-      await request('/store/staff/invitations', { method: 'POST', body: JSON.stringify({ invited_email: email, permissions: invitePermissions }) });
+      await callOperation('inviteStaff', {
+        body: {
+          invited_email: email,
+          permissions: invitePermissions as ("product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect")[],
+        },
+      });
       setEmail(''); setInvitePermissions([]); setNotice('Đã tạo lời mời. Người nhận có thể xem trong mục lời mời của tài khoản.'); await load();
     } catch (cause) { setError(cause); await load(); setError(cause); }
     finally { setBusy(false); }
@@ -46,14 +51,21 @@ export function StaffPage() {
   const update = async (member: Staff, changes: { status?: string; permissions?: string[] }) => {
     setBusy(true); setError(undefined);
     try {
-      await request(`/store/staff/${member.id}`, { method: 'PATCH', body: JSON.stringify({ ...changes, expected_version: member.version }) });
+      await callOperation('updateStaff', {
+        path: { id: member.id },
+        body: {
+          expected_version: member.version,
+          status: changes.status as "ACTIVE" | "LOCKED" | undefined,
+          permissions: changes.permissions,
+        },
+      });
       await load();
     } catch (cause) { setError(cause); }
     finally { setBusy(false); }
   };
   const revoke = async (invitation: Invitation) => {
     setBusy(true); setError(undefined);
-    try { await request(`/store/staff/invitations/${invitation.id}/revoke`, { method: 'POST' }); await load(); }
+    try { await callOperation('revokeStaffInvitation', { path: { id: invitation.id } }); await load(); }
     catch (cause) { setError(cause); }
     finally { setBusy(false); }
   };

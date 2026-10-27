@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ApiError, request } from "../../api/client";
+import { callOperation } from "../../api/operations";
 import { useAuth } from "../../api/auth-context";
 import type {
   OperationInputs,
@@ -324,9 +325,8 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
     setQuote(null);
     setQuoteError(null);
     setQuoting(true);
-    request<Quote>("/checkout/quotes", {
-      method: "POST",
-      body: inputFingerprint,
+    callOperation("quoteCheckout", {
+      body: JSON.parse(inputFingerprint),
     })
       .then((result) => {
         if (!cancelled) {
@@ -390,14 +390,10 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
     setConflictNotice(null);
     setStaleTotal(null);
     try {
-      const result = await request<OperationOutputs["confirmCheckout"]>(
-        "/orders/batches",
-        {
-          method: "POST",
-          headers: { "Idempotency-Key": current.key },
-          body: JSON.stringify(current.payload),
-        },
-      );
+      const result = await callOperation("confirmCheckout", {
+        headers: { "idempotency-key": current.key },
+        body: current.payload,
+      });
       setCreatedOrders(result.orders ?? []);
       clearAttempt(userId);
       const selKey = getSelectionKey(userId);
@@ -657,21 +653,37 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                 </>
               ) : (
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const store_vouchers = Object.fromEntries(
                       storeGroups
                         .map(([id]) => [id, (voucherDraft[id] ?? "").trim()])
                         .filter(([, code]) => code),
                     );
-                    setVouchers({
+                    const voucherPayload = {
                       ...(platformDraft.trim()
                         ? { platform_voucher_code: platformDraft.trim() }
                         : {}),
                       ...(Object.keys(store_vouchers).length
                         ? { store_vouchers }
                         : {}),
-                    });
+                    };
+                    if (voucherPayload.platform_voucher_code || voucherPayload.store_vouchers) {
+                      try {
+                        await callOperation("validateVouchers", {
+                          body: {
+                            cart_item_ids: items.map((it) => it.id),
+                            address_id: addressId,
+                            payment_methods: paymentMethods,
+                            ...voucherPayload,
+                          },
+                        });
+                      } catch (err) {
+                        setQuoteError(describe(err));
+                        return;
+                      }
+                    }
+                    setVouchers(voucherPayload);
                     setQuoteTick((n) => n + 1);
                   }}
                 >

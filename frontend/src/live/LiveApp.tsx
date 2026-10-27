@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState, useRef } from "react";
 import {
   BrowserRouter,
   Link,
@@ -141,6 +141,7 @@ function Market() {
     owner = membership?.role === "OWNER";
   const [mobile, setMobile] = useState(false),
     [search, setSearch] = useState("");
+  const isComposingRef = useRef(false);
   const portal = location.pathname.startsWith("/seller")
     ? "seller"
     : location.pathname.startsWith("/admin")
@@ -196,14 +197,35 @@ function Market() {
               onSubmit={submitSearch}
               className="hidden md:flex flex-1 max-w-lg relative"
             >
-              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 aria-label="Tìm kiếm toàn sàn"
-                className="w-full rounded-full bg-slate-100 border border-transparent pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-emerald-400"
+                className="w-full rounded-full bg-slate-100 border border-transparent pl-10 pr-9 py-2 text-sm focus:outline-none focus:border-emerald-400"
                 placeholder="Bạn đang tìm sản phẩm gì?"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
+                }}
+                onCompositionEnd={() => {
+                  isComposingRef.current = false;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isComposingRef.current) {
+                    submitSearch(e);
+                  }
+                }}
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded-full"
+                  title="Xóa tìm kiếm"
+                >
+                  <X size={15} />
+                </button>
+              )}
             </form>
           )}
           <div className="flex items-center gap-2">

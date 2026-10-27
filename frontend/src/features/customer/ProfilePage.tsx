@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { request, ApiError } from '../../api/client';
+import { ApiError } from '../../api/client';
+import { callOperation } from '../../api/operations';
 
 interface Profile {
   id: string;
@@ -48,13 +49,18 @@ export const ProfilePage: React.FC = () => {
   }, []);
 
   const fetchProfile = useCallback(async (): Promise<Profile> => {
-    const profile = await request<Profile>(PROFILE_PATH);
+    const profile = await callOperation('getProfile', {});
     if (mounted.current) {
       setEmail(profile.email);
       setDisplayName(profile.display_name ?? '');
       setPhone(profile.phone ?? '');
     }
-    return profile;
+    return {
+      id: profile.user_id,
+      email: profile.email,
+      display_name: profile.display_name ?? '',
+      phone: profile.phone ?? null,
+    };
   }, []);
 
   const load = useCallback(async () => {
@@ -90,10 +96,8 @@ export const ProfilePage: React.FC = () => {
     payload.phone = phone.trim(); // send string, never null
 
     try {
-      await request<Profile>(PROFILE_PATH, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      await callOperation('updateProfile', {
+        body: payload,
       });
     } catch (error) {
       if (mounted.current) setSaveError(describeError(error));

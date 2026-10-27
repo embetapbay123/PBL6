@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { request } from '../../api/client';
+import { callOperation } from '../../api/operations';
 import { ErrorView, Loading, Pagination } from '../../bootstrap/components';
 
 type AdminOrder = {
@@ -14,7 +14,7 @@ export function AdminOrders() {
   const [loading, setLoading] = useState(true); const [error, setError] = useState<unknown>();
   const load = useCallback(async () => {
     setLoading(true); setError(undefined);
-    try { const result = await request<{ items: AdminOrder[]; total: number }>('/admin/orders?page=' + page + '&size=20'); setItems(result.items); setTotal(result.total); }
+    try { const result = await callOperation('listAllOrders', { query: { page, size: 20 } }); setItems(result.items as unknown as AdminOrder[]); setTotal(result.total); }
     catch (cause) { setError(cause); } finally { setLoading(false); }
   }, [page]);
   useEffect(() => { void load(); }, [load]);
@@ -30,7 +30,7 @@ export function AdminOrders() {
 
 export function AdminDashboardSummary() {
   const [data, setData] = useState<Record<string, number | null>>(); const [error, setError] = useState<unknown>(); const [loading, setLoading] = useState(true);
-  const load = useCallback(async () => { setLoading(true); setError(undefined); try { setData(await request<Record<string, number | null>>('/admin/dashboard')); } catch (cause) { setError(cause); } finally { setLoading(false); } }, []);
+  const load = useCallback(async () => { setLoading(true); setError(undefined); try { setData(await callOperation('getPlatformDashboard', {}) as Record<string, number | null>); } catch (cause) { setError(cause); } finally { setLoading(false); } }, []);
   useEffect(() => { void load(); }, [load]);
   return <section className="boot-card"><h3>Tổng quan nền tảng</h3>{error !== undefined && <ErrorView error={error} />}{loading ? <Loading /> : data && <>
     <dl>{Object.entries(data).map(([key, value]) => <div key={key} style={{ display: 'flex', gap: '1rem' }}><dt>{key}</dt><dd>{value == null ? 'Chưa có dữ liệu' : key.endsWith('_vnd') ? money(value) : value.toLocaleString('vi-VN')}</dd></div>)}</dl>
@@ -53,7 +53,7 @@ const metricValue = (value: unknown) => {
 
 export function AdminAiMetrics() {
   const [data, setData] = useState<MetricsResponse>(); const [error, setError] = useState<unknown>(); const [loading, setLoading] = useState(true);
-  const load = useCallback(async () => { setLoading(true); setError(undefined); try { setData(await request<MetricsResponse>('/ai/metrics')); } catch (cause) { setError(cause); } finally { setLoading(false); } }, []);
+  const load = useCallback(async () => { setLoading(true); setError(undefined); try { setData(await callOperation('getAiMetrics', {}) as MetricsResponse); } catch (cause) { setError(cause); } finally { setLoading(false); } }, []);
   useEffect(() => { void load(); }, [load]);
   const metrics = data?.metrics ?? undefined;
   return <section className="boot-card"><h3>AI và trạng thái vận hành</h3>{error !== undefined && <ErrorView error={error} />}{loading ? <Loading /> : data && <>

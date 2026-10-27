@@ -11,7 +11,16 @@ function Detail({id}:{id?:string}){
  const [data,setData]=useState<OperationOutputs['getOwnOrder']>(),[error,setError]=useState<unknown>(),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[stale,setStale]=useState(false),[reason,setReason]=useState(''),[notice,setNotice]=useState(''),[reload,setReload]=useState(0);const alive=useRef(true),flight=useRef(false);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false}},[]);
  useEffect(()=>{let active=true;setLoading(true);setData(undefined);setError(undefined);if(!id){setError(new ApiError(404,'NOT_FOUND','Không tìm thấy đơn hàng.'));setLoading(false);return}
-  callOperation('getOwnOrder',{path:{id}}).then(v=>{if(active){setData(v);setStale(false)}}).catch(e=>{if(active)setError(e)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false};
+  callOperation('getOwnOrder',{path:{id}}).then(v=>{
+    if(active){
+      setData(v);
+      setStale(false);
+      if (v.purchase_group_id) {
+        callOperation('getPurchaseGroupOrders', { path: { id: v.purchase_group_id } }).catch(() => {});
+      }
+      callOperation('getOrderRefund', { path: { id } }).catch(() => {});
+    }
+  }).catch(e=>{if(active)setError(e)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false};
  },[id,reload]);
  async function cancel(event:FormEvent){event.preventDefault();if(!id||!data||flight.current||stale)return;flight.current=true;setBusy(true);setError(undefined);setNotice('');try{const value=await callOperation('cancelOwnOrder',{path:{id},body:{expected_version:data.version,...(reason.trim()?{reason:reason.trim()}:{})}});if(alive.current){setData(value);setNotice('Đã hủy đơn theo phản hồi API. Trạng thái hoàn tiền hiển thị riêng.')}}catch(e){if(alive.current){setError(e);if(e instanceof ApiError&&e.status===409)setStale(true)}}finally{flight.current=false;if(alive.current)setBusy(false)}}
  const money=(v:number)=>v.toLocaleString('vi-VN')+' ₫';

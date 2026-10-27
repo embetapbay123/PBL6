@@ -214,11 +214,56 @@ export function ProductDetail() {
       {/* 2. Hiển thị phần đánh giá sản phẩm (Product Reviews) */}
       {product?.id && <ProductReviews productId={product.id} />}
       {product?.id && <CustomerRecommendations productId={product.id} />}
+      {product?.store_id && product?.id && (
+        <StoreProductsSection storeId={product.store_id} currentProductId={product.id} />
+      )}
 
       <div className="mt-4 space-x-4">
         <Link to="/cart">Giỏ hàng</Link>
         <Link to="/">Quay lại danh sách sản phẩm</Link>
       </div>
     </section>
+  );
+}
+
+function StoreProductsSection({ storeId, currentProductId }: { storeId: string; currentProductId: string }) {
+  const [items, setItems] = useState<OperationOutputs["listStoreProducts"]["items"]>([]);
+  useEffect(() => {
+    let active = true;
+    callOperation("listStoreProducts", { path: { id: storeId }, query: { page: 1, size: 6 } })
+      .then((res) => {
+        if (active) setItems((res.items ?? []).filter((p) => p.id !== currentProductId));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [storeId, currentProductId]);
+
+  if (!items.length) return null;
+
+  return (
+    <div className="mt-8 border-t border-slate-100 pt-6">
+      <h3 className="text-lg font-bold mb-4">Sản phẩm khác cùng gian hàng</h3>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {items.slice(0, 4).map((p) => (
+          <Link key={p.id} to={`/products/${p.id}`} className="boot-card block hover:shadow-md transition">
+            {p.images?.[0]?.image_url ? (
+              <img src={p.images[0].image_url} alt={p.title} className="w-full aspect-square object-cover rounded mb-2" />
+            ) : (
+              <div className="w-full aspect-square bg-slate-100 flex items-center justify-center rounded mb-2 text-slate-400">
+                <ImageOff size={24} />
+              </div>
+            )}
+            <h4 className="font-medium text-sm line-clamp-2">{p.title}</h4>
+            {p.variants?.[0]?.price_vnd && (
+              <p className="text-emerald-600 font-bold text-sm mt-1">
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.variants[0].price_vnd)}
+              </p>
+            )}
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }
