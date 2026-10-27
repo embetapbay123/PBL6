@@ -48,6 +48,7 @@ beforeAll(async () => {
      VALUES($1,$2,$3,'Product REV-01','x','{}','ACTIVE','VISIBLE',0)`, [productId, STORE, PRODUCT_TYPE]);
 });
 beforeEach(async () => {
+  await database.query('DELETE FROM review_audit WHERE review_id IN (SELECT id FROM review WHERE product_id=$1)',[productId]);
   await database.query('DELETE FROM review WHERE product_id=$1', [productId]);
   visibleA = randomUUID(); visibleB = randomUUID(); hidden = randomUUID(); otherOwned = randomUUID();
   await seedReview(visibleA, OWNER, 5, 'VISIBLE', 'Rất tốt', '2026-10-01T00:00:00Z');
@@ -56,6 +57,7 @@ beforeEach(async () => {
   await seedReview(otherOwned, OTHER, 3, 'VISIBLE', 'Của người khác', '2026-10-04T00:00:00Z');
 });
 afterAll(async () => {
+  await database.query('DELETE FROM review_audit WHERE review_id IN (SELECT id FROM review WHERE product_id=$1)',[productId]);
   await database.query('DELETE FROM review WHERE product_id=$1', [productId]);
   await database.query('DELETE FROM product WHERE id=$1', [productId]);
   for (const id of correlations) await database.query('DELETE FROM m1_audit WHERE request_id=$1', [id]);
