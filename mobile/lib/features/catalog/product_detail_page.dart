@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
+import 'shop_page.dart';
 
 class ProductDetailPage extends ConsumerStatefulWidget {
   const ProductDetailPage({
@@ -168,7 +169,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         product['description']?.toString() ?? 'Chưa có mô tả chi tiết.';
     final attributes = (product['attributes'] as Map?) ?? {};
     final variants = (product['variants'] as List?) ?? [];
-    final storeName = product['store_name']?.toString() ?? 'TechZone Official';
+    final storeId = product['store_id']?.toString() ?? 'd3e00000-0000-4000-8000-000000000201';
+    final storeName = attributes['brand']?.toString() ?? product['store_name']?.toString() ?? 'TechZone Official';
 
     Map<String, dynamic>? activeVariant;
     if (variants.isNotEmpty && _selectedVariantIndex < variants.length) {
@@ -377,7 +379,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             const SizedBox(height: 14),
 
             // 7. Store Profile Card (Image 2)
-            _buildStoreProfileCard(storeName),
+            _buildStoreProfileCard(storeName, storeId),
 
             const SizedBox(height: 14),
 
@@ -792,7 +794,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   }
 
   /// 7. Store Profile Card matching Image 2
-  Widget _buildStoreProfileCard(String storeName) {
+  Widget _buildStoreProfileCard(String storeName, String storeId) {
     return Container(
       decoration: AppDecorations.card(radius: 14),
       padding: const EdgeInsets.all(12),
@@ -863,10 +865,13 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             children: [
               OutlinedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đang chuyển đến gian hàng "$storeName"...'),
-                      duration: const Duration(seconds: 1),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShopPage(
+                        shopId: storeId,
+                        shopName: storeName,
+                      ),
                     ),
                   );
                 },

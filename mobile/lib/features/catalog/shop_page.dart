@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
 import '../shared/app_bottom_nav.dart';
 import 'product_detail_page.dart';
 
-class ShopPage extends StatefulWidget {
+class ShopPage extends ConsumerStatefulWidget {
   const ShopPage({
     super.key,
-    this.shopId = 'store-tech',
+    this.shopId = 'd3e00000-0000-4000-8000-000000000201',
     this.shopName = 'TechZone Official',
   });
 
@@ -15,13 +17,15 @@ class ShopPage extends StatefulWidget {
   final String shopName;
 
   @override
-  State<ShopPage> createState() => _ShopPageState();
+  ConsumerState<ShopPage> createState() => _ShopPageState();
 }
 
-class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin {
+class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isFollowing = false;
   final Set<String> _savedVouchers = {};
+  List<Map<String, dynamic>> _storeProducts = [];
+  bool _isLoadingProducts = true;
 
   final List<Map<String, dynamic>> _featuredProducts = [
     {
@@ -74,6 +78,26 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadStoreProducts();
+  }
+
+  Future<void> _loadStoreProducts() async {
+    setState(() => _isLoadingProducts = true);
+    try {
+      final client = ref.read(apiProvider);
+      final res = await client.getStoreProducts(widget.shopId);
+      final items = res['items'] as List?;
+      if (items != null && items.isNotEmpty) {
+        if (!mounted) return;
+        setState(() {
+          _storeProducts = items.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          _isLoadingProducts = false;
+        });
+        return;
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _isLoadingProducts = false);
   }
 
   @override
@@ -498,21 +522,35 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
             // Products Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _featuredProducts.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.65,
-                ),
-                itemBuilder: (context, index) {
-                  final item = _featuredProducts[index];
-                  return _buildProductCard(item);
-                },
-              ),
+              child: _isLoadingProducts
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    )
+                  : Builder(
+                      builder: (context) {
+                        final displayList = _storeProducts.isNotEmpty
+                            ? _storeProducts
+                            : _featuredProducts;
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: displayList.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.65,
+                          ),
+                          itemBuilder: (context, index) {
+                            final item = displayList[index];
+                            return _buildProductCard(item);
+                          },
+                        );
+                      },
+                    ),
             ),
 
             const SizedBox(height: 24),
@@ -631,20 +669,48 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
   }
 
   Widget _buildProductCard(Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? 'prod-01';
+    final title = item['title']?.toString() ?? '';
+
+    // Price extraction
+    int priceInt = 100000;
+    if (item['price_vnd'] != null) {
+      priceInt = int.tryParse(item['price_vnd'].toString()) ?? 100000;
+    } else if (item['variants'] is List && (item['variants'] as List).isNotEmpty) {
+      final firstVariant = (item['variants'] as List).first;
+      if (firstVariant is Map && firstVariant['price_vnd'] != null) {
+        priceInt = int.tryParse(firstVariant['price_vnd'].toString()) ?? 100000;
+      }
+    }
+    final originalPriceInt = item['original_price_vnd'] != null
+        ? int.tryParse(item['original_price_vnd'].toString())
+        : (priceInt * 1.25).round();
+
+    // Image extraction
+    String? imageUrl;
+    final images = item['images'] as List?;
+    if (images != null && images.isNotEmpty) {
+      final firstImg = images.first;
+      if (firstImg is Map && firstImg['image_url'] != null) {
+        imageUrl = firstImg['image_url'].toString();
+      } else if (firstImg is String) {
+        imageUrl = firstImg;
+      }
+    } else if (item['image_url'] != null) {
+      imageUrl = item['image_url'].toString();
+    }
+
+    final rating = item['rating']?.toString() ?? '4.8';
+    final sold = item['sold']?.toString() ?? '100+';
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => ProductDetailPage(
-              productId: item['id'] ?? 'prod-01',
-              initialProduct: {
-                'id': item['id'],
-                'title': item['title'],
-                'variants': [
-                  {'id': 'v-01', 'sku': 'SKU-01', 'price_vnd': item['price_vnd'].toString()},
-                ],
-              },
+              productId: id,
+              initialProduct: item,
             ),
           ),
         );
@@ -668,18 +734,31 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
             // Image area + discount badge + favorite
             Stack(
               children: [
-                Container(
-                  height: 130,
-                  decoration: BoxDecoration(
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  child: Container(
+                    height: 130,
+                    width: double.infinity,
                     color: Colors.grey.shade50,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      item['icon'] as IconData? ?? Icons.shopping_bag_outlined,
-                      size: 54,
-                      color: item['color'] as Color? ?? AppColors.primary,
-                    ),
+                    child: imageUrl != null && imageUrl.startsWith('http')
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => Center(
+                              child: Icon(
+                                item['icon'] as IconData? ?? Icons.shopping_bag_outlined,
+                                size: 54,
+                                color: item['color'] as Color? ?? AppColors.primary,
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(
+                              item['icon'] as IconData? ?? Icons.shopping_bag_outlined,
+                              size: 54,
+                              color: item['color'] as Color? ?? AppColors.primary,
+                            ),
+                          ),
                   ),
                 ),
                 Positioned(
@@ -692,7 +771,7 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      item['discount'] ?? '-20%',
+                      item['discount']?.toString() ?? '-20%',
                       style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -717,7 +796,7 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item['title'] ?? '',
+                    title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, height: 1.3),
@@ -726,7 +805,7 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
                   Row(
                     children: [
                       Text(
-                        _formatPrice(item['price_vnd'] as int? ?? 500000),
+                        _formatPrice(priceInt),
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
@@ -735,9 +814,9 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
                       ),
                     ],
                   ),
-                  if (item['original_price_vnd'] != null)
+                  if (originalPriceInt != null && originalPriceInt > priceInt)
                     Text(
-                      _formatPrice(item['original_price_vnd'] as int),
+                      _formatPrice(originalPriceInt),
                       style: const TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 10,
@@ -749,7 +828,7 @@ class _ShopPageState extends State<ShopPage> with SingleTickerProviderStateMixin
                     children: [
                       const Icon(Icons.star, color: AppColors.star, size: 12),
                       Text(
-                        ' ${item['rating']} | Đã bán ${item['sold']}',
+                        ' $rating | Đã bán $sold',
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
                       ),
                     ],

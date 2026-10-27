@@ -88,10 +88,11 @@ class ApiClient {
     }
   }
 
-  Options _authOptions() {
+  Options _authOptions({Map<String, String>? headers}) {
     return Options(
       headers: {
         if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+        ...?headers,
       },
     );
   }
@@ -123,13 +124,14 @@ class ApiClient {
   Future<dynamic> get(
     String path, {
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     bool retry = true,
   }) {
     return _requestWithRetry(
       () => dio.get<dynamic>(
         path,
         queryParameters: query,
-        options: _authOptions(),
+        options: _authOptions(headers: headers),
       ),
       retry: retry,
     );
@@ -139,6 +141,7 @@ class ApiClient {
     String path, {
     dynamic data,
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     bool retry = true,
   }) {
     return _requestWithRetry(
@@ -146,7 +149,7 @@ class ApiClient {
         path,
         data: data,
         queryParameters: query,
-        options: _authOptions(),
+        options: _authOptions(headers: headers),
       ),
       retry: retry,
     );
@@ -156,6 +159,7 @@ class ApiClient {
     String path, {
     dynamic data,
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     bool retry = true,
   }) {
     return _requestWithRetry(
@@ -163,7 +167,7 @@ class ApiClient {
         path,
         data: data,
         queryParameters: query,
-        options: _authOptions(),
+        options: _authOptions(headers: headers),
       ),
       retry: retry,
     );
@@ -173,6 +177,7 @@ class ApiClient {
     String path, {
     dynamic data,
     Map<String, dynamic>? query,
+    Map<String, String>? headers,
     bool retry = true,
   }) {
     return _requestWithRetry(
@@ -180,7 +185,7 @@ class ApiClient {
         path,
         data: data,
         queryParameters: query,
-        options: _authOptions(),
+        options: _authOptions(headers: headers),
       ),
       retry: retry,
     );
@@ -427,6 +432,46 @@ class ApiClient {
     final res = await patch(
       '/me/personalization-consent',
       data: {'status': status, 'expected_version': expectedVersion},
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // --- AI Chat Sessions (M4) ---
+  Future<Map<String, dynamic>> createChatSession({String? firstMessage}) async {
+    final payload = <String, dynamic>{};
+    if (firstMessage != null && firstMessage.trim().isNotEmpty) {
+      payload['first_message'] = firstMessage.trim();
+    }
+    final res = await post('/chat/sessions', data: payload);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> sendChatMessage(
+    String sessionId,
+    String content, {
+    String? chatKey,
+  }) async {
+    final headers = <String, String>{};
+    if (chatKey != null && chatKey.isNotEmpty) {
+      headers['x-chat-key'] = chatKey;
+    }
+    final res = await post(
+      '/chat/sessions/$sessionId/messages',
+      data: {'content': content},
+      headers: headers.isNotEmpty ? headers : null,
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // --- Store Products (M1) ---
+  Future<Map<String, dynamic>> getStoreProducts(
+    String storeId, {
+    int page = 1,
+    int size = 20,
+  }) async {
+    final res = await get(
+      '/stores/$storeId/products',
+      query: {'page': page, 'size': size},
     );
     return Map<String, dynamic>.from(res as Map);
   }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../main.dart';
+import '../catalog/product_detail_page.dart';
 
-class ChatAiModal extends StatefulWidget {
+class ChatAiModal extends ConsumerStatefulWidget {
   const ChatAiModal({super.key, this.initialPrompt, this.productContext});
 
   final String? initialPrompt;
@@ -20,13 +23,15 @@ class ChatAiModal extends StatefulWidget {
   }
 
   @override
-  State<ChatAiModal> createState() => _ChatAiModalState();
+  ConsumerState<ChatAiModal> createState() => _ChatAiModalState();
 }
 
-class _ChatAiModalState extends State<ChatAiModal> {
+class _ChatAiModalState extends ConsumerState<ChatAiModal> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
+  String? _sessionId;
+  String? _chatKey;
 
   @override
   void initState() {
@@ -40,16 +45,41 @@ class _ChatAiModalState extends State<ChatAiModal> {
     } else {
       _messages.add({
         'isUser': false,
-        'text': 'Xin chào! Mình là Trợ lý AI mua sắm thông minh. Hãy mô tả nhu cầu, sở thích hoặc ngân sách để mình gợi ý sản phẩm phù hợp nhất cho bạn!',
+        'text': 'Xin chào! Mình là Trợ lý AI mua sắm thông minh kết nối Catalog trực tuyến. Hãy hỏi về bất kỳ sản phẩm nào bạn cần nhé!',
       });
     }
 
     if (widget.initialPrompt != null && widget.initialPrompt!.isNotEmpty) {
-      _handleSend(widget.initialPrompt!);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleSend(widget.initialPrompt!);
+      });
     }
   }
 
-  void _handleSend(String text) {
+  Future<void> _ensureSession([String? firstMessage]) async {
+    if (_sessionId != null) return;
+    try {
+      final client = ref.read(apiProvider);
+      final res = await client.createChatSession(firstMessage: firstMessage);
+      _sessionId = res['id']?.toString();
+      _chatKey = res['anonymous_key']?.toString();
+    } catch (_) {
+      // Ignored: network failure will be handled gracefully during send
+    }
+  }
+
+  String _formatVnd(dynamic value) {
+    if (value == null) return '';
+    final numVal = int.tryParse(value.toString());
+    if (numVal == null) return '$value đ';
+    final formatted = numVal.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
+    return '$formatted đ';
+  }
+
+  Future<void> _handleSend(String text) async {
     final query = text.trim();
     if (query.isEmpty) return;
     _controller.clear();
@@ -59,32 +89,85 @@ class _ChatAiModalState extends State<ChatAiModal> {
       _isTyping = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 700), () {
+    try {
+      final client = ref.read(apiProvider);
+      if (_sessionId == null) {
+        await _ensureSession(query);
+      }
+
+      if (_sessionId == null) {
+        if (!mounted) return;
+        setState(() {
+          _isTyping = false;
+          _messages.add({
+            'isUser': false,
+            'text': 'Không thể khởi tạo phiên chat với máy chủ. Vui lòng kiểm tra lại kết nối mạng.',
+          });
+        });
+        return;
+      }
+
+      final res = await client.sendChatMessage(
+        _sessionId!,
+        query,
+        chatKey: _chatKey,
+      );
+
+      final answerText = res['content']?.toString() ?? 'Dưới đây là một số gợi ý cho bạn:';
+      final productCards = res['product_cards'] as List? ?? [];
+      final suggestions = <Map<String, dynamic>>[];
+
+      for (final card in productCards.take(5)) {
+        if (card is Map) {
+          final pid = card['product_id']?.toString();
+          final price = card['current_price_vnd'];
+          var title = 'Sản phẩm gợi ý';
+          String? imageUrl;
+
+          if (pid != null) {
+            try {
+              final prod = await client.getProduct(pid);
+              title = prod['title']?.toString() ?? title;
+              final images = prod['images'] as List?;
+              if (images != null && images.isNotEmpty) {
+                final firstImg = images.first;
+                if (firstImg is Map && firstImg['image_url'] != null) {
+                  imageUrl = firstImg['image_url'].toString();
+                } else if (firstImg is String) {
+                  imageUrl = firstImg;
+                }
+              }
+            } catch (_) {}
+          }
+
+          suggestions.add({
+            'id': pid,
+            'title': title,
+            'price': _formatVnd(price),
+            'image_url': imageUrl,
+          });
+        }
+      }
+
       if (!mounted) return;
       setState(() {
         _isTyping = false;
         _messages.add({
           'isUser': false,
-          'text': _generateAiResponse(query),
-          'suggestions': [
-            {'title': 'Tai nghe Bluetooth Pro 2', 'price': '699.000 đ', 'rating': '4.8'},
-            {'title': 'Đồng hồ thông minh SmartFit', 'price': '1.590.000 đ', 'rating': '4.9'},
-          ],
+          'text': answerText,
+          'suggestions': suggestions,
         });
       });
-    });
-  }
-
-  String _generateAiResponse(String query) {
-    final q = query.toLowerCase();
-    if (q.contains('tai nghe') || q.contains('bluetooth')) {
-      return 'Dưới đây là một số mẫu tai nghe Bluetooth chống ồn cực tốt, pin 30 giờ và đang được giảm giá 30% hôm nay:';
-    } else if (q.contains('đồng hồ') || q.contains('watch')) {
-      return 'Đây là mẫu Smartwatch theo dõi sức khỏe và đo nhịp tim liên tục rất được ưa chuộng:';
-    } else if (q.contains('rẻ') || q.contains('giá')) {
-      return 'Mình đã tìm thấy các ưu đãi tốt nhất phù hợp với ngân sách của bạn kèm mã giảm 50K của Shop:';
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isTyping = false;
+        _messages.add({
+          'isUser': false,
+          'text': 'Đã có lỗi khi kết nối với Trợ lý AI: $e',
+        });
+      });
     }
-    return 'Dựa trên nhu cầu của bạn, mình đề xuất một số sản phẩm chính hãng được đánh giá cao nhất trên hệ thống:';
   }
 
   @override
@@ -227,52 +310,79 @@ class _ChatAiModalState extends State<ChatAiModal> {
                           child: Row(
                             children: suggestions.map((s) {
                               final item = s as Map<String, dynamic>;
-                              return Container(
-                                width: 170,
-                                margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
+                              final pid = item['id']?.toString();
+                              final imageUrl = item['image_url']?.toString();
+                              return Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    if (pid != null && pid.isNotEmpty) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => ProductDetailPage(productId: pid),
+                                        ),
+                                      );
+                                    }
+                                  },
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.primaryLight),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withAlpha(8),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
+                                  child: Container(
+                                    width: 170,
+                                    margin: const EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: AppColors.primaryLight),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withAlpha(8),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      height: 70,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade100,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 28),
-                                      ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Container(
+                                            height: 80,
+                                            width: double.infinity,
+                                            color: Colors.grey.shade100,
+                                            child: imageUrl != null && imageUrl.startsWith('http')
+                                                ? Image.network(
+                                                    imageUrl,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (ctx, err, stack) => const Center(
+                                                      child: Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 28),
+                                                    ),
+                                                  )
+                                                : const Center(
+                                                    child: Icon(Icons.shopping_bag_outlined, color: AppColors.primary, size: 28),
+                                                  ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          item['title'] ?? '',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          item['price'] ?? '',
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      item['title'] ?? '',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      item['price'] ?? '',
-                                      style: const TextStyle(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               );
                             }).toList(),
