@@ -86,7 +86,10 @@ function Profile() {
           <p>{data?.email}</p>
           <p>{data?.phone}</p>
           {session?.context?.roles.includes("CUSTOMER") && (
-            <Link to="/customer/profile">Cập nhật thông tin tài khoản</Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: '0.75rem 0' }}>
+              <Link to="/customer/profile">Cập nhật thông tin tài khoản</Link>
+              <Link to="/customer/addresses">Sổ địa chỉ nhận hàng</Link>
+            </div>
           )}
           <Link to="/change-password">Đổi mật khẩu</Link>
         </>
@@ -265,6 +268,7 @@ function Market() {
           </NavLink>
           <NavLink to="/customer/orders">Đơn hàng của tôi</NavLink>
           <NavLink to="/profile">Hồ sơ</NavLink>
+          <NavLink to="/customer/addresses">Sổ địa chỉ</NavLink>
           <NavLink to="/customer/settings">Cài đặt & quyền riêng tư</NavLink>
           {merchant && (
             <NavLink to="/seller">
@@ -365,6 +369,7 @@ function Market() {
           </div>
           <div className="flex flex-wrap gap-5 text-sm text-slate-500">
             <Link to="/customer/orders">Theo dõi đơn hàng</Link>
+            <Link to="/customer/addresses">Sổ địa chỉ</Link>
             <Link to="/customer/store-applications">Mở gian hàng</Link>
             <Link to="/customer/settings">Quyền riêng tư</Link>
           </div>
