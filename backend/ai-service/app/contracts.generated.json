@@ -10975,7 +10975,7 @@
       "route": "/admin/categories",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -11081,7 +11081,7 @@
       "route": "/admin/categories/{id}",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -11201,7 +11201,7 @@
       "route": "/admin/product-types",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -11362,7 +11362,7 @@
       "route": "/admin/product-types/{id}",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -11537,7 +11537,7 @@
       "route": "/admin/attribute-definitions",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -11662,7 +11662,7 @@
       "route": "/admin/attribute-definitions/{id}",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",

@@ -21,7 +21,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /auth/logout` | logout | M3 / auth | Trí | IMPLEMENTED_SAMPLE |
 | `POST /auth/reset-password` | resetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `POST /auth/reset-password/confirm` | confirmResetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
-| `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
+| `POST /auth/change-password` | changePassword | M3 / auth | Trí | IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
@@ -102,19 +102,15 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /store/reports` | getStoreReport | M2 / report | Hoa | NOT_IMPLEMENTED |
 | `GET /store/vouchers/{id}/usage` | getStoreVoucherUsage | M2 / voucher | Hoa | IMPLEMENTED |
 | `GET /admin/vouchers/{id}/usage` | getPlatformVoucherUsage | M2 / voucher | Hoa | IMPLEMENTED |
-| `POST /admin/categories` | createCategory | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /admin/categories/{id}` | updateCategory | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `POST /admin/product-types` | createProductType | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /admin/product-types/{id}` | updateProductType | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `POST /admin/attribute-definitions` | createAttributeDefinition | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /admin/attribute-definitions/{id}` | updateAttributeDefinition | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
+| `POST /admin/categories` | createCategory | M1 / moderation | Thịnh | IMPLEMENTED |
+| `PATCH /admin/categories/{id}` | updateCategory | M1 / moderation | Thịnh | IMPLEMENTED |
+| `POST /admin/product-types` | createProductType | M1 / moderation | Thịnh | IMPLEMENTED |
+| `PATCH /admin/product-types/{id}` | updateProductType | M1 / moderation | Thịnh | IMPLEMENTED |
+| `POST /admin/attribute-definitions` | createAttributeDefinition | M1 / moderation | Thịnh | IMPLEMENTED |
+| `PATCH /admin/attribute-definitions/{id}` | updateAttributeDefinition | M1 / moderation | Thịnh | IMPLEMENTED |
 | `POST /admin/products/{id}/hide` | hideProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `POST /admin/products/{id}/restore` | restoreProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
 | `GET /ai/metrics` | getAiMetrics | M4 / evaluation | Công | IMPLEMENTED_SAMPLE |
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
-
-Live role permissions are resolved from PostgreSQL for each authenticated request; platform.admin is required on ADMIN routes. Store staff permissions and status are resolved from active membership, so revocation applies immediately. Role permission mutation remains NOT_IMPLEMENTED on the current main baseline.
-
-Admin Web now exposes the M1 taxonomy/moderation workflows, but their API operations remain NOT_IMPLEMENTED; the UI will show the API error until M1 handlers are delivered. The AI metrics page reads the existing IMPLEMENTED_SAMPLE operation and does not replace the AI evaluation/provider acceptance.

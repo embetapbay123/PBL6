@@ -11922,7 +11922,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/categories/{id}": {
@@ -12058,7 +12058,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/product-types": {
@@ -12184,7 +12184,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/product-types/{id}": {
@@ -12320,7 +12320,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/attribute-definitions": {
@@ -12446,7 +12446,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/attribute-definitions/{id}": {
@@ -12582,7 +12582,7 @@
         "x-service-owner": "M1",
         "x-module": "moderation",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/admin/products/{id}/hide": {
