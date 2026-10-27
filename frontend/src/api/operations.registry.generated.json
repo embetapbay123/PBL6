@@ -169,6 +169,11 @@
     "path": "/store/products",
     "internal": false
   },
+  "getOwnStoreProduct": {
+    "method": "GET",
+    "path": "/store/products/{id}",
+    "internal": false
+  },
   "updateProduct": {
     "method": "PATCH",
     "path": "/store/products/{id}",
@@ -542,6 +547,11 @@
   "recordReturnCodRefund": {
     "method": "POST",
     "path": "/store/orders/{id}/returns/cod-refund",
+    "internal": false
+  },
+  "getProductAvailability": {
+    "method": "GET",
+    "path": "/products/{id}/availability",
     "internal": false
   },
   "ResolveContext": {

@@ -719,6 +719,31 @@
     },
     "status": 201
   },
+  "getOwnStoreProduct": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "product_type_id": "11111111-1111-4111-8111-111111111111",
+      "title": "fixture-value",
+      "description": "fixture-value",
+      "attributes": {},
+      "variants": [],
+      "images": [],
+      "status": "DRAFT",
+      "moderation_status": "VISIBLE",
+      "version": 0
+    },
+    "status": 200
+  },
   "updateProduct": {
     "mode": "fixture",
     "request": {
@@ -1707,7 +1732,11 @@
       "items": [],
       "total": 0,
       "page": 1,
-      "size": 1
+      "size": 1,
+      "summary": {
+        "count": 0,
+        "average_rating": 0
+      }
     },
     "status": 200
   },
@@ -2306,7 +2335,8 @@
       "unit": "fixture-value",
       "variant_axis": false,
       "allowed_values": [],
-      "version": 0
+      "version": 0,
+      "code": "fixture-value"
     },
     "status": 201
   },
@@ -2340,7 +2370,8 @@
       "unit": "fixture-value",
       "variant_axis": false,
       "allowed_values": [],
-      "version": 0
+      "version": 0,
+      "code": "fixture-value"
     },
     "status": 200
   },
@@ -2854,6 +2885,23 @@
     },
     "status": 201
   },
+  "getProductAvailability": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "observed_at": "2026-10-02T00:00:00Z",
+      "items": []
+    },
+    "status": 200
+  },
   "ResolveContext": {
     "mode": "fixture",
     "request": {
@@ -3034,7 +3082,8 @@
     },
     "response": {
       "eligible": false,
-      "reason": "fixture-value"
+      "reason": "fixture-value",
+      "product_id": "11111111-1111-4111-8111-111111111111"
     },
     "status": 200
   },

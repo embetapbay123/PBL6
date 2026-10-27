@@ -21,6 +21,11 @@ describe('attribute validation against the Product type taxonomy', () => {
     expect(attributeErrors({}, [])).toEqual([]);
     expect(attributeErrors({ anything: 1 }, [])).toEqual(['unknown:anything']);
   });
+  test('taxonomy types and allowed values are checked without coercing JSON strings',()=>{
+    const defs=[{code:'count',required:true,data_type:'NUMBER'},{code:'enabled',required:false,data_type:'BOOLEAN'},{code:'size',required:false,data_type:'STRING',allowed_values:['S','M']}];
+    expect(attributeErrors({count:2,enabled:false,size:'M'},defs)).toEqual([]);
+    expect(attributeErrors({count:'2',enabled:'false',size:'L'},defs)).toEqual(['type:count','type:enabled','value:size']);
+  });
 });
 
 describe('variant signature', () => {

@@ -1508,8 +1508,7 @@
         },
         "required": [
           "order_item_id",
-          "customer_user_id",
-          "product_id"
+          "customer_user_id"
         ],
         "additionalProperties": false
       },
@@ -1522,6 +1521,11 @@
           "reason": {
             "type": "string",
             "maxLength": 200
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Authoritative Product of the owned eligible OrderItem; returned when Product was omitted from the request."
           }
         },
         "required": [

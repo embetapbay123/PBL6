@@ -2793,6 +2793,11 @@
                         "version": {
                           "type": "integer",
                           "maximum": 9007199254740991
+                        },
+                        "code": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "description": "Immutable server attribute key; never derive it from a display name."
                         }
                       },
                       "required": [
@@ -3725,12 +3730,182 @@
       },
       "headers": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "idempotency-key": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
         "required": [],
         "additionalProperties": true
       },
       "responses": {
         "201": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "product_type_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "description": {
+              "type": "string",
+              "nullable": true,
+              "maxLength": 10000
+            },
+            "attributes": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "variants": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sku": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "price_vnd": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "variant_values": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "is_default": {
+                    "type": "boolean"
+                  },
+                  "status": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "sku",
+                  "price_vnd",
+                  "variant_values"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 100
+            },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "position": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "image_url"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "STOPPED"
+              ]
+            },
+            "moderation_status": {
+              "type": "string",
+              "enum": [
+                "VISIBLE",
+                "HIDDEN"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "product_type_id",
+            "title",
+            "attributes"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "getOwnStoreProduct": {
+      "method": "GET",
+      "route": "/store/products/{id}",
+      "internal": false,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
           "type": "object",
           "properties": {
             "id": {
@@ -4163,7 +4338,12 @@
       },
       "headers": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "idempotency-key": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
         "required": [],
         "additionalProperties": true
       },
@@ -4257,7 +4437,12 @@
       },
       "headers": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "idempotency-key": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
         "required": [],
         "additionalProperties": true
       },
@@ -9977,6 +10162,25 @@
             "size": {
               "type": "integer",
               "maximum": 9007199254740991
+            },
+            "summary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "count",
+                "average_rating"
+              ],
+              "properties": {
+                "count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "average_rating": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 5
+                }
+              }
             }
           },
           "required": [
@@ -9994,7 +10198,7 @@
       "route": "/me/reviews",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
@@ -12962,6 +13166,11 @@
                   "version": {
                     "type": "integer",
                     "maximum": 9007199254740991
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Immutable server attribute key; never derive it from a display name."
                   }
                 },
                 "required": [
@@ -13137,6 +13346,11 @@
                   "version": {
                     "type": "integer",
                     "maximum": 9007199254740991
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Immutable server attribute key; never derive it from a display name."
                   }
                 },
                 "required": [
@@ -13272,6 +13486,11 @@
             "version": {
               "type": "integer",
               "maximum": 9007199254740991
+            },
+            "code": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Immutable server attribute key; never derive it from a display name."
             }
           },
           "required": [
@@ -13411,6 +13630,11 @@
             "version": {
               "type": "integer",
               "maximum": 9007199254740991
+            },
+            "code": {
+              "type": "string",
+              "maxLength": 200,
+              "description": "Immutable server attribute key; never derive it from a display name."
             }
           },
           "required": [
@@ -16201,6 +16425,84 @@
         }
       }
     },
+    "getProductAvailability": {
+      "method": "GET",
+      "route": "/products/{id}/availability",
+      "internal": false,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "product_id",
+            "observed_at",
+            "items"
+          ],
+          "properties": {
+            "product_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "observed_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "variant_id",
+                  "available_quantity"
+                ],
+                "properties": {
+                  "variant_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "available_quantity": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "ResolveContext": {
       "method": "POST",
       "route": "/internal/context",
@@ -16960,8 +17262,7 @@
         },
         "required": [
           "order_item_id",
-          "customer_user_id",
-          "product_id"
+          "customer_user_id"
         ],
         "additionalProperties": false
       },
@@ -17001,6 +17302,11 @@
             "reason": {
               "type": "string",
               "maxLength": 200
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Authoritative Product of the owned eligible OrderItem; returned when Product was omitted from the request."
             }
           },
           "required": [

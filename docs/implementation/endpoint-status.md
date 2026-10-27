@@ -48,6 +48,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /stores/{id}/products` | listStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
 | `GET /store/products` | listOwnStoreProducts | M1 / catalog | Thịnh | IMPLEMENTED |
 | `POST /store/products` | createProduct | M1 / catalog | Thịnh | IMPLEMENTED |
+| `GET /store/products/{id}` | getOwnStoreProduct | M1 / catalog | Thịnh | IMPLEMENTED |
 | `PATCH /store/products/{id}` | updateProduct | M1 / catalog | Thịnh | IMPLEMENTED |
 | `POST /store/products/{id}/variants` | createVariant | M1 / catalog | Thịnh | IMPLEMENTED |
 | `POST /store/products/{id}/images` | addProductImage | M1 / catalog | Thịnh | IMPLEMENTED |
@@ -81,7 +82,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /admin/vouchers` | createPlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
 | `PATCH /admin/vouchers/{id}` | updatePlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
 | `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | IMPLEMENTED |
-| `POST /me/reviews` | createReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
+| `POST /me/reviews` | createReview | M1 / review | Thịnh | IMPLEMENTED |
 | `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /admin/reviews/{id}/hide` | hideReview | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /admin/reviews/{id}/restore` | restoreReview | M1 / review | Thịnh | IMPLEMENTED |
@@ -123,3 +124,4 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /store/orders/{id}/returns` | reportDeliveryReturn | M2 / order | Hoa | IMPLEMENTED |
 | `PATCH /store/orders/{id}/returns` | decideOrderReturn | M2 / order | Hoa | IMPLEMENTED |
 | `POST /store/orders/{id}/returns/cod-refund` | recordReturnCodRefund | M2 / order | Hoa | IMPLEMENTED |
+| `GET /products/{id}/availability` | getProductAvailability | M1 / catalog | Thịnh | IMPLEMENTED |

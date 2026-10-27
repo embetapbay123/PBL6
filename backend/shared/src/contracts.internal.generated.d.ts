@@ -306,11 +306,16 @@ export interface components {
             /** Format: uuid */
             customer_user_id: string;
             /** Format: uuid */
-            product_id: string;
+            product_id?: string;
         };
         ReviewEligibilityResult: {
             eligible: boolean;
             reason?: string;
+            /**
+             * Format: uuid
+             * @description Authoritative Product of the owned eligible OrderItem; returned when Product was omitted from the request.
+             */
+            product_id?: string;
         };
         CheckoutContextRequest: {
             token: string;

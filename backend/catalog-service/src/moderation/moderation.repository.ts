@@ -73,6 +73,7 @@ export class ModerationRepository {
   async createCategory(body: any, actor: string, requestId: string) {
     const name = body.name.trim();
     return database.transaction(async manager => {
+      await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['M1.taxonomy.categories']);
       if (body.parent_id) {
         await this.requireCategory(manager, body.parent_id, 'PARENT_NOT_FOUND', 'Parent category does not exist.');
       }
@@ -88,6 +89,9 @@ export class ModerationRepository {
 
   async updateCategory(id: string, body: any, actor: string, requestId: string) {
     return database.transaction(async manager => {
+      // Serialize the tree decision, not just the edited node: concurrent A→B/B→A
+      // updates otherwise both validate against an old acyclic snapshot.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['M1.taxonomy.categories']);
       const [old] = await manager.query('SELECT * FROM category WHERE id=$1 FOR UPDATE', [id]);
       if (!old) throw new ApiError(404, 'NOT_FOUND', 'Category not found.');
       if (old.version !== body.expected_version) throw new ApiError(409, 'VERSION_CONFLICT', 'Category version changed.');
@@ -155,6 +159,7 @@ export class ModerationRepository {
     const name = body.name.trim();
     const code = attributeCode(name);
     return database.transaction(async manager => {
+      await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['M1.attribute:'+body.product_type_id+':'+code]);
       await this.requireProductType(manager, body.product_type_id);
       await this.assertCodeFree(manager, body.product_type_id, code);
       const row = this.row<any>(await manager.query(

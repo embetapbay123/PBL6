@@ -8,6 +8,7 @@ import { ErrorView, Loading } from "../../bootstrap/components";
 import { ProductReviews } from "./ProductReviews"; // 1. Nhập component đánh giá sản phẩm
 import { CustomerRecommendations } from "./CustomerRecommendations";
 import { ImageOff } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
 
 type Product = OperationOutputs["getProduct"];
 
@@ -24,6 +25,8 @@ export function ProductDetail() {
   const [retry, setRetry] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
   const inFlight = useRef(false);
+  const stock=useQuery({queryKey:['product-availability',id],enabled:!!product?.id&&product.id===id,
+    queryFn:()=>callOperation('getProductAvailability',{path:{id:id!}})});
 
   useEffect(() => {
     let active = true;
@@ -66,7 +69,8 @@ export function ProductDetail() {
     product?.id === id &&
     product?.status === "ACTIVE" &&
     !!variant?.id &&
-    variant.status === "ACTIVE";
+    variant.status === "ACTIVE" && !stock.error &&
+    (stock.data?.items.find(v=>v.variant_id===variant.id)?.available_quantity??0)>=quantity;
 
   const add = async () => {
     if (
@@ -163,7 +167,7 @@ export function ProductDetail() {
               aria-pressed={variantId === item.id}
               onClick={() => setVariantId(item.id!)}
             >
-              SKU: {item.sku}
+              {Object.values(item.variant_values??{}).map(String).join(' / ')||item.sku}
             </button>
           ))}
           <label>
@@ -184,6 +188,9 @@ export function ProductDetail() {
               }
             />
           </label>
+          {stock.isFetching&&<p>Đang kiểm tra tồn khả dụng…</p>}
+          {stock.error&&<ErrorView error={stock.error} onRetry={()=>void stock.refetch()}/>}
+          {stock.data&&variant&&<p>Tồn khả dụng: {stock.data.items.find(v=>v.variant_id===variant.id)?.available_quantity??0} · sẽ kiểm tra lại khi đặt hàng.</p>}
           {session ? (
             <button disabled={!available || busy} onClick={add}>
               {busy ? "Đang xử lý…" : "Thêm vào giỏ hàng"}

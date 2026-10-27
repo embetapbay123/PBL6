@@ -20,11 +20,11 @@ export class CatalogController {
   @Get('store/products') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
   listOwnStoreProducts(@Req() request:any) {return this.service.listOwnStoreProducts(request.contract.query,request.auth);}
   @Post('store/products') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
-  createProduct(@Body() dto: CreateProductBodyDto,@Req() request:any) {return this.service.createProduct(dto,request.auth,request.correlationId);}
+  createProduct(@Body() dto: CreateProductBodyDto,@Req() request:any) {return this.service.createProduct(dto,request.auth,request.correlationId,request.contract.headers['idempotency-key']);}
   @Post('store/products/:id/variants') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
-  createVariant(@Param('id') id:string,@Body() dto:CreateVariantBodyDto,@Req() request:any) {return this.service.createVariant(id,dto,request.auth,request.correlationId);}
+  createVariant(@Param('id') id:string,@Body() dto:CreateVariantBodyDto,@Req() request:any) {return this.service.createVariant(id,dto,request.auth,request.correlationId,request.contract.headers['idempotency-key']);}
   @Post('store/products/:id/images') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
-  addProductImage(@Param('id') id:string,@Body() dto:AddProductImageBodyDto,@Req() request:any) {return this.service.addProductImage(id,dto,request.auth,request.correlationId);}
+  addProductImage(@Param('id') id:string,@Body() dto:AddProductImageBodyDto,@Req() request:any) {return this.service.addProductImage(id,dto,request.auth,request.correlationId,request.contract.headers['idempotency-key']);}
   @Patch('store/products/:id') @UseGuards(AuthGuard) @Roles('SELLER','STORE_OWNER')
   update(@Param('id') id:string,@Body() dto: UpdateProductBodyDto,@Req() request:any) {return this.service.updateProduct(id,dto,request.auth,request.correlationId);}
 }

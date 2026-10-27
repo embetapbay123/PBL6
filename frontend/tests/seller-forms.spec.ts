@@ -19,7 +19,7 @@ const productType = {
   id:'10000000-0000-4000-8000-000000000071', category_id:'10000000-0000-4000-8000-000000000070',
   name:'Loại có thuộc tính', status:'ACTIVE', version:0,
   attribute_definitions:[{ id:'attr-1', product_type_id:'10000000-0000-4000-8000-000000000071',
-    name:'Kích thước', data_type:'STRING', required:true, variant_axis:true, allowed_values:['S','M'], version:0 }],
+    code:'size',name:'Kích thước', data_type:'STRING', required:true, variant_axis:true, allowed_values:['S','M'], version:0 }],
 };
 
 test('the create form builds attribute fields from the Product type and sends them',async({page})=>{
@@ -46,15 +46,15 @@ test('the create form builds attribute fields from the Product type and sends th
   await expect(page.getByLabel(/Kích thước/)).toBeVisible();
 
   await page.getByLabel('Tên sản phẩm').fill('Sản phẩm từ form');
-  await page.getByLabel(/Kích thước/).fill('M');
+  await page.getByLabel(/Kích thước/).selectOption('M');
   await page.getByLabel('SKU').fill('FORM-SKU-1');
   await page.getByLabel('Giá (VND)').fill('150000');
   await page.getByRole('button',{name:'Lưu thay đổi'}).click();
 
   await expect.poll(()=>sent&&sent.title).toBe('Sản phẩm từ form');
   // The attribute key is the definition's snake_case code, which is what the server validates.
-  expect(sent.attributes).toEqual({kich_thuoc:'M'});
-  expect(sent.variants).toEqual([{sku:'FORM-SKU-1',price_vnd:150000,variant_values:{},is_default:true}]);
+  expect(sent.attributes).toEqual({size:'M'});
+  expect(sent.variants).toEqual([{sku:'FORM-SKU-1',price_vnd:150000,variant_values:{size:'M'},is_default:true}]);
   expect(sent.status).toBe('DRAFT');
   expect(errors).toEqual([]);
 });
@@ -75,7 +75,7 @@ test('the create form shows a server rejection instead of pretending it saved',a
   await page.getByLabel('Tên sản phẩm').fill('Sẽ bị từ chối');
   // The attribute is required by the taxonomy, so fill it and let the server answer instead of the
   // browser blocking the submit.
-  await page.getByLabel(/Kích thước/).fill('L');
+  await page.getByLabel(/Kích thước/).selectOption('M');
   await page.getByRole('button',{name:'Lưu thay đổi'}).click();
   await expect(page.getByRole('alert')).toContainText('Thuộc tính không khớp taxonomy');
   // A failed create must not navigate to an editor for a Product that does not exist.
@@ -87,7 +87,7 @@ test('the edit form adds a Variant and an image through their own operations',as
     product_type_id:productType.id, title:'Sản phẩm mẫu 1', description:'x', attributes:{},
     status:'ACTIVE', moderation_status:'VISIBLE', version:0, variants:[], images:[] };
   let variantBody:any, imageBody:any;
-  await page.route('**/api/v1/products/10000000-0000-4000-8000-000000000080',route=>route.fulfill({
+  await page.route('**/api/v1/store/products/10000000-0000-4000-8000-000000000080',route=>route.fulfill({
     status:200,contentType:'application/json',body:JSON.stringify(product)}));
   await page.route('**/api/v1/store/products/10000000-0000-4000-8000-000000000080/variants',async route=>{
     if(route.request().method()!=='POST')return route.continue();

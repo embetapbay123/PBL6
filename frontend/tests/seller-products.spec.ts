@@ -54,28 +54,27 @@ test('seller list offers the editor only for publicly readable Products',async({
   expect(errors).toEqual([]);
 });
 
-test('a non-public Product opens from the management list when the public read answers 404',async({page})=>{
+test('a non-public Product opens through its scoped management detail without scanning a page',async({page})=>{
   await loginAsOwner(page);
   await page.route('**/api/v1/products/11111111-1111-4111-8111-111111111111',route=>route.fulfill({status:404,
     contentType:'application/json',body:JSON.stringify({code:'NOT_FOUND',message:'Không tìm thấy sản phẩm.',correlation_id:'deep-link',details:[]})}));
-  await page.route('**/api/v1/store/products?*',route=>route.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify({items:[{id:'11111111-1111-4111-8111-111111111111',store_id:'10000000-0000-4000-8000-000000000061',
+  await page.route('**/api/v1/store/products/11111111-1111-4111-8111-111111111111',route=>route.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({id:'11111111-1111-4111-8111-111111111111',store_id:'10000000-0000-4000-8000-000000000061',
       product_type_id:'10000000-0000-4000-8000-000000000071',title:'Sản phẩm nháp quản lý',description:'x',
-      attributes:{},status:'DRAFT',moderation_status:'VISIBLE',version:3,variants:[],images:[]}],total:1,page:1,size:100})}));
+      attributes:{},status:'DRAFT',moderation_status:'VISIBLE',version:3,variants:[],images:[]})}));
   await page.goto('/seller/products/11111111-1111-4111-8111-111111111111/edit');
-  await expect(page.getByRole('heading',{name:'Sửa sản phẩm',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Sửa sản phẩm #11111111-1111-4111-8111-111111111111',exact:true})).toBeVisible();
   expect(await page.getByLabel('Tên sản phẩm').inputValue()).toBe('Sản phẩm nháp quản lý');
   // The management projection carries the real version, which the optimistic update depends on.
   await expect(page.getByText(/version 3/)).toBeVisible();
 });
 
-test('a Product outside the management page says so instead of pretending it is gone',async({page})=>{
+test('a foreign or missing Product remains 404 through the scoped management detail',async({page})=>{
   await loginAsOwner(page);
   await page.route('**/api/v1/products/22222222-2222-4222-8222-222222222222',route=>route.fulfill({status:404,
     contentType:'application/json',body:JSON.stringify({code:'NOT_FOUND',message:'Không tìm thấy sản phẩm.',correlation_id:'deep-link-2',details:[]})}));
-  await page.route('**/api/v1/store/products?*',route=>route.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify({items:[],total:0,page:1,size:100})}));
+  await page.route('**/api/v1/store/products/22222222-2222-4222-8222-222222222222',route=>route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({code:'NOT_FOUND',message:'Không tìm thấy sản phẩm trong Store.',details:[]})}));
   await page.goto('/seller/products/22222222-2222-4222-8222-222222222222/edit');
-  await expect(page.getByRole('alert')).toContainText('100 sản phẩm gần nhất');
+  await expect(page.getByRole('alert')).toContainText('Không tìm thấy sản phẩm trong Store.');
 });
 

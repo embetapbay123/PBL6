@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "PBL6 Marketplace API",
-    "version": "2.3.0",
+    "version": "2.4.0",
     "description": "Four-service SOA skeleton. See x-implementation-status; schema is not proof of business implementation."
   },
   "servers": [
@@ -4329,7 +4329,18 @@
         ],
         "operationId": "createProduct",
         "summary": "Tạo Product trong Store",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "description": "New management clients always provide a stable UUID; replay with a different payload returns 409.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Thành công: tạo product trong store",
@@ -4458,6 +4469,131 @@
       }
     },
     "/store/products/{id}": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "operationId": "getOwnStoreProduct",
+        "summary": "getOwnStoreProduct",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công: xem product trong store của mình",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "SELLER",
+          "STORE_OWNER"
+        ],
+        "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
+        "description": "Xem Product trong Store của mình. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: SELLER, STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "x-service-owner": "M1",
+        "x-module": "catalog",
+        "x-member-owner": "Thịnh",
+        "x-implementation-status": "IMPLEMENTED"
+      },
       "patch": {
         "tags": [
           "Catalog"
@@ -4619,6 +4755,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "description": "New management clients always provide a stable UUID; replay with a different payload returns 409.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -4760,6 +4906,16 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "description": "New management clients always provide a stable UUID; replay with a different payload returns 409.",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -9150,7 +9306,7 @@
         "x-service-owner": "M1",
         "x-module": "review",
         "x-member-owner": "Thịnh",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/reviews/{id}": {
@@ -14441,6 +14597,132 @@
         "x-member-owner": "Hoa",
         "x-implementation-status": "IMPLEMENTED"
       }
+    },
+    "/products/{id}/availability": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "operationId": "getProductAvailability",
+        "summary": "getProductAvailability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công: xem product trong store của mình",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductAvailability"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-required-roles": [
+          "GUEST",
+          "CUSTOMER",
+          "SELLER",
+          "STORE_OWNER",
+          "ADMIN"
+        ],
+        "x-data-scope": "Active visible Product of an active Store; public available quantity only",
+        "description": "Xem Product trong Store của mình. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: SELLER, STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "x-service-owner": "M1",
+        "x-module": "catalog",
+        "x-member-owner": "Thịnh",
+        "x-implementation-status": "IMPLEMENTED"
+      }
     }
   },
   "components": {
@@ -16557,6 +16839,11 @@
           "version": {
             "type": "integer",
             "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Immutable server attribute key; never derive it from a display name."
           }
         },
         "required": [
@@ -17271,6 +17558,25 @@
           "size": {
             "type": "integer",
             "maximum": 9007199254740991
+          },
+          "summary": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "count",
+              "average_rating"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "average_rating": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5
+              }
+            }
           }
         },
         "required": [
@@ -18673,6 +18979,47 @@
           "created_at"
         ],
         "additionalProperties": false
+      },
+      "ProductAvailability": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "product_id",
+          "observed_at",
+          "items"
+        ],
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "variant_id",
+                "available_quantity"
+              ],
+              "properties": {
+                "variant_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "available_quantity": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
