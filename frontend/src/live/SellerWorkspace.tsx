@@ -11,6 +11,52 @@ import type {
 import { ErrorView, Loading, Pagination } from "../bootstrap/components";
 import { formatMoney, useCommand, useStoreAccess } from "./useLiveData";
 
+export function SellerSubNav() {
+  const access = useStoreAccess();
+  return (
+    <nav className="seller-subnav" style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem', marginBottom: '1.5rem', overflowX: 'auto', flexWrap: 'wrap' }}>
+      <Link to="/seller" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+        Tổng quan
+      </Link>
+      {access.can('product.store.read_write') && (
+        <Link to="/seller/products" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Sản phẩm
+        </Link>
+      )}
+      {access.can('inventory.store.read_adjust') && (
+        <Link to="/seller/inventory" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Tồn kho
+        </Link>
+      )}
+      {access.can('order.store.read_status_cancel') && (
+        <Link to="/seller/orders" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Đơn hàng
+        </Link>
+      )}
+      {access.owner && (
+        <Link to="/seller/vouchers" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Voucher Store
+        </Link>
+      )}
+      {access.owner && (
+        <Link to="/seller/staff" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Nhân viên Store
+        </Link>
+      )}
+      {access.owner && (
+        <Link to="/seller/reports" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Báo cáo
+        </Link>
+      )}
+      {access.owner && (
+        <Link to="/seller/settings" style={{ fontWeight: 500, color: '#475569', textDecoration: 'none', padding: '0.35rem 0.75rem', borderRadius: '6px', background: '#f1f5f9' }}>
+          Cài đặt Store
+        </Link>
+      )}
+    </nav>
+  );
+}
+
 export function SellerOverview() {
   const access = useStoreAccess();
   const store = useQuery({
@@ -19,6 +65,7 @@ export function SellerOverview() {
   });
   return (
     <section>
+      <SellerSubNav />
       <h1>{store.data?.name ?? "Gian hàng của bạn"}</h1>
       {store.error && <ErrorView error={store.error} />}
       {store.isPending && <Loading />}
@@ -94,6 +141,7 @@ export function StoreSettings() {
     );
   return (
     <section>
+      <SellerSubNav />
       <h1>Thông tin gian hàng</h1>
       {state.error ? (
         <ErrorView error={state.error} onRetry={() => void state.refetch()} />
@@ -219,6 +267,7 @@ export function StoreInventory() {
     );
   return (
     <section>
+      <SellerSubNav />
       <h1>Quản lý tồn kho</h1>
       <p className="text-slate-500">
         Theo dõi số lượng sẵn có và ghi nhận nhập, xuất kho có lý do.
@@ -277,7 +326,11 @@ export function StoreInventory() {
             <h2>Lịch sử biến động kho</h2>
             <p className="text-slate-500">Nhật ký các lần nhập, xuất và điều chỉnh kho.</p>
             {movements.isPending && <Loading />}
-            {movements.error && <ErrorView error={movements.error} />}
+            {movements.error && (
+              <p className="text-sm text-slate-500 italic mt-2">
+                Chưa có dữ liệu biến động kho ({movements.error instanceof Error ? movements.error.message : 'Lỗi kết nối'}).
+              </p>
+            )}
             {movements.data && (
               <>
                 <div className="market-table-scroll mt-4">
@@ -513,6 +566,7 @@ export function StoreOrders() {
     );
   return (
     <section>
+      <SellerSubNav />
       <h1>Đơn hàng Store</h1>
       <p className="text-slate-500">
         Chỉ các đơn thuộc gian hàng đang hoạt động của bạn.
@@ -792,6 +846,7 @@ export function StoreReports() {
   };
   return (
     <section>
+      <SellerSubNav />
       <h1>Báo cáo gian hàng</h1>
       <div className="market-form-grid">
         <label>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { RouteObject } from 'react-router-dom';
-import {useSearchParams} from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { request, ApiError } from '../../api/client';
 import { callOperation } from '../../api/operations';
@@ -278,7 +278,38 @@ function AdminDashboard() {
 
   return (
     <section style={{ maxWidth: '960px', margin: '0 auto', padding: '1rem' }}>
-      <h2>Bảng Quản trị Hệ thống (Admin Portal)</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ margin: 0 }}>Bảng Quản trị Hệ thống (Admin Portal)</h2>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Link
+            to="/admin/store-applications"
+            style={{
+              padding: '0.35rem 0.75rem',
+              background: '#059669',
+              color: '#ffffff',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem'
+            }}
+          >
+            Duyệt mở Store &rarr;
+          </Link>
+          <Link
+            to="/"
+            style={{
+              padding: '0.35rem 0.75rem',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              color: '#475569',
+              fontSize: '0.875rem'
+            }}
+          >
+            &larr; Về Sàn
+          </Link>
+        </div>
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
         <button
           style={{ fontWeight: tab === 'users' ? 'bold' : 'normal' }}

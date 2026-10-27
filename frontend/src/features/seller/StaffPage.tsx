@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { callOperation } from '../../api/operations';
 import { ErrorView, Loading } from '../../bootstrap/components';
+import { SellerSubNav } from '../../live/SellerWorkspace';
 
 const sellerPermissions = [
   ['product.store.read_write', 'Quản lý sản phẩm'],
@@ -71,6 +72,7 @@ export function StaffPage() {
   };
 
   return <main className="boot-card">
+    <SellerSubNav />
     <h2>Quản lý nhân viên Store</h2>
     {error !== undefined && <ErrorView error={error} />}
     {notice && <p role="status">{notice}</p>}

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { callOperation } from '../../api/operations';
+import { CustomerSubNav } from './CustomerSubNav';
 
 interface Profile {
   id: string;
@@ -150,14 +151,7 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="flex gap-4 mb-6 border-b pb-3">
-        <Link to="/customer/profile" className="font-semibold text-emerald-600 border-b-2 border-emerald-600 pb-1">
-          Thông tin cá nhân
-        </Link>
-        <Link to="/customer/addresses" className="text-gray-500 hover:text-gray-900 pb-1">
-          Sổ địa chỉ nhận hàng
-        </Link>
-      </div>
+      <CustomerSubNav />
 
       <h1 className="text-2xl font-bold mb-6">Thông tin cá nhân (Profile)</h1>
 

@@ -4,6 +4,7 @@ import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/
 import { listOwnStoreApplications, submitStoreApplication } from '../../api/store-applications';
 import { dataMode } from '../../api/operations';
 import type { PageStoreApplications, StoreApplication } from '../../api/store-application.mock';
+import { CustomerSubNav } from './CustomerSubNav';
 
 const statusLabels: Record<string, string> = { PENDING: 'Chờ duyệt', APPROVED: 'Đã duyệt', REJECTED: 'Từ chối' };
 function StatusBadge({ status }: { status: string }) {
@@ -72,7 +73,9 @@ function ApplicationHistory({ refreshKey }: { refreshKey: number }) {
 
 function CustomerStoreApplicationPage() {
   const [refreshKey, setRefreshKey] = useState(0);
-  return <section className="store-app-page"><header className="store-app-page-heading"><p className="store-app-eyebrow">DÀNH CHO NHÀ BÁN HÀNG</p><h1>Bắt đầu bán hàng cùng PBL6</h1><p>Tạo hồ sơ cửa hàng và theo dõi trạng thái xét duyệt tại một nơi.</p></header>
+  return <section className="store-app-page">
+    <CustomerSubNav />
+    <header className="store-app-page-heading"><p className="store-app-eyebrow">DÀNH CHO NHÀ BÁN HÀNG</p><h1>Bắt đầu bán hàng cùng PBL6</h1><p>Tạo hồ sơ cửa hàng và theo dõi trạng thái xét duyệt tại một nơi.</p></header>
     <div className="store-app-demo-banner"><strong>{dataMode === 'fixture' ? 'FIXTURE' : 'API THẬT'}</strong><span>{dataMode === 'fixture' ? 'Đang dùng dữ liệu fixture trong trình duyệt; hồ sơ không được gửi lên máy chủ.' : 'Hồ sơ và lịch sử được tải từ API máy chủ. Lỗi API sẽ được hiển thị, không chuyển sang dữ liệu fixture.'}</span></div>
     <SubmitForm onSuccess={() => setRefreshKey(key => key + 1)} />
     <ApplicationHistory refreshKey={refreshKey} />

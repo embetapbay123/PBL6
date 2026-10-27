@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RouteObject } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Check, Eye, X } from 'lucide-react';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { listStoreApplications, reviewStoreApplication } from '../../api/store-applications';
@@ -55,6 +56,15 @@ function AdminStoreApplicationPage() {
     finally { setBusy(false); }
   };
   return <section className="store-app-page store-app-admin-page">
+    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', alignItems: 'center' }}>
+      <Link to="/admin" style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: 500 }}>
+        &larr; Quay lại Admin Dashboard
+      </Link>
+      <span style={{ color: '#cbd5e1' }}>|</span>
+      <Link to="/" style={{ color: '#64748b', textDecoration: 'underline' }}>
+        Trang chủ Sàn
+      </Link>
+    </div>
     <header className="store-app-page-heading"><p className="store-app-eyebrow">QUẢN TRỊ · NHÀ BÁN HÀNG</p><h1>Hồ sơ đăng ký cửa hàng</h1><p>Xem thông tin và xử lý hồ sơ đang chờ xét duyệt.</p></header>
     <div className="store-app-demo-banner"><strong>{dataMode === 'fixture' ? 'FIXTURE' : 'API'}</strong><span>{dataMode === 'fixture' ? 'Browser fixture data only; mock approvals do not create persisted Stores or memberships.' : 'Data and decisions use the server API. API errors are shown without fixture fallback.'}</span></div>
     {notice && <p className="store-app-notice" role="status">{notice}</p>}

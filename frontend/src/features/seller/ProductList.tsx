@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom';
 import {useQuery} from '@tanstack/react-query';
 import {callOperation} from '../../api/operations';
 import {Loading,Empty,ErrorView,Pagination} from '../../bootstrap/components';
+import {SellerSubNav} from '../../live/SellerWorkspace';
 
 /**
  * Seller catalogue management list.
@@ -28,6 +29,7 @@ export function SellerProductList(){
     queryFn:()=>callOperation('listOwnStoreProducts',{query:{page,size:20}})});
 
   return <section>
+    <SellerSubNav />
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
         <h2>Sản phẩm của Store</h2>

@@ -28,6 +28,9 @@ import {
   Ticket,
   Users,
   BarChart3,
+  MapPin,
+  Mail,
+  Key,
 } from "lucide-react";
 import { AuthProvider, useAuth } from "../api/auth-context";
 import { api } from "../api/client";
@@ -71,27 +74,125 @@ function Profile() {
     queryFn: api.profile,
     enabled: !!session,
   });
+  const roles = session?.context?.roles ?? [];
+  const isMerchant = roles.includes("STORE_OWNER") || roles.includes("SELLER");
+  const isAdmin = roles.includes("ADMIN");
+
   return (
     <section className="boot-card">
-      <h1>Hồ sơ</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>Trung tâm tài khoản</h1>
+          <p style={{ margin: '0.25rem 0 0', color: '#64748b' }}>Quản lý thông tin cá nhân, địa chỉ, đơn hàng và các quyền truy cập hệ thống.</p>
+        </div>
+        {session && (
+          <span className="market-badge" style={{ fontSize: '0.875rem' }}>
+            {isAdmin ? 'Quản trị viên' : isMerchant ? 'Đối tác bán hàng' : 'Khách hàng'}
+          </span>
+        )}
+      </div>
+
       {!session ? (
-        <p>Đăng nhập để xem hồ sơ.</p>
+        <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+          <p style={{ marginBottom: '1rem', color: '#475569' }}>Bạn chưa đăng nhập. Vui lòng đăng nhập để xem thông tin và lịch sử tài khoản.</p>
+          <Link to="/login" className="boot-button" style={{ display: 'inline-block', padding: '0.5rem 1.5rem', background: '#059669', color: '#fff', borderRadius: '6px', textDecoration: 'none' }}>
+            Đăng nhập ngay
+          </Link>
+        </div>
       ) : isLoading ? (
         <Loading />
       ) : error ? (
         <ErrorView error={error} />
       ) : (
         <>
-          <h2>{data?.display_name}</h2>
-          <p>{data?.email}</p>
-          <p>{data?.phone}</p>
-          {session?.context?.roles.includes("CUSTOMER") && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', margin: '0.75rem 0' }}>
-              <Link to="/customer/profile">Cập nhật thông tin tài khoản</Link>
-              <Link to="/customer/addresses">Sổ địa chỉ nhận hàng</Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <User size={26} color="#059669" />
             </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{data?.display_name || 'Người dùng PBL6'}</h2>
+              <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.9rem' }}>{data?.email} {data?.phone ? `· ${data.phone}` : ''}</p>
+            </div>
+          </div>
+
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Quản lý cá nhân & Mua hàng</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+            <Link to="/customer/profile" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <User size={20} color="#059669" />
+              <div>
+                <strong>Thông tin cá nhân</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Sửa tên hiển thị & số điện thoại</p>
+              </div>
+            </Link>
+            <Link to="/customer/addresses" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <MapPin size={20} color="#059669" />
+              <div>
+                <strong>Sổ địa chỉ</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Quản lý địa chỉ nhận hàng</p>
+              </div>
+            </Link>
+            <Link to="/customer/orders" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Package size={20} color="#059669" />
+              <div>
+                <strong>Đơn hàng của tôi</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Theo dõi trạng thái đơn & thanh toán</p>
+              </div>
+            </Link>
+            <Link to="/customer/invitations" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Mail size={20} color="#059669" />
+              <div>
+                <strong>Lời mời Store</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Xem & xác nhận lời mời nhân viên</p>
+              </div>
+            </Link>
+            <Link to="/customer/store-applications" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Store size={20} color="#059669" />
+              <div>
+                <strong>Đăng ký mở gian hàng</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Tạo cửa hàng và bán hàng trên sàn</p>
+              </div>
+            </Link>
+            <Link to="/customer/settings" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Settings size={20} color="#059669" />
+              <div>
+                <strong>Cài đặt & Quyền riêng tư</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Consent và cấu hình tài khoản</p>
+              </div>
+            </Link>
+            <Link to="/change-password" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Key size={20} color="#059669" />
+              <div>
+                <strong>Đổi mật khẩu</strong>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Cập nhật mật khẩu đăng nhập</p>
+              </div>
+            </Link>
+          </div>
+
+          {(isMerchant || isAdmin) && (
+            <>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Cổng nghiệp vụ được phân quyền</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                {isMerchant && (
+                  <Link to="/seller" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #10b981', background: '#ecfdf5' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                      <Store size={22} color="#059669" />
+                      <strong style={{ fontSize: '1rem', color: '#065f46' }}>Store Portal (Kênh người bán)</strong>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#047857' }}>Quản lý sản phẩm, đơn hàng, tồn kho, mã giảm giá và báo cáo doanh thu.</p>
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link to="/admin" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #6366f1', background: '#eef2ff' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                      <ShieldCheck size={22} color="#4f46e5" />
+                      <strong style={{ fontSize: '1rem', color: '#3730a3' }}>Admin Portal (Quản trị hệ thống)</strong>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#4338ca' }}>Quản lý người dùng, duyệt hồ sơ mở Store, phân quyền và kiểm duyệt toàn sàn.</p>
+                  </Link>
+                )}
+              </div>
+            </>
           )}
-          <Link to="/change-password">Đổi mật khẩu</Link>
         </>
       )}
     </section>
@@ -266,10 +367,12 @@ function Market() {
           <NavLink end to="/">
             Sản phẩm
           </NavLink>
-          <NavLink to="/customer/orders">Đơn hàng của tôi</NavLink>
-          <NavLink to="/profile">Hồ sơ</NavLink>
+          <NavLink to="/customer/orders">Đơn hàng</NavLink>
           <NavLink to="/customer/addresses">Sổ địa chỉ</NavLink>
-          <NavLink to="/customer/settings">Cài đặt & quyền riêng tư</NavLink>
+          <NavLink to="/customer/invitations">Lời mời Store</NavLink>
+          <NavLink to="/customer/store-applications">Mở gian hàng</NavLink>
+          <NavLink to="/profile">Hồ sơ</NavLink>
+          <NavLink to="/customer/settings">Cài đặt</NavLink>
           {merchant && (
             <NavLink to="/seller">
               <Store size={15} />

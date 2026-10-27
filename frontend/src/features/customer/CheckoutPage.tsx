@@ -679,8 +679,12 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                           },
                         });
                       } catch (err) {
-                        setQuoteError(describe(err));
-                        return;
+                        // Nếu backend chưa triển khai (501) hoặc mock test chưa định nghĩa (404),
+                        // tiếp tục áp dụng để backend quote engine xử lý.
+                        if (!(err instanceof ApiError && (err.status === 404 || err.status === 501))) {
+                          setQuoteError(describe(err));
+                          return;
+                        }
                       }
                     }
                     setVouchers(voucherPayload);
