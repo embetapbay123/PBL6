@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { RouteObject } from 'react-router-dom';
+import {useSearchParams} from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { request, ApiError } from '../../api/client';
 import {storeApplicationAdminRoutes} from './StoreApplicationAdminPage';
 import { AdminAiMetrics, AdminDashboardSummary, AdminOrders } from './AdminLiveData';
-import { AdminCatalogManagement, AdminVouchers } from './AdminOperations';
+import { AdminCatalogManagement } from './AdminOperations';
+import {VoucherPanel} from '../../live/VoucherPanel';
 
 interface AdminUser {
   id: string;
@@ -264,12 +266,15 @@ function StoresManagement() {
 }
 
 function AdminDashboard() {
-  const [tab, setTab] = useState<'users' | 'stores' | 'roles' | 'catalog' | 'orders' | 'vouchers' | 'dashboard' | 'ai'>('users');
+  const [params, setParams] = useSearchParams();
+  const value = params.get('tab') ?? 'dashboard';
+  const tab = ['users','stores','roles','catalog','orders','vouchers','dashboard','ai'].includes(value) ? value : 'dashboard';
+  const setTab = (next: string) => setParams({tab: next});
 
   return (
     <section style={{ maxWidth: '960px', margin: '0 auto', padding: '1rem' }}>
       <h2>Bảng Quản trị Hệ thống (Admin Portal)</h2>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
         <button
           style={{ fontWeight: tab === 'users' ? 'bold' : 'normal' }}
           onClick={() => setTab('users')}
@@ -293,13 +298,9 @@ function AdminDashboard() {
       </div>
 
       {tab === 'users' ? <UsersManagement /> : tab === 'stores' ? <StoresManagement /> : tab === 'roles' ? <RolesManagement />
-        : tab === 'catalog' ? <AdminCatalogManagement /> : tab === 'orders' ? <AdminOrders /> : tab === 'vouchers' ? <AdminVouchers />
+        : tab === 'catalog' ? <AdminCatalogManagement /> : tab === 'orders' ? <AdminOrders /> : tab === 'vouchers' ? <VoucherPanel scope="PLATFORM"/>
           : tab === 'dashboard' ? <AdminDashboardSummary /> : <AdminAiMetrics />}
 
-      <footer style={{ marginTop: '2rem', fontSize: '0.85rem', color: '#666' }}>
-        <p>• Store Application (#40) và Staff Management (#42, #43) giữ theo issue riêng.</p>
-        <p>• Số liệu User/Store thống kê được lấy trực tiếp từ nguồn quản trị M3.</p>
-      </footer>
     </section>
   );
 }

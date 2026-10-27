@@ -41,7 +41,7 @@ npm run infra:up
 
 Mở [http://localhost:8080](http://localhost:8080). Đăng nhập `customer1@pbl6.test`, `customer2@pbl6.test`, `owner@pbl6.test` hoặc `admin@pbl6.test`. Mật khẩu là `SEED_PASSWORD` trong `infrastructure/.env`, mặc định local `LocalDemo-ChangeMe123!`. Seed chỉ là dữ liệu giả để phát triển. Script giữ cấu hình/khóa đã có, không in secret.
 
-Luồng thật: login/refresh/logout, context/quyền hiện hành, hồ sơ của chính User, danh sách/chi tiết Product và mẫu sửa title/description có expected_version + audit/outbox. Bản tổng Hoa bổ sung Cart, Voucher CRUD/usage và Order read; chạy migration M2 004 và đọc [phạm vi/dependency](docs/implementation/hoa-consolidated-handoff.md). M3 Profile/Address và checkout/AI scope lookup đã merge qua [PR #87](https://github.com/embetapbay123/PBL6/pull/87); Web list mẫu có retry qua [#89](https://github.com/embetapbay123/PBL6/pull/89). Seller transition/Shipment mô phỏng đã có. Checkout confirm/cancel, COD, report còn phần 501/dependency; AI chỉ chạy mock. UI demo cũ ở `/?mode=mock` vẫn dùng dữ liệu mô phỏng.
+Web mặc định dùng giao diện marketplace nối API cho Customer, Store và Admin: catalog/detail, cart/checkout/voucher, lịch sử đơn/thanh toán, kho/đơn/COD và các màn quản trị. Xem [bàn giao giao diện live](docs/implementation/live-demo-ui.md) để biết route, phạm vi và kiểm thử. `/?mode=mock` giữ demo dữ liệu local cũ; `/?mode=api-tools` giữ khung API. Review backend, email thật, provider Refund và nghiệm thu thiết bị vẫn còn; không suy Done từ việc đã có UI.
 
 ## Nhận việc
 

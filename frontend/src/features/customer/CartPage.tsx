@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError, request } from '../../api/client';
 import { useAuth } from '../../api/auth-context';
+import {CartProduct} from '../../live/CartProduct';
 
 interface CartItem {
   id: string;
@@ -48,7 +49,7 @@ const describe = (error: unknown): string => {
   return 'Đã xảy ra lỗi không xác định.';
 };
 
-const shortId = (id: string) => id.slice(0, 8);
+const shortId = (id: string) => id.slice(-8);
 
 export const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -208,7 +209,7 @@ export const CartPage: React.FC = () => {
                     onChange={() => toggleItem(item.id)}
                   />
                   <div>
-                    <h3 className="font-semibold text-gray-800">Sản phẩm {shortId(item.product_id)}</h3>
+                    <CartProduct productId={item.product_id} variantId={item.variant_id}/>
                     <p className="text-xs text-gray-500">
                       Biến thể {shortId(item.variant_id)} · Cửa hàng {shortId(item.store_id)}
                     </p>
