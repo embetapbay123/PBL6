@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ApiError, request } from '../../api/client';
+import { ApiError } from '../../api/client';
+import { callOperation } from '../../api/operations';
 import { useAuth } from '../../api/auth-context';
 import {CartProduct} from '../../live/CartProduct';
 
@@ -29,9 +30,11 @@ async function fetchAllCartItems(): Promise<CartItem[]> {
   let total = 0;
 
   for (let page = 1; page <= MAX_PAGES; page++) {
-    const data = await request<CartList>(`/cart/items?page=${page}&size=${PAGE_SIZE}`);
+    const data = await callOperation('listCartItems', { query: { page, size: PAGE_SIZE } });
     total = data.total;
-    for (const item of data.items) byId.set(item.id, item);
+    for (const item of data.items) {
+      if (item.id) byId.set(item.id, item as CartItem);
+    }
     if (byId.size >= total || data.items.length === 0) break;
   }
 
@@ -89,7 +92,7 @@ export const CartPage: React.FC = () => {
     setBusyId(item.id);
     setActionError(null);
     try {
-      await request(`/cart/items/${item.id}`, { method: 'PATCH', body: JSON.stringify({ quantity }) });
+      await callOperation('updateCartItem', { path: { id: item.id }, body: { quantity } });
       setItems((prev) => prev && prev.map((i) => (i.id === item.id ? { ...i, quantity } : i)));
     } catch (error) {
       setActionError(describe(error));
@@ -103,7 +106,7 @@ export const CartPage: React.FC = () => {
     setBusyId(item.id);
     setActionError(null);
     try {
-      await request(`/cart/items/${item.id}`, { method: 'DELETE' });
+      await callOperation('removeCartItem', { path: { id: item.id } });
       setItems((prev) => prev && prev.filter((i) => i.id !== item.id));
       setSelected((prev) => {
         const next = new Set(prev);

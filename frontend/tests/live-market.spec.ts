@@ -114,6 +114,8 @@ async function setup(
       });
     if (call.path === "/auth/logout")
       return route.fulfill({ json: { status: "SUCCESS" } });
+    if(call.path==='/store/inventory/movements')return route.fulfill({json:pageData([])});
+    if(call.path==='/store/inventory/summary')return route.fulfill({json:{period_start:new Date().toISOString(),period_end:new Date().toISOString(),received_units:0,issued_to_orders_units:0,returned_units:0,adjusted_out_units:0,opening_units:0}});
     if (call.path === "/products" || call.path === "/store/products")
       return route.fulfill({ json: pageData([productData]) });
     if (call.path === "/products/" + product)
@@ -264,6 +266,8 @@ test("inventory retries preserve operation ID, payload and version across a relo
   await page.getByRole("button", { name: "Điều chỉnh", exact: true }).click();
   await page.getByLabel("Số lượng thay đổi").fill("2");
   await page.getByLabel("Lý do").fill("Received shipment");
+  await expect(page.getByRole("button",{name:"Lưu điều chỉnh"})).toBeDisabled();
+  await page.getByRole('checkbox',{name:/Tôi là chủ gian hàng/}).check();
   await page.getByRole("button", { name: "Lưu điều chỉnh" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Stock response unavailable",

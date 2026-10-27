@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -19,12 +19,30 @@ import {
 } from "../../bootstrap/components";
 import { CustomerRecommendations } from "./CustomerRecommendations";
 import { CatalogCard } from "../../live/CatalogCard";
+import { useDebounce } from "../../hooks/useDebounce";
+
 export function ProductsSample() {
   const { session } = useAuth(),
     [params, setParams] = useSearchParams();
   const search = params.get("q") ?? "",
     category = params.get("category") ?? "",
     page = Number(params.get("page") ?? 1) || 1;
+  const [localSearch, setLocalSearch] = useState(search);
+  const isComposingRef = useRef(false);
+  const debouncedSearch = useDebounce(localSearch, 250);
+
+  // Sync internal state if URL query changes externally
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  // Propagate debounced query to URL search filter smoothly without interrupting IME
+  useEffect(() => {
+    if (!isComposingRef.current && debouncedSearch !== search) {
+      setFilter("q", debouncedSearch);
+    }
+  }, [debouncedSearch]);
+
   const [sort, setSort] = useState<"title" | "price_asc" | "price_desc">(
     "title",
   );
@@ -149,14 +167,39 @@ export function ProductsSample() {
             Tìm sản phẩm
             <div className="relative">
               <Search
-                className="absolute right-3 top-3 text-slate-400"
+                className="absolute right-3 top-3 text-slate-400 pointer-events-none"
                 size={17}
               />
               <input
-                value={search}
-                onChange={(e) => setFilter("q", e.target.value)}
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
+                }}
+                onCompositionEnd={() => {
+                  isComposingRef.current = false;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isComposingRef.current) {
+                    setFilter("q", localSearch);
+                  }
+                }}
                 placeholder="Tìm tai nghe, áo khoác, đèn bàn…"
+                style={{ paddingRight: localSearch ? "36px" : undefined }}
               />
+              {localSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSearch("");
+                    setFilter("q", "");
+                  }}
+                  className="absolute right-8 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </label>
           <label>

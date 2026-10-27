@@ -6,13 +6,17 @@ import {
   CreatePlatformVoucherBodyDto,
   UpdatePlatformVoucherBodyDto,
   ValidateVouchersBodyDto,
+  SuggestVouchersBodyDto,
 } from '../../../shared/src/dtos.generated';
 import { VoucherService } from './voucher.service';
+import {OrderService} from '../order/order.service';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class VoucherController {
   private readonly service = new VoucherService();
+  @Post('vouchers/suggestions') @Roles('CUSTOMER')
+  suggest(@Body() b:SuggestVouchersBodyDto,@Req() r:any){return new OrderService().suggestVouchers(b,r.auth,r.correlationId)}
 
   // --- Customer Voucher Validation ---
   @Post('vouchers/validate')

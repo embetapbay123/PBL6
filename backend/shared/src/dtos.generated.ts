@@ -515,6 +515,14 @@ export class AdjustInventoryBodyDto {
   "operation_id"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
   "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "received_at"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "supplier_name"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "source_reference"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["RECEIPT", "CORRECTION"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "adjustment_kind"?: "RECEIPT" | "CORRECTION";
 }
 export class AdjustInventoryPathDto {
 }
@@ -531,6 +539,12 @@ export class ListStockMovementsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "from"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "to"?: string;
 }
 export class ListStockMovementsHeadersDto {
 }
@@ -1510,6 +1524,171 @@ export class SepayCallbackHeadersDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string"},true),defaultMessage:()=> 'Invalid contract field'}})
   "x-sepay-timestamp"!: string;
 }
+export class SuggestVouchersBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}, "maxItems": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "cart_item_ids"!: Array<string>;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "address_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": {"type": "string", "enum": ["SANDBOX", "COD"]}, "x-key-format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "payment_methods"!: {} & Record<string, "SANDBOX" | "COD">;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "platform_voucher_code"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": {"type": "string", "maxLength": 200}, "x-key-format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "store_vouchers"?: {} & Record<string, string>;
+}
+export class SuggestVouchersPathDto {
+}
+export class SuggestVouchersQueryDto {
+}
+export class SuggestVouchersHeadersDto {
+}
+export class GetInventorySummaryPathDto {
+}
+export class GetInventorySummaryQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "from"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "date-time"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "to"!: string;
+}
+export class GetInventorySummaryHeadersDto {
+}
+export class ListStockRequestsPathDto {
+}
+export class ListStockRequestsQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "default": 1}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "default": 1},false),defaultMessage:()=> 'Invalid contract field'}})
+  "page": number = 1;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
+  "size": number = 20;
+}
+export class ListStockRequestsHeadersDto {
+}
+export class CreateStockRequestBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "variant_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  "delta_quantity"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "reason"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "received_at"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "supplier_name"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "source_reference"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["RECEIPT", "CORRECTION"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "adjustment_kind"?: "RECEIPT" | "CORRECTION";
+}
+export class CreateStockRequestPathDto {
+}
+export class CreateStockRequestQueryDto {
+}
+export class CreateStockRequestHeadersDto {
+}
+export class DecideStockRequestBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["APPROVE", "REJECT"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "decision"!: "APPROVE" | "REJECT";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "reason"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_inventory_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+}
+export class DecideStockRequestPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class DecideStockRequestQueryDto {
+}
+export class DecideStockRequestHeadersDto {
+}
+export class RequestOrderReturnBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 500},true),defaultMessage:()=> 'Invalid contract field'}})
+  "reason"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_order_version"!: number;
+}
+export class RequestOrderReturnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class RequestOrderReturnQueryDto {
+}
+export class RequestOrderReturnHeadersDto {
+}
+export class ReportDeliveryReturnBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 500},true),defaultMessage:()=> 'Invalid contract field'}})
+  "reason"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_order_version"!: number;
+}
+export class ReportDeliveryReturnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class ReportDeliveryReturnQueryDto {
+}
+export class ReportDeliveryReturnHeadersDto {
+}
+export class DecideOrderReturnBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["APPROVE", "REJECT", "RECEIVE"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "action"!: "APPROVE" | "REJECT" | "RECEIVE";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 500},true),defaultMessage:()=> 'Invalid contract field'}})
+  "reason"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_order_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "restock"?: boolean;
+}
+export class DecideOrderReturnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class DecideOrderReturnQueryDto {
+}
+export class DecideOrderReturnHeadersDto {
+}
+export class RecordReturnCodRefundBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_order_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},true),defaultMessage:()=> 'Invalid contract field'}})
+  "amount_vnd"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "cash_repaid"!: boolean;
+}
+export class RecordReturnCodRefundPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class RecordReturnCodRefundQueryDto {
+}
+export class RecordReturnCodRefundHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -1790,6 +1969,15 @@ export const runtimeDtos = {
   getPersonalizationConsent: {body: undefined, path: GetPersonalizationConsentPathDto, query: GetPersonalizationConsentQueryDto, headers: GetPersonalizationConsentHeadersDto},
   updatePersonalizationConsent: {body: UpdatePersonalizationConsentBodyDto, path: UpdatePersonalizationConsentPathDto, query: UpdatePersonalizationConsentQueryDto, headers: UpdatePersonalizationConsentHeadersDto},
   sepayCallback: {body: SepayCallbackBodyDto, path: SepayCallbackPathDto, query: SepayCallbackQueryDto, headers: SepayCallbackHeadersDto},
+  suggestVouchers: {body: SuggestVouchersBodyDto, path: SuggestVouchersPathDto, query: SuggestVouchersQueryDto, headers: SuggestVouchersHeadersDto},
+  getInventorySummary: {body: undefined, path: GetInventorySummaryPathDto, query: GetInventorySummaryQueryDto, headers: GetInventorySummaryHeadersDto},
+  listStockRequests: {body: undefined, path: ListStockRequestsPathDto, query: ListStockRequestsQueryDto, headers: ListStockRequestsHeadersDto},
+  createStockRequest: {body: CreateStockRequestBodyDto, path: CreateStockRequestPathDto, query: CreateStockRequestQueryDto, headers: CreateStockRequestHeadersDto},
+  decideStockRequest: {body: DecideStockRequestBodyDto, path: DecideStockRequestPathDto, query: DecideStockRequestQueryDto, headers: DecideStockRequestHeadersDto},
+  requestOrderReturn: {body: RequestOrderReturnBodyDto, path: RequestOrderReturnPathDto, query: RequestOrderReturnQueryDto, headers: RequestOrderReturnHeadersDto},
+  reportDeliveryReturn: {body: ReportDeliveryReturnBodyDto, path: ReportDeliveryReturnPathDto, query: ReportDeliveryReturnQueryDto, headers: ReportDeliveryReturnHeadersDto},
+  decideOrderReturn: {body: DecideOrderReturnBodyDto, path: DecideOrderReturnPathDto, query: DecideOrderReturnQueryDto, headers: DecideOrderReturnHeadersDto},
+  recordReturnCodRefund: {body: RecordReturnCodRefundBodyDto, path: RecordReturnCodRefundPathDto, query: RecordReturnCodRefundQueryDto, headers: RecordReturnCodRefundHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

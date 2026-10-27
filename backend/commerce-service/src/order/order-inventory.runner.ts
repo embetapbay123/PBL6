@@ -8,7 +8,7 @@ import { OrderRepository } from './order.repository';
 import { commandId, CommandCall } from './checkout.runner';
 
 type Kind='CONSUME'|'RELEASE'|'RESTOCK';
-const closed=(order:any)=>['CANCELLED','EXPIRED'].includes(order.status);
+const closed=(order:any)=>['CANCELLED','EXPIRED','RETURNED'].includes(order.status);
 const operations={CONSUME:'ConsumeReservation',RELEASE:'ReleaseReservation',RESTOCK:'RestockOrder'} as const;
 
 export async function queueInventoryCommand(manager:EntityManager,id:string,kind:Kind,correlation:string) {
@@ -144,7 +144,7 @@ export class OrderInventoryRunner {
   }
   async tick() {
     const reconcile=await this.source.query(`SELECT o.id FROM "order" o JOIN order_inventory_state s ON s.order_id=o.id
-      WHERE s.next_attempt_at<=now() AND (o.status IN ('CANCELLED','EXPIRED') OR
+      WHERE s.next_attempt_at<=now() AND (o.status IN ('CANCELLED','EXPIRED','RETURNED') OR
         o.payment_method='SANDBOX' AND o.status IN ('AWAITING_PAYMENT','RECOVERING')) ORDER BY s.next_attempt_at,o.id LIMIT 20`);
     for(const row of reconcile)try {await this.reconcile(row.id);} catch {await this.defer(row.id);}
     const rows=await this.source.query("SELECT order_id FROM order_inventory_state WHERE command_kind IS NOT NULL AND next_attempt_at<=now() AND (lease_until IS NULL OR lease_until<=now()) ORDER BY updated_at LIMIT 20");

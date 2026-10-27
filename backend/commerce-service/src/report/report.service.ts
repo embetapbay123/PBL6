@@ -124,6 +124,7 @@ export class ReportService {
       refunded_vnd: moneyNumber(data.refunded_vnd),
       shipping_fee_vnd: moneyNumber(data.shipping_fee_vnd),
       order_count: data.order_count,
+      ...(data.completed_units===undefined?{}:{completed_units:moneyNumber(data.completed_units)}),
       best_selling_product_ids: data.best_selling_product_ids,
       low_stock_variant_ids: lowStockIds,
       revenue_series: data.revenue_series.map(s => ({

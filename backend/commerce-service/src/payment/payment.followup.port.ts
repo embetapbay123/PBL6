@@ -14,7 +14,7 @@ export class PaymentFollowupPort {
   async closePending(orderId:string) {
     if(!this.manager.queryRunner?.isTransactionActive)throw new Error('PAYMENT_REQUIRES_CALLER_TRANSACTION');
     const [order]=await this.manager.query('SELECT status FROM "order" WHERE id=$1 FOR UPDATE',[orderId]);
-    if(!order || !['CANCELLED','EXPIRED'].includes(order.status))throw new ApiError(409,'ORDER_NOT_CLOSED','Order chưa đóng.');
+    if(!order || !['CANCELLED','EXPIRED','RETURNED'].includes(order.status))throw new ApiError(409,'ORDER_NOT_CLOSED','Order chưa đóng.');
     const [payment]=await this.manager.query('SELECT * FROM payment WHERE order_id=$1 FOR UPDATE',[orderId]);
     if(!payment)return;
     if(payment.status==='PENDING') {
@@ -44,7 +44,7 @@ export class PaymentFollowupPort {
         throw new ApiError(409,'FOLLOWUP_NOT_RESOLVED','Order chưa xác nhận consume và chuyển trạng thái.');
     }else if(resolution==='REFUNDED'){
       const [refund]=await this.manager.query("SELECT * FROM refund WHERE payment_id=$1 AND order_id=$2 AND status='SUCCEEDED' AND amount_vnd=$3",[payment.id,target.order_id,payment.payable_vnd]);
-      if(!['EXPIRED','CANCELLED'].includes(order.status) || !refund || BigInt(payment.refunded_vnd)!==BigInt(payment.payable_vnd))
+      if(!['EXPIRED','CANCELLED','RETURNED'].includes(order.status) || !refund || BigInt(payment.refunded_vnd)!==BigInt(payment.payable_vnd))
         throw new ApiError(409,'FOLLOWUP_NOT_RESOLVED','Chưa có bằng chứng Refund thành công.');
     }else throw new ApiError(422,'VALIDATION_FAILED','Resolution không hợp lệ.');
     await this.manager.query("UPDATE payment_followup SET status='DONE',resolution=$2 WHERE operation_id=$1",[operationId,resolution]);

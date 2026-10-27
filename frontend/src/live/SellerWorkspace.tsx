@@ -10,6 +10,146 @@ import type {
 } from "../api/operations.generated";
 import { ErrorView, Loading, Pagination } from "../bootstrap/components";
 import { formatMoney, useCommand, useStoreAccess } from "./useLiveData";
+import { StockOperationsPanel, OrderStock } from "./StockOperationsPanel";
+import { OrderFacts } from "./OrderFacts";
+import { ReturnControls } from "./ReturnControls";
+
+export function SellerSubNav() {
+  const access = useStoreAccess();
+  return (
+    <nav
+      className="seller-subnav"
+      style={{
+        display: "flex",
+        gap: "0.5rem",
+        borderBottom: "1px solid #e2e8f0",
+        paddingBottom: "0.75rem",
+        marginBottom: "1.5rem",
+        overflowX: "auto",
+        flexWrap: "wrap",
+      }}
+    >
+      <Link
+        to="/seller"
+        style={{
+          fontWeight: 500,
+          color: "#475569",
+          textDecoration: "none",
+          padding: "0.35rem 0.75rem",
+          borderRadius: "6px",
+          background: "#f1f5f9",
+        }}
+      >
+        Tổng quan
+      </Link>
+      {access.can("product.store.read_write") && (
+        <Link
+          to="/seller/products"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Sản phẩm
+        </Link>
+      )}
+      {access.can("inventory.store.read_adjust") && (
+        <Link
+          to="/seller/inventory"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Tồn kho
+        </Link>
+      )}
+      {access.can("order.store.read_status_cancel") && (
+        <Link
+          to="/seller/orders"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Đơn hàng
+        </Link>
+      )}
+      {access.owner && (
+        <Link
+          to="/seller/vouchers"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Voucher Store
+        </Link>
+      )}
+      {access.owner && (
+        <Link
+          to="/seller/staff"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Nhân viên Store
+        </Link>
+      )}
+      {access.owner && (
+        <Link
+          to="/seller/reports"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Báo cáo
+        </Link>
+      )}
+      {access.owner && (
+        <Link
+          to="/seller/settings"
+          style={{
+            fontWeight: 500,
+            color: "#475569",
+            textDecoration: "none",
+            padding: "0.35rem 0.75rem",
+            borderRadius: "6px",
+            background: "#f1f5f9",
+          }}
+        >
+          Cài đặt Store
+        </Link>
+      )}
+    </nav>
+  );
+}
 
 export function SellerOverview() {
   const access = useStoreAccess();
@@ -19,6 +159,7 @@ export function SellerOverview() {
   });
   return (
     <section>
+      <SellerSubNav />
       <h1>{store.data?.name ?? "Gian hàng của bạn"}</h1>
       {store.error && <ErrorView error={store.error} />}
       {store.isPending && <Loading />}
@@ -34,8 +175,12 @@ export function SellerOverview() {
               ["/seller/inventory", "Tồn kho", Boxes],
               ["/seller/orders", "Đơn hàng", Package],
             ]
-              .filter(
-                ([href]) => href === "/seller/inventory" ? access.can("inventory.store.read_adjust") : href === "/seller/orders" ? access.can("order.store.read_status_cancel") : access.can("product.store.read_write"),
+              .filter(([href]) =>
+                href === "/seller/inventory"
+                  ? access.can("inventory.store.read_adjust")
+                  : href === "/seller/orders"
+                    ? access.can("order.store.read_status_cancel")
+                    : access.can("product.store.read_write"),
               )
               .map(([href, label, Icon]) => {
                 const Symbol = Icon as typeof Store;
@@ -94,6 +239,7 @@ export function StoreSettings() {
     );
   return (
     <section>
+      <SellerSubNav />
       <h1>Thông tin gian hàng</h1>
       {state.error ? (
         <ErrorView error={state.error} onRetry={() => void state.refetch()} />
@@ -179,6 +325,7 @@ function StoreSettingsForm({
 export function StoreInventory() {
   const access = useStoreAccess(),
     [page, setPage] = useState(1),
+    [stockNotice, setStockNotice] = useState(""),
     [selected, setSelected] =
       useState<OperationOutputs["listStoreInventory"]["items"][number]>();
   const inventory = useQuery({
@@ -212,7 +359,9 @@ export function StoreInventory() {
     );
   return (
     <section>
+      <SellerSubNav />
       <h1>Quản lý tồn kho</h1>
+      {stockNotice && <p role="status">{stockNotice}</p>}
       <p className="text-slate-500">
         Theo dõi số lượng sẵn có và ghi nhận nhập, xuất kho có lý do.
       </p>
@@ -266,6 +415,7 @@ export function StoreInventory() {
             total={inventory.data.total}
             onPage={setPage}
           />
+          <StockOperationsPanel name={variantName} />
         </>
       )}
       {selected && (
@@ -283,6 +433,11 @@ export function StoreInventory() {
               close={() => setSelected(undefined)}
               done={() => {
                 setSelected(undefined);
+                setStockNotice(
+                  access.owner
+                    ? "Đã ghi nhận thay đổi kho."
+                    : "Đã gửi đề nghị, tồn kho chưa thay đổi. Chờ Owner duyệt.",
+                );
                 void inventory.refetch();
               }}
             />
@@ -322,6 +477,21 @@ function StockAdjustment({
       return undefined;
     }
   });
+  const localTime = (iso?: string) => {
+    const d = iso ? new Date(iso) : new Date();
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+  };
+  const [adjustmentKind, setAdjustmentKind] = useState<
+    "RECEIPT" | "CORRECTION"
+  >(restored?.adjustment_kind ?? "RECEIPT");
+  const [receivedAt, setReceivedAt] = useState(() =>
+      localTime(restored?.received_at),
+    ),
+    [supplier, setSupplier] = useState(restored?.supplier_name ?? ""),
+    [reference, setReference] = useState(restored?.source_reference ?? ""),
+    [ownerConfirmed, setOwnerConfirmed] = useState(false);
   const [delta, setDelta] = useState(restored?.delta_quantity ?? 1),
     [reason, setReason] = useState(restored?.reason ?? ""),
     [uncertain, setUncertain] = useState(!!restored),
@@ -346,6 +516,12 @@ function StockAdjustment({
           reason: reason.trim(),
           operation_id: crypto.randomUUID(),
           expected_version: item.version,
+          adjustment_kind: delta > 0 ? adjustmentKind : "CORRECTION",
+          ...(receivedAt
+            ? { received_at: new Date(receivedAt).toISOString() }
+            : {}),
+          ...(supplier.trim() ? { supplier_name: supplier.trim() } : {}),
+          ...(reference.trim() ? { source_reference: reference.trim() } : {}),
         };
       try {
         sessionStorage.setItem(storageKey, JSON.stringify(pending.current));
@@ -353,7 +529,10 @@ function StockAdjustment({
         /* Keep the immutable request in memory if storage is unavailable. */
       }
       try {
-        await callOperation("adjustInventory", { body: pending.current });
+        if (access.owner)
+          await callOperation("adjustInventory", { body: pending.current });
+        else
+          await callOperation("createStockRequest", { body: pending.current });
         clear();
         done();
       } catch (e) {
@@ -406,6 +585,60 @@ function StockAdjustment({
           onChange={(e) => setReason(e.target.value)}
         />
       </label>
+      <label>
+        Loại thay đổi
+        <select
+          value={delta > 0 ? adjustmentKind : "CORRECTION"}
+          disabled={uncertain || stale || command.busy || delta <= 0}
+          onChange={(e) =>
+            setAdjustmentKind(e.target.value as "RECEIPT" | "CORRECTION")
+          }
+        >
+          <option value="RECEIPT">Nhập hàng từ bên ngoài</option>
+          <option value="CORRECTION">Điều chỉnh / kiểm kê</option>
+        </select>
+      </label>
+      <label>
+        Ngày nhận hàng / chứng từ
+        <input
+          type="datetime-local"
+          value={receivedAt}
+          required={delta > 0}
+          disabled={uncertain || stale || command.busy}
+          onChange={(e) => setReceivedAt(e.target.value)}
+        />
+      </label>
+      <label>
+        Nhà cung cấp / nguồn nhập
+        <input
+          maxLength={200}
+          value={supplier}
+          disabled={uncertain || stale || command.busy}
+          onChange={(e) => setSupplier(e.target.value)}
+        />
+      </label>
+      <label>
+        Số chứng từ / phiếu nhập
+        <input
+          maxLength={200}
+          value={reference}
+          disabled={uncertain || stale || command.busy}
+          onChange={(e) => setReference(e.target.value)}
+        />
+      </label>
+      {access.owner ? (
+        <label>
+          <input
+            type="checkbox"
+            checked={ownerConfirmed}
+            disabled={uncertain || stale || command.busy}
+            onChange={(e) => setOwnerConfirmed(e.target.checked)}
+          />
+          Tôi là chủ gian hàng, xác nhận thay đổi số lượng và chứng từ thực tế.
+        </label>
+      ) : (
+        <p>Nhân viên gửi đề nghị. Tồn chỉ thay đổi sau khi Owner duyệt.</p>
+      )}
       {command.error != null && <ErrorView error={command.error} />}{" "}
       {uncertain && (
         <p role="status">
@@ -417,8 +650,20 @@ function StockAdjustment({
           Dữ liệu đã thay đổi. Đóng và tải lại kho trước khi điều chỉnh tiếp.
         </p>
       )}
-      <button disabled={command.busy || stale || delta === 0 || !reason.trim()}>
-        {uncertain ? "Thử lại điều chỉnh" : "Lưu điều chỉnh"}
+      <button
+        disabled={
+          command.busy ||
+          stale ||
+          delta === 0 ||
+          !reason.trim() ||
+          (access.owner && !ownerConfirmed && !uncertain)
+        }
+      >
+        {uncertain
+          ? "Thử lại điều chỉnh"
+          : access.owner
+            ? "Lưu điều chỉnh"
+            : "Gửi đề nghị cho Owner"}
       </button>
       <button
         type="button"
@@ -465,6 +710,7 @@ export function StoreOrders() {
     );
   return (
     <section>
+      <SellerSubNav />
       <h1>Đơn hàng Store</h1>
       <p className="text-slate-500">
         Chỉ các đơn thuộc gian hàng đang hoạt động của bạn.
@@ -620,6 +866,17 @@ function StoreOrderActions({
           · {order.refund_status}
         </p>
       )}
+      <OrderFacts order={order} />
+      <OrderStock order={order} />
+      <ReturnControls
+        order={order}
+        store
+        updated={(value) => {
+          updated(value);
+          setStale(false);
+          setCash(false);
+        }}
+      />
       {order.items?.map((i, index) => (
         <div className="border-b border-slate-100 py-2" key={index}>
           <p>
@@ -637,18 +894,22 @@ function StoreOrderActions({
       {stale && (
         <p>Đọc lại đơn để xác minh trạng thái trước khi thực hiện tiếp.</p>
       )}
-      {next[order.status] && (
-        <button
-          disabled={
-            command.busy ||
-            stale ||
-            (order.status === "SHIPPED" && order.payment_status !== "SUCCEEDED")
-          }
-          onClick={() => run("next")}
-        >
-          Chuyển sang {next[order.status]}
-        </button>
-      )}
+      {next[order.status] &&
+        !["REQUESTED", "APPROVED"].includes(
+          order.return_case?.status ?? "",
+        ) && (
+          <button
+            disabled={
+              command.busy ||
+              stale ||
+              (order.status === "SHIPPED" &&
+                order.payment_status !== "SUCCEEDED")
+            }
+            onClick={() => run("next")}
+          >
+            Chuyển sang {next[order.status]}
+          </button>
+        )}
       {["AWAITING_PAYMENT", "PENDING", "CONFIRMED"].includes(order.status) && (
         <form
           onSubmit={(e) => {
@@ -672,6 +933,7 @@ function StoreOrderActions({
         </form>
       )}
       {order.status === "SHIPPED" &&
+        !["REQUESTED", "APPROVED"].includes(order.return_case?.status ?? "") &&
         order.payment_method === "COD" &&
         order.payment_status !== "SUCCEEDED" &&
         access.can("cod.store.collect") && (
@@ -744,7 +1006,12 @@ export function StoreReports() {
   };
   return (
     <section>
+      <SellerSubNav />
       <h1>Báo cáo gian hàng</h1>
+      <p>
+        Số liệu bán hoàn tất của các đơn được tạo trong khoảng ngày đã chọn;
+        hàng xuất cho đơn chưa hoàn tất được tách trong thống kê kho.
+      </p>
       <div className="market-form-grid">
         <label>
           Từ ngày
@@ -771,6 +1038,10 @@ export function StoreReports() {
         <Loading />
       ) : (
         <>
+          <div className="boot-card">
+            <h3>Số hàng bán hoàn tất</h3>
+            <strong>{data.data.completed_units ?? "Chưa có số liệu"}</strong>
+          </div>
           <div className="market-stats">
             {Object.entries(labels).map(([key, label]) => (
               <div key={key}>

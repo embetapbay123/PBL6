@@ -15,7 +15,9 @@
 | Nền tảng | Client Web và Flutter/Android cho Customer; Management Portal cho Owner/Seller/Admin theo quyền. |
 | Kiến trúc | M1 Catalog & Inventory; M2 Order & Payment; M3 Identity & Store; M4 AI. Bốn service độc lập, sở hữu DB riêng. |
 
-**Ngoài phạm vi:** commission, payout, settlement, wallet, tranh chấp/đổi trả sau Processing, hãng vận chuyển và cổng thanh toán production, COD do Shipper thật thu, huấn luyện LLM, Mobile quản trị, voucher dùng nhiều mã cùng phạm vi, ảnh/video review. Promotion trong tài liệu nguồn được hiện thực bằng Voucher của MVP; không có chương trình khuyến mãi khác.
+**Ngoài phạm vi:** commission, payout, settlement, wallet, tranh chấp, đổi hàng/trả từng phần, hãng vận chuyển và cổng thanh toán production, COD do Shipper thật thu, huấn luyện LLM, Mobile quản trị, voucher dùng nhiều mã cùng phạm vi, ảnh/video review. Promotion trong tài liệu nguồn được hiện thực bằng Voucher của MVP; không có chương trình khuyến mãi khác.
+
+**Bổ sung 27/10:** cho phép trả toàn bộ đơn khi giao thất bại hoặc sau khi khách đã nhận, với Owner duyệt/nhận hàng, xử lý hàng bán lại/hỏng và hoàn tiền đúng bằng chứng. Xem [ADR phạm vi và tiêu chí](implementation/adr-demo-returns.md), [bàn giao vận hành](implementation/demo-operations.md). Phạm vi cũ loại trừ mọi đổi/trả sau Processing được thay thế bởi bổ sung này.
 
 ## Thuật ngữ
 

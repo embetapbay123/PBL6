@@ -4,6 +4,8 @@
 
 **Web demo nối API:** [Customer, Store và Admin trong giao diện mặc định](live-demo-ui.md). Demo local-data cũ giữ riêng ở `/?mode=mock`; không dùng nó làm bằng chứng hoàn thành nghiệp vụ.
 
+**Vận hành khi test demo:** [chọn voucher, Owner duyệt kho, log/thống kê và hai luồng trả hàng](demo-operations.md), [ADR và state machine mở rộng](adr-demo-returns.md).
+
 **Payment callback:** [durable receipt và điểm nối worker Order](payment-callback-handoff.md), scope PAY-02 của Công; nghiệm thu consume/recovery/refund còn phối hợp đúng owner.
 
 **Schema đã chốt để code:** [database baseline 2.2](database-schema.md). Chạy toàn bộ migration hiện có: 001→002→003 ở từng service và thêm 004 ở M2; dùng DTO OpenAPI. Không phải chờ chốt database thêm.

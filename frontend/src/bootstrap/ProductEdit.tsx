@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { callOperation } from '../api/operations';
 import { ErrorView, FormPanel, Loading } from './components';
+import { SellerSubNav } from '../live/SellerWorkspace';
 type SaleStatus='DRAFT'|'ACTIVE'|'STOPPED';
 /**
  * Seller Product edit form.
@@ -23,12 +24,22 @@ export function ProductEdit(){
       cache.setQueryData(['product',id],product);await cache.invalidateQueries({queryKey:['products']});setSaved(true);
     }catch(e){setError(e);}finally{setBusy(false);}
   }
-  if(query.isLoading)return <Loading/>;if(query.error)return <ErrorView error={query.error}/>;
-  return <><FormPanel title="Sửa sản phẩm" busy={busy} error={error} onSubmit={submit}>
-    <label>Tên sản phẩm<input value={title} onChange={e=>setTitle(e.target.value)} required maxLength={200}/></label>
-    <label>Mô tả<textarea value={description} onChange={e=>setDescription(e.target.value)} maxLength={10000}/></label>
-    <label>Trạng thái bán<select value={status} onChange={e=>setStatus(e.target.value as SaleStatus)}>
-      <option value="DRAFT">Nháp</option><option value="ACTIVE">Đang bán</option><option value="STOPPED">Dừng bán</option>
-    </select></label>
-  </FormPanel>{saved && <p role="status">Đã lưu sản phẩm.</p>}</>;
+  if(query.isLoading)return <><SellerSubNav /><Loading/></>;
+  if(query.error)return <><SellerSubNav /><div style={{ marginBottom: '1rem' }}><Link to="/seller/products">← Quay lại danh sách sản phẩm</Link></div><ErrorView error={query.error}/></>;
+  return <div style={{ maxWidth: '960px', margin: '0 auto', padding: '1rem' }}>
+    <SellerSubNav />
+    <div style={{ marginBottom: '1rem' }}>
+      <Link to="/seller/products" style={{ color: '#2563eb', textDecoration: 'underline' }}>
+        ← Quay lại danh sách sản phẩm
+      </Link>
+    </div>
+    <FormPanel title={`Sửa sản phẩm #${id}`} busy={busy} error={error} onSubmit={submit}>
+      <label>Tên sản phẩm<input value={title} onChange={e=>setTitle(e.target.value)} required maxLength={200}/></label>
+      <label>Mô tả<textarea value={description} onChange={e=>setDescription(e.target.value)} maxLength={10000}/></label>
+      <label>Trạng thái bán<select value={status} onChange={e=>setStatus(e.target.value as SaleStatus)}>
+        <option value="DRAFT">Nháp</option><option value="ACTIVE">Đang bán</option><option value="STOPPED">Dừng bán</option>
+      </select></label>
+    </FormPanel>
+    {saved && <p role="status">Đã lưu sản phẩm.</p>}
+  </div>;
 }

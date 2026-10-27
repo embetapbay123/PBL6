@@ -4428,6 +4428,25 @@
           "expected_version": {
             "type": "integer",
             "maximum": 9007199254740991
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "adjustment_kind": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "CORRECTION"
+            ]
           }
         },
         "required": [
@@ -4526,6 +4545,14 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "required": [],
@@ -4569,6 +4596,38 @@
                   "occurred_at": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "received_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "supplier_name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "source_reference": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "requested_by": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "delta_reserved": {
+                    "type": "integer",
+                    "minimum": -2147483647,
+                    "maximum": 2147483647
+                  },
+                  "movement_kind": {
+                    "type": "string",
+                    "enum": [
+                      "RECEIPT",
+                      "CORRECTION"
+                    ]
                   }
                 },
                 "required": [
@@ -5234,7 +5293,8 @@
                       "COMPLETED",
                       "CANCELLED",
                       "EXPIRED",
-                      "RECOVERING"
+                      "RECOVERING",
+                      "RETURNED"
                     ]
                   },
                   "version": {
@@ -5305,6 +5365,147 @@
                       "additionalProperties": true
                     },
                     "maxItems": 100
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "address_snapshot": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "status_history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "from_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "to_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "actor_user_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "to_status",
+                        "actor_user_id",
+                        "created_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "return_case": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "DELIVERY_FAILED",
+                          "CUSTOMER_RETURN"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "REQUESTED",
+                          "APPROVED",
+                          "REJECTED",
+                          "RECEIVED"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "requested_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "requested_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2147483647
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "decided_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "decision_reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "received_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "received_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "restock": {
+                        "type": "boolean"
+                      },
+                      "stock_state": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "cash_refund_due_vnd": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "order_id",
+                      "kind",
+                      "status",
+                      "reason",
+                      "requested_by",
+                      "requested_at",
+                      "version",
+                      "cash_refund_due_vnd"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "inventory_state": {
+                    "type": "string",
+                    "maxLength": 30
                   }
                 },
                 "required": [
@@ -5416,7 +5617,8 @@
                       "COMPLETED",
                       "CANCELLED",
                       "EXPIRED",
-                      "RECOVERING"
+                      "RECOVERING",
+                      "RETURNED"
                     ]
                   },
                   "version": {
@@ -5487,6 +5689,147 @@
                       "additionalProperties": true
                     },
                     "maxItems": 100
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "address_snapshot": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "status_history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "from_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "to_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "actor_user_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "to_status",
+                        "actor_user_id",
+                        "created_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "return_case": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "DELIVERY_FAILED",
+                          "CUSTOMER_RETURN"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "REQUESTED",
+                          "APPROVED",
+                          "REJECTED",
+                          "RECEIVED"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "requested_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "requested_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2147483647
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "decided_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "decision_reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "received_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "received_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "restock": {
+                        "type": "boolean"
+                      },
+                      "stock_state": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "cash_refund_due_vnd": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "order_id",
+                      "kind",
+                      "status",
+                      "reason",
+                      "requested_by",
+                      "requested_at",
+                      "version",
+                      "cash_refund_due_vnd"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "inventory_state": {
+                    "type": "string",
+                    "maxLength": 30
                   }
                 },
                 "required": [
@@ -5947,7 +6290,8 @@
                       "COMPLETED",
                       "CANCELLED",
                       "EXPIRED",
-                      "RECOVERING"
+                      "RECOVERING",
+                      "RETURNED"
                     ]
                   },
                   "version": {
@@ -6018,6 +6362,147 @@
                       "additionalProperties": true
                     },
                     "maxItems": 100
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "address_snapshot": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "status_history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "from_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "to_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "actor_user_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "to_status",
+                        "actor_user_id",
+                        "created_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "return_case": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "DELIVERY_FAILED",
+                          "CUSTOMER_RETURN"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "REQUESTED",
+                          "APPROVED",
+                          "REJECTED",
+                          "RECEIVED"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "requested_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "requested_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2147483647
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "decided_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "decision_reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "received_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "received_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "restock": {
+                        "type": "boolean"
+                      },
+                      "stock_state": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "cash_refund_due_vnd": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "order_id",
+                      "kind",
+                      "status",
+                      "reason",
+                      "requested_by",
+                      "requested_at",
+                      "version",
+                      "cash_refund_due_vnd"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "inventory_state": {
+                    "type": "string",
+                    "maxLength": 30
                   }
                 },
                 "required": [
@@ -6118,7 +6603,8 @@
                 "COMPLETED",
                 "CANCELLED",
                 "EXPIRED",
-                "RECOVERING"
+                "RECOVERING",
+                "RETURNED"
               ]
             },
             "version": {
@@ -6189,6 +6675,147 @@
                 "additionalProperties": true
               },
               "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
             }
           },
           "required": [
@@ -6282,7 +6909,8 @@
                 "COMPLETED",
                 "CANCELLED",
                 "EXPIRED",
-                "RECOVERING"
+                "RECOVERING",
+                "RETURNED"
               ]
             },
             "version": {
@@ -6353,6 +6981,147 @@
                 "additionalProperties": true
               },
               "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
             }
           },
           "required": [
@@ -6441,7 +7210,8 @@
                       "COMPLETED",
                       "CANCELLED",
                       "EXPIRED",
-                      "RECOVERING"
+                      "RECOVERING",
+                      "RETURNED"
                     ]
                   },
                   "version": {
@@ -6512,6 +7282,147 @@
                       "additionalProperties": true
                     },
                     "maxItems": 100
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "address_snapshot": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "status_history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "from_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "to_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "actor_user_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "to_status",
+                        "actor_user_id",
+                        "created_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "return_case": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "DELIVERY_FAILED",
+                          "CUSTOMER_RETURN"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "REQUESTED",
+                          "APPROVED",
+                          "REJECTED",
+                          "RECEIVED"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "requested_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "requested_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2147483647
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "decided_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "decision_reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "received_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "received_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "restock": {
+                        "type": "boolean"
+                      },
+                      "stock_state": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "cash_refund_due_vnd": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "order_id",
+                      "kind",
+                      "status",
+                      "reason",
+                      "requested_by",
+                      "requested_at",
+                      "version",
+                      "cash_refund_due_vnd"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "inventory_state": {
+                    "type": "string",
+                    "maxLength": 30
                   }
                 },
                 "required": [
@@ -6612,7 +7523,8 @@
                 "COMPLETED",
                 "CANCELLED",
                 "EXPIRED",
-                "RECOVERING"
+                "RECOVERING",
+                "RETURNED"
               ]
             },
             "version": {
@@ -6683,6 +7595,147 @@
                 "additionalProperties": true
               },
               "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
             }
           },
           "required": [
@@ -6786,7 +7839,8 @@
                 "COMPLETED",
                 "CANCELLED",
                 "EXPIRED",
-                "RECOVERING"
+                "RECOVERING",
+                "RETURNED"
               ]
             },
             "version": {
@@ -6857,6 +7911,147 @@
                 "additionalProperties": true
               },
               "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
             }
           },
           "required": [
@@ -6950,7 +8145,8 @@
                 "COMPLETED",
                 "CANCELLED",
                 "EXPIRED",
-                "RECOVERING"
+                "RECOVERING",
+                "RETURNED"
               ]
             },
             "version": {
@@ -7021,6 +8217,147 @@
                 "additionalProperties": true
               },
               "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
             }
           },
           "required": [
@@ -7116,7 +8453,8 @@
                 "COMPLETED",
                 "CANCELLED",
                 "EXPIRED",
-                "RECOVERING"
+                "RECOVERING",
+                "RETURNED"
               ]
             },
             "version": {
@@ -7187,6 +8525,147 @@
                 "additionalProperties": true
               },
               "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
             }
           },
           "required": [
@@ -9359,7 +10838,8 @@
                       "COMPLETED",
                       "CANCELLED",
                       "EXPIRED",
-                      "RECOVERING"
+                      "RECOVERING",
+                      "RETURNED"
                     ]
                   },
                   "version": {
@@ -9430,6 +10910,147 @@
                       "additionalProperties": true
                     },
                     "maxItems": 100
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "address_snapshot": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "status_history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "from_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "to_status": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "actor_user_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "reason": {
+                          "type": "string",
+                          "maxLength": 500
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "to_status",
+                        "actor_user_id",
+                        "created_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "return_case": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "order_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "DELIVERY_FAILED",
+                          "CUSTOMER_RETURN"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "REQUESTED",
+                          "APPROVED",
+                          "REJECTED",
+                          "RECEIVED"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "requested_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "requested_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2147483647
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "decided_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "decision_reason": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "received_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "received_by": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "restock": {
+                        "type": "boolean"
+                      },
+                      "stock_state": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "cash_refund_due_vnd": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "order_id",
+                      "kind",
+                      "status",
+                      "reason",
+                      "requested_by",
+                      "requested_at",
+                      "version",
+                      "cash_refund_due_vnd"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "inventory_state": {
+                    "type": "string",
+                    "maxLength": 30
                   }
                 },
                 "required": [
@@ -10824,6 +12445,11 @@
                 "additionalProperties": false
               },
               "maxItems": 100
+            },
+            "completed_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           },
           "required": [
@@ -12488,6 +14114,2088 @@
           },
           "required": [
             "success"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "suggestVouchers": {
+      "method": "POST",
+      "route": "/vouchers/suggestions",
+      "internal": false,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "cart_item_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100
+          },
+          "address_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_methods": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "x-key-format": "uuid"
+          },
+          "platform_voucher_code": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "store_vouchers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "x-key-format": "uuid"
+          }
+        },
+        "required": [
+          "cart_item_ids",
+          "address_id",
+          "payment_methods"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "voucher": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "code": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "scope": {
+                        "type": "string",
+                        "enum": [
+                          "STORE",
+                          "PLATFORM"
+                        ]
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "discount_type": {
+                        "type": "string",
+                        "enum": [
+                          "FIXED",
+                          "PERCENT"
+                        ]
+                      },
+                      "discount_value": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "min_goods_vnd": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "max_discount_vnd": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "starts_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "ends_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "usage_limit": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "per_customer_limit": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Phiên bản hiện tại mà client đã đọc.",
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "scope",
+                      "discount_type",
+                      "discount_value",
+                      "starts_at",
+                      "ends_at",
+                      "usage_limit",
+                      "per_customer_limit"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "eligible": {
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "estimated_discount_vnd": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "voucher",
+                  "eligible",
+                  "reason",
+                  "estimated_discount_vnd"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "evaluated_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "truncated": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "items",
+            "evaluated_at",
+            "truncated"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "getInventorySummary": {
+      "method": "GET",
+      "route": "/store/inventory/summary",
+      "internal": false,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "period_start": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "period_end": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "received_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "issued_to_orders_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "returned_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "adjusted_out_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "opening_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "adjusted_in_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "unclassified_in_units": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "period_start",
+            "period_end",
+            "received_units",
+            "issued_to_orders_units",
+            "returned_units",
+            "adjusted_out_units",
+            "opening_units",
+            "adjusted_in_units",
+            "unclassified_in_units"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "listStockRequests": {
+      "method": "GET",
+      "route": "/store/inventory/requests",
+      "internal": false,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "store_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "variant_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "requested_by": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "delta_quantity": {
+                    "type": "integer",
+                    "minimum": -2147483647,
+                    "maximum": 2147483647
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "PENDING",
+                      "APPROVED",
+                      "REJECTED"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  },
+                  "received_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "supplier_name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "source_reference": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "decided_by": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "decided_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "decision_reason": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "adjustment_kind": {
+                    "type": "string",
+                    "enum": [
+                      "RECEIPT",
+                      "CORRECTION"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "store_id",
+                  "variant_id",
+                  "requested_by",
+                  "delta_quantity",
+                  "reason",
+                  "created_at",
+                  "status",
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "total": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "page": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "size": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            }
+          },
+          "required": [
+            "items",
+            "total",
+            "page",
+            "size"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "createStockRequest": {
+      "method": "POST",
+      "route": "/store/inventory/requests",
+      "internal": false,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "delta_quantity": {
+            "type": "integer",
+            "maximum": 9007199254740991
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": "integer",
+            "maximum": 9007199254740991
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "supplier_name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "adjustment_kind": {
+            "type": "string",
+            "enum": [
+              "RECEIPT",
+              "CORRECTION"
+            ]
+          }
+        },
+        "required": [
+          "variant_id",
+          "delta_quantity",
+          "reason",
+          "operation_id",
+          "expected_version"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "variant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "requested_by": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "delta_quantity": {
+              "type": "integer",
+              "minimum": -2147483647,
+              "maximum": 2147483647
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "received_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "supplier_name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "source_reference": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "decided_by": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "decided_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "decision_reason": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "adjustment_kind": {
+              "type": "string",
+              "enum": [
+                "RECEIPT",
+                "CORRECTION"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "store_id",
+            "variant_id",
+            "requested_by",
+            "delta_quantity",
+            "reason",
+            "created_at",
+            "status",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "decideStockRequest": {
+      "method": "PATCH",
+      "route": "/store/inventory/requests/{id}",
+      "internal": false,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expected_inventory_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "decision",
+          "reason",
+          "expected_version",
+          "expected_inventory_version",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "variant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "requested_by": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "delta_quantity": {
+              "type": "integer",
+              "minimum": -2147483647,
+              "maximum": 2147483647
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2147483647
+            },
+            "received_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "supplier_name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "source_reference": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "decided_by": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "decided_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "decision_reason": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "adjustment_kind": {
+              "type": "string",
+              "enum": [
+                "RECEIPT",
+                "CORRECTION"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "store_id",
+            "variant_id",
+            "requested_by",
+            "delta_quantity",
+            "reason",
+            "created_at",
+            "status",
+            "version"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "requestOrderReturn": {
+      "method": "POST",
+      "route": "/me/orders/{id}/returns",
+      "internal": false,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "reason",
+          "operation_id",
+          "expected_order_version"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "purchase_group_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PREPARING",
+                "AWAITING_PAYMENT",
+                "PENDING",
+                "CONFIRMED",
+                "PROCESSING",
+                "SHIPPED",
+                "COMPLETED",
+                "CANCELLED",
+                "EXPIRED",
+                "RECOVERING",
+                "RETURNED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "maximum": 9007199254740991
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "payment_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "refund_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "payment_expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "amounts": {
+              "type": "object",
+              "properties": {
+                "goods_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "store_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "platform_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "shipping_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "payable_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "goods_vnd",
+                "store_discount_vnd",
+                "platform_discount_vnd",
+                "shipping_vnd",
+                "payable_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "required": [
+            "id",
+            "purchase_group_id",
+            "store_id",
+            "status",
+            "version",
+            "payment_method",
+            "amounts"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "reportDeliveryReturn": {
+      "method": "POST",
+      "route": "/store/orders/{id}/returns",
+      "internal": false,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "reason",
+          "operation_id",
+          "expected_order_version"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "purchase_group_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PREPARING",
+                "AWAITING_PAYMENT",
+                "PENDING",
+                "CONFIRMED",
+                "PROCESSING",
+                "SHIPPED",
+                "COMPLETED",
+                "CANCELLED",
+                "EXPIRED",
+                "RECOVERING",
+                "RETURNED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "maximum": 9007199254740991
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "payment_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "refund_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "payment_expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "amounts": {
+              "type": "object",
+              "properties": {
+                "goods_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "store_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "platform_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "shipping_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "payable_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "goods_vnd",
+                "store_discount_vnd",
+                "platform_discount_vnd",
+                "shipping_vnd",
+                "payable_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "required": [
+            "id",
+            "purchase_group_id",
+            "store_id",
+            "status",
+            "version",
+            "payment_method",
+            "amounts"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "decideOrderReturn": {
+      "method": "PATCH",
+      "route": "/store/orders/{id}/returns",
+      "internal": false,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "RECEIVE"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "restock": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action",
+          "reason",
+          "operation_id",
+          "expected_version",
+          "expected_order_version"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "purchase_group_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PREPARING",
+                "AWAITING_PAYMENT",
+                "PENDING",
+                "CONFIRMED",
+                "PROCESSING",
+                "SHIPPED",
+                "COMPLETED",
+                "CANCELLED",
+                "EXPIRED",
+                "RECOVERING",
+                "RETURNED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "maximum": 9007199254740991
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "payment_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "refund_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "payment_expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "amounts": {
+              "type": "object",
+              "properties": {
+                "goods_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "store_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "platform_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "shipping_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "payable_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "goods_vnd",
+                "store_discount_vnd",
+                "platform_discount_vnd",
+                "shipping_vnd",
+                "payable_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "required": [
+            "id",
+            "purchase_group_id",
+            "store_id",
+            "status",
+            "version",
+            "payment_method",
+            "amounts"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "recordReturnCodRefund": {
+      "method": "POST",
+      "route": "/store/orders/{id}/returns/cod-refund",
+      "internal": false,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_order_version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "amount_vnd": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "cash_repaid": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "operation_id",
+          "expected_order_version",
+          "amount_vnd",
+          "cash_repaid"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "purchase_group_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "PREPARING",
+                "AWAITING_PAYMENT",
+                "PENDING",
+                "CONFIRMED",
+                "PROCESSING",
+                "SHIPPED",
+                "COMPLETED",
+                "CANCELLED",
+                "EXPIRED",
+                "RECOVERING",
+                "RETURNED"
+              ]
+            },
+            "version": {
+              "type": "integer",
+              "maximum": 9007199254740991
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "payment_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "refund_status": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "payment_expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "amounts": {
+              "type": "object",
+              "properties": {
+                "goods_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "store_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "platform_discount_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "shipping_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "payable_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "goods_vnd",
+                "store_discount_vnd",
+                "platform_discount_vnd",
+                "shipping_vnd",
+                "payable_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              },
+              "maxItems": 100
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_snapshot": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "status_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "from_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "to_status": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "id",
+                  "to_status",
+                  "actor_user_id",
+                  "created_at"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "return_case": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "order_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "DELIVERY_FAILED",
+                    "CUSTOMER_RETURN"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "REQUESTED",
+                    "APPROVED",
+                    "REJECTED",
+                    "RECEIVED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "requested_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "requested_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483647
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_reason": {
+                  "type": "string",
+                  "maxLength": 500
+                },
+                "received_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "received_by": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restock": {
+                  "type": "boolean"
+                },
+                "stock_state": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "cash_refund_due_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "id",
+                "order_id",
+                "kind",
+                "status",
+                "reason",
+                "requested_by",
+                "requested_at",
+                "version",
+                "cash_refund_due_vnd"
+              ],
+              "additionalProperties": false
+            },
+            "inventory_state": {
+              "type": "string",
+              "maxLength": 30
+            }
+          },
+          "required": [
+            "id",
+            "purchase_group_id",
+            "store_id",
+            "status",
+            "version",
+            "payment_method",
+            "amounts"
           ],
           "additionalProperties": false
         }

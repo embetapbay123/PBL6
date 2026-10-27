@@ -136,6 +136,47 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
           {order && <p>Số tiền: <b>{formatVnd(order.amounts.payable_vnd)}</b></p>}
           {remaining !== null && <p>Còn lại: <span data-testid="payment-countdown">{formatClock(remaining)}</span></p>}
           <p>Đang chờ xác nhận thanh toán{rawStatus ? ` (${rawStatus})` : ''}...</p>
+          {import.meta.env.DEV && (
+            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await callOperation('sandboxCallback', {
+                      headers: { 'x-sandbox-signature': 'sim' },
+                      body: {
+                        provider_event_id: 'evt-' + Date.now(),
+                        provider_reference: attempt.payment_id,
+                        result: 'SUCCESS',
+                        signature: 'sim',
+                      },
+                    });
+                  } catch {}
+                }}
+              >
+                Mô phỏng Sandbox Callback
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await callOperation('sepayCallback', {
+                      headers: { 'x-sepay-signature': 'sim', 'x-sepay-timestamp': String(Date.now()) },
+                      body: {
+                        id: Date.now(),
+                        transferType: 'in',
+                        transferAmount: order?.amounts.payable_vnd ?? 0,
+                        accountNumber: 'VNPAY-01',
+                        content: attempt.payment_code ?? 'PAY',
+                      },
+                    });
+                  } catch {}
+                }}
+              >
+                Mô phỏng SePay Callback
+              </button>
+            </div>
+          )}
         </div>
       );
   }

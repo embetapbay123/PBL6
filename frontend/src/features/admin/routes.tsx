@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { RouteObject } from 'react-router-dom';
-import {useSearchParams} from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
 import { request, ApiError } from '../../api/client';
+import { callOperation } from '../../api/operations';
 import {storeApplicationAdminRoutes} from './StoreApplicationAdminPage';
 import { AdminAiMetrics, AdminDashboardSummary, AdminOrders } from './AdminLiveData';
 import { AdminCatalogManagement } from './AdminOperations';
@@ -41,8 +42,8 @@ function RolesManagement() {
   const load = useCallback(async () => {
     setLoading(true); setError(undefined); setNotice('');
     try {
-      const result = await request<{ roles: AdminRole[]; permissions: AdminPermission[] }>('/admin/roles');
-      setRoles(result.roles); setPermissions(result.permissions);
+      const result = await callOperation('listRoles', {});
+      setRoles(result.roles as unknown as AdminRole[]); setPermissions(result.permissions as unknown as AdminPermission[]);
       setSelectedId(current => result.roles.some(role => role.id === current) ? current : result.roles[0]?.id ?? '');
       const currentId = selectedId || result.roles[0]?.id;
       setSelectedPermissionIds(result.roles.find(role => role.id === currentId)?.permission_ids ?? []);
@@ -57,9 +58,13 @@ function RolesManagement() {
     if (!selectedRole) return;
     setBusy(true); setError(undefined); setNotice('');
     try {
-      await request(`/admin/roles/${selectedRole.id}`, { method: 'PATCH', body: JSON.stringify({
-        permission_ids: selectedPermissionIds, expected_version: selectedRole.version,
-      }) });
+      await callOperation('updateRole', {
+        path: { id: selectedRole.id },
+        body: {
+          permission_ids: selectedPermissionIds,
+          expected_version: selectedRole.version,
+        },
+      });
       setNotice('Đã cập nhật quyền. Thay đổi có hiệu lực ở request tiếp theo.');
       await load();
     } catch (e) { setError(e); }
@@ -107,8 +112,8 @@ function UsersManagement() {
     setLoading(true);
     setError(undefined);
     try {
-      const res = await request<{ items: AdminUser[]; total: number; page: number; size: number }>(`/admin/users?page=${p}&size=10`);
-      setItems(res.items);
+      const res = await callOperation('listUsers', { query: { page: p, size: 10 } });
+      setItems(res.items as unknown as AdminUser[]);
       setTotal(res.total);
       setPage(res.page);
     } catch (e) {
@@ -126,13 +131,13 @@ function UsersManagement() {
     if (!reason) return;
     setBusy(true);
     try {
-      await request(`/admin/users/${user.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status: nextStatus,
+      await callOperation('updateUserState', {
+        path: { id: user.id },
+        body: {
+          status: nextStatus as 'ACTIVE' | 'LOCKED',
           reason,
           expected_version: user.version,
-        }),
+        },
       });
       await load(page);
     } catch (e) {
@@ -191,8 +196,8 @@ function StoresManagement() {
     setLoading(true);
     setError(undefined);
     try {
-      const res = await request<{ items: AdminStore[]; total: number; page: number; size: number }>(`/admin/stores?page=${p}&size=10`);
-      setItems(res.items);
+      const res = await callOperation('listStores', { query: { page: p, size: 10 } });
+      setItems(res.items as unknown as AdminStore[]);
       setTotal(res.total);
       setPage(res.page);
     } catch (e) {
@@ -210,13 +215,13 @@ function StoresManagement() {
     if (!reason) return;
     setBusy(true);
     try {
-      await request(`/admin/stores/${store.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status: nextStatus,
+      await callOperation('updateStoreState', {
+        path: { id: store.id },
+        body: {
+          status: nextStatus as 'ACTIVE' | 'LOCKED',
           reason,
           expected_version: store.version,
-        }),
+        },
       });
       await load(page);
     } catch (e) {
@@ -273,7 +278,38 @@ function AdminDashboard() {
 
   return (
     <section style={{ maxWidth: '960px', margin: '0 auto', padding: '1rem' }}>
-      <h2>Bảng Quản trị Hệ thống (Admin Portal)</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ margin: 0 }}>Bảng Quản trị Hệ thống (Admin Portal)</h2>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Link
+            to="/admin/store-applications"
+            style={{
+              padding: '0.35rem 0.75rem',
+              background: '#059669',
+              color: '#ffffff',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              fontWeight: 600,
+              fontSize: '0.875rem'
+            }}
+          >
+            Duyệt mở Store &rarr;
+          </Link>
+          <Link
+            to="/"
+            style={{
+              padding: '0.35rem 0.75rem',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              color: '#475569',
+              fontSize: '0.875rem'
+            }}
+          >
+            &larr; Về Sàn
+          </Link>
+        </div>
+      </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
         <button
           style={{ fontWeight: tab === 'users' ? 'bold' : 'normal' }}

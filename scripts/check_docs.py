@@ -78,7 +78,7 @@ acceptids=set(re.findall(r'^\| (TC-(?:FR|NFR)-[A-Z0-9-]+) \|',accept,re.M))
 if len(acceptids)!=len(fr)+len(nfr): errors.append(('acceptance count',len(acceptids)))
 if 'Có môi trường/dữ liệu test cố định và log theo correlation ID' in accept:
     errors.append(('NFR acceptance still generic',))
-if len(ops)!=100: errors.append(('API count',len(ops)))
+if len(ops)!=109: errors.append(('API count',len(ops)))
 status_index=json.loads((DOCS/'contracts'/'endpoint-status.json').read_text(encoding='utf-8'))
 if len(status_index)!=len(ops) or {row['operation_id'] for row in status_index}!=opids:
     errors.append(('endpoint status coverage',))

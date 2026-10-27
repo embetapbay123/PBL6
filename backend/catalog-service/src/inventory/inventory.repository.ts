@@ -33,6 +33,13 @@ export interface InventoryBalanceRow {
 }
 
 export interface StockMovementRow {
+  movement_kind?:'RECEIPT'|'CORRECTION'|null;
+  actor_user_id?:string;
+  requested_by?:string|null;
+  delta_reserved?:number;
+  received_at?:Date|string|null;
+  supplier_name?:string|null;
+  source_reference?:string|null;
   id: string;
   variant_id: string;
   order_id: string | null;
@@ -114,15 +121,16 @@ export class InventoryRepository extends OwnedRepository {
     await this.manager.query('UPDATE inventory SET quantity=$2, version=version+1 WHERE id=$1', [inventoryId, quantity]);
   }
 
-  async pageMovements(storeId: string, page: number, size: number): Promise<{ items: StockMovementRow[]; total: number }> {
+  async pageMovements(storeId: string, page: number, size: number,from?:string,to?:string): Promise<{ items: StockMovementRow[]; total: number }> {
+    const filter='i.store_id=$1 AND ($2::timestamptz IS NULL OR coalesce(m.received_at,m.created_at)>=$2) AND ($3::timestamptz IS NULL OR coalesce(m.received_at,m.created_at)<$3)';
     const [count] = await this.manager.query(
       `SELECT count(*)::int AS total FROM stock_movement m
-         JOIN inventory i ON i.id=m.inventory_id WHERE i.store_id=$1`, [storeId]);
+         JOIN inventory i ON i.id=m.inventory_id WHERE ${filter}`, [storeId,from??null,to??null]);
     const items = await this.manager.query(
-      `SELECT m.id, i.variant_id, m.order_id, m.delta_quantity, m.reason, m.created_at AS occurred_at
+      `SELECT m.id, i.variant_id, m.order_id, m.delta_quantity,m.movement_kind,m.delta_reserved,m.actor_user_id,m.requested_by,m.received_at,m.supplier_name,m.source_reference, m.reason, m.created_at AS occurred_at
          FROM stock_movement m JOIN inventory i ON i.id=m.inventory_id
-        WHERE i.store_id=$1 ORDER BY m.created_at DESC, m.id LIMIT $2 OFFSET $3`,
-      [storeId, size, (page - 1) * size]);
+        WHERE ${filter} ORDER BY m.created_at DESC, m.id LIMIT $4 OFFSET $5`,
+      [storeId,from??null,to??null,size,(page-1)*size]);
     return { items, total: count.total };
   }
 

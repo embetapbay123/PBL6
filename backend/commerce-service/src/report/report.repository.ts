@@ -27,6 +27,7 @@ export interface PlatformDashboardData {
 }
 
 export interface StoreReportData {
+  completed_units?:string;
   order_count: number;
   order_value_vnd: string;
   completed_goods_revenue_vnd: string;
@@ -109,6 +110,7 @@ export class ReportRepository extends OwnedRepository {
     const [orderAgg] = await this.manager.query(
       `SELECT 
          COUNT(*)::int AS order_count,
+         coalesce(sum(CASE WHEN o.status='COMPLETED' THEN (SELECT sum(oi.quantity) FROM order_item oi WHERE oi.order_id=o.id) ELSE 0 END),0)::text AS completed_units,
          COALESCE(SUM(o.payable_vnd), 0)::text AS order_value_vnd,
          COALESCE(SUM(CASE WHEN o.status = 'COMPLETED' THEN o.goods_vnd - o.store_discount_vnd - o.platform_discount_vnd ELSE 0 END), 0)::text AS completed_goods_revenue_vnd,
          COALESCE(SUM(o.shipping_vnd), 0)::text AS shipping_fee_vnd
@@ -154,6 +156,7 @@ export class ReportRepository extends OwnedRepository {
 
     return {
       order_count: orderAgg?.order_count ?? 0,
+      completed_units: orderAgg?.completed_units,
       order_value_vnd: orderAgg?.order_value_vnd ?? '0',
       completed_goods_revenue_vnd: orderAgg?.completed_goods_revenue_vnd ?? '0',
       collected_vnd: paymentAgg?.collected_vnd ?? '0',

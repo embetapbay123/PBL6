@@ -826,7 +826,11 @@
         "delta_quantity": 0,
         "reason": "fixture-value",
         "operation_id": "11111111-1111-4111-8111-111111111111",
-        "expected_version": 0
+        "expected_version": 0,
+        "received_at": "2026-10-02T00:00:00Z",
+        "supplier_name": "fixture-value",
+        "source_reference": "fixture-value",
+        "adjustment_kind": "RECEIPT"
       },
       "path": {},
       "query": {},
@@ -848,7 +852,9 @@
       "path": {},
       "query": {
         "page": 1,
-        "size": 20
+        "size": 20,
+        "from": "2026-10-02T00:00:00Z",
+        "to": "2026-10-02T00:00:00Z"
       },
       "headers": {}
     },
@@ -1146,7 +1152,29 @@
         "shipping_vnd": 0,
         "payable_vnd": 0
       },
-      "items": []
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
     },
     "status": 200
   },
@@ -1180,7 +1208,29 @@
         "shipping_vnd": 0,
         "payable_vnd": 0
       },
-      "items": []
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
     },
     "status": 200
   },
@@ -1230,7 +1280,29 @@
         "shipping_vnd": 0,
         "payable_vnd": 0
       },
-      "items": []
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
     },
     "status": 200
   },
@@ -1264,7 +1336,29 @@
         "shipping_vnd": 0,
         "payable_vnd": 0
       },
-      "items": []
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
     },
     "status": 200
   },
@@ -1298,7 +1392,29 @@
         "shipping_vnd": 0,
         "payable_vnd": 0
       },
-      "items": []
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
     },
     "status": 200
   },
@@ -1332,7 +1448,29 @@
         "shipping_vnd": 0,
         "payable_vnd": 0
       },
-      "items": []
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
     },
     "status": 200
   },
@@ -1984,7 +2122,8 @@
       "order_count": 0,
       "best_selling_product_ids": [],
       "low_stock_variant_ids": [],
-      "revenue_series": []
+      "revenue_series": [],
+      "completed_units": 0
     },
     "status": 200
   },
@@ -2342,6 +2481,378 @@
       "success": false
     },
     "status": 200
+  },
+  "suggestVouchers": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "cart_item_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "address_id": "11111111-1111-4111-8111-111111111111",
+        "payment_methods": {},
+        "platform_voucher_code": "fixture-value",
+        "store_vouchers": {}
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "evaluated_at": "2026-10-02T00:00:00Z",
+      "truncated": false
+    },
+    "status": 201
+  },
+  "getInventorySummary": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "from": "2026-10-02T00:00:00Z",
+        "to": "2026-10-02T00:00:00Z"
+      },
+      "headers": {}
+    },
+    "response": {
+      "period_start": "2026-10-02T00:00:00Z",
+      "period_end": "2026-10-02T00:00:00Z",
+      "received_units": 0,
+      "issued_to_orders_units": 0,
+      "returned_units": 0,
+      "adjusted_out_units": 0,
+      "opening_units": 0,
+      "adjusted_in_units": 0,
+      "unclassified_in_units": 0
+    },
+    "status": 200
+  },
+  "listStockRequests": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "page": 1,
+        "size": 20
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 1
+    },
+    "status": 200
+  },
+  "createStockRequest": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "variant_id": "11111111-1111-4111-8111-111111111111",
+        "delta_quantity": 0,
+        "reason": "fixture-value",
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "expected_version": 0,
+        "received_at": "2026-10-02T00:00:00Z",
+        "supplier_name": "fixture-value",
+        "source_reference": "fixture-value",
+        "adjustment_kind": "RECEIPT"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "requested_by": "11111111-1111-4111-8111-111111111111",
+      "delta_quantity": 0,
+      "reason": "fixture-value",
+      "created_at": "2026-10-02T00:00:00Z",
+      "status": "PENDING",
+      "version": 0,
+      "received_at": "2026-10-02T00:00:00Z",
+      "supplier_name": "fixture-value",
+      "source_reference": "fixture-value",
+      "decided_by": "11111111-1111-4111-8111-111111111111",
+      "decided_at": "2026-10-02T00:00:00Z",
+      "decision_reason": "fixture-value",
+      "adjustment_kind": "RECEIPT"
+    },
+    "status": 201
+  },
+  "decideStockRequest": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "decision": "APPROVE",
+        "reason": "fixture-value",
+        "expected_version": 0,
+        "expected_inventory_version": 0,
+        "operation_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "requested_by": "11111111-1111-4111-8111-111111111111",
+      "delta_quantity": 0,
+      "reason": "fixture-value",
+      "created_at": "2026-10-02T00:00:00Z",
+      "status": "PENDING",
+      "version": 0,
+      "received_at": "2026-10-02T00:00:00Z",
+      "supplier_name": "fixture-value",
+      "source_reference": "fixture-value",
+      "decided_by": "11111111-1111-4111-8111-111111111111",
+      "decided_at": "2026-10-02T00:00:00Z",
+      "decision_reason": "fixture-value",
+      "adjustment_kind": "RECEIPT"
+    },
+    "status": 200
+  },
+  "requestOrderReturn": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "reason": "fixture-value",
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "expected_order_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
+    },
+    "status": 201
+  },
+  "reportDeliveryReturn": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "reason": "fixture-value",
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "expected_order_version": 0
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
+    },
+    "status": 201
+  },
+  "decideOrderReturn": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "action": "APPROVE",
+        "reason": "fixture-value",
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "expected_version": 0,
+        "expected_order_version": 0,
+        "restock": false
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
+    },
+    "status": 200
+  },
+  "recordReturnCodRefund": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "operation_id": "11111111-1111-4111-8111-111111111111",
+        "expected_order_version": 0,
+        "amount_vnd": 0,
+        "cash_repaid": false
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "purchase_group_id": "11111111-1111-4111-8111-111111111111",
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "status": "PREPARING",
+      "version": 0,
+      "payment_method": "SANDBOX",
+      "payment_status": "fixture-value",
+      "refund_status": "fixture-value",
+      "payment_expires_at": "2026-10-02T00:00:00Z",
+      "amounts": {
+        "goods_vnd": 0,
+        "store_discount_vnd": 0,
+        "platform_discount_vnd": 0,
+        "shipping_vnd": 0,
+        "payable_vnd": 0
+      },
+      "items": [],
+      "created_at": "2026-10-02T00:00:00Z",
+      "address_snapshot": {},
+      "status_history": [],
+      "return_case": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "DELIVERY_FAILED",
+        "status": "REQUESTED",
+        "reason": "fixture-value",
+        "requested_by": "11111111-1111-4111-8111-111111111111",
+        "requested_at": "2026-10-02T00:00:00Z",
+        "version": 0,
+        "decided_at": "2026-10-02T00:00:00Z",
+        "decided_by": "11111111-1111-4111-8111-111111111111",
+        "decision_reason": "fixture-value",
+        "received_at": "2026-10-02T00:00:00Z",
+        "received_by": "11111111-1111-4111-8111-111111111111",
+        "restock": false,
+        "stock_state": "fixture-value",
+        "cash_refund_due_vnd": 0
+      },
+      "inventory_state": "fixture-value"
+    },
+    "status": 201
   },
   "ResolveContext": {
     "mode": "fixture",

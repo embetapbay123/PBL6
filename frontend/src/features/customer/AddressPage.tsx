@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { request, ApiError } from '../../api/client';
+import { Link } from 'react-router-dom';
+import { ApiError } from '../../api/client';
+import { callOperation } from '../../api/operations';
+import { CustomerSubNav } from './CustomerSubNav';
 
 /* ------------------------------------------------------------------ */
 /* Contract với backend (M3) - CHỈNH Ở ĐÂY nếu tên field khác thực tế  */
@@ -80,7 +83,7 @@ export const AddressPage: React.FC = () => {
 
 
   const fetchAddresses = useCallback(async () => {
-    const data = await request<unknown>(`${ADDRESSES_PATH}?page=1&size=100`);
+    const data = await callOperation('listAddresses', { query: { page: 1, size: 100 } });
     if (mounted.current) setAddresses(extractList(data).map(fromApi));
   }, []);
 
@@ -133,10 +136,8 @@ export const AddressPage: React.FC = () => {
 
     setAdding(true);
     const ok = await runMutation(() =>
-      request<ApiAddress>(ADDRESSES_PATH, {
-        method: 'POST',
-        headers: JSON_HEADERS,
-        body: JSON.stringify({
+      callOperation('createAddress', {
+        body: {
           recipient_name: name,
           phone,
           line1,
@@ -144,7 +145,7 @@ export const AddressPage: React.FC = () => {
           district,
           city,
           is_default: addresses.length === 0,
-        }),
+        },
       }),
     );
     if (mounted.current) {
@@ -165,10 +166,9 @@ export const AddressPage: React.FC = () => {
     if (busyId) return;
     setBusyId(id);
     await runMutation(() =>
-      request<ApiAddress>(`${ADDRESSES_PATH}/${id}`, {
-        method: 'PATCH',
-        headers: JSON_HEADERS,
-        body: JSON.stringify({ is_default: true }),
+      callOperation('updateAddress', {
+        path: { id },
+        body: { is_default: true },
       }),
     );
     if (mounted.current) setBusyId(null);
@@ -177,7 +177,7 @@ export const AddressPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (busyId) return;
     setBusyId(id);
-    await runMutation(() => request<unknown>(`${ADDRESSES_PATH}/${id}`, { method: 'DELETE' }));
+    await runMutation(() => callOperation('deleteAddress', { path: { id } }));
     if (mounted.current) setBusyId(null);
   };
 
@@ -208,6 +208,8 @@ export const AddressPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <CustomerSubNav />
+
       <h1 className="text-2xl font-bold mb-6">Sổ địa chỉ nhận hàng (Addresses)</h1>
 
       {actionError && (

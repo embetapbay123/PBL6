@@ -40,6 +40,11 @@ export interface IdempotencyRecordRow {
 }
 
 export interface OrderRow {
+  status_history?:any[];
+  return_case?:any;
+  inventory_state?:string;
+  collected_vnd?:string;
+  refunded_vnd?:string;
   id: string;
   purchase_group_id: string;
   customer_user_id: string;
@@ -409,7 +414,10 @@ export class OrderRepository extends OwnedRepository {
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
               o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
-              p.status AS payment_status,
+              p.status AS payment_status,p.collected_vnd,p.refunded_vnd,
+              (SELECT state FROM order_inventory_state si WHERE si.order_id=o.id) AS inventory_state,
+              (SELECT to_jsonb(rt) FROM order_return rt WHERE rt.order_id=o.id) AS return_case,
+              (SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY h.created_at,h.id),'[]'::jsonb) FROM order_status_history h WHERE h.order_id=o.id) AS status_history,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
@@ -503,7 +511,10 @@ export class OrderRepository extends OwnedRepository {
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
               o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
-              p.status AS payment_status,
+              p.status AS payment_status,p.collected_vnd,p.refunded_vnd,
+              (SELECT state FROM order_inventory_state si WHERE si.order_id=o.id) AS inventory_state,
+              (SELECT to_jsonb(rt) FROM order_return rt WHERE rt.order_id=o.id) AS return_case,
+              (SELECT coalesce(jsonb_agg(to_jsonb(h) ORDER BY h.created_at,h.id),'[]'::jsonb) FROM order_status_history h WHERE h.order_id=o.id) AS status_history,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
