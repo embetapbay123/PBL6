@@ -3,6 +3,7 @@ import { database } from '../../../shared/src/database';
 import type { EntityManager } from 'typeorm';
 import { ApiError } from '../../../shared/src/errors';
 import { returnedRow } from '../../../shared/src/postgres-returning';
+import { emitEvent } from '../../../shared/src/events';
 import { assertDataType, attributeCode, createsCategoryCycle, taxonomySlug } from './taxonomy.validation';
 
 /**
@@ -192,19 +193,58 @@ export class ModerationRepository {
 
   /* ------------------------------------------------------- product moderation */
 
+  /** Restoring visibility must not resurrect a Product whose Store is no longer sellable. */
+  async storeOfProduct(id: string): Promise<string> {
+    const [row] = await database.query('SELECT store_id FROM product WHERE id=$1', [id]);
+    if (!row) throw new ApiError(404, 'NOT_FOUND', 'Product not found.');
+    return row.store_id;
+  }
+
+  /**
+   * Hiding and restoring only moves `moderation_status`; the sale status is deliberately left alone,
+   * so a restored DRAFT or STOPPED Product stays out of the catalogue. The returned projection is the
+   * contract `Product`, and the change publishes `ProductChanged` because a hidden Product must also
+   * disappear from anything downstream that already cached it.
+   */
   async setProductModeration(id: string, visible: boolean, body: any, actor: string, requestId: string) {
     if (!body.reason?.trim()) throw new ApiError(422, 'VALIDATION_FAILED', 'A moderation reason is required.');
     return database.transaction(async manager => {
       const [old] = await manager.query('SELECT id,status,moderation_status,version FROM product WHERE id=$1 FOR UPDATE', [id]);
       if (!old) throw new ApiError(404, 'NOT_FOUND', 'Product not found.');
       if (old.version !== body.expected_version) throw new ApiError(409, 'VERSION_CONFLICT', 'Product version changed.');
+      if (old.moderation_status === (visible ? 'VISIBLE' : 'HIDDEN')) {
+        throw new ApiError(409, 'NO_STATE_CHANGE', 'The Product is already in that moderation state.');
+      }
       const row = this.row<any>(await manager.query(
-        'UPDATE product SET moderation_status=$1,version=version+1 WHERE id=$2 RETURNING id,status,moderation_status,version',
+        `UPDATE product SET moderation_status=$1,version=version+1 WHERE id=$2
+         RETURNING id,store_id,product_type_id,title,description,attributes_json AS attributes,
+                   status,moderation_status,version`,
         [visible ? 'VISIBLE' : 'HIDDEN', id]), 'Product moderation update');
-      await manager.query(
-        `INSERT INTO m1_audit(actor_user_id,target_type,target_id,action,reason,request_id,before_json,after_json)
-         VALUES($1,'Product',$2,$3,$4,$5,$6::jsonb,$7::jsonb)`,
-        [actor, id, visible ? 'PRODUCT_RESTORED' : 'PRODUCT_HIDDEN', body.reason, requestId, JSON.stringify(old), JSON.stringify(row)]);
+      await this.audit(manager, 'Product', id, visible ? 'PRODUCT_RESTORED' : 'PRODUCT_HIDDEN',
+        actor, requestId, old, row, body.reason.trim());
+      await emitEvent(manager, 'ProductChanged', { product_id: row.id, store_id: row.store_id,
+        version: row.version, sale_status: row.status, moderation_status: row.moderation_status }, requestId);
+      return row;
+    });
+  }
+
+  /* -------------------------------------------------------- review moderation */
+
+  async setReviewModeration(id: string, visible: boolean, body: any, actor: string, requestId: string) {
+    if (!body.reason?.trim()) throw new ApiError(422, 'VALIDATION_FAILED', 'A moderation reason is required.');
+    return database.transaction(async manager => {
+      const [old] = await manager.query('SELECT * FROM review WHERE id=$1 FOR UPDATE', [id]);
+      if (!old) throw new ApiError(404, 'NOT_FOUND', 'Review not found.');
+      if (old.version !== body.expected_version) throw new ApiError(409, 'VERSION_CONFLICT', 'Review version changed.');
+      if (old.status === (visible ? 'VISIBLE' : 'HIDDEN')) {
+        throw new ApiError(409, 'NO_STATE_CHANGE', 'The Review is already in that moderation state.');
+      }
+      const row = this.row<any>(await manager.query(
+        `UPDATE review SET status=$1, hidden_reason=$2, updated_at=now(), version=version+1
+          WHERE id=$3 RETURNING id,order_item_id,product_id,rating,body,status,version`,
+        [visible ? 'VISIBLE' : 'HIDDEN', visible ? null : body.reason.trim(), id]), 'Review moderation update');
+      await this.audit(manager, 'Review', id, visible ? 'REVIEW_RESTORED' : 'REVIEW_HIDDEN',
+        actor, requestId, old, row, body.reason.trim());
       return row;
     });
   }

@@ -10,8 +10,4 @@ export class ReviewSkeletonController {
   listProductReviews(): never { return notImplemented('listProductReviews'); }
   @Patch('me/reviews/:id') @Roles("CUSTOMER")
   updateReview(): never { return notImplemented('updateReview'); }
-  @Post('admin/reviews/:id/hide') @Roles("ADMIN")
-  hideReview(): never { return notImplemented('hideReview'); }
-  @Post('admin/reviews/:id/restore') @Roles("ADMIN")
-  restoreReview(): never { return notImplemented('restoreReview'); }
 }

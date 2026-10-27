@@ -83,8 +83,8 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | NOT_IMPLEMENTED |
 | `POST /me/reviews` | createReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
 | `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
-| `POST /admin/reviews/{id}/hide` | hideReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
-| `POST /admin/reviews/{id}/restore` | restoreReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
+| `POST /admin/reviews/{id}/hide` | hideReview | M1 / review | Thịnh | IMPLEMENTED |
+| `POST /admin/reviews/{id}/restore` | restoreReview | M1 / review | Thịnh | IMPLEMENTED |
 | `GET /admin/users` | listUsers | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `PATCH /admin/users/{id}` | updateUserState | M3 / administration | Trí | NOT_IMPLEMENTED |
 | `GET /admin/stores` | listStores | M3 / administration | Trí | NOT_IMPLEMENTED |
@@ -108,8 +108,8 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `PATCH /admin/product-types/{id}` | updateProductType | M1 / moderation | Thịnh | IMPLEMENTED |
 | `POST /admin/attribute-definitions` | createAttributeDefinition | M1 / moderation | Thịnh | IMPLEMENTED |
 | `PATCH /admin/attribute-definitions/{id}` | updateAttributeDefinition | M1 / moderation | Thịnh | IMPLEMENTED |
-| `POST /admin/products/{id}/hide` | hideProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
-| `POST /admin/products/{id}/restore` | restoreProduct | M1 / moderation | Thịnh | NOT_IMPLEMENTED |
+| `POST /admin/products/{id}/hide` | hideProduct | M1 / moderation | Thịnh | IMPLEMENTED |
+| `POST /admin/products/{id}/restore` | restoreProduct | M1 / moderation | Thịnh | IMPLEMENTED |
 | `GET /ai/metrics` | getAiMetrics | M4 / evaluation | Công | IMPLEMENTED_SAMPLE |
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |

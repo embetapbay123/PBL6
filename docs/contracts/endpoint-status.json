@@ -859,7 +859,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -871,7 +871,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -1162,7 +1162,7 @@
     "service": "M1",
     "module": "moderation",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -1174,7 +1174,7 @@
     "service": "M1",
     "module": "moderation",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
