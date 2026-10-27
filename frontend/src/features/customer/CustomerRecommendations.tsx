@@ -6,6 +6,7 @@ import {ApiError} from '../../api/client';
 import type {OperationOutputs} from '../../api/operations.generated';
 import {useAuth} from '../../api/auth-context';
 import {ErrorView,Loading,Pagination} from '../../bootstrap/components';
+import {CatalogCard} from '../../live/CatalogCard';
 export function CustomerRecommendations({productId}:{productId?:string}){
  const {session}=useAuth();const customer=session?.context?.roles.includes('CUSTOMER')?session.context.user_id:undefined;
  if(!productId&&!customer)return null;
@@ -21,7 +22,7 @@ function Recommendations({productId}:{productId?:string}){
  },[productId,page,retry]);
  return <section className="boot-card" aria-label={productId?'Sản phẩm liên quan':'Dành cho bạn'}><h3>{productId?'Sản phẩm liên quan':'Dành cho bạn'}</h3>
   {loading?<Loading/>:error?<ErrorView error={error} onRetry={()=>setRetry(n=>n+1)}/>:<>{source&&<small>Nguồn gợi ý: {source}</small>}{!products.length&&<p>Chưa có gợi ý phù hợp.</p>}
-   <div className="boot-grid">{products.map(p=><article key={p.id}><Link to={'/products/'+p.id}>{p.title}</Link><p>{p.variants?.[0]?.price_vnd?.toLocaleString('vi-VN')} ₫</p></article>)}</div>
+   <div className="market-product-grid">{products.map(p=><CatalogCard key={p.id} product={p}/>)}</div>
    {productId&&<Pagination page={page} size={4} total={total} onPage={setPage}/>}</>}
  </section>;
 }

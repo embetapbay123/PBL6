@@ -6,6 +6,8 @@ Cập nhật **23/10/2026**. Demo **thứ Ba 03/11/2026**; gate chức năng **2
 
 **Cập nhật sau gate 27/10:** xem [bản sửa PR và phần còn phải nghiệm thu](pr-fixes-2026-10-27.md). Các dòng “đầu tuần” dưới đây giữ làm mốc kế hoạch; trạng thái source mới nhất theo bản cập nhật này. #69 vẫn chờ Review backend #16, không chuyển Done chỉ vì đã sửa frontend.
 
+**Web demo 27/10:** giao diện mặc định đã có bản nối API Customer, Store và Admin; xem [route, kiểm thử và phần còn thiếu](live-demo-ui.md). Checkout chọn COD/SePay từng Store và áp voucher; Store có kho/đơn/COD/voucher/settings/report. Đây là phần tích hợp source, không tự nghiệm thu provider/device hoặc đổi owner task của member.
+
 ## Điểm xuất phát và việc không làm lại
 
 | Phần | Đã có / trạng thái tại đầu tuần | Việc còn lại |

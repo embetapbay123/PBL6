@@ -7,6 +7,7 @@ const application = {
 const fixtureRun = process.env.WEB_TEST_API_MODE === 'fixture';
 
 async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
+  await page.route('**/api/v1/**', route => route.fulfill({status:404,json:{code:'NOT_FOUND',message:'Unconfigured fixture',details:[]}}));
   await page.route('**/api/v1/auth/login', route => route.fulfill({ json: {
     access_token: 'test-access-token', refresh_token: 'test-refresh-token', token_type: 'Bearer', expires_in: 900,
     context: { user_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', roles: [role], token_version: 0 },
@@ -75,6 +76,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [application], total: 1, page: 1, size: 10 } });
     }
   });
+  await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
   await page.locator('a[href="/admin/store-applications"]').click();
   await page.locator('.store-app-icon-button--approve').first().click();
   await page.locator('.store-app-dialog-actions .store-app-button--primary').click();
@@ -105,6 +107,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   await signInAs(page, 'ADMIN');
   let reviewCalls = 0;
   await page.route(url => new URL(url).pathname.startsWith('/api/v1/admin/store-applications'), route => { reviewCalls += 1; return route.continue(); });
+  await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
   await page.locator('a[href="/admin/store-applications"]').click();
   await page.locator('.store-app-icon-button--approve').first().click();
   await page.locator('.store-app-dialog-actions .store-app-button--primary').click();

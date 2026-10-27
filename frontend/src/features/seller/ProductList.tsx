@@ -31,6 +31,7 @@ export function SellerProductList(){
     {isFetching && <Loading/>}
     {error && <ErrorView error={error} onRetry={()=>{void refetch();}} retryBusy={isFetching}/>}
     <div className="boot-grid">{data?.items.map(product=><article key={product.id} className="boot-card">
+      {product.images?.[0]?.image_url&&<img src={product.images[0].image_url} alt={product.title} loading="lazy" style={{width:'100%',aspectRatio:'4 / 3',objectFit:'cover',borderRadius:12,marginBottom:16}}/>}
       <small>{product.status ?? '—'} · {product.moderation_status ?? '—'}</small>
       <h3>{product.title}</h3>
       <p>{product.description}</p>
