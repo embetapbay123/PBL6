@@ -21,7 +21,7 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `POST /auth/logout` | logout | M3 / auth | Trí | IMPLEMENTED_SAMPLE |
 | `POST /auth/reset-password` | resetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
 | `POST /auth/reset-password/confirm` | confirmResetPassword | M3 / auth | Trí | NOT_IMPLEMENTED |
-| `POST /auth/change-password` | changePassword | M3 / auth | Trí | NOT_IMPLEMENTED |
+| `POST /auth/change-password` | changePassword | M3 / auth | Trí | IMPLEMENTED |
 | `GET /me/context` | getAuthContext | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `GET /me` | getProfile | M3 / profile | Trí | IMPLEMENTED_SAMPLE |
 | `PATCH /me` | updateProfile | M3 / profile | Trí | IMPLEMENTED |
@@ -80,9 +80,9 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /admin/vouchers` | listPlatformVouchers | M2 / voucher | Hoa | IMPLEMENTED |
 | `POST /admin/vouchers` | createPlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
 | `PATCH /admin/vouchers/{id}` | updatePlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
-| `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | NOT_IMPLEMENTED |
+| `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /me/reviews` | createReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
+| `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /admin/reviews/{id}/hide` | hideReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
 | `POST /admin/reviews/{id}/restore` | restoreReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
 | `GET /admin/users` | listUsers | M3 / administration | Trí | NOT_IMPLEMENTED |
@@ -114,7 +114,3 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /me/personalization-consent` | getPersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `PATCH /me/personalization-consent` | updatePersonalizationConsent | M4 / consent | Công | IMPLEMENTED |
 | `POST /payment-callbacks/sepay` | sepayCallback | M2 / payment | Công | NOT_IMPLEMENTED |
-
-Live role permissions are resolved from PostgreSQL for each authenticated request; platform.admin is required on ADMIN routes. Store staff permissions and status are resolved from active membership, so revocation applies immediately. Role permission mutation remains NOT_IMPLEMENTED on the current main baseline.
-
-Admin Web now exposes the M1 taxonomy/moderation workflows, but their API operations remain NOT_IMPLEMENTED; the UI will show the API error until M1 handlers are delivered. The AI metrics page reads the existing IMPLEMENTED_SAMPLE operation and does not replace the AI evaluation/provider acceptance.

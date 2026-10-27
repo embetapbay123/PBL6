@@ -8396,7 +8396,7 @@
       "route": "/products/{id}/reviews",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": false,
       "body": null,
       "callers": [],
@@ -8608,7 +8608,7 @@
       "route": "/me/reviews/{id}",
       "internal": false,
       "service": "M1",
-      "status": "NOT_IMPLEMENTED",
+      "status": "IMPLEMENTED",
       "body_required": true,
       "body": {
         "type": "object",
