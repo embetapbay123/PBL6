@@ -217,6 +217,14 @@ class MockApiClient extends ApiClient {
     'payable_total_vnd': 500000,
     'orders': [],
   };
+
+  @override
+  Future<Map<String, dynamic>> getProfile() async => {
+    'id': 'user-01',
+    'email': 'customer@example.com',
+    'display_name': 'Nguyễn Văn A',
+    'phone_number': '0901234567',
+  };
 }
 
 void main() {

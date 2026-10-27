@@ -56,8 +56,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final productsAsync = ref.watch(catalogProductsProvider(_catalogKey));
     final categoriesAsync = ref.watch(categoriesProvider);
     final recommendationsAsync = ref.watch(recommendationProvider);
-    const userName = 'Bình';
-    const cartCount = 0;
+    final profileAsync = ref.watch(profileProvider);
+    final cartCount = ref.watch(cartBadgeCountProvider);
+
+    final profile = profileAsync.valueOrNull;
+    final rawName = profile?['display_name']?.toString().trim() ??
+        profile?['name']?.toString().trim();
+    final userName = (rawName != null && rawName.isNotEmpty) ? rawName : 'Khách hàng';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -264,6 +269,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         const SizedBox(height: 2),
                         Text(
                           'Xin chào, $userName! • Hơn 1.000+ cửa hàng uy tín',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 11,
