@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/app_theme.dart';
 
 class OrderSuccessPage extends StatelessWidget {
   const OrderSuccessPage({super.key, required this.orderBatch});
@@ -57,10 +58,10 @@ class OrderSuccessPage extends StatelessWidget {
             // Purchase Group Card
             Card(
               elevation: 0,
-              color: const Color(0xff1648a8).withAlpha(12),
+              color: AppColors.primaryLight.withAlpha(70),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: const Color(0xff1648a8).withAlpha(30)),
+                side: BorderSide(color: AppColors.primary.withAlpha(40)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -70,7 +71,7 @@ class OrderSuccessPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Mã nhóm mua sắm:',
+                           'Mã nhóm mua sắm:',
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                         Flexible(
@@ -78,7 +79,7 @@ class OrderSuccessPage extends StatelessWidget {
                             purchaseGroupId,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Color(0xff1648a8),
+                              color: AppColors.primary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -98,7 +99,7 @@ class OrderSuccessPage extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xff1648a8),
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -149,7 +150,7 @@ class OrderSuccessPage extends StatelessWidget {
                           children: [
                             const Icon(
                               Icons.storefront,
-                              color: Color(0xff1648a8),
+                              color: AppColors.primary,
                               size: 18,
                             ),
                             const SizedBox(width: 6),
@@ -221,7 +222,7 @@ class OrderSuccessPage extends StatelessWidget {
                   child: ListTile(
                     leading: const Icon(
                       Icons.receipt_long,
-                      color: Color(0xff1648a8),
+                      color: AppColors.primary,
                     ),
                     title: Text('Mã đơn hàng: $oId'),
                     subtitle: const Text('Trạng thái: PENDING'),

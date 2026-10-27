@@ -384,6 +384,11 @@
     "path": "/admin/dashboard",
     "internal": false
   },
+  "listRoles": {
+    "method": "GET",
+    "path": "/admin/roles",
+    "internal": false
+  },
   "updateRole": {
     "method": "PATCH",
     "path": "/admin/roles/{id}",

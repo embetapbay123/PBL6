@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
 import '../../main.dart';
 
 class ConsentDialog extends ConsumerStatefulWidget {
@@ -91,7 +92,7 @@ class _ConsentDialogState extends ConsumerState<ConsentDialog> {
     return AlertDialog(
       title: const Row(
         children: [
-          Icon(Icons.auto_awesome, color: Color(0xff1648a8)),
+          Icon(Icons.auto_awesome, color: AppColors.primary),
           SizedBox(width: 8),
           Text('Cá nhân hóa & Gợi ý AI'),
         ],

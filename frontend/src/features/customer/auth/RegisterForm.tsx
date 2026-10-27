@@ -1,0 +1,6 @@
+import {useState} from 'react';
+import {Link} from 'react-router-dom';
+import {callOperation} from '../../../api/operations';
+import {ErrorView} from '../../../bootstrap/components';
+import {useAuthCommand} from './useAuthCommand';
+export function RegisterForm(){const command=useAuthCommand(),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState('');return <form className="boot-card" onSubmit={e=>{e.preventDefault();void command.run(async()=>{const result=await callOperation('register',{body:{email,password,...(name.trim()?{display_name:name.trim()}:{})}});setPassword('');return result.message??'Yêu cầu đăng ký đã được tiếp nhận. Kiểm tra email để xác thực.'})}}><h2>Đăng ký tài khoản</h2><label>Email<input type="email" required maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Tên hiển thị<input maxLength={200} value={name} onChange={e=>setName(e.target.value)}/></label><label>Mật khẩu<input type="password" minLength={8} maxLength={72} required autoComplete="new-password" value={password} onChange={e=>setPassword(e.target.value)}/></label><button disabled={command.busy}>Đăng ký</button>{command.error!=null&&<ErrorView error={command.error}/>} {command.notice&&<p role="status">{command.notice}</p>}<Link to="/verify-email">Xác thực bằng mã trong email</Link></form>}

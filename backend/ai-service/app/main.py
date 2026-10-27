@@ -111,7 +111,7 @@ def live(): return {'status':'alive','service':'M4'}
 def ready():
     if engine is None: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Database chưa sẵn sàng.')
     with engine.connect() as db:
-        expected='006_ai_runtime.sql' if os.getenv('AI_MODE')=='real' else '001_initial.sql'
+        expected='008_chat_thinking_trace.sql' if os.getenv('AI_MODE')=='real' else '001_initial.sql'
         row=db.execute(text('SELECT version FROM schema_migration WHERE version=:version'),{'version':expected}).first()
         if not row: raise ApiError(503,'SCHEMA_NOT_READY','Chưa chạy migration.')
     return {'status':'ready','service':'M4','mode':os.getenv('AI_MODE','mock')}

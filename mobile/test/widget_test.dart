@@ -563,8 +563,9 @@ void main() {
         expect(find.text('Mua ngay'), findsOneWidget);
 
         // Change variant
+        await tester.ensureVisible(find.text('KB-BLUE (1250000 ₫)'));
         await tester.tap(find.text('KB-BLUE (1250000 ₫)'));
-        await tester.pump();
+        await tester.pumpAndSettle();
         expect(find.text('1250000 ₫'), findsOneWidget);
         expect(find.text('Mã SKU: KB-BLUE'), findsOneWidget);
 

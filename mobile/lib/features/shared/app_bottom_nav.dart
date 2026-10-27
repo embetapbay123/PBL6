@@ -1,28 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
 
-class AppBottomNav extends StatelessWidget {
+class AppBottomNav extends ConsumerWidget {
   const AppBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
-    this.cartCount = 5,
+    this.cartCount,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
-  final int cartCount;
+  final int? cartCount;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // If cartCount is explicitly passed, use it; otherwise automatically watch cartBadgeCountProvider
+    final effectiveCartCount = cartCount ?? ref.watch(cartBadgeCountProvider);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(16),
-            blurRadius: 10,
+            color: Colors.black.withAlpha(12),
+            blurRadius: 16,
+            spreadRadius: 0,
             offset: const Offset(0, -3),
           ),
         ],
@@ -30,7 +36,7 @@ class AppBottomNav extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 62,
+          height: 64,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -46,43 +52,42 @@ class AppBottomNav extends StatelessWidget {
                 unselectedIcon: Icons.explore_outlined,
                 label: 'Khám phá',
               ),
-              // Center AI Chat Button
+              // Center Raised AI Chat Button
               GestureDetector(
                 onTap: () {
                   ChatAiModal.show(context);
+                  onTap(2);
                 },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.redGradient,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withAlpha(90),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 3),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: AppDecorations.aiGlow(radius: 22),
+                        child: const Center(
+                          child: Icon(
+                            Icons.auto_awesome,
+                            color: Colors.white,
+                            size: 22,
                           ),
-                        ],
+                        ),
                       ),
-                      child: const Center(
-                        child: Icon(Icons.auto_awesome, color: Colors.white, size: 24),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Chat AI',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                          letterSpacing: -0.2,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Chat AI',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               _buildNavItem(
@@ -90,7 +95,7 @@ class AppBottomNav extends StatelessWidget {
                 icon: Icons.shopping_cart_rounded,
                 unselectedIcon: Icons.shopping_cart_outlined,
                 label: 'Giỏ hàng',
-                badgeCount: cartCount,
+                badgeCount: effectiveCartCount,
               ),
               _buildNavItem(
                 index: 4,
@@ -113,56 +118,73 @@ class AppBottomNav extends StatelessWidget {
     int? badgeCount,
   }) {
     final isSelected = currentIndex == index;
-    final color = isSelected ? AppColors.primary : AppColors.textMuted;
+    final color = isSelected ? AppColors.primary : AppColors.textSecondary;
 
-    return InkWell(
-      onTap: () => onTap(index),
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(isSelected ? icon : unselectedIcon, color: color, size: 24),
-                if (badgeCount != null && badgeCount > 0)
-                  Positioned(
-                    right: -6,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                      child: Center(
-                        child: Text(
-                          '$badgeCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
+    return Expanded(
+      child: InkWell(
+        onTap: () => onTap(index),
+        borderRadius: BorderRadius.circular(16),
+        splashColor: AppColors.primaryLight,
+        highlightColor: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isSelected ? icon : unselectedIcon,
+                    color: color,
+                    size: 24,
+                  ),
+                  if (badgeCount != null && badgeCount > 0)
+                    Positioned(
+                      right: -8,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withAlpha(80),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Center(
+                          child: Text(
+                            badgeCount > 99 ? '99+' : '$badgeCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              height: 1,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: color,
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: color,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

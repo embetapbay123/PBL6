@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/api_client.dart';
+import 'core/app_theme.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/register_page.dart';
 import 'features/auth/verify_email_page.dart';
@@ -49,6 +50,20 @@ final recommendationProvider = FutureProvider<Map<String, dynamic>>((
 
 final cartItemsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).getAllCartItems();
+});
+
+final cartBadgeCountProvider = Provider<int>((ref) {
+  final cartAsync = ref.watch(cartItemsProvider);
+  return cartAsync.maybeWhen(
+    data: (data) {
+      final items = data['items'] as List?;
+      if (items != null) return items.length;
+      final count = data['total_items'] ?? data['count'];
+      if (count is num) return count.toInt();
+      return 0;
+    },
+    orElse: () => 0,
+  );
 });
 
 final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
@@ -101,13 +116,7 @@ class BootstrapApp extends StatelessWidget {
     return MaterialApp(
       title: 'PBL6 Customer Mobile',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xff1648a8),
-        useMaterial3: true,
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {

@@ -1,0 +1,4 @@
+import {callOperation} from '../../../api/operations';
+import {ErrorView} from '../../../bootstrap/components';
+import {useAuthCommand,useEmailToken} from './useAuthCommand';
+export function VerifyForm(){const command=useAuthCommand(),[token,setToken]=useEmailToken();return <form className="boot-card" onSubmit={e=>{e.preventDefault();void command.run(async()=>{await callOperation('verifyEmail',{body:{token}});setToken('');return 'Email đã được xác thực. Bạn có thể đăng nhập.'})}}><h2>Xác thực email</h2><label>Mã xác thực<input type="password" autoComplete="off" maxLength={4096} required value={token} onChange={e=>setToken(e.target.value)}/></label><button disabled={command.busy}>Xác thực email</button>{command.error!=null&&<ErrorView error={command.error}/>} {command.notice&&<p role="status">{command.notice}</p>}</form>}

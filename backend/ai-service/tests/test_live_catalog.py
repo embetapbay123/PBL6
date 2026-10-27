@@ -4,6 +4,10 @@ import pytest
 from app.catalog import LiveCatalog
 from app.internal_client import InternalError
 
+@pytest.fixture(autouse=True)
+def service_identity(monkeypatch):
+    monkeypatch.setenv('M4_INTERNAL_KEY','test-catalog-service-key')
+
 def test_live_catalog_filters_and_preserves_correlation(monkeypatch):
     monkeypatch.setenv('CATALOG_URL','http://catalog')
     store=str(uuid.uuid4());other=str(uuid.uuid4())
@@ -15,6 +19,7 @@ def test_live_catalog_filters_and_preserves_correlation(monkeypatch):
     items=[product(store),product(other),product(store,'STOPPED')]
     def handler(request):
         assert request.headers['X-Correlation-Id']=='flow-test'
+        assert request.headers['x-service-id']=='M4' and request.headers['x-service-key']=='test-catalog-service-key'
         return httpx.Response(200,json={'items':items,'total':3,'page':1,'size':100})
     catalog=LiveCatalog(transport=httpx.MockTransport(handler),internal=Identity())
     assert asyncio.run(catalog.snapshot('flow-test'))==[items[0]]

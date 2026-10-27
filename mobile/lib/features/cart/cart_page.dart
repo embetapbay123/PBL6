@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../checkout/checkout_page.dart';
 
@@ -249,7 +250,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                   const Icon(
                                     Icons.storefront,
                                     size: 20,
-                                    color: Color(0xff1648a8),
+                                    color: AppColors.primary,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
@@ -363,7 +364,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                       ? '$price ₫'
                                                       : 'Chưa có giá',
                                                   style: const TextStyle(
-                                                    color: Color(0xff1648a8),
+                                                    color: AppColors.primary,
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 14,
                                                   ),
@@ -498,7 +499,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xff1648a8),
+                              color: AppColors.primary,
                             ),
                           ),
                         ],

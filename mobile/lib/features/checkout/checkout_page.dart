@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
 import '../../main.dart';
 import 'order_success_page.dart';
 
@@ -345,7 +346,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     style: const TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xff1648a8),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -434,7 +435,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       children: [
                         const Icon(
                           Icons.location_on_outlined,
-                          color: Color(0xff1648a8),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 8),
                         const Text(
@@ -537,7 +538,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         children: [
                           const Icon(
                             Icons.storefront,
-                            color: Color(0xff1648a8),
+                            color: AppColors.primary,
                             size: 20,
                           ),
                           const SizedBox(width: 8),
@@ -704,7 +705,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       children: [
                         Icon(
                           Icons.confirmation_num_outlined,
-                          color: Color(0xff1648a8),
+                          color: AppColors.primary,
                         ),
                         SizedBox(width: 8),
                         Text(
@@ -772,10 +773,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             // Live Quote Calculation Card
             Card(
               elevation: 0,
-              color: const Color(0xff1648a8).withAlpha(10),
+              color: AppColors.primaryLight.withAlpha(80),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: const Color(0xff1648a8).withAlpha(30)),
+                side: BorderSide(color: AppColors.primary.withAlpha(50)),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -786,7 +787,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       children: [
                         const Icon(
                           Icons.receipt_long,
-                          color: Color(0xff1648a8),
+                          color: AppColors.primary,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
@@ -932,7 +933,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
               color: isDiscount
                   ? Colors.green
-                  : (isTotal ? const Color(0xff1648a8) : Colors.black87),
+                  : (isTotal ? AppColors.primary : Colors.black87),
             ),
           ),
         ],
@@ -974,7 +975,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               ? Icons.check_circle
                               : Icons.radio_button_unchecked,
                           color: isSelected
-                              ? const Color(0xff1648a8)
+                              ? AppColors.primary
                               : Colors.grey,
                         ),
                         title: Text(

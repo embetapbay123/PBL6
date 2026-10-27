@@ -12,7 +12,7 @@ if (process.env.PBL6_ACCEPTANCE_ISOLATED !== '1' || !/^pbl6-acceptance-[a-f0-9]{
   throw new Error('ACCEPTANCE_ISOLATION_REQUIRED');
 }
 const phase = process.argv[2];
-if (!['payment', 'rollback-prepare', 'rollback-recover', 'expiry', 'tracking', 'chat'].includes(phase)) throw new Error('INVALID_PHASE');
+if (!['payment', 'rollback-prepare', 'rollback-recover', 'expiry', 'multistore', 'authorization', 'tracking', 'chat'].includes(phase)) throw new Error('INVALID_PHASE');
 const uid = n => `10000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const urls = { M1: 'http://m1:3101', M2: 'http://m2:3102', M3: 'http://m3:3103', M4: 'http://m4:3104' };
 const checks = [];
@@ -48,7 +48,7 @@ async function request(operation, { body, token, id, headers = {}, status, query
   if (response.status !== expected) {
     // Never print arbitrary response bodies, tokens, bank fields or addresses.
     const code = /^[A-Z_]{1,100}$/.test(json.code || '') ? json.code : 'REDACTED';
-    throw new Error(`HTTP_FAILED:${operation}:${response.status}:${code}:expected_${expected}`);
+    throw Object.assign(new Error(`HTTP_FAILED:${operation}:${response.status}:${code}:expected_${expected}`),{status:response.status,code});
   }
   if (response.status < 300) {
     const errors = schemaErrors(json, spec.responses[String(response.status)]);
@@ -80,6 +80,7 @@ async function prepare(token, variant = 90, method = 'SANDBOX') {
     expected_payable_total_vnd: quote.payable_total_vnd }, correlation };
 }
 async function confirm(token, prepared, status = 201) {
+  if(status===201)return require('./replay-confirm.cjs')(request,{token,body:prepared.input,key:prepared.key});
   return request('confirmCheckout', { token, body: prepared.input,
     headers: { 'idempotency-key': prepared.key }, status });
 }
@@ -230,9 +231,10 @@ async function main() {
       catch { return 0; }
     }, status => status === 200);
   }
-  const token = await login(phase === 'chat' ? 'customer2@pbl6.test' : undefined);
-  if (phase === 'tracking' || phase === 'chat') {
+  const token = await login(['chat', 'multistore'].includes(phase) ? 'customer2@pbl6.test' : undefined);
+  if (['tracking', 'chat', 'multistore', 'authorization'].includes(phase)) {
     await require('./' + phase + '.cjs')({ token, db, check, wait, query, row, request, login, uid,
+      control, callback, event, order, state, stock, movementCount,
       correlation: () => correlation, newCorrelation: () => (correlation = 'acceptance-' + randomUUID()) });
   } else await ({ payment, 'rollback-prepare': rollbackPrepare, 'rollback-recover': rollbackRecover, expiry }[phase])(token);
 }
@@ -243,7 +245,8 @@ main().then(() => {
   console.log(JSON.stringify({ phase, status: 'PASS', checks: checks.length }));
 }).catch(error => {
   const failure = /^(CHECK_FAILED|WAIT_FAILED|HTTP_FAILED|SCHEMA_FAILED):/.test(error.message) ? error.message :
-    'HARNESS_FAILURE:' + (String(error.code || '').match(/^[A-Z0-9_]{1,30}$/)?.[0] || 'REDACTED');
+    'HARNESS_FAILURE:' + (String(error.code || '').match(/^[A-Z0-9_]{1,30}$/)?.[0] || 'REDACTED') +
+    [error.table, error.column].filter(v => typeof v === 'string' && /^[a-z_]{1,60}$/.test(v)).map(v => ':' + v).join('');
   fs.writeFileSync(`/evidence/${phase}.json`, JSON.stringify({ phase, status: 'FAIL', checks, failure }, null, 2) + '\n');
   console.error(failure);
   process.exitCode = 1;

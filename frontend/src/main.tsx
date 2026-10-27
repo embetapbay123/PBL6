@@ -1,14 +1,15 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { App } from './App'
-import { AppProvider } from './context/AppContext'
+import {lazy,Suspense} from 'react'
 import './index.css'
-import { BootstrapApp } from './bootstrap/BootstrapApp'
+import {LiveApp} from './live/LiveApp'
+const LegacyDemo=lazy(()=>import('./legacy-demo'));
+const ApiTools=lazy(()=>import('./bootstrap/BootstrapApp').then(module=>({default:module.BootstrapApp})));
 
 const mockMode = new URLSearchParams(window.location.search).get('mode') === 'mock';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {mockMode ? <AppProvider><App /></AppProvider> : <BootstrapApp />}
+    <Suspense fallback={<p role="status">Đang tải…</p>}>{mockMode?<LegacyDemo/>:new URLSearchParams(window.location.search).get('mode')==='api-tools'?<ApiTools/>:<LiveApp/>}</Suspense>
   </React.StrictMode>,
 )

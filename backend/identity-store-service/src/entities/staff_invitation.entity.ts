@@ -20,4 +20,12 @@ export class StaffInvitation {
   expires_at!: Date;
   @Column({"type": "integer", "nullable": false})
   version!: number;
+  @Column({ type: 'jsonb', nullable: false, default: () => "'[]'::jsonb" })
+  permissions!: string[];
+  @Column({ type: 'timestamptz', nullable: false, default: () => 'now()' })
+  created_at!: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  accepted_at!: Date | null;
+  @Column({ type: 'timestamptz', nullable: true })
+  revoked_at!: Date | null;
 }

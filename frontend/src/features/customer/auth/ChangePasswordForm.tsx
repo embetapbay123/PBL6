@@ -1,0 +1,7 @@
+import {useState} from 'react';
+import {useQueryClient} from '@tanstack/react-query';
+import {callOperation} from '../../../api/operations';
+import {useAuth} from '../../../api/auth-context';
+import {ErrorView} from '../../../bootstrap/components';
+import {useAuthCommand} from './useAuthCommand';
+export function ChangePasswordForm(){const auth=useAuth(),cache=useQueryClient(),command=useAuthCommand(),[current,setCurrent]=useState(''),[password,setPassword]=useState('');return <form className="boot-card" onSubmit={e=>{e.preventDefault();void command.run(async()=>{await callOperation('changePassword',{body:{current_password:current,new_password:password}});setCurrent('');setPassword('');try{await auth.logout()}catch{/* Password change already revoked all sessions; logout clears local state in finally. */}cache.clear();return 'Đã đổi mật khẩu. Hãy đăng nhập lại.'})}}><h2>Đổi mật khẩu</h2><label>Mật khẩu hiện tại<input type="password" autoComplete="current-password" required maxLength={72} value={current} onChange={e=>setCurrent(e.target.value)}/></label><label>Mật khẩu mới<input type="password" autoComplete="new-password" required minLength={8} maxLength={72} value={password} onChange={e=>setPassword(e.target.value)}/></label><button disabled={command.busy}>Đổi mật khẩu</button>{command.error!=null&&<ErrorView error={command.error}/>} {command.notice&&<p role="status">{command.notice}</p>}</form>}

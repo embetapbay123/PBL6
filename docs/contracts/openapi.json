@@ -1051,7 +1051,7 @@
         "x-service-owner": "M3",
         "x-module": "auth",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/context": {
@@ -2971,16 +2971,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -2992,11 +2982,11 @@
           "STORE_OWNER"
         ],
         "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
-        "description": "Xem lời mời Seller của Store. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "List paginated invitations for the active Owner Store. Scope is resolved from authenticated M3 membership.",
         "x-service-owner": "M3",
         "x-module": "staff",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       },
       "post": {
         "tags": [
@@ -3085,16 +3075,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
           }
         },
         "requestBody": {
@@ -3123,11 +3103,11 @@
           "STORE_OWNER"
         ],
         "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
-        "description": "Mời Seller theo email. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Persist a seven-day Seller invitation for the authenticated Owner Store. Email delivery is not configured; recipients can discover invitations through their authenticated invitation list.",
         "x-service-owner": "M3",
         "x-module": "staff",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/store/staff/invitations/{id}/revoke": {
@@ -3228,16 +3208,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -3249,11 +3219,11 @@
           "STORE_OWNER"
         ],
         "x-data-scope": "ACTIVE_STORE_MEMBERSHIP",
-        "description": "Thu hồi lời mời Seller. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Revoke a pending, unexpired invitation belonging to the authenticated Owner Store.",
         "x-service-owner": "M3",
         "x-module": "staff",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/invitations": {
@@ -3367,16 +3337,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -3388,11 +3348,11 @@
           "CUSTOMER"
         ],
         "x-data-scope": "OWN_USER",
-        "description": "Xem lời mời Store gửi cho mình. Phạm vi dữ liệu: OWN_USER; quyền: CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "List invitations matching the authenticated user verified email, including the Store name.",
         "x-service-owner": "M3",
         "x-module": "staff",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/me/invitations/{id}/accept": {
@@ -3493,16 +3453,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
           }
         },
         "security": [
@@ -3514,11 +3464,11 @@
           "CUSTOMER"
         ],
         "x-data-scope": "OWN_USER",
-        "description": "Chấp nhận lời mời Seller. Phạm vi dữ liệu: OWN_USER; quyền: CUSTOMER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.",
+        "description": "Accept a pending, unexpired invitation matching the authenticated user verified email and create Seller membership atomically.",
         "x-service-owner": "M3",
         "x-module": "staff",
         "x-member-owner": "Trí",
-        "x-implementation-status": "NOT_IMPLEMENTED"
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/categories": {
@@ -10404,6 +10354,61 @@
         "x-implementation-status": "NOT_IMPLEMENTED"
       }
     },
+    "/admin/roles": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "operationId": "listRoles",
+        "summary": "Admin xem Role va danh muc Permission",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Danh sach role va permission hien hanh",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminRoleConfiguration"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "ADMIN"
+        ],
+        "x-data-scope": "PLATFORM",
+        "x-service-owner": "M3",
+        "x-module": "administration",
+        "x-member-owner": "Trí",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
     "/admin/roles/{id}": {
       "patch": {
         "tags": [
@@ -11274,7 +11279,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StaffMembershipUpdate"
+                  "$ref": "#/components/schemas/StoreStaff"
                 }
               }
             }
@@ -13678,11 +13683,17 @@
           "expires_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "payment_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Owned Payment ID used by GET /payments/{id}; distinct from the PaymentAttempt ID."
           }
         },
         "required": [
           "id",
-          "status"
+          "status",
+          "payment_id"
         ],
         "additionalProperties": false
       },
@@ -14067,6 +14078,14 @@
             },
             "maxItems": 100
           },
+          "role_permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "maxItems": 100
+          },
           "store_membership": {
             "type": "object",
             "properties": {
@@ -14104,6 +14123,7 @@
         "required": [
           "user_id",
           "roles",
+          "role_permissions",
           "token_version"
         ],
         "additionalProperties": false
@@ -14173,7 +14193,13 @@
             "type": "array",
             "items": {
               "type": "string",
-              "maxLength": 200
+              "maxLength": 200,
+              "enum": [
+                "product.store.read_write",
+                "inventory.store.read_adjust",
+                "order.store.read_status_cancel",
+                "cod.store.collect"
+              ]
             },
             "maxItems": 100
           },
@@ -14189,6 +14215,10 @@
           "expires_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "store_name": {
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [
@@ -15028,6 +15058,58 @@
         ],
         "additionalProperties": false
       },
+      "AdminRoleConfiguration": {
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            },
+            "maxItems": 100
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Permission"
+            },
+            "maxItems": 1000
+          }
+        },
+        "required": [
+          "roles",
+          "permissions"
+        ],
+        "additionalProperties": false
+      },
+      "Permission": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "resource": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "action": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "resource",
+          "action"
+        ],
+        "additionalProperties": false
+      },
       "Role": {
         "type": "object",
         "properties": {
@@ -15259,6 +15341,70 @@
           "user_id",
           "role",
           "status"
+        ],
+        "additionalProperties": false
+      },
+      "StoreStaff": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "SELLER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "LOCKED"
+            ]
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "product.store.read_write",
+                "inventory.store.read_adjust",
+                "order.store.read_status_cancel",
+                "cod.store.collect"
+              ]
+            },
+            "maxItems": 100
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "store_id",
+          "user_id",
+          "email",
+          "role",
+          "status",
+          "permissions",
+          "version"
         ],
         "additionalProperties": false
       },
@@ -15501,7 +15647,7 @@
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/StoreMembership"
+              "$ref": "#/components/schemas/StoreStaff"
             },
             "maxItems": 100
           },
@@ -16469,7 +16615,13 @@
             "type": "array",
             "items": {
               "type": "string",
-              "maxLength": 200
+              "maxLength": 200,
+              "enum": [
+                "product.store.read_write",
+                "inventory.store.read_adjust",
+                "order.store.read_status_cancel",
+                "cod.store.collect"
+              ]
             },
             "maxItems": 100
           }

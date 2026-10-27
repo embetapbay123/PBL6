@@ -7,6 +7,7 @@ import { ApiError } from './errors';
 import { internalRequest } from './http-client';
 export const Public = () => SetMetadata('public', true);
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
+export const Permissions = (...permissions: string[]) => SetMetadata('permissions', permissions);
 export const ServiceCallers = (...ids: (ServiceId | 'M4')[]) => SetMetadata('service_callers', ids);
 export function verifyToken(token: string, publicKey: string) {
   try {
@@ -34,7 +35,13 @@ export class AuthGuard implements CanActivate {
     verifyToken(token, c.publicKey);
     const context = await internalRequest<any>(`${c.identityUrl}/internal/context`, c.id, c.internalKeys[c.id], request.correlationId, { token });
     const roles = this.reflector.getAllAndOverride<string[]>('roles', [ctx.getHandler(), ctx.getClass()]);
-    if (roles?.length && !roles.some(role => context.roles.includes(role))) throw new ApiError(403, 'FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này.');
+    const hasRequiredRole = !roles?.length || roles.some(role => context.roles.includes(role));
+    const permissions = this.reflector.getAllAndOverride<string[]>('permissions', [ctx.getHandler(), ctx.getClass()]);
+    // Keep ADMIN routes fail-closed even if a controller omits explicit permission metadata.
+    const requiredPermissions = [...new Set([...(permissions ?? []), ...(roles?.includes('ADMIN') ? ['platform.admin'] : [])])];
+    const currentPermissions = new Set<string>(context.role_permissions ?? []);
+    const hasRequiredPermissions = requiredPermissions.every(permission => currentPermissions.has(permission));
+    if (!hasRequiredRole || !hasRequiredPermissions) throw new ApiError(403, 'FORBIDDEN', 'Access denied.');
     request.auth = { ...context, access_token: token };
     return true;
   }

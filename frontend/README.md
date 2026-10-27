@@ -1,4 +1,8 @@
-# PBL6 Multi-Store Marketplace — UI & Mock Data Demo
+# PBL6 Marketplace Web
+
+The default site is the live Customer, Store and Admin interface. Read the [live web handoff](../docs/implementation/live-demo-ui.md) for routes, permissions, mutation/retry rules and remaining module work. The UI uses the existing demo design with real API data; there is no role-switching shortcut or mock payment action in this mode.
+
+Open `/seller` after a Store Owner/Seller login, `/admin` after an Admin login, and `/customer/orders` for owned orders. `/?mode=mock` preserves the original local-data demo; `/?mode=api-tools` opens the earlier API scaffold.
 
 Store Application pages use the real backend operations by default. Browser fixtures are selected explicitly with `VITE_API_MODE=fixture` during development (`npm run dev`); production builds always use API mode. Fixture submissions and reviews only alter browser data and never create a persisted Store or owner membership. API failures, including duplicate submission HTTP 409 responses, are shown without localStorage fallback.
 
@@ -23,7 +27,11 @@ Mở trình duyệt truy cập: **`http://localhost:3000`**
 
 ---
 
-## 🎯 Các Tính Năng & Luồng Màn Hình Đã Hoàn Thiện
+## Original mock demo only — `/?mode=mock`
+
+The role switcher, mailbox, sample identities, localStorage data and payment simulators described below belong exclusively to the original mock demo. They do not establish backend completion or create live Orders, Payments, Refunds or Store memberships.
+
+## 🎯 Các Tính Năng & Luồng Màn Hình Mô Phỏng
 
 ### 1. Phân vai đa ngữ cảnh & Chuyển đổi nhanh (Role Switcher Bar)
 Ngay trên thanh điều hướng đầu trang, có bộ chọn nhanh vai trò cho phép kiểm thử toàn bộ ma trận RBAC:
