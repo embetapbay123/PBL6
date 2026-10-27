@@ -4,7 +4,7 @@ import { CatalogSkeletonController } from './catalog/catalog.skeleton.controller
 import { InventoryController } from './inventory/inventory.controller';
 import {StockOperationsController} from './inventory/stock-operations.controller';
 import { ReviewSkeletonController } from './review/review.skeleton.controller';
-import { ModerationSkeletonController } from './moderation/moderation.skeleton.controller';
+import { ModerationController } from './moderation/moderation.controller';
 import { CatalogController } from './catalog/catalog.controller';
 import { InventoryInternalController } from './inventory/inventory.internal.controller';
-bootstrap('M1',[StockOperationsController,InventoryInternalController,CatalogController,InventoryController,CatalogSkeletonController,ReviewSkeletonController,ModerationSkeletonController]).catch(()=>{ console.error('Startup failed: check service configuration and dependencies.'); process.exit(1); });
+bootstrap('M1',[StockOperationsController,InventoryInternalController,CatalogController,InventoryController,CatalogSkeletonController,ReviewSkeletonController,ModerationController]).catch(()=>{ console.error('Startup failed: check service configuration and dependencies.'); process.exit(1); });
