@@ -821,7 +821,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -846,7 +846,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]

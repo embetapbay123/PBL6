@@ -80,9 +80,9 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /admin/vouchers` | listPlatformVouchers | M2 / voucher | Hoa | IMPLEMENTED |
 | `POST /admin/vouchers` | createPlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
 | `PATCH /admin/vouchers/{id}` | updatePlatformVoucher | M2 / voucher | Hoa | IMPLEMENTED |
-| `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | NOT_IMPLEMENTED |
+| `GET /products/{id}/reviews` | listProductReviews | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /me/reviews` | createReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
-| `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | NOT_IMPLEMENTED |
+| `PATCH /me/reviews/{id}` | updateReview | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /admin/reviews/{id}/hide` | hideReview | M1 / review | Thịnh | IMPLEMENTED |
 | `POST /admin/reviews/{id}/restore` | restoreReview | M1 / review | Thịnh | IMPLEMENTED |
 | `GET /admin/users` | listUsers | M3 / administration | Trí | NOT_IMPLEMENTED |
