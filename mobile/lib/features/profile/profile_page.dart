@@ -958,6 +958,11 @@ class ProfilePage extends ConsumerWidget {
                 runSpacing: 6,
                 children: [
                   ActionChip(
+                    avatar: const Icon(Icons.cloud_done_rounded, size: 14, color: AppColors.primary),
+                    label: const Text('Máy chủ Live (demo.congnguyen.me)', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    onPressed: () => controller.text = 'https://demo.congnguyen.me/api/v1',
+                  ),
+                  ActionChip(
                     label: const Text('Máy ảo Android (10.0.2.2)', style: TextStyle(fontSize: 10)),
                     onPressed: () => controller.text = 'http://10.0.2.2:8080/api/v1',
                   ),
