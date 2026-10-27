@@ -70,7 +70,7 @@ export class CatalogRepository extends OwnedRepository {
       "SELECT id,category_id,name,status,version FROM product_type WHERE status='ACTIVE' ORDER BY name,id LIMIT $1 OFFSET $2",
       [size,(page-1)*size]);
     const definitions=rows.length ? await this.manager.query(
-      `SELECT id,product_type_id,name,data_type,required,variant_factor,allowed_values,unit,version
+      `SELECT id,product_type_id,code,name,data_type,required,variant_factor,allowed_values,unit,version
          FROM attribute_definition WHERE product_type_id=ANY($1::uuid[]) ORDER BY name,id`,[rows.map((row:any)=>row.id)]) : [];
     return {items:rows.map((row:any)=>productTypeResponse(row,definitions)),total:count.total,page,size};
   }
@@ -124,7 +124,7 @@ export class CatalogRepository extends OwnedRepository {
   }
 
   async attributeDefinitions(productTypeId:string) {
-    return this.manager.query('SELECT code,required FROM attribute_definition WHERE product_type_id=$1 ORDER BY code',[productTypeId]);
+    return this.manager.query('SELECT code,required,data_type,allowed_values,variant_factor FROM attribute_definition WHERE product_type_id=$1 ORDER BY code',[productTypeId]);
   }
 
   async productRowForStore(id:string,storeId:string) {

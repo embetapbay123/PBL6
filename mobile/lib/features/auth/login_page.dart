@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
 import '../../main.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -79,7 +80,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const Icon(
                 Icons.lock_person_outlined,
                 size: 72,
-                color: Color(0xff1648a8),
+                color: AppColors.primary,
               ),
               const SizedBox(height: 16),
               const Text(

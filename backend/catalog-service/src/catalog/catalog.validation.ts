@@ -3,6 +3,9 @@ import { createHash } from 'node:crypto';
 export interface AttributeDefinitionRow {
   code: string;
   required: boolean;
+  data_type?:string;
+  allowed_values?:unknown[];
+  variant_factor?:boolean;
 }
 
 /**
@@ -15,6 +18,11 @@ export function attributeErrors(attributes: Record<string, unknown>, definitions
   const errors = Object.keys(attributes).filter(key => !known.has(key)).map(key => 'unknown:' + key);
   for (const definition of definitions) {
     if (definition.required && attributes[definition.code] === undefined) errors.push('missing:' + definition.code);
+    const value=attributes[definition.code];
+    if(value!==undefined){
+      if(definition.data_type==='STRING' && typeof value!=='string' || definition.data_type==='NUMBER' && (typeof value!=='number'||!Number.isFinite(value)) || definition.data_type==='BOOLEAN' && typeof value!=='boolean')errors.push('type:'+definition.code);
+      if(Array.isArray(definition.allowed_values)&&definition.allowed_values.length&&!definition.allowed_values.includes(value))errors.push('value:'+definition.code);
+    }
   }
   return errors;
 }

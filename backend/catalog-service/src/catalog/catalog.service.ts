@@ -10,6 +10,8 @@ import { attributeErrors, defaultVariantCount, variantSignature } from './catalo
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { optionalUserId, recordInteraction } from './catalog.telemetry';
+import { DataSource,EntityManager } from 'typeorm';
+import { once } from '../../../shared/src/idempotency';
 
 type VariantPayload = NonNullable<OperationInputs['createProduct']['body']['variants']>[number];
 
@@ -51,6 +53,11 @@ function uniqueConflictError(error:unknown):ApiError|undefined {
 }
 
 export class CatalogService {
+  constructor(private readonly suppliedSource?:DataSource) {}
+  private get source(){return this.suppliedSource??database}
+  private command<T>(caller:string,key:string|undefined,payload:unknown,effect:(manager:EntityManager)=>Promise<T>):Promise<T> {
+    return this.source.transaction(manager=>key?once(manager,caller,key,payload,()=>effect(manager)):effect(manager));
+  }
   private async stores(correlation:string) {
     const c=config('M1');return (await new InternalClients('M1',c.internalKeys.M1,{M1:c.catalogUrl,M2:'',M3:c.identityUrl}).call('ActiveStores',undefined,correlation)).ids;
   }
@@ -91,6 +98,18 @@ export class CatalogService {
     if(defaultVariantCount(variants)>1)throw new ApiError(422,'MULTIPLE_DEFAULT_VARIANTS','Chỉ một Variant được là mặc định.');
   }
 
+  private async publishable(repository:CatalogRepository,product:any) {
+    if(product.status!=='ACTIVE')return;
+    const variants=(await repository.variantsOfProduct(product.id)).filter((v:any)=>v.status==='ACTIVE');
+    if(!variants.length)throw new ApiError(422,'PRODUCT_NOT_READY','Cần ít nhất một phân loại đang bán trước khi xuất bản.');
+    const definitions=(await repository.attributeDefinitions(product.product_type_id)).filter((d:any)=>d.variant_factor);
+    if(!definitions.length)return; // Existing taxonomy permits open Variant maps until axes are declared.
+    for(const variant of variants){
+      const errors=attributeErrors(variant.variant_values??{},definitions);
+      if(errors.length)throw new ApiError(422,'INVALID_VARIANT_ATTRIBUTES','Phân loại chưa khớp thuộc tính của loại sản phẩm.',errors.map(field=>({field})));
+    }
+  }
+
   /** Insert or update the submitted Variants and give every new Variant a zero-stock inventory row. */
   private async writeVariants(repository:CatalogRepository,productId:string,storeId:string,
     variants:VariantPayload[],markSoleDefault:boolean):Promise<void> {
@@ -121,7 +140,7 @@ export class CatalogService {
   async list(query:OperationInputs['listProducts']['query'],authorization:unknown,correlation:string):Promise<OperationOutputs['listProducts']> {
     // The contract applies page/size defaults in the request DTO; the generated type keeps them
     // optional, so the boundary normalises them once before they reach the repository.
-    const page=await new CatalogRepository(database.manager).page(await this.stores(correlation),
+    const page=await new CatalogRepository(this.source.manager).page(await this.stores(correlation),
       {...query,page:query.page ?? 1,size:query.size ?? 20});
     // A plain listing produces no personal event. Resolve live identity only when a
     // search can actually be recorded; Store visibility above remains authoritative.
@@ -132,7 +151,7 @@ export class CatalogService {
 
   /** A hidden Product, a locked Store and an unknown id all answer 404 without leaking which one it was. */
   async detail(id:string,authorization:unknown,correlation:string):Promise<OperationOutputs['getProduct']> {
-    const product=await new CatalogRepository(database.manager).publicProduct(id,await this.stores(correlation));
+    const product=await new CatalogRepository(this.source.manager).publicProduct(id,await this.stores(correlation));
     if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm.');
     const userId=await optionalUserId(authorization,correlation);
     if(userId) await recordInteraction('InteractionRecorded',{user_id:userId,product_id:id,event_type:'VIEW'},correlation);
@@ -141,11 +160,11 @@ export class CatalogService {
 
   /** Taxonomy lookups are public reference data; only ACTIVE rows are exposed. */
   async listCategories(query:OperationInputs['listCategories']['query']):Promise<OperationOutputs['listCategories']> {
-    return new CatalogRepository(database.manager).pageCategories(query.page ?? 1,query.size ?? 20);
+    return new CatalogRepository(this.source.manager).pageCategories(query.page ?? 1,query.size ?? 20);
   }
 
   async listProductTypes(query:OperationInputs['listProductTypes']['query']):Promise<OperationOutputs['listProductTypes']> {
-    return new CatalogRepository(database.manager).pageProductTypes(query.page ?? 1,query.size ?? 20);
+    return new CatalogRepository(this.source.manager).pageProductTypes(query.page ?? 1,query.size ?? 20);
   }
 
   /**
@@ -171,7 +190,7 @@ export class CatalogService {
   async listOwnStoreProducts(query:OperationInputs['listOwnStoreProducts']['query'],context:any):
   Promise<OperationOutputs['listOwnStoreProducts']> {
     const storeId=this.requireProductScope(context);
-    return new CatalogRepository(database.manager).pageOwnStore(storeId,query.page ?? 1,query.size ?? 20);
+    return new CatalogRepository(this.source.manager).pageOwnStore(storeId,query.page ?? 1,query.size ?? 20);
   }
 
   /**
@@ -185,7 +204,7 @@ export class CatalogService {
   Promise<OperationOutputs['listStoreProducts']> {
     if(!(await this.stores(correlation)).includes(id))
       throw new ApiError(404,'NOT_FOUND','Không tìm thấy Store đang bán.');
-    return new CatalogRepository(database.manager).page([id],{page:query.page ?? 1,size:query.size ?? 20});
+    return new CatalogRepository(this.source.manager).page([id],{page:query.page ?? 1,size:query.size ?? 20});
   }
 
   /**
@@ -195,7 +214,7 @@ export class CatalogService {
    * audit và outbox `ProductChanged` cùng commit hoặc cùng rollback, nên không có Product "mồ côi"
    * hay một event báo thay đổi cho thứ chưa được lưu.
    */
-  async createProduct(input:OperationInputs['createProduct']['body'],context:any,correlation:string):
+  async createProduct(input:OperationInputs['createProduct']['body'],context:any,correlation:string,operationId?:string):
   Promise<OperationOutputs['createProduct']> {
     const {storeId,actorUserId}=await this.writableStore(context,correlation);
     this.validateVariantPayload(input.variants);
@@ -205,13 +224,14 @@ export class CatalogService {
     // updateProduct, which proves ownership first, and the repository scopes the SQL as well.
     if(input.variants?.some(variant=>variant.id!==undefined))
       throw new ApiError(422,'VARIANT_ID_NOT_ALLOWED','Tạo Product không nhận Variant có id; chỉ gửi Variant mới.');
-    return database.transaction(async manager=>{
+    return this.command('M1.Product.create',operationId,{storeId,actorUserId,input},async manager=>{
       const repository=new CatalogRepository(manager);
       await this.validateTaxonomy(repository,input.product_type_id,input.attributes);
       const created=await repository.insertProduct({storeId,productTypeId:input.product_type_id,title:input.title,
         description:input.description ?? null,attributes:input.attributes,status:input.status ?? 'DRAFT'});
       const variants=input.variants ?? [];
       await this.writeVariants(repository,created.id,storeId,variants,variants.length===1);
+      await this.publishable(repository,created);
       await audit(manager,'M1',actorUserId,'Product',created.id,'CREATE',correlation,null,
         {id:created.id,title:created.title,status:created.status,version:created.version});
       await emitEvent(manager,'ProductChanged',{product_id:created.id,store_id:storeId,version:created.version,
@@ -231,7 +251,7 @@ export class CatalogService {
   Promise<OperationOutputs['updateProduct']> {
     const {storeId,actorUserId}=await this.writableStore(context,correlation);
     this.validateVariantPayload(input.variants);
-    return database.transaction(async manager=>{
+    return this.source.transaction(async manager=>{
       const repository=new CatalogRepository(manager);
       const before=await repository.lockProduct(id,storeId);
       if(!before)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
@@ -261,6 +281,7 @@ export class CatalogService {
         }
       }
 
+      await this.publishable(repository,after);
       await audit(manager,'M1',actorUserId,'Product',id,'UPDATE',correlation,
         {product_type_id:current.product_type_id,title:current.title,description:current.description,
           attributes:current.attributes,status:current.status,version:current.version},
@@ -293,10 +314,10 @@ export class CatalogService {
    * cho tới khi Seller nhập hàng. Variant đầu tiên của Product tự thành mặc định; một Variant mặc
    * định mới sẽ bỏ cờ của Variant cũ vì `variant_default_unique` chỉ cho một.
    */
-  async createVariant(id:string,input:OperationInputs['createVariant']['body'],context:any,correlation:string):
+  async createVariant(id:string,input:OperationInputs['createVariant']['body'],context:any,correlation:string,operationId?:string):
   Promise<OperationOutputs['createVariant']> {
     const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
-    return database.transaction(async manager=>{
+    return this.command('M1.Product.variant',operationId,{id,storeId,actorUserId,input},async manager=>{
       const repository=new CatalogRepository(manager);
       // Lock the Product before reading or changing its Variants. `updateProduct` locks the same row
       // first, so the two write paths share one lock order.
@@ -338,12 +359,12 @@ export class CatalogService {
    * ghi audit. Nhờ vậy thêm ảnh không làm mọi client phải tải lại vì một thay đổi không liên quan
    * tới giá. `position` bỏ trống thì ảnh được nối vào cuối.
    */
-  async addProductImage(id:string,input:OperationInputs['addProductImage']['body'],context:any,correlation:string):
+  async addProductImage(id:string,input:OperationInputs['addProductImage']['body'],context:any,correlation:string,operationId?:string):
   Promise<OperationOutputs['addProductImage']> {
     const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
-    return database.transaction(async manager=>{
+    return this.command('M1.Product.image',operationId,{id,storeId,actorUserId,input},async manager=>{
       const repository=new CatalogRepository(manager);
-      const product=await repository.productForWrite(id,storeId);
+      const product=await repository.lockProductForVariants(id,storeId);
       if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
       if(input.variant_id) {
         const variants=await repository.variantRowsOfProduct(id);

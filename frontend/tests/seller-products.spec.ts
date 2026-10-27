@@ -40,27 +40,41 @@ test('seller list offers the editor only for publicly readable Products',async({
   const publicRow=page.locator('article').filter({hasText:'Sản phẩm công khai'});
   await expect(publicRow.getByRole('link',{name:'Sửa sản phẩm',exact:true})).toHaveCount(1);
 
-  // A DRAFT row and a HIDDEN row are listed without a link: the editor would 404 on them.
+  // Every row now opens the editor: a non-public Product is read back through the management list,
+  // because the contract has no single-Product route scoped to the Store.
   for(const title of ['Sản phẩm nháp','Sản phẩm bị ẩn']){
     const row=page.locator('article').filter({hasText:title});
-    await expect(row.getByRole('link',{name:'Sửa sản phẩm',exact:true})).toHaveCount(0);
-    await expect(row.getByRole('note')).toContainText('Chưa sửa được');
+    await expect(row.getByRole('link',{name:'Sửa sản phẩm',exact:true})).toHaveCount(1);
   }
 
-  // The enabled action really reaches the editor through the real API, so the difference above is
-  // about visibility, not about a dead end for every row.
+  // The action really reaches the editor through the real API.
   await publicRow.getByRole('link',{name:'Sửa sản phẩm',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Sửa sản phẩm #'+PUBLIC_PRODUCT,exact:true})).toBeVisible();
   expect(await page.getByLabel('Tên sản phẩm').inputValue()).toContain('Sản phẩm');
   expect(errors).toEqual([]);
 });
 
-test('a deep link to a non-public Product is not presented as editable from the list',async({page})=>{
-  // The editor itself still answers 404 for a hidden Product; the list must not send the Seller
-  // there, which is what the previous test asserts. This one records the underlying truth.
+test('a non-public Product opens through its scoped management detail without scanning a page',async({page})=>{
   await loginAsOwner(page);
   await page.route('**/api/v1/products/11111111-1111-4111-8111-111111111111',route=>route.fulfill({status:404,
     contentType:'application/json',body:JSON.stringify({code:'NOT_FOUND',message:'Không tìm thấy sản phẩm.',correlation_id:'deep-link',details:[]})}));
+  await page.route('**/api/v1/store/products/11111111-1111-4111-8111-111111111111',route=>route.fulfill({status:200,contentType:'application/json',
+    body:JSON.stringify({id:'11111111-1111-4111-8111-111111111111',store_id:'10000000-0000-4000-8000-000000000061',
+      product_type_id:'10000000-0000-4000-8000-000000000071',title:'Sản phẩm nháp quản lý',description:'x',
+      attributes:{},status:'DRAFT',moderation_status:'VISIBLE',version:3,variants:[],images:[]})}));
   await page.goto('/seller/products/11111111-1111-4111-8111-111111111111/edit');
-  await expect(page.getByRole('alert')).toContainText('Không tìm thấy sản phẩm.');
+  await expect(page.getByRole('heading',{name:'Sửa sản phẩm #11111111-1111-4111-8111-111111111111',exact:true})).toBeVisible();
+  expect(await page.getByLabel('Tên sản phẩm').inputValue()).toBe('Sản phẩm nháp quản lý');
+  // The management projection carries the real version, which the optimistic update depends on.
+  await expect(page.getByText(/version 3/)).toBeVisible();
 });
+
+test('a foreign or missing Product remains 404 through the scoped management detail',async({page})=>{
+  await loginAsOwner(page);
+  await page.route('**/api/v1/products/22222222-2222-4222-8222-222222222222',route=>route.fulfill({status:404,
+    contentType:'application/json',body:JSON.stringify({code:'NOT_FOUND',message:'Không tìm thấy sản phẩm.',correlation_id:'deep-link-2',details:[]})}));
+  await page.route('**/api/v1/store/products/22222222-2222-4222-8222-222222222222',route=>route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({code:'NOT_FOUND',message:'Không tìm thấy sản phẩm trong Store.',details:[]})}));
+  await page.goto('/seller/products/22222222-2222-4222-8222-222222222222/edit');
+  await expect(page.getByRole('alert')).toContainText('Không tìm thấy sản phẩm trong Store.');
+});
+

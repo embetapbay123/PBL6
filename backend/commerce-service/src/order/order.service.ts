@@ -944,7 +944,7 @@ export class OrderService {
     if (!customerUserId || !UUID_REGEX.test(customerUserId)) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'customer_user_id không hợp lệ.');
     }
-    if (!productId || !UUID_REGEX.test(productId)) {
+    if (productId!==undefined && !UUID_REGEX.test(productId)) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'product_id không hợp lệ.');
     }
 
@@ -965,7 +965,7 @@ export class OrderService {
       };
     }
 
-    if (item.product_id !== productId) {
+    if (productId!==undefined && item.product_id !== productId) {
       return {
         eligible: false,
         reason: 'Sản phẩm không khớp với mục đơn hàng.',
@@ -981,6 +981,7 @@ export class OrderService {
 
     return {
       eligible: true,
+      ...(productId===undefined?{product_id:item.product_id}:{}),
     };
   }
 }

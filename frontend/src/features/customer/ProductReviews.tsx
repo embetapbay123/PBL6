@@ -43,6 +43,7 @@ function ReviewsInner({productId,userId}:{productId:string;userId?:string}) {
     }catch(e){setError(e)}finally{flight.current=false;setBusy(false)}
   };
   return <section className="boot-card"><h3>Đánh giá sản phẩm</h3>
+    {reviews?.summary&&<p>{reviews.summary.average_rating.toFixed(1)}/5 · {reviews.summary.count} đánh giá đang hiển thị</p>}
     {error!==undefined && <ErrorView error={error} onRetry={()=>setReload(n=>n+1)}/>}
     {loading?<Loading/>:reviews && <>
       {!reviews.items.length && <p>Chưa có đánh giá nào cho sản phẩm này.</p>}

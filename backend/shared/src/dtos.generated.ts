@@ -430,6 +430,18 @@ export class CreateProductPathDto {
 export class CreateProductQueryDto {
 }
 export class CreateProductHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "idempotency-key"?: string;
+}
+export class GetOwnStoreProductPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetOwnStoreProductQueryDto {
+}
+export class GetOwnStoreProductHeadersDto {
 }
 export class UpdateProductBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
@@ -474,6 +486,9 @@ export class CreateVariantPathDto {
 export class CreateVariantQueryDto {
 }
 export class CreateVariantHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "idempotency-key"?: string;
 }
 export class AddProductImageBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uri", "maxLength": 2048},true),defaultMessage:()=> 'Invalid contract field'}})
@@ -491,6 +506,9 @@ export class AddProductImagePathDto {
 export class AddProductImageQueryDto {
 }
 export class AddProductImageHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "idempotency-key"?: string;
 }
 export class ListStoreInventoryPathDto {
 }
@@ -1689,6 +1707,15 @@ export class RecordReturnCodRefundQueryDto {
 }
 export class RecordReturnCodRefundHeadersDto {
 }
+export class GetProductAvailabilityPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetProductAvailabilityQueryDto {
+}
+export class GetProductAvailabilityHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -1803,8 +1830,8 @@ export class VerifyReviewEligibilityBodyDto {
   "order_item_id"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
   "customer_user_id"!: string;
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
-  "product_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "product_id"?: string;
 }
 export class VerifyReviewEligibilityPathDto {
 }
@@ -1903,6 +1930,7 @@ export const runtimeDtos = {
   listStoreProducts: {body: undefined, path: ListStoreProductsPathDto, query: ListStoreProductsQueryDto, headers: ListStoreProductsHeadersDto},
   listOwnStoreProducts: {body: undefined, path: ListOwnStoreProductsPathDto, query: ListOwnStoreProductsQueryDto, headers: ListOwnStoreProductsHeadersDto},
   createProduct: {body: CreateProductBodyDto, path: CreateProductPathDto, query: CreateProductQueryDto, headers: CreateProductHeadersDto},
+  getOwnStoreProduct: {body: undefined, path: GetOwnStoreProductPathDto, query: GetOwnStoreProductQueryDto, headers: GetOwnStoreProductHeadersDto},
   updateProduct: {body: UpdateProductBodyDto, path: UpdateProductPathDto, query: UpdateProductQueryDto, headers: UpdateProductHeadersDto},
   createVariant: {body: CreateVariantBodyDto, path: CreateVariantPathDto, query: CreateVariantQueryDto, headers: CreateVariantHeadersDto},
   addProductImage: {body: AddProductImageBodyDto, path: AddProductImagePathDto, query: AddProductImageQueryDto, headers: AddProductImageHeadersDto},
@@ -1978,6 +2006,7 @@ export const runtimeDtos = {
   reportDeliveryReturn: {body: ReportDeliveryReturnBodyDto, path: ReportDeliveryReturnPathDto, query: ReportDeliveryReturnQueryDto, headers: ReportDeliveryReturnHeadersDto},
   decideOrderReturn: {body: DecideOrderReturnBodyDto, path: DecideOrderReturnPathDto, query: DecideOrderReturnQueryDto, headers: DecideOrderReturnHeadersDto},
   recordReturnCodRefund: {body: RecordReturnCodRefundBodyDto, path: RecordReturnCodRefundPathDto, query: RecordReturnCodRefundQueryDto, headers: RecordReturnCodRefundHeadersDto},
+  getProductAvailability: {body: undefined, path: GetProductAvailabilityPathDto, query: GetProductAvailabilityQueryDto, headers: GetProductAvailabilityHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

@@ -579,7 +579,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * getOwnStoreProduct
+         * @description Xem Product trong Store của mình. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: SELLER, STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         */
+        get: operations["getOwnStoreProduct"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1951,6 +1955,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/{id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getProductAvailability
+         * @description Xem Product trong Store của mình. Phạm vi dữ liệu: ACTIVE_STORE_MEMBERSHIP; quyền: SELLER, STORE_OWNER. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         */
+        get: operations["getProductAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2530,6 +2554,8 @@ export interface components {
             variant_axis?: boolean;
             allowed_values?: string[];
             version?: number;
+            /** @description Immutable server attribute key; never derive it from a display name. */
+            code?: string;
         };
         StoreMembership: {
             /** Format: uuid */
@@ -2699,6 +2725,10 @@ export interface components {
             total: number;
             page: number;
             size: number;
+            summary?: {
+                count: number;
+                average_rating: number;
+            };
         };
         PageUsers: {
             items: components["schemas"]["UserSummary"][];
@@ -3065,6 +3095,17 @@ export interface components {
             reason?: string;
             /** Format: date-time */
             created_at: string;
+        };
+        ProductAvailability: {
+            /** Format: uuid */
+            product_id: string;
+            /** Format: date-time */
+            observed_at: string;
+            items: {
+                /** Format: uuid */
+                variant_id: string;
+                available_quantity: number;
+            }[];
         };
     };
     responses: never;
@@ -6209,7 +6250,10 @@ export interface operations {
     createProduct: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description New management clients always provide a stable UUID; replay with a different payload returns 409. */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6231,6 +6275,100 @@ export interface operations {
         responses: {
             /** @description Thành công: tạo product trong store */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getOwnStoreProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem product trong store của mình */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6419,7 +6557,10 @@ export interface operations {
     createVariant: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description New management clients always provide a stable UUID; replay with a different payload returns 409. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -6527,7 +6668,10 @@ export interface operations {
     addProductImage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description New management clients always provide a stable UUID; replay with a different payload returns 409. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -13476,6 +13620,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getProductAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem product trong store của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductAvailability"];
                 };
             };
             /** @description Malformed request */

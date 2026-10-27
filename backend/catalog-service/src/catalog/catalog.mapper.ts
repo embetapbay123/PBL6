@@ -21,6 +21,7 @@ export function categoryResponse(row:any):OperationOutputs['listCategories']['it
 
 export function attributeDefinitionResponse(d:any) {
   return {id:d.id,product_type_id:d.product_type_id,name:d.name,data_type:d.data_type,
+    ...(d.code==null?{}:{code:d.code}),
     ...(d.unit==null?{}:{unit:d.unit}),required:d.required,variant_axis:d.variant_factor,
     ...(Array.isArray(d.allowed_values)?{allowed_values:d.allowed_values}:{}),
     ...(d.version===undefined?{}:{version:d.version})};

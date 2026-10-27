@@ -87,6 +87,10 @@ test('Review eligibility uses HTTP 200, the M1 allowlist and actual OrderItem ow
     const response=await call();expect(response.status).toBe(200);
     const body=await response.json();expect(body).toEqual({eligible:true});
     expect(schemaErrors(body,bundle.operations.VerifyReviewEligibility.responses['200'])).toEqual([]);
+    const resolved=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json','X-Service-Id':'M1','X-Service-Key':process.env.M1_INTERNAL_KEY??''},body:JSON.stringify({order_item_id:item,customer_user_id:user})});
+    expect(resolved.status).toBe(200);expect(await resolved.json()).toEqual({eligible:true,product_id:product});
+    const foreign=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json','X-Service-Id':'M1','X-Service-Key':process.env.M1_INTERNAL_KEY??''},body:JSON.stringify({order_item_id:item,customer_user_id:randomUUID()})});
+    const denied=await foreign.json() as any;expect(denied.eligible).toBe(false);expect(denied.product_id).toBeUndefined();
     expect((await (await call(randomUUID())).json() as any).eligible).toBe(false);
     expect((await call(user,'M3',process.env.M3_INTERNAL_KEY)).status).toBe(401);
   } finally {await source.query('DELETE FROM order_item WHERE id=$1',[item]);await source.query('DELETE FROM "order" WHERE id=$1',[id]);await source.destroy();}
