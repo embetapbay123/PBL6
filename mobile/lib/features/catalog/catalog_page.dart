@@ -1045,6 +1045,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final priceInt = int.tryParse(priceStr) ?? 100000;
     final originalPriceInt = (priceInt * 1.25).round();
 
+    final images = product['images'] as List?;
+    final imageUrl = (images != null && images.isNotEmpty)
+        ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
+        : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1071,13 +1076,25 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 children: [
                   Container(
                     color: const Color(0xFFF9FAFB),
-                    child: const Center(
-                      child: Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 42,
-                        color: Color(0xFFCBD5E1),
-                      ),
-                    ),
+                    child: (imageUrl != null && imageUrl.isNotEmpty && imageUrl.startsWith('http'))
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => const Center(
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 42,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 42,
+                              color: Color(0xFFCBD5E1),
+                            ),
+                          ),
                   ),
                   // Discount Badge Top-Left
                   Positioned(

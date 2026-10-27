@@ -62,8 +62,8 @@ class ProfilePage extends ConsumerWidget {
               color: AppColors.textPrimary,
               size: 24,
             ),
-            tooltip: 'Cài đặt',
-            onPressed: () => ref.invalidate(profileProvider),
+            tooltip: 'Cài đặt máy chủ API',
+            onPressed: () => _showServerConfigDialog(context, ref),
           ),
         ],
       ),
@@ -912,4 +912,94 @@ class ProfilePage extends ConsumerWidget {
       ),
     );
   }
+
+  void _showServerConfigDialog(BuildContext context, WidgetRef ref) {
+    final client = ref.read(apiProvider);
+    final controller = TextEditingController(text: client.baseUrl);
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.dns_outlined, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text(
+                'Cấu hình máy chủ API',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Địa chỉ máy chủ hiện tại:',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'http://10.0.2.2:8080/api/v1',
+                  isDense: true,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Chọn nhanh cấu hình:',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  ActionChip(
+                    label: const Text('Máy ảo Android (10.0.2.2)', style: TextStyle(fontSize: 10)),
+                    onPressed: () => controller.text = 'http://10.0.2.2:8080/api/v1',
+                  ),
+                  ActionChip(
+                    label: const Text('Windows / Desktop (127.0.0.1)', style: TextStyle(fontSize: 10)),
+                    onPressed: () => controller.text = 'http://127.0.0.1:8080/api/v1',
+                  ),
+                  ActionChip(
+                    label: const Text('Localhost (localhost:8080)', style: TextStyle(fontSize: 10)),
+                    onPressed: () => controller.text = 'http://localhost:8080/api/v1',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final newUrl = controller.text.trim();
+                if (newUrl.isNotEmpty) {
+                  await client.updateBaseUrl(newUrl);
+                  ref.invalidate(profileProvider);
+                  ref.invalidate(catalogProductsProvider);
+                  ref.invalidate(categoriesProvider);
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Đã cập nhật máy chủ API: $newUrl')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Lưu & Áp dụng'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
+

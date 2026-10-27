@@ -408,6 +408,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// 1. Main Hero Image with Gallery Thumbnails matching Image 2
   Widget _buildHeroImageGallery() {
+    final images = (_product?['images'] as List?) ?? [];
+    final hasImages = images.isNotEmpty;
+    final currentImageUrl = hasImages && _selectedImageIndex < images.length
+        ? (images[_selectedImageIndex] is Map
+            ? images[_selectedImageIndex]['image_url']?.toString()
+            : images[_selectedImageIndex]?.toString())
+        : (_product?['image_url']?.toString() ?? _product?['thumbnail']?.toString());
+
     return Container(
       decoration: AppDecorations.card(radius: 16),
       padding: const EdgeInsets.all(12),
@@ -423,15 +431,32 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                   color: const Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Center(
-                  child: Icon(
-                    _selectedImageIndex % 2 == 0
-                        ? Icons.headphones_rounded
-                        : Icons.shopping_bag_outlined,
-                    size: 80,
-                    color: AppColors.primary.withAlpha(180),
-                  ),
-                ),
+                child: (currentImageUrl != null && currentImageUrl.isNotEmpty && currentImageUrl.startsWith('http'))
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          currentImageUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (ctx, err, stack) => Center(
+                            child: Icon(
+                              _selectedImageIndex % 2 == 0
+                                  ? Icons.headphones_rounded
+                                  : Icons.shopping_bag_outlined,
+                              size: 80,
+                              color: AppColors.primary.withAlpha(180),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Icon(
+                          _selectedImageIndex % 2 == 0
+                              ? Icons.headphones_rounded
+                              : Icons.shopping_bag_outlined,
+                          size: 80,
+                          color: AppColors.primary.withAlpha(180),
+                        ),
+                      ),
               ),
               // Discount Tag Top-Left (-30%)
               Positioned(
@@ -464,7 +489,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    '${_selectedImageIndex + 1}/6',
+                    '${_selectedImageIndex + 1}/${hasImages ? images.length : 6}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10.5,
@@ -479,8 +504,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           // 6 Preview Thumbnails Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(6, (idx) {
+            children: List.generate(hasImages ? images.length.clamp(1, 6) : 6, (idx) {
               final isSelected = _selectedImageIndex == idx;
+              final thumbUrl = hasImages && idx < images.length
+                  ? (images[idx] is Map ? images[idx]['image_url']?.toString() : images[idx]?.toString())
+                  : null;
+
               return InkWell(
                 onTap: () => setState(() => _selectedImageIndex = idx),
                 borderRadius: BorderRadius.circular(8),
@@ -495,12 +524,23 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                       width: isSelected ? 2 : 1,
                     ),
                   ),
-                  child: Center(
-                    child: Icon(
-                      idx % 2 == 0 ? Icons.headphones_rounded : Icons.devices_rounded,
-                      size: 20,
-                      color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                    ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: (thumbUrl != null && thumbUrl.isNotEmpty && thumbUrl.startsWith('http'))
+                        ? Image.network(
+                            thumbUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => Icon(
+                              idx % 2 == 0 ? Icons.headphones_rounded : Icons.devices_rounded,
+                              size: 20,
+                              color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                            ),
+                          )
+                        : Icon(
+                            idx % 2 == 0 ? Icons.headphones_rounded : Icons.devices_rounded,
+                            size: 20,
+                            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                          ),
                   ),
                 ),
               );

@@ -1,5 +1,19 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+String resolveDefaultBaseUrl() {
+  const envUrl = String.fromEnvironment('API_BASE_URL');
+  if (envUrl.isNotEmpty) return envUrl;
+  if (kIsWeb) return 'http://localhost:8080/api/v1';
+  try {
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8080/api/v1';
+    }
+  } catch (_) {}
+  return 'http://127.0.0.1:8080/api/v1';
+}
 
 class ApiClient {
   ApiClient({String? baseUrl, FlutterSecureStorage? storage, Dio? customDio})
@@ -8,12 +22,7 @@ class ApiClient {
           customDio ??
           Dio(
             BaseOptions(
-              baseUrl:
-                  baseUrl ??
-                  const String.fromEnvironment(
-                    'API_BASE_URL',
-                    defaultValue: 'http://10.0.2.2:8080/api/v1',
-                  ),
+              baseUrl: baseUrl ?? resolveDefaultBaseUrl(),
               connectTimeout: const Duration(seconds: 5),
               receiveTimeout: const Duration(seconds: 10),
             ),
@@ -24,6 +33,16 @@ class ApiClient {
   String? _accessToken;
   Future<void>? _refreshing;
 
+  String get baseUrl => dio.options.baseUrl;
+  set baseUrl(String url) {
+    dio.options.baseUrl = url;
+  }
+
+  Future<void> updateBaseUrl(String newUrl) async {
+    dio.options.baseUrl = newUrl;
+    await _storage.write(key: 'custom_api_base_url', value: newUrl);
+  }
+
   bool get isAuthenticated => _accessToken != null;
 
   void setAccessTokenForTesting(String? token) {
@@ -32,6 +51,10 @@ class ApiClient {
 
   Future<bool> tryRestoreSession() async {
     try {
+      final customUrl = await _storage.read(key: 'custom_api_base_url');
+      if (customUrl != null && customUrl.trim().isNotEmpty) {
+        dio.options.baseUrl = customUrl.trim();
+      }
       final token = await _storage.read(key: 'refresh_token');
       if (token == null || token.isEmpty) return false;
       await _refresh();
