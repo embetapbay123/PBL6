@@ -637,6 +637,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
               {!attempt && (
                 <VoucherPicker
                   input={quoteInput}
+                  clear={()=>{setVouchers({});setPlatformDraft('');setVoucherDraft({})}}
                   select={(voucher, remove) => {
                     if (voucher.scope === "PLATFORM") {
                       const code = remove ? "" : voucher.code;

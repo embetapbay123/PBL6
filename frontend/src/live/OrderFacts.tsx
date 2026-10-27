@@ -18,6 +18,8 @@ export const timeLabel = (value?: string) =>
 export function OrderFacts({ order }: { order: Order }) {
   const address = order.address_snapshot,
     history = order.status_history ?? [];
+  const steps=[...(order.status==='PREPARING'||history.some(h=>h.to_status==='PREPARING')?['PREPARING']:[]),
+    ...(order.payment_method==='SANDBOX'?['AWAITING_PAYMENT']:[]), 'PENDING','CONFIRMED','PROCESSING','SHIPPED','COMPLETED'];
   return (
     <section className="market-order-facts">
       <h3>Thông tin giao hàng</h3>
@@ -50,7 +52,7 @@ export function OrderFacts({ order }: { order: Order }) {
       </>:<p>Chưa có bản ghi vận chuyển cho đơn hàng.</p>}
       <h3>Chuỗi xử lý đơn hàng</h3>
       <ol className="market-order-chain">
-        {["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "COMPLETED"].map(
+        {steps.map(
           (status) => (
             <li
               key={status}

@@ -11,11 +11,14 @@ type Voucher = OperationOutputs["createStoreVoucher"];
 export function VoucherPicker({
   input,
   select,
+  clear,
 }: {
   input: OperationInputs["suggestVouchers"]["body"];
   select: (voucher: Voucher, remove: boolean) => void;
+  clear: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const selectedCodes=[...(input.platform_voucher_code?[input.platform_voucher_code]:[]),...Object.values(input.store_vouchers??{})];
   const data = useQuery({
     queryKey: ["voucher-suggestions", input],
     queryFn: () => callOperation("suggestVouchers", { body: input }),
@@ -23,6 +26,8 @@ export function VoucherPicker({
   });
   return (
     <section className="market-voucher-picker">
+      <p>{selectedCodes.length?'Đã chọn: '+selectedCodes.join(', '):'Chưa chọn mã ưu đãi.'}</p>
+      {selectedCodes.length>0&&<button type="button" onClick={clear}>Bỏ tất cả mã đã chọn</button>}
       <button type="button" onClick={() => setOpen((v) => !v)}>
         {open ? "Đóng gợi ý" : "Chọn voucher / Gợi ý mã"}
       </button>
@@ -33,7 +38,7 @@ export function VoucherPicker({
             Mỗi gian hàng dùng một mã và có thể kết hợp một mã toàn sàn. Ước
             tính sẽ được kiểm tra lại khi đặt hàng.
           </p>
-          {data.error ? (
+          {!input.address_id||!input.cart_item_ids.length ? <p>Chọn sản phẩm và địa chỉ để xem mã phù hợp.</p> : data.error ? (
             <ErrorView error={data.error} onRetry={() => void data.refetch()} />
           ) : !data.data ? (
             <Loading />

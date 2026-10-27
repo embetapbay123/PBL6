@@ -51,3 +51,22 @@ test('public stock errors are visible and never interpreted as saleable stock',a
  await setup(page,(route,c)=>c.path==='/products/'+id+'/availability'?route.fulfill({status:503,json:{code:'DEPENDENCY_UNAVAILABLE',message:'Không đọc được tồn hiện tại',details:[]}}):undefined);
  await page.goto('/products/'+id);await expect(page.getByRole('button',{name:'Thêm vào giỏ hàng'})).toBeDisabled();await expect(page.getByRole('alert').filter({hasText:'Không đọc được tồn hiện tại'})).toBeVisible();await expect(page.getByText('Tồn khả dụng: 0')).toHaveCount(0);
 });
+
+test('Product detail selects color and size combinations and respects availability',async({page})=>{
+ const variants=[
+  {id:variant,sku:'RED-S',price_vnd:100,status:'ACTIVE',is_default:true,variant_values:{color:'Đỏ',size:'S'}},
+  {id:'61000000-0000-4000-8000-000000000005',sku:'RED-M',price_vnd:120,status:'ACTIVE',variant_values:{color:'Đỏ',size:'M'}},
+  {id:'61000000-0000-4000-8000-000000000006',sku:'BLUE-S',price_vnd:130,status:'ACTIVE',variant_values:{color:'Xanh',size:'S'}},
+ ];
+ await setup(page,(route,c)=>{
+  if(c.path==='/products/'+id)return route.fulfill({json:{...product,status:'ACTIVE',variants}});
+  if(c.path==='/products/'+id+'/availability')return route.fulfill({json:{product_id:id,observed_at:new Date().toISOString(),items:variants.map(v=>({variant_id:v.id,available_quantity:v.sku==='BLUE-S'?0:3}))}});
+ });
+ await page.goto('/products/'+id);await expect(page.getByRole('group',{name:'Màu sắc'})).toBeVisible();await expect(page.getByRole('group',{name:'Kích cỡ'})).toBeVisible();
+ await page.getByRole('button',{name:'M',exact:true}).click();await expect(page.getByText('120 ₫')).toBeVisible();
+ await page.getByLabel('Số lượng').fill('4');await expect(page.getByRole('button',{name:'Thêm vào giỏ hàng'})).toBeDisabled();
+ await page.getByLabel('Số lượng').fill('1');await expect(page.getByRole('button',{name:'Thêm vào giỏ hàng'})).toBeEnabled();
+ await expect(page.getByRole('button',{name:'Xanh',exact:true})).toBeDisabled();
+ await page.getByRole('button',{name:'S',exact:true}).click();await page.getByRole('button',{name:'Xanh',exact:true}).click();
+ await expect(page.getByText('Phân loại này hiện hết hàng.')).toBeVisible();await expect(page.getByRole('button',{name:'Thêm vào giỏ hàng'})).toBeDisabled();
+});

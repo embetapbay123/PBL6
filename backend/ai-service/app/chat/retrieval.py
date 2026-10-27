@@ -21,6 +21,15 @@ def retrieve(engine,question,candidates):
     candidates=[p for p in candidates if maximum is None or price(p)<=maximum]
     if not candidates:return []
     live={p['id']:p for p in candidates};query=embedding(question);terms={t for t in tokens(question) if not t.isdigit() and t not in ('toi','da','khong','qua','trieu','tr')}
+    # Broad category words do not necessarily appear in Product titles. Expand
+    # only explicit categories into bounded, relevant lexical terms; never
+    # substitute unrelated products when a specific query has no match.
+    import unicodedata
+    folded=unicodedata.normalize('NFKD',question.lower()).replace('đ','d')
+    folded=''.join(c for c in folded if not unicodedata.combining(c))
+    if 'thoi trang' in folded:
+        terms.difference_update(('thoi','trang'))
+        terms.update(('ao','quan','vay','dam','giay','dep','tui'))
     with engine.connect() as db:
         # Compare versions with BOTH current Catalog and durable ProductChanged state.
         indexed=db.execute(text("SELECT e.product_id,e.source_version,e.vector::text AS vector FROM product_embedding e JOIN product_document d ON d.product_id=e.product_id AND d.source_version=e.source_version LEFT JOIN event_entity_state s ON s.kind='ProductChanged' AND s.entity_id=e.product_id WHERE e.status='ACTIVE' AND (s.version IS NULL OR s.version<=e.source_version) AND e.product_id=ANY(CAST(:ids AS uuid[]))"),{'ids':list(live)}).mappings().all()
