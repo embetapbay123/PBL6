@@ -15,8 +15,10 @@ export function reviewResponse(row: any): OperationOutputs['updateReview'] {
 }
 
 export class ReviewService {
-  constructor(private readonly repository = new ReviewRepository(),private readonly source:DataSource=database,
+  constructor(private readonly suppliedRepository?:ReviewRepository,private readonly suppliedSource?:DataSource,
     private readonly eligibility?:(input:OperationInputs['VerifyReviewEligibility']['body'])=>Promise<OperationOutputs['VerifyReviewEligibility']>) {}
+  private get source(){return this.suppliedSource??database}
+  private get repository(){return this.suppliedRepository??new ReviewRepository(this.source.manager)}
 
   async createReview(body:OperationInputs['createReview']['body'],context:any,correlation:string):Promise<OperationOutputs['createReview']> {
     const customer=context?.user_id;

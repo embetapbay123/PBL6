@@ -8,7 +8,8 @@ import { CatalogRepository } from './catalog.repository';
 import { hasProductPermission } from './catalog.service';
 
 export class CatalogManagementService {
-  constructor(private readonly source:DataSource=database,private readonly activeStores?:()=>Promise<string[]>) {}
+  constructor(private readonly suppliedSource?:DataSource,private readonly activeStores?:()=>Promise<string[]>) {}
+  private get source(){return this.suppliedSource??database}
   async own(id:string,auth:any):Promise<OperationOutputs['getOwnStoreProduct']> {
     const membership=auth?.store_membership;
     if(!membership?.store_id || !hasProductPermission(membership.role,membership.permissions??[]))
