@@ -26,7 +26,7 @@ async function setup(page:Page,{customer=false,failure=false}={}){
 }
 test('Guest chat is reachable from the application and sends the session capability and actual content',async({page})=>{
  const calls=await setup(page);await page.goto('/');await page.getByRole('button',{name:'Chat hỗ trợ',exact:true}).click();await page.getByLabel('Câu hỏi',{exact:true}).fill('Find something useful');await page.getByRole('button',{name:'Gửi câu hỏi',exact:true}).click();
- await expect(page.getByRole('log')).toContainText('Actual server answer');await expect(page.getByRole('status')).toContainText('PROVIDER_NOT_CONFIGURED');await expect(page.getByRole('log')).toContainText('123.456');
+ await expect(page.getByRole('log')).toContainText('Actual server answer');await expect(page.getByRole('status')).toContainText('Trợ lý đang dùng gợi ý dự phòng từ danh mục sản phẩm');await expect(page.getByRole('log')).toContainText('123.456');
  expect(calls.filter(c=>c.path==='/api/v1/chat/sessions')).toHaveLength(1);expect(calls.some(c=>c.path.includes('/me/chat'))).toBe(false);await expect(page.getByText('Cảm ơn bạn. Hệ thống đang xử lý yêu cầu của bạn.')).toHaveCount(0);
 });
 test('Customer For You, related products and owned chat history use their real operations',async({page})=>{
