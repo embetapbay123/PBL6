@@ -527,12 +527,29 @@ class ApiClient {
               price > 9007199254740991) {
             throw const FormatException('Catalog thiếu giá hoặc sai Store.');
           }
-          item.addAll({
-            'title': product['title'],
-            'sku': variant['sku'],
-            'unit_price_vnd': price,
-            'catalog_available': true,
-          });
+          final images = product['images'] as List?;
+          final imageUrl = (images != null && images.isNotEmpty)
+              ? (images.first as Map)['image_url']?.toString()
+              : null;
+          final variantValues = variant['variant_values'] as Map?;
+          final variantText = (variantValues != null && variantValues.isNotEmpty)
+              ? variantValues.entries.map((e) => '${e.key}: ${e.value}').join(', ')
+              : (variant['sku']?.toString() ?? 'Mặc định');
+          final storeIdStr = item['store_id']?.toString() ?? '';
+          final shortStoreId = storeIdStr.length > 8 ? storeIdStr.substring(0, 8) : storeIdStr;
+          final storeName = item['store_name']?.toString() ??
+              product['store_name']?.toString() ??
+              product['attributes']?['brand']?.toString() ??
+              'Cửa hàng $shortStoreId';
+          item['title'] = product['title'];
+          item['sku'] = variant['sku'];
+          if (imageUrl != null) {
+            item['image_url'] = imageUrl;
+          }
+          item['variant_text'] = variantText;
+          item['store_name'] = storeName;
+          item['unit_price_vnd'] = price;
+          item['catalog_available'] = true;
         } catch (_) {
           item['catalog_available'] = false;
           item['catalog_error'] =
