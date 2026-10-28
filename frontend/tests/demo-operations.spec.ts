@@ -267,6 +267,7 @@ test("Customer selects eligible Store/platform vouchers and sees disabled inelig
     page.getByRole("button", { name: "Chọn USED", exact: true }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Chọn STORE10", exact: true }).click();
+  await expect(page.getByText('Đã chọn: STORE10')).toBeVisible();
   await page
     .getByRole("button", { name: "Chọn PLATFORM10", exact: true })
     .click();
@@ -286,6 +287,9 @@ test("Customer selects eligible Store/platform vouchers and sees disabled inelig
           .platform_voucher_code,
     )
     .toBeUndefined();
+  await page.getByRole('button',{name:'Bỏ tất cả mã đã chọn'}).click();
+  await expect(page.getByText('Chưa chọn mã ưu đãi.')).toBeVisible();
+  await expect.poll(()=>calls.filter(c=>c.path==='/checkout/quotes').at(-1)?.body.store_vouchers).toBeUndefined();
   expect(calls.some((c) => c.path === "/orders/batches")).toBe(false);
 });
 
@@ -298,6 +302,7 @@ test('Customer Order filters survive pagination and clear back to page one',asyn
     }
   });
   await page.goto('/customer/orders');await page.getByLabel('Mã đơn',{exact:true}).fill('PBL-00000003');
+  await page.getByRole('navigation',{name:'Xem đơn theo trạng thái'}).getByRole('button',{name:'Đang giao'}).click();await expect.poll(()=>queries.at(-1)?.get('status')).toBe('SHIPPED');
   await page.getByLabel('Trạng thái đơn',{exact:true}).selectOption('SHIPPED');await page.getByLabel('Ngày tạo từ').fill('2026-10-20');await page.getByLabel('Đến ngày (bao gồm)').fill('2026-10-27');
   await page.getByRole('button',{name:'Lọc đơn hàng',exact:true}).click();await expect.poll(()=>queries.at(-1)?.get('q')).toBe('PBL-00000003');
   await page.getByRole('button',{name:'Trang sau',exact:true}).click();await expect.poll(()=>queries.at(-1)?.get('page')).toBe('2');

@@ -2,6 +2,8 @@
 
 The default web entry uses `frontend/src/live/LiveApp.tsx`. It brings the existing emerald/slate demo design to the real API routes, without mounting the mock `AppProvider`. A real login determines the visible roles and Store scope. API failures remain errors; the UI never switches to local mock records when a request fails.
 
+The checkout voucher picker shows selected codes and can clear them even when suggestions fail. Customer Order history has status tabs and the detail page shows recorded transitions. Product detail groups scalar Variant attributes (such as color and size), disables combinations absent from the catalog and uses current availability before adding to Cart. Broad fashion questions expand to bounded lexical catalog terms; this is a retrieval improvement, not a general semantic model. Empty results and an unavailable model are reported separately.
+
 ## Entry points
 
 | Entry | Data and purpose |

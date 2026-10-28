@@ -116,6 +116,7 @@ class CatalogSelector:
 
 def compose(selection,products):
     verified={p['id']:p for p in products};chosen=[verified[i] for i in selection.ids if i in verified]
+    if not chosen and selection.reason=='NO_MATCH':return 'Chưa tìm thấy sản phẩm phù hợp. Hãy thử tên sản phẩm hoặc điều chỉnh mức giá.',[]
     prefix='Đang dùng gợi ý theo dữ liệu Catalog (model chưa sẵn sàng). ' if selection.fallback else 'Gợi ý từ các sản phẩm đã xác minh: '
     if not chosen:return (selection.answer+' ' if not selection.fallback and selection.answer else prefix)+'Chưa tìm thấy sản phẩm phù hợp đang được bán.',[]
     lines=[f"{redact(p.get('title'),200)} — {price(p):,} VND" for p in chosen]

@@ -65,6 +65,9 @@ export function ProductDetail() {
   }, [id, retry]);
 
   const variant = product?.variants?.find((item) => item.id === variantId);
+  const activeVariants=product?.variants?.filter(v=>v.id&&v.status==='ACTIVE')??[];
+  const axes=[...new Set(activeVariants.flatMap(v=>Object.entries(v.variant_values??{}).filter(([,value])=>value!==null&&['string','number','boolean'].includes(typeof value)).map(([key])=>key)))];
+  const axisLabels:Record<string,string>={color:'Màu sắc',colour:'Màu sắc',size:'Kích cỡ',capacity:'Dung lượng',material:'Chất liệu'};
   const available =
     product?.id === id &&
     product?.status === "ACTIVE" &&
@@ -157,10 +160,15 @@ export function ProductDetail() {
               {variant.price_vnd.toLocaleString("vi-VN")} ₫
             </p>
           )}
-          {!available && (
-            <p>Sản phẩm hoặc phân loại này hiện không được bán.</p>
-          )}
-          {product.variants?.map((item) => (
+          {stock.data && variant && (stock.data.items.find(v=>v.variant_id===variant.id)?.available_quantity??0)===0 && <p>Phân loại này hiện hết hàng.</p>}
+          {axes.length>0 && <div aria-label="Chọn phân loại sản phẩm">{axes.map(axis=>{
+            const options=[...new Set(activeVariants.map(v=>v.variant_values?.[axis]).filter((v):v is string|number|boolean=>v!==undefined&&v!==null&&['string','number','boolean'].includes(typeof v)))];
+            return <fieldset key={axis} disabled={busy}><legend>{axisLabels[axis.toLowerCase()]??axis}</legend>{options.map(value=>{
+              const match=activeVariants.find(v=>v.variant_values?.[axis]===value&&axes.every(other=>other===axis||v.variant_values?.[other]===variant?.variant_values?.[other]));
+              return <button type="button" key={typeof value+':'+String(value)} disabled={!match} aria-pressed={variant?.variant_values?.[axis]===value} onClick={()=>match?.id&&setVariantId(match.id)}>{String(value)}</button>;
+            })}</fieldset>;
+          })}</div>}
+          {axes.length===0 && product.variants?.map((item) => (
             <button
               key={item.id ?? item.sku}
               disabled={!item.id || item.status !== "ACTIVE" || busy}
@@ -177,7 +185,7 @@ export function ProductDetail() {
               min={1}
               max={2147483647}
               value={quantity}
-              disabled={!available || busy}
+              disabled={!variant?.id || variant.status!=="ACTIVE" || busy}
               onChange={(event) =>
                 setQuantity(
                   Math.min(

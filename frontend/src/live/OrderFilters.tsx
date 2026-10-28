@@ -1,10 +1,11 @@
-import { FormEvent,useState } from 'react';
+import { FormEvent,useEffect,useState } from 'react';
 import type { OperationInputs } from '../api/operations.generated';
 import { orderLabel } from './OrderFacts';
 export type OrderQuery=Pick<OperationInputs['listOwnOrders']['query'],'q'|'status'|'from'|'to'>;
 export const orderCode=(id:string)=>'PBL-'+id.replace(/-/g,'').slice(-8).toUpperCase();
-export function OrderFilters({apply}:{apply:(query:OrderQuery)=>void}){
+export function OrderFilters({apply,selectedStatus}:{apply:(query:OrderQuery)=>void;selectedStatus?:OrderQuery['status']}){
   const [q,setQ]=useState(''),[status,setStatus]=useState(''),[from,setFrom]=useState(''),[to,setTo]=useState(''),[error,setError]=useState('');
+  useEffect(()=>setStatus(selectedStatus??''),[selectedStatus]);
   function submit(event:FormEvent){
     event.preventDefault();setError('');
     if(from&&to&&from>to){setError('Ngày kết thúc phải từ ngày bắt đầu trở đi.');return}
