@@ -159,12 +159,20 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /store/audit/catalog` | listStoreCatalogAudit | M1 / audit | Thịnh | IMPLEMENTED |
 | `GET /store/audit/commerce` | listStoreCommerceAudit | M2 / audit | Hoa | IMPLEMENTED |
 | `GET /store/audit/identity` | listStoreIdentityAudit | M3 / audit | Trí | IMPLEMENTED |
-| `POST /store/audit/actors` | lookupStoreAuditActors | M3 / audit | — | IMPLEMENTED |
-| `POST /admin/audit/actors` | lookupAdminAuditActors | M3 / audit | — | IMPLEMENTED |
+| `POST /store/audit/actors` | lookupStoreAuditActors | M3 / audit | None | IMPLEMENTED |
+| `POST /admin/audit/actors` | lookupAdminAuditActors | M3 / audit | None | IMPLEMENTED |
 | `GET /admin/reports` | getPlatformMoneyReport | M2 / report | Hoa | IMPLEMENTED |
 | `GET /store/reports/unresolved-money` | listStoreUnresolvedMoneyMovements | M2 / report | Hoa | IMPLEMENTED |
 | `GET /admin/reports/unresolved-money` | listAdminUnresolvedMoneyMovements | M2 / report | Hoa | IMPLEMENTED |
 | `GET /store/inventory/reconciliation` | getInventoryReconciliation | M1 / inventory | Thịnh | IMPLEMENTED |
 | `GET /store/stock-commitments` | listStockCommitments | M2 / order | Thịnh | IMPLEMENTED |
-
+| `GET /me/orders/{id}/after-sale-history` | listOwnAfterSaleHistory | M2 / returns | Hoa | IMPLEMENTED |
+| `GET /store/orders/{id}/after-sale-history` | listStoreAfterSaleHistory | M2 / returns | Hoa | IMPLEMENTED |
+| `GET /admin/orders/{id}/after-sale-history` | listAdminAfterSaleHistory | M2 / returns | Hoa | IMPLEMENTED |
+| `GET /store/orders/{id}/refund-recovery` | getStoreRefundRecovery | M2 / returns | Hoa | IMPLEMENTED |
+| `POST /store/orders/{id}/refund-recovery` | requestStoreRefundRecovery | M2 / returns | Hoa | IMPLEMENTED |
+| `GET /admin/orders/{id}/refund-recovery` | getAdminRefundRecovery | M2 / returns | Hoa | IMPLEMENTED |
+| `POST /admin/orders/{id}/refund-recovery` | requestAdminRefundRecovery | M2 / returns | Hoa | IMPLEMENTED |
 | `POST /auth/demo-login` | demoLogin | M3 / auth | Trí | IMPLEMENTED |
+| `GET /me/vouchers` | listAvailableVouchers | M2 / voucher | Hoa | IMPLEMENTED |
+| `POST /me/notifications/read-all` | markAllNotificationsRead | M2 / notification | Hoa | IMPLEMENTED |

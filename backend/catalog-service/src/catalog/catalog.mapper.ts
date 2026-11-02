@@ -10,6 +10,7 @@ export function productResponse(row:any,variants:any[],images:any[]=[]):Operatio
   return {id:row.id,store_id:row.store_id,product_type_id:row.product_type_id,title:row.title,
     ...(row.description==null?{}:{description:row.description}),attributes:row.attributes,status:row.status,moderation_status:row.moderation_status,version:row.version,
     ...(Array.isArray(row.variant_axes)?{variant_axes:row.variant_axes}:{}),
+    ...(row.review_summary?{review_summary:{count:row.review_summary.count,average:Number(row.review_summary.average)}}:{}),
     ...(row.moderation_decision?{moderation_decision:row.moderation_decision}:{}),
     variants:variants.filter(v=>v.product_id===row.id).map(v=>({id:v.id,sku:v.sku,price_vnd:moneyNumber(v.price_vnd),variant_values:v.variant_values,is_default:v.is_default,status:v.status,...(Number.isSafeInteger(v.available_quantity)&&v.available_quantity>=0?{available_quantity:v.available_quantity}:{})})),
     images:images.filter(i=>i.product_id===row.id).map(i=>({id:i.id,product_id:i.product_id,image_url:i.image_url,position:i.position,...(i.variant_id?{variant_id:i.variant_id}:{})}))};

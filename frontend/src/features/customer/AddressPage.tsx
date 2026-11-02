@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link,useSearchParams } from 'react-router-dom';
-import { ApiError,isUncertainMutation } from '../../api/client';
-import { callOperation } from '../../api/operations';
-import { CustomerSubNav } from './CustomerSubNav';
-import {useAuth} from '../../api/auth-context';
-import {checkoutAddressState} from './checkout-intent';
-import {useUnsavedChanges} from '../../components/useUnsavedChanges';
-import {readAddressBook} from './address-book';
+import { AddressSuggestions } from "../../components/AddressSuggestions";
+import { useConfirm } from "../../components/ConfirmDialog";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ApiError, isUncertainMutation } from "../../api/client";
+import { callOperation } from "../../api/operations";
+import { CustomerSubNav } from "./CustomerSubNav";
+import { useAuth } from "../../api/auth-context";
+import { checkoutAddressState } from "./checkout-intent";
+import { useUnsavedChanges } from "../../components/useUnsavedChanges";
+import { readAddressBook } from "./address-book";
 
 interface ApiAddress {
   id: string;
@@ -19,9 +21,8 @@ interface ApiAddress {
   is_default?: boolean;
 }
 
-
 interface Address {
-  source:ApiAddress;
+  source: ApiAddress;
   id: string;
   name: string;
   phone: string;
@@ -30,51 +31,72 @@ interface Address {
 }
 
 const fromApi = (a: ApiAddress): Address => ({
-  source:a,
+  source: a,
   id: a.id,
   name: a.recipient_name,
   phone: a.phone,
-  detail: [a.line1, a.ward, a.district, a.city].filter(Boolean).join(', '),
+  detail: [a.line1, a.ward, a.district, a.city].filter(Boolean).join(", "),
   isDefault: Boolean(a.is_default),
 });
-
 
 const describeError = (error: unknown): string => {
   if (error instanceof ApiError) {
     if (error.status === 401 || error.status === 403) {
-      return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+      return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
     }
-    return error.message || 'Không thể xử lý yêu cầu. Vui lòng thử lại.';
+    return error.message || "Không thể xử lý yêu cầu. Vui lòng thử lại.";
   }
-  return 'Không thể kết nối tới máy chủ. Vui lòng thử lại.';
+  return "Không thể kết nối tới máy chủ. Vui lòng thử lại.";
 };
 
 export const AddressPage: React.FC = () => {
-  const {session}=useAuth(),userId=session?.context?.user_id;
-  const [params]=useSearchParams();
-  const returnTo=params.get('returnTo')==='/checkout'?'/checkout':undefined;
-  const [editing,setEditing]=useState<string|null>(null);
-  const form=useRef<HTMLFormElement>(null);
+  const { confirm, dialog } = useConfirm();
+  const { session } = useAuth(),
+    userId = session?.context?.user_id;
+  const [params] = useSearchParams();
+  const returnTo =
+    params.get("returnTo") === "/checkout" ? "/checkout" : undefined;
+  const [editing, setEditing] = useState<string | null>(null);
+  const form = useRef<HTMLFormElement>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [uncertain,setUncertain]=useState(false),[knownSaved,setKnownSaved]=useState(false),[reconciled,setReconciled]=useState(false),[reading,setReading]=useState(false);
-  const flight=useRef(false);
-  const locked=adding||busyId!==null||uncertain;
+  const [uncertain, setUncertain] = useState(false),
+    [knownSaved, setKnownSaved] = useState(false),
+    [reconciled, setReconciled] = useState(false),
+    [reading, setReading] = useState(false);
+  const flight = useRef(false);
+  const locked = adding || busyId !== null || uncertain;
 
-  const [newLine1, setNewLine1] = useState('');
-  const [newWard, setNewWard] = useState('');
-  const [newDistrict, setNewDistrict] = useState('');
-  const [newCity, setNewCity] = useState('');
-  const [newName, setNewName] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const original=addresses.find(a=>a.id===editing)?.source;
-  const values=[newName,newPhone,newLine1,newWard,newDistrict,newCity];
-  const dirty=editing?JSON.stringify(values)!==JSON.stringify(original?[original.recipient_name,original.phone,original.line1,original.ward,original.district,original.city]:[]):values.some(Boolean);
-  const releaseUnsaved=useUnsavedChanges(dirty||uncertain||adding||busyId!==null);
+  const [newLine1, setNewLine1] = useState("");
+  const [newWard, setNewWard] = useState("");
+  const [newDistrict, setNewDistrict] = useState("");
+  const [newCity, setNewCity] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const original = addresses.find((a) => a.id === editing)?.source;
+  const values = [newName, newPhone, newLine1, newWard, newDistrict, newCity];
+  const dirty = editing
+    ? JSON.stringify(values) !==
+      JSON.stringify(
+        original
+          ? [
+              original.recipient_name,
+              original.phone,
+              original.line1,
+              original.ward,
+              original.district,
+              original.city,
+            ]
+          : [],
+      )
+    : values.some(Boolean);
+  const releaseUnsaved = useUnsavedChanges(
+    dirty || uncertain || adding || busyId !== null,
+  );
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -84,9 +106,8 @@ export const AddressPage: React.FC = () => {
     };
   }, []);
 
-
   const fetchAddresses = useCallback(async () => {
-    const rows=await readAddressBook();
+    const rows = await readAddressBook();
     if (mounted.current) setAddresses(rows.map(fromApi));
   }, []);
 
@@ -106,14 +127,22 @@ export const AddressPage: React.FC = () => {
     void load();
   }, [load]);
 
-  
-  const runMutation = async (mutate: () => Promise<unknown>): Promise<boolean> => {
+  const runMutation = async (
+    mutate: () => Promise<unknown>,
+  ): Promise<boolean> => {
     setActionError(null);
     try {
       await mutate();
     } catch (error) {
-      if (mounted.current) {setActionError(describeError(error));if(isUncertainMutation(error)){setUncertain(true);setKnownSaved(false);setReconciled(false);}}
-      flight.current=false;
+      if (mounted.current) {
+        setActionError(describeError(error));
+        if (isUncertainMutation(error)) {
+          setUncertain(true);
+          setKnownSaved(false);
+          setReconciled(false);
+        }
+      }
+      flight.current = false;
       return false;
     }
     try {
@@ -121,14 +150,16 @@ export const AddressPage: React.FC = () => {
     } catch (error) {
       if (mounted.current) {
         setActionError(
-          'Đã lưu nhưng không thể tải lại danh sách. ' + describeError(error),
+          "Đã lưu nhưng không thể tải lại danh sách. " + describeError(error),
         );
-        setUncertain(true);setKnownSaved(true);setReconciled(false);
+        setUncertain(true);
+        setKnownSaved(true);
+        setReconciled(false);
       }
-      flight.current=false;
+      flight.current = false;
       return false;
     }
-    flight.current=false;
+    flight.current = false;
     return true;
   };
 
@@ -140,47 +171,74 @@ export const AddressPage: React.FC = () => {
     const ward = newWard.trim();
     const district = newDistrict.trim();
     const city = newCity.trim();
-    if (!line1 || !ward || !district || !city || !name || !phone || locked||flight.current) return;
+    if (
+      !line1 ||
+      !ward ||
+      !district ||
+      !city ||
+      !name ||
+      !phone ||
+      locked ||
+      flight.current
+    )
+      return;
 
-    flight.current=true;
+    flight.current = true;
     setAdding(true);
-    const body={recipient_name:name,phone,line1,ward,district,city};
-    const ok = await runMutation(() => editing
-      ?callOperation('updateAddress',{path:{id:editing},body})
-      :callOperation('createAddress', {
-        body: {
-          ...body,
-          is_default: addresses.length === 0,
-        },
-      }),
+    const body = { recipient_name: name, phone, line1, ward, district, city };
+    const ok = await runMutation(() =>
+      editing
+        ? callOperation("updateAddress", { path: { id: editing }, body })
+        : callOperation("createAddress", {
+            body: {
+              ...body,
+              is_default: addresses.length === 0,
+            },
+          }),
     );
     if (mounted.current) {
       setAdding(false);
       // chỉ xóa form khi server nhận thành công
       if (ok) {
         setEditing(null);
-        setNewName('');
-        setNewPhone('');
-        setNewLine1('');
-        setNewWard('');
-        setNewDistrict('');
-        setNewCity('');
+        setNewName("");
+        setNewPhone("");
+        setNewLine1("");
+        setNewWard("");
+        setNewDistrict("");
+        setNewCity("");
       }
     }
   };
-  const editAddress=(addr:Address)=>{
-    if(locked||flight.current)return;
-    setEditing(addr.id);setNewName(addr.source.recipient_name);setNewPhone(addr.source.phone);setNewLine1(addr.source.line1);setNewWard(addr.source.ward);setNewDistrict(addr.source.district);setNewCity(addr.source.city);setActionError(null);
-    form.current?.scrollIntoView({block:'start'});form.current?.querySelector('input')?.focus();
+  const editAddress = (addr: Address) => {
+    if (locked || flight.current) return;
+    setEditing(addr.id);
+    setNewName(addr.source.recipient_name);
+    setNewPhone(addr.source.phone);
+    setNewLine1(addr.source.line1);
+    setNewWard(addr.source.ward);
+    setNewDistrict(addr.source.district);
+    setNewCity(addr.source.city);
+    setActionError(null);
+    form.current?.scrollIntoView({ block: "start" });
+    form.current?.querySelector("input")?.focus();
   };
-  const cancelEdit=()=>{setEditing(null);setNewName('');setNewPhone('');setNewLine1('');setNewWard('');setNewDistrict('');setNewCity('');};
+  const cancelEdit = () => {
+    setEditing(null);
+    setNewName("");
+    setNewPhone("");
+    setNewLine1("");
+    setNewWard("");
+    setNewDistrict("");
+    setNewCity("");
+  };
 
   const handleSetDefault = async (id: string) => {
-    if (locked||flight.current) return;
-    flight.current=true;
+    if (locked || flight.current) return;
+    flight.current = true;
     setBusyId(id);
     await runMutation(() =>
-      callOperation('updateAddress', {
+      callOperation("updateAddress", {
         path: { id },
         body: { is_default: true },
       }),
@@ -189,16 +247,37 @@ export const AddressPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (locked||flight.current) return;
-    flight.current=true;
+    if (locked || flight.current) return;
+    const address = addresses.find((a) => a.id === id);
+    if (
+      !(await confirm({
+        title: "Xóa địa chỉ?",
+        description: `${address?.name ?? ""} — ${address?.detail ?? ""}. Địa chỉ này sẽ không còn dùng cho các lần đặt mới; địa chỉ đã chốt trong đơn cũ được giữ nguyên.`,
+        confirmLabel: "Xóa địa chỉ",
+      }))
+    )
+      return;
+    if (locked || flight.current) return;
+    flight.current = true;
     setBusyId(id);
-    await runMutation(() => callOperation('deleteAddress', { path: { id } }));
+    await runMutation(() => callOperation("deleteAddress", { path: { id } }));
     if (mounted.current) setBusyId(null);
   };
-  const reconcile=async()=>{
-    if(flight.current)return;flight.current=true;setReading(true);setActionError(null);setReconciled(false);
-    try{await fetchAddresses();if(mounted.current)setReconciled(true);}catch(error){if(mounted.current)setActionError(describeError(error));}
-    finally{flight.current=false;if(mounted.current)setReading(false);}
+  const reconcile = async () => {
+    if (flight.current) return;
+    flight.current = true;
+    setReading(true);
+    setActionError(null);
+    setReconciled(false);
+    try {
+      await fetchAddresses();
+      if (mounted.current) setReconciled(true);
+    } catch (error) {
+      if (mounted.current) setActionError(describeError(error));
+    } finally {
+      flight.current = false;
+      if (mounted.current) setReading(false);
+    }
   };
 
   if (loading) {
@@ -212,7 +291,10 @@ export const AddressPage: React.FC = () => {
   if (loadError) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div role="alert" className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg">
+        <div
+          role="alert"
+          className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg"
+        >
           {loadError}
         </div>
         <button
@@ -229,123 +311,162 @@ export const AddressPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <CustomerSubNav />
+      {dialog}
 
-      <h1 className="text-2xl font-bold mb-6">Sổ địa chỉ nhận hàng (Addresses)</h1>
-      {returnTo&&<Link className="ui-button ui-button-secondary" to={returnTo}>Quay lại thanh toán</Link>}
+      <h1 className="text-2xl font-bold mb-6">Sổ địa chỉ</h1>
+      {returnTo && (
+        <Link className="ui-button ui-button-secondary" to={returnTo}>
+          Quay lại thanh toán
+        </Link>
+      )}
 
       {actionError && (
-        <div role="alert" className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg">
+        <div
+          role="alert"
+          className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg"
+        >
           {actionError}
         </div>
       )}
-      {uncertain&&<section role="region" aria-label="Đối chiếu thao tác địa chỉ"><h2>Kiểm tra kết quả lưu</h2><p>{knownSaved?'Server đã xác nhận thay đổi nhưng chưa đọc lại được danh sách.':'Chưa rõ thay đổi đã được ghi hay chưa.'} Chỉ đọc lại và kiểm tra địa chỉ bên dưới; không gửi lại thao tác cũ.</p><button type="button" disabled={reading} onClick={()=>void reconcile()}>Đọc lại sổ địa chỉ</button>{reconciled&&<><p>Đã đọc danh sách hiện tại. Kiểm tra thông tin trước khi kết thúc; việc đọc lại không xác nhận ai đã tạo hoặc sửa một địa chỉ giống nhau.</p><button type="button" onClick={()=>{releaseUnsaved();setUncertain(false);setKnownSaved(false);setReconciled(false);setActionError(null);cancelEdit();}}>Đã đối chiếu, kết thúc thao tác này</button></>}</section>}
+      {uncertain && (
+        <section role="region" aria-label="Đối chiếu thao tác địa chỉ">
+          <h2>Kiểm tra kết quả lưu</h2>
+          <p>
+            {knownSaved
+              ? "Server đã xác nhận thay đổi nhưng chưa đọc lại được danh sách."
+              : "Kết nối bị gián đoạn khi lưu. Hãy kiểm tra danh sách trước khi thử thêm hoặc sửa lần nữa."}{" "}
+            Chỉ đọc lại và kiểm tra địa chỉ bên dưới; không gửi lại thao tác cũ.
+          </p>
+          <button
+            type="button"
+            disabled={reading}
+            onClick={() => void reconcile()}
+          >
+            Đọc lại sổ địa chỉ
+          </button>
+          {reconciled && (
+            <>
+              <p>
+                Đã đọc danh sách hiện tại. Kiểm tra thông tin trước khi kết
+                thúc; việc đọc lại không xác nhận ai đã tạo hoặc sửa một địa chỉ
+                giống nhau.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  releaseUnsaved();
+                  setUncertain(false);
+                  setKnownSaved(false);
+                  setReconciled(false);
+                  setActionError(null);
+                  cancelEdit();
+                }}
+              >
+                Đã đối chiếu, kết thúc thao tác này
+              </button>
+            </>
+          )}
+        </section>
+      )}
 
       {/* Form thêm địa chỉ mới */}
-      <form ref={form} onSubmit={handleAddAddress} className="bg-white shadow rounded-lg p-6 mb-8 space-y-4">
+      <form
+        ref={form}
+        onSubmit={handleAddAddress}
+        className="bg-white shadow rounded-lg p-6 mb-8 space-y-4"
+      >
         <fieldset disabled={locked} className="space-y-4">
-        <h2 className="text-lg font-semibold mb-2">{editing?'Sửa địa chỉ':'Thêm địa chỉ mới'}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="text-lg font-semibold mb-2">
+            {editing ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="addr-name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Tên người nhận
+              </label>
+              <input
+                id="addr-name"
+                type="text"
+                maxLength={200}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full border rounded-md p-2"
+                placeholder="Nguyễn Văn A"
+                required
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="addr-phone"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Số điện thoại
+              </label>
+              <input
+                id="addr-phone"
+                type="tel"
+                autoComplete="tel"
+                maxLength={20}
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+                className="w-full border rounded-md p-2"
+                placeholder="090XXXXXXX"
+                required
+              />
+            </div>
+          </div>
           <div>
-            <label htmlFor="addr-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Tên người nhận
+            <label
+              htmlFor="addr-line1"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Số nhà, tên đường
             </label>
             <input
-              id="addr-name"
+              id="addr-line1"
               type="text"
               maxLength={200}
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
+              value={newLine1}
+              onChange={(e) => setNewLine1(e.target.value)}
               className="w-full border rounded-md p-2"
-              placeholder="Nguyễn Văn A"
+              placeholder="123 Đường ABC"
               required
             />
           </div>
-          <div>
-            <label htmlFor="addr-phone" className="block text-sm font-medium text-gray-700 mb-1">
-              Số điện thoại
-            </label>
-            <input
-              id="addr-phone"
-              type="tel"
-              maxLength={200}
-              value={newPhone}
-              onChange={(e) => setNewPhone(e.target.value)}
-              className="w-full border rounded-md p-2"
-              placeholder="090XXXXXXX"
-              required
-            />
-          </div>
-        </div>
-        <div>
-          <label htmlFor="addr-line1" className="block text-sm font-medium text-gray-700 mb-1">
-            Số nhà, tên đường
-          </label>
-          <input
-            id="addr-line1"
-            type="text"
-              maxLength={200}
-            value={newLine1}
-            onChange={(e) => setNewLine1(e.target.value)}
-            className="w-full border rounded-md p-2"
-            placeholder="123 Đường ABC"
-            required
+          <AddressSuggestions
+            city={newCity}
+            ward={newWard}
+            onCity={setNewCity}
+            onWard={setNewWard}
           />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="addr-ward" className="block text-sm font-medium text-gray-700 mb-1">
-              Phường/xã
-            </label>
+          <label>
+            Quận/huyện (theo địa chỉ được cung cấp)
             <input
-              id="addr-ward"
-              type="text"
-              maxLength={200}
-              value={newWard}
-              onChange={(e) => setNewWard(e.target.value)}
-              className="w-full border rounded-md p-2"
-              placeholder="Hòa Khánh"
               required
-            />
-          </div>
-          <div>
-            <label htmlFor="addr-district" className="block text-sm font-medium text-gray-700 mb-1">
-              Quận/huyện
-            </label>
-            <input
-              id="addr-district"
-              type="text"
               maxLength={200}
               value={newDistrict}
               onChange={(e) => setNewDistrict(e.target.value)}
-              className="w-full border rounded-md p-2"
-              placeholder="Liên Chiểu"
-              required
             />
-          </div>
-          <div>
-            <label htmlFor="addr-city" className="block text-sm font-medium text-gray-700 mb-1">
-              Tỉnh/thành phố
-            </label>
-            <input
-              id="addr-city"
-              type="text"
-              maxLength={200}
-              value={newCity}
-              onChange={(e) => setNewCity(e.target.value)}
-              className="w-full border rounded-md p-2"
-              placeholder="Đà Nẵng"
-              required
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={adding}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {adding?'Đang lưu...':editing?'Lưu địa chỉ':'Thêm địa chỉ'}
-        </button>
-        {editing&&<button type="button" disabled={adding} onClick={cancelEdit}>Hủy sửa địa chỉ</button>}
+          </label>
+          <p className="form-hint">
+            Giữ thông tin quận/huyện của địa chỉ giao nhận khi có; hệ thống hiện
+            vẫn sử dụng trường này.
+          </p>
+          <button
+            type="submit"
+            disabled={adding}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {adding ? "Đang lưu..." : editing ? "Lưu địa chỉ" : "Thêm địa chỉ"}
+          </button>
+          {editing && (
+            <button type="button" disabled={adding} onClick={cancelEdit}>
+              Hủy sửa địa chỉ
+            </button>
+          )}
         </fieldset>
       </form>
 
@@ -353,13 +474,15 @@ export const AddressPage: React.FC = () => {
       <div className="space-y-4">
         {addresses.length === 0 && (
           <p className="text-sm text-gray-600">
-            Bạn chưa có địa chỉ nào. Hãy thêm địa chỉ nhận hàng ở form phía trên.
+            Bạn chưa có địa chỉ nào. Hãy thêm địa chỉ nhận hàng ở form phía
+            trên.
           </p>
         )}
         {addresses.map((addr) => {
           const busy = busyId === addr.id;
           return (
-            <article aria-label={'Địa chỉ '+addr.name}
+            <article
+              aria-label={"Địa chỉ " + addr.name}
               key={addr.id}
               className="bg-white shadow rounded-lg p-6 flex justify-between items-start"
             >
@@ -376,8 +499,21 @@ export const AddressPage: React.FC = () => {
                 <p className="text-gray-600 mt-2">{addr.detail}</p>
               </div>
               <div className="flex flex-col gap-2 text-sm">
-                {returnTo&&userId&&!locked&&<Link to={returnTo} state={checkoutAddressState(userId,addr.id)}>Giao đến địa chỉ này</Link>}
-                <button type="button" disabled={locked} onClick={()=>editAddress(addr)}>Sửa địa chỉ</button>
+                {returnTo && userId && !locked && (
+                  <Link
+                    to={returnTo}
+                    state={checkoutAddressState(userId, addr.id)}
+                  >
+                    Giao đến địa chỉ này
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  disabled={locked}
+                  onClick={() => editAddress(addr)}
+                >
+                  Sửa địa chỉ
+                </button>
                 {!addr.isDefault && (
                   <button
                     type="button"
@@ -385,7 +521,7 @@ export const AddressPage: React.FC = () => {
                     disabled={locked}
                     className="text-indigo-600 hover:underline text-right disabled:opacity-50"
                   >
-                    {busy ? 'Đang xử lý...' : 'Thiết lập mặc định'}
+                    {busy ? "Đang xử lý..." : "Thiết lập mặc định"}
                   </button>
                 )}
                 <button

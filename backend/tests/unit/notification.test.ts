@@ -20,3 +20,9 @@ test('marking read verifies ownership before writing and is idempotent',async()=
 test('malformed ids fail before querying the database',async()=>{
   await expect(new NotificationService().markRead('unknown','buyer')).rejects.toMatchObject({status:422});expect(mockQuery).not.toHaveBeenCalled();
 });
+
+test('bulk read binds the owner in all three event sources and duplicate receipts do nothing',async()=>{
+ mockQuery.mockResolvedValueOnce([{event_id:event}]).mockResolvedValueOnce([]);
+ expect(await new NotificationService().markAllRead('buyer')).toEqual({updated:1});expect(await new NotificationService().markAllRead('buyer')).toEqual({updated:0});
+ for(const [sql,args] of mockQuery.mock.calls){expect(sql.match(/o.customer_user_id=\$1/g)).toHaveLength(3);expect(sql).toContain('ON CONFLICT DO NOTHING');expect(args).toEqual(['buyer']);}
+});

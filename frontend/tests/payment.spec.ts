@@ -31,7 +31,7 @@ const apiError = (status: number, message: string): Reply => ({ status, json: { 
 async function login(page: Page) {
   await page.goto('/login');
   await page.getByLabel('Email', { exact: true }).fill('customer1@pbl6.test');
-  await page.getByLabel('Mật khẩu', { exact: true }).fill(process.env.SEED_PASSWORD!);
+  await page.getByLabel('Mật khẩu', { exact: true }).fill('Fixture-password-123');
   await page.getByRole('button', { name: 'Đăng nhập', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Đã đăng nhập' })).toBeVisible();
 }
@@ -62,6 +62,10 @@ test('shows QR, code and amount, keeps waiting on PENDING, then shows success on
   await expect(page.getByTestId('payment-waiting')).toBeVisible();
   await expect(page.getByAltText('Mã QR thanh toán')).toBeVisible();
   await expect(page.getByText('PBL6TEST')).toBeVisible();
+  await page.evaluate(() => { Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (value: string) => { (window as unknown as { copied: string }).copied = value; } } }); });
+  await page.getByRole('button', { name: 'Sao chép nội dung' }).click();
+  await expect(page.getByText('Đã sao chép nội dung.')).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { copied: string }).copied)).toBe('PBL6TEST');
   await expect.poll(() => c.payments).toBe(1);
   await expect(page.getByTestId('payment-succeeded')).toHaveCount(0);
   await page.clock.runFor(4000);

@@ -45,7 +45,7 @@ test('public reads exclude hidden reviews and inactive products',async()=>{
   await expect(service().list('product',{},'trace')).rejects.toMatchObject({status:404});
   mockQuery.mockResolvedValueOnce([{id:'product'}]).mockResolvedValueOnce([{total:1}]).mockResolvedValueOnce([row()]);
   await expect(service().list('product',{page:2,size:5},'trace')).resolves.toMatchObject({page:2,size:5,total:1});
-  expect(mockQuery.mock.calls[3]).toEqual([expect.stringContaining("status='VISIBLE'"),['product',5,5]]);
+  expect(mockQuery.mock.calls[3]).toEqual([expect.stringContaining("status='VISIBLE'"),['product',null,5,5]]);
 });
 
 

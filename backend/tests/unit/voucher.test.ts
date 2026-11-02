@@ -212,6 +212,7 @@ describe('VoucherService Business Logic & Store Isolation (BR-04, BR-06)', () =>
       },
     ]);
 
+    mockQuery.mockResolvedValueOnce([{voucher_id:'voucher-1111-1111-4111-8111-111111111111',redeemed_count:7,reserved_count:2}]);
     const result = await service.listStoreVouchers({ page: 1, size: 20 }, storeAOwner, correlation);
     expect(result.total).toBe(1);
     expect(result.page).toBe(1);
@@ -219,6 +220,7 @@ describe('VoucherService Business Logic & Store Isolation (BR-04, BR-06)', () =>
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toEqual({
       id: 'voucher-1111-1111-4111-8111-111111111111',
+      usage_summary:{voucher_id:'voucher-1111-1111-4111-8111-111111111111',redeemed_count:7,reserved_count:2,remaining_count:91},
       code: 'STORE10',
       scope: 'STORE',
       store_id: storeId,
@@ -504,7 +506,9 @@ describe('VoucherService Business Logic & Store Isolation (BR-04, BR-06)', () =>
       },
     ]);
 
+    mockQuery.mockResolvedValueOnce([{voucher_id:'platform-voucher-1',redeemed_count:15,reserved_count:4}]);
     const result = await service.listPlatformVouchers({ page: 1, size: 20 }, adminUser, correlation);
+    expect(result.items[0].usage_summary).toEqual({voucher_id:'platform-voucher-1',redeemed_count:15,reserved_count:4,remaining_count:981});
     expect(result.total).toBe(1);
     expect(result.items).toHaveLength(1);
     expect(result.items[0].scope).toBe('PLATFORM');

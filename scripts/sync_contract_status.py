@@ -6,7 +6,7 @@ api=json.loads((ROOT/'docs/contracts/openapi.json').read_text(encoding='utf-8'))
 records=[]
 for path,methods in api['paths'].items():
     for method,op in methods.items():
-        records.append(dict(method=method.upper(),path=path,operation_id=op['operationId'],service=op['x-service-owner'],module=op['x-module'],owner=op['x-member-owner'],status=op['x-implementation-status'],roles=op['x-required-roles']))
+        records.append(dict(method=method.upper(),path=path,operation_id=op['operationId'],service=op['x-service-owner'],module=op['x-module'],owner=op.get('x-member-owner'),status=op['x-implementation-status'],roles=op['x-required-roles']))
 api['servers']=[{'url':'http://localhost:8080/api/v1','description':'Local scaffold'}]
 (ROOT/'docs/contracts/openapi.json').write_text(json.dumps(api,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 (ROOT/'docs/contracts/endpoint-status.json').write_text(json.dumps(records,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
@@ -21,7 +21,7 @@ for sid,service in services.items():
         folder=ROOT/'backend'/service/('app' if sid=='M4' else 'src')/module
         folder.mkdir(exist_ok=True,parents=True)
         rows=[r for r in records if r['service']==sid and r['module']==module]
-        text=f"# {sid} / {module}\n\nOwner: {', '.join(sorted({r['owner'] for r in rows}))}\n\n"
+        text=f"# {sid} / {module}\n\nOwner: {', '.join(sorted({r['owner'] for r in rows if r['owner']}))}\n\n"
         text+='\n'.join(f"- `{r['method']} {r['path']}` — {r['operation_id']}: **{r['status']}**" for r in rows)
         text+='\n\nXem [backlog](../../../../docs/implementation/member-backlog.md). DTO runtime/fixture đã có trong [foundation handoff](../../../../docs/implementation/foundation-handoff.md). Hoàn thiện service/repository, ownership, migration, audit, timeout/recovery và test trước khi đổi trạng thái endpoint.\n'
         if not (folder/'README.md').exists():(folder/'README.md').write_text(text,encoding='utf-8')

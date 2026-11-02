@@ -1,21 +1,25 @@
-import { Link, useParams } from 'react-router-dom';
-import { PaymentPanel } from './PaymentPanel';
+import { Link, useParams } from "react-router-dom";
+import { PaymentPanel } from "./PaymentPanel";
 
 export function PaymentPage() {
   const { id } = useParams<{ id: string }>();
   if (!id) return <div role="alert">Thiếu mã đơn hàng.</div>;
   return (
     <main className="container mx-auto px-4 py-8 max-w-xl">
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-        <Link to={`/customer/orders/${id}`} style={{ color: '#2563eb', textDecoration: 'underline' }}>
-          &larr; Xem chi tiết đơn #{id}
+      <nav className="ui-actions mb-6" aria-label="Điều hướng thanh toán">
+        <Link to={`/customer/orders/${id}`}>
+          &larr; Xem chi tiết đơn #{id.slice(-8).toUpperCase()}
         </Link>
-        <span style={{ color: '#cbd5e1' }}>|</span>
-        <Link to="/customer/orders" style={{ color: '#4b5563', textDecoration: 'underline' }}>
-          Đơn hàng của tôi
-        </Link>
-      </div>
-      <h1 className="text-2xl font-bold mb-4">Thanh toán đơn hàng #{id}</h1>
+        <Link to="/customer/orders">Đơn hàng của tôi</Link>
+      </nav>
+      <h1 className="text-2xl font-bold mb-4">
+        Thanh toán đơn #{id.slice(-8).toUpperCase()}
+      </h1>
+      <p className="mb-4">
+        Mở ứng dụng ngân hàng để quét mã QR hoặc dùng đúng nội dung chuyển khoản
+        bên dưới. Kiểm tra số tiền và thông tin người nhận trong ứng dụng trước
+        khi xác nhận. Kết quả sẽ được cập nhật tại đây.
+      </p>
       <PaymentPanel orderId={id} />
     </main>
   );

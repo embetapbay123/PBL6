@@ -3,6 +3,7 @@ import { OwnedRepository } from '../../../shared/src/repository';
 import { ApiError } from '../../../shared/src/errors';
 
 export interface VoucherRow {
+  usage_summary?:{voucher_id:string;redeemed_count:number;reserved_count:number;remaining_count:number};
   id: string;
   code: string;
   scope: string;
@@ -25,6 +26,18 @@ export class VoucherRepository extends OwnedRepository {
     super(manager);
   }
 
+  private async withUsage(items:VoucherRow[]):Promise<VoucherRow[]>{
+    if(!items.length)return items;
+    const rows=await this.manager.query(`WITH uses AS (
+      SELECT voucher_id,purchase_group_id,true AS redeemed FROM voucher_redemption WHERE voucher_id=ANY($1::uuid[])
+      UNION ALL SELECT r.voucher_id,r.purchase_group_id,false FROM voucher_reservation r
+        WHERE r.voucher_id=ANY($1::uuid[]) AND r.status IN ('ACTIVE','RESERVED') AND r.expires_at>now()
+        AND NOT EXISTS(SELECT 1 FROM voucher_redemption d WHERE d.voucher_id=r.voucher_id AND d.purchase_group_id=r.purchase_group_id)
+    ) SELECT voucher_id,count(DISTINCT purchase_group_id) FILTER(WHERE redeemed)::int AS redeemed_count,
+      count(DISTINCT purchase_group_id) FILTER(WHERE NOT redeemed)::int AS reserved_count FROM uses GROUP BY voucher_id`,[items.map(v=>v.id)]);
+    return items.map(item=>{const counts=rows.find((r:any)=>r.voucher_id===item.id)??{redeemed_count:0,reserved_count:0};return {...item,usage_summary:{voucher_id:item.id,...counts,remaining_count:Math.max(0,item.usage_limit-counts.redeemed_count-counts.reserved_count)}};});
+  }
+
   // --- Store Voucher Methods ---
   async pageStoreVouchers(storeId: string, page: number, size: number): Promise<{ items: VoucherRow[]; total: number }> {
     const [countRow] = await this.manager.query(
@@ -40,7 +53,7 @@ export class VoucherRepository extends OwnedRepository {
        LIMIT $2 OFFSET $3`,
       [storeId, size, offset]
     );
-    return { items, total: countRow?.total ?? 0 };
+    return { items:await this.withUsage(items), total: countRow?.total ?? 0 };
   }
 
   async findStoreVoucherById(id: string, storeId: string): Promise<VoucherRow | undefined> {
@@ -167,7 +180,7 @@ export class VoucherRepository extends OwnedRepository {
        LIMIT $1 OFFSET $2`,
       [size, offset]
     );
-    return { items, total: countRow?.total ?? 0 };
+    return { items:await this.withUsage(items), total: countRow?.total ?? 0 };
   }
 
   async findPlatformVoucherById(id: string): Promise<VoucherRow | undefined> {

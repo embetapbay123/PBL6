@@ -1968,5 +1968,29 @@
       "GUEST",
       "CUSTOMER"
     ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/vouchers",
+    "operation_id": "listAvailableVouchers",
+    "service": "M2",
+    "module": "voucher",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/notifications/read-all",
+    "operation_id": "markAllNotificationsRead",
+    "service": "M2",
+    "module": "notification",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
   }
 ]

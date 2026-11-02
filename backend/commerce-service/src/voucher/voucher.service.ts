@@ -13,6 +13,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 export function voucherResponse(row: VoucherRow): OperationOutputs['createStoreVoucher'] {
   return {
+    ...(row.usage_summary?{usage_summary:row.usage_summary}:{}),
     id: row.id,
     code: row.code,
     scope: row.scope as 'STORE' | 'PLATFORM',
@@ -49,6 +50,23 @@ export class VoucherService {
     if (!auth?.roles?.includes('ADMIN')) {
       throw new ApiError(403, 'FORBIDDEN', 'Chỉ Quản trị viên (Admin) mới có quyền thao tác voucher toàn sàn.');
     }
+  }
+
+  async listAvailableVouchers(query:{page?:number;size?:number;store_ids:string},auth:any):Promise<OperationOutputs['listAvailableVouchers']>{
+    if(!auth?.user_id)throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
+    const page=query.page??1,size=query.size??20;
+    const args=[query.store_ids.split(','),auth.user_id];
+    // Suggestions expose public terms only. Count distinct purchase groups exactly as the
+    // reservation engine does; do not restore redeemed usage for cancelled/refunded orders.
+    const where=`v.status='ACTIVE' AND v.starts_at<=now() AND v.ends_at>now()
+      AND (v.scope='PLATFORM' OR (v.scope='STORE' AND v.store_id=ANY($1::uuid[])))
+      AND (SELECT count(*) FROM (SELECT purchase_group_id,customer_user_id FROM voucher_redemption WHERE voucher_id=v.id
+        UNION SELECT purchase_group_id,customer_user_id FROM voucher_reservation WHERE voucher_id=v.id AND status IN ('ACTIVE','RESERVED') AND expires_at>now()) used)<v.usage_limit
+      AND (SELECT count(*) FROM (SELECT purchase_group_id FROM voucher_redemption WHERE voucher_id=v.id AND customer_user_id=$2
+        UNION SELECT purchase_group_id FROM voucher_reservation WHERE voucher_id=v.id AND customer_user_id=$2 AND status IN ('ACTIVE','RESERVED') AND expires_at>now()) used)<v.per_customer_limit`;
+    const [count]=await this.source.manager.query('SELECT count(*)::int AS total FROM voucher v WHERE '+where,args);
+    const rows=await this.source.manager.query('SELECT v.* FROM voucher v WHERE '+where+' ORDER BY v.ends_at,v.id LIMIT $3 OFFSET $4',[...args,size,(page-1)*size]);
+    return {items:rows.map(voucherResponse),page,size,total:count.total};
   }
 
   // ================= STORE VOUCHERS =================

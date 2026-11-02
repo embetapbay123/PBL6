@@ -12,6 +12,7 @@ export interface ProductQuery {
   category_id?: string;
   product_type_id?: string;
   sort?: 'title' | 'price_asc' | 'price_desc';
+  ids?: string;
   min_price_vnd?: number;
   max_price_vnd?: number;
 }
@@ -41,6 +42,7 @@ export class CatalogRepository extends OwnedRepository {
     const filters:unknown[]=[storeIds,searchPattern(query.q)??'%'];
     const conditions=[`p.status='ACTIVE'`,`p.moderation_status='VISIBLE'`,`p.store_id=ANY($1::uuid[])`,
       `(marketplace_search(p.title) LIKE $2 OR marketplace_search(p.description) LIKE $2)`];
+    if(query.ids){filters.push(query.ids.split(','));conditions.push(`p.id=ANY($${filters.length}::uuid[])`);}
     if(query.category_id){filters.push(query.category_id);conditions.push(`pt.category_id=$${filters.length}`);}
     if(query.product_type_id){filters.push(query.product_type_id);conditions.push(`p.product_type_id=$${filters.length}`);}
     if(query.min_price_vnd!==undefined||query.max_price_vnd!==undefined){
@@ -103,9 +105,10 @@ export class CatalogRepository extends OwnedRepository {
     const images=await this.manager.query(
       `SELECT id,product_id,variant_id,url AS image_url,position
          FROM product_image WHERE product_id=ANY($1::uuid[]) AND status='ACTIVE' ORDER BY position,id`,[ids]);
+    const summaries=await this.manager.query("SELECT product_id,count(*)::int AS count,avg(rating)::float AS average FROM review WHERE product_id=ANY($1::uuid[]) AND status='VISIBLE' GROUP BY product_id",[ids]);
     const typeIds=[...new Set(rows.map(row=>row.product_type_id))];
     const axes=await this.manager.query('SELECT product_type_id,code,name FROM attribute_definition WHERE product_type_id=ANY($1::uuid[]) AND variant_factor=true ORDER BY code',[typeIds]);
-    return rows.map(row=>productResponse({...row,variant_axes:axes.filter((axis:any)=>axis.product_type_id===row.product_type_id).map(({code,name}:any)=>({code,name}))},variants,images));
+    return rows.map(row=>productResponse({...row,review_summary:summaries.find((s:any)=>s.product_id===row.id)??{count:0,average:0},variant_axes:axes.filter((axis:any)=>axis.product_type_id===row.product_type_id).map(({code,name}:any)=>({code,name}))},variants,images));
   }
 
   /* ------------------------------------------- CAT-01: Store product lists */

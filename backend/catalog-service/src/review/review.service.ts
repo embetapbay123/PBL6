@@ -22,13 +22,15 @@ export class ReviewService {
     if(!canonical)throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Dịch vụ đơn hàng chưa trả sản phẩm của mục đã mua.');
     return canonical;
   }
-  async list(product:string,query:{page?:number;size?:number},trace:string){
+  async list(product:string,query:{page?:number;size?:number;rating?:number;sort?:string},trace:string){
     const stores=await this.clients().call('ActiveStores',undefined,trace);
     const [visible]=await database.manager.query("SELECT id FROM product WHERE id=$1 AND status='ACTIVE' AND moderation_status='VISIBLE' AND store_id=ANY($2::uuid[])",[product,stores.ids]);
     if(!visible)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm công khai.');
     const page=query.page ?? 1,size=query.size ?? 20;
-    const [count]=await database.manager.query("SELECT count(*)::int AS total FROM review WHERE product_id=$1 AND status='VISIBLE'",[product]);
-    const rows=await database.manager.query("SELECT * FROM review WHERE product_id=$1 AND status='VISIBLE' ORDER BY created_at DESC,id LIMIT $2 OFFSET $3",[product,size,(page-1)*size]);
+    const where="product_id=$1 AND status='VISIBLE' AND ($2::integer IS NULL OR rating=$2)";
+    const sort=query.sort==='rating_desc'?'rating DESC,created_at DESC,id':query.sort==='rating_asc'?'rating ASC,created_at DESC,id':'created_at DESC,id';
+    const [count]=await database.manager.query('SELECT count(*)::int AS total FROM review WHERE '+where,[product,query.rating??null]);
+    const rows=await database.manager.query('SELECT * FROM review WHERE '+where+' ORDER BY '+sort+' LIMIT $3 OFFSET $4',[product,query.rating??null,size,(page-1)*size]);
     return {items:rows.map(map),page,size,total:count.total};
   }
   async listAdmin(query:{page?:number;size?:number;status?:string;product_id?:string}){

@@ -14,6 +14,10 @@ import type {OperationInputs} from '../../../shared/src/operations.generated';
 export class VoucherController {
   private readonly service = new VoucherService();
 
+  @Get('me/vouchers')
+  @Roles('CUSTOMER')
+  available(@Req() req:any){return this.service.listAvailableVouchers(req.contract.query,req.auth);}
+
   // --- Customer Voucher Validation ---
   @Post('vouchers/validate')
   @Roles('CUSTOMER')

@@ -41,11 +41,11 @@ test('create uses a real completed owned OrderItem rather than a sample ID',asyn
 test('owned edit sends expected_version and preserves the draft on a 409',async({page})=>{
  const t=await setup(page,{existing:true,conflict:true});await t.login();await page.goto('/products/'+product);
  await page.getByRole('button',{name:'Sửa đánh giá',exact:true}).click();await page.getByLabel('Nội dung đánh giá').fill('Preserve this draft');await page.getByRole('button',{name:'Lưu đánh giá',exact:true}).click();
- await expect(page.getByRole('alert')).toContainText('Review changed');await expect(page.getByLabel('Nội dung đánh giá')).toHaveValue('Preserve this draft');
+ await expect(page.locator('#reviews').getByRole('alert')).toContainText('Review changed');await expect(page.getByLabel('Nội dung đánh giá')).toHaveValue('Preserve this draft');
  expect(t.writes[0]).toEqual({method:'PATCH',path:'/api/v1/me/reviews/'+reviewId,body:{rating:4,body:'Preserve this draft',expected_version:7}});
  await expect(page.getByText('Đã lưu đánh giá qua API.')).toHaveCount(0);
 });
 test('501 remains an explicit error rather than an empty/successful review list',async({page})=>{
- await setup(page,{unavailable:true});await page.goto('/products/'+product);await expect(page.getByRole('alert')).toContainText('Review backend pending');
+ await setup(page,{unavailable:true});await page.goto('/products/'+product);await expect(page.locator('#reviews').getByRole('alert')).toContainText('Review backend pending');
  await expect(page.getByText('Chưa có đánh giá nào cho sản phẩm này.')).toHaveCount(0);
 });

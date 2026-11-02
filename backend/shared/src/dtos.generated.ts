@@ -404,6 +404,9 @@ export class ListProductsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 0, "maximum": 9007199254740991}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},false),defaultMessage:()=> 'Invalid contract field'}})
   "max_price_vnd"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 3699, "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(,[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}){0,99}$", "example": "11111111-1111-4111-8111-111111111111"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 3699, "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(,[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}){0,99}$", "example": "11111111-1111-4111-8111-111111111111"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "ids"?: string;
 }
 export class ListProductsHeadersDto {
 }
@@ -1077,6 +1080,12 @@ export class ListProductReviewsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 5}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 5},false),defaultMessage:()=> 'Invalid contract field'}})
+  "rating"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["newest", "rating_desc", "rating_asc"], "default": "newest"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["newest", "rating_desc", "rating_asc"], "default": "newest"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort": "newest" | "rating_desc" | "rating_asc" = "newest";
 }
 export class ListProductReviewsHeadersDto {
 }
@@ -2755,6 +2764,27 @@ export class DemoLoginQueryDto {
 }
 export class DemoLoginHeadersDto {
 }
+export class ListAvailableVouchersPathDto {
+}
+export class ListAvailableVouchersQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1},false),defaultMessage:()=> 'Invalid contract field'}})
+  "page": number = 1;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
+  "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 3699, "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(,[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}){0,99}$", "example": "11111111-1111-4111-8111-111111111111"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 3699, "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(,[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}){0,99}$", "example": "11111111-1111-4111-8111-111111111111"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "store_ids"!: string;
+}
+export class ListAvailableVouchersHeadersDto {
+}
+export class MarkAllNotificationsReadPathDto {
+}
+export class MarkAllNotificationsReadQueryDto {
+}
+export class MarkAllNotificationsReadHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3160,6 +3190,8 @@ export const runtimeDtos = {
   getAdminRefundRecovery: {body: undefined, path: GetAdminRefundRecoveryPathDto, query: GetAdminRefundRecoveryQueryDto, headers: GetAdminRefundRecoveryHeadersDto},
   requestAdminRefundRecovery: {body: RequestAdminRefundRecoveryBodyDto, path: RequestAdminRefundRecoveryPathDto, query: RequestAdminRefundRecoveryQueryDto, headers: RequestAdminRefundRecoveryHeadersDto},
   demoLogin: {body: DemoLoginBodyDto, path: DemoLoginPathDto, query: DemoLoginQueryDto, headers: DemoLoginHeadersDto},
+  listAvailableVouchers: {body: undefined, path: ListAvailableVouchersPathDto, query: ListAvailableVouchersQueryDto, headers: ListAvailableVouchersHeadersDto},
+  markAllNotificationsRead: {body: undefined, path: MarkAllNotificationsReadPathDto, query: MarkAllNotificationsReadQueryDto, headers: MarkAllNotificationsReadHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},
