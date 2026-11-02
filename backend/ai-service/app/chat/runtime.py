@@ -76,7 +76,7 @@ class ChatRuntime:
                     personalized,_,_=await run_in_threadpool(RecommendationRuntime(self.engine,self.catalog).personal,user,retrieved)
                     order={p:i for i,p in enumerate(personalized)}
                     retrieved.sort(key=lambda p:order.get(p['id'],len(order)))
-                estimated=request_estimate(question,retrieved,history) if retrieved and getattr(self.selector,'provider','none')!='none' else 0
+                estimated=request_estimate(question,retrieved,history,output_tokens=getattr(self.selector,'max_output_tokens',512)) if retrieved and getattr(self.selector,'provider','none')!='none' else 0
                 await run_in_threadpool(self.budget,scope,estimated,False)
                 session_token=CHAT_SESSION.set(digest('session:'+str(id)))
                 try:selection=await self.selector.select(question,retrieved,history,correlation)

@@ -129,3 +129,19 @@ def test_thinking_extension_is_omitted_for_auto_and_rejected_for_unsupported_mod
     assert not asyncio.run(selector(handler).select('camera',PRODUCTS)).fallback
     with pytest.raises(ValueError):
         CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='other-model',api_key='test',thinking_mode='disabled')
+
+
+@pytest.mark.parametrize('mode,output_tokens',[('auto',1024),('enabled',1024),('disabled',512)])
+def test_deepseek_reasoning_budget_leaves_room_for_complete_json(mode,output_tokens):
+    from app.chat.provider import request_estimate
+    def handler(request):
+        body=json.loads(request.content)
+        assert body['max_tokens']==output_tokens
+        # Reproduce a reasoning-heavy response that truncates at the old limit.
+        if mode!='disabled' and body['max_tokens']<1024:
+            return httpx.Response(200,json={'choices':[{'finish_reason':'length','message':{'content':'{"product_ids":'}}]})
+        return httpx.Response(200,json=envelope())
+    client=CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='deepseek-v4.1-flash',api_key='test-only-key',thinking_mode=mode,transport=httpx.MockTransport(handler))
+    result=asyncio.run(client.select('camera',PRODUCTS))
+    assert not result.fallback and result.reason=='MODEL_GENERATED'
+    assert request_estimate('camera',PRODUCTS,output_tokens=client.max_output_tokens)-request_estimate('camera',PRODUCTS)==output_tokens-512

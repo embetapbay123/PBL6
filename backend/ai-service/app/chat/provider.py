@@ -13,11 +13,11 @@ from ..network import session
 PROMPT_VERSION='catalog-answer-v4'
 CHAT_SESSION=ContextVar('chat_session',default=None)
 
-def request_estimate(question,products,history=()):
+def request_estimate(question,products,history=(),*,output_tokens=512):
     # Conservative UTF-8 byte upper bound, not a claim of tokenizer/billing accuracy.
     context=[{'id':p['id'],'title':redact(p.get('title'),200),'description':redact(p.get('description'),600)} for p in products[:8]]
     data={'question':redact(question),'history':[redact(m.get('content'),300) for m in list(history)[-6:]],'catalog':context}
-    return len(json.dumps(data,ensure_ascii=False).encode())+2048+512
+    return len(json.dumps(data,ensure_ascii=False).encode())+2048+output_tokens
 
 @dataclass(frozen=True)
 class Selection:
@@ -42,6 +42,9 @@ class CatalogSelector:
         if self.thinking_mode not in ('auto','enabled','disabled'):raise ValueError('CHAT_THINKING must be auto, enabled or disabled')
         if self.thinking_mode!='auto' and (self.provider!='openai_compatible' or not self.model.lower().startswith('deepseek-')):
             raise ValueError('Explicit CHAT_THINKING requires a DeepSeek OpenAI-compatible model')
+        # DeepSeek counts reasoning and final JSON against the same output limit.
+        # 512 can exhaust the budget before the structured answer is complete.
+        self.max_output_tokens=1024 if self.provider=='openai_compatible' and self.model.lower().startswith('deepseek-') and self.thinking_mode!='disabled' else 512
         self.timeout=float(os.getenv('CHAT_TIMEOUT_SECONDS','2'))
         if not math.isfinite(self.timeout) or not 0<self.timeout<=30:raise ValueError('CHAT_TIMEOUT_SECONDS must be within (0, 30]')
         self.session_id=uuid.uuid4().hex
@@ -71,12 +74,12 @@ class CatalogSelector:
         headers['x-opencode-session']=CHAT_SESSION.get() or self.session_id
         if self.provider=='ollama':
             endpoint=self.url+'/api/chat'
-            payload={'model':self.model,'messages':messages,'stream':False,'format':schema,'options':{'temperature':0,'num_predict':512}}
+            payload={'model':self.model,'messages':messages,'stream':False,'format':schema,'options':{'temperature':0,'num_predict':self.max_output_tokens}}
         else:
             endpoint=self.url if self.url.endswith('/chat/completions') else self.url+'/chat/completions'
             headers['Authorization']='Bearer '+self.api_key
             output_format={'type':'json_object'} if self.response_format=='json_object' else {'type':'json_schema','json_schema':{'name':'catalog_answer','strict':True,'schema':schema}}
-            payload={'model':self.model,'messages':messages,'stream':False,'max_tokens':512,'response_format':output_format}
+            payload={'model':self.model,'messages':messages,'stream':False,'max_tokens':self.max_output_tokens,'response_format':output_format}
             if self.thinking_mode!='auto':payload['thinking']={'type':self.thinking_mode}
         try:
             # Overall deadline includes streaming/chunked response; HTTP timeout alone is per I/O.
