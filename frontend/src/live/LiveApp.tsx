@@ -50,6 +50,7 @@ import "../bootstrap/bootstrap.css";
 import "./commerce.css";
 import "../features/customer/marketplace-refresh.css";
 import "../features/customer/ui-review-fixes.css";
+import "../chat/chat-workspace.css";
 import { StoreContextNotice } from "../components/StoreContextNotice";
 import { MarketplaceHeader } from "./MarketplaceHeader";
 import { listenFavoritesChange } from "../features/customer/favorite-state";
