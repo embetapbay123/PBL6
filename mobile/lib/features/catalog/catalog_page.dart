@@ -280,7 +280,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Color(0x33BA1B1A),
+            color: Color(0x330F172A),
             blurRadius: 12,
             offset: Offset(0, 4),
           ),
@@ -301,22 +301,36 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'PBL6 E-Commerce',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF34D399),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'PBL6 MARKETPLACE',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
-                          'Xin chào, $userName! • Hơn 1.000+ cửa hàng uy tín',
+                          'Xin chào, $userName! • Sàn TMĐT đa gian hàng AI',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white70,
-                            fontSize: 11,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w400,
                           ),
                         ),
@@ -531,7 +545,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       decoration: BoxDecoration(
         gradient: AppColors.lightPinkGradient,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFD4D4), width: 1),
+        border: Border.all(color: const Color(0xFFA7F3D0), width: 1),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withAlpha(12),
@@ -546,7 +560,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           onTap: () => ChatAiModal.show(context),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 // Robot / Sparkle Icon
@@ -558,7 +572,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withAlpha(70),
+                        color: AppColors.primary.withAlpha(50),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -578,17 +592,19 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 2,
                         children: [
                           const Text(
                             'Trợ lý mua sắm AI',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13.5,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
@@ -597,6 +613,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             ),
                             child: Text(
                               badgeLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: isMock ? Colors.black87 : AppColors.primaryDark,
                                 fontSize: 9,
@@ -609,6 +627,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       const SizedBox(height: 3),
                       const Text(
                         'Mô tả nhu cầu để nhận gợi ý phù hợp nhất từ AI',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 11.5,
                           color: AppColors.textSecondary,
@@ -622,11 +642,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    gradient: AppColors.aiBannerGradient,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withAlpha(60),
+                        color: AppColors.primary.withAlpha(40),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -636,7 +656,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Trò chuyện ngay',
+                        'Hỏi AI',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -877,14 +897,14 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: AppColors.saleBannerGradient,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withAlpha(50),
-                blurRadius: 10,
+                color: Colors.black.withAlpha(25),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -895,50 +915,96 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(35),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white30, width: 0.8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome, size: 12, color: Color(0xFF6EE7B7)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Sàn TMĐT Đa Gian Hàng',
+                            style: TextStyle(
+                              color: Color(0xFF6EE7B7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     const Text(
-                      'SIÊU SALE 9.9',
+                      'Mua sắm thông minh cùng Trợ lý AI',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                        letterSpacing: 0.5,
+                        fontSize: 16,
+                        height: 1.25,
                       ),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Giảm đến 50% • Đồ điện tử chính hãng',
+                      'Hàng ngàn sản phẩm chính hãng • Đặt hàng đa shop trong 1 lần thanh toán duy nhất.',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                        color: Colors.white70,
+                        fontSize: 11.5,
+                        height: 1.3,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black12, blurRadius: 4),
-                        ],
-                      ),
-                      child: const Text(
-                        'Mua ngay',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold,
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: () => ChatAiModal.show(context),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black26, blurRadius: 4),
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.chat_bubble_outline, size: 13, color: Color(0xFF0F172A)),
+                            SizedBox(width: 5),
+                            Text(
+                              'Hỏi Trợ lý AI ngay',
+                              style: TextStyle(
+                                color: Color(0xFF0F172A),
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
-                Icons.local_offer_rounded,
-                color: Colors.white70,
-                size: 54,
+              const SizedBox(width: 12),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(20),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.storefront_rounded,
+                    color: Color(0xFF6EE7B7),
+                    size: 30,
+                  ),
+                ),
               ),
             ],
           ),

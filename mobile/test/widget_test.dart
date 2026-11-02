@@ -667,7 +667,7 @@ void main() {
         );
         await tester.pump();
 
-        expect(find.text('PBL6 E-Commerce'), findsOneWidget);
+        expect(find.text('PBL6 MARKETPLACE'), findsOneWidget);
         expect(find.text('Dành riêng cho bạn', skipOffstage: false), findsOneWidget);
         expect(find.text('Gợi ý Baseline / Mock', skipOffstage: false), findsOneWidget);
         expect(find.text('Thời trang', skipOffstage: false), findsOneWidget);

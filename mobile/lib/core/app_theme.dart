@@ -1,64 +1,66 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Brand Reds from design screenshots
-  static const Color primary = Color(0xFFE52E2D);
-  static const Color primaryDark = Color(0xFFC61A19);
-  static const Color primaryDeep = Color(0xFFBA1B1A);
-  static const Color primaryLight = Color(0xFFFFECEB);
-  static const Color primarySoft = Color(0xFFFFF5F5);
-  static const Color accent = Color(0xFFFF3B30);
+  // Brand Emerald & Teal matching Web Marketplace (PBL6 Marketplace)
+  static const Color primary = Color(0xFF059669);
+  static const Color primaryDark = Color(0xFF047857);
+  static const Color primaryDeep = Color(0xFF065F46);
+  static const Color primaryLight = Color(0xFFD1FAE5);
+  static const Color primarySoft = Color(0xFFECFDF5);
+  static const Color accent = Color(0xFF0D9488);
+  static const Color slateDark = Color(0xFF0F172A);
+  static const Color slateCard = Color(0xFF1E293B);
   
-  // Backgrounds & Surfaces
-  static const Color background = Color(0xFFF7F8FA);
+  // Backgrounds & Surfaces matching Web (Slate 50)
+  static const Color background = Color(0xFFF8FAFC);
   static const Color surface = Colors.white;
-  static const Color surfaceSubtle = Color(0xFFFAFAFA);
-  static const Color border = Color(0xFFEFEFEF);
-  static const Color borderDark = Color(0xFFE5E7EB);
-  static const Color divider = Color(0xFFF1F3F5);
+  static const Color surfaceSubtle = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFE2E8F0);
+  static const Color borderDark = Color(0xFFCBD5E1);
+  static const Color divider = Color(0xFFE2E8F0);
 
   // Typography
-  static const Color textPrimary = Color(0xFF1E232C);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textMuted = Color(0xFF9CA3AF);
-  static const Color textLight = Color(0xFFD1D5DB);
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textMuted = Color(0xFF94A3B8);
+  static const Color textLight = Color(0xFFCBD5E1);
   
   // Highlights & Statuses
-  static const Color star = Color(0xFFFFB800);
-  static const Color badge = Color(0xFFE52E2D);
+  static const Color star = Color(0xFFF59E0B);
+  static const Color badge = Color(0xFF059669);
   static const Color green = Color(0xFF10B981);
   static const Color greenSoft = Color(0xFFECFDF5);
   static const Color blue = Color(0xFF2563EB);
   static const Color blueSoft = Color(0xFFEFF6FF);
   static const Color orange = Color(0xFFF97316);
 
-  // Gradients matching mobile_ui
+  // Gradients matching Web Marketplace Hero & AI Chat
   static const LinearGradient redGradient = LinearGradient(
-    colors: [Color(0xFFE52E2D), Color(0xFFC61A19)],
+    colors: [Color(0xFF0D9488), Color(0xFF059669)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFFE52E2D), Color(0xFFBA1B1A)],
+    colors: [Color(0xFF065F46), Color(0xFF0F172A)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient aiBannerGradient = LinearGradient(
-    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+    colors: [Color(0xFF0D9488), Color(0xFF059669)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
   static const LinearGradient saleBannerGradient = LinearGradient(
-    colors: [Color(0xFFE52E2D), Color(0xFFB71C1C)],
+    colors: [Color(0xFF065F46), Color(0xFF0D9488), Color(0xFF0F172A)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient lightPinkGradient = LinearGradient(
-    colors: [Color(0xFFFFF0F0), Color(0xFFFFE5E5)],
+    colors: [Color(0xFFF0FDF4), Color(0xFFECFDF5)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
