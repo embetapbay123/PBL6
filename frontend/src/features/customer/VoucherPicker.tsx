@@ -1,4 +1,4 @@
-import {Button as UiButton} from '../../components/ui/Button';
+import { Button as UiButton } from "../../components/ui/Button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
@@ -53,54 +53,82 @@ export function VoucherPicker({
               cấp.
             </p>
           )}
-          <div className="voucher-options">
-            {list.data?.items.map((v) => (
-              <article className="voucher-option" key={v.id ?? v.code}>
-                <h3>{v.code}</h3>
-                <p>
-                  {v.scope === "PLATFORM" ? (
-                    "Ưu đãi toàn sàn"
-                  ) : (
-                    <StoreLabel id={v.store_id!} />
-                  )}
-                </p>
-                <strong>
-                  Giảm{" "}
-                  {v.discount_type === "PERCENT"
-                    ? v.discount_value + "%"
-                    : money(v.discount_value)}
-                </strong>
-                {v.max_discount_vnd !== undefined && (
-                  <p>Tối đa {money(v.max_discount_vnd)}</p>
-                )}
-                <p>
-                  Tiền hàng từ {money(v.min_goods_vnd ?? 0)} ·{" "}
-                  {v.per_customer_limit} lượt/khách
-                </p>
-                <p>
-                  Đến{" "}
-                  {new Date(v.ends_at).toLocaleString("vi-VN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                  })}
-                </p>
-                <UiButton
-                  variant="secondary" type="submit"
-                  onClick={() => {
-                    onPick(
-                      v.scope === "STORE" ? v.store_id : undefined,
-                      v.code,
-                    );
-                    onClose();
-                  }}
+          <div className="voucher-groups">
+            {(["PLATFORM", "STORE"] as const)
+              .filter((scope) =>
+                list.data?.items.some((v) => v.scope === scope),
+              )
+              .map((scope) => (
+                <section
+                  key={scope}
+                  aria-label={
+                    scope === "PLATFORM"
+                      ? "Voucher toàn sàn"
+                      : "Voucher cửa hàng"
+                  }
                 >
-                  Chọn {v.code}
-                </UiButton>
-              </article>
-            ))}
+                  <h3>
+                    {scope === "PLATFORM"
+                      ? "Ưu đãi toàn sàn"
+                      : "Ưu đãi từ cửa hàng"}
+                  </h3>
+                  <div className="voucher-options">
+                    {list.data?.items
+                      .filter((v) => v.scope === scope)
+                      .map((v) => (
+                        <article
+                          className="voucher-option"
+                          key={v.id ?? v.code}
+                        >
+                          <h3>{v.code}</h3>
+                          <p>
+                            {v.scope === "PLATFORM" ? (
+                              "Ưu đãi toàn sàn"
+                            ) : (
+                              <StoreLabel id={v.store_id!} />
+                            )}
+                          </p>
+                          <strong>
+                            Giảm{" "}
+                            {v.discount_type === "PERCENT"
+                              ? v.discount_value + "%"
+                              : money(v.discount_value)}
+                          </strong>
+                          {v.max_discount_vnd !== undefined && (
+                            <p>Tối đa {money(v.max_discount_vnd)}</p>
+                          )}
+                          <p>
+                            Tiền hàng từ {money(v.min_goods_vnd ?? 0)} ·{" "}
+                            {v.per_customer_limit} lượt/khách
+                          </p>
+                          <p>
+                            Đến{" "}
+                            {new Date(v.ends_at).toLocaleString("vi-VN", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })}
+                          </p>
+                          <UiButton
+                            variant="secondary"
+                            type="button"
+                            onClick={() => {
+                              onPick(
+                                v.scope === "STORE" ? v.store_id : undefined,
+                                v.code,
+                              );
+                              onClose();
+                            }}
+                          >
+                            Chọn {v.code}
+                          </UiButton>
+                        </article>
+                      ))}
+                  </div>
+                </section>
+              ))}
           </div>
           {list.data && (
             <Pagination

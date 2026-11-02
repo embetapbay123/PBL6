@@ -473,7 +473,9 @@ export function StoreInventory() {
       ? "history"
       : location.hash === "#stock-reconciliation"
         ? "reconciliation"
-        : "inventory");
+        : params.has("history_page")
+          ? "history"
+          : "inventory");
   const sectionLink = (section: string) => {
     const next = new URLSearchParams(params);
     next.set("view", section);
@@ -498,6 +500,7 @@ export function StoreInventory() {
     setParams((current) => {
       const next = new URLSearchParams(current);
       next.set("history_page", String(value));
+      next.set("view", "history");
       return next;
     });
   const filters = {
@@ -514,6 +517,7 @@ export function StoreInventory() {
     params.get("stock_to"),
   );
   const access = useStoreAccess(),
+    [adjustmentNotice, setAdjustmentNotice] = useState(""),
     [selected, setSelected] =
       useState<OperationOutputs["listStoreInventory"]["items"][number]>();
   const inventory = useQuery({
@@ -572,6 +576,12 @@ export function StoreInventory() {
     <section>
       <SellerSubNav />
       <h1>Quản lý tồn kho</h1>
+      {adjustmentNotice && (
+        <div role="status" className="ui-alert ui-alert-success">
+          <span>Đã ghi nhận điều chỉnh: {adjustmentNotice}. </span>
+          <Link to={sectionLink("history")}>Xem bút toán mới nhất</Link>
+        </div>
+      )}
       <button
         type="button"
         disabled={inventory.isFetching || movements.isFetching}
@@ -743,6 +753,24 @@ export function StoreInventory() {
           {view === "history" && (
             <div id="stock-history" className="boot-card mt-8">
               <h2>Lịch sử biến động kho</h2>
+              {filters.variant_id &&
+                inventory.data?.items.some(
+                  (item) => item.variant_id === filters.variant_id,
+                ) && (
+                  <button
+                    type="button"
+                    disabled={inventory.isFetching}
+                    onClick={() =>
+                      setSelected(
+                        inventory.data!.items.find(
+                          (item) => item.variant_id === filters.variant_id,
+                        ),
+                      )
+                    }
+                  >
+                    Điều chỉnh
+                  </button>
+                )}
               {historyPeriod && (
                 <p role="note">
                   Đang lọc bút toán từ {params.get("stock_from")} đến hết{" "}
@@ -867,7 +895,8 @@ export function StoreInventory() {
           item={selected}
           name={variantName(selected)}
           close={() => setSelected(undefined)}
-          done={() => {
+          done={(reason) => {
+            setAdjustmentNotice(reason);
             setSelected(undefined);
             void cache.invalidateQueries({ queryKey: ["store-inventory"] });
             if (movementsPage !== 1) setMovementsPage(1);
@@ -893,7 +922,7 @@ function StockAdjustment({
   item: OperationOutputs["listStoreInventory"]["items"][number];
   name: string;
   close: () => void;
-  done: () => void;
+  done: (reason: string) => void;
 }) {
   const access = useStoreAccess(),
     command = useCommand();
@@ -960,8 +989,9 @@ function StockAdjustment({
       }
       try {
         await callOperation("adjustInventory", { body: pending.current });
+        const submittedReason = pending.current.reason;
         clear();
-        done();
+        done(submittedReason);
       } catch (e) {
         if (
           !(e instanceof ApiError) ||

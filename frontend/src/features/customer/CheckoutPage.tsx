@@ -1,4 +1,4 @@
-import {Button as UiButton} from '../../components/ui/Button';
+import { Button as UiButton } from "../../components/ui/Button";
 import { VoucherPicker } from "./VoucherPicker";
 import { CheckCircle2 } from "lucide-react";
 import { paymentMethodLabel } from "../../components/OrderListTools";
@@ -1121,7 +1121,12 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
             </div>
           </div>
 
-          <div className="purchase-summary space-y-4">
+          <div
+            className="purchase-summary space-y-4"
+            role="region"
+            aria-label="Tóm tắt thanh toán"
+            tabIndex={0}
+          >
             <h2 className="text-lg font-bold border-b pb-2">
               Tóm tắt thanh toán
             </h2>
@@ -1141,9 +1146,12 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                       <StoreLabel id={store.store_id} />
                     </strong>
                     {store.return_policy_snapshot && (
-                      <ReturnPolicyNotice
-                        policy={store.return_policy_snapshot}
-                      />
+                      <details className="checkout-policy-details">
+                        <summary>Chính sách đổi trả của cửa hàng</summary>
+                        <ReturnPolicyNotice
+                          policy={store.return_policy_snapshot}
+                        />
+                      </details>
                     )}
                     <p>Hàng hóa: {formatVnd(store.amounts.goods_vnd)}</p>
                     <p>

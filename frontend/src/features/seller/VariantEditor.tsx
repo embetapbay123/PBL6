@@ -7,6 +7,7 @@ import type { OperationOutputs } from "../../api/operations.generated";
 import { ErrorView, Loading } from "../../bootstrap/components";
 import { AttributeFields, unknownAttributeKeys } from "./AttributeFields";
 import { useProductTypes } from "./useProductTypes";
+import { Button } from "../../components/ui/Button";
 
 type Product = OperationOutputs["getOwnStoreProduct"];
 type Variant = NonNullable<Product["variants"]>[number];
@@ -33,6 +34,7 @@ export function VariantEditor({
   const [busy, setBusy] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [notice, setNotice] = useState("");
+  const [bulkPrice, setBulkPrice] = useState("");
   const [baseVersion, setBaseVersion] = useState(product.version),
     [dirty, setDirty] = useState(false);
   useUnsavedChanges(dirty);
@@ -134,6 +136,49 @@ export function VariantEditor({
             Thay đổi áp dụng cho toàn bộ danh sách. Biến thể dừng bán vẫn được
             giữ để bảo toàn lịch sử đơn hàng.
           </p>
+          <fieldset
+            className="variant-bulk-price"
+            disabled={
+              busy || conflict || !type || !!types.error || types.isFetching
+            }
+          >
+            <legend>Đổi giá nhanh</legend>
+            <label>
+              Giá cho các phân loại đang bán (VNĐ)
+              <input
+                type="number"
+                min={0}
+                step={1}
+                max={Number.MAX_SAFE_INTEGER}
+                value={bulkPrice}
+                onChange={(event) => setBulkPrice(event.target.value)}
+              />
+            </label>
+            <Button
+              variant="secondary"
+              disabled={
+                bulkPrice === "" ||
+                !Number.isSafeInteger(Number(bulkPrice)) ||
+                Number(bulkPrice) < 0 ||
+                !variants.some((row) => row.status !== "STOPPED")
+              }
+              onClick={() => {
+                setVariants((current) =>
+                  current.map((row) =>
+                    row.status === "STOPPED"
+                      ? row
+                      : { ...row, price_vnd: Number(bulkPrice) },
+                  ),
+                );
+                setDirty(true);
+                setNotice(
+                  "Đã cập nhật giá trong bản nháp cho các phân loại đang bán. Kiểm tra rồi bấm Lưu biến thể để áp dụng.",
+                );
+              }}
+            >
+              Áp giá vào bản nháp
+            </Button>
+          </fieldset>
           {variants.map((variant, index) => (
             <details className="variant-accordion" key={variant.id ?? index}>
               <summary>

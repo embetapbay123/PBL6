@@ -501,7 +501,7 @@ export const AddressPage: React.FC = () => {
         </>
       )}
       {/* Danh sách địa chỉ */}
-      <div className="space-y-4">
+      <div className="address-card-grid">
         {addresses.length === 0 && (
           <p className="text-sm text-gray-600">
             Bạn chưa có địa chỉ nào. Hãy thêm địa chỉ nhận hàng ở form phía
@@ -514,7 +514,9 @@ export const AddressPage: React.FC = () => {
             <article
               aria-label={"Địa chỉ " + addr.name}
               key={addr.id}
-              className="bg-white shadow rounded-lg p-6 flex justify-between items-start"
+              className={
+                "address-book-card" + (addr.isDefault ? " is-default" : "")
+              }
             >
               <div>
                 <div className="flex items-center gap-2">
@@ -528,7 +530,7 @@ export const AddressPage: React.FC = () => {
                 </div>
                 <p className="text-gray-600 mt-2">{addr.detail}</p>
               </div>
-              <div className="flex flex-col gap-2 text-sm">
+              <div className="address-card-actions">
                 {returnTo && userId && !locked && (
                   <Link
                     to={returnTo}

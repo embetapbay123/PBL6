@@ -31,7 +31,7 @@ const describeError = (error: unknown): string => {
 
 export const ProfilePage: React.FC = () => {
   const cache = useQueryClient();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<"all" | "name" | "phone" | null>(null);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
@@ -100,7 +100,7 @@ export const ProfilePage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
-    if (!displayName.trim()) {
+    if (editing !== "phone" && !displayName.trim()) {
       setSaveError("Tên hiển thị không được chỉ chứa khoảng trắng.");
       return;
     }
@@ -112,10 +112,10 @@ export const ProfilePage: React.FC = () => {
 
     const payload: ProfileUpdate = {};
     const trimmedName = displayName.trim();
-    if (trimmedName) {
+    if (editing !== "phone" && trimmedName) {
       payload.display_name = trimmedName;
     }
-    payload.phone = phone.trim(); // send string, never null
+    if (editing !== "name") payload.phone = phone.trim(); // send string, never null
 
     try {
       const saved = await callOperation("updateProfile", {
@@ -140,7 +140,7 @@ export const ProfilePage: React.FC = () => {
     try {
       await fetchProfile();
       if (mounted.current) {
-        setEditing(false);
+        setEditing(null);
         setIsSaved(true);
         savedTimer.current = window.setTimeout(() => setIsSaved(false), 3000);
       }
@@ -217,14 +217,35 @@ export const ProfilePage: React.FC = () => {
             <div>
               <dt>Tên hiển thị</dt>
               <dd>{original?.displayName || "Chưa có tên hiển thị"}</dd>
+              <UiButton
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSaveError(null);
+                  setEditing("name");
+                }}
+              >
+                Thay đổi tên
+              </UiButton>
             </div>
             <div>
               <dt>Email đăng nhập</dt>
               <dd>{email}</dd>
+              <small>Email đăng nhập được giữ cố định.</small>
             </div>
             <div>
               <dt>Số điện thoại</dt>
               <dd>{original?.phone || "Chưa bổ sung"}</dd>
+              <UiButton
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSaveError(null);
+                  setEditing("phone");
+                }}
+              >
+                Thay đổi số điện thoại
+              </UiButton>
             </div>
           </dl>
           <div className="ui-actions">
@@ -232,7 +253,7 @@ export const ProfilePage: React.FC = () => {
               type="button"
               onClick={() => {
                 setSaveError(null);
-                setEditing(true);
+                setEditing("all");
               }}
             >
               Chỉnh sửa thông tin
@@ -246,24 +267,26 @@ export const ProfilePage: React.FC = () => {
           className="bg-white shadow rounded-lg p-6 space-y-4"
         >
           <fieldset disabled={saving} className="space-y-4">
-            <div>
-              <label
-                htmlFor="profile-display-name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Tên hiển thị
-              </label>
-              <input
-                autoFocus
-                id="profile-display-name"
-                type="text"
-                maxLength={200}
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
-                required
-              />
-            </div>
+            {editing !== "phone" && (
+              <div>
+                <label
+                  htmlFor="profile-display-name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Tên hiển thị
+                </label>
+                <input
+                  autoFocus
+                  id="profile-display-name"
+                  type="text"
+                  maxLength={200}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+            )}
 
             <p>
               Email đăng nhập: <strong>{email}</strong>
@@ -272,23 +295,26 @@ export const ProfilePage: React.FC = () => {
               Email đăng nhập không thể thay đổi tại đây.
             </p>
             <Link to="/change-password">Đổi mật khẩu</Link>
-            <div>
-              <label
-                htmlFor="profile-phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Số điện thoại
-              </label>
-              <input
-                id="profile-phone"
-                type="tel"
-                autoComplete="tel"
-                maxLength={20}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
+            {editing !== "name" && (
+              <div>
+                <label
+                  htmlFor="profile-phone"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Số điện thoại
+                </label>
+                <input
+                  id="profile-phone"
+                  autoFocus={editing === "phone"}
+                  type="tel"
+                  autoComplete="tel"
+                  maxLength={20}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+            )}
 
             <div className="ui-actions">
               <button
@@ -306,7 +332,7 @@ export const ProfilePage: React.FC = () => {
                   setDisplayName(original?.displayName ?? "");
                   setPhone(original?.phone ?? "");
                   setSaveError(null);
-                  setEditing(false);
+                  setEditing(null);
                 }}
               >
                 Hủy thay đổi

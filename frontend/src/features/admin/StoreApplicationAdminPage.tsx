@@ -135,18 +135,45 @@ function ReviewDialog({
           )}
 
           {!approve && (
-            <label>
-              Lý do từ chối <span aria-hidden="true">*</span>
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={busy || blocked}
-                required
-                maxLength={200}
-                rows={4}
-                placeholder="Nêu rõ thông tin cần bổ sung…"
-              />
-            </label>
+            <>
+              <div
+                className="review-reason-presets"
+                aria-label="Gợi ý lý do từ chối"
+              >
+                <p>Chọn gợi ý rồi sửa theo hồ sơ thực tế:</p>
+                {[
+                  "Tên cửa hàng cần điều chỉnh để phân biệt rõ với gian hàng khác. Vui lòng cập nhật và gửi lại.",
+                  "Thông tin liên hệ chưa đầy đủ hoặc chưa rõ. Vui lòng bổ sung để có thể xác minh hồ sơ.",
+                  "Mô tả cửa hàng chưa đủ thông tin. Vui lòng bổ sung mặt hàng dự kiến kinh doanh và gửi lại.",
+                ].map((value, index) => (
+                  <UiButton
+                    key={value}
+                    variant="secondary"
+                    size="sm"
+                    disabled={busy || blocked}
+                    onClick={() => setReason(value)}
+                  >
+                    {
+                      ["Tên cửa hàng", "Thông tin liên hệ", "Mô tả kinh doanh"][
+                        index
+                      ]
+                    }
+                  </UiButton>
+                ))}
+              </div>
+              <label>
+                Lý do từ chối <span aria-hidden="true">*</span>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  disabled={busy || blocked}
+                  required
+                  maxLength={200}
+                  rows={4}
+                  placeholder="Nêu rõ thông tin cần bổ sung…"
+                />
+              </label>
+            </>
           )}
           <div className="store-app-dialog-actions">
             <UiButton
@@ -526,7 +553,11 @@ function AdminStoreApplicationPage() {
         )}
       </section>
       {selected && (
-        <Modal labelledBy="detail-title" onClose={() => setSelected(undefined)}>
+        <Modal
+          variant="drawer"
+          labelledBy="detail-title"
+          onClose={() => setSelected(undefined)}
+        >
           <section className="store-app-dialog">
             <button
               className="store-app-dialog-close"
@@ -541,6 +572,20 @@ function AdminStoreApplicationPage() {
             </p>
             <h2 id="detail-title">{selected.proposed_name}</h2>
             <dl className="store-app-detail-list">
+              <div>
+                <dt>Người nộp</dt>
+                <dd>
+                  {selected.applicant_display_name ?? "Chưa có tên"} ·{" "}
+                  {selected.applicant_email ?? selected.contact}
+                </dd>
+              </div>
+              <div>
+                <dt>Tài khoản nộp hồ sơ</dt>
+                <dd>
+                  {selected.applicant_user_id ?? "Đơn cũ chưa có mã tài khoản"}{" "}
+                  · {selected.applicant_status ?? "Chưa rõ trạng thái"}
+                </dd>
+              </div>
               <div>
                 <dt>Liên hệ</dt>
                 <dd>{selected.contact}</dd>

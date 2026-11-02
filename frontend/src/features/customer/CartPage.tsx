@@ -262,7 +262,9 @@ export const CartPage: React.FC = () => {
   const batch = useProductBatch(productIds),
     metadata = [batch];
   const productFor = (item: CartItem) =>
-    batch.data?.find((product) => product.id === item.product_id);
+    batch.error
+      ? undefined
+      : batch.data?.find((product) => product.id === item.product_id);
   const pages = Math.max(1, Math.ceil((items?.length ?? 0) / 25));
   useEffect(() => {
     if (cartPage > pages) setCartPage(pages);

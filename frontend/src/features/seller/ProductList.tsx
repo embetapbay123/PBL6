@@ -1,4 +1,4 @@
-import {Button as UiButton} from '../../components/ui/Button';
+import { Button as UiButton } from "../../components/ui/Button";
 import { FormEvent, useState } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ import {
 import { SellerSubNav } from "../../live/SellerWorkspace";
 import { AttributeFields } from "./AttributeFields";
 import { useProductTypes } from "./useProductTypes";
+import { VariantMatrix, type MatrixVariant } from "./VariantMatrix";
 
 type ManagedProduct = OperationOutputs["listOwnStoreProducts"]["items"][number];
 export function SellerProductList() {
@@ -128,7 +129,8 @@ export function SellerProductList() {
         </div>
         <div>
           <UiButton
-            variant="secondary" type="submit"
+            variant="secondary"
+            type="submit"
             onClick={() => void refetch()}
             disabled={isFetching}
           >
@@ -145,7 +147,8 @@ export function SellerProductList() {
             </Link>
           )}
           <UiButton
-            variant="primary" type="submit"
+            variant="primary"
+            type="submit"
             disabled={!canWrite}
             onClick={() => create(true)}
           >
@@ -272,7 +275,8 @@ export function SellerProductList() {
                         </Link>
                         <ActionMenu label={"Thao tác " + product.title}>
                           <UiButton
-                            variant="secondary" type="submit"
+                            variant="secondary"
+                            type="submit"
                             aria-label={"Chi tiết " + product.title}
                             onClick={() => setInspect(product)}
                           >
@@ -280,7 +284,8 @@ export function SellerProductList() {
                             Chi tiết
                           </UiButton>
                           <UiButton
-                            variant="secondary" type="submit"
+                            variant="secondary"
+                            type="submit"
                             disabled={
                               !canWrite ||
                               product.version === undefined ||
@@ -355,7 +360,8 @@ export function SellerProductList() {
           </ul>
           <div className="ui-actions">
             <UiButton
-              variant="secondary" type="submit"
+              variant="secondary"
+              type="submit"
               onClick={() => setInspect(undefined)}
             >
               Đóng
@@ -394,7 +400,8 @@ export function SellerProductList() {
           {actionError !== undefined && <ErrorView error={actionError} />}
           <div className="ui-actions">
             <UiButton
-              variant="secondary" type="submit"
+              variant="secondary"
+              type="submit"
               disabled={busy}
               onClick={() => setDecision(undefined)}
             >
@@ -402,7 +409,8 @@ export function SellerProductList() {
             </UiButton>
             {blocked ? (
               <UiButton
-                variant="primary" type="submit"
+                variant="primary"
+                type="submit"
                 onClick={() =>
                   void refetch().then((result) => {
                     if (!result.error) setDecision(undefined);
@@ -413,7 +421,8 @@ export function SellerProductList() {
               </UiButton>
             ) : (
               <UiButton
-                variant="primary" type="submit"
+                variant="primary"
+                type="submit"
                 disabled={busy}
                 onClick={() => void changeStatus()}
               >
@@ -448,6 +457,8 @@ function CreateProductModal({
   const types = useProductTypes();
   const selectedType = types.data?.find((type) => type.id === productTypeId);
   const [sku, setSku] = useState("");
+  const [matrix, setMatrix] = useState(false),
+    [matrixRows, setMatrixRows] = useState<MatrixVariant[]>([]);
   const [price, setPrice] = useState(100000);
   const [imageUrl, setImageUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -460,7 +471,14 @@ function CreateProductModal({
   );
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (submitting || uncertain || createdId || !selectedType) return;
+    if (
+      submitting ||
+      uncertain ||
+      createdId ||
+      !selectedType ||
+      (matrix && !matrixRows.length)
+    )
+      return;
     setSubmitting(true);
     setError(undefined);
     try {
@@ -469,26 +487,30 @@ function CreateProductModal({
           product_type_id: productTypeId,
           title: title.trim(),
           description: description.trim() || undefined,
-          attributes,
-          variants: [
-            {
-              sku: sku.trim(),
-              price_vnd: price,
-              variant_values: Object.fromEntries(
-                (selectedType?.attribute_definitions ?? [])
-                  .filter(
-                    (definition) =>
-                      definition.variant_axis &&
-                      attributes[definition.code] !== undefined,
-                  )
-                  .map((definition) => [
-                    definition.code,
-                    attributes[definition.code],
-                  ]),
-              ),
-              is_default: true,
-            },
-          ],
+          attributes: matrix
+            ? { ...attributes, ...matrixRows[0].variant_values }
+            : attributes,
+          variants: matrix
+            ? matrixRows
+            : [
+                {
+                  sku: sku.trim(),
+                  price_vnd: price,
+                  variant_values: Object.fromEntries(
+                    (selectedType?.attribute_definitions ?? [])
+                      .filter(
+                        (definition) =>
+                          definition.variant_axis &&
+                          attributes[definition.code] !== undefined,
+                      )
+                      .map((definition) => [
+                        definition.code,
+                        attributes[definition.code],
+                      ]),
+                  ),
+                  is_default: true,
+                },
+              ],
           status,
         },
       });
@@ -558,6 +580,8 @@ function CreateProductModal({
                 onChange={(e) => {
                   setProductTypeId(e.target.value);
                   setAttributes({});
+                  setMatrix(false);
+                  setMatrixRows([]);
                 }}
               >
                 <option value="">Chọn loại sản phẩm</option>
@@ -581,7 +605,9 @@ function CreateProductModal({
             )}
             {selectedType && (
               <AttributeFields
-                definitions={selectedType.attribute_definitions}
+                definitions={selectedType.attribute_definitions.filter(
+                  (definition) => !matrix || !definition.variant_axis,
+                )}
                 values={attributes}
                 onChange={setAttributes}
                 disabled={submitting}
@@ -600,6 +626,18 @@ function CreateProductModal({
               </select>
             </label>
             <p>Biến thể mới có tồn kho bằng 0. Hãy nhập kho trước khi bán.</p>
+            {!!selectedType?.attribute_definitions.some(
+              (definition) => definition.variant_axis,
+            ) && (
+              <label className="permission-option">
+                <input
+                  type="checkbox"
+                  checked={matrix}
+                  onChange={(event) => setMatrix(event.target.checked)}
+                />
+                Tạo nhiều phân loại theo ma trận
+              </label>
+            )}
             <label>
               Tên sản phẩm *
               <input
@@ -624,7 +662,9 @@ function CreateProductModal({
               }}
             >
               <label>
-                SKU phân loại mặc định *
+                {matrix
+                  ? "Tiền tố SKU cho các tổ hợp *"
+                  : "SKU phân loại mặc định *"}
                 <input
                   required
                   value={sku}
@@ -663,11 +703,29 @@ function CreateProductModal({
                 />
               )}
             </label>
+            {matrix && selectedType && (
+              <VariantMatrix
+                key={productTypeId}
+                axes={selectedType.attribute_definitions.filter(
+                  (definition) => definition.variant_axis,
+                )}
+                sku={sku}
+                price={price}
+                rows={matrixRows}
+                onChange={setMatrixRows}
+              />
+            )}
           </fieldset>
           <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
             <button
               type="submit"
-              disabled={submitting || !!createdId || uncertain || !selectedType}
+              disabled={
+                submitting ||
+                !!createdId ||
+                uncertain ||
+                !selectedType ||
+                (matrix && !matrixRows.length)
+              }
             >
               {submitting ? "Đang tạo..." : "Tạo sản phẩm"}
             </button>

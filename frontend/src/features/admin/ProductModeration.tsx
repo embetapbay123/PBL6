@@ -1,4 +1,4 @@
-import {Button as UiButton} from '../../components/ui/Button';
+import { Button as UiButton } from "../../components/ui/Button";
 import { Modal } from "../../components/Modal";
 import { useConfirm } from "../../components/ConfirmDialog";
 import { useUnsavedChanges } from "../../components/useUnsavedChanges";
@@ -16,6 +16,7 @@ import {
   Pagination,
 } from "../../bootstrap/components";
 import { ProductModerationNotice } from "../seller/ProductModerationNotice";
+import { ImagePreview } from "../../components/ImagePreview";
 type Product = OperationOutputs["listAdminProducts"]["items"][number];
 export function ProductModeration() {
   const [params, setParams] = useSearchParams(),
@@ -213,11 +214,10 @@ function ProductDecision({
       <p>{product.description}</p>
       <div className="market-moderation-images">
         {product.images?.map((image, index) => (
-          <img
+          <ImagePreview
             key={image.id}
             src={image.image_url}
-            alt={product.title + " — ảnh " + (index + 1)}
-            loading="lazy"
+            name={product.title + " — ảnh " + (index + 1)}
           />
         ))}
       </div>

@@ -1,4 +1,5 @@
 import { useConfirm } from "../../components/ConfirmDialog";
+import { PermissionPresets } from "./PermissionPresets";
 import { Modal } from "../../components/Modal";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { callOperation } from "../../api/operations";
@@ -250,6 +251,10 @@ export function StaffPage() {
           </label>
           <fieldset disabled={locked}>
             <legend>Quyền được cấp</legend>
+            <PermissionPresets
+              disabled={locked}
+              onChange={setInvitePermissions}
+            />
             {sellerPermissions.map(([code, label]) => (
               <label key={code} className="permission-option">
                 <input
@@ -411,6 +416,10 @@ function PermissionEditor({
       )}
       <fieldset disabled={busy || error != null}>
         <legend>Quyền trong Store</legend>
+        <PermissionPresets
+          disabled={busy || error != null}
+          onChange={setDraft}
+        />
         {sellerPermissions.map(([code, label]) => (
           <label className="permission-option" key={code}>
             <input

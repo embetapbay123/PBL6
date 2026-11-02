@@ -158,82 +158,101 @@ function Detail({ id }: { id?: string }) {
       ) : (
         data && (
           <>
-            <p>Mã đơn: #{data.id.slice(-8).toUpperCase()}</p>
-            <ContactStoreButton storeId={data.store_id} orderId={data.id} />
-            <p>Trạng thái: {orderStatusLabel(data.status)}</p>
-            <p>
-              Thanh toán: {paymentMethodLabel(data.payment_method)} ·{" "}
-              {paymentStatusLabel(
-                data.payment_status,
-                data.amounts.payable_vnd,
-              )}
-            </p>
-            {data.refund_status && (
-              <p role="status">
-                {data.refund_status === "SUCCEEDED"
-                  ? "Đã hoàn tiền."
-                  : "Chưa xác nhận hoàn tiền. Trạng thái yêu cầu: " +
-                    refundStatusLabel(data.refund_status)}
+            <header className="order-detail-overview">
+              <p>Mã đơn: #{data.id.slice(-8).toUpperCase()}</p>
+              <ContactStoreButton storeId={data.store_id} orderId={data.id} />
+              <p>Trạng thái: {orderStatusLabel(data.status)}</p>
+              <p>
+                Thanh toán: {paymentMethodLabel(data.payment_method)} ·{" "}
+                {paymentStatusLabel(
+                  data.payment_status,
+                  data.amounts.payable_vnd,
+                )}
               </p>
-            )}
-            {canStartOrderPayment(data) && (
-              <Link to={"/orders/" + data.id + "/pay"}>Mở thanh toán</Link>
-            )}
-            <OrderNextStep order={data} />
-            <h2 id="order-items">Sản phẩm trong đơn</h2>
-            {data.items?.length ? (
-              data.items.map((item, i) => (
-                <article key={typeof item.id === "string" ? item.id : i}>
-                  <OrderItemIdentity item={item} />
-                  {typeof item.product_id === "string" && (
-                    <div className="order-actions">
-                      <Link to={"/products/" + item.product_id}>
-                        Xem sản phẩm
-                      </Link>
-                      {data.status === "COMPLETED" && (
-                        <Link to={"/products/" + item.product_id + "#reviews"}>
-                          Viết đánh giá
-                        </Link>
-                      )}
-                    </div>
+              {data.refund_status && (
+                <p role="status">
+                  {data.refund_status === "SUCCEEDED"
+                    ? "Đã hoàn tiền."
+                    : "Chưa xác nhận hoàn tiền. Trạng thái yêu cầu: " +
+                      refundStatusLabel(data.refund_status)}
+                </p>
+              )}
+              {canStartOrderPayment(data) && (
+                <Link to={"/orders/" + data.id + "/pay"}>Mở thanh toán</Link>
+              )}
+              <OrderNextStep order={data} />
+            </header>
+            <div className="order-detail-layout">
+              <div className="order-detail-main">
+                <OrderTimeline order={data} />
+                <section className="order-detail-items">
+                  <h2 id="order-items">Sản phẩm trong đơn</h2>
+                  {data.items?.length ? (
+                    data.items.map((item, i) => (
+                      <article key={typeof item.id === "string" ? item.id : i}>
+                        <OrderItemIdentity item={item} />
+                        {typeof item.product_id === "string" && (
+                          <div className="order-actions">
+                            <Link to={"/products/" + item.product_id}>
+                              Xem sản phẩm
+                            </Link>
+                            {data.status === "COMPLETED" && (
+                              <Link
+                                to={"/products/" + item.product_id + "#reviews"}
+                              >
+                                Viết đánh giá
+                              </Link>
+                            )}
+                          </div>
+                        )}
+                      </article>
+                    ))
+                  ) : (
+                    <p>API chưa cung cấp danh sách mục đơn.</p>
                   )}
-                </article>
-              ))
-            ) : (
-              <p>API chưa cung cấp danh sách mục đơn.</p>
-            )}
-            <OrderDeliveryAddress order={data} />
-            {data.status !== "COMPLETED" && (
-              <ReturnPolicyNotice policy={data.return_policy_snapshot} />
-            )}
-            <OrderTimeline order={data} />
+                </section>
+              </div>
+              <aside
+                className="order-detail-sidebar"
+                aria-label="Giao hàng và thanh toán"
+              >
+                <OrderDeliveryAddress order={data} />
+                {data.status !== "COMPLETED" && (
+                  <details className="return-policy-details">
+                    <summary>Chính sách và địa chỉ đổi trả</summary>
+                    <ReturnPolicyNotice policy={data.return_policy_snapshot} />
+                  </details>
+                )}
+                <h2>Chi tiết thanh toán</h2>
+                <dl className="order-amounts">
+                  <dt>Tiền hàng</dt>
+                  <dd>{money(data.amounts.goods_vnd)}</dd>
+                  <dt>Giảm giá Store</dt>
+                  <dd>{money(data.amounts.store_discount_vnd)}</dd>
+                  <dt>Giảm giá sàn</dt>
+                  <dd>{money(data.amounts.platform_discount_vnd)}</dd>
+                  <dt>Phí giao hàng</dt>
+                  <dd>{money(data.amounts.shipping_vnd)}</dd>
+                  <dt>Tổng thanh toán</dt>
+                  <dd>{money(data.amounts.payable_vnd)}</dd>
+                </dl>
+                {canCancel && (
+                  <form id="cancel" onSubmit={cancel}>
+                    <label>
+                      Lý do hủy
+                      <input
+                        maxLength={200}
+                        value={reason}
+                        disabled={busy || stale}
+                        onChange={(e) => setReason(e.target.value)}
+                      />
+                    </label>
+                    <button disabled={busy || stale}>Hủy đơn hàng</button>
+                  </form>
+                )}
+              </aside>
+            </div>
             <OwnDeliveryReturn order={data} />
-            <dl className="order-amounts">
-              <dt>Tiền hàng</dt>
-              <dd>{money(data.amounts.goods_vnd)}</dd>
-              <dt>Giảm giá Store</dt>
-              <dd>{money(data.amounts.store_discount_vnd)}</dd>
-              <dt>Giảm giá sàn</dt>
-              <dd>{money(data.amounts.platform_discount_vnd)}</dd>
-              <dt>Phí giao hàng</dt>
-              <dd>{money(data.amounts.shipping_vnd)}</dd>
-              <dt>Tổng thanh toán</dt>
-              <dd>{money(data.amounts.payable_vnd)}</dd>
-            </dl>
-            {canCancel && (
-              <form id="cancel" onSubmit={cancel}>
-                <label>
-                  Lý do hủy
-                  <input
-                    maxLength={200}
-                    value={reason}
-                    disabled={busy || stale}
-                    onChange={(e) => setReason(e.target.value)}
-                  />
-                </label>
-                <button disabled={busy || stale}>Hủy đơn hàng</button>
-              </form>
-            )}
             {stale && (
               <p>
                 Đơn đã thay đổi hoặc cần đối soát. Bấm Làm mới đơn để kiểm tra

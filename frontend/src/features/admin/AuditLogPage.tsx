@@ -1,4 +1,4 @@
-import {Button as UiButton} from '../../components/ui/Button';
+import { Button as UiButton } from "../../components/ui/Button";
 import { SourceNavigation } from "../../components/SourceNavigation";
 import { AuditIdentityLookup } from "./AuditIdentityLookup";
 import { useEffect, useState, type FormEvent } from "react";
@@ -14,6 +14,24 @@ import {
   Pagination,
 } from "../../bootstrap/components";
 import { AuditActor, useAuditActorLabels } from "./AuditActors";
+import { ShieldAlert, Activity } from "lucide-react";
+const actionLabels: Record<string, string> = {
+  CREATE: "Tạo mới",
+  UPDATE: "Cập nhật",
+  ADJUST: "Điều chỉnh kho",
+  STAFF_MEMBERSHIP_UPDATED: "Thay quyền / trạng thái nhân viên",
+  STAFF_INVITATION_CREATED: "Mời nhân viên",
+  CANCEL_ORDER: "Hủy đơn",
+  TRANSITION_ORDER: "Đổi trạng thái đơn",
+  COD_COLLECT: "Xác nhận thu COD",
+  COD_REFUND_MANUALLY_CONFIRMED: "Xác nhận hoàn COD",
+  HIDE: "Ẩn nội dung",
+  RESTORE: "Khôi phục hiển thị",
+  LOCK_USER: "Khóa tài khoản",
+  LOCK_STORE: "Khóa Store",
+};
+const sensitiveAction = (action: string) =>
+  /LOCK|PERMISSION|ROLE|STAFF_MEMBERSHIP_UPDATED/.test(action);
 
 type Source = "catalog" | "commerce" | "identity";
 const fields = [
@@ -309,7 +327,14 @@ export function AuditLogPage() {
                 </thead>
                 <tbody>
                   {query.data.items.map((entry) => (
-                    <tr key={entry.id}>
+                    <tr
+                      key={entry.id}
+                      className={
+                        sensitiveAction(entry.action)
+                          ? "audit-sensitive-row"
+                          : undefined
+                      }
+                    >
                       <td>
                         <time dateTime={entry.created_at}>
                           {new Date(entry.created_at).toLocaleString("vi-VN", {
@@ -317,7 +342,20 @@ export function AuditLogPage() {
                           })}
                         </time>
                       </td>
-                      <td>{entry.action}</td>
+                      <td>
+                        <span className="audit-action-label">
+                          {sensitiveAction(entry.action) ? (
+                            <ShieldAlert
+                              size={17}
+                              aria-label="Thao tác liên quan quyền hoặc khóa"
+                            />
+                          ) : (
+                            <Activity size={17} aria-hidden="true" />
+                          )}
+                          {actionLabels[entry.action] ?? entry.action}
+                        </span>
+                        <small>{entry.action}</small>
+                      </td>
                       <td>
                         {entry.target_type}
                         <br />
