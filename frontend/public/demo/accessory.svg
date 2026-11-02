@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-label="Minh họa phụ kiện dữ liệu demo">
+  <rect width="640" height="640" fill="#e8e6ee"/>
+  <rect x="135" y="230" width="370" height="220" rx="38" fill="#8f9aa5" stroke="#56616e" stroke-width="5"/>
+  <path d="M135 285h370m-50-55v55" fill="none" stroke="#56616e" stroke-width="8"/>
+  <rect x="270" y="335" width="100" height="42" rx="5" fill="#d4c4a7"/>
+  <text x="320" y="585" text-anchor="middle" font-family="sans-serif" font-size="23" fill="#64736c">Ảnh minh họa · DEMO</text>
+</svg>

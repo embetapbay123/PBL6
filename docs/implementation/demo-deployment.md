@@ -13,7 +13,40 @@ python scripts/deploy_candidate.py --runtime-root C:/PBL6 --apply
 
 The existing project must be named `pbl6`, with healthy Postgres/Redis/RabbitMQ and existing `.env`/RSA keys. The command refuses dirty candidates. It does not copy, print or regenerate secrets. All application images have revision-specific tags and OCI revision labels; M1/M2/M3 and their workers use the same Node image, and M4/API and tracking worker use the same AI image.
 
-The sequence is: validate configuration and existing dependencies; build; stop gateway and application writers; dump all four databases with before/after schema/count/row hashes; restore each dump into a **new** `restore_drill_*` database and verify it against its backup-time manifest; migrate; start matching API/Web/workers; verify exact image revisions, migrations, internal readiness, M1/M2/M3 publishers and the M4 consumer; reopen gateway and check Web/Catalog. There is no seed/reset, dependency recreation, volume removal, bank transfer or model-generation call.
+The normal sequence is: validate configuration and existing dependencies; build; stop gateway and application writers; dump all four databases with before/after schema/count/row hashes; restore each dump into a **new** `restore_drill_*` database and verify it against its backup-time manifest; migrate; start matching API/Web/workers; verify exact image revisions, migrations, internal readiness, M1/M2/M3 publishers and the M4 consumer; reopen gateway and check Web/Catalog. The default preserves data. The optional reset below recreates only the four named databases after backup/restore verification. Neither path removes volumes, recreates dependencies, transfers bank money or calls model generation.
+
+## Optional synthetic demo reset
+
+The observed deployment target is **https://demo.congnguyen.me**, local Docker project **`pbl6`**, gateway `127.0.0.1:8080`. Confirm this exact target before applying a destructive reset. The private QA project `pbl6-fe-verify` and its gateway `127.0.0.1:18080` are separate and must remain untouched.
+
+```powershell
+# Safe plan: no changes to services or databases.
+python scripts/deploy_candidate.py --runtime-root C:/PBL6 --reset-demo
+# DESTRUCTIVE: only after the owner confirms the target and removal of its old data.
+python scripts/deploy_candidate.py --runtime-root C:/PBL6 --reset-demo --confirm-reset pbl6:m1,m2,m3,m4 --apply
+```
+
+Reset stops ingress/writers, verifies queues, backs up and restore-verifies all four databases, then drops/recreates **m1, m2, m3, m4**, restores their role isolation/extensions, migrates and starts the new revision. It seeds before reopening ingress. RSA keys, `.env`, Redis, RabbitMQ, Tunnel and volumes are retained. New synthetic identities receive fresh UUIDs, so retained tokens for deleted users cannot resolve to the new accounts. Cached browser screens may still require sign-out/reload.
+
+Current `.bootstrap.v1` and `.tracking.v1` queues must have no pending work. Unknown nonempty queues block reset. Known retired `pbl6.m1.bootstrap`/`pbl6.m2.bootstrap` and dead-letter queues are retained for inspection; current workers do not consume those retired names. No queue is purged or rebound to a new reader.
+
+`scripts/seed_marketplace_demo.cjs` defaults to a read-only `--plan`. Writing additionally requires `--apply`, `DEMO_SEED_ALLOWED=1`, non-production mode, all four database configurations and an existing private `SEED_PASSWORD`. It refuses non-demo identities/products. Do **not** run the old minimal seed first. A partially created set of orders stops for inspection rather than silently creating replacements.
+
+The dataset `marketplace-demo-v1` contains synthetic names/addresses, seven verified accounts, two active Stores with return addresses, twelve products, thirty-four variants, stock boundaries 0/1/many, local watermarked illustrations, two Store vouchers and one platform voucher. The default password is the existing local `SEED_PASSWORD`; it is never written to the report or Git.
+
+| Account | Role / scope |
+|---|---|
+| `admin@pbl6.test` | ADMIN, platform administration |
+| `customer.a@pbl6.test`, `customer.b@pbl6.test` | Independent Customers |
+| `owner.a@pbl6.test`, `owner.b@pbl6.test` | STORE_OWNER of An Nhiên / Mây Xanh |
+| `seller.a@pbl6.test` | SELLER in An Nhiên: product, inventory and order permissions |
+| `seller.b@pbl6.test` | SELLER in Mây Xanh: inventory permission only |
+
+The database membership value `OWNER` is exposed as the application role `STORE_OWNER`; `SELLER` remains an employee. Verified synthetic identities and employee memberships are fixture setup via M3 SQL, **not** proof of verification-email or invitation delivery. Product, inventory, Store approval, address, voucher, checkout, status, return and money states use public service API handlers, with real workers and final SQL reconciliation.
+
+Seventeen sample orders cover pending, confirmed, processing, shipped, completed, cancelled, awaiting online payment, a completed full COD refund, an approved exchange and an open delivery-failure return. Online orders have **no payment attempt or bank callback**. Manual COD collection/refund attestations are clearly synthetic, not bank-verified transfers. Voucher codes are `DEMO-A-10K`, `DEMO-B-10K`, `DEMO-SAN-5K`; the example one-shirt orders total 164,000/174,000 VND including shipping and discounts.
+
+Immediately after seed, SQL checks require 17 orders, four collection ledger entries totalling 676,000 VND, one refund/receipt for 164,000 VND, two return requests, one delivery-return case, 34 valid inventory balances and zero balance/ledger discrepancies. A seed rerun before manual test activity must not duplicate these effects. The private `dataset.json` links the generated objects and reconciliation. This fixture is suitable for manual operational testing; it is not the 300-product/100-order load dataset or real-provider acceptance.
 
 Default Compose includes `worker-m3`, so UserLocked and StoreStatusChanged events leave the M3 outbox. The gateway still excludes internal service routes. The existing Tunnel container is not recreated or removed; it reconnects to the same gateway service. Expect a maintenance window after builds finish: callbacks may receive a retryable transport error while ingress is closed. Inspect pending payment receipts/follow-ups after resuming; never manually mark them successful.
 

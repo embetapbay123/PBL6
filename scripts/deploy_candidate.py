@@ -5,6 +5,7 @@ migrates without seed, and verifies API/worker/image/schema readiness. On failur
 maintenance starts the gateway remains stopped; never auto-roll back database state.
 """
 import argparse
+import hashlib
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -17,6 +18,58 @@ ROOT = Path(__file__).resolve().parents[1]
 NODE = ('m1', 'm2', 'm3', 'worker-m1', 'worker-m2', 'worker-m3', 'worker-refund', 'tools')
 AI = ('m4', 'worker-m4')
 APPS = tuple(s for s in NODE if s != 'tools') + AI + ('web',)
+RESET_CONFIRMATION = 'pbl6:m1,m2,m3,m4'
+ACTIVE_QUEUES = {'pbl6.m1.bootstrap.v1', 'pbl6.m2.bootstrap.v1',
+                 'pbl6.m3.bootstrap.v1', 'pbl6.m4.tracking.v1'}
+LEGACY_QUEUES = {'pbl6.m1.bootstrap', 'pbl6.m2.bootstrap'}
+
+
+def check_reset_queues(output):
+    """Current readers must be empty. Keep known retired queues and dead letters intact."""
+    seen, retained = set(), []
+    for line in output.splitlines():
+        fields = line.split()
+        if len(fields) != 3 or not fields[0].startswith('pbl6.'):
+            continue
+        name, ready, unacknowledged = fields[0], int(fields[1]), int(fields[2])
+        seen.add(name)
+        if ready or unacknowledged:
+            if name in LEGACY_QUEUES or name.endswith('.dead'):
+                retained.append({'queue': name, 'ready': ready, 'unacknowledged': unacknowledged})
+            else:
+                raise RuntimeError('Reset refused: pending broker work must be reconciled before reset')
+    if not ACTIVE_QUEUES.issubset(seen):
+        raise RuntimeError('Reset refused: current consumer queue inventory is incomplete')
+    return retained
+
+
+def validate_reset_request(apply, reset, confirmation):
+    if confirmation and not reset:
+        raise ValueError('--confirm-reset requires --reset-demo')
+    if apply and reset and confirmation != RESET_CONFIRMATION:
+        raise ValueError('Reset requires --confirm-reset ' + RESET_CONFIRMATION)
+
+
+def reset_commands(command, backup):
+    """Only four named demo DBs; require verified backup files before producing commands."""
+    folder = Path(backup['folder'])
+    for database in ('m1', 'm2', 'm3', 'm4'):
+        file = folder / (database + '.dump')
+        expected = backup.get('services', {}).get(database, {}).get('sha256')
+        if not file.is_file() or hashlib.sha256(file.read_bytes()).hexdigest() != expected:
+            raise RuntimeError('Reset refused: backup missing or checksum mismatch for ' + database)
+    result = []
+    for database in ('m1', 'm2', 'm3', 'm4'):
+        result.append(('reset-drop-' + database, command + ['exec', '-T', 'postgres',
+                       'dropdb', '-U', 'postgres', '--force', database]))
+        result.append(('reset-create-' + database, command + ['exec', '-T', 'postgres',
+                       'createdb', '-U', 'postgres', '--owner=' + database, database]))
+        sql = (f'REVOKE CONNECT ON DATABASE {database} FROM PUBLIC; '
+               f'GRANT CONNECT ON DATABASE {database} TO {database}; '
+               'CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS vector;')
+        result.append(('reset-extensions-' + database, command + ['exec', '-T', 'postgres',
+                       'psql', '-Xq', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', database, '-c', sql]))
+    return result
 
 
 def override(source, revision):
@@ -49,7 +102,14 @@ def main():
                         help='Existing checkout holding infrastructure/.env and secrets')
     parser.add_argument('--gateway-url', default='http://127.0.0.1:8080')
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--reset-demo', action='store_true',
+                        help='After backup AND restore drill, recreate only m1-m4 and seed synthetic test data')
+    parser.add_argument('--confirm-reset', help='Explicit target acknowledgement; see --reset-demo plan')
     args = parser.parse_args()
+    try:
+        validate_reset_request(args.apply, args.reset_demo, args.confirm_reset)
+    except ValueError as error:
+        parser.error(str(error))
     runtime = args.runtime_root.resolve()
     for file in ('infrastructure/.env', 'infrastructure/secrets/jwt-public.pem',
                  'infrastructure/secrets/jwt-private.pem'):
@@ -67,7 +127,8 @@ def main():
     overlay.write_text(json.dumps(override(ROOT, revision), indent=2), encoding='utf-8')
     command = compose(runtime, overlay)
     report = {'revision': revision, 'status': 'PLANNED', 'steps': [],
-              'limits': ['No seed/reset or automatic database rollback',
+              'reset_demo': args.reset_demo,
+              'limits': [('Explicit synthetic demo reset after backup/restore verification' if args.reset_demo else 'No seed/reset') + '; no automatic database rollback',
                          'Health/version checks do not accept provider, UI, load or AI quality',
                          'Tunnel and persistent dependencies are preserved']}
     report_file = folder / 'report.json'
@@ -93,6 +154,10 @@ def main():
         print('Plan: validate existing project; build revision', revision,
               '; stop ingress/writers; backup; migrate; start/verify; reopen ingress.')
         print('Plan and non-secret overlay:', folder)
+        if args.reset_demo:
+            print('RESET PLAN: only pbl6 databases m1,m2,m3,m4; all previous records removed after verified backup/restore drill.')
+            print('Seed: 7 synthetic accounts, 2 Stores, 12 products/34 variants, 17 example orders; no bank callbacks or SMTP messages.')
+            print('Required acknowledgement: --confirm-reset ' + RESET_CONFIRMATION)
         return
     maintenance = False
     try:
@@ -114,11 +179,19 @@ def main():
         maintenance = True
         execute('stop-ingress', command + ['stop', 'gateway'])
         execute('stop-writers', command + ['stop', *APPS])
+        if args.reset_demo:
+            # Do not silently replay pre-reset events into the new dataset, or purge shared caches.
+            queues = capture(command + ['exec', '-T', 'rabbitmq', 'rabbitmqctl',
+                                       'list_queues', 'name', 'messages_ready', 'messages_unacknowledged'])
+            report['retained_retired_queues'] = check_reset_queues(queues)
         execute('backup', [sys.executable, str(ROOT / 'scripts/database_backup.py'), 'backup',
                           '--runtime-root', str(runtime), '--manifest-file', str(folder / 'backup.json')])
         report['backup'] = json.loads((folder / 'backup.json').read_text(encoding='utf-8'))
         execute('restore-drill', [sys.executable, str(ROOT / 'scripts/restore_drill.py'),
             '--runtime-root', str(runtime), '--backup-dir', report['backup']['folder']])
+        if args.reset_demo:
+            for stage, argv in reset_commands(command, report['backup']):
+                execute(stage, argv)
         execute('migrate', command + ['run', '--rm', '--no-deps', 'tools',
                                      'node', 'dist/shared/src/migrate.js'])
         execute('start-apps', command + ['up', '-d', '--no-deps', *APPS])
@@ -170,6 +243,19 @@ def main():
                                     'list_queues', 'name', 'consumers'])
         if not any(line.split() == ['pbl6.m4.tracking.v1', '1'] for line in queues.splitlines()):
             raise RuntimeError('M4 tracking consumer missing or duplicated')
+        if args.reset_demo:
+            execute('seed-demo', command + ['run', '--rm', '-T', '--no-deps',
+                '-e', 'DEMO_SEED_ALLOWED=1',
+                '-v', str(ROOT / 'scripts') + ':/seed:ro',
+                '-v', str(folder) + ':/seed-output',
+                'tools', 'node', '/seed/seed_marketplace_demo.cjs', '--apply',
+                '--output', '/seed-output/dataset.json'])
+            seed = json.loads((folder / 'dataset.json').read_text(encoding='utf-8'))
+            if seed.get('status') != 'PASS' or len(seed.get('orders', [])) != 17:
+                raise RuntimeError('Demo seed did not finish; ingress remains closed')
+            report['seed'] = {'dataset': seed['dataset'], 'accounts': 7, 'stores': 2,
+                              'products': 12, 'variants': 34, 'orders': 17,
+                              'evidence': str(folder / 'dataset.json')}
         execute('open-ingress', command + ['up', '-d', '--no-deps', '--force-recreate', 'gateway'])
         deadline = time.monotonic() + 60
         while True:

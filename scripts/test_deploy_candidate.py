@@ -4,6 +4,7 @@ Protects the worktree/runtime split: no build from the old checkout, no alternat
 project/volumes, all publishers present, and secrets bind only from the runtime.
 """
 import json
+import hashlib
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,6 +15,44 @@ from deploy_candidate import ROOT, NODE, AI, APPS, compose, override
 
 
 class CandidateConfiguration(unittest.TestCase):
+    def test_reset_keeps_retired_messages_but_refuses_pending_current_or_unknown_work(self):
+        current = '\n'.join(name + '\t0\t0' for name in sorted(deploy_candidate.ACTIVE_QUEUES))
+        retired = current + '\npbl6.m1.bootstrap\t130\t0\npbl6.m2.bootstrap.v1.dead\t2\t0'
+        self.assertEqual(len(deploy_candidate.check_reset_queues(retired)), 2)
+        for output in (current.replace('pbl6.m1.bootstrap.v1\t0', 'pbl6.m1.bootstrap.v1\t1'),
+                       current + '\npbl6.unknown\t1\t0', 'name\tmessages_ready\tmessages_unacknowledged'):
+            with self.assertRaises(RuntimeError):
+                deploy_candidate.check_reset_queues(output)
+
+    def test_reset_is_opt_in_and_requires_an_exact_apply_target(self):
+        deploy_candidate.validate_reset_request(True, False, None)
+        deploy_candidate.validate_reset_request(False, True, None)
+        deploy_candidate.validate_reset_request(True, True, deploy_candidate.RESET_CONFIRMATION)
+        for confirmation in (None, 'pbl6', 'pbl6-fe-verify:m1,m2,m3,m4'):
+            with self.assertRaises(ValueError):
+                deploy_candidate.validate_reset_request(True, True, confirmation)
+        with self.assertRaises(ValueError):
+            deploy_candidate.validate_reset_request(True, False, deploy_candidate.RESET_CONFIRMATION)
+
+    def test_reset_commands_require_intact_backups_and_name_only_owned_databases(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            backup = {'folder': directory, 'services': {}}
+            with self.assertRaises(RuntimeError):
+                deploy_candidate.reset_commands(['docker', 'compose'], backup)
+            for name in ('m1', 'm2', 'm3', 'm4'):
+                raw = (name + '-private-test-dump').encode()
+                (folder / (name + '.dump')).write_bytes(raw)
+                backup['services'][name] = {'sha256': hashlib.sha256(raw).hexdigest()}
+            commands = deploy_candidate.reset_commands(['docker', 'compose'], backup)
+            self.assertEqual(len(commands), 12)
+            drops = [command for _, command in commands if 'dropdb' in command]
+            self.assertEqual([c[-1] for c in drops], ['m1', 'm2', 'm3', 'm4'])
+            self.assertFalse(any('down' in c or '--volumes' in c for _, c in commands))
+            (folder / 'm2.dump').write_bytes(b'changed')
+            with self.assertRaises(RuntimeError):
+                deploy_candidate.reset_commands(['docker', 'compose'], backup)
+
     def test_real_compose_merge_preserves_runtime_data_and_candidate_code(self):
         with tempfile.TemporaryDirectory() as directory:
             runtime = Path(directory)
