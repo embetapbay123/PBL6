@@ -4,13 +4,13 @@ const fixtures = JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.
 const id = (n: number) => '68000000-0000-4000-8000-' + String(n).padStart(12, '0');
 async function model(page: Page, lostAck = false) {
   const row = {variant_id: id(1), product_id: id(2), product_title: 'Áo thứ 300', sku: 'OPAQUE-299-11', variant_values: {color: 'Đen', size: 'XL'}, quantity: 10, reserved_quantity: 3, available_quantity: 7, version: 0};
-  const state = {row, movements: [] as any[], posts: [] as any[], catalogReads: 0, movementReads: 0, applied: false};
+  const state = {row, movements: [] as any[], posts: [] as any[], catalogReads: 0, movementReads: 0, movementUrls: [] as string[], applied: false};
   await page.route('**/api/v1/**', async route => {
     const request = route.request(), path = new URL(request.url()).pathname.replace('/api/v1', '');
     if (path === '/auth/login' || path === '/auth/refresh') return route.fulfill({json: {...fixtures.login.response, access_token: 'inventory-fixture', context: {user_id: id(3), roles: ['CUSTOMER','SELLER'], role_permissions: [], token_version: 0, store_membership: {store_id: id(4), role: 'SELLER', status: 'ACTIVE', permissions: ['inventory.store.read_adjust']}}}, headers: {'set-cookie': 'pbl6_csrf=fixture; Path=/; SameSite=Strict'}});
     if (path === '/store/products') {state.catalogReads++; return route.fulfill({status: 403, json: {code: 'FORBIDDEN', message: 'No product permission'}});}
     if (path === '/store/inventory') return route.fulfill({json: {items: [row], page: 1, size: 20, total: 1}});
-    if (path === '/store/inventory/movements') {state.movementReads++; const page = Number(new URL(request.url()).searchParams.get('page') ?? 1); return route.fulfill({json: {items: state.movements.slice((page - 1) * 10, page * 10), page, size: 10, total: state.movements.length}});}
+    if (path === '/store/inventory/movements') {state.movementReads++; state.movementUrls.push(request.url()); const page = Number(new URL(request.url()).searchParams.get('page') ?? 1); return route.fulfill({json: {items: state.movements.slice((page - 1) * 10, page * 10), page, size: 10, total: state.movements.length}});}
     if (path === '/store/inventory/adjustments') {
       const body = request.postDataJSON(); state.posts.push(body);
       if (!state.applied) {
@@ -57,4 +57,8 @@ test('adjusting from an older history page returns to the newest movement and pr
   await expect(page).toHaveURL(new RegExp('variant_id=' + id(1) + '&history_page=1'));
   await expect(page.locator('#stock-history')).toContainText('Nhập mới từ trang lịch sử cũ');
   expect(s.posts).toHaveLength(1);
+});
+
+test('history date filter sends a bounded Vietnam period and can be cleared',async({page})=>{
+ const s=await model(page);await page.getByRole('link',{name:'Xem biến động',exact:true}).click();const form=page.locator('.stock-period-filter');await form.getByLabel('Từ ngày',{exact:true}).fill('2026-11-01');await form.getByLabel('Đến hết ngày',{exact:true}).fill('2026-11-02');await form.getByRole('button',{name:'Lọc lịch sử',exact:true}).click();await expect.poll(()=>s.movementUrls.some(value=>new URL(value).searchParams.get('from')==='2026-10-31T17:00:00.000Z'&&new URL(value).searchParams.get('to')==='2026-11-02T17:00:00.000Z')).toBe(true);await form.getByRole('button',{name:'Bỏ lọc ngày'}).click();await expect(page).not.toHaveURL(/stock_from=/);
 });

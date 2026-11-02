@@ -4,6 +4,7 @@ import { AddressSuggestions } from "../components/AddressSuggestions";
 import { variantLabel } from "../components/variant-identity";
 import { useCurrentOrderImages } from "../components/useCurrentOrderImages";
 import { ProductImage } from "../components/ProductImage";
+import { SortHeader } from '../components/SortHeader';
 import { FinancialReport } from "../features/reports/FinancialReport";
 import {
   InventoryReconciliation,
@@ -84,7 +85,7 @@ export function SellerOverview() {
     "/seller/orders": orderCount,
   };
   return (
-    <section>
+    <section className="seller-overview">
       <SellerSubNav />
       <div className="seller-products-toolbar">
         <div>
@@ -114,14 +115,10 @@ export function SellerOverview() {
       {store.isPending && <Loading />}
       {store.data && !store.error && (
         <>
-          <p className="text-slate-500">
-            Quản lý sản phẩm, tồn kho và xử lý các đơn hàng trong gian hàng của
-            bạn.
-          </p>
           {(!store.data.return_address || !['recipient_name','phone','line1','ward','district','city'].every(key=>String(store.data.return_address?.[key as keyof typeof store.data.return_address] ?? '').trim()))&&<p role="status">Địa chỉ nhận trả chưa đầy đủ. Chủ Store cần hoàn thiện trước khi nhận đơn mới.</p>}
           {access.can('order.store.read_status_cancel')&&<div className="seller-work-alerts"><Link to="/seller/orders?status=PENDING">Đơn chờ xác nhận: {pendingOrders.error?'Chưa tải được':pendingOrders.data?.total??'Đang tải…'}</Link><Link to="/seller/returns?status=REQUESTED">Yêu cầu đổi trả chờ duyệt: {pendingReturns.error?'Chưa tải được':pendingReturns.data?.total??'Đang tải…'}</Link></div>}
-          <details className="seller-guide"><summary>Hướng dẫn chuẩn bị gian hàng</summary><StoreSetupGuide store={store.data} /></details>
-          <details className="seller-guide"><summary>Quyền và hướng dẫn công việc</summary><StoreWorkGuide /></details>
+          <div className="seller-overview-guides"><details className="seller-guide"><summary>Thiết lập & điều kiện nhận đơn</summary><StoreSetupGuide store={store.data} /></details>
+          <details className="seller-guide"><summary>Quyền & hướng dẫn công việc</summary><StoreWorkGuide /></details></div>
           <div className="market-stats mt-6">
             {[
               ["/seller/products", "Sản phẩm", ShoppingBag],
@@ -138,7 +135,7 @@ export function SellerOverview() {
               .map(([href, label, Icon]) => {
                 const Symbol = Icon as typeof Store;
                 return (
-                  <div key={String(href)}>
+                  <Link className="seller-overview-tile" key={String(href)} to={String(href)}>
                     <Symbol className="text-emerald-600" size={25} />
                     <h3>{String(label)}</h3>
                     <p className="overview-count">
@@ -151,14 +148,12 @@ export function SellerOverview() {
                             ) ?? "Chưa có dữ liệu")}
                       {String(href) === "/seller/inventory" && " phân loại"}
                     </p>
-                    <Link to={String(href)}>
-                      Mở quản lý <ArrowRight size={13} className="inline" />
-                    </Link>
-                  </div>
+                    <span>Mở quản lý <ArrowRight size={13} className="inline" /></span>
+                  </Link>
                 );
               })}
           </div>
-          <div className="boot-card mt-6">
+          <div className="boot-card seller-operating-info">
             <h2>Thông tin vận hành</h2>
             <p>
               Trạng thái:{" "}
@@ -543,13 +538,16 @@ export function StoreInventory() {
     [selected, setSelected] =
       useState<OperationOutputs["listStoreInventory"]["items"][number]>();
   const sortValue = params.get('sort');
-  const sort = sortValue === 'NAME_ASC' || sortValue === 'AVAILABLE_ASC' || sortValue === 'AVAILABLE_DESC' ? sortValue : undefined;
+  const sort = sortValue === 'NAME_ASC' || sortValue === 'NAME_DESC' || sortValue === 'AVAILABLE_ASC' || sortValue === 'AVAILABLE_DESC' ? sortValue : undefined;
+  const stockValue=params.get('stock');
+  const stock=stockValue==='IN_STOCK'||stockValue==='LOW'||stockValue==='OUT'?stockValue:undefined;
+  const setInventoryFilter=(key:string,value:string)=>setParams(current=>{const next=new URLSearchParams(current);value?next.set(key,value):next.delete(key);next.set('page','1');return next;});
   const inventory = useQuery({
-    queryKey: ["store-inventory", page, filters, sort],
+    queryKey: ["store-inventory", page, filters, sort,stock],
     queryFn: ({ signal }) =>
       callOperation(
         "listStoreInventory",
-        { query: { page, size: 20, ...filters, ...(sort ? {sort} : {}) } },
+        { query: { page, size: 20, ...filters, ...(sort ? {sort} : {}),...(stock?{stock}:{}) } },
         { signal },
       ),
     enabled: access.can("inventory.store.read_adjust"),
@@ -598,7 +596,7 @@ export function StoreInventory() {
       />
     );
   return (
-    <section>
+    <section className="seller-inventory-page">
       <SellerSubNav />
       <h1>Quản lý tồn kho</h1>
       {adjustmentNotice && (
@@ -629,10 +627,10 @@ export function StoreInventory() {
           tiếp.
         </p>
       )}
-      <p className="text-slate-500">
+      <details className="inventory-explanation"><summary>Cách đọc số tồn và lượng đang giữ</summary><p className="text-slate-500">
         Theo dõi tồn thương mại, lượng đang giữ và điều chỉnh có lý do. Số này
         không phải số đếm vật lý: đơn COD có thể đã trừ tồn trước khi bàn giao.
-      </p>
+      </p></details>
       <form
         className="inventory-search"
         key={JSON.stringify(filters)}
@@ -703,31 +701,31 @@ export function StoreInventory() {
         <>
           {view === "inventory" && (
             <>
-              <label className="seller-inventory-sort">Sắp xếp theo <select value={sort ?? ''} onChange={event=>setParams(current=>{const next=new URLSearchParams(current);if(event.target.value)next.set('sort',event.target.value);else next.delete('sort');next.set('page','1');return next;})}><option value="">Mặc định</option><option value="NAME_ASC">Tên sản phẩm</option><option value="AVAILABLE_ASC">Có thể bán: ít đến nhiều</option><option value="AVAILABLE_DESC">Có thể bán: nhiều đến ít</option></select></label>
+              <nav className="order-status-tabs" aria-label="Lọc nhanh tồn kho">{[['','Tất cả'],['IN_STOCK','Còn hàng'],['LOW','Sắp hết (1–4)'],['OUT','Hết hàng']].map(([value,label])=><button key={value} type="button" aria-pressed={(stock??'')===value} onClick={()=>setInventoryFilter('stock',value)}>{label}</button>)}</nav>
               <div className="boot-card market-table-scroll">
                 <table>
                   <thead>
                     <tr>
-                      <th>Sản phẩm / SKU</th>
+                      <SortHeader label="Sản phẩm / SKU" value={sort} ascending="NAME_ASC" descending="NAME_DESC" onChange={value=>setInventoryFilter('sort',value)}/>
                       <th>Tồn thương mại</th>
                       <th>Đang giữ</th>
-                      <th>Có thể bán</th>
+                      <SortHeader label="Có thể bán" value={sort} ascending="AVAILABLE_ASC" descending="AVAILABLE_DESC" onChange={value=>setInventoryFilter('sort',value)}/>
                       <th></th>
                     </tr>
                   </thead>
                   <tbody>
                     {inventory.data.items.map((item) => (
                       <tr key={item.variant_id}>
-                        <td><div className="seller-inventory-identity">{inventoryImages.get(item.variant_id) && <div className="order-item-current-image"><ProductImage src={inventoryImages.get(item.variant_id)} name={item.product_title ?? 'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/><small>Ảnh hiện tại</small></div>}<span>{variantName(item)}</span></div></td>
+                        <td><div className="seller-inventory-identity">{inventoryImages.get(item.variant_id) && <div className="order-item-current-image"><ProductImage src={inventoryImages.get(item.variant_id)} name={item.product_title ?? 'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/><small>Ảnh hiện tại</small></div>}<span>{variantName(item)}{item.product_id&&<span className="inventory-item-links"><Link to={'/products/'+item.product_id}>Xem sản phẩm</Link>{access.can('product.store.read_write')&&<Link to={'/seller/products/'+item.product_id+'/edit'}>Chỉnh sửa</Link>}</span>}</span></div></td>
                         <td>{item.quantity}</td>
                         <td>{item.reserved_quantity}</td>
                         <td>
                           <span className="market-badge">
                             {item.available_quantity}
                           </span>
-                          {item.available_quantity < 5 && <span className="seller-low-stock"> · Còn ít (dưới 5)</span>}
+                          {item.available_quantity === 0 ? <span className="seller-low-stock"> · Hết hàng</span> : item.available_quantity < 5 && <span className="seller-low-stock"> · Còn ít (dưới 5)</span>}
                         </td>
-                        <td>
+                        <td className="inventory-row-actions">
                           <button
                             disabled={
                               !item.product_title || inventory.isFetching
@@ -780,6 +778,7 @@ export function StoreInventory() {
           {view === "history" && (
             <div id="stock-history" className="boot-card mt-8">
               <h2>Lịch sử biến động kho</h2>
+              <form key={(params.get("stock_from")??"")+":"+(params.get("stock_to")??"")} className="stock-period-filter" onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget),from=String(data.get('from')??''),to=String(data.get('to')??'');const end=event.currentTarget.elements.namedItem('to') as HTMLInputElement;end.setCustomValidity(!inventoryPeriod(from,to)?'Chọn kỳ hợp lệ: ngày kết thúc không trước ngày bắt đầu, tối đa 366 ngày.':'');if(!event.currentTarget.reportValidity())return;setParams(current=>{const next=new URLSearchParams(current);next.set('stock_from',from);next.set('stock_to',to);next.set('history_page','1');return next;});}}><label>Từ ngày<input name="from" type="date" required defaultValue={params.get('stock_from')??''}/></label><label>Đến hết ngày<input name="to" type="date" required defaultValue={params.get('stock_to')??''} onChange={event=>event.target.setCustomValidity('')}/></label><button type="submit">Lọc lịch sử</button><button type="button" onClick={()=>setParams(current=>{const next=new URLSearchParams(current);next.delete('stock_from');next.delete('stock_to');next.set('history_page','1');return next;})}>Bỏ lọc ngày</button></form>
               {filters.variant_id &&
                 inventory.data?.items.some(
                   (item) => item.variant_id === filters.variant_id,
@@ -847,7 +846,7 @@ export function StoreInventory() {
                                 </p>
                               )}
                             </td>
-                            <td>{variantName(m)}</td>
+                            <td>{variantName(m)}{m.product_id&&<span className="inventory-item-links"><Link to={'/products/'+m.product_id}>Xem sản phẩm</Link><Link to={'/seller/inventory?variant_id='+m.variant_id}>Xem tồn hiện tại</Link></span>}</td>
                             <td
                               style={{
                                 color:
@@ -869,7 +868,7 @@ export function StoreInventory() {
                               {m.quantity_before == null ? "Lịch sử cũ chưa có mốc đối chiếu" : <div className="stock-change"><span>Tồn: {m.quantity_before} → {m.quantity_after}</span><span>Đang giữ: {m.reserved_before} → {m.reserved_after}</span></div>}
                             </td>
                             <td>
-                              {m.order_id ? `Đơn ${m.order_id}` : "Điều chỉnh"}
+                              {m.order_id && access.can('order.store.read_status_cancel') ? <Link to={'/seller/orders?q='+m.order_id}>Đơn #{m.order_id.slice(-8).toUpperCase()}</Link> : m.order_id ? `Đơn #${m.order_id.slice(-8).toUpperCase()}` : "Điều chỉnh"}
                               <br />
                               {!m.actor_user_id ? (
                                 "Lịch sử cũ chưa có người thao tác"
@@ -1137,7 +1136,7 @@ function StockAdjustment({
 type StoreOrder = OperationOutputs["getStoreOrder"];
 export function StoreOrders() {
   const access = useStoreAccess(),
-    filters = useOrderListFilters(),
+    filters = useOrderListFilters(true),
     [selected, setSelected] = useState<StoreOrder>(),
     [detailError, setDetailError] = useState<unknown>();
   const data = useQuery({
@@ -1209,7 +1208,8 @@ export function StoreOrders() {
         <Loading />
       ) : (
         <>
-          <OrderQueue orders={data.data.items} onOpen={(id) => void open(id)} />
+          <p className="table-result-note">{data.data.total} đơn phù hợp · Bấm tiêu đề cột để đổi thứ tự thời gian hoặc số tiền.</p>
+          <OrderQueue orders={data.data.items} sort={filters.query.sort} onSort={value=>filters.set('sort',value)} onOpen={(id) => void open(id)} />
           <Pagination
             page={filters.page}
             size={data.data.size}

@@ -451,6 +451,9 @@ export class ListOwnStoreProductsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["DRAFT", "ACTIVE", "STOPPED"]}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["DRAFT", "ACTIVE", "STOPPED"]},false),defaultMessage:()=> 'Invalid contract field'}})
   "status"?: "DRAFT" | "ACTIVE" | "STOPPED";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["NAME_ASC", "NAME_DESC", "PRICE_ASC", "PRICE_DESC"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["NAME_ASC", "NAME_DESC", "PRICE_ASC", "PRICE_DESC"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort"?: "NAME_ASC" | "NAME_DESC" | "PRICE_ASC" | "PRICE_DESC";
 }
 export class ListOwnStoreProductsHeadersDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -580,9 +583,12 @@ export class ListStoreInventoryQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "variant_id"?: string;
-  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["NAME_ASC", "AVAILABLE_ASC", "AVAILABLE_DESC"]}}}).value)
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["NAME_ASC", "AVAILABLE_ASC", "AVAILABLE_DESC"]},false),defaultMessage:()=> 'Invalid contract field'}})
-  "sort"?: "NAME_ASC" | "AVAILABLE_ASC" | "AVAILABLE_DESC";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["NAME_ASC", "AVAILABLE_ASC", "AVAILABLE_DESC", "NAME_DESC"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["NAME_ASC", "AVAILABLE_ASC", "AVAILABLE_DESC", "NAME_DESC"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort"?: "NAME_ASC" | "AVAILABLE_ASC" | "AVAILABLE_DESC" | "NAME_DESC";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["IN_STOCK", "LOW", "OUT"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["IN_STOCK", "LOW", "OUT"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "stock"?: "IN_STOCK" | "LOW" | "OUT";
 }
 export class ListStoreInventoryHeadersDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -835,6 +841,9 @@ export class ListStoreOrdersQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["REQUESTED", "PROCESSING", "UNKNOWN", "SUCCEEDED", "FAILED"]}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["REQUESTED", "PROCESSING", "UNKNOWN", "SUCCEEDED", "FAILED"]},false),defaultMessage:()=> 'Invalid contract field'}})
   "refund_status"?: "REQUESTED" | "PROCESSING" | "UNKNOWN" | "SUCCEEDED" | "FAILED";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["CREATED_ASC", "CREATED_DESC", "TOTAL_ASC", "TOTAL_DESC"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["CREATED_ASC", "CREATED_DESC", "TOTAL_ASC", "TOTAL_DESC"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort"?: "CREATED_ASC" | "CREATED_DESC" | "TOTAL_ASC" | "TOTAL_DESC";
 }
 export class ListStoreOrdersHeadersDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)

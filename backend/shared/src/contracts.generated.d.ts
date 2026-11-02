@@ -7881,6 +7881,8 @@ export interface operations {
                 size?: number;
                 q?: string;
                 status?: "DRAFT" | "ACTIVE" | "STOPPED";
+                /** @description Áp dụng trước phân trang trong phạm vi được cấp quyền. */
+                sort?: "NAME_ASC" | "NAME_DESC" | "PRICE_ASC" | "PRICE_DESC";
             };
             header?: {
                 /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
@@ -8511,7 +8513,9 @@ export interface operations {
                 /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
                 variant_id?: string;
                 /** @description Sắp xếp toàn bộ kết quả trong Store trước phân trang. */
-                sort?: "NAME_ASC" | "AVAILABLE_ASC" | "AVAILABLE_DESC";
+                sort?: "NAME_ASC" | "AVAILABLE_ASC" | "AVAILABLE_DESC" | "NAME_DESC";
+                /** @description Áp dụng trước phân trang trong phạm vi được cấp quyền. */
+                stock?: "IN_STOCK" | "LOW" | "OUT";
             };
             header?: {
                 /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
@@ -10267,6 +10271,8 @@ export interface operations {
                 payment_status?: "PENDING" | "UNKNOWN" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "REFUNDED";
                 /** @description Trạng thái lệnh hoàn tiền mới nhất; yêu cầu đổi/trả chưa sinh lệnh hoàn không được coi là đã hoàn. */
                 refund_status?: "REQUESTED" | "PROCESSING" | "UNKNOWN" | "SUCCEEDED" | "FAILED";
+                /** @description Áp dụng trước phân trang trong phạm vi được cấp quyền. */
+                sort?: "CREATED_ASC" | "CREATED_DESC" | "TOTAL_ASC" | "TOTAL_DESC";
             };
             header?: {
                 /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */

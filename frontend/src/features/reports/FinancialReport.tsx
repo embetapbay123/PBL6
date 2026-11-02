@@ -75,6 +75,7 @@ const countLabels = {
 } as const;
 
 export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
+  const [reportView,setReportView]=useState('summary');
   const { session } = useAuth(),
     [params, setParams] = useSearchParams(),
     context = session?.context,
@@ -169,18 +170,18 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
       />
     );
   return (
-    <section>
+    <section className="seller-financial-report">
       <h1>
         {scope === "ADMIN"
           ? "Báo cáo thu / hoàn toàn sàn"
           : "Báo cáo gian hàng"}
       </h1>
-      <p>
+      <details className="report-definition"><summary>Cách tính số liệu & thời gian báo cáo</summary><p>
         Kỳ theo giờ Việt Nam (Asia/Ho_Chi_Minh): gồm đầu ngày bắt đầu, không gồm
         đầu ngày kết thúc. Thu / hoàn tính theo sự kiện tiền đã xác nhận, độc
         lập ngày tạo đơn. Giá trị đơn và hàng hoàn tất là nhóm đơn tạo trong kỳ;
         các số này không phải lợi nhuận hoặc tiền chi trả Owner.
-      </p>
+      </p></details>
       <button
         type="button"
         disabled={!valid || reading || query.isFetching}
@@ -300,7 +301,7 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
             <p role="status">
               Phạm vi:{" "}
               {scope === "STORE"
-                ? context?.store_membership?.store_id
+                ? 'Gian hàng hiện tại'
                 : store || "Toàn sàn"}{" "}
               · {from} đến trước {to} · giờ Việt Nam
             </p>
@@ -310,18 +311,19 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
               Nam). Giao dịch mới có thể làm thay đổi dữ liệu; đọc lại toàn bộ
               báo cáo trước khi đối chiếu.
             </p>
-            <dl className="financial-summary">
+            <nav className="order-status-tabs" aria-label="Nội dung báo cáo">{[['summary','Tổng hợp'],['cash','Thu / hoàn theo kỳ'],['entries','Giao dịch'],['gaps','Khoản chưa rõ ngày']].map(([value,label])=><button type="button" key={value} aria-pressed={reportView===value} onClick={()=>setReportView(value)}>{label}</button>)}</nav>
+            <div hidden={reportView!=='summary'}><div className="market-table-scroll financial-summary-table"><table><thead><tr><th>Chỉ tiêu trong kỳ</th><th>Giá trị</th></tr></thead><tbody>
               {Object.entries(countLabels).map(([key, label]) => (
-                <div key={key}>
-                  <dt>{label}</dt>
-                  <dd>
+                <tr key={key}>
+                  <th scope="row">{label}</th>
+                  <td>
                     {key === "order_count"
                       ? query.data!.order_count
                       : money(query.data![key as keyof typeof countLabels])}
-                  </dd>
-                </div>
+                  </td>
+                </tr>
               ))}
-            </dl>
+            </tbody></table></div>
             <Button
               variant="secondary"
               disabled={query.isFetching || reading}
@@ -352,8 +354,8 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
               phải bản xuất toàn bộ giao dịch. Đối chiếu từng khoản ở danh sách
               bên dưới.
             </p>
-            {!!query.data.cash_series?.length && (
-              <CashChart rows={query.data.cash_series} />
+            </div><div hidden={reportView!=='cash'}>{!!query.data.cash_series?.length && (
+              <details className="report-chart-disclosure"><summary>Xem biểu đồ thu / hoàn</summary><CashChart rows={query.data.cash_series} /></details>
             )}
             <h2>
               Thu / hoàn theo {granularity === "DAY" ? "ngày" : "tháng"} phát
@@ -392,7 +394,7 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
                   : "Bản đọc chưa cung cấp chuỗi sự kiện tiền."}
               </p>
             )}
-            <h2>Đường đối chiếu từng khoản tiền</h2>
+            </div><div hidden={reportView!=='entries'}><h2>Đường đối chiếu từng khoản tiền</h2>
             <MoneyEntries
               key={scope + from + to + store}
               scope={scope}
@@ -400,7 +402,7 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
               to={period.to}
               store={store}
             />
-            <h2>Lịch sử chưa xác định được ngày</h2>
+            </div><div hidden={reportView!=='gaps'}><h2>Lịch sử chưa xác định được ngày</h2>
             <p>
               Các khoản bên dưới nằm ngoài kỳ đã chọn, vì chưa có sự kiện tiền
               với timestamp được đối chiếu. Không gán ngày tạo đơn cho ngày thu
@@ -438,6 +440,7 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
                 cáo tiền.
               </p>
             )}
+            </div>
           </>
         )
       )}
@@ -527,23 +530,21 @@ function MoneyEntries({
                 <p>Không có sự kiện tiền đã xác nhận trong khoảng này.</p>
               )
             ) : (
-              <ul className="financial-money-list">
+              <div className="market-table-scroll financial-money-table" tabIndex={0} role="region" aria-label="Các giao dịch tiền trong kỳ"><table><thead><tr><th>Loại</th><th>Số tiền</th><th>Phát sinh</th><th>Đơn hàng</th><th>Nguồn đối chiếu</th></tr></thead><tbody>
                 {query.data.items.map((row) => (
-                  <li key={row.id}>
-                    <strong>
-                      {row.kind === "COLLECTION" ? "Thu" : "Hoàn"}{" "}
-                      {money(row.amount_vnd)}
-                    </strong>{" "}
-                    ·{" "}
-                    <time dateTime={row.occurred_at}>
+                  <tr key={row.id}>
+                    <td><span className={'money-kind '+(row.kind==='COLLECTION'?'is-collection':'is-refund')}>{row.kind === "COLLECTION" ? "Thu" : "Hoàn"}</span></td>
+                    <td className="money-cell">{money(row.amount_vnd)}</td>
+                    <td><time dateTime={row.occurred_at}>
                       {time(row.occurred_at)}
                     </time>
                     <p>{sources[row.time_source] ?? row.time_source}</p>
+                    </td><td>
                     <Link to={orderLink(scope, row.order_id)}>
-                      Đối chiếu đơn {row.order_id}
+                      Đối chiếu đơn #{row.order_id.slice(-8).toUpperCase()}
                     </Link>
                     {scope === "ADMIN" && <p>Store: {row.store_id}</p>}
-                    <details>
+                    </td><td><details>
                       <summary>Nguồn đối chiếu khoản tiền</summary>
                       <p>
                         Nguồn: {row.source_type} · {row.source_id}
@@ -554,10 +555,10 @@ function MoneyEntries({
                         Hệ thống ghi nhận lúc {time(row.recorded_at)}; mốc này
                         có thể khác thời điểm phát sinh.
                       </p>
-                    </details>
-                  </li>
+                    </details></td>
+                  </tr>
                 ))}
-              </ul>
+              </tbody></table></div>
             )}
             <Pagination
               page={paging.page}

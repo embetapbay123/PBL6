@@ -11,7 +11,7 @@ import { orderStatusLabel } from "./OrderPresentation";
 import { variantLabel } from "./variant-identity";
 import { Package } from "lucide-react";
 import { ProductImage } from "./ProductImage";
-type Query = OperationInputs["listOwnOrders"]["query"];
+type Query = OperationInputs["listOwnOrders"]["query"] & Pick<OperationInputs['listStoreOrders']['query'],'sort'>;
 const statuses: NonNullable<Query["status"]>[] = [
   "PREPARING",
   "AWAITING_PAYMENT",
@@ -54,7 +54,7 @@ export const paymentMethodLabel = (value: string) =>
     : value === "SANDBOX"
       ? "Chuyển khoản (thử nghiệm)"
       : "Phương thức chưa xác định";
-export function useOrderListFilters() {
+export function useOrderListFilters(storeScope = false) {
   const [params, setParams] = useSearchParams();
   const raw = Number(params.get("page")),
     page = Number.isSafeInteger(raw) && raw > 0 ? raw : 1;
@@ -68,6 +68,7 @@ export function useOrderListFilters() {
   const query: Query = {
     page,
     size: 20,
+    ...(storeScope && ['CREATED_ASC','CREATED_DESC','TOTAL_ASC','TOTAL_DESC'].includes(params.get('sort')??'')?{sort:params.get('sort') as Query['sort']}:{}),
     ...(params.get("q") ? { q: params.get("q")! } : {}),
     ...(status ? { status } : {}),
     ...(payment ? { payment_status: payment } : {}),
@@ -93,6 +94,7 @@ export function useOrderListFilters() {
           "payment_status",
           "refund_status",
           "page",
+          "sort",
         ])
           next.delete(key);
         return next;
@@ -110,7 +112,6 @@ export function OrderStatusTabs({
         ["", "Tất cả"],
         ["AWAITING_PAYMENT", "Chờ thanh toán"],
         ["PENDING", "Chờ xác nhận"],
-        ["CONFIRMED", "Đã xác nhận"],
         ["CONFIRMED", "Đã xác nhận"],
         ["PROCESSING", "Chuẩn bị hàng"],
         ["SHIPPED", "Đang giao"],
@@ -137,7 +138,7 @@ export function OrderListFilters({
   const [search, setSearch] = useState(filters.query.q ?? "");
   useEffect(() => setSearch(filters.query.q ?? ""), [filters.query.q]);
   return (
-    <>
+    <div className="order-filter-panel">
       <form
         className="admin-moderation-search"
         onSubmit={(event) => {
@@ -207,7 +208,7 @@ export function OrderListFilters({
           Bỏ bộ lọc đơn
         </button>
       </div>
-    </>
+    </div>
   );
 }
 function record(value: unknown): Record<string, unknown> {

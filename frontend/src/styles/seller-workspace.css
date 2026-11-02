@@ -1,0 +1,89 @@
+.seller-workspace .market-table-scroll {
+  max-height: min(460px, 52vh); overflow: auto; overscroll-behavior: contain;
+  border: 1px solid var(--ui-line, #e7e2dc); border-radius: 10px; background: #fff;
+  scrollbar-gutter: stable;
+}
+.seller-workspace .market-table-scroll.boot-card { padding: 0; }
+.seller-workspace .inventory-explanation { margin: 8px 0; font-size: 12px; color: #6d6257; }
+.seller-workspace .inventory-explanation summary { cursor: pointer; }
+.seller-workspace .seller-inventory-page { position: relative; }
+.seller-workspace .seller-inventory-page > h1 { padding-right: 300px; }
+.seller-workspace .seller-inventory-page > button:first-of-type { position: absolute; top: 0; right: 0; padding: 9px 12px; font-size: 12px; }
+.seller-workspace .workspace-topbar { padding-top: 12px; }
+.seller-workspace .market-portal { padding-top: 14px; }
+.seller-workspace .inventory-row-actions { min-width: 180px; }
+.seller-workspace .inventory-row-actions .inventory-history-link { display: inline-block; margin: 5px 10px 0 0; font-size: 12px; }
+.seller-workspace .market-table-scroll table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.seller-workspace .market-table-scroll thead th { position: sticky; top: 0; z-index: 2; background: #f4f3f0; border-bottom: 1px solid #dcd7d0; color: #554b40; padding: 11px 12px; white-space: nowrap; }
+.seller-workspace .market-table-scroll td { padding: 11px 12px; vertical-align: middle; border-bottom: 1px solid #eeeae5; }
+.seller-workspace .market-table-scroll tbody tr:hover td { background: #fcfaf6; }
+.seller-workspace .market-table-scroll tbody tr:nth-child(even) { background: #fdfcfb; }
+.seller-workspace .market-table-scroll td p { margin: 4px 0; line-height: 1.4; }
+.seller-workspace .table-sort { display: inline-flex; gap: 7px; align-items: center; padding: 0; border: 0; color: inherit; background: transparent; box-shadow: none; font-weight: 650; }
+.seller-workspace th[aria-sort="ascending"],.seller-workspace th[aria-sort="descending"] { color: #ad3c18; }
+.seller-workspace .table-sort:hover { color: #c2411d; }
+.seller-workspace .table-sort:focus-visible { outline: 2px solid #bd4d28; outline-offset: 4px; }
+.seller-workspace .boot-pagination { margin: 10px 0 0; padding: 10px 4px; border-top: 0; }
+.seller-workspace .order-status-tabs,.seller-workspace .workspace-sections { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; padding: 5px; background: #eeece8; border-radius: 10px; border: 0; }
+.seller-workspace .order-status-tabs button,.seller-workspace .workspace-sections > a,.seller-workspace .workspace-sections > button { padding: 8px 12px; border: 0; border-radius: 7px; background: transparent; color: #685c50; font-size: 13px; font-weight: 550; text-decoration: none; }
+.seller-workspace .order-status-tabs button[aria-pressed="true"],.seller-workspace .workspace-sections [aria-current="page"],.seller-workspace .workspace-sections button[aria-pressed="true"] { background: #fff; color: #ac3c18; box-shadow: 0 1px 4px #0000000c; }
+.seller-workspace .order-filter-panel { display: grid; grid-template-columns: minmax(260px,1.2fr) minmax(420px,2fr); gap: 16px; padding: 16px; margin-bottom: 14px; border: 1px solid #e6e0d8; border-radius: 10px; background: #fff; }
+.seller-workspace .order-filter-panel form,.seller-workspace .order-filter-panel .seller-product-filters { margin: 0; align-items: end; gap: 8px; display: flex; }
+.seller-workspace .order-filter-panel label { display: grid; flex: 1; gap: 5px; font-size: 12px; color: #665d54; min-width: 0; }
+.seller-workspace .order-filter-panel input,.seller-workspace .order-filter-panel select { width: 100%; min-width: 0; height: 38px; padding: 7px 9px; font-size: 13px; }
+.seller-workspace .order-filter-panel button { font-size: 12px; padding: 9px 11px; }
+.seller-workspace .seller-filter-bar { margin: 12px 0; padding: 12px; background: #fff; border: 1px solid #e6e0d8; border-radius: 10px; }
+.seller-workspace .table-result-note { font-size: 12px; color: #746a60; margin: 10px 0; }
+.seller-workspace .inventory-item-links { display: flex; gap: 12px; margin-top: 5px; font-size: 12px; }
+.seller-workspace .inventory-item-links a { color: #a83c18; text-decoration: underline; text-underline-offset: 3px; }
+.seller-workspace .inventory-search { display: flex; align-items: end; gap: 10px; max-width: 700px; margin: 12px 0; }
+.seller-workspace .inventory-search label { flex: 1; }
+.seller-workspace #stock-history,.seller-workspace #stock-reconciliation,.seller-workspace [aria-label="Hàng đã trừ chưa bàn giao"] { margin-top: 14px; padding: 16px; }
+.seller-workspace .operational-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin: 12px 0; }
+.seller-workspace .operational-metrics > div { padding: 10px 12px; border: 1px solid #e8e2da; border-radius: 8px; }
+.seller-workspace .operational-metrics dt { font-size: 12px; color: #73675b; }
+.seller-workspace .operational-metrics dd { font-size: 22px; margin: 4px 0 0; }
+.seller-workspace .stock-period-filter { display: flex; gap: 10px; align-items: end; margin: 12px 0; }
+.seller-workspace .stock-period-filter label { display: grid; gap: 4px; font-size: 12px; }
+.seller-workspace .stock-period-filter input { height: 36px; padding: 6px 9px; }
+.seller-workspace .seller-inventory-sort { margin: 10px 0; font-size: 12px; }
+.seller-workspace .seller-inventory-sort select { min-width: 200px; padding: 6px 10px; }
+.seller-workspace .seller-overview .market-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin: 16px 0; }
+.seller-workspace .seller-overview-tile { display: grid; grid-template-columns: 32px 1fr; gap: 8px; padding: 20px; border: 1px solid #e1dbd3; border-radius: 12px; background: #fff; text-decoration: none; color: #322c26; }
+.seller-workspace .seller-overview-tile h3 { margin: 0; font-size: 14px; }
+.seller-workspace .seller-overview-tile .overview-count { grid-column: 2; margin: 0; font-size: 28px; font-weight: 700; }
+.seller-workspace .seller-overview-tile > span { grid-column: 2; color: #a43d1c; font-size: 12px; }
+.seller-workspace .seller-overview-tile:hover { border-color: #bd7758; box-shadow: 0 3px 10px #00000008; }
+.seller-workspace .seller-overview-guides { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.seller-workspace .seller-work-alerts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.seller-workspace .seller-work-alerts a { display: block; background: #fff8ee; border-color: #ecdcc5; padding: 15px 18px; }
+.seller-workspace .seller-operating-info { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; margin-top: 16px; padding: 16px 18px; }
+.seller-workspace .seller-operating-info h2 { font-size: 15px; margin: 0; }
+.seller-workspace .seller-operating-info p { margin: 0; font-size: 13px; }
+.seller-workspace .product-editor-nav { position: sticky; top: 8px; z-index: 4; }
+.seller-workspace .product-editor-heading h1 { margin-bottom: 4px; }
+.seller-workspace .product-editor-heading p { color: #76685c; margin: 0 0 14px; }
+.seller-workspace .seller-product-editor .ui-form-panel > form > .ui-actions { position: sticky; bottom: 0; padding: 12px 0; background: white; border-top: 1px solid #e4ddd5; z-index: 3; }
+.seller-workspace dialog:has(.seller-product-inspect) { width: min(850px, calc(100vw - 64px)); max-width: 850px; }
+.seller-workspace .seller-product-inspect > details { padding: 10px 0; font-size: 13px; }
+.seller-workspace .seller-product-inspect .product-description p { max-height: 160px; overflow: auto; white-space: pre-wrap; }
+.seller-workspace .seller-product-editor .market-form-grid { gap: 14px; }
+.seller-workspace .seller-product-editor input,.seller-workspace .seller-product-editor select { min-height: 38px; }
+.seller-workspace .market-moderation-images { max-height: 180px; overflow: auto; display: flex; gap: 10px; }
+.seller-workspace .market-moderation-images img { max-width: 150px; max-height: 160px; object-fit: contain; }
+.seller-workspace .financial-summary-table { margin: 16px 0; }
+.seller-workspace .financial-summary-table td { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; text-align: right; }
+.seller-workspace .financial-summary-table tbody th { padding: 10px 14px; text-align: left; font-weight: 500; }
+.seller-workspace .financial-money-table .money-cell { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 650; }
+.seller-workspace .money-kind { padding: 4px 9px; border-radius: 5px; font-size: 12px; }
+.seller-workspace .money-kind.is-collection { color: #236343; background: #eaf5ed; }
+.seller-workspace .money-kind.is-refund { color: #a34324; background: #fcf0e9; }
+.seller-workspace .report-definition,.seller-workspace .report-chart-disclosure { border: 1px solid #e3ddd5; border-radius: 8px; padding: 12px 16px; margin: 12px 0; background: #fff; }
+.seller-workspace .seller-financial-report { position: relative; }
+.seller-workspace .seller-financial-report > h1 { padding-right: 180px; }
+.seller-workspace .seller-financial-report > button:first-of-type { position: absolute; top: 0; right: 0; }
+.seller-workspace .seller-financial-report > .report-definition { border: 0; background: transparent; padding: 4px 0; font-size: 12px; margin: 4px 0; }
+.seller-workspace .seller-financial-report > p { font-size: 12px; margin: 7px 0; color: #75685c; }
+.seller-workspace .seller-financial-report > .market-form-grid { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 14px; background: #fff; border: 1px solid #e3ddd5; border-radius: 10px; margin: 14px 0; }
+.seller-workspace .seller-financial-report > .market-form-grid label { min-width: 150px; flex: 1; }
+@media (max-width:1100px) { .seller-workspace .order-filter-panel { grid-template-columns: 1fr; } }

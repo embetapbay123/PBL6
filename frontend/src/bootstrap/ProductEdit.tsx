@@ -267,6 +267,7 @@ export function ProductEdit() {
     );
   return (
     <div
+      className="seller-product-editor"
       style={{ maxWidth: "960px", margin: "0 auto", padding: "1rem" }}
       onClick={(event) => {
         const anchor = (event.target as Element).closest(
@@ -286,6 +287,7 @@ export function ProductEdit() {
       }}
     >
       <SellerSubNav />
+      <header className="product-editor-heading"><h1>Chỉnh sửa sản phẩm</h1><p>{query.data?.title}</p></header>
       {query.data && <ProductModerationNotice product={query.data} />}
       <div style={{ marginBottom: "1rem" }}>
         <Link
@@ -295,7 +297,7 @@ export function ProductEdit() {
           ← Quay lại danh sách sản phẩm
         </Link>
       </div>
-      <nav className="workspace-sections" aria-label="Các phần sản phẩm">
+      <nav className="workspace-sections product-editor-nav" aria-label="Các phần sản phẩm">
         {[
           ["general", "Thông tin chung"],
           ["attributes", "Thuộc tính"],

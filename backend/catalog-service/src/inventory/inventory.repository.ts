@@ -3,7 +3,7 @@ import { OwnedRepository } from '../../../shared/src/repository';
 import {searchPattern} from '../../../shared/src/search';
 import type {AttributeDefinitionRow} from '../catalog/catalog.validation';
 
-export type InventoryFilters={q?:string;product_id?:string;variant_id?:string;from?:string;to?:string;sort?:'NAME_ASC'|'AVAILABLE_ASC'|'AVAILABLE_DESC'};
+export type InventoryFilters={q?:string;product_id?:string;variant_id?:string;from?:string;to?:string;stock?:'IN_STOCK'|'LOW'|'OUT';sort?:'NAME_ASC'|'NAME_DESC'|'AVAILABLE_ASC'|'AVAILABLE_DESC'};
 const inventoryJoins=' FROM inventory i LEFT JOIN product_variant v ON v.id=i.variant_id AND v.store_id=i.store_id LEFT JOIN product p ON p.id=v.product_id AND p.store_id=i.store_id';
 function inventoryPredicate(store:string,filters:InventoryFilters){
  const values:unknown[]=[store],conditions=['i.store_id=$1'];
@@ -130,8 +130,9 @@ export class InventoryRepository extends OwnedRepository {
   /* ------------------------------ INV-01: store inventory read, adjust, movements */
 
   async pageInventory(storeId: string, page: number, size: number,filters:InventoryFilters={}): Promise<{ items: InventoryBalanceRow[]; total: number }> {
-    const {values,where}=inventoryPredicate(storeId,filters);
-    const order = filters.sort === 'NAME_ASC' ? 'p.title ASC NULLS LAST, i.variant_id' : filters.sort === 'AVAILABLE_ASC' ? 'greatest(i.quantity-i.reserved_quantity,0) ASC, i.variant_id' : filters.sort === 'AVAILABLE_DESC' ? 'greatest(i.quantity-i.reserved_quantity,0) DESC, i.variant_id' : 'i.variant_id';
+    const {values,where:baseWhere}=inventoryPredicate(storeId,filters);
+    const where=baseWhere+(filters.stock==='OUT'?' AND i.quantity-i.reserved_quantity<=0':filters.stock==='LOW'?' AND i.quantity-i.reserved_quantity BETWEEN 1 AND 4':filters.stock==='IN_STOCK'?' AND i.quantity-i.reserved_quantity>0':'');
+    const order = filters.sort === 'NAME_ASC' ? 'p.title ASC NULLS LAST, i.variant_id' : filters.sort === 'NAME_DESC' ? 'p.title DESC NULLS LAST, i.variant_id' : filters.sort === 'AVAILABLE_ASC' ? 'greatest(i.quantity-i.reserved_quantity,0) ASC, i.variant_id' : filters.sort === 'AVAILABLE_DESC' ? 'greatest(i.quantity-i.reserved_quantity,0) DESC, i.variant_id' : 'i.variant_id';
     const [count] = await this.manager.query('SELECT count(*)::int AS total'+inventoryJoins+where,values);
     const items = await this.manager.query(
       `SELECT i.variant_id, i.quantity, i.reserved_quantity,

@@ -158,16 +158,17 @@ test("Owner sees event cash separately from zero orders created in period and ca
 }, info) => {
   const m = await model(page);
   await page.goto("/seller/reports?from=2026-11-01&to=2026-11-02");
-  await expect(page.locator(".financial-summary")).toContainText(
+  await expect(page.locator(".financial-summary-table")).toContainText(
     "Tiền xác nhận thu trong kỳ",
   );
-  await expect(page.locator(".financial-summary")).toContainText("120.000 ₫");
+  await expect(page.locator(".financial-summary-table")).toContainText("120.000 ₫");
   await expect(
     page
-      .locator(".financial-summary dt")
+      .locator('.financial-summary-table th[scope="row"]')
       .filter({ hasText: "Số đơn tạo trong kỳ" })
       .locator(".."),
   ).toContainText("0");
+  await page.getByRole("navigation", {name:"Nội dung báo cáo"}).getByRole("button", {name:"Giao dịch",exact:true}).click();
   const events = page.getByRole("region", {
     name: "Sự kiện tiền đã xác nhận",
     exact: true,
@@ -179,7 +180,7 @@ test("Owner sees event cash separately from zero orders created in period and ca
   await expect(events).toContainText("Hệ thống ghi nhận lúc");
   await expect(
     events.getByRole("link", {
-      name: "Đối chiếu đơn " + m.entries[0].order_id,
+      name: "Đối chiếu đơn #" + m.entries[0].order_id.slice(-8).toUpperCase(),
       exact: true,
     }),
   ).toHaveAttribute("href", "/seller/orders?q=" + m.entries[0].order_id);
@@ -205,6 +206,8 @@ test("cash chart and CSV use the selected event period rather than order creatio
 }) => {
   const m = await model(page);
   await page.goto("/seller/reports?from=2026-11-01&to=2026-11-02");
+  await page.getByRole("button", {name:"Thu / hoàn theo kỳ",exact:true}).click();
+  await page.locator(".report-chart-disclosure summary").click();
   await expect(
     page.getByRole("img", {
       name: "Biểu đồ cột tiền đã thu và hoàn theo kỳ. Số tiền chính xác nằm trong bảng bên dưới.",
@@ -213,6 +216,7 @@ test("cash chart and CSV use the selected event period rather than order creatio
   await expect(page.locator(".cash-chart title")).toContainText(
     "đã thu 120.000 ₫, đã hoàn 120.000 ₫",
   );
+  await page.getByRole("button", {name:"Tổng hợp",exact:true}).click();
   const download = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Xuất tổng hợp CSV", exact: true })
@@ -232,10 +236,12 @@ test("historical unknown dates are lazy, outside selected period and independent
 }) => {
   const m = await model(page);
   await page.goto("/seller/reports?from=2026-11-01&to=2026-11-02");
+  await page.getByRole("button", {name:"Khoản chưa rõ ngày",exact:true}).click();
   await expect(
     page.getByText("Đã thu chưa rõ ngày: 25.000 ₫", { exact: false }),
   ).toBeVisible();
   expect(m.reads.some((path) => path.includes("unresolved-money"))).toBe(false);
+  await page.getByRole("button", {name:"Khoản chưa rõ ngày",exact:true}).click();
   await page
     .getByRole("button", { name: "Xem khoản chưa rõ ngày", exact: true })
     .click();
@@ -300,6 +306,7 @@ test("Admin scope and Vietnam half-open range are sent consistently to summary a
   await expect(
     page.getByRole("combobox", { name: "Nhóm theo", exact: true }),
   ).toHaveValue("MONTH");
+  await page.getByRole("button", {name:"Khoản chưa rõ ngày",exact:true}).click();
   await page
     .getByRole("button", { name: "Xem khoản chưa rõ ngày", exact: true })
     .click();
@@ -319,7 +326,8 @@ test("GET journal failure remains an error while the actual summary stays availa
 }) => {
   await model(page, "STORE", { entriesFail: true });
   await page.goto("/seller/reports?from=2026-11-01&to=2026-11-02");
-  await expect(page.locator(".financial-summary")).toContainText("120.000 ₫");
+  await expect(page.locator(".financial-summary-table")).toContainText("120.000 ₫");
+  await page.getByRole("button", {name:"Giao dịch",exact:true}).click();
   await expect(
     page
       .getByRole("region", { name: "Sự kiện tiền đã xác nhận", exact: true })
@@ -336,9 +344,11 @@ test("missing legacy gap or series fields are not silently reported as zero or e
 }) => {
   await model(page, "STORE", { summaryMissing: true });
   await page.goto("/seller/reports?from=2026-11-01&to=2026-11-02");
+  await page.getByRole('button',{name:'Khoản chưa rõ ngày',exact:true}).click();
   await expect(
     page.getByText("Đã thu chưa rõ ngày: Chưa có dữ liệu", { exact: false }),
   ).toBeVisible();
+  await page.getByRole("button", {name:"Thu / hoàn theo kỳ",exact:true}).click();
   await expect(
     page.getByText("Bản đọc chưa cung cấp chuỗi sự kiện tiền.", {
       exact: true,
@@ -352,7 +362,7 @@ test("invalid deep-linked dates cannot issue a report query or show stale financ
   await page.goto("/seller/reports?from=invalid&to=2026-11-01");
   await expect(page.getByRole("alert")).toContainText("Cần khoảng ngày hợp lệ");
   expect(m.requests).toEqual([]);
-  await expect(page.locator(".financial-summary")).toHaveCount(0);
+  await expect(page.locator(".financial-summary-table")).toHaveCount(0);
 });
 test("Seller and Admin without platform permission cannot read financial reports", async ({
   page,
@@ -360,7 +370,7 @@ test("Seller and Admin without platform permission cannot read financial reports
 }) => {
   const m = await model(page, "SELLER");
   await page.goto("/seller/reports");
-  await expect(page.locator(".financial-summary")).toHaveCount(0);
+  await expect(page.locator(".financial-summary-table")).toHaveCount(0);
   expect(m.requests).toEqual([]);
   const context = await browser.newContext();
   try {
@@ -381,7 +391,7 @@ test("submitting unchanged report filters reloads the summary and source pages a
 }) => {
   const m = await model(page);
   await page.goto("/seller/reports?from=2026-11-01&to=2026-11-02");
-  await expect(page.locator(".financial-summary")).toContainText("120.000 ₫");
+  await expect(page.locator(".financial-summary-table")).toContainText("120.000 ₫");
   const previous = m.requests.filter((r) => r.path === "/store/reports").length;
   m.summary.collected_vnd = 240000;
   m.summary.cash_series[0].collected_vnd = 240000;
@@ -392,10 +402,11 @@ test("submitting unchanged report filters reloads the summary and source pages a
     .toBeGreaterThan(previous);
   await expect(
     page
-      .locator(".financial-summary dt")
+      .locator('.financial-summary-table th[scope="row"]')
       .filter({ hasText: "Tiền xác nhận thu trong kỳ" })
       .locator(".."),
   ).toContainText("240.000 ₫");
+  await page.getByRole("button", {name:"Giao dịch",exact:true}).click();
   await expect(
     page.getByRole("region", { name: "Sự kiện tiền đã xác nhận", exact: true }),
   ).toContainText("22 kết quả");

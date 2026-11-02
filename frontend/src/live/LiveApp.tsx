@@ -52,6 +52,7 @@ import "../bootstrap/bootstrap.css";
 import "./commerce.css";
 import "../chat/chat-workspace.css";
 import "../styles/ui-components.css";
+import "../styles/seller-workspace.css";
 import { StoreContextNotice } from "../components/StoreContextNotice";
 import { MarketplaceHeader } from "./MarketplaceHeader";
 import { listenFavoritesChange } from "../features/customer/favorite-state";
@@ -316,7 +317,7 @@ function Market() {
     <div
       className={
         "live-market " +
-        (portal ? "workspace-shell " : "storefront-shell ") +
+        (portal ? "workspace-shell " : "storefront-shell ") + (portal==='seller'?'seller-workspace ':'') +
         (collapsed ? "sidebar-collapsed" : "")
       }
     >

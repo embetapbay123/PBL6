@@ -144,6 +144,7 @@ export function InventoryReconciliation({ variantId }: { variantId?: string }) {
                     {Object.values(query.data.variant_values ?? {}).join(" / ")}
                     {query.data.sku && <> · SKU: {query.data.sku}</>}
                   </h3>
+                  {query.data.product_id&&<p className="inventory-item-links"><Link to={'/products/'+query.data.product_id}>Xem sản phẩm</Link><Link to={'/seller/inventory?variant_id='+variantId}>Xem tồn hiện tại</Link></p>}
                   <p>
                     Ảnh đọc lúc {clock(query.data.as_of)} (giờ Việt Nam). Tính
                     từ thời điểm hệ thống ghi bút toán; không thay thời gian cũ

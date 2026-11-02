@@ -1,5 +1,5 @@
 import {searchPattern} from '../../../shared/src/search';
-export type OrderSearch={q?:string;status?:string;payment_status?:string;refund_status?:string;store_id?:string};
+export type OrderSearch={q?:string;status?:string;payment_status?:string;refund_status?:string;store_id?:string;sort?:string};
 /** Append bound predicates to an already established Customer/Store/Platform scope. */
 export function orderSearch(query:OrderSearch,args:unknown[]):string{
  const conditions:string[]=[];

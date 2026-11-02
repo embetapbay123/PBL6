@@ -469,7 +469,7 @@ export class OrderRepository extends OwnedRepository {
          SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1
        ) r ON true
        WHERE o.store_id = $1${extra}
-       ORDER BY o.created_at DESC, o.id ASC
+       ORDER BY ${filters.sort==='CREATED_ASC'?'o.created_at ASC':filters.sort==='TOTAL_ASC'?'o.payable_vnd ASC':filters.sort==='TOTAL_DESC'?'o.payable_vnd DESC':'o.created_at DESC'}, o.id ASC
        LIMIT $${args.length+1} OFFSET $${args.length+2}`,
       [...args, size, offset]
     );

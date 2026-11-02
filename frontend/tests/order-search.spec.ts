@@ -211,6 +211,12 @@ async function search(page: Page, value: string) {
     .getByRole("button", { name: "Tìm trong toàn bộ đơn", exact: true })
     .click();
 }
+test('Seller sorts all matching orders by money and resets paging while keeping filters',async({page})=>{
+ const m=await model(page,'SELLER');await page.goto('/seller/orders?page=2&status=COMPLETED');
+ await page.getByRole('button',{name:'Sắp xếp Phải trả tăng dần',exact:true}).click();
+ await expect.poll(()=>m.reads.some(value=>{const url=new URL(value,'http://fixture');return url.searchParams.get('sort')==='TOTAL_ASC'&&url.searchParams.get('page')==='1'&&url.searchParams.get('status')==='COMPLETED';})).toBe(true);
+ await expect(page.locator('th[aria-sort="ascending"]')).toContainText('Phải trả');
+});
 test("Customer finds an old order by SKU with snapshot identity and returns from details without losing query or money status", async ({
   page,
 }) => {

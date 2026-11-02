@@ -118,12 +118,13 @@ export class CatalogRepository extends OwnedRepository {
    * The Store id is a required argument because it always comes from the resolved membership, never
    * from the request — this is the view that must stay invisible to another Store.
    */
-  async pageOwnStore(storeId:string,page:number,size:number,query:{q?:string;status?:string}={}) {
-    if(query.q||query.status){
+  async pageOwnStore(storeId:string,page:number,size:number,query:{q?:string;status?:string;sort?:string}={}) {
+    const sorts:Record<string,string>={NAME_ASC:'p.title ASC',NAME_DESC:'p.title DESC',PRICE_ASC:'(SELECT min(price_vnd) FROM product_variant sv WHERE sv.product_id=p.id) ASC NULLS LAST',PRICE_DESC:'(SELECT min(price_vnd) FROM product_variant sv WHERE sv.product_id=p.id) DESC NULLS LAST'}; const sort=sorts[query.sort??'NAME_ASC']??'p.title ASC';
+    if(query.q||query.status||query.sort){
       const args=[storeId,searchPattern(query.q)??null,query.status??null];
       const where=' WHERE p.store_id=$1 AND ($2::text IS NULL OR marketplace_search(p.title) LIKE $2 OR EXISTS(SELECT 1 FROM product_variant v WHERE v.product_id=p.id AND v.store_id=$1 AND marketplace_search(v.sku) LIKE $2)) AND ($3::text IS NULL OR p.status=$3)';
       const [count]=await this.manager.query('SELECT count(*)::int AS total FROM product p'+where,args);
-      const rows=await this.manager.query(`SELECT ${PRODUCT_COLUMNS} FROM product p`+where+' ORDER BY p.title,p.id LIMIT $4 OFFSET $5',[...args,size,(page-1)*size]);
+      const rows=await this.manager.query(`SELECT ${PRODUCT_COLUMNS} FROM product p`+where+` ORDER BY ${sort},p.id LIMIT $4 OFFSET $5`,[...args,size,(page-1)*size]);
       return {items:await this.withAllVariants(rows),total:count.total,page,size};
     }
     const [count]=await this.manager.query('SELECT count(*)::int AS total FROM product WHERE store_id=$1',[storeId]);

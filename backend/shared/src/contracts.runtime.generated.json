@@ -4068,6 +4068,15 @@
               "ACTIVE",
               "STOPPED"
             ]
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "NAME_ASC",
+              "NAME_DESC",
+              "PRICE_ASC",
+              "PRICE_DESC"
+            ]
           }
         },
         "required": [],
@@ -5492,7 +5501,16 @@
             "enum": [
               "NAME_ASC",
               "AVAILABLE_ASC",
-              "AVAILABLE_DESC"
+              "AVAILABLE_DESC",
+              "NAME_DESC"
+            ]
+          },
+          "stock": {
+            "type": "string",
+            "enum": [
+              "IN_STOCK",
+              "LOW",
+              "OUT"
             ]
           }
         },
@@ -8723,6 +8741,15 @@
               "UNKNOWN",
               "SUCCEEDED",
               "FAILED"
+            ]
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "CREATED_ASC",
+              "CREATED_DESC",
+              "TOTAL_ASC",
+              "TOTAL_DESC"
             ]
           }
         },

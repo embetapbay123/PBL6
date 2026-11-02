@@ -124,6 +124,7 @@ export function StockCommitments({
                       <tr key={row.order_id + ":" + row.variant_id}>
                         <td>
                           {row.product_title}
+                          <span className="inventory-item-links"><Link to={'/products/'+row.product_id}>Xem sản phẩm</Link><Link to={'/seller/inventory?variant_id='+row.variant_id}>Xem tồn</Link></span>
                           <br />
                           {variantLabel(
                             row.variant_values,
@@ -144,7 +145,7 @@ export function StockCommitments({
                                 encodeURIComponent(row.order_id)
                               }
                             >
-                              {row.order_id}
+                              Đơn #{row.order_id.slice(-8).toUpperCase()}
                             </Link>
                           ) : (
                             <span style={{ overflowWrap: "anywhere" }}>

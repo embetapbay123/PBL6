@@ -21,6 +21,8 @@ import { SellerSubNav } from "../../live/SellerWorkspace";
 import { AttributeFields } from "./AttributeFields";
 import { useProductTypes } from "./useProductTypes";
 import { VariantMatrix, type MatrixVariant } from "./VariantMatrix";
+import { SortHeader } from '../../components/SortHeader';
+import { variantLabel } from '../../components/variant-identity';
 
 type ManagedProduct = OperationOutputs["listOwnStoreProducts"]["items"][number];
 export function SellerProductList() {
@@ -38,6 +40,8 @@ export function SellerProductList() {
     });
   const search = params.get("q") ?? "",
     status = params.get("status") ?? "";
+  const rawSort=params.get('sort');
+  const sort=rawSort==='NAME_DESC'||rawSort==='PRICE_ASC'||rawSort==='PRICE_DESC'?rawSort:'NAME_ASC';
   const setFilter = (key: string, value: string) =>
     setParams(
       (current) => {
@@ -56,7 +60,7 @@ export function SellerProductList() {
     [blocked, setBlocked] = useState(false),
     [actionError, setActionError] = useState<unknown>();
   const { data, isFetching, error, refetch } = useQuery({
-    queryKey: ["own-store-products", page, search, status],
+    queryKey: ["own-store-products", page, search, status, sort],
     queryFn: ({ signal }) =>
       callOperation(
         "listOwnStoreProducts",
@@ -64,6 +68,7 @@ export function SellerProductList() {
           query: {
             page,
             size: 20,
+            sort,
             ...(search ? { q: search } : {}),
             ...(status
               ? { status: status as "ACTIVE" | "DRAFT" | "STOPPED" }
@@ -166,7 +171,8 @@ export function SellerProductList() {
           }}
         />
       )}
-      <div className="seller-product-filters">
+      <nav className="order-status-tabs" aria-label="Lọc nhanh sản phẩm">{[['','Tất cả'],['ACTIVE','Đang bán'],['DRAFT','Bản nháp'],['STOPPED','Dừng bán']].map(([value,label])=><button key={value} type="button" aria-pressed={status===value} onClick={()=>setFilter('status',value)}>{label}</button>)}</nav>
+      <div className="seller-product-filters seller-filter-bar">
         <input
           type="search"
           maxLength={200}
@@ -210,8 +216,8 @@ export function SellerProductList() {
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Sản phẩm</th>
-                  <th scope="col">Giá bán</th>
+                  <SortHeader label="Sản phẩm" value={sort} ascending="NAME_ASC" descending="NAME_DESC" onChange={value=>setFilter('sort',value)}/>
+                  <SortHeader label="Giá bán" value={sort} ascending="PRICE_ASC" descending="PRICE_DESC" onChange={value=>setFilter('sort',value)}/>
                   <th scope="col">Phân loại</th>
                   <th scope="col">Trạng thái</th>
                   <th scope="col">Thao tác</th>
@@ -273,16 +279,8 @@ export function SellerProductList() {
                           <SquarePen size={13} />
                           Sửa sản phẩm
                         </Link>
+                        <UiButton variant="ghost" size="sm" type="button" aria-label={'Chi tiết '+product.title} onClick={()=>setInspect(product)}><Eye size={14}/>Xem</UiButton>
                         <ActionMenu label={"Thao tác " + product.title}>
-                          <UiButton
-                            variant="secondary"
-                            type="submit"
-                            aria-label={"Chi tiết " + product.title}
-                            onClick={() => setInspect(product)}
-                          >
-                            <Eye size={13} />
-                            Chi tiết
-                          </UiButton>
                           <UiButton
                             variant="secondary"
                             type="submit"
@@ -337,27 +335,22 @@ export function SellerProductList() {
           label={"Chi tiết " + inspect.title}
           onClose={() => setInspect(undefined)}
         >
+          <div className="seller-product-inspect">
           <h2>{inspect.title}</h2>
-          <p>{inspect.description || "Chưa có mô tả."}</p>
-          <p>
-            Trạng thái: {inspect.status} · Kiểm duyệt:{" "}
-            {inspect.moderation_status}
-          </p>
-          <ProductModerationNotice product={inspect} />
+          <details className="product-description"><summary>Mô tả sản phẩm</summary><p>{inspect.description || "Chưa có mô tả."}</p></details>
+          <p><span className="market-badge">{inspect.status==='ACTIVE'?'Đang bán':inspect.status==='DRAFT'?'Bản nháp':'Dừng bán'}</span> · {inspect.moderation_status==='HIDDEN'?'Đang bị ẩn':'Được hiển thị'}</p>
+          {inspect.moderation_status==='HIDDEN'?<ProductModerationNotice product={inspect}/>:<details><summary>Lịch sử kiểm duyệt</summary><ProductModerationNotice product={inspect}/></details>}
           <div className="market-moderation-images">
             {inspect.images?.map((image) => (
               <img key={image.id} src={image.image_url} alt={inspect.title} />
             ))}
           </div>
           <h3>Biến thể</h3>
-          <ul>
+          <div className="market-table-scroll"><table><thead><tr><th>Phân loại</th><th>SKU</th><th>Giá bán</th><th>Trạng thái</th></tr></thead><tbody>
             {inspect.variants?.map((variant) => (
-              <li key={variant.id}>
-                {variant.sku} · {variant.price_vnd.toLocaleString("vi-VN")} ₫ ·{" "}
-                {variant.status}
-              </li>
+              <tr key={variant.id}><td>{variantLabel(variant.variant_values,'Tiêu chuẩn')}</td><td>{variant.sku}</td><td>{variant.price_vnd.toLocaleString('vi-VN')} ₫</td><td>{variant.status==='ACTIVE'?'Đang bán':'Dừng bán'}</td></tr>
             ))}
-          </ul>
+          </tbody></table></div>
           <div className="ui-actions">
             <UiButton
               variant="secondary"
@@ -373,6 +366,7 @@ export function SellerProductList() {
             >
               Chỉnh sửa sản phẩm
             </Link>
+          </div>
           </div>
         </Modal>
       )}

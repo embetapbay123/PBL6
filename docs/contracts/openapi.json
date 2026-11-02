@@ -4363,6 +4363,21 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "NAME_ASC",
+                "NAME_DESC",
+                "PRICE_ASC",
+                "PRICE_DESC"
+              ]
+            },
+            "description": "Áp dụng trước phân trang trong phạm vi được cấp quyền."
           }
         ],
         "responses": {
@@ -5295,10 +5310,25 @@
               "enum": [
                 "NAME_ASC",
                 "AVAILABLE_ASC",
-                "AVAILABLE_DESC"
+                "AVAILABLE_DESC",
+                "NAME_DESC"
               ]
             },
             "description": "Sắp xếp toàn bộ kết quả trong Store trước phân trang."
+          },
+          {
+            "name": "stock",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IN_STOCK",
+                "LOW",
+                "OUT"
+              ]
+            },
+            "description": "Áp dụng trước phân trang trong phạm vi được cấp quyền."
           }
         ],
         "responses": {
@@ -7827,6 +7857,21 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CREATED_ASC",
+                "CREATED_DESC",
+                "TOTAL_ASC",
+                "TOTAL_DESC"
+              ]
+            },
+            "description": "Áp dụng trước phân trang trong phạm vi được cấp quyền."
           }
         ],
         "responses": {
