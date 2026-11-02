@@ -504,18 +504,21 @@
     },
     {
       "id": "MX-NB01",
-      "title": "Sổ còng ghi chép Daily Notes",
+      "title": "Sổ tay ghi chép Daily Notes",
       "category": "Góc làm việc",
       "store": "B",
       "price_vnd": 79000,
       "color": "Trung tính",
       "material": "Giấy và bìa",
-      "dimensions": "Một sổ còng ghi chép",
+      "dimensions": "Một sổ ghi chép",
       "photos": [
         "notebook-and-coffee"
       ],
       "description": "Sổ tay dùng ghi ý tưởng, lịch làm việc hoặc ghi chép học tập. Thiết kế đơn giản, dễ mang theo; bút, cốc và đồ vật trong bối cảnh ảnh không đi kèm.",
-      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "previous_titles": [
+        "Sổ còng ghi chép Daily Notes"
+      ]
     },
     {
       "id": "MX-NB02",
@@ -571,7 +574,8 @@
       "Beige tee is not described as a button-up shirt",
       "Metal teapot is not described as ceramic",
       "Orange sport headphones are not described as black",
-      "Context props are excluded in descriptions"
+      "Context props are excluded in descriptions",
+      "Daily Notes photo shows a bound notebook, not a ring binder"
     ]
   }
 }

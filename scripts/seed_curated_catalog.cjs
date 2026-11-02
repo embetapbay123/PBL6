@@ -41,7 +41,8 @@ async function main(argv=process.argv.slice(2),env=process.env){
    let product=old.find(p=>p.variants.some(v=>v.sku===item.id+'-001'));
    const values=variantsFor(item),attrs={color:item.color,material:item.material,dimensions:item.dimensions,care:item.care,...(item.sizes?{size:item.sizes[0]}:{})};
    if(!product)product=await api('/store/products',actor,'POST',{title:item.title,description:item.description,product_type_id:types[item.category],attributes:attrs,status:'ACTIVE',variants:values.map((v,index)=>({sku:item.id+'-'+String(index+1).padStart(3,'0'),price_vnd:item.price_vnd+(item.sizes&&v.size==='XL'?10000:0),variant_values:v,is_default:index===0}))});
-   if(product.title!==item.title||product.status!=='ACTIVE')throw Error('Curated product changed; refusing silent overwrite');
+   if(product.status!=='ACTIVE')throw Error('Curated product changed; refusing silent overwrite');
+   if(product.title!==item.title){if(!item.previous_titles?.includes(product.title))throw Error('Curated product changed; refusing silent overwrite');product=await api('/store/products/'+product.id,actor,'PATCH',{expected_version:product.version,title:item.title,description:item.description,attributes:attrs});}
    const balance=await list('/store/inventory?product_id='+product.id,actor);
    for(const [index,v] of product.variants.entries()){const row=balance.find(b=>b.variant_id===v.id);if(!row)throw Error('Variant inventory missing');const initial=item.id==='AN-TS01'?(index===11?0:index===10?1:24):['AN-HB02','MX-HP04'].includes(item.id)?1:item.id==='MX-SH01'?0:12+catalog.products.indexOf(item)%17;
     if(row.version===0&&initial)await api('/store/inventory/adjustments',actor,'POST',{variant_id:v.id,delta_quantity:initial,expected_version:0,operation_id:idFor('stock:'+v.id),reason:'Nhập catalog tuyển chọn '+catalog.version+' · '+item.id});
