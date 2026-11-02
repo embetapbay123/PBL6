@@ -16,6 +16,9 @@ import {isBuyNow,saveBuyNow,variantLabel,ownsCheckoutState} from './checkout-int
 import {rememberAuthReturn} from './auth/auth-return';
 import {StoreLabel} from '../../live/StoreLabel';
 import {availableUnits,variantCanOrder,variantAxisDescription} from '../../components/variant-availability';
+import {VariantPicker} from '../../components/VariantPicker';
+import {Modal} from '../../components/Modal';
+import {useQuery} from '@tanstack/react-query';
 
 type Product = OperationOutputs["getProduct"];
 
@@ -38,6 +41,7 @@ export function ProductDetail() {
   const [favoriteError, setFavoriteError] = useState<unknown>();
   const [retry, setRetry] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
+  const [zoom,setZoom]=useState(false);
   const inFlight = useRef(false);
   const generation=useRef(0),availabilityFlight=useRef(false);
   const [checkingStock,setCheckingStock]=useState(false),[stockError,setStockError]=useState<unknown>();
@@ -86,6 +90,11 @@ export function ProductDetail() {
   }, [id, retry, location.state]);
 
   const variant = product?.variants?.find((item) => item.id === variantId);
+  const images=(product?.images??[]).filter((image,index,all)=>all.findIndex(item=>item.image_url===image.image_url)===index);
+  const taxonomy=useQuery({queryKey:['catalog-types'],enabled:!!product,queryFn:()=>callOperation('listProductTypes',{query:{page:1,size:100}})});
+  const definitions=taxonomy.data?.items.find(type=>type.id===product?.product_type_id)?.attribute_definitions??[];
+  const attributeName=(key:string)=>definitions.find(d=>d.code===key)?.name??(({color:'Màu sắc',size:'Kích cỡ',material:'Chất liệu',dimensions:'Quy cách',care:'Bảo quản',brand:'Thương hiệu'} as Record<string,string>)[key]??key.replaceAll('_',' '));
+  useEffect(()=>{const associated=product?.images?.find(image=>image.variant_id===variantId);if(associated){const index=images.findIndex(image=>image.image_url===associated.image_url);if(index>=0)setImageIndex(index);}},[variantId,product?.id]);
   const stock=availableUnits(variant),tooMany=stock!==undefined&&quantity>stock;
   const available =
     product?.id === id &&
@@ -160,18 +169,17 @@ export function ProductDetail() {
     );
 
   return (
-    <section>
+    <section className="product-detail-page">
       <Link to="/" className="text-sm">
         ← Tất cả sản phẩm
       </Link>
       <div className="market-detail-columns boot-card mt-5">
         <div>
           <div className="market-detail-image">
-            <ProductImage src={product.images?.[imageIndex]?.image_url} alt={product.title} name={product.title} retry/>
-
+            <div className="product-gallery-main"><ProductImage src={images[imageIndex]?.image_url} alt={product.title} name={product.title} retry/><button type="button" className="product-gallery-zoom" disabled={!images.length} onClick={()=>setZoom(true)} aria-label={'Phóng to ảnh '+product.title}>Xem ảnh lớn</button></div>
           </div>
           <div className="market-detail-thumbnails">
-            {product.images?.map((image, index) => (
+            {images.map((image, index) => (
               <button
                 className="market-image-thumb"
                 key={image.id ?? image.image_url}
@@ -184,12 +192,11 @@ export function ProductDetail() {
             ))}
           </div>
         </div>
-        <div>
+        <div className="product-buy-panel">
           <span className="market-badge">
             {product.status === "ACTIVE" ? "Đang bán" : product.status}
           </span>
           <h1>{product.title}</h1>
-          <p>{product.description ?? "Không có mô tả sản phẩm."}</p>
           {product.store_id && <div className="product-store-actions"><StoreLabel id={product.store_id} prefix="Gian hàng: " className="ui-button ui-button-secondary"/><ContactStoreButton storeId={product.store_id}/></div>}
           {variant && (
             <p className="market-detail-price">
@@ -199,20 +206,12 @@ export function ProductDetail() {
           {!available&&stock!==0 && (
             <p>Sản phẩm hoặc phân loại này hiện không được bán.</p>
           )}
-          <p role="status">{stock===0?'Phân loại đã chọn hiện hết hàng. Chọn phân loại khác hoặc đọc lại sau.':stock!==undefined?'Tồn khả dụng vừa đọc: '+stock.toLocaleString('vi-VN')+'.':'Chưa có số tồn khả dụng từ lần đọc này.'} Giá và tồn được kiểm tra lại khi đặt hàng, chưa giữ hàng tại đây.</p>
+          <p className="product-stock-status" role="status">{stock===0?'Phân loại đã chọn hiện hết hàng. Chọn phân loại khác hoặc đọc lại sau.':stock!==undefined?'Còn '+stock.toLocaleString('vi-VN')+' sản phẩm.':'Chưa đọc được số lượng còn hàng.'} Giá và tồn được kiểm tra lại khi đặt hàng.</p>
           <button type="button" disabled={busy||checkingStock} onClick={()=>void refreshAvailability()}>{checkingStock?'Đang đọc giá và tồn…':'Đọc lại giá và tồn'}</button>
           {stockError!==undefined&&<ErrorView error={stockError}/>}
           {tooMany&&stock!==0&&<p role="alert">Số lượng đã chọn vượt tồn khả dụng vừa đọc. Giảm số lượng hoặc chọn phân loại khác; hệ thống giữ nguyên lựa chọn của bạn.</p>}
-          <div className="purchase-variants" aria-label="Chọn phân loại">{product.variants?.map((item) => (
-            <button
-              key={item.id ?? item.sku}
-              disabled={!item.id || !variantCanOrder(item) || busy||checkingStock}
-              aria-pressed={variantId === item.id}
-              onClick={() => setVariantId(item.id!)}
-            >
-              {variantLabel(item.variant_values)}{variantAxisDescription(item.variant_values,product.variant_axes)&&<small> · {variantAxisDescription(item.variant_values,product.variant_axes)}</small>} <small>· SKU: {item.sku}{availableUnits(item)===0?' · Hết hàng':''}</small>
-            </button>
-          ))}</div>
+          <VariantPicker variants={product.variants??[]} axes={product.variant_axes} value={variantId} disabled={busy||checkingStock} onChange={setVariantId}/>
+          {variant&&<p className="product-selection-summary">Đã chọn: <strong>{variantLabel(variant.variant_values)}</strong><small>Mã hàng: {variant.sku}</small></p>}
           <label htmlFor="purchase-quantity">Số lượng</label>
           <div className="purchase-quantity">
             <button type="button" aria-label="Giảm số lượng" disabled={!available||busy||quantity<=1} onClick={()=>setQuantity(value=>Math.max(1,value-1))}><Minus size={15}/></button>
@@ -248,12 +247,15 @@ export function ProductDetail() {
           {session?.context?.roles.includes('CUSTOMER') && <div className="purchase-secondary-actions"><button className="ui-button ui-button-secondary" type="button" aria-pressed={favoriteSaved} disabled={favoriteBusy} onClick={()=>void addFavorite()}><Heart size={16}/>{favoriteSaved ? 'Bỏ yêu thích' : favoriteBusy ? 'Đang lưu…' : 'Lưu yêu thích'}</button> <Link to="/customer/favorites">Xem danh sách yêu thích</Link></div>}
           {(favoriteError??favorite.error) != null && <ErrorView error={favoriteError??favorite.error} onRetry={()=>void favorite.retry()}/>}
           {error != null && <ErrorView error={error} />}
-          <div className="mt-6 border-t border-slate-100 pt-4">
+
+        </div>
+      </div>
+      <div className="product-information-grid"><section className="boot-card product-description"><h2>Mô tả sản phẩm</h2><p>{product.description??'Gian hàng chưa bổ sung mô tả cho sản phẩm này.'}</p></section><section className="boot-card">          <div className="product-attributes">
             <h3>Thông số sản phẩm</h3>
             <dl>
-              {Object.entries(product.attributes ?? {}).map(([key, value]) => (
+              {Object.entries({...product.attributes,...variant?.variant_values}).map(([key, value]) => (
                 <div className="flex gap-3" key={key}>
-                  <dt>{key}</dt>
+                  <dt>{attributeName(key)}</dt>
                   <dd>
                     {typeof value === "object"
                       ? JSON.stringify(value)
@@ -262,9 +264,8 @@ export function ProductDetail() {
                 </div>
               ))}
             </dl>
-          </div>
-        </div>
-      </div>
+          </div></section></div>
+      {zoom&&<Modal label={'Ảnh sản phẩm '+product.title} onClose={()=>setZoom(false)}><div className="product-image-viewer" onKeyDown={event=>{if(event.key==='ArrowRight'){event.preventDefault();setImageIndex(index=>(index+1)%Math.max(images.length,1));}if(event.key==='ArrowLeft'){event.preventDefault();setImageIndex(index=>(index+images.length-1)%Math.max(images.length,1));}}}><div className="product-viewer-toolbar"><span>{imageIndex+1} / {images.length||1}</span><button type="button" onClick={()=>setZoom(false)}>Đóng ảnh</button></div><ProductImage src={images[imageIndex]?.image_url} alt={product.title} name={product.title} retry/>{images.length>1&&<div className="ui-actions"><button type="button" aria-label="Ảnh trước" onClick={()=>setImageIndex(index=>(index+images.length-1)%images.length)}>←</button><button type="button" aria-label="Ảnh tiếp theo" onClick={()=>setImageIndex(index=>(index+1)%images.length)}>→</button></div>}</div></Modal>}
 
       {/* 2. Hiển thị phần đánh giá sản phẩm (Product Reviews) */}
       {product?.id && <ProductReviews productId={product.id} />}

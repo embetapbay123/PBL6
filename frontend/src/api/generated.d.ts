@@ -3401,6 +3401,11 @@ export interface components {
             /** Format: uri */
             image_url: string;
             position?: number;
+            /**
+             * Format: uuid
+             * @description Optional variant identity for accurate color/variant imagery.
+             */
+            variant_id?: string;
         };
         StateChangeRequest: {
             status: string;
@@ -7463,6 +7468,10 @@ export interface operations {
                 category_id?: string;
                 product_type_id?: string;
                 sort?: "title" | "price_asc" | "price_desc";
+                /** @description Filter products with an orderable variant within the requested VND range. */
+                min_price_vnd?: number;
+                /** @description Filter products with an orderable variant within the requested VND range. */
+                max_price_vnd?: number;
             };
             header?: never;
             path?: never;

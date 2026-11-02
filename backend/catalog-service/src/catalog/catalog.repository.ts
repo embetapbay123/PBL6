@@ -12,6 +12,8 @@ export interface ProductQuery {
   category_id?: string;
   product_type_id?: string;
   sort?: 'title' | 'price_asc' | 'price_desc';
+  min_price_vnd?: number;
+  max_price_vnd?: number;
 }
 
 export class CatalogRepository extends OwnedRepository {
@@ -41,6 +43,12 @@ export class CatalogRepository extends OwnedRepository {
       `(marketplace_search(p.title) LIKE $2 OR marketplace_search(p.description) LIKE $2)`];
     if(query.category_id){filters.push(query.category_id);conditions.push(`pt.category_id=$${filters.length}`);}
     if(query.product_type_id){filters.push(query.product_type_id);conditions.push(`p.product_type_id=$${filters.length}`);}
+    if(query.min_price_vnd!==undefined||query.max_price_vnd!==undefined){
+      const prices=["fv.product_id=p.id", "fv.status='ACTIVE'", 'fi.quantity>fi.reserved_quantity'];
+      if(query.min_price_vnd!==undefined){filters.push(query.min_price_vnd);prices.push(`fv.price_vnd>=$${filters.length}`);}
+      if(query.max_price_vnd!==undefined){filters.push(query.max_price_vnd);prices.push(`fv.price_vnd<=$${filters.length}`);}
+      conditions.push(`EXISTS(SELECT 1 FROM product_variant fv JOIN inventory fi ON fi.variant_id=fv.id AND fi.store_id=fv.store_id WHERE ${prices.join(' AND ')})`);
+    }
     const where=conditions.join(' AND ');
     const order=query.sort==='price_asc' ? 'min_price ASC NULLS LAST, p.id'
       : query.sort==='price_desc' ? 'min_price DESC NULLS LAST, p.id' : 'p.title ASC, p.id';
@@ -93,7 +101,7 @@ export class CatalogRepository extends OwnedRepository {
          FROM product_variant v LEFT JOIN inventory i ON i.variant_id=v.id AND i.store_id=v.store_id
         WHERE v.product_id=ANY($1::uuid[]) AND v.status='ACTIVE'`,[ids]);
     const images=await this.manager.query(
-      `SELECT id,product_id,url AS image_url,position
+      `SELECT id,product_id,variant_id,url AS image_url,position
          FROM product_image WHERE product_id=ANY($1::uuid[]) AND status='ACTIVE' ORDER BY position,id`,[ids]);
     const typeIds=[...new Set(rows.map(row=>row.product_type_id))];
     const axes=await this.manager.query('SELECT product_type_id,code,name FROM attribute_definition WHERE product_type_id=ANY($1::uuid[]) AND variant_factor=true ORDER BY code',[typeIds]);
@@ -135,7 +143,7 @@ export class CatalogRepository extends OwnedRepository {
       `SELECT id,product_id,sku,price_vnd,variant_values_json AS variant_values,is_default,status
          FROM product_variant WHERE product_id=ANY($1::uuid[]) ORDER BY sku,id`,[ids]);
     const images=await this.manager.query(
-      `SELECT id,product_id,url AS image_url,position
+      `SELECT id,product_id,variant_id,url AS image_url,position
          FROM product_image WHERE product_id=ANY($1::uuid[]) AND status='ACTIVE' ORDER BY position,id`,[ids]);
     return (await this.withModerationDecisions(rows)).map(row=>productResponse(row,variants,images));
   }
@@ -362,7 +370,7 @@ export class CatalogRepository extends OwnedRepository {
     const [row]=await this.manager.query(
       `INSERT INTO product_image(id,product_id,variant_id,url,position,status)
        VALUES(gen_random_uuid(),$1,$2,$3,$4,'ACTIVE')
-       RETURNING id,product_id,url AS image_url,position`,
+       RETURNING id,product_id,variant_id,url AS image_url,position`,
       [input.productId,input.variantId,input.url,input.position]);
     return row;
   }

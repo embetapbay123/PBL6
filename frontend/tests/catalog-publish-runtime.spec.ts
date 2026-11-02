@@ -112,9 +112,9 @@ test('Owner publishes twelve UI-created variants among300products and Customer p
       await catalog(page, p.title);
       await page.locator('.product-card a.market-product-link[href="/products/' + p.id + '"]').click();
       if (p.id === product.id) {
-        const selected = page.getByRole('button', {name: /Đen \/ XL .*SKU:/}); await selected.click();
+        await page.locator('[data-variant-axis="color"] button').filter({hasText:/^Đen$/}).click();const selected = page.locator('[data-variant-axis="size"] button').filter({hasText:/^XL$/}); await selected.click();
         await expect(selected).toHaveAttribute('aria-pressed', 'true');
-        await expect(page.getByRole('button', {name: /Đỏ \/ S .*SKU:/})).toBeDisabled();
+        await expect(page.locator('[data-variant-axis="color"] button').filter({hasText:/^Đỏ/})).toBeDisabled();
       }
       await page.getByRole('spinbutton', {name: 'Số lượng', exact: true}).fill(String(quantity));
       const [added] = await Promise.all([page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/cart/items'), page.getByRole('button', {name: 'Thêm vào giỏ hàng', exact: true}).click()]);

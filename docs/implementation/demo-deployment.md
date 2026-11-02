@@ -64,6 +64,8 @@ Backups compare stable before/after table contents and schema; they are not an a
 
 ## Remaining acceptance
 
+For the curated catalog refresh, use `--demo-login --curated-catalog` without `--reset-demo`. See [catalog refresh evidence and scope](marketplace-ui-refresh.md). The upgrade preserves old transactions, retires only allowlisted legacy listings and adds the new synthetic catalog/orders through APIs. A read-only preflight runs before maintenance, and the ordinary backup/restore verification still precedes changes.
+
 After deployment, verify authenticated roles/two Stores, checkout/payment/recovery, consent and real UI/device flows using their own issue criteria. A public 200 or matching image revision cannot close OPS-01, OPS-02 or DEMO-01 by itself. Refund remains disabled until an actual supported provider is configured and tested. Representative AI quality, measured load and the Android/full-demo rehearsals require separate evidence.
 
 For an existing seeded demo with `AI_MODE=real`, run the bounded read-only authentication audit:

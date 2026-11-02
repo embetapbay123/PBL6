@@ -398,6 +398,12 @@ export class ListProductsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["title", "price_asc", "price_desc"], "default": "title"}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["title", "price_asc", "price_desc"], "default": "title"},false),defaultMessage:()=> 'Invalid contract field'}})
   "sort": "title" | "price_asc" | "price_desc" = "title";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 0, "maximum": 9007199254740991}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},false),defaultMessage:()=> 'Invalid contract field'}})
+  "min_price_vnd"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 0, "maximum": 9007199254740991}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 9007199254740991},false),defaultMessage:()=> 'Invalid contract field'}})
+  "max_price_vnd"?: number;
 }
 export class ListProductsHeadersDto {
 }

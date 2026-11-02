@@ -26,7 +26,7 @@ export function CartProduct({
   return (
     <div className="flex items-center gap-3 min-w-0">
       <div className="market-cart-image cart-product-image">
-        <ProductImage src={data?.images?.[0]?.image_url} name={quotedLine?.product_title ?? data?.title ?? 'sản phẩm'} alt=""/>
+        <ProductImage src={(data?.images?.find(image=>image.variant_id===variantId)??data?.images?.[0])?.image_url} name={quotedLine?.product_title ?? data?.title ?? 'sản phẩm'} alt=""/>
       </div>
       <div className="min-w-0">
         <Link to={"/products/" + productId}>

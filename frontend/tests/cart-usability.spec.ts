@@ -76,7 +76,7 @@ test('UX02: explicit change-choice route adds the new choice, then removes only 
   await change.focus(); await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', {name: title, exact: true})).toBeVisible();
   expect(s.writes.filter(call => call.path.startsWith('/cart'))).toHaveLength(0);
-  await page.getByRole('button', {name: /Xanh \/ L .*SKU:/}).click();
+  await page.getByRole('button', {name: 'Xanh / L',exact:true}).click();
   await page.getByLabel('Số lượng', {exact: true}).fill('2');
   await page.getByRole('button', {name: 'Thêm vào giỏ hàng', exact: true}).click();
   await page.locator('header').getByRole('link', {name: 'Giỏ hàng', exact: true}).click();

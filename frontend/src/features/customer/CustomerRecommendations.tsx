@@ -16,7 +16,7 @@ function Recommendations({productId}:{productId?:string}){
  const [products,setProducts]=useState<OperationOutputs['getProduct'][]>([]),[recent,setRecent]=useState<OperationOutputs['getProduct'][]>([]),[error,setError]=useState<unknown>(),[loading,setLoading]=useState(true),[source,setSource]=useState(''),[page,setPage]=useState(1),[total,setTotal]=useState(0),[retry,setRetry]=useState(0);
  useEffect(()=>{let active=true;setLoading(true);setError(undefined);setProducts([]);
   (async()=>{
-   if(productId){const result=await getRelatedProducts(productId,page);if(active){setProducts(result.items);setTotal(result.total)}}
+   if(productId){const result=await getRelatedProducts(productId,page);if(!Array.isArray(result?.items)||!Number.isSafeInteger(result.total))throw new ApiError(503,'INVALID_RECOMMENDATION_RESPONSE','Chưa tải được gợi ý sản phẩm. Bạn vẫn có thể chọn và mua sản phẩm đang xem.');if(active){setProducts(result.items);setTotal(result.total)}}
    else{const result=await getCustomerRecommendations();const ids=[...new Set([...result.product_ids,...result.recently_viewed_product_ids])];const values=await Promise.all(ids.map(async id=>{try{return await callOperation('getProduct',{path:{id}})}catch(e){if(e instanceof ApiError&&e.status===404)return undefined;throw e}}));if(active){const byId=new Map(values.filter((v):v is OperationOutputs['getProduct']=>!!v&&v.status==='ACTIVE'&&!!v.id).map(v=>[v.id!,v]));setProducts(result.product_ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]));setRecent(result.recently_viewed_product_ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]));setSource(result.source)}}
   })().catch(e=>{if(active)setError(e)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false};
  },[productId,page,retry]);

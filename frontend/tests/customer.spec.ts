@@ -308,6 +308,6 @@ test('account isolation prevents session leakage and direct checkout entry works
 
   // Direct entry test: reloading or entering /checkout directly should retain selection via namespaced key
   await page.goto('/checkout');
-  await expect(page.getByRole('heading', { name: 'Thanh toán đơn hàng (Checkout)' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Kiểm tra và đặt hàng' })).toBeVisible();
   await expect(page.getByText('Chưa có sản phẩm nào được chọn')).toHaveCount(0);
 });

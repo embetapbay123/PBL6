@@ -526,7 +526,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
   if (selectedIds.length === 0&&!buyNow) {
     return (
       <div className="checkout-page space-y-4">
-        <h1 className="text-2xl font-bold">Thanh toán đơn hàng (Checkout)</h1>
+        <h1 className="text-2xl font-bold">Kiểm tra và đặt hàng</h1>
         <p className="text-gray-600">
           Chưa có sản phẩm nào được chọn để thanh toán.
         </p>
@@ -547,7 +547,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
         &larr; {buyNow?'Quay lại sản phẩm':'Quay lại giỏ hàng'}
       </Link>
       <h1 className="text-2xl font-bold mb-6">
-        Thanh toán đơn hàng (Checkout)
+        Kiểm tra và đặt hàng
       </h1>
 
       {error && (

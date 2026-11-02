@@ -105,6 +105,7 @@ def main():
     parser.add_argument('--gateway-url', default='http://127.0.0.1:8080')
     parser.add_argument('--apply', action='store_true')
     parser.add_argument('--demo-login', action='store_true', help='Enable quick login for the seven synthetic demo accounts only')
+    parser.add_argument('--curated-catalog', action='store_true', help='Upgrade the existing synthetic dataset through APIs, preserving prior orders and money')
     parser.add_argument('--reset-demo', action='store_true',
                         help='After backup AND restore drill, recreate only m1-m4 and seed synthetic test data')
     parser.add_argument('--confirm-reset', help='Explicit target acknowledgement; see --reset-demo plan')
@@ -131,7 +132,8 @@ def main():
     command = compose(runtime, overlay)
     report = {'revision': revision, 'status': 'PLANNED', 'steps': [],
               'reset_demo': args.reset_demo, 'demo_login': args.demo_login,
-              'limits': [('Explicit synthetic demo reset after backup/restore verification' if args.reset_demo else 'No seed/reset') + '; no automatic database rollback',
+              'curated_catalog': args.curated_catalog,
+              'limits': [('Explicit synthetic demo reset after backup/restore verification' if args.reset_demo else 'Curated synthetic upgrade; no database reset' if args.curated_catalog else 'No seed/reset') + '; no automatic database rollback',
                          'Health/version checks do not accept provider, UI, load or AI quality',
                          'Tunnel and persistent dependencies are preserved']}
     report_file = folder / 'report.json'
@@ -161,6 +163,8 @@ def main():
             print('RESET PLAN: only pbl6 databases m1,m2,m3,m4; all previous records removed after verified backup/restore drill.')
             print('Seed: 7 synthetic accounts, 2 Stores, 12 products/34 variants, 17 example orders; no bank callbacks or SMTP messages.')
             print('Required acknowledgement: --confirm-reset ' + RESET_CONFIRMATION)
+        if args.curated_catalog:
+            print('Curated catalog: 32 products / 64 variants; stop legacy demo listings; add 12 varied COD orders. Preserve prior order/stock/money history.')
         return
     maintenance = False
     try:
@@ -179,6 +183,11 @@ def main():
             data = json.loads(capture(['docker', 'image', 'inspect', f'pbl6-{family}:{revision}']))[0]
             if data['Config'].get('Labels', {}).get('org.opencontainers.image.revision') != revision:
                 raise RuntimeError('Image revision mismatch before maintenance')
+        if args.curated_catalog and not args.reset_demo:
+            execute('curated-preflight', command + ['run', '--rm', '-T', '--no-deps',
+                '-e', 'DEMO_SEED_ALLOWED=1', '-e', 'CURATED_CATALOG_FILE=/seed-data/marketplace-catalog.json',
+                '-v', str(ROOT / 'scripts') + ':/seed:ro', '-v', str(ROOT / 'data') + ':/seed-data:ro',
+                'tools', 'node', '/seed/seed_curated_catalog.cjs', '--preflight'])
         maintenance = True
         execute('stop-ingress', command + ['stop', 'gateway'])
         execute('stop-writers', command + ['stop', *APPS])
@@ -259,6 +268,16 @@ def main():
             report['seed'] = {'dataset': seed['dataset'], 'accounts': 7, 'stores': 2,
                               'products': 12, 'variants': 34, 'orders': 17,
                               'evidence': str(folder / 'dataset.json')}
+        if args.curated_catalog:
+            execute('seed-curated-catalog', command + ['run', '--rm', '-T', '--no-deps',
+                '-e', 'DEMO_SEED_ALLOWED=1', '-e', 'CURATED_CATALOG_FILE=/seed-data/marketplace-catalog.json',
+                '-v', str(ROOT / 'scripts') + ':/seed:ro', '-v', str(ROOT / 'data') + ':/seed-data:ro',
+                '-v', str(folder) + ':/seed-output', 'tools', 'node', '/seed/seed_curated_catalog.cjs',
+                '--apply', '--output', '/seed-output/curated-catalog.json'])
+            curated = json.loads((folder / 'curated-catalog.json').read_text(encoding='utf-8'))
+            if curated.get('status') != 'PASS':
+                raise RuntimeError('Curated dataset upgrade did not finish; ingress remains closed')
+            report['curated_verification'] = curated['verification']
         execute('open-ingress', command + ['up', '-d', '--no-deps', '--force-recreate', 'gateway'])
         deadline = time.monotonic() + 60
         while True:

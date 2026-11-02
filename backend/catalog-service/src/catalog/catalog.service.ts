@@ -168,6 +168,8 @@ export class CatalogService {
    * telemetry failure can never fail the read.
    */
   async list(query:OperationInputs['listProducts']['query'],authorization:unknown,correlation:string):Promise<OperationOutputs['listProducts']> {
+    if(query.min_price_vnd!==undefined&&query.max_price_vnd!==undefined&&query.min_price_vnd>query.max_price_vnd)
+      throw new ApiError(422,'VALIDATION_FAILED','Giá từ không được lớn hơn giá đến.');
     // The contract applies page/size defaults in the request DTO; the generated type keeps them
     // optional, so the boundary normalises them once before they reach the repository.
     const page=await new CatalogRepository(database.manager).page(await this.stores(correlation),
@@ -417,7 +419,7 @@ export class CatalogService {
         url:input.image_url,position});
       await audit(manager,'M1',actorUserId,'Product',id,'IMAGE_ADD',correlation,
         {version:product.version},{image_id:image.id,position:image.position});
-      return {id:image.id,product_id:image.product_id,image_url:image.image_url,position:image.position};
+      return {id:image.id,product_id:image.product_id,image_url:image.image_url,position:image.position,...(image.variant_id?{variant_id:image.variant_id}:{})};
     });
   }
 

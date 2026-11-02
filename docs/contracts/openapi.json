@@ -3894,6 +3894,28 @@
               ],
               "default": "title"
             }
+          },
+          {
+            "name": "min_price_vnd",
+            "in": "query",
+            "required": false,
+            "description": "Filter products with an orderable variant within the requested VND range.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          {
+            "name": "max_price_vnd",
+            "in": "query",
+            "required": false,
+            "description": "Filter products with an orderable variant within the requested VND range.",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
           }
         ],
         "responses": {
@@ -24738,6 +24760,11 @@
           "position": {
             "type": "integer",
             "maximum": 9007199254740991
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Optional variant identity for accurate color/variant imagery."
           }
         },
         "required": [

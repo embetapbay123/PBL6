@@ -18,7 +18,7 @@ async function model(page:Page,{missing=false}={}){
 test('same-title same-SKU catalog cards identify the Store before the Customer chooses a product',async({page})=>{
  const f=await model(page);await page.goto('/?q=Áo');await expect(page.locator('.product-card')).toHaveCount(2);
  for(const [name,store,product] of [['Áo Việt Huế',id(11),id(1)],['Áo Việt Đà Nẵng',id(12),id(2)]] as const){
-  const card=page.locator('.product-card').filter({has:page.getByRole('link',{name:'Gian hàng: '+name,exact:true})});await expect(card).toHaveCount(1);await expect(card.getByRole('link',{name:'Gian hàng: '+name,exact:true})).toHaveAttribute('href','/stores/'+store);await expect(card.locator('.market-product-link')).toHaveAttribute('href','/products/'+product);
+  const card=page.locator('.product-card').filter({has:page.getByRole('link',{name:name,exact:true})});await expect(card).toHaveCount(1);await expect(card.getByRole('link',{name:name,exact:true})).toHaveAttribute('href','/stores/'+store);await expect(card.locator('.market-product-link')).toHaveAttribute('href','/products/'+product);
  }
 });
 test('detail Store identity loads independently and an unavailable name has an explicit read-only recovery',async({page})=>{
@@ -30,6 +30,6 @@ test('detail Store identity loads independently and an unavailable name has an e
 test('a variant label keeps the same axis order for both JSON key orders and preserves valid zero or false values',async({page})=>{
  const f=await model(page);const product={...f.products[0],variants:[{...f.products[0].variants[0],variant_values:{size:'M',color:'Đỏ',width:0,coated:false}}]};
  await page.route('**/api/v1/products/'+id(1),route=>route.fulfill({json:product}));await page.goto('/products/'+id(1));
- const choice=page.getByRole('button',{name:/false \/ Đỏ \/ M \/ 0 .*SKU:/});await expect(choice).toHaveCount(1);await expect(choice).toHaveAttribute('aria-pressed','true');
- product.variants[0].variant_values={coated:false,width:0,color:'Đỏ',size:'M'};await page.reload();await expect(choice).toHaveCount(1);await expect(choice).toHaveAttribute('aria-pressed','true');
+ const choice=page.locator('.product-selection-summary');await expect(choice).toHaveCount(1);await expect(choice).toContainText('false / Đỏ / M / 0');
+ product.variants[0].variant_values={coated:false,width:0,color:'Đỏ',size:'M'};await page.reload();await expect(choice).toHaveCount(1);await expect(choice).toContainText('false / Đỏ / M / 0');
 });

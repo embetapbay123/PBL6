@@ -55,7 +55,7 @@ test('UX02: two-Store cart keyboard correction and a concurrent tab change are r
     await row(page, 'Đỏ / M').getByRole('link', {name: 'Chọn phân loại khác', exact: true}).focus(); await page.keyboard.press('Enter');
     await expect(page.getByRole('heading', {name: a.product.title, exact: true})).toBeVisible();
     expect((await a.api('/cart/items?size=100', a.buyer.access)).items.find((item: any) => item.id === redItem.id).quantity).toBe(2);
-    await page.getByRole('button', {name: /Xanh \/ L .*SKU:/}).click();
+    await page.getByRole('button', {name: 'Xanh / L',exact:true}).click();
     await page.getByLabel('Số lượng', {exact: true}).fill('2');
     const [added] = await Promise.all([page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname === '/api/v1/cart/items'), page.getByRole('button', {name: 'Thêm vào giỏ hàng', exact: true}).click()]);
     expect(added.status()).toBe(201);

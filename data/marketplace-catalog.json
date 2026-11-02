@@ -1,0 +1,577 @@
+{
+  "version": "marketplace-curated-v2",
+  "purpose": "Synthetic operational catalog; original stock photography, no invented social proof",
+  "categories": [
+    "Thời trang",
+    "Túi & phụ kiện",
+    "Nhà cửa & đời sống",
+    "Góc làm việc"
+  ],
+  "stores": {
+    "A": {
+      "name": "An Nhiên Studio",
+      "description": "Trang phục tối giản và túi phụ kiện cho nhịp sống hằng ngày. Chọn màu, cỡ và trao đổi với gian hàng trước khi đặt."
+    },
+    "B": {
+      "name": "Mây Xanh Living",
+      "description": "Đồ dùng cho góc nhà và bàn làm việc. Mỗi món đều có mô tả phần sản phẩm đi kèm và cách bảo quản."
+    }
+  },
+  "collection_photos": {
+    "Thời trang": "rack-of-blank-tshirts",
+    "Túi & phụ kiện": "black-fashion-backpack",
+    "Nhà cửa & đời sống": "plants-and-table-decorations",
+    "Góc làm việc": "a-minimal-yet-cosy-workspace"
+  },
+  "products": [
+    {
+      "id": "AN-TS01",
+      "title": "Áo thun Everyday cổ tròn",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 149000,
+      "color": "Xanh dương",
+      "material": "Cotton dệt jersey",
+      "dimensions": "S–M–L; dáng regular",
+      "photos": [
+        "blue-t-shirt",
+        "green-t-shirt",
+        "red-t-shirt",
+        "purple-t-shirt"
+      ],
+      "description": "Áo thun cổ tròn tối giản, dễ phối với jeans hoặc quần vải. Bề mặt vải mềm, đường may gọn và phom regular cho sinh hoạt hằng ngày. Chọn màu và cỡ trước khi thêm vào giỏ.",
+      "care": "Giặt nhẹ với nước mát, lộn trái áo và phơi trong bóng râm.",
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ],
+      "colors": [
+        "Xanh dương",
+        "Xanh lá",
+        "Đỏ",
+        "Tím"
+      ]
+    },
+    {
+      "id": "AN-TS02",
+      "title": "Áo thun xám Basic Essential",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 169000,
+      "color": "Xám",
+      "material": "Cotton pha",
+      "dimensions": "S–M–L–XL; dáng regular",
+      "photos": [
+        "grey-t-shirt"
+      ],
+      "description": "Áo thun tông xám lạnh, cổ bo tròn và tay ngắn. Thiết kế trơn gọn, dễ kết hợp cùng quần jeans hoặc mặc trong sơ mi khoác ngoài.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-TS03",
+      "title": "Áo thun xanh teal City",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 179000,
+      "color": "Xanh teal",
+      "material": "Cotton dệt jersey",
+      "dimensions": "S–M–L–XL; dáng regular",
+      "photos": [
+        "teal-t-shirt"
+      ],
+      "description": "Áo thun màu xanh teal, thiết kế không họa tiết để dễ phối đồ. Phù hợp mặc riêng hoặc phối trong sơ mi khoác ngoài.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-TS04",
+      "title": "Áo thun trắng cổ tim Airy",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 159000,
+      "color": "Trắng",
+      "material": "Cotton dệt jersey",
+      "dimensions": "S–M–L–XL; dáng regular",
+      "photos": [
+        "white-tshirt-template"
+      ],
+      "description": "Áo thun trắng cổ tim và tay ngắn, phom thoải mái cho trang phục thường ngày. Dễ phối cùng quần vải hoặc jeans.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-TS05",
+      "title": "Áo thun sọc ngang Coast",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 219000,
+      "color": "Sọc",
+      "material": "Vải dệt kim",
+      "dimensions": "S–M–L–XL; dáng regular",
+      "photos": [
+        "striped-t-shirt"
+      ],
+      "description": "Họa tiết sọc ngang và đường cổ đơn giản tạo điểm nhấn vừa đủ. Phom áo gọn, phù hợp phối cùng jeans hoặc chân váy trơn.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-TS06",
+      "title": "Áo thun trắng viền màu Play",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 189000,
+      "color": "Trắng phối màu",
+      "material": "Cotton dệt jersey",
+      "dimensions": "S–M–L–XL; dáng regular",
+      "photos": [
+        "white-tee-with-pocket"
+      ],
+      "description": "Áo thun trắng có viền màu ở cổ và tay áo, tạo điểm nhấn vui mắt. Cổ tròn, tay ngắn, phù hợp trang phục thường ngày.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-HD01",
+      "title": "Áo hoodie xám Weekend",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 389000,
+      "color": "Xám",
+      "material": "Vải nỉ",
+      "dimensions": "S–M–L–XL; dáng thoải mái",
+      "photos": [
+        "close-up-grey-marl-hoodie"
+      ],
+      "description": "Hoodie có mũ với bề mặt vải nỉ và tông xám dễ phối. Thích hợp khoác ngoài khi thời tiết mát, đi học hoặc di chuyển hằng ngày.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-SH01",
+      "title": "Áo thun màu be Sand",
+      "category": "Thời trang",
+      "store": "A",
+      "price_vnd": 329000,
+      "color": "Be",
+      "material": "Vải dệt kim",
+      "dimensions": "S–M–L–XL; dáng thoải mái",
+      "photos": [
+        "simple-beige-mens-shirt"
+      ],
+      "description": "Áo thun màu be, cổ tròn và tay ngắn. Tông màu ấm dễ phối với quần sáng hoặc tối màu; phom thoải mái cho sinh hoạt hằng ngày.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng.",
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "id": "AN-BP01",
+      "title": "Balo City khóa kéo ánh kim",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 429000,
+      "color": "Đen",
+      "material": "Chất liệu tổng hợp",
+      "dimensions": "Balo dùng hằng ngày",
+      "photos": [
+        "black-fashion-backpack",
+        "black-gold-fashion-backpack",
+        "gold-zipper-on-black-fashion-backpack"
+      ],
+      "description": "Balo đen với điểm nhấn khóa kéo ánh kim, quai đeo điều chỉnh và ngăn chính đóng mở thuận tiện. Phù hợp mang đồ cá nhân khi đi làm hoặc dạo phố.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-HB01",
+      "title": "Túi xách xanh Everyday",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 359000,
+      "color": "Xanh",
+      "material": "Chất liệu tổng hợp",
+      "dimensions": "Túi xách tay",
+      "photos": [
+        "modern-blue-handbag"
+      ],
+      "description": "Túi xách màu xanh với dáng gọn và quai cầm chắc tay. Dễ phối với trang phục đơn sắc; xem ảnh để cân nhắc kiểu dáng phù hợp.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-HB02",
+      "title": "Túi đeo vai hồng Pastel",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 289000,
+      "color": "Hồng nhạt",
+      "material": "Chất liệu tổng hợp",
+      "dimensions": "Túi đeo vai cỡ nhỏ",
+      "photos": [
+        "light-pink-purse"
+      ],
+      "description": "Túi màu hồng pastel, kích thước gọn cho các vật dụng thiết yếu. Thiết kế nhẹ nhàng phù hợp những buổi đi chơi và hẹn gặp bạn bè.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-HB03",
+      "title": "Túi đỏ quai xích Evening",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 399000,
+      "color": "Đỏ",
+      "material": "Chất liệu tổng hợp và kim loại",
+      "dimensions": "Túi đeo vai cỡ nhỏ",
+      "photos": [
+        "red-purse-with-gold-chain"
+      ],
+      "description": "Sắc đỏ kết hợp quai xích ánh kim tạo điểm nhấn cho trang phục. Dáng túi nhỏ, phù hợp điện thoại, ví mỏng và vật dụng cá nhân.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-HB04",
+      "title": "Túi đeo vai nâu Daily",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 449000,
+      "color": "Nâu",
+      "material": "Chất liệu tổng hợp",
+      "dimensions": "Túi đeo vai",
+      "photos": [
+        "brown-purse-with-shoulder-strap"
+      ],
+      "description": "Túi màu nâu ấm, dáng cổ điển dễ dùng hằng ngày. Quai đeo và ngăn chính tiện mang theo các vật dụng cá nhân khi ra ngoài.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-HB05",
+      "title": "Túi xách đen Minimal",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 319000,
+      "color": "Đen",
+      "material": "Chất liệu tổng hợp",
+      "dimensions": "Túi xách tay",
+      "photos": [
+        "black-over-the-shoulder-bag"
+      ],
+      "description": "Túi xách đen có quai cầm, thiết kế tối giản cho trang phục đi làm hoặc dạo phố. Ngăn chính dành cho các vật dụng cá nhân thường dùng.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-BP02",
+      "title": "Balo Casual đi học đi làm",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 379000,
+      "color": "Đen",
+      "material": "Vải tổng hợp",
+      "dimensions": "Balo dùng hằng ngày",
+      "photos": [
+        "casual-black-backpack"
+      ],
+      "description": "Balo đen có thiết kế gọn, phù hợp sách vở và đồ cá nhân. Quai đeo có thể điều chỉnh theo chiều cao người sử dụng.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "AN-HB06",
+      "title": "Túi xách nâu Classic",
+      "category": "Túi & phụ kiện",
+      "store": "A",
+      "price_vnd": 529000,
+      "color": "Nâu",
+      "material": "Chất liệu tổng hợp",
+      "dimensions": "Túi xách tay",
+      "photos": [
+        "leather-handbag-on-bed"
+      ],
+      "description": "Tông nâu cổ điển và dáng túi có cấu trúc phù hợp trang phục đi làm. Xem các ảnh để lựa chọn kiểu phối đồ mong muốn.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-PL01",
+      "title": "Chậu cây xanh để bàn Pure",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 149000,
+      "color": "Xanh và trắng",
+      "material": "Cây trang trí, chậu gốm",
+      "dimensions": "Chậu để bàn",
+      "photos": [
+        "house-plant-in-white-pot"
+      ],
+      "description": "Một chậu cây xanh trong chậu trắng đơn giản để làm mềm góc bàn hoặc kệ. Đặt ở nơi có ánh sáng phù hợp và điều chỉnh chăm sóc theo môi trường thực tế.",
+      "care": "Lau mặt ngoài chậu, kiểm tra độ ẩm trước khi tưới."
+    },
+    {
+      "id": "MX-CD01",
+      "title": "Nến hũ thủ công Calm",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 159000,
+      "color": "Trắng",
+      "material": "Sáp nến, hũ đựng",
+      "dimensions": "Một hũ nến",
+      "photos": [
+        "diy-organic-candle"
+      ],
+      "description": "Nến hũ phong cách tối giản cho góc đọc sách hoặc bàn trang trí. Ánh nến tạo cảm giác ấm cúng cho không gian buổi tối.",
+      "care": "Đặt trên bề mặt chịu nhiệt; không để nến cháy khi không có người trông."
+    },
+    {
+      "id": "MX-MG01",
+      "title": "Cốc gốm xanh mint Morning",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 129000,
+      "color": "Xanh mint",
+      "material": "Gốm tráng men",
+      "dimensions": "Một cốc có quai",
+      "photos": [
+        "mint-green-mug-full-of-black-coffee-on-top-of-books"
+      ],
+      "description": "Cốc gốm màu xanh mint có quai cầm, phù hợp cà phê hoặc trà hằng ngày. Tông màu dịu dễ kết hợp với không gian bếp và góc làm việc.",
+      "care": "Rửa nhẹ, tránh thay đổi nhiệt độ đột ngột."
+    },
+    {
+      "id": "MX-TP01",
+      "title": "Ấm trà kim loại hình học",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 349000,
+      "color": "Bạc",
+      "material": "Kim loại",
+      "dimensions": "Một ấm trà",
+      "photos": [
+        "a-close-up-view-of-a-geometric-teapot"
+      ],
+      "description": "Ấm trà kim loại có dáng hình học, bề mặt ánh bạc và đường nét rõ. Phù hợp tạo điểm nhấn cho bàn trà; bộ sản phẩm chỉ gồm ấm, không gồm phụ kiện trong bối cảnh ảnh.",
+      "care": "Rửa bằng miếng bọt biển mềm, tránh va đập."
+    },
+    {
+      "id": "MX-BW01",
+      "title": "Tô sứ trắng Everyday",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 99000,
+      "color": "Trắng",
+      "material": "Sứ tráng men",
+      "dimensions": "Một tô",
+      "photos": [
+        "white-bowl-surrounded-by-herbs-chilis-and-lime-slices"
+      ],
+      "description": "Tô sứ trắng kiểu dáng đơn giản cho món súp, bún hoặc món trộn. Dễ phối với chén đĩa hiện có; thực phẩm trong ảnh chỉ là bối cảnh sử dụng.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-CB01",
+      "title": "Thớt gỗ bếp Daily Prep",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 189000,
+      "color": "Gỗ tự nhiên",
+      "material": "Gỗ",
+      "dimensions": "Một thớt",
+      "photos": [
+        "cutting-board-with-veg"
+      ],
+      "description": "Thớt gỗ cho công việc sơ chế nguyên liệu trong bếp. Mặt phẳng dễ thao tác và tông gỗ ấm; không bao gồm dao hay nguyên liệu trong ảnh.",
+      "care": "Rửa nhanh và dựng khô sau khi dùng; không ngâm lâu trong nước."
+    },
+    {
+      "id": "MX-KT01",
+      "title": "Bộ dụng cụ bếp kiểu gỗ",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 269000,
+      "color": "Gỗ tự nhiên",
+      "material": "Gỗ và chất liệu phối",
+      "dimensions": "Bộ dụng cụ bếp",
+      "photos": [
+        "beautiful-kitchen-utensils-in-bright-wooden-kitchen"
+      ],
+      "description": "Bộ dụng cụ nấu ăn phong cách mộc, dành cho góc bếp sáng và gọn. Sản phẩm là dụng cụ bếp, không bao gồm đồ nội thất hay thiết bị trong bối cảnh ảnh.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-SH01",
+      "title": "Kệ trang trí dáng thang",
+      "category": "Nhà cửa & đời sống",
+      "store": "B",
+      "price_vnd": 849000,
+      "color": "Gỗ tự nhiên",
+      "material": "Gỗ",
+      "dimensions": "Kệ đứng trang trí",
+      "photos": [
+        "ladder-plant-shelf"
+      ],
+      "description": "Kệ kiểu thang giúp trưng bày cây nhỏ và vật dụng trang trí theo chiều cao. Phù hợp đặt sát tường ở góc phòng; cây và đồ trang trí trong ảnh không thuộc bộ sản phẩm.",
+      "care": "Đặt trên nền phẳng, phân bổ đồ vật đều và tránh môi trường ẩm lâu ngày."
+    },
+    {
+      "id": "MX-HP01",
+      "title": "Tai nghe chụp tai Studio",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 549000,
+      "color": "Đen",
+      "material": "Nhựa, kim loại, đệm tai",
+      "dimensions": "Tai nghe chụp tai",
+      "photos": [
+        "headphones-over-ear"
+      ],
+      "description": "Tai nghe dạng chụp tai, thích hợp nghe nội dung giải trí và làm việc tại bàn. Xem kiểu dáng, phụ kiện và mô tả kết nối trước khi lựa chọn.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-HP02",
+      "title": "Tai nghe không dây Daily",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 649000,
+      "color": "Đen",
+      "material": "Nhựa và đệm tai",
+      "dimensions": "Tai nghe không dây",
+      "photos": [
+        "wireless-headphones"
+      ],
+      "description": "Tai nghe không dây với thiết kế gọn cho sinh hoạt thường ngày. Chọn theo kiểu đeo phù hợp; thiết bị phát nhạc trong bối cảnh ảnh không đi kèm.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-HP03",
+      "title": "Tai nghe có dây Classic",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 329000,
+      "color": "Đen",
+      "material": "Nhựa và đệm tai",
+      "dimensions": "Tai nghe có dây",
+      "photos": [
+        "black-headphones"
+      ],
+      "description": "Tai nghe tông đen theo phong cách cổ điển, có dây kết nối. Phù hợp sử dụng tại góc học tập hoặc bàn làm việc.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-HP04",
+      "title": "Tai nghe thể thao Active",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 279000,
+      "color": "Cam",
+      "material": "Nhựa và silicone",
+      "dimensions": "Tai nghe thể thao",
+      "photos": [
+        "sport-headphones"
+      ],
+      "description": "Tai nghe gọn để sử dụng khi di chuyển và tập luyện nhẹ. Kiểm tra kiểu đeo trong ảnh để lựa chọn theo nhu cầu; không suy ra khả năng chống nước khi chưa có thông số công bố.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-NB01",
+      "title": "Sổ còng ghi chép Daily Notes",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 79000,
+      "color": "Trung tính",
+      "material": "Giấy và bìa",
+      "dimensions": "Một sổ còng ghi chép",
+      "photos": [
+        "notebook-and-coffee"
+      ],
+      "description": "Sổ tay dùng ghi ý tưởng, lịch làm việc hoặc ghi chép học tập. Thiết kế đơn giản, dễ mang theo; bút, cốc và đồ vật trong bối cảnh ảnh không đi kèm.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-NB02",
+      "title": "Sổ tay góc làm việc Focus",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 89000,
+      "color": "Trung tính",
+      "material": "Giấy và bìa",
+      "dimensions": "Một sổ ghi chép",
+      "photos": [
+        "flatlay-of-a-notebook-with-pen-and-cellphone"
+      ],
+      "description": "Sổ ghi chép cho các đầu việc và ý tưởng trong ngày. Bề mặt giấy phù hợp ghi tay; sản phẩm không gồm điện thoại và phụ kiện trong ảnh.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    },
+    {
+      "id": "MX-LM01",
+      "title": "Đèn bàn kim loại Nordic",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 459000,
+      "color": "Bạc",
+      "material": "Kim loại",
+      "dimensions": "Một đèn bàn",
+      "photos": [
+        "silver-lamp-on-a-white-table-next-to-books"
+      ],
+      "description": "Đèn bàn màu bạc theo phong cách tối giản, phù hợp góc đọc sách hoặc làm việc. Ảnh thể hiện bối cảnh sắp đặt; sách và bàn không đi kèm.",
+      "care": "Ngắt nguồn trước khi lau; sử dụng theo hướng dẫn an toàn điện."
+    },
+    {
+      "id": "MX-TR01",
+      "title": "Khay gỗ sắp xếp bàn làm việc",
+      "category": "Góc làm việc",
+      "store": "B",
+      "price_vnd": 199000,
+      "color": "Gỗ tự nhiên",
+      "material": "Gỗ",
+      "dimensions": "Một khay để bàn",
+      "photos": [
+        "a-laptop-with-potted-plants-and-wooden-tray"
+      ],
+      "description": "Khay gỗ để gom các vật dụng nhỏ và giữ mặt bàn gọn hơn. Laptop, cây và những vật dụng trong bối cảnh chỉ minh họa cách sử dụng.",
+      "care": "Lau sạch bằng khăn mềm; bảo quản nơi khô thoáng."
+    }
+  ],
+  "visual_review": {
+    "method": "All 32 primary product photos inspected against titles/colors/object types using a contact sheet",
+    "corrections": [
+      "Crew-neck color gallery uses matching flat-lay shirts",
+      "V-neck white shirt is a separate product",
+      "Beige tee is not described as a button-up shirt",
+      "Metal teapot is not described as ceramic",
+      "Orange sport headphones are not described as black",
+      "Context props are excluded in descriptions"
+    ]
+  }
+}

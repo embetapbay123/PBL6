@@ -12,7 +12,7 @@ export function productResponse(row:any,variants:any[],images:any[]=[]):Operatio
     ...(Array.isArray(row.variant_axes)?{variant_axes:row.variant_axes}:{}),
     ...(row.moderation_decision?{moderation_decision:row.moderation_decision}:{}),
     variants:variants.filter(v=>v.product_id===row.id).map(v=>({id:v.id,sku:v.sku,price_vnd:moneyNumber(v.price_vnd),variant_values:v.variant_values,is_default:v.is_default,status:v.status,...(Number.isSafeInteger(v.available_quantity)&&v.available_quantity>=0?{available_quantity:v.available_quantity}:{})})),
-    images:images.filter(i=>i.product_id===row.id).map(i=>({id:i.id,product_id:i.product_id,image_url:i.image_url,position:i.position}))};
+    images:images.filter(i=>i.product_id===row.id).map(i=>({id:i.id,product_id:i.product_id,image_url:i.image_url,position:i.position,...(i.variant_id?{variant_id:i.variant_id}:{})}))};
 }
 
 /** `parent_id` is nullable in the database but typed as a string in the contract. */
