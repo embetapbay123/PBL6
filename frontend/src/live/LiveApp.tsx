@@ -1,10 +1,12 @@
-import { FormEvent, useMemo, useState, useRef } from "react";
+import {RouteFocus} from '../components/RouteFocus';
+import {UnsavedChangesBoundary} from '../components/UnsavedChangesBoundary';
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  BrowserRouter,
+  createBrowserRouter,
+  RouterProvider,
   Link,
   NavLink,
   useLocation,
-  useNavigate,
   useRoutes,
 } from "react-router-dom";
 import {
@@ -30,30 +32,29 @@ import {
   BarChart3,
   MapPin,
   Mail,
+  MessageSquare,
   Key,
 } from "lucide-react";
 import { AuthProvider, useAuth } from "../api/auth-context";
-import { api } from "../api/client";
+import { api, sessionScope } from "../api/client";
 import { dataMode } from "../api/operations";
 import { customerRoutes } from "../features/customer/routes";
 import { sellerRoutes } from "../features/seller/routes";
 import { adminRoutes } from "../features/admin/routes";
 import { AuthPage } from "../features/customer/auth/AuthPage";
-import { CustomerChatWidget } from "../features/customer/CustomerChatWidget";
+import {ToastProvider} from "../components/ToastProvider";
+import {ChatProvider} from "../chat/ChatProvider";
+import {ChatCenter} from "../chat/ChatCenter";
 import { ErrorView, Loading } from "../bootstrap/components";
 import "../bootstrap/bootstrap.css";
-import "./live.css";
+import "./commerce.css";
+import {StoreContextNotice} from '../components/StoreContextNotice';
+import {MarketplaceHeader} from "./MarketplaceHeader";
+import {listenFavoritesChange} from '../features/customer/favorite-state';
 
 function ScopedQueries() {
   const { session } = useAuth();
-  const context = session?.context;
-  const scope = JSON.stringify([
-    context?.user_id ?? "guest",
-    context?.roles,
-    context?.role_permissions,
-    context?.store_membership,
-    context?.token_version,
-  ]);
+  const scope = sessionScope(session);
   const client = useMemo(
     () =>
       new QueryClient({
@@ -61,9 +62,11 @@ function ScopedQueries() {
       }),
     [scope],
   );
+  useEffect(()=>()=>{void client.cancelQueries();client.clear();},[client]);
+  useEffect(()=>listenFavoritesChange(client),[client]);
   return (
-    <QueryClientProvider client={client}>
-      <Market key={scope} />
+    <QueryClientProvider client={client} key={scope}>
+      <UnsavedChangesBoundary><ToastProvider key={scope}><ChatProvider><Market /></ChatProvider></ToastProvider></UnsavedChangesBoundary>
     </QueryClientProvider>
   );
 }
@@ -78,125 +81,26 @@ function Profile() {
   const isMerchant = roles.includes("STORE_OWNER") || roles.includes("SELLER");
   const isAdmin = roles.includes("ADMIN");
 
-  return (
-    <section className="boot-card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>Trung tâm tài khoản</h1>
-          <p style={{ margin: '0.25rem 0 0', color: '#64748b' }}>Quản lý thông tin cá nhân, địa chỉ, đơn hàng và các quyền truy cập hệ thống.</p>
-        </div>
-        {session && (
-          <span className="market-badge" style={{ fontSize: '0.875rem' }}>
-            {isAdmin ? 'Quản trị viên' : isMerchant ? 'Đối tác bán hàng' : 'Khách hàng'}
-          </span>
-        )}
-      </div>
-
-      {!session ? (
-        <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
-          <p style={{ marginBottom: '1rem', color: '#475569' }}>Bạn chưa đăng nhập. Vui lòng đăng nhập để xem thông tin và lịch sử tài khoản.</p>
-          <Link to="/login" className="boot-button" style={{ display: 'inline-block', padding: '0.5rem 1.5rem', background: '#059669', color: '#fff', borderRadius: '6px', textDecoration: 'none' }}>
-            Đăng nhập ngay
-          </Link>
-        </div>
-      ) : isLoading ? (
-        <Loading />
-      ) : error ? (
-        <ErrorView error={error} />
-      ) : (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#f8fafc', padding: '1.25rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <User size={26} color="#059669" />
-            </div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{data?.display_name || 'Người dùng PBL6'}</h2>
-              <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.9rem' }}>{data?.email} {data?.phone ? `· ${data.phone}` : ''}</p>
-            </div>
-          </div>
-
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Quản lý cá nhân & Mua hàng</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <Link to="/customer/profile" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <User size={20} color="#059669" />
-              <div>
-                <strong>Thông tin cá nhân</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Sửa tên hiển thị & số điện thoại</p>
-              </div>
-            </Link>
-            <Link to="/customer/addresses" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <MapPin size={20} color="#059669" />
-              <div>
-                <strong>Sổ địa chỉ</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Quản lý địa chỉ nhận hàng</p>
-              </div>
-            </Link>
-            <Link to="/customer/orders" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Package size={20} color="#059669" />
-              <div>
-                <strong>Đơn hàng của tôi</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Theo dõi trạng thái đơn & thanh toán</p>
-              </div>
-            </Link>
-            <Link to="/customer/invitations" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Mail size={20} color="#059669" />
-              <div>
-                <strong>Lời mời Store</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Xem & xác nhận lời mời nhân viên</p>
-              </div>
-            </Link>
-            <Link to="/customer/store-applications" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Store size={20} color="#059669" />
-              <div>
-                <strong>Đăng ký mở gian hàng</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Tạo cửa hàng và bán hàng trên sàn</p>
-              </div>
-            </Link>
-            <Link to="/customer/settings" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Settings size={20} color="#059669" />
-              <div>
-                <strong>Cài đặt & Quyền riêng tư</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Consent và cấu hình tài khoản</p>
-              </div>
-            </Link>
-            <Link to="/change-password" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Key size={20} color="#059669" />
-              <div>
-                <strong>Đổi mật khẩu</strong>
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b' }}>Cập nhật mật khẩu đăng nhập</p>
-              </div>
-            </Link>
-          </div>
-
-          {(isMerchant || isAdmin) && (
-            <>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.75rem' }}>Cổng nghiệp vụ được phân quyền</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-                {isMerchant && (
-                  <Link to="/seller" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #10b981', background: '#ecfdf5' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                      <Store size={22} color="#059669" />
-                      <strong style={{ fontSize: '1rem', color: '#065f46' }}>Store Portal (Kênh người bán)</strong>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#047857' }}>Quản lý sản phẩm, đơn hàng, tồn kho, mã giảm giá và báo cáo doanh thu.</p>
-                  </Link>
-                )}
-                {isAdmin && (
-                  <Link to="/admin" className="boot-card" style={{ textDecoration: 'none', color: 'inherit', border: '1px solid #6366f1', background: '#eef2ff' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                      <ShieldCheck size={22} color="#4f46e5" />
-                      <strong style={{ fontSize: '1rem', color: '#3730a3' }}>Admin Portal (Quản trị hệ thống)</strong>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#4338ca' }}>Quản lý người dùng, duyệt hồ sơ mở Store, phân quyền và kiểm duyệt toàn sàn.</p>
-                  </Link>
-                )}
-              </div>
-            </>
-          )}
-        </>
-      )}
-    </section>
-  );
+  const personalLinks=[
+    ['/customer/profile','Thông tin cá nhân','Chỉnh sửa tên và thông tin liên hệ',User],
+    ['/customer/orders','Đơn hàng của tôi','Theo dõi, thanh toán và xử lý đơn mua',Package],
+    ['/customer/favorites','Sản phẩm yêu thích','Những sản phẩm bạn đã lưu',ShoppingBag],
+    ['/customer/messages','Tin nhắn với gian hàng','Trao đổi và xem lịch sử hội thoại',MessageSquare],
+    ['/customer/notifications','Thông báo','Cập nhật đơn hàng và đổi trả',Mail],
+    ['/customer/returns','Yêu cầu đổi trả','Theo dõi yêu cầu và phản hồi',Package],
+    ['/customer/addresses','Sổ địa chỉ','Quản lý địa chỉ nhận hàng',MapPin],
+    ['/customer/invitations','Lời mời Store','Xem lời mời tham gia gian hàng',Users],
+    ['/customer/store-applications','Đăng ký mở gian hàng','Bắt đầu bán hàng trên PBL6 Market',Store],
+    ['/customer/settings','Cài đặt & Quyền riêng tư','Quản lý quyền cá nhân hóa',Settings],
+    ['/change-password','Đổi mật khẩu','Cập nhật mật khẩu đăng nhập',Key],
+  ] as const;
+  return <section className="account-hub"><div className="seller-products-toolbar"><div><h1>Trung tâm tài khoản</h1><p>Quản lý thông tin, hoạt động mua sắm và các quyền truy cập của bạn.</p></div>{session&&<Link className="ui-button ui-button-secondary" to="/login">Quản lý đăng nhập</Link>}</div>
+    {!session?<div className="boot-card"><h2>Chào mừng bạn đến PBL6 Market</h2><p>Bạn chưa đăng nhập. Vui lòng đăng nhập để xem thông tin và lịch sử tài khoản.</p><div className="ui-actions"><Link className="ui-button ui-button-primary" to="/login">Đăng nhập ngay</Link><Link className="ui-button ui-button-secondary" to="/register">Đăng ký tài khoản</Link></div></div>:isLoading?<Loading/>:error?<ErrorView error={error}/>:<>
+    <div className="account-summary"><span className="account-avatar"><User size={28}/></span><div><h2>{data?.display_name || 'Tài khoản của bạn'}</h2><p>{data?.email}</p>{data?.phone&&<p>{data.phone}</p>}</div><span className="market-badge">{isAdmin?'Quản trị viên':isMerchant?'Đối tác bán hàng':'Khách hàng'}</span></div>
+    <div className="account-shortcut-grid">{personalLinks.filter(([path])=>!session||roles.includes('CUSTOMER')||path==='/change-password').map(([path,label,description,Icon])=><Link to={path} key={path}><span><Icon size={22}/></span><div><strong>{label}</strong><small>{description}</small></div><span className="account-shortcut-arrow">→</span></Link>)}</div>
+    {(isMerchant||isAdmin)&&<div className="account-portals">{isMerchant&&<Link className="ui-button ui-button-primary" to="/seller"><Store size={18}/>Mở kênh người bán</Link>}{isAdmin&&<Link className="ui-button ui-button-primary" to="/admin"><ShieldCheck size={18}/>Mở trang quản trị</Link>}</div>}
+    </>}
+  </section>;
 }
 function ApplicationRoutes() {
   return useRoutes([
@@ -229,167 +133,39 @@ const merchantLinks = [
   ["/seller/products", "Sản phẩm Store", ShoppingBag],
   ["/seller/inventory", "Tồn kho", Boxes],
   ["/seller/orders", "Đơn hàng Store", Package],
+  ["/seller/messages", "Tin nhắn khách hàng", MessageSquare],
+  ["/seller/returns", "Đổi trả", Package],
+  ["/seller/delivery-returns", "Giao thất bại / hoàn về", Package],
   ["/seller/vouchers", "Voucher Store", Ticket],
   ["/seller/staff", "Nhân viên & lời mời", Users],
   ["/seller/settings", "Thông tin gian hàng", Settings],
   ["/seller/reports", "Báo cáo", BarChart3],
+  ["/seller/audit", "Nhật ký Store", ShieldCheck],
 ] as const;
 function Market() {
   const { session } = useAuth(),
-    location = useLocation(),
-    navigate = useNavigate();
+    location = useLocation();
+  const [collapsed,setCollapsed]=useState(false);
   const roles = session?.context?.roles ?? [],
     membership = session?.context?.store_membership;
   const admin = roles.includes("ADMIN"),
     merchant = roles.some((r) => r === "STORE_OWNER" || r === "SELLER"),
     owner = membership?.role === "OWNER";
-  const [mobile, setMobile] = useState(false),
-    [search, setSearch] = useState("");
-  const isComposingRef = useRef(false);
   const portal = location.pathname.startsWith("/seller")
     ? "seller"
     : location.pathname.startsWith("/admin")
       ? "admin"
       : undefined;
-  const role = admin
-    ? "Quản trị viên"
-    : owner
-      ? "Chủ gian hàng"
-      : merchant
-        ? "Nhân viên Store"
-        : session
-          ? "Khách hàng"
-          : "Khách vãng lai";
-  const submitSearch = (event: FormEvent) => {
-    event.preventDefault();
-    navigate("/?q=" + encodeURIComponent(search.trim()));
-  };
+  const account=location.pathname.startsWith('/customer/')&&!location.pathname.startsWith('/customer/messages')||location.pathname==='/profile';
   const can = (code: string) =>
     owner || !!membership?.permissions?.includes(code);
   return (
-    <div className="live-market min-h-screen bg-slate-50 text-slate-900">
-      <header className="market-header sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
-        <div className="bg-slate-900 text-slate-200 text-xs">
-          <div className="market-width flex items-center justify-between gap-3 py-2">
-            <span className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              PBL6 MARKETPLACE
-            </span>
-            <span>{role}</span>
-          </div>
-        </div>
-        <div className="market-width flex items-center justify-between gap-4 py-4">
-          <Link
-            to="/"
-            aria-label="Trang chủ PBL6"
-            className="flex items-center gap-2 shrink-0"
-          >
-            <span className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 grid place-items-center text-white font-extrabold shadow">
-              P6
-            </span>
-            <span className="leading-tight">
-              <strong className="text-lg">
-                PBL6<span className="text-emerald-600">Market</span>
-              </strong>
-              <small className="block text-[10px] tracking-widest text-slate-400">
-                MULTI-STORE PLATFORM
-              </small>
-            </span>
-          </Link>
-          {location.pathname !== "/" && (
-            <form
-              onSubmit={submitSearch}
-              className="hidden md:flex flex-1 max-w-lg relative"
-            >
-              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
-              <input
-                aria-label="Tìm kiếm toàn sàn"
-                className="w-full rounded-full bg-slate-100 border border-transparent pl-10 pr-9 py-2 text-sm focus:outline-none focus:border-emerald-400"
-                placeholder="Bạn đang tìm sản phẩm gì?"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onCompositionStart={() => {
-                  isComposingRef.current = true;
-                }}
-                onCompositionEnd={() => {
-                  isComposingRef.current = false;
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !isComposingRef.current) {
-                    submitSearch(e);
-                  }
-                }}
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none p-0.5 rounded-full"
-                  title="Xóa tìm kiếm"
-                >
-                  <X size={15} />
-                </button>
-              )}
-            </form>
-          )}
-          <div className="flex items-center gap-2">
-            <Link to="/cart" aria-label="Giỏ hàng" className="market-icon-link">
-              <ShoppingCart size={20} />
-              <span className="hidden sm:inline">Giỏ hàng</span>
-            </Link>
-            <Link
-              to="/login"
-              data-testid="account-link"
-              aria-label={session ? "Tài khoản" : "Đăng nhập"}
-              className="market-account"
-            >
-              <User size={17} />
-              <span className="hidden sm:inline">
-                {session ? "Tài khoản" : "Đăng nhập"}
-              </span>
-            </Link>
-            <button
-              className="md:hidden market-icon-link"
-              aria-label={mobile ? "Đóng menu" : "Mở menu"}
-              onClick={() => setMobile((v) => !v)}
-            >
-              {mobile ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </div>
-        <nav
-          aria-label="Điều hướng chính"
-          className={
-            "market-width market-navigation " + (mobile ? "mobile-open" : "")
-          }
-          onClick={() => setMobile(false)}
-        >
-          <NavLink end to="/">
-            Sản phẩm
-          </NavLink>
-          <NavLink to="/customer/orders">Đơn hàng</NavLink>
-          <NavLink to="/customer/addresses">Sổ địa chỉ</NavLink>
-          <NavLink to="/customer/invitations">Lời mời Store</NavLink>
-          <NavLink to="/customer/store-applications">Mở gian hàng</NavLink>
-          <NavLink to="/profile">Hồ sơ</NavLink>
-          <NavLink to="/customer/settings">Cài đặt</NavLink>
-          {merchant && (
-            <NavLink to="/seller">
-              <Store size={15} />
-              Store Portal
-            </NavLink>
-          )}
-          {admin && (
-            <NavLink to="/admin">
-              <ShieldCheck size={15} />
-              Admin Portal
-            </NavLink>
-          )}
-        </nav>
-      </header>
+    <div className={"live-market "+(portal?"workspace-shell ":"storefront-shell ")+(collapsed?"sidebar-collapsed":"")}>
+      <MarketplaceHeader/>
+      {portal&&<div className="workspace-topbar market-width"><button className="ui-button ui-button-secondary" aria-label={collapsed?"Mở rộng menu":"Thu gọn menu"} onClick={()=>setCollapsed(value=>!value)}><Menu size={18}/><span>{collapsed?"Mở rộng menu":"Thu gọn menu"}</span></button><nav aria-label="Breadcrumb"><Link to="/">PBL6 Market</Link><span>/</span><span>{portal==='seller'?'Kênh người bán':'Quản trị'}</span></nav></div>}
       <div
         className={
-          "market-width market-body " + (portal ? "market-portal" : "")
+          "market-width market-body " + (portal ? "market-portal" : account?"account-layout":"")
         }
       >
         {portal === "seller" && merchant && (
@@ -399,6 +175,7 @@ function Market() {
             </p>
             {merchantLinks
               .filter(([path]) =>
+                path.includes("audit") ||
                 path.includes("staff") ||
                 path.includes("settings") ||
                 path.includes("reports") ||
@@ -406,14 +183,16 @@ function Market() {
                   ? owner
                   : path.includes("inventory")
                     ? can("inventory.store.read_adjust")
-                    : path.includes("orders")
+                    : path.includes("products")
+                      ? can("product.store.read_write")
+                    : path.includes("orders") || path.includes("messages") || path.includes("returns")
                       ? can("order.store.read_status_cancel")
                       : true,
               )
               .map(([to, label, Icon]) => (
-                <NavLink key={to} end to={to}>
+                <NavLink key={to} aria-label={label} title={label} end={to==='/seller'} to={to}>
                   <Icon size={17} />
-                  {label}
+                  <span>{label}</span>
                 </NavLink>
               ))}
           </aside>
@@ -423,43 +202,41 @@ function Market() {
             <p className="text-xs font-bold tracking-widest text-slate-400 mb-5">
               QUẢN TRỊ NỀN TẢNG
             </p>
-            {[
-              ["dashboard", "Tổng quan"],
-              ["users", "Tài khoản"],
-              ["stores", "Gian hàng"],
-              ["roles", "Phân quyền"],
-              ["catalog", "Danh mục & kiểm duyệt"],
-              ["orders", "Đơn hàng toàn sàn"],
-              ["vouchers", "Ưu đãi toàn sàn"],
-              ["ai", "Vận hành AI"],
-            ].map(([tab, label]) => (
-              <Link
-                key={tab}
-                to={"/admin?tab=" + tab}
-                className={location.search === "?tab=" + tab ? "active" : ""}
-              >
-                <LayoutDashboard size={16} />
-                {label}
-              </Link>
-            ))}
-            <NavLink to="/admin/store-applications">
+            {([
+              ["dashboard", "Tổng quan",LayoutDashboard],
+              ["users", "Tài khoản",Users],
+              ["stores", "Gian hàng",Store],
+              ["roles", "Phân quyền",Key],
+              ["catalog", "Danh mục & kiểm duyệt",Boxes],
+              ["orders", "Đơn hàng toàn sàn",Package],
+              ["reports", "Báo cáo thu / hoàn",BarChart3],
+              ["returns", "Yêu cầu đổi trả",ShoppingBag],
+              ["delivery-returns", "Hồ sơ giao thất bại",Package],
+              ["vouchers", "Ưu đãi toàn sàn",Ticket],
+              ["ai", "Vận hành AI",MessageSquare],
+              ["audit", "Nhật ký quản trị",ShieldCheck],
+            ] as const).map(([tab,label,Icon])=>{
+              const selected=(new URLSearchParams(location.search).get('tab') ?? 'dashboard')===tab&&location.pathname==='/admin';
+              return <Link key={tab} aria-label={label} title={label} to={"/admin?tab="+tab} className={selected?'active':undefined} aria-current={selected?'page':undefined}><Icon size={16}/><span>{label}</span></Link>;
+            })}
+            <NavLink aria-label="Hồ sơ mở gian hàng" title="Hồ sơ mở gian hàng" to="/admin/store-applications">
               <Store size={16} />
-              Hồ sơ mở gian hàng
+              <span>Hồ sơ mở gian hàng</span>
             </NavLink>
           </aside>
         )}
-        <main className="live-content min-w-0">
+        {account&&<aside className="account-sidebar" aria-label="Điều hướng tài khoản"><h2>Tài khoản của tôi</h2>{[['/profile','Tổng quan'],['/customer/profile','Thông tin cá nhân'],['/customer/orders','Đơn hàng'],['/customer/favorites','Yêu thích'],['/customer/reviews','Đánh giá của tôi'],['/customer/messages','Tin nhắn'],['/customer/notifications','Thông báo'],['/customer/returns','Đổi trả'],['/customer/addresses','Sổ địa chỉ'],['/customer/invitations','Lời mời Store'],['/customer/store-applications','Mở gian hàng'],['/customer/settings','Cài đặt'],['/change-password','Đổi mật khẩu']].filter(([path])=>!session||roles.includes('CUSTOMER')||path==='/profile'||path==='/change-password').map(([path,label])=><NavLink to={path} key={path} end>{label}</NavLink>)}</aside>}
+        <main id="main-content" className="live-content min-w-0" tabIndex={-1}>
+          <RouteFocus/><StoreContextNotice/>
           {dataMode === "fixture" && (
             <p role="alert" className="boot-error">
               Dữ liệu fixture · không thực hiện giao dịch.
             </p>
           )}
-          <ApplicationRoutes />
+          <Suspense fallback={<Loading/>}><ApplicationRoutes /></Suspense>
         </main>
       </div>
-      <div className="market-chat">
-        <CustomerChatWidget />
-      </div>
+      <ChatCenter/>
       <footer className="border-t border-slate-200 bg-white mt-16">
         <div className="market-width py-8 flex flex-wrap justify-between gap-4">
           <div>
@@ -481,12 +258,12 @@ function Market() {
     </div>
   );
 }
+const liveRouter=createBrowserRouter([{path:'*',element:<ScopedQueries/>}]);
+if(import.meta.hot)import.meta.hot.dispose(()=>liveRouter.dispose());
 export function LiveApp() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <ScopedQueries />
-      </BrowserRouter>
+      <RouterProvider router={liveRouter}/>
     </AuthProvider>
   );
 }

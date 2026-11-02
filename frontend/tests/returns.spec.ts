@@ -1,0 +1,51 @@
+import {test,expect,type Page} from '@playwright/test';
+import {readFileSync} from 'node:fs';
+const fixtures=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
+const order='64000000-0000-4000-8000-000000000001',id='64000000-0000-4000-8000-000000000002';
+const request={inventory_status:'APPLIED',exchange_status:'NOT_STARTED',fault_party:'STORE',fee_payer:'STORE',items:[],id,order_id:order,type:'EXCHANGE',reason:'Sai kích thước',status:'REQUESTED',version:0,payment_method:'COD',amount_vnd:100000,created_at:'2026-10-28T00:00:00Z',updated_at:'2026-10-28T00:00:00Z'};
+async function setup(page:Page,{seller=false,initial=request,conflict=false,failList=false}:{seller?:boolean;initial?:typeof request;conflict?:boolean;failList?:boolean}={}){
+  let row={...initial},conflicted=false;const writes:unknown[]=[];
+  await page.route('**/api/v1/**',route=>{
+    const req=route.request(),path=new URL(req.url()).pathname.replace('/api/v1','');
+    if(path==='/auth/login'||path==='/auth/refresh')return route.fulfill({json:{...fixtures.login.response,context:{user_id:order,roles:seller?['STORE_OWNER']:['CUSTOMER'],role_permissions:[],token_version:0,...(seller?{store_membership:{store_id:order,role:'OWNER',status:'ACTIVE',permissions:[]}}:{})}},headers:{'set-cookie':'pbl6_csrf=fixture; Path=/; SameSite=Strict'}});
+    if(path==='/me/returns'||path==='/store/returns')return route.fulfill(failList?{status:503,json:{code:'DOWN',message:'Không tải được đổi trả',details:[]}}:{json:{items:[row],total:1,page:1,size:20}});
+    if(path==='/me/returns/'+id+'/confirm'||path==='/store/returns/'+id){
+      writes.push(req.postDataJSON());
+      if(conflict&&!conflicted){conflicted=true;return route.fulfill({status:409,json:{code:'VERSION_CONFLICT',message:'Yêu cầu đã thay đổi',details:[]}});}
+      row={...row,...req.postDataJSON(),status:path.endsWith('/confirm')?'COMPLETED':req.postDataJSON().status,version:row.version+1};
+      return route.fulfill({status:path.endsWith('/confirm')?201:200,json:row});
+    }
+    return route.fulfill({status:404,json:{code:'NOT_FOUND',message:'Fixture chưa cấu hình',details:[]}});
+  });
+  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('fixture@example.test');await page.getByLabel('Mật khẩu',{exact:true}).fill('Fixture-password-123');await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập'})).toBeVisible();
+  await page.goto(seller?'/seller/returns':'/customer/returns');return writes;
+}
+test('Customer confirms receipt through the API using the current version',async({page})=>{
+  const writes=await setup(page,{initial:{...request,status:'EXCHANGE_SENT',version:3}});
+  await page.getByRole('button',{name:'Xác nhận đã nhận hàng đổi',exact:true}).click();await expect(page.getByText('Đã hoàn tất',{exact:true})).toBeVisible();expect(writes).toEqual([{expected_version:3}]);
+});
+test('Seller resolves a conflict by explicitly reloading even when the returned version is unchanged',async({page})=>{
+  const writes=await setup(page,{seller:true,conflict:true});
+  await page.getByLabel('Hướng dẫn và địa chỉ gửi trả').fill('Kho nhận trả, 0900000000, địa chỉ kiểm thử');await page.getByLabel('Giải thích quyết định').fill('Chấp thuận, vui lòng gửi hàng về');await page.getByRole('button',{name:'Lưu quyết định',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Yêu cầu đã thay đổi');await expect(page.getByRole('button',{name:'Lưu quyết định',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Đọc lại hồ sơ',exact:true}).click();await expect(page.getByLabel('Giải thích quyết định')).toHaveValue('Chấp thuận, vui lòng gửi hàng về');await page.getByLabel('Giải thích quyết định').fill('Đã kiểm tra lại, chấp thuận');await page.getByRole('button',{name:'Lưu quyết định',exact:true}).click();
+  await expect(page.getByText('Đã chấp thuận',{exact:true})).toBeVisible();expect(writes).toHaveLength(2);
+});
+test('a pending refund cannot be marked completed by the Seller',async({page})=>{
+  const writes=await setup(page,{seller:true,initial:{...request,type:'REFUND',status:'RECEIVED'}});
+  await expect(page.getByText('Chưa có xác nhận hoàn tiền.',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'Hoàn tất yêu cầu',exact:true})).toBeDisabled();expect(writes).toHaveLength(0);
+});
+test('an unavailable return feed stays an error',async({page})=>{
+  await setup(page,{failList:true});await expect(page.getByRole('alert')).toContainText('Không tải được đổi trả');await expect(page.getByText('Chưa có yêu cầu đổi trả ở trang này.')).toHaveCount(0);
+});
+
+
+test('CR-007: pending online refund updates by GET only, polling is bounded and manual refresh recovers after an error',async({page})=>{
+ await page.clock.install();const writes=await setup(page,{seller:true,initial:{...request,type:'REFUND',status:'RECEIVED',payment_method:'SANDBOX'}});let status='REQUESTED',gets=0,fail=false;
+ await page.route('**/api/v1/store/orders/*/refund-recovery',route=>route.fulfill({json:{order_id:order,order_version:0,refund_id:id,refund_version:0,status,amount_vnd:100000,can_retry_known_failure:false}}));
+ await page.route('**/api/v1/store/returns?*',route=>{gets++;return fail?route.fulfill({status:503,json:{code:'OFFLINE',message:'Đọc trạng thái tạm lỗi'}}):route.fulfill({json:{items:[{...request,type:'REFUND',status:'RECEIVED',payment_method:'SANDBOX',refund_status:status}],page:1,size:20,total:1}});});
+ await expect(page.getByRole('button',{name:'Hoàn tất yêu cầu',exact:true})).toBeDisabled();await page.clock.runFor(3100);await expect.poll(()=>gets).toBeGreaterThan(0);expect(writes).toEqual([]);
+ status='SUCCEEDED';await page.clock.runFor(3100);await expect(page.getByRole('button',{name:'Hoàn tất yêu cầu',exact:true})).toBeEnabled();await expect(page.getByText('Đã xác nhận hoàn tiền.',{exact:true})).toBeVisible();expect(writes).toEqual([]);
+ await page.clock.runFor(61000);const stopped=gets;await page.clock.runFor(10000);expect(gets).toBe(stopped);await expect(page.getByText('Đã dừng tự làm mới sau 60 giây;', {exact:false})).toBeVisible();
+ fail=true;await page.getByRole('button',{name:'Làm mới yêu cầu',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Đọc trạng thái tạm lỗi');expect(writes).toEqual([]);fail=false;
+ await page.getByRole('alert').getByRole('button',{name:'Thử lại',exact:true}).click();await expect(page.getByRole('button',{name:'Hoàn tất yêu cầu',exact:true})).toBeEnabled();expect(writes).toEqual([]);
+});

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { lazy, useState, useEffect, useCallback } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ProtectedRoute, ErrorView, Loading, Pagination } from '../../bootstrap/components';
@@ -6,24 +6,13 @@ import { request, ApiError } from '../../api/client';
 import { callOperation } from '../../api/operations';
 import {storeApplicationAdminRoutes} from './StoreApplicationAdminPage';
 import { AdminAiMetrics, AdminDashboardSummary, AdminOrders } from './AdminLiveData';
+import {AccountDirectory} from './AccountDirectory';
 import { AdminCatalogManagement } from './AdminOperations';
-import {VoucherPanel} from '../../live/VoucherPanel';
-
-interface AdminUser {
-  id: string;
-  email: string;
-  status: string;
-  version: number;
-}
-
-interface AdminStore {
-  id: string;
-  owner_user_id: string;
-  name: string;
-  status: string;
-  shipping_fee_vnd: number;
-  version: number;
-}
+const VoucherPanel=lazy(()=>import('../../live/VoucherPanel').then(module=>({default:module.VoucherPanel})));
+const DeliveryReturnsPage=lazy(()=>import('../returns/DeliveryReturnsPage').then(module=>({default:module.DeliveryReturnsPage})));
+const ReturnsPage=lazy(()=>import('../returns/ReturnsPage').then(module=>({default:module.ReturnsPage})));
+const FinancialReport=lazy(()=>import('../reports/FinancialReport').then(module=>({default:module.FinancialReport})));
+const AuditLogPage=lazy(()=>import('./AuditLogPage').then(module=>({default:module.AuditLogPage})));
 
 interface AdminRole { id: string; name: string; permission_ids: string[]; version: number }
 interface AdminPermission { id: string; code: string; resource: string; action: string }
@@ -100,242 +89,17 @@ function RolesManagement() {
   </section>;
 }
 
-function UsersManagement() {
-  const [items, setItems] = useState<AdminUser[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>();
-  const [busy, setBusy] = useState(false);
-
-  const load = useCallback(async (p: number) => {
-    setLoading(true);
-    setError(undefined);
-    try {
-      const res = await callOperation('listUsers', { query: { page: p, size: 10 } });
-      setItems(res.items as unknown as AdminUser[]);
-      setTotal(res.total);
-      setPage(res.page);
-    } catch (e) {
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(page); }, [load, page]);
-
-  const toggleState = async (user: AdminUser) => {
-    const nextStatus = user.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    const reason = prompt(`Lý do chuyển trạng thái người dùng thành ${nextStatus}:`, 'Cập nhật từ Admin Web');
-    if (!reason) return;
-    setBusy(true);
-    try {
-      await callOperation('updateUserState', {
-        path: { id: user.id },
-        body: {
-          status: nextStatus as 'ACTIVE' | 'LOCKED',
-          reason,
-          expected_version: user.version,
-        },
-      });
-      await load(page);
-    } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Thao tác thất bại.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="boot-card">
-      <h3>Quản lý Người dùng (Users)</h3>
-      {error !== undefined && <ErrorView error={error} />}
-      {loading ? <Loading /> : (
-        <>
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '1rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #ccc' }}>
-                <th>Email</th>
-                <th>Trạng thái</th>
-                <th>Phiên bản</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(u => (
-                <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td>{u.email}</td>
-                  <td><span style={{ color: u.status === 'ACTIVE' ? 'green' : 'crimson' }}>{u.status}</span></td>
-                  <td>{u.version}</td>
-                  <td>
-                    <button disabled={busy} onClick={() => toggleState(u)}>
-                      {u.status === 'ACTIVE' ? 'Khóa (Lock)' : 'Mở khóa (Activate)'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <Pagination page={page} size={10} total={total} onPage={setPage} />
-        </>
-      )}
-    </div>
-  );
-}
-
-function StoresManagement() {
-  const [items, setItems] = useState<AdminStore[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<unknown>();
-  const [busy, setBusy] = useState(false);
-
-  const load = useCallback(async (p: number) => {
-    setLoading(true);
-    setError(undefined);
-    try {
-      const res = await callOperation('listStores', { query: { page: p, size: 10 } });
-      setItems(res.items as unknown as AdminStore[]);
-      setTotal(res.total);
-      setPage(res.page);
-    } catch (e) {
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(page); }, [load, page]);
-
-  const toggleState = async (store: AdminStore) => {
-    const nextStatus = store.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-    const reason = prompt(`Lý do chuyển trạng thái cửa hàng thành ${nextStatus}:`, 'Cập nhật từ Admin Web');
-    if (!reason) return;
-    setBusy(true);
-    try {
-      await callOperation('updateStoreState', {
-        path: { id: store.id },
-        body: {
-          status: nextStatus as 'ACTIVE' | 'LOCKED',
-          reason,
-          expected_version: store.version,
-        },
-      });
-      await load(page);
-    } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Thao tác thất bại.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="boot-card">
-      <h3>Quản lý Cửa hàng (Stores)</h3>
-      {error !== undefined && <ErrorView error={error} />}
-      {loading ? <Loading /> : (
-        <>
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', marginBottom: '1rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #ccc' }}>
-                <th>Tên cửa hàng</th>
-                <th>Phí giao hàng</th>
-                <th>Trạng thái</th>
-                <th>Phiên bản</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map(s => (
-                <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td>{s.name}</td>
-                  <td>{s.shipping_fee_vnd.toLocaleString('vi-VN')} đ</td>
-                  <td><span style={{ color: s.status === 'ACTIVE' ? 'green' : 'crimson' }}>{s.status}</span></td>
-                  <td>{s.version}</td>
-                  <td>
-                    <button disabled={busy} onClick={() => toggleState(s)}>
-                      {s.status === 'ACTIVE' ? 'Khóa (Lock)' : 'Mở khóa (Activate)'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <Pagination page={page} size={10} total={total} onPage={setPage} />
-        </>
-      )}
-    </div>
-  );
-}
-
 function AdminDashboard() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const value = params.get('tab') ?? 'dashboard';
-  const tab = ['users','stores','roles','catalog','orders','vouchers','dashboard','ai'].includes(value) ? value : 'dashboard';
-  const setTab = (next: string) => setParams({tab: next});
+  const tab = ['users','stores','roles','catalog','orders','returns','delivery-returns','vouchers','dashboard','ai','audit','reports'].includes(value) ? value : 'dashboard';
 
   return (
-    <section style={{ maxWidth: '960px', margin: '0 auto', padding: '1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h2 style={{ margin: 0 }}>Bảng Quản trị Hệ thống (Admin Portal)</h2>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Link
-            to="/admin/store-applications"
-            style={{
-              padding: '0.35rem 0.75rem',
-              background: '#059669',
-              color: '#ffffff',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              fontWeight: 600,
-              fontSize: '0.875rem'
-            }}
-          >
-            Duyệt mở Store &rarr;
-          </Link>
-          <Link
-            to="/"
-            style={{
-              padding: '0.35rem 0.75rem',
-              border: '1px solid #cbd5e1',
-              borderRadius: '4px',
-              textDecoration: 'none',
-              color: '#475569',
-              fontSize: '0.875rem'
-            }}
-          >
-            &larr; Về Sàn
-          </Link>
-        </div>
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button
-          style={{ fontWeight: tab === 'users' ? 'bold' : 'normal' }}
-          onClick={() => setTab('users')}
-        >
-          Người dùng (Users)
-        </button>
-        <button
-          style={{ fontWeight: tab === 'stores' ? 'bold' : 'normal' }}
-          onClick={() => setTab('stores')}
-        >
-          Cửa hàng (Stores)
-        </button>
-        <button style={{ fontWeight: tab === 'roles' ? 'bold' : 'normal' }} onClick={() => setTab('roles')}>
-          Vai trò và quyền
-        </button>
-        <button style={{ fontWeight: tab === 'catalog' ? 'bold' : 'normal' }} onClick={() => setTab('catalog')}>Taxonomy & moderation</button>
-        <button style={{ fontWeight: tab === 'orders' ? 'bold' : 'normal' }} onClick={() => setTab('orders')}>Đơn hàng</button>
-        <button style={{ fontWeight: tab === 'vouchers' ? 'bold' : 'normal' }} onClick={() => setTab('vouchers')}>Voucher sàn</button>
-        <button style={{ fontWeight: tab === 'dashboard' ? 'bold' : 'normal' }} onClick={() => setTab('dashboard')}>Dashboard</button>
-        <button style={{ fontWeight: tab === 'ai' ? 'bold' : 'normal' }} onClick={() => setTab('ai')}>AI metrics</button>
-      </div>
-
-      {tab === 'users' ? <UsersManagement /> : tab === 'stores' ? <StoresManagement /> : tab === 'roles' ? <RolesManagement />
-        : tab === 'catalog' ? <AdminCatalogManagement /> : tab === 'orders' ? <AdminOrders /> : tab === 'vouchers' ? <VoucherPanel scope="PLATFORM"/>
-          : tab === 'dashboard' ? <AdminDashboardSummary /> : <AdminAiMetrics />}
+    <section className="admin-workspace">
+      <header className="admin-workspace-heading"><div><p className="market-eyebrow">ĐIỀU HÀNH MARKETPLACE</p><h1>Quản trị hệ thống</h1></div><div><Link to="/admin/store-applications">Duyệt gian hàng →</Link><Link to="/">Về cửa hàng</Link></div></header>
+      {tab === 'users' ? <AccountDirectory key="users" kind="users" /> : tab === 'stores' ? <AccountDirectory key="stores" kind="stores" /> : tab === 'roles' ? <RolesManagement />
+        : tab === 'catalog' ? <AdminCatalogManagement /> : tab === 'orders' ? <AdminOrders /> : tab === 'returns' ? <ReturnsPage scope="ADMIN"/> : tab === 'delivery-returns' ? <DeliveryReturnsPage admin/> : tab === 'vouchers' ? <VoucherPanel scope="PLATFORM"/>
+          : tab === 'reports' ? <FinancialReport scope="ADMIN"/> : tab === 'dashboard' ? <AdminDashboardSummary /> : tab === 'audit' ? <AuditLogPage/> : <AdminAiMetrics />}
 
     </section>
   );

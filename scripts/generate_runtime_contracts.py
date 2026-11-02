@@ -59,7 +59,7 @@ def main():
                 records[name] = record
     events = json.loads((CONTRACTS / 'events.json').read_text(encoding='utf-8'))
 
-    supported = {'type','properties','required','additionalProperties','items','enum','nullable',
+    supported = {'type','properties','required','additionalProperties','items','enum','nullable','oneOf',
                  'minimum','maximum','minLength','maxLength','minItems','maxItems','uniqueItems',
                  'minProperties','maxProperties','pattern','format','default','description','title',
                  'example','examples','deprecated','readOnly','writeOnly','x-key-format'}
@@ -68,6 +68,7 @@ def main():
         if unknown:
             raise SystemExit('Runtime validator needs support for schema keyword: ' + ', '.join(sorted(unknown)))
         for child in schema.get('properties', {}).values(): check_schema(child)
+        for child in schema.get('oneOf', []): check_schema(child)
         if isinstance(schema.get('items'), dict): check_schema(schema['items'])
         if isinstance(schema.get('additionalProperties'), dict): check_schema(schema['additionalProperties'])
     for record in records.values():
@@ -76,6 +77,8 @@ def main():
     for event in events['events'].values(): check_schema(event['schema'])
 
     def fixture(schema, key=''):
+        if 'oneOf' in schema:
+            return fixture(schema['oneOf'][0], key)
         if 'default' in schema:
             return schema['default']
         if 'enum' in schema:
@@ -129,7 +132,9 @@ def main():
         if '$ref' in schema:
             raise AssertionError('unresolved schema')
         kind = schema.get('type')
-        if 'enum' in schema:
+        if 'oneOf' in schema:
+            result = '(' + ' | '.join(typename(branch) for branch in schema['oneOf']) + ')'
+        elif 'enum' in schema:
             result = ' | '.join(json.dumps(v) for v in schema['enum'])
         elif kind == 'object':
             fields = [f'{json.dumps(k)}{"" if k in schema.get("required", []) else "?"}: {typename(v)}'

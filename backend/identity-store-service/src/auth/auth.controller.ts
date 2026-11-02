@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, HttpCode, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, HttpCode, Req, Res, Query, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { AuthGuard, Public, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
 import { config } from '../../../shared/src/config';
-import { database } from '../../../shared/src/database';
+import { StoreService } from '../store/store.service';
+import { ActiveStoresQueryDto } from '../../../shared/src/dtos.generated';
 import { ApiError } from '../../../shared/src/errors';
 import { ProfileService } from '../profile/profile.service';
 import { AuthService } from './auth.service';
@@ -69,8 +70,9 @@ export class AuthController {
   @Post('auth/logout') @HttpCode(200) @Public()
   async logout(@Body() dto: RefreshDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {
     const session = this.getRefresh(req,dto);
-    const result = await this.service.logout(session.token);
-    res.clearCookie('pbl6_refresh',{path:'/api/v1/auth'}); res.clearCookie('pbl6_csrf',{path:'/'});
+    const access=req.headers.authorization?.match(/^Bearer (.+)$/)?.[1];
+    const result = access?await this.service.logoutAccess(access,session.web?session.token:undefined):await this.service.logout(session.token);
+    if(!('cookie_session_changed' in result)||!result.cookie_session_changed){res.clearCookie('pbl6_refresh',{path:'/api/v1/auth'});res.clearCookie('pbl6_csrf',{path:'/'});}
     return result;
   }
   @Get('me/context') context(@Req() req: any) {
@@ -87,8 +89,8 @@ export class AuthController {
     return this.service.resolve(body.token);
   }
   @Get('internal/stores/active') @Public() @UseGuards(ServiceGuard) @ServiceCallers('M1','M2','M4')
-  async activeStores(@Req() req: Request) {
+  async activeStores(@Req() req: Request,@Query() query:ActiveStoresQueryDto) {
     verifyService(req.headers,config('M3').internalKeys,['M1','M2','M4']);
-    return {ids:(await database.query('SELECT id FROM store WHERE status=\'ACTIVE\'')).map((r:any)=>r.id)};
+    return new StoreService().listActiveStoreIds(query);
   }
 }

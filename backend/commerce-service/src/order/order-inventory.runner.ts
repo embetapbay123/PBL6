@@ -6,6 +6,8 @@ import { PaymentService } from '../payment/payment.service';
 import { PaymentFollowupPort } from '../payment/payment.followup.port';
 import { OrderRepository } from './order.repository';
 import { commandId, CommandCall } from './checkout.runner';
+import {ORDER_SYSTEM_ACTOR} from './order-timeline';
+import {settleZeroDue,zeroDueSettled} from '../payment/zero-due';
 
 type Kind='CONSUME'|'RELEASE'|'RESTOCK';
 const closed=(order:any)=>['CANCELLED','EXPIRED'].includes(order.status);
@@ -15,6 +17,7 @@ export async function queueInventoryCommand(manager:EntityManager,id:string,kind
   if(!manager.queryRunner?.isTransactionActive)throw new Error('ORDER_REQUIRES_CALLER_TRANSACTION');
   const [row]=await manager.query('SELECT * FROM order_inventory_state WHERE order_id=$1 FOR UPDATE',[id]);
   if(!row)throw new ApiError(409,'INVENTORY_CONTEXT_MISSING','Order thiếu bằng chứng reservation; cần đối soát.');
+  if(row.state==='RETURN_INSPECTED')throw new ApiError(409,'INSPECTED_RETURN_EXISTS','Tồn của đơn đã đối chiếu bằng biên bản kiểm hoàn, không dùng lệnh kho hủy toàn bộ.');
   if(row.command_kind){
     if(row.command_kind!==kind)throw new ApiError(409,'INVENTORY_COMMAND_IN_PROGRESS','Lệnh kho trước chưa rõ kết quả.');
     return;
@@ -26,7 +29,7 @@ export async function queueInventoryCommand(manager:EntityManager,id:string,kind
     correlation_id=$5,lease_token=NULL,lease_until=NULL,next_attempt_at=now(),last_error=NULL,updated_at=now() WHERE order_id=$1`,[id,kind,operation,JSON.stringify(body),correlation]);
 }
 
-export async function changeOrderStatus(manager:EntityManager,order:any,status:string,reason:string,correlation:string,actor=order.customer_user_id) {
+export async function changeOrderStatus(manager:EntityManager,order:any,status:string,reason:string,correlation:string,actor=ORDER_SYSTEM_ACTOR) {
   if(order.status===status)return order;
   const updated=await new OrderRepository(manager).updateOrderStatusWithHistory({order_id:order.id,from_status:order.status,to_status:status,expected_version:order.version,actor_user_id:actor,reason});
   if(!updated)throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
@@ -36,6 +39,7 @@ export async function changeOrderStatus(manager:EntityManager,order:any,status:s
 
 export async function requestClosedRefund(manager:EntityManager,order:any,payment:any,correlation:string) {
   await new PaymentFollowupPort(manager).closePending(order.id);
+  if(BigInt(order.payable_vnd)===0n)return;
   if(payment?.status!=='SUCCEEDED' || payment.method!=='SANDBOX')return;
   const [existing]=await manager.query('SELECT id FROM refund WHERE payment_id=$1',[payment.id]);
   if(!existing)await new PaymentService(manager).requestRefund({order_id:order.id,payment_id:payment.id,amount_vnd:BigInt(payment.collected_vnd),operation_id:commandId('refund:'+order.id),correlation_id:correlation});
@@ -65,6 +69,12 @@ export class OrderInventoryRunner {
         return;
       }
       if(order.payment_method!=='SANDBOX' || !['AWAITING_PAYMENT','RECOVERING'].includes(order.status))return;
+      payment=await settleZeroDue(manager,order,payment,stock.correlation_id);
+      if(zeroDueSettled(order,payment)){
+        if(!stock.command_kind&&stock.state==='RESERVED')await queueInventoryCommand(manager,id,'CONSUME',stock.correlation_id);
+        await changeOrderStatus(manager,order,'RECOVERING','PAYMENT_NOT_REQUIRED',stock.correlation_id);
+        return;
+      }
       const successful=await manager.query("SELECT id FROM payment_attempt WHERE payment_id=$1 AND status='SUCCEEDED' AND amount_vnd=$2",[payment?.id,order.payable_vnd]);
       if(payment?.status==='SUCCEEDED' && payment.method===order.payment_method && BigInt(payment.collected_vnd)===BigInt(payment.payable_vnd) && BigInt(payment.payable_vnd)===BigInt(order.payable_vnd) && successful.length){
         if(!stock.command_kind && stock.state==='RESERVED')await queueInventoryCommand(manager,id,'CONSUME',stock.correlation_id);
@@ -144,7 +154,7 @@ export class OrderInventoryRunner {
   }
   async tick() {
     const reconcile=await this.source.query(`SELECT o.id FROM "order" o JOIN order_inventory_state s ON s.order_id=o.id
-      WHERE s.next_attempt_at<=now() AND (o.status IN ('CANCELLED','EXPIRED') OR
+      WHERE s.next_attempt_at<=now() AND (o.status IN ('CANCELLED','EXPIRED') AND s.state<>'RETURN_INSPECTED' OR
         o.payment_method='SANDBOX' AND o.status IN ('AWAITING_PAYMENT','RECOVERING')) ORDER BY s.next_attempt_at,o.id LIMIT 20`);
     for(const row of reconcile)try {await this.reconcile(row.id);} catch {await this.defer(row.id);}
     const rows=await this.source.query("SELECT order_id FROM order_inventory_state WHERE command_kind IS NOT NULL AND next_attempt_at<=now() AND (lease_until IS NULL OR lease_until<=now()) ORDER BY updated_at LIMIT 20");

@@ -1,3 +1,5 @@
+import {integrationAdaptersEnabled} from './integration-provider';
+import {recordMoneyMovement} from './money-journal';
 import { DataSource } from 'typeorm';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
@@ -5,7 +7,7 @@ import { audit } from '../../../shared/src/audit';
 import { fingerprint } from '../../../shared/src/idempotency';
 import type { OperationInputs } from '../../../shared/src/operations.generated';
 
-type Provider = 'SEPAY_TEST' | 'LEGACY_SANDBOX';
+type Provider = 'SEPAY_TEST' | 'LEGACY_SANDBOX' | 'INTEGRATION';
 interface Callback {
   provider: Provider; eventId:string; reference?:string; result:'SUCCESS'|'FAILED'|'CANCELLED'|'IGNORED';
   amount?:number; payloadHash:string;
@@ -24,6 +26,10 @@ export class PaymentCallbackService {
     const reference=input.code || references[0];
     return this.apply({provider:'SEPAY_TEST',eventId:String(input.id),reference,
       result:input.transferType==='out' || !reference?'IGNORED':'SUCCESS',amount:input.transferAmount,payloadHash:fingerprint(input)},correlation);
+  }
+  integration(input:OperationInputs['integrationPaymentCallback']['body'],correlation:string) {
+    if(!integrationAdaptersEnabled()||process.env.PAYMENT_PROVIDER_MODE!=='integration')throw new ApiError(503,'TEST_PROVIDER_DISABLED','Adapter mô phỏng chưa được bật.');
+    return this.apply({provider:'INTEGRATION',eventId:input.provider_event_id,reference:input.provider_reference,result:input.result,amount:input.amount_vnd,payloadHash:fingerprint(input)},correlation);
   }
   sandbox(input:OperationInputs['sandboxCallback']['body'],correlation:string) {
     // The legacy body signature is compatibility metadata, not authentication. Header HMAC is checked first.
@@ -58,12 +64,13 @@ export class PaymentCallbackService {
               throw new ApiError(409,'PAYMENT_RECONCILIATION_REQUIRED','Attempt thành công nhưng Payment không khớp.');
             // A different SePay transaction ID may represent a second bank transfer.
             // Keep its amount for PAY-03 reconciliation; never silently call it a replay.
-            disposition=input.provider==='SEPAY_TEST'?'EXTRA_TRANSFER_RECONCILE_REQUIRED':'ALREADY_SUCCEEDED';
+            disposition=input.provider!=='LEGACY_SANDBOX'?'EXTRA_TRANSFER_RECONCILE_REQUIRED':'ALREADY_SUCCEEDED';
           }else{
             if(!['CREATED','PENDING','UNKNOWN','FAILED','CANCELLED','EXPIRED'].includes(attempt.status) || !['PENDING','FAILED','CANCELLED'].includes(payment.status) || BigInt(payment.collected_vnd)!==0n)
               throw new ApiError(409,'PAYMENT_RECONCILIATION_REQUIRED','Không ghi đè tiền đã thu hoặc trạng thái cần đối soát.');
             await manager.query("UPDATE payment_attempt SET status='SUCCEEDED' WHERE id=$1",[attempt.id]);
             await manager.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=$2,version=version+1 WHERE id=$1",[payment.id,attempt.amount_vnd]);
+            await recordMoneyMovement(manager,{paymentId:payment.id,orderId:order.id,storeId:order.store_id,kind:'COLLECTION',amount:attempt.amount_vnd,sourceType:'PROVIDER_CALLBACK',sourceId:input.provider+':'+input.eventId,timeSource:'SYSTEM_RECEIVED'});
             // Expiry alone does not prove inventory release. Order owner must reconcile before compensation.
             const kind=['EXPIRED','CANCELLED'].includes(order.status)?'REFUND_REQUIRED':
               order.status==='AWAITING_PAYMENT' && order.payment_expires_at && new Date(order.payment_expires_at).getTime()>Date.now()?'CONSUME_REQUIRED':'RECONCILE_REQUIRED';

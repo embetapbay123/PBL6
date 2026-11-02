@@ -40,7 +40,7 @@ const createBody = (over: Record<string, unknown> = {}) => ({
   title: 'Sản phẩm mới',
   description: 'Mô tả sản phẩm mới',
   attributes: { color: 'red' },
-  variants: [{ sku: 'NEW-' + randomUUID().slice(0, 8), price_vnd: 123000, variant_values: {}, is_default: true }],
+  variants: [{ sku: 'NEW-' + randomUUID().slice(0, 8), price_vnd: 123000, variant_values: { color: 'red' }, is_default: true }],
   ...over,
 });
 
@@ -55,7 +55,7 @@ async function createProduct(over: Record<string, unknown> = {}) {
 async function seed() {
   attributeDefinition = randomUUID();
   await m1.query(`INSERT INTO attribute_definition(id,product_type_id,code,name,data_type,required,variant_factor,allowed_values,unit)
-    VALUES($1,$2,'color','Màu','STRING',true,false,NULL,NULL)`, [attributeDefinition, PRODUCT_TYPE]);
+    VALUES($1,$2,'color','Màu','STRING',true,true,NULL,NULL)`, [attributeDefinition, PRODUCT_TYPE]);
   foreignProduct = randomUUID();
   await m1.query(`INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version)
     VALUES($1,$2,$3,'Sản phẩm Store khác','other','{}','ACTIVE','VISIBLE',0)`, [foreignProduct, STORE_B, PRODUCT_TYPE]);
@@ -142,7 +142,7 @@ test('createProduct writes the Product, its Variant, stock, audit and outbox tog
 
 test('createProduct defaults to DRAFT and an omitted single Variant becomes the default', async () => {
   const product = await createProduct({ status: undefined,
-    variants: [{ sku: 'SKU-DRAFT', price_vnd: 1000, variant_values: {} }] });
+    variants: [{ sku: 'SKU-DRAFT', price_vnd: 1000, variant_values: { color: 'red' } }] });
   expect(product.status).toBe('DRAFT');
   expect(product.variants[0]).toMatchObject({ sku: 'SKU-DRAFT', is_default: true });
 });
@@ -161,15 +161,19 @@ test('createProduct rejects an unknown Product type and attributes outside the t
   expect(missingRequired.status).toBe(422);
   expect((await missingRequired.json() as any).code).toBe('INVALID_ATTRIBUTES');
 
+  const invalidType = await call('POST', '/store/products', createBody({attributes:{color:42}}), owner);
+  expect(invalidType.status).toBe(422);
+  expect((await invalidType.json() as any).details).toContainEqual({field:'type:color'});
+
   // Nothing was persisted by any rejected attempt.
   expect(await m1.query("SELECT id FROM product WHERE title='Sản phẩm mới'")).toHaveLength(0);
 });
 
 test('createProduct rolls back the Product, audit and outbox when a SKU already exists', async () => {
-  await createProduct({ variants: [{ sku: 'DUP-SKU', price_vnd: 1000, variant_values: {} }] });
+  await createProduct({ variants: [{ sku: 'DUP-SKU', price_vnd: 1000, variant_values: { color: 'red' } }] });
   const before = correlations.length;
   const duplicate = await call('POST', '/store/products', createBody({
-    variants: [{ sku: 'DUP-SKU', price_vnd: 2000, variant_values: {} }] }), owner);
+    variants: [{ sku: 'DUP-SKU', price_vnd: 2000, variant_values: { color: 'red' } }] }), owner);
   expect(duplicate.status).toBe(409);
   expect((await duplicate.json() as any).code).toBe('SKU_CONFLICT');
 
@@ -247,7 +251,7 @@ test('updateProduct treats variants as a replacement set and stops the removed o
 test('a rejected Variant id does not touch the Product', async () => {
   const product = await createProduct();
   const response = await call('PATCH', `/store/products/${product.id}`, { expected_version: 0,
-    variants: [{ id: randomUUID(), sku: 'X', price_vnd: 1, variant_values: {} }] }, owner);
+    variants: [{ id: randomUUID(), sku: 'X', price_vnd: 1, variant_values: { color: 'red' } }] }, owner);
   expect(response.status).toBe(404);
   expect((await response.json() as any).code).toBe('VARIANT_NOT_FOUND');
   expect(await m1.query('SELECT version FROM product WHERE id=$1', [product.id])).toEqual([{ version: 0 }]);
@@ -274,7 +278,7 @@ test('createProduct refuses a Variant id and cannot rewrite a foreign Variant', 
   const before = correlations.length;
   // `ProductCreate.variants` reuses the ProductVariant schema, so the contract accepts an id here.
   const response = await call('POST', '/store/products', createBody({
-    variants: [{ id: foreignVariant, sku: 'FOREIGN-SKU', price_vnd: 1, variant_values: {} }] }), owner);
+    variants: [{ id: foreignVariant, sku: 'FOREIGN-SKU', price_vnd: 1, variant_values: { color: 'red' } }] }), owner);
   expect(response.status).toBe(422);
   expect((await response.json() as any).code).toBe('VARIANT_ID_NOT_ALLOWED');
 
@@ -290,7 +294,7 @@ test('createProduct refuses a Variant id and cannot rewrite a foreign Variant', 
 
 test('createProduct refuses a Variant id of another Product in the same Store', async () => {
   const response = await call('POST', '/store/products', createBody({
-    variants: [{ id: ownOtherVariant, sku: 'OWN-OTHER-SKU', price_vnd: 1, variant_values: {} }] }), owner);
+    variants: [{ id: ownOtherVariant, sku: 'OWN-OTHER-SKU', price_vnd: 1, variant_values: { color: 'red' } }] }), owner);
   expect(response.status).toBe(422);
   expect((await response.json() as any).code).toBe('VARIANT_ID_NOT_ALLOWED');
   expect(await m1.query('SELECT price_vnd::text AS price FROM product_variant WHERE id=$1', [ownOtherVariant]))
@@ -313,7 +317,7 @@ test('updateProduct validates the final attributes when the Product type changes
 
   // Supplying the final attribute map is accepted, so the rule rejects invalid state, not the change.
   const accepted = await call('PATCH', `/store/products/${product.id}`,
-    { product_type_id: strictProductType, attributes: { required_review: 'yes' }, expected_version: 0 }, owner);
+    { product_type_id: strictProductType, attributes: { required_review: 'yes' }, expected_version: 0, variants: product.variants.map((v:any)=>({...v,variant_values:{}})) }, owner);
   expect(accepted.status).toBe(200);
   expect(await accepted.json() as any).toMatchObject({ product_type_id: strictProductType,
     attributes: { required_review: 'yes' }, version: 1 });

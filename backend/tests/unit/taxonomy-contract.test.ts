@@ -22,7 +22,8 @@ test('all taxonomy writes map DB columns/nulls to their declared response and pr
     const responses=(bundle.operations as any)[op].responses;
     expect(schemaErrors(result,responses[op.startsWith('create')?'201':'200'])).toEqual([]);
     expect(result.version).toBe(op.includes('Category')?7:op.includes('ProductType')?3:2);
-    expect(result).not.toHaveProperty('slug');expect(result).not.toHaveProperty('code');expect(result).not.toHaveProperty('variant_factor');
+    expect(result).not.toHaveProperty('slug');expect(result).not.toHaveProperty('variant_factor');
+    if(op.includes('AttributeDefinition'))expect(result.code).toBe('size');
     if(op.includes('ProductType'))expect(result.attribute_definitions[0]).toMatchObject({id,variant_axis:true,version:2});
   }
 });

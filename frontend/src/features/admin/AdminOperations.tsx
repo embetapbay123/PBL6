@@ -1,7 +1,12 @@
+import {Link,useSearchParams} from 'react-router-dom';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { request } from '../../api/client';
+import { request,ApiError } from '../../api/client';
 import { callOperation } from '../../api/operations';
 import { ErrorView, Loading, Pagination } from '../../bootstrap/components';
+import { ReviewModeration } from './ReviewModeration';
+import { ProductModeration } from './ProductModeration';
+import { AttributeDefinitions } from './AttributeDefinitions';
+import type { OperationOutputs } from '../../api/operations.generated';
 
 type Order = { id: string; store_id: string; status: string; payment_method: string; payment_status?: string; version: number; amounts: { payable_vnd: number } };
 type Voucher = { id: string; code: string; discount_type: 'FIXED' | 'PERCENT'; discount_value: number; starts_at: string; ends_at: string; usage_limit: number; per_customer_limit: number; status?: string; version?: number };
@@ -39,20 +44,20 @@ export function AdminAiMetrics() {
 }
 
 type Category = { id: string; name: string; parent_id?: string; status?: string; version?: number };
-type ProductType = { id: string; name: string; category_id?: string; status?: string; version?: number };
+type ProductType = OperationOutputs['listProductTypes']['items'][number];
 export function AdminCatalogManagement() {
+  const [params]=useSearchParams(),requested=params.get('section')??'taxonomy',section=['taxonomy','attributes','products','reviews'].includes(requested)?requested:'taxonomy';
   const [categories, setCategories] = useState<Category[]>([]); const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [categoryName, setCategoryName] = useState(''); const [typeName, setTypeName] = useState(''); const [categoryId, setCategoryId] = useState('');
   const [editCategoryId, setEditCategoryId] = useState(''); const [editTypeId, setEditTypeId] = useState('');
-  const [attrName, setAttrName] = useState(''); const [attrId, setAttrId] = useState('');
-  const [productId, setProductId] = useState(''); const [reviewId, setReviewId] = useState(''); const [version, setVersion] = useState(0); const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>(); const [notice, setNotice] = useState('');
   const load = useCallback(async () => { setLoading(true); setError(undefined); try {
-    const [categoryPage, typePage] = await Promise.all([
-      request<{ items: Category[] }>('/categories?page=1&size=100'), request<{ items: ProductType[] }>('/product-types?page=1&size=100'),
-    ]); setCategories(categoryPage.items); setProductTypes(typePage.items);
+    const [categoryItems,typeItems]=await Promise.all([
+      (async()=>{const items:Category[]=[];for(let page=1;;page++){const result=await callOperation('listCategories',{query:{page,size:100}});items.push(...result.items);if(!result.items.length||items.length>=result.total)return items;}})(),
+      (async()=>{const items:ProductType[]=[];for(let page=1;;page++){const result=await callOperation('listProductTypes',{query:{page,size:100}});items.push(...result.items);if(!result.items.length||items.length>=result.total)return items;}})(),
+    ]);setCategories(categoryItems);setProductTypes(typeItems);
   } catch (cause) { setError(cause); } finally { setLoading(false); } }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if(section==='taxonomy'||section==='attributes')void load(); }, [load,section]);
   const handleCreateCategory = async (e: FormEvent) => {
     e.preventDefault(); setBusy(true); setError(undefined); setNotice('');
     try {
@@ -65,9 +70,10 @@ export function AdminCatalogManagement() {
     if (!item) return;
     setBusy(true); setError(undefined); setNotice('');
     try {
+      if(item.version===undefined)throw new ApiError(503,'VERSION_MISSING','Danh mục chưa có phiên bản. Tải lại taxonomy trước khi sửa.');
       await callOperation('updateCategory', {
         path: { id: item.id },
-        body: { name: categoryName || item.name, expected_version: item.version ?? 0 },
+        body: { name: categoryName || item.name, expected_version: item.version },
       });
       setNotice('Đã cập nhật danh mục.'); await load();
     } catch (cause) { setError(cause); } finally { setBusy(false); }
@@ -84,63 +90,25 @@ export function AdminCatalogManagement() {
     if (!item) return;
     setBusy(true); setError(undefined); setNotice('');
     try {
+      if(item.version===undefined)throw new ApiError(503,'VERSION_MISSING','Loại sản phẩm chưa có phiên bản. Tải lại taxonomy trước khi sửa.');
       await callOperation('updateProductType', {
         path: { id: item.id },
-        body: { name: typeName || item.name, expected_version: item.version ?? 0 },
+        body: { name: typeName || item.name, expected_version: item.version,...(categoryId?{category_id:categoryId}:{}) },
       });
       setNotice('Đã cập nhật loại sản phẩm.'); await load();
     } catch (cause) { setError(cause); } finally { setBusy(false); }
   };
-  const handleCreateAttribute = async (e: FormEvent) => {
-    e.preventDefault(); setBusy(true); setError(undefined); setNotice('');
-    try {
-      await callOperation('createAttributeDefinition', {
-        body: { name: attrName, data_type: 'STRING', product_type_id: editTypeId || undefined },
-      });
-      setNotice('Đã tạo định nghĩa thuộc tính.'); setAttrName('');
-    } catch (cause) { setError(cause); } finally { setBusy(false); }
-  };
-  const handleUpdateAttribute = async () => {
-    if (!attrId) return;
-    setBusy(true); setError(undefined); setNotice('');
-    try {
-      await callOperation('updateAttributeDefinition', {
-        path: { id: attrId },
-        body: { name: attrName, expected_version: 1 },
-      });
-      setNotice('Đã cập nhật định nghĩa thuộc tính.');
-    } catch (cause) { setError(cause); } finally { setBusy(false); }
-  };
-  const hideOrRestore = async (kind: 'products' | 'reviews', action: 'hide' | 'restore') => {
-    const id = kind === 'products' ? productId : reviewId; if (!id) return;
-    setBusy(true); setError(undefined); setNotice('');
-    try {
-      if (kind === 'products') {
-        if (action === 'hide') {
-          await callOperation('hideProduct', { path: { id }, body: { reason, expected_version: version } });
-        } else {
-          await callOperation('restoreProduct', { path: { id }, body: { reason, expected_version: version } });
-        }
-      } else {
-        if (action === 'hide') {
-          await callOperation('hideReview', { path: { id }, body: { reason, expected_version: version } });
-        } else {
-          await callOperation('restoreReview', { path: { id }, body: { reason, expected_version: version } });
-        }
-      }
-      setNotice(`Đã ${action === 'hide' ? 'ẩn' : 'khôi phục'} ${kind}.`);
-    } catch (cause) { setError(cause); } finally { setBusy(false); }
-  };
-  return <section className="boot-card"><h3>Taxonomy và kiểm duyệt</h3>
-    <p>Danh mục và loại sản phẩm đang đọc dữ liệu API công khai; thay đổi kiểm duyệt cần API quản trị M1.</p>
+  return <section className="boot-card admin-catalog"><h3>Taxonomy và kiểm duyệt</h3>
+    <p>Quản lý danh mục, loại sản phẩm và thuộc tính dùng chung cho các gian hàng.</p>
+    <nav className="admin-catalog-shortcuts" aria-label="Công cụ danh mục">{[['taxonomy','Danh mục & loại sản phẩm'],['attributes','Thuộc tính'],['products','Kiểm duyệt sản phẩm'],['reviews','Kiểm duyệt đánh giá']].map(([value,label])=><Link key={value} className={'ui-button '+(section===value?'ui-button-primary':'ui-button-secondary')} aria-current={section===value?'page':undefined} to={'/admin?tab=catalog&section='+value}>{label}</Link>)}{(section==='taxonomy'||section==='attributes')&&<button className="ui-button ui-button-secondary" disabled={busy||loading} onClick={()=>void load()}>Tải lại taxonomy</button>}</nav>
     {error !== undefined && <ErrorView error={error} />}{notice && <p role="status">{notice}</p>}
-    {loading ? <Loading /> : <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(250px,1fr))', gap: '1rem' }}>
+    {(section==='taxonomy'||section==='attributes')&&(loading ? <Loading /> : <>
+      {section==='taxonomy'&&<div id="taxonomy" className="admin-taxonomy-grid">
         <div><h4>Danh mục</h4><ul>{categories.map(item => <li key={item.id}>{item.name} · {item.status ?? 'ACTIVE'}</li>)}</ul>
           <form onSubmit={handleCreateCategory}>
             <label>Tên danh mục<input required value={categoryName} onChange={event => setCategoryName(event.target.value)} /></label><button disabled={busy}>Tạo danh mục</button>
           </form>
-          <label>Sửa danh mục<select value={editCategoryId} onChange={event => setEditCategoryId(event.target.value)}><option value="">Chọn danh mục</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label>Sửa danh mục<select value={editCategoryId} onChange={event => {setEditCategoryId(event.target.value);setCategoryName(categories.find(item=>item.id===event.target.value)?.name ?? '');}}><option value="">Chọn danh mục</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
           <button disabled={busy || !editCategoryId} onClick={handleUpdateCategory}>Cập nhật danh mục</button>
         </div>
         <div><h4>Loại sản phẩm</h4><ul>{productTypes.map(item => <li key={item.id}>{item.name}</li>)}</ul>
@@ -149,28 +117,15 @@ export function AdminCatalogManagement() {
             <label>Danh mục<select required value={categoryId} onChange={event => setCategoryId(event.target.value)}><option value="">Chọn danh mục</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
             <button disabled={busy}>Tạo loại sản phẩm</button>
           </form>
-          <label>Sửa loại sản phẩm<select value={editTypeId} onChange={event => setEditTypeId(event.target.value)}><option value="">Chọn loại sản phẩm</option>{productTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <label>Sửa loại sản phẩm<select value={editTypeId} onChange={event => {const item=productTypes.find(row=>row.id===event.target.value);setEditTypeId(event.target.value);setTypeName(item?.name ?? '');setCategoryId(item?.category_id ?? '');}}><option value="">Chọn loại sản phẩm</option>{productTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
           <button disabled={busy || !editTypeId} onClick={handleUpdateProductType}>Cập nhật loại sản phẩm</button>
 
-          <h5 style={{ marginTop: '1rem' }}>Thuộc tính loại sản phẩm</h5>
-          <form onSubmit={handleCreateAttribute}>
-            <label>Tên thuộc tính<input value={attrName} onChange={e => setAttrName(e.target.value)} placeholder="VD: Màu sắc, Kích cỡ" /></label>
-            <button disabled={busy || !attrName}>Thêm thuộc tính</button>
-          </form>
-          <label>Attribute ID sửa<input value={attrId} onChange={e => setAttrId(e.target.value)} placeholder="UUID thuộc tính" /></label>
-          <button disabled={busy || !attrId} onClick={handleUpdateAttribute}>Cập nhật thuộc tính</button>
         </div>
-      </div>
-      <h4>Ẩn hoặc khôi phục nội dung</h4>
-      <label>Product ID<input value={productId} onChange={event => setProductId(event.target.value)} /></label>
-      <label>Review ID<input value={reviewId} onChange={event => setReviewId(event.target.value)} /></label>
-      <label>Phiên bản đã đọc<input type="number" min={0} value={version} onChange={event => setVersion(Number(event.target.value))} /></label>
-      <label>Lý do<input required value={reason} onChange={event => setReason(event.target.value)} /></label>
-      <div>{(['products', 'reviews'] as const).map(kind => <span key={kind} style={{ marginRight: '.75rem' }}>
-        <button disabled={busy || !reason} onClick={() => hideOrRestore(kind, 'hide')}>Ẩn {kind === 'products' ? 'Product' : 'Review'}</button>{' '}
-        <button disabled={busy || !reason} onClick={() => hideOrRestore(kind, 'restore')}>Khôi phục {kind === 'products' ? 'Product' : 'Review'}</button>
-      </span>)}</div>
-    </>}
+      </div>}
+      {section==='attributes'&&<div id="attributes"><AttributeDefinitions types={productTypes} reload={load}/></div>}
+    </>)}
+    {section==='products'&&<ProductModeration />}
+    {section==='reviews'&&<ReviewModeration />}
   </section>;
 }
 

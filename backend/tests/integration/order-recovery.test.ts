@@ -6,6 +6,7 @@ import { DataSource } from 'typeorm';
 import { OrderService } from '../../commerce-service/src/order/order.service';
 import { CheckoutRunner, CheckoutPlan } from '../../commerce-service/src/order/checkout.runner';
 import { OrderInventoryRunner } from '../../commerce-service/src/order/order-inventory.runner';
+import {StockCommitmentsService} from '../../commerce-service/src/order/stock-commitments.service';
 import { PaymentService } from '../../commerce-service/src/payment/payment.service';
 import { ApiError } from '../../shared/src/errors';
 import { schemaErrors } from '../../shared/src/contract-validation';
@@ -24,7 +25,7 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
   const call=async(op:string,body:any,corr:string):Promise<any>=>{
     calls.push({op,body:structuredClone(body),corr});
     if(op==='QuoteVariants')return {items:body.items.map((i:any)=>({...i,price_vnd:1000,available_quantity:10,version:0}))};
-    if(op==='ResolveCheckoutContext')return {address_snapshot:{id:address},stores:body.store_ids.map((id:string)=>({id,name:'Test Store',shipping_fee_vnd:0,version:0}))};
+    if(op==='ResolveCheckoutContext')return {address_snapshot:{id:address},stores:body.store_ids.map((id:string)=>({id,name:'Test Store',shipping_fee_vnd:0,version:0,return_address:{recipient_name:'Kho nhận trả kiểm thử',phone:'0900000000',line1:'12 Đường Kiểm Thử',ward:'Phường A',district:'Quận B',city:'Huế'}}))};
     const saved=ledger.get(body.operation_id),payload=JSON.stringify(body);
     if(saved){expect(saved.payload).toBe(payload);return saved.result;}
     const result=op==='ReserveInventory'?{reservations:body.items.map((i:any)=>({id:randomUUID(),order_id:i.order_id,variant_id:i.variant_id,quantity:i.quantity,expires_at:body.expires_at}))}:
@@ -36,7 +37,7 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
   };
   function service(extra:Record<string,any>={}) {
     return new OrderService((()=>({call})) as any,{source:db,
-      catalog:{product:async()=>({id:product,store_id:store,title:'Recovery product',variants:[{id:variant,sku:'R',price_vnd:1000}]})} as any,
+      catalog:{product:async()=>({id:product,store_id:store,title:'Recovery product',status:'ACTIVE',moderation_status:'VISIBLE',variants:[{id:variant,sku:'R',price_vnd:1000,status:'ACTIVE',variant_values:{color:'Đỏ',size:'M'}}]})} as any,
       quotes:{put:async(id,r)=>{records.set(id,r);},get:async id=>records.get(id)},...extra});
   }
   async function checkout(method:'COD'|'SANDBOX'='COD',extra:Record<string,any>={}) {
@@ -64,6 +65,61 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     await db.query('TRUNCATE m2_audit,outbox');
     await db.query('INSERT INTO cart(id,customer_user_id,updated_at) VALUES($1,$2,now())',[cart,user]);
     records=new Map();ledger=new Map();calls=[];lost=new Set();effects=new Map();pause=undefined;arrived=undefined;
+  });
+  test('BUY_NOW orders exactly the requested amount and never edits the saved cart, even on replay',async()=>{
+    const item=randomUUID();await db.query('INSERT INTO cart_item(id,cart_id,variant_id,product_id,store_id,quantity,added_at) VALUES($1,$2,$3,$4,$5,5,now())',[item,cart,variant,product,store]);
+    const s=service(),selection={source:'BUY_NOW' as const,buy_now:{product_id:product,variant_id:variant,quantity:2},address_id:address,payment_methods:{[store]:'COD' as const}},q=await s.quoteCheckout(selection,auth,'direct');
+    const input={...selection,quote_id:q.quote_id,expected_payable_total_vnd:q.payable_total_vnd},result=await s.confirmCheckout(input,'direct-key',auth,'direct');
+    expect(result.payable_total_vnd).toBe(2000);expect(result.orders[0].items![0]).toMatchObject({quantity:2,product_snapshot:{title:'Recovery product',variant_values:{color:'Đỏ',size:'M'}},sku_snapshot:'R'});expect(result.orders[0].address_snapshot).toEqual({id:address});
+    expect((await db.query('SELECT id,quantity FROM cart_item'))).toEqual([{id:item,quantity:5}]);records.clear();expect(await service().confirmCheckout(input,'direct-key',auth,'retry')).toEqual(result);expect(await count('"order"')).toBe(1);expect(effects.get('ReserveInventory')).toBe(1);
+  });
+  test('Seller mutation responses keep policy and timeline, including the confirmed completion time after COD',async()=>{
+    const {s,input}=await checkout(),created=await s.confirmCheckout(input,'mutation-projection',auth,'projection');await s.recoverOrders();const id=created.order_ids[0],owner={user_id:randomUUID(),roles:['STORE_OWNER'],store_membership:{store_id:store,role:'OWNER',status:'ACTIVE',permissions:[]}};
+    let current=await s.getOwnOrder(id,auth,'read-before');const policy=current.return_policy_snapshot;expect(policy).toBeDefined();
+    for(const status of ['CONFIRMED','PROCESSING','SHIPPED'] as const){current=await s.transitionStoreOrder(id,{expected_version:current.version,to_status:status},owner,'projection-'+status);expect(current.return_policy_snapshot).toEqual(policy);expect(current.timeline?.at(-1)?.status).toBe(status);expect(current.completed_at).toBeUndefined();expect(current.address_snapshot).toEqual({id:address});}
+    const historyLength=current.timeline!.length;current=await s.collectCod(id,{expected_version:current.version,amount_collected_vnd:1000},owner,'projection-cod');expect(current.payment_status).toBe('SUCCEEDED');expect(current.return_policy_snapshot).toEqual(policy);expect(current.timeline).toHaveLength(historyLength);expect(current.timeline?.at(-1)?.status).toBe('SHIPPED');
+    current=await s.transitionStoreOrder(id,{expected_version:current.version,to_status:'COMPLETED'},owner,'projection-complete');expect(current.completed_at).toEqual(expect.any(String));expect(current.return_policy_snapshot).toEqual(policy);expect(current.timeline?.at(-1)?.status).toBe('COMPLETED');expect(await s.getOwnOrder(id,auth,'read-after')).toEqual(current);expect(schemaErrors(current,bundle.operations.transitionStoreOrder.responses['200'])).toEqual([]);
+  });
+  test('worker status history records System, legacy worker rows read correctly, and Customer cancellation keeps its actor',async()=>{
+    const {s,input}=await checkout(),created=await s.confirmCheckout(input,'timeline-actor',auth,'timeline');await s.recoverOrders();const id=created.order_ids[0];
+    let current=await s.getOwnOrder(id,auth,'timeline-read');expect(current.timeline?.map(event=>event.actor_kind)).toEqual(['CUSTOMER','SYSTEM']);
+    const [written]=await db.query("SELECT actor_user_id FROM order_status_history WHERE order_id=$1 AND to_status='PENDING'",[id]);expect(written.actor_user_id).toBe('00000000-0000-0000-0000-000000000000');
+    // Reproduce an immutable legacy row in this suite's private schema only.
+    await db.query("UPDATE order_status_history SET actor_user_id=$2 WHERE order_id=$1 AND to_status='PENDING'",[id,user]);current=await s.getOwnOrder(id,auth,'timeline-legacy');expect(current.timeline?.at(-1)?.actor_kind).toBe('SYSTEM');
+    const [legacy]=await db.query("SELECT actor_user_id FROM order_status_history WHERE order_id=$1 AND to_status='PENDING'",[id]);expect(legacy.actor_user_id).toBe(user);
+    const cancelled=await s.cancelOwnOrder(id,{expected_version:current.version,reason:'PAYMENT_RECEIVED'},auth,'timeline-cancel');expect(cancelled.timeline?.at(-1)).toMatchObject({status:'CANCELLED',actor_kind:'CUSTOMER'});
+  });
+  test('inventory-only Seller reconciles all pages of unhanded stock without Customer data and distinguishes uncertain commands',async()=>{
+    const {s,input}=await checkout(),created=await s.confirmCheckout(input,'commitments',auth,'commitments');await s.recoverOrders();const original=created.order_ids[0],stock=new StockCommitmentsService(db),employee={user_id:randomUUID(),store_membership:{store_id:store,role:'SELLER',permissions:['inventory.store.read_adjust']}};
+    // Bulk data is private SQL fixture setup, not a claimed bulk-order product feature.
+    const ids:string[]=[];
+    for(let n=0;n<101;n++){
+      const id=randomUUID();ids.push(id);await db.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,address_snapshot,status,payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd) SELECT $2,$2,customer_user_id,store_id,address_snapshot,'PENDING',payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd FROM "order" WHERE id=$1`,[original,id]);
+      await db.query(`INSERT INTO order_item(order_id,product_id,variant_id,product_snapshot,sku_snapshot,unit_price_vnd,quantity,line_total_vnd) SELECT $2,product_id,variant_id,product_snapshot,'HIDDEN-SKU-'||$3,unit_price_vnd,quantity,line_total_vnd FROM order_item WHERE order_id=$1`,[original,id,n]);
+      await db.query(`INSERT INTO order_inventory_state(order_id,reservation_ids,items_json,state,correlation_id) SELECT $2,reservation_ids,items_json,'CONSUMED','stock-fixture' FROM order_inventory_state WHERE order_id=$1`,[original,id]);
+    }
+    const first=await stock.list({page:1,size:10},employee);expect(first).toMatchObject({total:102,consumed_quantity:102,uncertain_quantity:0});expect(first.items).toHaveLength(10);expect((await stock.list({page:11,size:10},employee)).items).toHaveLength(2);expect(schemaErrors(first,bundle.operations.listStockCommitments.responses['200'])).toEqual([]);expect(JSON.stringify(first)).not.toContain('address_snapshot');expect(JSON.stringify(first)).not.toContain('customer_user_id');
+    const exact=await stock.list({q:'hidden-sku-100',variant_id:variant,product_id:product},employee);expect(exact.total).toBe(1);expect(exact.items[0].order_id).toBe(ids[100]);
+    await db.query("UPDATE \"order\" SET status='SHIPPED' WHERE id=$1",[ids[0]]);expect((await stock.list({},employee)).consumed_quantity).toBe(101);
+    await db.query("UPDATE \"order\" SET status='CANCELLED' WHERE id=$1",[ids[1]]);expect((await stock.list({},employee))).toMatchObject({consumed_quantity:100,uncertain_quantity:1});
+    await db.query("UPDATE order_inventory_state SET state='RESERVED',command_kind='CONSUME',operation_id=$2,command_json='{}' WHERE order_id=$1",[ids[2],randomUUID()]);expect((await stock.list({},employee))).toMatchObject({consumed_quantity:99,uncertain_quantity:2});
+    expect((await stock.list({q:'%'},employee)).total).toBe(0);expect((await stock.list({variant_id:variant},{...employee,store_membership:{...employee.store_membership,store_id:randomUUID()}})).total).toBe(0);
+    await expect(stock.list({}, {...employee,store_membership:{...employee.store_membership,permissions:[]}})).rejects.toMatchObject({status:403});
+  });
+  test('BUY_NOW lost reserve ACK recovers the same intent without Redis or cart mutation',async()=>{
+    const s=service(),selection={source:'BUY_NOW' as const,buy_now:{product_id:product,variant_id:variant,quantity:2},address_id:address,payment_methods:{[store]:'COD' as const}},q=await s.quoteCheckout(selection,auth,'direct-lost');
+    const input={...selection,quote_id:q.quote_id,expected_payable_total_vnd:q.payable_total_vnd};lost.add('ReserveInventory');await expect(s.confirmCheckout(input,'direct-lost',auth,'direct-lost')).rejects.toMatchObject({status:503});
+    records.clear();await due();await service().recoverOrders();const result=await service().confirmCheckout(input,'direct-lost',auth,'retry');expect(result.orders[0].items![0].quantity).toBe(2);expect(await count('cart_item')).toBe(0);expect(effects.get('ReserveInventory')).toBe(1);
+    const reserves=calls.filter(x=>x.op==='ReserveInventory');expect(reserves[0]).toEqual(reserves[1]);
+  });
+  test('variant identity changed after quote rejects confirmation before any reservation',async()=>{
+    const value={id:product,store_id:store,title:'Shirt',status:'ACTIVE',moderation_status:'VISIBLE',variants:[{id:variant,sku:'R',price_vnd:1000,status:'ACTIVE',variant_values:{color:'Đỏ'}}]};
+    const s=service({catalog:{product:async()=>structuredClone(value)}}),selection={source:'BUY_NOW' as const,buy_now:{product_id:product,variant_id:variant,quantity:1},address_id:address,payment_methods:{[store]:'COD' as const}},q=await s.quoteCheckout(selection,auth,'identity');value.variants[0].variant_values.color='Xanh';
+    await expect(s.confirmCheckout({...selection,quote_id:q.quote_id,expected_payable_total_vnd:q.payable_total_vnd},'identity',auth,'identity')).rejects.toMatchObject({status:409,response:{code:'QUOTE_CHANGED'}});expect(effects.get('ReserveInventory')).toBeUndefined();expect(await count('"order"')).toBe(0);
+  });
+  test('legacy CART quote hashes remain accepted during the quote TTL',async()=>{
+    const {s,input}=await checkout();const calculated=await s.revalidateQuote(input,auth,'legacy',new (await import('../../commerce-service/src/order/order.repository')).OrderRepository(db.manager));const saved=records.get(input.quote_id);delete saved.snapshot_version;saved.snapshot_hash=calculated.legacySnapshotHash;
+    const result=await s.confirmCheckout(input,'legacy-quote',auth,'legacy');expect(result.order_ids).toHaveLength(1);expect(await count('cart_item')).toBe(0);
   });
   test('concurrent same-key Confirm has one durable attempt, one reserve effect and a contract-valid saved response',async()=>{
     const {s,input}=await checkout();let release!:()=>void,started!:()=>void;
@@ -135,6 +191,10 @@ suite('durable Order recovery in an isolated M2 schema',()=>{
     const quoteInput={cart_item_ids:ids,address_id:address,payment_methods:{[store]:'COD' as const,[otherStore]:'SANDBOX' as const},platform_voucher_code:'PLATFORM'};
     const quote=await s.quoteCheckout(quoteInput,auth,'mixed');const result=await s.confirmCheckout({...quoteInput,quote_id:quote.quote_id,expected_payable_total_vnd:1899},'mixed',auth,'mixed');
     expect(result.orders).toHaveLength(2);expect(result.orders.map(x=>x.status).sort()).toEqual(['AWAITING_PAYMENT','PREPARING']);
+    const group=await s.getPurchaseGroupOrders(result.purchase_group_id,auth,'read-group');
+    expect(group.orders).toHaveLength(2);
+    for(const order of group.orders){const [payment]=await db.query('SELECT status FROM payment WHERE order_id=$1',[order.id]);expect(order.payment_status).toBe(payment.status);expect(order.created_at).toEqual(expect.any(String));expect(order.address_snapshot).toEqual({id:address});expect(order.return_policy_snapshot).toBeDefined();expect(order.timeline?.at(-1)?.status).toBe(order.status);}
+    await expect(s.getPurchaseGroupOrders(result.purchase_group_id,{...auth,user_id:randomUUID()},'wrong-group-customer')).rejects.toMatchObject({status:404});
     expect(result.orders.reduce((sum,x)=>sum+x.amounts.platform_discount_vnd,0)).toBe(101);expect(await count('payment')).toBe(2);expect(await count('voucher_redemption')).toBe(2);
     expect((await db.query('SELECT status FROM voucher_reservation'))[0].status).toBe('RESERVED');
     expect(schemaErrors(result,bundle.operations.confirmCheckout.responses['201'])).toEqual([]);

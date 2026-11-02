@@ -202,6 +202,22 @@ export class AuthService {
     await database.query('UPDATE refresh_session SET revoked_at=coalesce(revoked_at,now()) WHERE family_id IN (SELECT family_id FROM refresh_session WHERE token_hash=$1)',[digest(token)]);
     return { status: 'OK', message: 'Đăng xuất thành công.' };
   }
+  async logoutAccess(accessToken:string,cookieToken?:string){
+    let claims:jwt.JwtPayload;
+    try{
+      // An expired, correctly signed credential may only revoke its own session.
+      // Normal access/refresh authentication keeps its strict expiry/reuse checks.
+      const value=jwt.verify(accessToken,config('M3').publicKey,{algorithms:['RS256'],issuer:'pbl6-identity',audience:'pbl6-clients',ignoreExpiration:true});
+      if(typeof value==='string'||typeof value.sub!=='string'||typeof value.sid!=='string')throw new Error('Invalid claims');claims=value;
+    }catch{throw new ApiError(401,'UNAUTHENTICATED','Không xác minh được phiên cần đăng xuất.');}
+    return database.transaction(async manager=>{
+      const [target]=await manager.query('SELECT family_id FROM refresh_session WHERE id=$1 AND user_id=$2',[claims.sid,claims.sub]);
+      if(!target)throw new ApiError(401,'SESSION_REVOKED','Phiên cần đăng xuất không còn tồn tại.');
+      const [cookie]=cookieToken?await manager.query('SELECT family_id FROM refresh_session WHERE token_hash=$1',[digest(cookieToken)]):[];
+      await manager.query('UPDATE refresh_session SET revoked_at=coalesce(revoked_at,now()) WHERE family_id=$1',[target.family_id]);
+      return {status:'OK' as const,message:'Đã thu hồi phiên được yêu cầu.',cookie_session_changed:!!cookieToken&&cookie?.family_id!==target.family_id};
+    });
+  }
   async resetPassword(email: string) {
     const adapter = this.deliveryAdapter();
     const [user] = await database.query('SELECT id,status FROM "user" WHERE lower(email)=lower($1)', [email]);

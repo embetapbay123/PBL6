@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { callOperation } from '../../api/operations';
 import { CustomerSubNav } from './CustomerSubNav';
+import {useQueryClient} from '@tanstack/react-query';
+import {useUnsavedChanges} from '../../components/useUnsavedChanges';
 
 interface Profile {
   id: string;
@@ -16,8 +18,6 @@ type ProfileUpdate = {
   phone?: string;
 };
 
-const PROFILE_PATH = '/me';
-
 const describeError = (error: unknown): string => {
   if (error instanceof ApiError) {
     if (error.status === 401 || error.status === 403) {
@@ -29,6 +29,7 @@ const describeError = (error: unknown): string => {
 };
 
 export const ProfilePage: React.FC = () => {
+  const cache=useQueryClient();
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,6 +39,8 @@ export const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [original,setOriginal]=useState<{displayName:string;phone:string}>();
+  useUnsavedChanges(saving||!!original&&(displayName!==original.displayName||phone!==original.phone));
 
   const mounted = useRef(true);
   const savedTimer = useRef<number | undefined>(undefined);
@@ -56,6 +59,7 @@ export const ProfilePage: React.FC = () => {
       setEmail(profile.email);
       setDisplayName(profile.display_name ?? '');
       setPhone(profile.phone ?? '');
+      setOriginal({displayName:profile.display_name??'',phone:profile.phone??''});
     }
     return {
       id: profile.user_id,
@@ -84,6 +88,7 @@ export const ProfilePage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
+    if(!displayName.trim()){setSaveError('Tên hiển thị không được chỉ chứa khoảng trắng.');return;}
 
     setSaving(true);
     setSaveError(null);
@@ -98,9 +103,11 @@ export const ProfilePage: React.FC = () => {
     payload.phone = phone.trim(); // send string, never null
 
     try {
-      await callOperation('updateProfile', {
+      const saved=await callOperation('updateProfile', {
         body: payload,
       });
+      if(mounted.current){cache.setQueryData(['profile',saved.user_id],saved);setDisplayName(saved.display_name??'');setPhone(saved.phone??'');setOriginal({displayName:saved.display_name??'',phone:saved.phone??''});}
+      await cache.invalidateQueries({queryKey:['profile']});
     } catch (error) {
       if (mounted.current) setSaveError(describeError(error));
       if (mounted.current) setSaving(false);
@@ -168,6 +175,7 @@ export const ProfilePage: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-4">
+        <fieldset disabled={saving} className="space-y-4">
         <div>
           <label htmlFor="profile-display-name" className="block text-sm font-medium text-gray-700 mb-1">
             Tên hiển thị
@@ -175,6 +183,7 @@ export const ProfilePage: React.FC = () => {
           <input
             id="profile-display-name"
             type="text"
+              maxLength={200}
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -202,6 +211,7 @@ export const ProfilePage: React.FC = () => {
           <input
             id="profile-phone"
             type="tel"
+              maxLength={200}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -215,6 +225,7 @@ export const ProfilePage: React.FC = () => {
         >
           {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
         </button>
+        </fieldset>
       </form>
     </div>
   );

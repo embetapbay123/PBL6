@@ -1,8 +1,8 @@
 // GENERATED from OpenAPI; replace implementations deliberately, do not regenerate after editing.
 import { Body, Controller, Get, Patch, Post, Query, Param, Req, UseGuards } from '@nestjs/common';
-import { AuthGuard, Roles, ServiceCallers, ServiceGuard } from '../../../shared/src/auth';
+import { AuthGuard, Public, Roles, ServiceCallers, ServiceGuard } from '../../../shared/src/auth';
 import {
-  ListOwnStoreApplicationsQueryDto, ListStoreApplicationsQueryDto, ReviewStoreApplicationBodyDto,
+  ActiveStoresQueryDto, ListOwnStoreApplicationsQueryDto, ListStoreApplicationsQueryDto, ReviewStoreApplicationBodyDto,
   ReviewStoreApplicationPathDto, SubmitStoreApplicationBodyDto, UpdateOwnStoreBodyDto,
 } from '../../../shared/src/dtos.generated';
 import { StoreService } from './store.service';
@@ -10,6 +10,8 @@ import { StoreService } from './store.service';
 @Controller() @UseGuards(AuthGuard)
 export class StoreSkeletonController {
   private readonly service = new StoreService();
+  @Get('stores/:id') @Public()
+  getPublicStore(@Param('id') id:string){return this.service.getPublicStore(id);}
 
   @Post('me/store-applications') @Roles("CUSTOMER")
   submitStoreApplication(@Req() req: any, @Body() body: SubmitStoreApplicationBodyDto) {
@@ -23,7 +25,7 @@ export class StoreSkeletonController {
 
   @Get('admin/store-applications') @Roles("ADMIN")
   listStoreApplications(@Query() query: ListStoreApplicationsQueryDto) {
-    return this.service.listStoreApplications(query.page, query.size);
+    return this.service.listStoreApplications(query.page, query.size,query.status,query.q);
   }
 
   @Get('store') @Roles("SELLER","STORE_OWNER")
@@ -47,7 +49,7 @@ export class StoreInternalController {
   private readonly service = new StoreService();
 
   @Get('stores/active') @ServiceCallers('M1', 'M2', 'M4')
-  activeStores() {
-    return this.service.listActiveStoreIds();
+  activeStores(@Query() query:ActiveStoresQueryDto) {
+    return this.service.listActiveStoreIds(query);
   }
 }

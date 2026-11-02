@@ -1,0 +1,21 @@
+import {randomUUID} from 'node:crypto';
+import {test,expect} from '@playwright/test';
+import {writeFileSync} from 'node:fs';
+import {afterSaleMarket} from './runtime/after-sale-market';
+import {providerControl,paidOnline,pendingProviderJobs} from './runtime/online-refund-market';
+test('baseline35: known FAILED refund has no recovery command exposed',async({},info)=>{
+ test.skip(process.env.CORE_FIX_REFUND_RECOVERY_BASELINE!=='1','Explicit private baseline only.');test.setTimeout(150000);
+ expect(pendingProviderJobs()).toBe(0);const previous=providerControl('/stats').value.mode,f=await afterSaleMarket();let proof:any;
+ try{
+  expect(providerControl('/control',{mode:'FAILED'}).status).toBe(200);const {order,request}=await paidOnline(f);await f.receive(request.id);await expect.poll(async()=>(await f.own(order.id)).refund_status,{timeout:20000}).toBe('FAILED');
+  const state=await f.own(order.id),unavailable=await f.raw('/store/orders/'+order.id+'/refund-recovery',f.owner.access);expect(unavailable.status).toBe(404);const stats=providerControl('/stats',undefined,[request.id]).value.commands;expect(stats).toHaveLength(1);expect(stats[0]).toMatchObject({status:'FAILED',refund_calls:1,effects:0});
+  proof={runtime:'manifest35',tag:f.tag,evidence:'REAL_HTTP_DATABASE_WORKER_CONTROLLED_PROVIDER',order_id:order.id,request_id:request.id,payment_status:state.payment_status,refund_status:state.refund_status,recovery_get_status:unavailable.status,provider:stats,expected:'Owner/Admin can explicitly request lookup and safe retry after verified no-effect failure; UNKNOWN never creates a new execution.',identity_setup:'Private tagged verified M3 fixture, not signup acceptance.'};
+ }finally{providerControl('/control',{mode:previous});await f.cleanup();if(proof)writeFileSync(info.outputPath('refund-recovery-baseline35.json'),JSON.stringify({...proof,cleanup:'STOPPED, transactions/history retained; failed return remains eligible for recovery.'},null,2));}
+});
+
+test('provider LOST_ACK commits externally once, stays UNKNOWN locally and recovers by lookup',async({},info)=>{
+ test.skip(process.env.CORE_FIX_REFUND_LOST_ACK!=='1','Explicit private adapter acceptance only.');test.setTimeout(120000);const f=await afterSaleMarket();let correlation:string|undefined;const checks:any[]=[];
+ const record=(step:string,data:any)=>{checks.push({step,...data});writeFileSync(info.outputPath('provider-lost-ack-checkpoints.json'),JSON.stringify({runtime:process.env.CORE_FIX_RUNTIME_MANIFEST,tag:f.tag,evidence:'REAL_HTTP_DATABASE_WORKER_CONTROLLED_PROVIDER',identity_setup:'Tagged verified M3 fixture, not signup acceptance.',checkpoints:checks},null,2));};
+ try{const {order,request,correlation:trace}=await paidOnline(f);correlation=trace;expect(providerControl('/control/rule',{correlation_id:trace,mode:'LOST_ACK'}).status).toBe(200);await f.receive(request.id);await expect.poll(async()=>(await f.own(order.id)).refund_status,{timeout:15000,intervals:[100,200]}).toBe('UNKNOWN');const uncertain=await f.own(order.id),stats=providerControl('/stats',undefined,[request.id]).value.commands[0];expect(uncertain.payment_status).toBe('SUCCEEDED');expect(stats).toMatchObject({status:'SUCCEEDED',effects:1,refund_calls:1});record('PROVIDER_COMMITTED_ACK_LOST',{order_id:order.id,request_id:request.id,local_refund:uncertain.refund_status,payment_status:uncertain.payment_status,provider:stats});await expect.poll(async()=>(await f.own(order.id)).refund_status,{timeout:20000}).toBe('SUCCEEDED');const ready=await f.readRequest(request.id);await f.api('/store/returns/'+request.id,f.owner.access,'PATCH',{operation_id:randomUUID(),expected_version:ready.version,status:'COMPLETED'});const final=providerControl('/stats',undefined,[request.id]).value.commands[0];expect(final).toMatchObject({effects:1,refund_calls:1,status:'SUCCEEDED'});expect(final.lookup_calls).toBeGreaterThanOrEqual(1);record('LOOKUP_CONFIRMED_NO_RESEND',{order_id:order.id,request_id:request.id,order:await f.own(order.id),provider:final});}
+ finally{if(correlation)providerControl('/control/rule',{correlation_id:correlation,mode:null});await f.cleanup();record('CLEANUP',{product_status:'STOPPED',transactions_and_provider_ledger_retained:true});}
+});

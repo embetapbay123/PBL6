@@ -39,7 +39,7 @@ docker compose --env-file infrastructure/.env -f infrastructure/compose.yaml run
 npm run infra:up
 ```
 
-Mở [http://localhost:8080](http://localhost:8080). Đăng nhập `customer1@pbl6.test`, `customer2@pbl6.test`, `owner@pbl6.test` hoặc `admin@pbl6.test`. Mật khẩu là `SEED_PASSWORD` trong `infrastructure/.env`, mặc định local `LocalDemo-ChangeMe123!`. Seed chỉ là dữ liệu giả để phát triển. Script giữ cấu hình/khóa đã có, không in secret.
+Mở [http://localhost:8080](http://localhost:8080). Đăng nhập `customer1@pbl6.test`, `customer2@pbl6.test`, `owner@pbl6.test` hoặc `admin@pbl6.test`. Mật khẩu là `SEED_PASSWORD` trong `infrastructure/.env`, mặc định local `<SEED_PASSWORD từ infrastructure/.env>`. Seed chỉ là dữ liệu giả để phát triển. Script giữ cấu hình/khóa đã có, không in secret.
 
 Web mặc định dùng giao diện marketplace nối API cho Customer, Store và Admin: catalog/detail, cart/checkout/voucher, lịch sử đơn/thanh toán, kho/đơn/COD và các màn quản trị. Xem [bàn giao giao diện live](docs/implementation/live-demo-ui.md) để biết route, phạm vi và kiểm thử. `/?mode=mock` giữ demo dữ liệu local cũ; `/?mode=api-tools` giữ khung API. Review backend, email thật, provider Refund và nghiệm thu thiết bị vẫn còn; không suy Done từ việc đã có UI.
 

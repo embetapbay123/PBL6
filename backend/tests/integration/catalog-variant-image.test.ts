@@ -14,6 +14,7 @@ let product = '';        // DRAFT Product of Store A that already has one Varian
 let emptyProduct = '';   // DRAFT Product of Store A with no Variant at all
 let foreignProduct = ''; // DRAFT Product of another Store
 let correlations: string[] = [];
+let axisDefinitions:string[]=[];
 
 async function login(email: string): Promise<string> {
   const response = await fetch(base + '/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -45,6 +46,7 @@ async function insertProduct(id: string, storeId: string, title: string) {
 }
 
 async function seed() {
+  for(const [code,required] of [['color',true],['size',false]] as const){const id=randomUUID();axisDefinitions.push(id);await m1.query("INSERT INTO attribute_definition(id,product_type_id,code,name,data_type,required,variant_factor) VALUES($1,$2,$3,$3,'STRING',$4,true)",[id,PRODUCT_TYPE,code,required]);}
   product = randomUUID(); emptyProduct = randomUUID(); foreignProduct = randomUUID();
   // DRAFT so the seeded rows never change what the public catalogue suites expect to see.
   await insertProduct(product, STORE_A, 'Product CAT-03');
@@ -55,6 +57,7 @@ async function seed() {
 }
 
 async function reset() {
+  if(axisDefinitions.length){await m1.query('DELETE FROM attribute_definition WHERE id=ANY($1::uuid[])',[axisDefinitions]);axisDefinitions=[];}
   if (correlations.length) {
     await m1.query('DELETE FROM m1_audit WHERE request_id = ANY($1::text[])', [correlations]);
     await m1.query('DELETE FROM outbox WHERE correlation_id = ANY($1::text[])', [correlations]);
@@ -198,6 +201,35 @@ test('addProductImage only accepts a Variant of the same Product', async () => {
 
   expect((await call('POST', `/store/products/${foreignProduct}/images`,
     { image_url: 'https://cdn.example.test/y.jpg' }, owner)).status).toBe(404);
+});
+
+test('removing an image is scoped to the Store and idempotently hides it', async () => {
+  const created=await call('POST',`/store/products/${product}/images`,{image_url:'https://cdn.example.test/remove.jpg'},owner);
+  expect(created.status).toBe(201);
+  const image=await created.json() as any;
+  expect((await call('DELETE',`/store/products/${foreignProduct}/images/${image.id}`,undefined,owner)).status).toBe(404);
+  expect((await call('DELETE',`/store/products/${product}/images/${image.id}`)).status).toBe(401);
+  const removed=await call('DELETE',`/store/products/${product}/images/${image.id}`,undefined,owner);
+  expect(removed.status).toBe(200);
+  expect(await removed.json()).toMatchObject({id:image.id,product_id:product});
+  expect((await call('DELETE',`/store/products/${product}/images/${image.id}`,undefined,owner)).status).toBe(200);
+  expect(await m1.query('SELECT status FROM product_image WHERE id=$1',[image.id])).toEqual([{status:'STOPPED'}]);
+  const managed=await (await call('GET',`/store/products/${product}`,undefined,owner)).json() as any;
+  expect(managed.images.some((row:any)=>row.id===image.id)).toBe(false);
+});
+
+test('reordering checks the current image snapshot and rejects stale edits', async () => {
+  const a=await (await call('POST',`/store/products/${product}/images`,{image_url:'https://cdn.example.test/order-a.jpg'},owner)).json() as any;
+  const b=await (await call('POST',`/store/products/${product}/images`,{image_url:'https://cdn.example.test/order-b.jpg'},owner)).json() as any;
+  const input={expected_image_ids:[a.id,b.id],image_ids:[b.id,a.id]};
+  const result=await call('POST',`/store/products/${product}/images/reorder`,input,owner);
+  expect(result.status).toBe(200);
+  expect((await result.json() as any).image_ids).toEqual([b.id,a.id]);
+  const stale=await call('POST',`/store/products/${product}/images/reorder`,input,owner);
+  expect(stale.status).toBe(409);
+  expect((await stale.json() as any).code).toBe('IMAGE_ORDER_CONFLICT');
+  const managed=await (await call('GET',`/store/products/${product}`,undefined,owner)).json() as any;
+  expect(managed.images.map((image:any)=>image.id)).toEqual([b.id,a.id]);
 });
 
 test('the DTO rejects an image url that is not a URI', async () => {

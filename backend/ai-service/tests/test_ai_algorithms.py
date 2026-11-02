@@ -37,7 +37,8 @@ def test_provider_connection_error_and_no_retry():
     selected=asyncio.run(CatalogSelector(provider='ollama',url='http://localhost:11434',model='test',transport=httpx.MockTransport(handler)).select('camera',products()))
     assert selected.fallback and selected.reason=='PROVIDER_UNAVAILABLE' and len(calls)==1
 
-def test_provider_overall_deadline_and_response_size_limit():
+def test_provider_overall_deadline_and_response_size_limit(monkeypatch):
+    monkeypatch.setenv('CHAT_TIMEOUT_SECONDS','2')
     async def slow(request):
         await asyncio.sleep(3)
         return httpx.Response(200,json={})

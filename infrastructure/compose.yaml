@@ -8,6 +8,7 @@ x-app-env: &app-env
   RABBITMQ_URL: amqp://pbl6:${RABBIT_PASSWORD}@rabbitmq:5672
   IDENTITY_URL: http://m3:3103
   CATALOG_URL: http://m1:3101
+  COMMERCE_URL: http://m2:3102
   JWT_PUBLIC_KEY_FILE: /run/secrets/jwt-public.pem
   WEB_ORIGIN: ${WEB_ORIGIN}
   COOKIE_SECURE: ${COOKIE_SECURE}
@@ -49,7 +50,7 @@ services:
     restart: unless-stopped
   m1:
     <<: *node
-    environment: {<<: *app-env, SERVICE_ID: M1, PORT: '3101', M1_DATABASE_URL: 'postgresql://m1:${M1_DB_PASSWORD}@postgres:5432/m1'}
+    environment: {<<: *app-env, SERVICE_ID: M1, PORT: '3101', M1_DATABASE_URL: 'postgresql://m1:${M1_DB_PASSWORD}@postgres:5432/m1', EXCHANGE_DISPATCH_WRITES_ENABLED: '${EXCHANGE_DISPATCH_WRITES_ENABLED-true}'}
     command: [node, dist/catalog-service/src/main.js]
   m2:
     <<: *node

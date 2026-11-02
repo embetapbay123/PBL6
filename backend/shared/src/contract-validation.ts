@@ -11,6 +11,11 @@ export function schemaErrors(value: unknown, schema: Schema, field = '', require
   const fail = (reason: string) => errors.push({ field: field || '$', reason });
   if (value === undefined) { if (required) fail('required'); return errors; }
   if (value === null) { if (!schema.nullable) fail('null is not allowed'); return errors; }
+  if(schema.oneOf){
+    const matches=schema.oneOf.filter((branch:Schema)=>schemaErrors(value,branch,field,required).length===0);
+    if(matches.length!==1)fail('must match exactly one allowed shape');
+    return errors;
+  }
   if (schema.enum && !schema.enum.includes(value)) fail('invalid enum value');
   switch (schema.type) {
     case 'object': {

@@ -1,24 +1,29 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Headers, Req, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Headers, Req, UseGuards, HttpCode } from '@nestjs/common';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import {
-  QuoteCheckoutBodyDto,
-  ConfirmCheckoutBodyDto,
   TransitionStoreOrderBodyDto,
   CancelOwnOrderBodyDto,
   CancelStoreOrderBodyDto,
   CollectCodBodyDto,
 } from '../../../shared/src/dtos.generated';
 import { OrderService } from './order.service';
+import {StockCommitmentsService} from './stock-commitments.service';
+import type {OperationInputs} from '../../../shared/src/operations.generated';
 
 @Controller()
 @UseGuards(AuthGuard)
 export class OrderController {
   private readonly service = new OrderService();
+  private readonly commitments=new StockCommitmentsService();
+
+  @Get('store/stock-commitments')
+  @Roles('SELLER','STORE_OWNER')
+  listStockCommitments(@Req() req:any){return this.commitments.list(req.contract.query,req.auth);}
 
   @Post('checkout/quotes')
   @HttpCode(200)
   @Roles('CUSTOMER')
-  quoteCheckout(@Body() dto: QuoteCheckoutBodyDto, @Req() req: any) {
+  quoteCheckout(@Body() dto: OperationInputs['quoteCheckout']['body'], @Req() req: any) {
     return this.service.quoteCheckout(dto, req.auth, req.correlationId);
   }
 
@@ -26,7 +31,7 @@ export class OrderController {
   @Roles('CUSTOMER')
   confirmCheckout(
     @Headers('idempotency-key') idempotencyKey: string,
-    @Body() dto: ConfirmCheckoutBodyDto,
+    @Body() dto: OperationInputs['confirmCheckout']['body'],
     @Req() req: any
   ) {
     const key = idempotencyKey || req.headers?.['idempotency-key'] || req.headers?.['Idempotency-Key'];
@@ -41,19 +46,8 @@ export class OrderController {
 
   @Get('me/orders')
   @Roles('CUSTOMER')
-  listOwnOrders(
-    @Query('page') page: string | undefined,
-    @Query('size') size: string | undefined,
-    @Req() req: any
-  ) {
-    return this.service.listOwnOrders(
-      {
-        page: page !== undefined ? Number(page) : undefined,
-        size: size !== undefined ? Number(size) : undefined,
-      },
-      req.auth,
-      req.correlationId
-    );
+  listOwnOrders(@Req() req:any) {
+    return this.service.listOwnOrders(req.contract?.query??{},req.auth,req.correlationId);
   }
 
   @Get('me/orders/:id')
@@ -71,19 +65,8 @@ export class OrderController {
 
   @Get('store/orders')
   @Roles('SELLER', 'STORE_OWNER')
-  listStoreOrders(
-    @Query('page') page: string | undefined,
-    @Query('size') size: string | undefined,
-    @Req() req: any
-  ) {
-    return this.service.listStoreOrders(
-      {
-        page: page !== undefined ? Number(page) : undefined,
-        size: size !== undefined ? Number(size) : undefined,
-      },
-      req.auth,
-      req.correlationId
-    );
+  listStoreOrders(@Req() req:any) {
+    return this.service.listStoreOrders(req.contract?.query??{},req.auth,req.correlationId);
   }
 
   @Get('store/orders/:id')

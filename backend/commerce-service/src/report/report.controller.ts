@@ -19,6 +19,18 @@ export class ReportController {
     return this.service.getPlatformDashboard(req.auth, req.correlationId);
   }
 
+  @Get('admin/reports') @Roles('ADMIN')
+  platformReport(@Req() req:any){return this.service.getPlatformMoneyReport(req.contract.query,req.auth);}
+  @Get('store/reports/unresolved-money') @Roles('STORE_OWNER')
+  storeUnresolved(@Req() req:any){return this.service.listUnresolvedMoney(req.contract.query,req.auth);}
+  @Get('admin/reports/unresolved-money') @Roles('ADMIN')
+  adminUnresolved(@Req() req:any){return this.service.listUnresolvedMoney(req.contract.query,req.auth,true);}
+
+  @Get('store/reports/money') @Roles('STORE_OWNER')
+  storeMoney(@Req() req:any){return this.service.listMoney(req.contract.query,req.auth);}
+  @Get('admin/reports/money') @Roles('ADMIN')
+  adminMoney(@Req() req:any){return this.service.listMoney(req.contract.query,req.auth,true);}
+
   @Get('store/reports')
   @Roles('STORE_OWNER')
   getStoreReport(@Req() req: any) {

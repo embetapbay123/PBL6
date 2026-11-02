@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.store-app-form>fieldset{grid-column:1/-1;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:1rem}
+.store-app-form>fieldset>button{grid-column:1/-1;justify-self:start}
+@media(max-width:680px){.store-app-form>fieldset{grid-template-columns:minmax(0,1fr)}.store-app-form>fieldset>button{width:100%}}
+
 @layer base {
   body {
     @apply bg-slate-50 text-slate-900 font-sans;

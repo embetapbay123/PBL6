@@ -22,4 +22,7 @@ export class InventoryController {
 
   @Get('store/inventory/movements')
   listStockMovements(@Req() request:any) {return this.service.listStockMovements(request.contract.query,request.auth);}
+
+  @Get('store/inventory/reconciliation')
+  getInventoryReconciliation(@Req() request:any){return this.service.getInventoryReconciliation(request.contract.query,request.auth);}
 }

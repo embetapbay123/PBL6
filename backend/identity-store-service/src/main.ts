@@ -1,3 +1,6 @@
+import {AuditActorsController} from './administration/audit-actors.controller';
+import {storeAuditController} from '../../shared/src/store-audit';
+import { auditLogController } from '../../shared/src/audit-log';
 import { ContextInternalController } from './auth/context.internal.controller';
 process.env.SERVICE_ID = 'M3';
 import { bootstrap } from '../../shared/src/bootstrap';
@@ -7,7 +10,8 @@ import { StoreInternalController, StoreSkeletonController } from './store/store.
 import { StaffSkeletonController } from './staff/staff.skeleton.controller';
 import { AdministrationSkeletonController } from './administration/administration.skeleton.controller';
 import { AuthController } from './auth/auth.controller';
-bootstrap('M3',[ContextInternalController,AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StoreInternalController,StaffSkeletonController,AdministrationSkeletonController]).catch((error: unknown)=>{
+import { MessagingController } from './messaging/messaging.controller';
+bootstrap('M3',[auditLogController('M3'),storeAuditController('M3'),AuditActorsController,MessagingController,ContextInternalController,AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StoreInternalController,StaffSkeletonController,AdministrationSkeletonController]).catch((error: unknown)=>{
   const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   console.error(`Startup failed: ${detail}`);
   process.exit(1);

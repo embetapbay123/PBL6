@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ApiError } from '../../api/client';
+import { Link,useSearchParams } from 'react-router-dom';
+import { ApiError,isUncertainMutation } from '../../api/client';
 import { callOperation } from '../../api/operations';
 import { CustomerSubNav } from './CustomerSubNav';
-
-/* ------------------------------------------------------------------ */
-/* Contract với backend (M3) - CHỈNH Ở ĐÂY nếu tên field khác thực tế  */
-/* Checkout đã dùng GET /me/addresses nên path này đúng theo review.    */
-/* ------------------------------------------------------------------ */
-const ADDRESSES_PATH = '/me/addresses';
-
+import {useAuth} from '../../api/auth-context';
+import {checkoutAddressState} from './checkout-intent';
+import {useUnsavedChanges} from '../../components/useUnsavedChanges';
+import {readAddressBook} from './address-book';
 
 interface ApiAddress {
   id: string;
@@ -24,6 +21,7 @@ interface ApiAddress {
 
 
 interface Address {
+  source:ApiAddress;
   id: string;
   name: string;
   phone: string;
@@ -32,6 +30,7 @@ interface Address {
 }
 
 const fromApi = (a: ApiAddress): Address => ({
+  source:a,
   id: a.id,
   name: a.recipient_name,
   phone: a.phone,
@@ -39,14 +38,6 @@ const fromApi = (a: ApiAddress): Address => ({
   isDefault: Boolean(a.is_default),
 });
 
-
-const extractList = (data: unknown): ApiAddress[] => {
-  if (Array.isArray(data)) return data as ApiAddress[];
-  const items = (data as { items?: unknown } | null)?.items;
-  return Array.isArray(items) ? (items as ApiAddress[]) : [];
-};
-
-const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 const describeError = (error: unknown): string => {
   if (error instanceof ApiError) {
@@ -59,12 +50,20 @@ const describeError = (error: unknown): string => {
 };
 
 export const AddressPage: React.FC = () => {
+  const {session}=useAuth(),userId=session?.context?.user_id;
+  const [params]=useSearchParams();
+  const returnTo=params.get('returnTo')==='/checkout'?'/checkout':undefined;
+  const [editing,setEditing]=useState<string|null>(null);
+  const form=useRef<HTMLFormElement>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [uncertain,setUncertain]=useState(false),[knownSaved,setKnownSaved]=useState(false),[reconciled,setReconciled]=useState(false),[reading,setReading]=useState(false);
+  const flight=useRef(false);
+  const locked=adding||busyId!==null||uncertain;
 
   const [newLine1, setNewLine1] = useState('');
   const [newWard, setNewWard] = useState('');
@@ -72,6 +71,10 @@ export const AddressPage: React.FC = () => {
   const [newCity, setNewCity] = useState('');
   const [newName, setNewName] = useState('');
   const [newPhone, setNewPhone] = useState('');
+  const original=addresses.find(a=>a.id===editing)?.source;
+  const values=[newName,newPhone,newLine1,newWard,newDistrict,newCity];
+  const dirty=editing?JSON.stringify(values)!==JSON.stringify(original?[original.recipient_name,original.phone,original.line1,original.ward,original.district,original.city]:[]):values.some(Boolean);
+  const releaseUnsaved=useUnsavedChanges(dirty||uncertain||adding||busyId!==null);
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -83,8 +86,8 @@ export const AddressPage: React.FC = () => {
 
 
   const fetchAddresses = useCallback(async () => {
-    const data = await callOperation('listAddresses', { query: { page: 1, size: 100 } });
-    if (mounted.current) setAddresses(extractList(data).map(fromApi));
+    const rows=await readAddressBook();
+    if (mounted.current) setAddresses(rows.map(fromApi));
   }, []);
 
   const load = useCallback(async () => {
@@ -109,7 +112,8 @@ export const AddressPage: React.FC = () => {
     try {
       await mutate();
     } catch (error) {
-      if (mounted.current) setActionError(describeError(error));
+      if (mounted.current) {setActionError(describeError(error));if(isUncertainMutation(error)){setUncertain(true);setKnownSaved(false);setReconciled(false);}}
+      flight.current=false;
       return false;
     }
     try {
@@ -119,8 +123,12 @@ export const AddressPage: React.FC = () => {
         setActionError(
           'Đã lưu nhưng không thể tải lại danh sách. ' + describeError(error),
         );
+        setUncertain(true);setKnownSaved(true);setReconciled(false);
       }
+      flight.current=false;
+      return false;
     }
+    flight.current=false;
     return true;
   };
 
@@ -132,18 +140,16 @@ export const AddressPage: React.FC = () => {
     const ward = newWard.trim();
     const district = newDistrict.trim();
     const city = newCity.trim();
-    if (!line1 || !ward || !district || !city || !name || !phone || adding) return;
+    if (!line1 || !ward || !district || !city || !name || !phone || locked||flight.current) return;
 
+    flight.current=true;
     setAdding(true);
-    const ok = await runMutation(() =>
-      callOperation('createAddress', {
+    const body={recipient_name:name,phone,line1,ward,district,city};
+    const ok = await runMutation(() => editing
+      ?callOperation('updateAddress',{path:{id:editing},body})
+      :callOperation('createAddress', {
         body: {
-          recipient_name: name,
-          phone,
-          line1,
-          ward,
-          district,
-          city,
+          ...body,
           is_default: addresses.length === 0,
         },
       }),
@@ -152,6 +158,7 @@ export const AddressPage: React.FC = () => {
       setAdding(false);
       // chỉ xóa form khi server nhận thành công
       if (ok) {
+        setEditing(null);
         setNewName('');
         setNewPhone('');
         setNewLine1('');
@@ -161,9 +168,16 @@ export const AddressPage: React.FC = () => {
       }
     }
   };
+  const editAddress=(addr:Address)=>{
+    if(locked||flight.current)return;
+    setEditing(addr.id);setNewName(addr.source.recipient_name);setNewPhone(addr.source.phone);setNewLine1(addr.source.line1);setNewWard(addr.source.ward);setNewDistrict(addr.source.district);setNewCity(addr.source.city);setActionError(null);
+    form.current?.scrollIntoView({block:'start'});form.current?.querySelector('input')?.focus();
+  };
+  const cancelEdit=()=>{setEditing(null);setNewName('');setNewPhone('');setNewLine1('');setNewWard('');setNewDistrict('');setNewCity('');};
 
   const handleSetDefault = async (id: string) => {
-    if (busyId) return;
+    if (locked||flight.current) return;
+    flight.current=true;
     setBusyId(id);
     await runMutation(() =>
       callOperation('updateAddress', {
@@ -175,10 +189,16 @@ export const AddressPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (busyId) return;
+    if (locked||flight.current) return;
+    flight.current=true;
     setBusyId(id);
     await runMutation(() => callOperation('deleteAddress', { path: { id } }));
     if (mounted.current) setBusyId(null);
+  };
+  const reconcile=async()=>{
+    if(flight.current)return;flight.current=true;setReading(true);setActionError(null);setReconciled(false);
+    try{await fetchAddresses();if(mounted.current)setReconciled(true);}catch(error){if(mounted.current)setActionError(describeError(error));}
+    finally{flight.current=false;if(mounted.current)setReading(false);}
   };
 
   if (loading) {
@@ -211,16 +231,19 @@ export const AddressPage: React.FC = () => {
       <CustomerSubNav />
 
       <h1 className="text-2xl font-bold mb-6">Sổ địa chỉ nhận hàng (Addresses)</h1>
+      {returnTo&&<Link className="ui-button ui-button-secondary" to={returnTo}>Quay lại thanh toán</Link>}
 
       {actionError && (
         <div role="alert" className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg">
           {actionError}
         </div>
       )}
+      {uncertain&&<section role="region" aria-label="Đối chiếu thao tác địa chỉ"><h2>Kiểm tra kết quả lưu</h2><p>{knownSaved?'Server đã xác nhận thay đổi nhưng chưa đọc lại được danh sách.':'Chưa rõ thay đổi đã được ghi hay chưa.'} Chỉ đọc lại và kiểm tra địa chỉ bên dưới; không gửi lại thao tác cũ.</p><button type="button" disabled={reading} onClick={()=>void reconcile()}>Đọc lại sổ địa chỉ</button>{reconciled&&<><p>Đã đọc danh sách hiện tại. Kiểm tra thông tin trước khi kết thúc; việc đọc lại không xác nhận ai đã tạo hoặc sửa một địa chỉ giống nhau.</p><button type="button" onClick={()=>{releaseUnsaved();setUncertain(false);setKnownSaved(false);setReconciled(false);setActionError(null);cancelEdit();}}>Đã đối chiếu, kết thúc thao tác này</button></>}</section>}
 
       {/* Form thêm địa chỉ mới */}
-      <form onSubmit={handleAddAddress} className="bg-white shadow rounded-lg p-6 mb-8 space-y-4">
-        <h2 className="text-lg font-semibold mb-2">Thêm địa chỉ mới</h2>
+      <form ref={form} onSubmit={handleAddAddress} className="bg-white shadow rounded-lg p-6 mb-8 space-y-4">
+        <fieldset disabled={locked} className="space-y-4">
+        <h2 className="text-lg font-semibold mb-2">{editing?'Sửa địa chỉ':'Thêm địa chỉ mới'}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="addr-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -229,6 +252,7 @@ export const AddressPage: React.FC = () => {
             <input
               id="addr-name"
               type="text"
+              maxLength={200}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               className="w-full border rounded-md p-2"
@@ -243,6 +267,7 @@ export const AddressPage: React.FC = () => {
             <input
               id="addr-phone"
               type="tel"
+              maxLength={200}
               value={newPhone}
               onChange={(e) => setNewPhone(e.target.value)}
               className="w-full border rounded-md p-2"
@@ -258,6 +283,7 @@ export const AddressPage: React.FC = () => {
           <input
             id="addr-line1"
             type="text"
+              maxLength={200}
             value={newLine1}
             onChange={(e) => setNewLine1(e.target.value)}
             className="w-full border rounded-md p-2"
@@ -273,6 +299,7 @@ export const AddressPage: React.FC = () => {
             <input
               id="addr-ward"
               type="text"
+              maxLength={200}
               value={newWard}
               onChange={(e) => setNewWard(e.target.value)}
               className="w-full border rounded-md p-2"
@@ -287,6 +314,7 @@ export const AddressPage: React.FC = () => {
             <input
               id="addr-district"
               type="text"
+              maxLength={200}
               value={newDistrict}
               onChange={(e) => setNewDistrict(e.target.value)}
               className="w-full border rounded-md p-2"
@@ -301,6 +329,7 @@ export const AddressPage: React.FC = () => {
             <input
               id="addr-city"
               type="text"
+              maxLength={200}
               value={newCity}
               onChange={(e) => setNewCity(e.target.value)}
               className="w-full border rounded-md p-2"
@@ -314,8 +343,10 @@ export const AddressPage: React.FC = () => {
           disabled={adding}
           className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {adding ? 'Đang thêm...' : 'Thêm địa chỉ'}
+          {adding?'Đang lưu...':editing?'Lưu địa chỉ':'Thêm địa chỉ'}
         </button>
+        {editing&&<button type="button" disabled={adding} onClick={cancelEdit}>Hủy sửa địa chỉ</button>}
+        </fieldset>
       </form>
 
       {/* Danh sách địa chỉ */}
@@ -328,7 +359,7 @@ export const AddressPage: React.FC = () => {
         {addresses.map((addr) => {
           const busy = busyId === addr.id;
           return (
-            <div
+            <article aria-label={'Địa chỉ '+addr.name}
               key={addr.id}
               className="bg-white shadow rounded-lg p-6 flex justify-between items-start"
             >
@@ -345,11 +376,13 @@ export const AddressPage: React.FC = () => {
                 <p className="text-gray-600 mt-2">{addr.detail}</p>
               </div>
               <div className="flex flex-col gap-2 text-sm">
+                {returnTo&&userId&&!locked&&<Link to={returnTo} state={checkoutAddressState(userId,addr.id)}>Giao đến địa chỉ này</Link>}
+                <button type="button" disabled={locked} onClick={()=>editAddress(addr)}>Sửa địa chỉ</button>
                 {!addr.isDefault && (
                   <button
                     type="button"
                     onClick={() => void handleSetDefault(addr.id)}
-                    disabled={busyId !== null}
+                    disabled={locked}
                     className="text-indigo-600 hover:underline text-right disabled:opacity-50"
                   >
                     {busy ? 'Đang xử lý...' : 'Thiết lập mặc định'}
@@ -358,13 +391,13 @@ export const AddressPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => void handleDelete(addr.id)}
-                  disabled={busyId !== null}
+                  disabled={locked}
                   className="text-red-600 hover:underline text-right disabled:opacity-50"
                 >
                   Xóa
                 </button>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

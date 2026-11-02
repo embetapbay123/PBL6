@@ -143,6 +143,23 @@
               "type": "string",
               "maxLength": 64
             }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -216,7 +233,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Active Store IDs. First-party readers request cursor pages with size<=100; after is the last returned UUID. Without size/after, the legacy unpaged response remains available during reader-first rollout. Each page reads current ACTIVE status; it is not a transaction spanning membership or Store changes."
       }
     },
     "/internal/variants/quote": {
@@ -1145,6 +1163,317 @@
           }
         }
       }
+    },
+    "/internal/inventory/received-restock": {
+      "post": {
+        "operationId": "RestockReceivedItems",
+        "summary": "Restock only inspected sellable received items",
+        "x-service-owner": "M1",
+        "x-allowed-callers": [
+          "M2"
+        ],
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Correlation-Id",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract result after implementation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceivedItemsRestockCommand"
+              }
+            }
+          }
+        },
+        "description": "M2 provides one immutable receipt. M1 checks consumed quantities and all previous returns under an Order lock. Empty items records a wholly non-sellable receipt without increasing inventory."
+      }
+    },
+    "/internal/inventory/exchange-dispatch": {
+      "post": {
+        "operationId": "DispatchExchangeItems",
+        "summary": "Consume same-price replacements after inspected return receipt",
+        "x-service-owner": "M1",
+        "x-allowed-callers": [
+          "M2"
+        ],
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Correlation-Id",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract result after implementation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeDispatchResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeDispatchCommand"
+              }
+            }
+          }
+        },
+        "description": "One immutable dispatch per return receipt. Validates original consumed variants, equal snapshot price, replacement product and current available stock. Different-price or partial exchanges are refused."
+      }
+    },
+    "/internal/orders/conversation-context": {
+      "post": {
+        "operationId": "ResolveConversationOrder",
+        "summary": "Kiểm quyền hiện hành và phạm vi đơn khi gắn ngữ cảnh hội thoại",
+        "x-service-owner": "M2",
+        "x-allowed-callers": [
+          "M3"
+        ],
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Correlation-Id",
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contract result after implementation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOrderLookupResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationOrderLookupRequest"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1189,8 +1518,13 @@
             "items": {
               "type": "string",
               "format": "uuid"
-            },
-            "maxItems": 100
+            }
+          },
+          "next_after": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Last returned UUID when more ACTIVE IDs follow; null when the cursor page ends. Omitted by legacy unpaged readers."
           }
         },
         "required": [
@@ -1508,8 +1842,7 @@
         },
         "required": [
           "order_item_id",
-          "customer_user_id",
-          "product_id"
+          "customer_user_id"
         ],
         "additionalProperties": false
       },
@@ -1522,6 +1855,11 @@
           "reason": {
             "type": "string",
             "maxLength": 200
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Canonical Product of an eligible owned OrderItem, returned when product_id is omitted."
           }
         },
         "required": [
@@ -1591,6 +1929,9 @@
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 9007199254740991
+                },
+                "return_address": {
+                  "$ref": "./openapi.json#/components/schemas/ReturnAddress"
                 }
               },
               "required": [
@@ -1747,6 +2088,229 @@
           "user_id",
           "scope",
           "token_version"
+        ],
+        "additionalProperties": false
+      },
+      "ReceivedItemsRestockCommand": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantQuantity"
+            },
+            "minItems": 0,
+            "maxItems": 100
+          },
+          "receipt_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "operation_id",
+          "order_id",
+          "items",
+          "receipt_id",
+          "actor_user_id"
+        ],
+        "additionalProperties": false
+      },
+      "ExchangeDispatchCommand": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "receipt_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actor_user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "properties": {
+                "original_variant_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "variant_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "store_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                },
+                "unit_price_vnd": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "original_variant_id",
+                "variant_id",
+                "store_id",
+                "quantity",
+                "unit_price_vnd"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "operation_id",
+          "receipt_id",
+          "order_id",
+          "actor_user_id",
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "ConversationOrderLookupRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "token",
+          "order_id",
+          "side"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "CUSTOMER",
+              "STORE"
+            ]
+          }
+        }
+      },
+      "ConversationOrderLookupResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "order_id",
+          "store_id",
+          "status",
+          "items",
+          "customer_user_id"
+        ],
+        "properties": {
+          "order_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PREPARING",
+              "AWAITING_PAYMENT",
+              "PENDING",
+              "CONFIRMED",
+              "PROCESSING",
+              "SHIPPED",
+              "COMPLETED",
+              "CANCELLED",
+              "EXPIRED",
+              "RECOVERING"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "quantity"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "maxLength": 1000
+                },
+                "variant_values": {
+                  "type": "object",
+                  "additionalProperties": true
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              }
+            }
+          },
+          "customer_user_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ExchangeDispatchResult": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "APPLIED",
+              "ALREADY_APPLIED"
+            ]
+          },
+          "exchange_dispatch": {
+            "$ref": "./openapi.json#/components/schemas/ExchangeDispatchSnapshot"
+          }
+        },
+        "required": [
+          "operation_id",
+          "status"
         ],
         "additionalProperties": false
       }

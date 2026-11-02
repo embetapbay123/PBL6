@@ -9,8 +9,9 @@ jest.mock('../../shared/src/database', () => {
       get manager() {
         return { query: mockQuery };
       },
-      transaction: jest.fn(async (cb: (manager: any) => Promise<any>) => {
-        return cb({ query: mockQuery });
+      transaction: jest.fn(async (isolation: any, cb?: (manager: any) => Promise<any>) => {
+        if(typeof isolation==='function')return isolation({query:mockQuery});
+        expect(isolation).toBe('REPEATABLE READ');return cb!({ query: mockQuery });
       }),
     },
   };
@@ -136,12 +137,15 @@ describe('ReportService RBAC and Business Logic', () => {
       },
     ]);
 
+    // Snapshot lines are read only for the selected page.
+    mockQuery.mockResolvedValueOnce([]);
     const result = await service.listAllOrders({ page: 1, size: 20 }, adminUser, correlation);
     expect(result.total).toBe(1);
     expect(result.page).toBe(1);
     expect(result.size).toBe(20);
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toEqual({
+      created_at:'2026-10-04T10:00:00.000Z',items:[],
       id: 'order-1',
       purchase_group_id: 'pg-1',
       store_id: 'store-1',
@@ -255,6 +259,9 @@ describe('ReportService RBAC and Business Logic', () => {
         refunded_vnd: '200000',
       },
     ]);
+    // Historical money without an occurrence time remains outside period totals.
+    mockQuery.mockResolvedValueOnce([{unresolved_collected_vnd:'150000',unresolved_refunded_vnd:'20000'}]);
+    mockQuery.mockResolvedValueOnce([{bucket_start:new Date('2026-09-30T17:00:00Z'),collected_vnd:'4800000',refunded_vnd:'200000'}]);
     // 3. bestSellingRows
     mockQuery.mockResolvedValueOnce([
       { product_id: 'prod-uuid-1', total_qty: 25 },
@@ -284,6 +291,8 @@ describe('ReportService RBAC and Business Logic', () => {
 
     expect(result).toEqual({
       store_id: storeId,
+      timezone:'Asia/Ho_Chi_Minh',unresolved_collected_vnd:150000,unresolved_refunded_vnd:20000,
+      cash_series:[{bucket_start:'2026-09-30T17:00:00.000Z',collected_vnd:4800000,refunded_vnd:200000}],
       period_start: '2026-10-01T00:00:00.000Z',
       period_end: '2026-10-31T23:59:59.000Z',
       order_value_vnd: 5000000,

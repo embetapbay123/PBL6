@@ -1,3 +1,7 @@
+import {ConversationOrderController} from './order/conversation-order.controller';
+import {storeAuditController} from '../../shared/src/store-audit';
+import {DeliveryReturnController} from './returns/delivery-return.controller';
+import { auditLogController } from '../../shared/src/audit-log';
 process.env.SERVICE_ID = 'M2';
 import { bootstrap } from '../../shared/src/bootstrap';
 import { CartController } from './cart/cart.controller';
@@ -12,8 +16,15 @@ import { PaymentController } from './payment/payment.controller';
 import { ReportSkeletonController } from './report/report.skeleton.controller';
 import { SePayController } from './payment/sepay.controller';
 import { ReviewEligibilityInternalController } from './order/review-eligibility.internal.controller';
+import { NotificationController } from './notification/notification.controller';
+import { ReturnsController } from './returns/returns.controller';
 
 bootstrap('M2', [
+  ConversationOrderController,
+  DeliveryReturnController,
+  auditLogController('M2'),storeAuditController('M2'),
+  NotificationController,
+  ReturnsController,
   ReviewEligibilityInternalController,
   SePayController,
   CartController,

@@ -18,12 +18,12 @@ export class AdministrationSkeletonController {
 
   @Get('admin/users') @Roles("ADMIN")
   async listUsers(@Query() query: ListUsersQueryDto) {
-    return this.service.listUsers(query.page, query.size);
+    return this.service.listUsers(query.page, query.size, query.q, query.status,query.ids);
   }
 
   @Get('admin/stores') @Roles("ADMIN")
   async listStores(@Query() query: ListStoresQueryDto) {
-    return this.service.listStores(query.page, query.size);
+    return this.service.listStores(query.page, query.size, query.q, query.status,query.ids);
   }
 
   @Get('admin/roles') @Roles("ADMIN")

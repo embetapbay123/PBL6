@@ -1,5 +1,8 @@
+import {mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,sep} from 'node:path';
 import 'reflect-metadata';
-import { randomUUID, createHmac } from 'node:crypto';
+import { randomUUID, randomBytes, createHmac } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DataSource } from 'typeorm';
@@ -166,4 +169,26 @@ test('database refuses follow-up that mixes Attempt, Payment or Order identities
   const first=await fixture(),second=await fixture();
   await expect(source.query("INSERT INTO payment_followup(attempt_id,payment_id,order_id,kind,correlation_id) VALUES($1,$2,$3,'CONSUME_REQUIRED','invalid')",[first.attempt,second.payment,second.id])).rejects.toMatchObject({driverError:{code:'23503'}});
   await expect(source.query("INSERT INTO payment_followup(attempt_id,payment_id,order_id,kind,correlation_id) VALUES($1,$2,$3,'CONSUME_REQUIRED','invalid')",[first.attempt,first.payment,second.id])).rejects.toMatchObject({driverError:{code:'23503'}});
+});
+
+test('development callback needs private raw HMAC, rejects wrong money and journals one confirmed collection',async()=>{
+  const keys=['NODE_ENV','PBL6_TEST_ADAPTERS','PBL6_TEST_STACK','INTEGRATION_KEY_FILE','PAYMENT_PROVIDER_MODE'] as const;
+  const previous=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  const directory=await mkdtemp(join(tmpdir(),'pbl6-callback-test-')),key=randomBytes(32).toString('hex');
+  await writeFile(join(directory,'key'),key,{mode:0o600});
+  Object.assign(process.env,{NODE_ENV:'development',PBL6_TEST_ADAPTERS:'1',PBL6_TEST_STACK:'pbl6-fe-verify',INTEGRATION_KEY_FILE:join(directory,'key'),PAYMENT_PROVIDER_MODE:'integration'});
+  const post=async(value:any,signed=true)=>{const raw=JSON.stringify(value);return fetch(base+'/payment-callbacks/integration',{method:'POST',headers:{'Content-Type':'application/json','X-Integration-Signature':signed?'sha256='+createHmac('sha256',key).update(raw).digest('hex'):'invalid'},body:raw});};
+  try{
+    const f=await fixture('INTEGRATION'),payload={provider_event_id:randomUUID(),provider_reference:f.reference,amount_vnd:100,result:'SUCCESS'};
+    expect((await post({},false)).status).toBe(401);
+    const wrong=await post({...payload,amount_vnd:99});expect(wrong.status).toBe(422);expect((await wrong.json() as any).code).toBe('CALLBACK_AMOUNT_MISMATCH');
+    const valid=await post(payload);if(valid.status!==200)throw new Error(JSON.stringify(await valid.json()));expect(valid.status).toBe(200);expect((await post(payload)).status).toBe(200);
+    expect((await post({...payload,amount_vnd:101})).status).toBe(409);
+    expect(await source.query('SELECT kind,amount_vnd,time_source FROM money_movement WHERE order_id=$1',[f.id])).toEqual([{kind:'COLLECTION',amount_vnd:'100',time_source:'SYSTEM_RECEIVED'}]);
+    const extra=await post({...payload,provider_event_id:randomUUID()});expect((await extra.json() as any).status).toBe('EXTRA_TRANSFER_RECONCILE_REQUIRED');
+    process.env.NODE_ENV='production';expect((await post(payload)).status).toBe(503);
+  }finally{
+    for(const key of keys)if(previous[key]===undefined)delete process.env[key];else process.env[key]=previous[key];
+    if(resolve(directory).startsWith(resolve(tmpdir())+sep+'pbl6-callback-test-'))await rm(directory,{recursive:true,force:true});
+  }
 });

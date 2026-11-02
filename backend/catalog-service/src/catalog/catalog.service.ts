@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash,randomUUID } from 'node:crypto';
 import { moneyNumber } from '../../../shared/src/money';
 import { database } from '../../../shared/src/database';
 import { config } from '../../../shared/src/config';
@@ -6,7 +6,7 @@ import { audit } from '../../../shared/src/audit';
 import { emitEvent } from '../../../shared/src/events';
 import { ApiError } from '../../../shared/src/errors';
 import { CatalogRepository } from './catalog.repository';
-import { attributeErrors, defaultVariantCount, variantSignature } from './catalog.validation';
+import { attributeErrors, defaultVariantCount, variantSignature,variantAttributeErrors,sameVariantValues } from './catalog.validation';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
 import { InternalClients } from '../../../shared/src/internal-clients';
 import { optionalUserId, recordInteraction } from './catalog.telemetry';
@@ -51,8 +51,30 @@ function uniqueConflictError(error:unknown):ApiError|undefined {
 }
 
 export class CatalogService {
+  async listAdminProducts(query:{page?:number;size?:number;q?:string;status?:string;moderation_status?:string}){
+    return new CatalogRepository(database.manager).pageAdmin(query);
+  }
   private async stores(correlation:string) {
     const c=config('M1');return (await new InternalClients('M1',c.internalKeys.M1,{M1:c.catalogUrl,M2:'',M3:c.identityUrl}).call('ActiveStores',undefined,correlation)).ids;
+  }
+
+  async listFavorites(query:{page?:number;size?:number},context:any) {
+    const page=query.page ?? 1,size=query.size ?? 20,userId=context.user_id;
+    const [count]=await database.manager.query('SELECT count(*)::int AS total FROM customer_favorite WHERE user_id=$1',[userId]);
+    const rows=await database.manager.query('SELECT product_id FROM customer_favorite WHERE user_id=$1 ORDER BY created_at DESC,product_id LIMIT $2 OFFSET $3',[userId,size,(page-1)*size]);
+    return {items:rows.map((row:any)=>row.product_id),page,size,total:count.total};
+  }
+
+  async addFavorite(id:string,context:any,correlation:string) {
+    const product=await new CatalogRepository(database.manager).publicProduct(id,await this.stores(correlation));
+    if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm đang bán.');
+    await database.manager.query('INSERT INTO customer_favorite(user_id,product_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[context.user_id,id]);
+    return {product_id:id};
+  }
+
+  async removeFavorite(id:string,context:any) {
+    await database.manager.query('DELETE FROM customer_favorite WHERE user_id=$1 AND product_id=$2',[context.user_id,id]);
+    return {product_id:id};
   }
 
   /**
@@ -84,17 +106,44 @@ export class CatalogService {
   private validateVariantPayload(variants:VariantPayload[]|undefined):void {
     if(!variants)return;
     const skus=new Set<string>();
+    const ids=new Set<string>(),signatures=new Set<string>();
     for(const variant of variants) {
+      if(variant.id&&ids.has(variant.id))throw new ApiError(422,'DUPLICATE_VARIANT_ID','Một phân loại không được xuất hiện hai lần.');
+      if(variant.id)ids.add(variant.id);
+      const signature=variantSignature(variant.variant_values);
+      if(signatures.has(signature))throw new ApiError(422,'VARIANT_DUPLICATE','Các phân loại phải có tổ hợp thuộc tính khác nhau.');
+      signatures.add(signature);
       if(skus.has(variant.sku))throw new ApiError(422,'DUPLICATE_SKU','SKU trùng trong cùng một Product.',[{field:'sku:'+variant.sku}]);
       skus.add(variant.sku);
     }
     if(defaultVariantCount(variants)>1)throw new ApiError(422,'MULTIPLE_DEFAULT_VARIANTS','Chỉ một Variant được là mặc định.');
   }
 
+  private async validateVariantAxes(repository:CatalogRepository,typeId:string,variants:VariantPayload[],existing:any[]=[]){
+    const definitions=await repository.attributeDefinitions(typeId),before=new Map(existing.map(row=>[row.id,row]));
+    const details:Array<{field:string;reason:string}>=[];
+    for(const [index,variant] of variants.entries()){
+      const prior=variant.id?before.get(variant.id):undefined;
+      // Retiring a malformed historical row must not require rewriting its identity.
+      // New/changed values, or making it sellable again, still require today's axes.
+      if(prior&&(variant.status??prior.status)==='STOPPED'&&sameVariantValues(variant.variant_values,prior.variant_values))continue;
+      for(const problem of variantAttributeErrors(variant.variant_values,definitions)){
+        const split=problem.indexOf(':'),kind=problem.slice(0,split),code=problem.slice(split+1);
+        const reason:Record<string,string>={missing:'Cần nhập giá trị cho trục bắt buộc.',unknown:'Thuộc tính này không được cấu hình là trục phân loại.',type:'Kiểu dữ liệu chưa đúng với trục đã cấu hình.',allowed_values:'Giá trị không thuộc các lựa chọn được phép.',empty:'Bỏ thuộc tính tùy chọn nếu không có giá trị.'};
+        details.push({field:`variants.${index}.variant_values${code?'.'+code:''}`,reason:reason[kind]??'Giá trị phân loại chưa hợp lệ.'});
+      }
+    }
+    if(details.length)throw new ApiError(422,'INVALID_VARIANT_ATTRIBUTES','Thuộc tính phân loại chưa khớp cấu hình. Kiểm tra trục bắt buộc, kiểu dữ liệu và các lựa chọn.',details);
+  }
+
   /** Insert or update the submitted Variants and give every new Variant a zero-stock inventory row. */
   private async writeVariants(repository:CatalogRepository,productId:string,storeId:string,
     variants:VariantPayload[],markSoleDefault:boolean):Promise<void> {
     if(!variants.length)return;
+    // A valid batch may swap SKU/attribute combinations between existing IDs.
+    // Immediate unique indexes would otherwise reject the first intermediate row.
+    // The caller proves ownership first; every parked row is restored or rolled back.
+    await repository.stageVariantIdentities(productId,storeId,variants.flatMap(v=>v.id?[v.id]:[]),randomUUID());
     if(variants.some(variant=>variant.is_default===true))await repository.clearDefaultVariants(productId);
     for(const [index,variant] of variants.entries()) {
       if(await repository.skuTakenInStore(storeId,variant.sku,variant.id ?? null))
@@ -171,7 +220,13 @@ export class CatalogService {
   async listOwnStoreProducts(query:OperationInputs['listOwnStoreProducts']['query'],context:any):
   Promise<OperationOutputs['listOwnStoreProducts']> {
     const storeId=this.requireProductScope(context);
-    return new CatalogRepository(database.manager).pageOwnStore(storeId,query.page ?? 1,query.size ?? 20);
+    return new CatalogRepository(database.manager).pageOwnStore(storeId,query.page ?? 1,query.size ?? 20,query);
+  }
+
+  async getOwnStoreProduct(id:string,context:any):Promise<OperationOutputs['getOwnStoreProduct']> {
+    const product=await new CatalogRepository(database.manager).ownStoreProduct(id,this.requireProductScope(context));
+    if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+    return product;
   }
 
   /**
@@ -208,6 +263,7 @@ export class CatalogService {
     return database.transaction(async manager=>{
       const repository=new CatalogRepository(manager);
       await this.validateTaxonomy(repository,input.product_type_id,input.attributes);
+      await this.validateVariantAxes(repository,input.product_type_id,input.variants??[]);
       const created=await repository.insertProduct({storeId,productTypeId:input.product_type_id,title:input.title,
         description:input.description ?? null,attributes:input.attributes,status:input.status ?? 'DRAFT'});
       const variants=input.variants ?? [];
@@ -217,7 +273,7 @@ export class CatalogService {
       await emitEvent(manager,'ProductChanged',{product_id:created.id,store_id:storeId,version:created.version,
         sale_status:created.status,moderation_status:created.moderation_status},correlation);
       return (await repository.withAllVariants([created]))[0];
-    });
+    }).catch(error=>{throw uniqueConflictError(error)??error;});
   }
 
   /**
@@ -242,16 +298,18 @@ export class CatalogService {
       // missing a required attribute of its new type, or keeping keys that belong only to the old one.
       const finalProductTypeId=input.product_type_id ?? current.product_type_id;
       const finalAttributes=input.attributes ?? current.attributes;
-      await this.validateTaxonomy(repository,finalProductTypeId,finalAttributes);
+      const onlyRetiring=input.status==='STOPPED'&&input.product_type_id===undefined&&input.attributes===undefined&&input.variants===undefined;
+      if(!onlyRetiring)await this.validateTaxonomy(repository,finalProductTypeId,finalAttributes);
 
+      const checkAxes=!!input.variants||finalProductTypeId!==current.product_type_id||input.status==='ACTIVE';
+      const variantsBefore=checkAxes?await repository.variantsOfProduct(id):undefined;
+      if(input.variants){const owned=new Set(variantsBefore!.map((v:any)=>v.id));for(const v of input.variants)if(v.id&&!owned.has(v.id))throw new ApiError(404,'VARIANT_NOT_FOUND','Variant không thuộc sản phẩm này.');}
+      if(checkAxes)await this.validateVariantAxes(repository,finalProductTypeId,input.variants??variantsBefore!,variantsBefore);
       const after=await repository.updateProductFields(id,{productTypeId:input.product_type_id,title:input.title,
         description:input.description,attributes:input.attributes,status:input.status});
 
       if(input.variants) {
-        const existing=await repository.variantsOfProduct(id);
-        const owned=new Set(existing.map((row:any)=>row.id));
-        for(const variant of input.variants) if(variant.id && !owned.has(variant.id))
-          throw new ApiError(404,'VARIANT_NOT_FOUND','Variant không thuộc sản phẩm này.');
+        const existing=variantsBefore!;
         await this.writeVariants(repository,id,storeId,input.variants,input.variants.length===1);
         const keptIds=new Set(input.variants.map(variant=>variant.id).filter(Boolean));
         const keptSkus=new Set(input.variants.map(variant=>variant.sku));
@@ -263,13 +321,13 @@ export class CatalogService {
 
       await audit(manager,'M1',actorUserId,'Product',id,'UPDATE',correlation,
         {product_type_id:current.product_type_id,title:current.title,description:current.description,
-          attributes:current.attributes,status:current.status,version:current.version},
+          attributes:current.attributes,status:current.status,version:current.version,...(variantsBefore?{variants:variantsBefore}:{} )},
         {product_type_id:after.product_type_id,title:after.title,description:after.description,
-          attributes:after.attributes,status:after.status,version:after.version});
+          attributes:after.attributes,status:after.status,version:after.version,...(variantsBefore?{variants:await repository.variantsOfProduct(id)}:{})});
       await emitEvent(manager,'ProductChanged',{product_id:id,store_id:storeId,version:after.version,
         sale_status:after.status,moderation_status:after.moderation_status},correlation);
       return (await repository.withAllVariants([after]))[0];
-    });
+    }).catch(error=>{throw uniqueConflictError(error)??error;});
   }
   /**
    * Write scope for catalogue mutations. Store comes from the resolved membership, the permission
@@ -303,6 +361,8 @@ export class CatalogService {
       const product=await repository.lockProductForVariants(id,storeId);
       if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
       try {
+        await this.validateTaxonomy(repository,product.product_type_id,undefined);
+        await this.validateVariantAxes(repository,product.product_type_id,[{...input,status:'ACTIVE'}]);
         if(await repository.skuUsedInStore(storeId,input.sku))
           throw new ApiError(409,'SKU_CONFLICT','SKU đã tồn tại trong Store.',[{field:'sku:'+input.sku}]);
         const signature=variantSignatureOf(input.variant_values);
@@ -316,7 +376,7 @@ export class CatalogService {
         await repository.addInventoryRow(variant.id,storeId);
         const after=await repository.touchProductRow(id);
         await audit(manager,'M1',actorUserId,'Product',id,'VARIANT_ADD',correlation,
-          {version:product.version},{variant_id:variant.id,sku:variant.sku,version:after.version});
+          {version:product.version},{variant_id:variant.id,sku:variant.sku,price_vnd:variant.price_vnd,variant_values:variant.variant_values,version:after.version});
         await emitEvent(manager,'ProductChanged',{product_id:id,store_id:storeId,version:after.version,
           sale_status:after.status,moderation_status:after.moderation_status},correlation);
         return {id:variant.id,sku:variant.sku,price_vnd:moneyNumber(variant.price_vnd),
@@ -343,8 +403,10 @@ export class CatalogService {
     const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
     return database.transaction(async manager=>{
       const repository=new CatalogRepository(manager);
-      const product=await repository.productForWrite(id,storeId);
+      const product=await repository.lockProductForVariants(id,storeId);
       if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+      if((await repository.activeImageIds(id)).length>=20)
+        throw new ApiError(422,'IMAGE_LIMIT_REACHED','Mỗi sản phẩm chỉ được có tối đa 20 ảnh đang hiển thị.');
       if(input.variant_id) {
         const variants=await repository.variantRowsOfProduct(id);
         if(!variants.some((row:any)=>row.id===input.variant_id))
@@ -356,6 +418,41 @@ export class CatalogService {
       await audit(manager,'M1',actorUserId,'Product',id,'IMAGE_ADD',correlation,
         {version:product.version},{image_id:image.id,position:image.position});
       return {id:image.id,product_id:image.product_id,image_url:image.image_url,position:image.position};
+    });
+  }
+
+  async removeProductImage(id:string,imageId:string,context:any,correlation:string) {
+    const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
+    return database.transaction(async manager=>{
+      const repository=new CatalogRepository(manager);
+      const product=await repository.lockProductForVariants(id,storeId);
+      if(!product)throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+      const image=await repository.lockImage(imageId,id);
+      if(!image)throw new ApiError(404,'NOT_FOUND','Không tìm thấy ảnh của sản phẩm.');
+      if(image.status!=='STOPPED'){
+        await repository.stopImage(imageId,id);
+        await audit(manager,'M1',actorUserId,'Product',id,'IMAGE_REMOVE',correlation,{image_id:imageId,status:image.status},{image_id:imageId,status:'STOPPED'});
+      }
+      return {id:imageId,product_id:id};
+    });
+  }
+
+  async reorderProductImages(id:string,input:{expected_image_ids:string[];image_ids:string[]},context:any,correlation:string) {
+    const {storeId,actorUserId}=await this.storeForWrite(context,correlation);
+    return database.transaction(async manager=>{
+      const repository=new CatalogRepository(manager);
+      if(!await repository.lockProductForVariants(id,storeId))throw new ApiError(404,'NOT_FOUND','Không tìm thấy sản phẩm trong Store.');
+      const current=await repository.activeImageIds(id);
+      if(current.length!==input.expected_image_ids.length || current.some((image,index)=>image!==input.expected_image_ids[index]))
+        throw new ApiError(409,'IMAGE_ORDER_CONFLICT','Danh sách ảnh đã thay đổi. Vui lòng tải lại.');
+      const desired=new Set(input.image_ids);
+      if(desired.size!==current.length || current.some(image=>!desired.has(image)))
+        throw new ApiError(422,'INVALID_IMAGE_ORDER','Thứ tự mới phải chứa đúng các ảnh hiện có.');
+      if(current.some((image,index)=>image!==input.image_ids[index])) {
+        for(const [index,image] of input.image_ids.entries())await repository.setImagePosition(image,id,index);
+        await audit(manager,'M1',actorUserId,'Product',id,'IMAGE_REORDER',correlation,{image_ids:current},{image_ids:input.image_ids});
+      }
+      return {product_id:id,image_ids:input.image_ids};
     });
   }
 

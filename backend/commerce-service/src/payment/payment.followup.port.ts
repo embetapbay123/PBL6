@@ -17,6 +17,14 @@ export class PaymentFollowupPort {
     if(!order || !['CANCELLED','EXPIRED'].includes(order.status))throw new ApiError(409,'ORDER_NOT_CLOSED','Order chưa đóng.');
     const [payment]=await this.manager.query('SELECT * FROM payment WHERE order_id=$1 FOR UPDATE',[orderId]);
     if(!payment)return;
+    if(BigInt(payment.payable_vnd)===0n&&BigInt(payment.collected_vnd)===0n&&BigInt(payment.refunded_vnd)===0n&&['PENDING','FAILED','SUCCEEDED'].includes(payment.status)){
+      const attempts=await this.manager.query('SELECT id FROM payment_attempt WHERE payment_id=$1 LIMIT 1',[payment.id]);
+      if(!attempts.length){
+        await this.manager.query("UPDATE payment SET status='CANCELLED',version=version+1 WHERE id=$1 AND status<>'CANCELLED'",[payment.id]);
+        await this.manager.query("UPDATE c_o_d_collection SET status='CANCELLED' WHERE order_id=$1 AND amount_due_vnd=0 AND amount_collected_vnd=0",[orderId]);
+        return;
+      }
+    }
     if(payment.status==='PENDING') {
       await this.manager.query("UPDATE payment SET status='CANCELLED',version=version+1 WHERE id=$1",[payment.id]);
       await this.manager.query("UPDATE payment_attempt SET status=$2 WHERE payment_id=$1 AND status IN ('CREATED','PENDING')",[payment.id,order.status==='EXPIRED'?'EXPIRED':'CANCELLED']);

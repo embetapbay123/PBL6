@@ -1,3 +1,4 @@
+import {RefundRecoveryService} from '../../commerce-service/src/payment/refund-recovery.service';
 import { randomUUID } from 'node:crypto';
 import { readFileSync,readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -18,14 +19,31 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{await source.destroy();await root.query('DROP SCHEMA '+schema+' CASCADE');await root.destroy();});
 async function fixture(){
-  const order=randomUUID(),payment=randomUUID(),user=randomUUID(),operation=randomUUID(),reference='PBL6'+randomUUID().replace(/-/g,'').toUpperCase();
-  await source.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd) VALUES($1,$1,$2,$3,'CANCELLED','SANDBOX',100,0,0,0,100)`,[order,user,randomUUID()]);
+  const store=randomUUID(),order=randomUUID(),payment=randomUUID(),user=randomUUID(),operation=randomUUID(),reference='PBL6'+randomUUID().replace(/-/g,'').toUpperCase();
+  await source.query(`INSERT INTO "order"(id,purchase_group_id,customer_user_id,store_id,status,payment_method,goods_vnd,store_discount_vnd,platform_discount_vnd,shipping_vnd,payable_vnd) VALUES($1,$1,$2,$3,'CANCELLED','SANDBOX',100,0,0,0,100)`,[order,user,store]);
   await source.query("INSERT INTO payment(id,order_id,method,status,payable_vnd,collectible_vnd,collected_vnd) VALUES($1,$2,'SANDBOX','SUCCEEDED',100,0,100)",[payment,order]);
   await source.query("INSERT INTO payment_attempt(payment_id,provider_reference,status,amount_vnd) VALUES($1,$2,'SUCCEEDED',100)",[payment,reference]);
   const draft={order_id:order,payment_id:payment,amount_vnd:100n,operation_id:operation,correlation_id:'refund-integration'};
-  return {order,payment,user,operation,reference,draft};
+  return {store,order,payment,user,operation,reference,draft};
 }
 async function request(draft:any){return source.transaction(m=>new PaymentService(m).requestRefund(draft));}
+async function recover(f:any){const service=new RefundRecoveryService(source),auth={user_id:randomUUID(),roles:['STORE_OWNER'],store_membership:{store_id:f.store,role:'OWNER',status:'ACTIVE',permissions:[]}},state=await service.get(f.order,auth,'STORE');return service.request(f.order,{operation_id:randomUUID(),expected_order_version:state.order_version,expected_refund_version:state.refund_version,note:'Đã kiểm tra, yêu cầu tra soát trước khi thử lại'},auth,'STORE','test-recovery');}
+
+test('received online returns enqueue one stable refund, stay pending with disabled provider, and require a verified receipt',async()=>{
+  const f=await fixture(),returnId=randomUUID();
+  await source.query("UPDATE \"order\" SET status='COMPLETED' WHERE id=$1",[f.order]);
+  await expect(request(f.draft)).rejects.toMatchObject({status:409,response:{code:'REFUND_STATE_CONFLICT'}});
+  await source.query("INSERT INTO order_return_request(id,order_id,type,reason,status) VALUES($1,$2,'REFUND','Trả hàng đã nhận','APPROVED')",[returnId,f.order]);
+  const disabled=new RefundRunner(source,new DisabledRefundProvider());await disabled.enqueueReturnRefunds();
+  expect(await source.query('SELECT id FROM refund WHERE order_id=$1',[f.order])).toHaveLength(0);
+  await source.query("UPDATE order_return_request SET status='RECEIVED',inventory_status='LEGACY_RECONCILED',fault_party='STORE',fee_payer='STORE',legacy_reconciliation_note='Fixture kho cũ đã đối chiếu riêng, không cộng tồn' WHERE id=$1",[returnId]);
+  await disabled.enqueueReturnRefunds();await disabled.enqueueReturnRefunds();expect(await disabled.tick()).toBe('DISABLED');
+  const refunds=await source.query('SELECT id,status,operation_id FROM refund WHERE order_id=$1',[f.order]);expect(refunds).toHaveLength(1);expect(refunds[0]).toMatchObject({status:'REQUESTED',operation_id:returnId});
+  expect((await source.query('SELECT refunded_vnd FROM payment WHERE id=$1',[f.payment]))[0].refunded_vnd).toBe('0');
+  await new RefundRunner(source,provider(command=>{expect(command.operation_id).toBe(returnId);return succeeded(command);})).tick();
+  expect((await source.query('SELECT status FROM refund WHERE id=$1',[refunds[0].id]))[0].status).toBe('SUCCEEDED');
+  expect((await source.query('SELECT status,refunded_vnd FROM payment WHERE id=$1',[f.payment]))[0]).toEqual({status:'REFUNDED',refunded_vnd:'100'});
+});
 function provider(outcome:(command:RefundCommand,lookup:boolean)=>Promise<RefundOutcome>|RefundOutcome):RefundProvider {
   return {enabled:true,name:'SEPAY_TEST',refund:async c=>outcome(c,false),lookup:async c=>outcome(c,true)};
 }
@@ -91,12 +109,13 @@ test('mismatched receipt leaves ledger unchanged, keeps UNKNOWN and disallows re
   const f=await fixture(),r=await request(f.draft),runner=new RefundRunner(source,provider(c=>({...succeeded(c),amount_vnd:'99'} as RefundOutcome)));
   await runner.tick();expect((await source.query('SELECT status FROM refund WHERE id=$1',[r.id]))[0].status).toBe('UNKNOWN');
   expect((await source.query('SELECT refunded_vnd FROM payment WHERE id=$1',[f.payment]))[0].refunded_vnd).toBe('0');
-  await expect(source.transaction(m=>runner.retryKnownFailure(m,r.id))).rejects.toMatchObject({status:409});
+  await expect(recover(f)).rejects.toMatchObject({status:409});
 });
-test('definitive FAILED can retry with the same ID; changed Order state prevents command',async()=>{
+test('definitive FAILED requires lookup before another execution; logical Refund ID stays stable and changed Order prevents command',async()=>{
   const f=await fixture(),r=await request(f.draft),runner=new RefundRunner(source,provider(c=>({status:'FAILED',...c})));
-  await runner.tick();await source.transaction(m=>runner.retryKnownFailure(m,r.id));
-  await new RefundRunner(source,provider(c=>{expect(c.operation_id).toBe(f.operation);return succeeded(c);})).tick();
+  await runner.tick();await recover(f);
+  const recovered=new RefundRunner(source,provider((c,lookup)=>{if(lookup){expect(c.operation_id).toBe(f.operation);return {status:'FAILED',...c};}expect(c.operation_id).not.toBe(f.operation);return succeeded(c);}));await recovered.tick();await recovered.tick();
+  expect((await source.query('SELECT operation_id FROM refund WHERE id=$1',[r.id]))[0].operation_id).toBe(f.operation);
   expect((await source.query('SELECT status FROM refund WHERE id=$1',[r.id]))[0].status).toBe('SUCCEEDED');
   const changed=await fixture();await request(changed.draft);
   await source.query("UPDATE \"order\" SET status='PENDING' WHERE id=$1",[changed.order]);

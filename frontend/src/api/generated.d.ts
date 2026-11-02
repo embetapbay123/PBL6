@@ -95,7 +95,7 @@ export interface paths {
         put?: never;
         /**
          * Đăng xuất và thu hồi phiên
-         * @description Đăng xuất và thu hồi phiên. Phạm vi dữ liệu: AUTHENTICATED_CONTEXT; quyền: AUTHENTICATED. Điều kiện nghiệp vụ, trạng thái và lỗi xem api-spec.md cùng Use Case liên quan.
+         * @description WEB validates Origin/CSRF. When Authorization is present, revoke only that signed session family; preserve another family cookie and report cookie_session_changed. Correctly signed expired access is accepted only for own-session revocation. Normal access and refresh keep strict expiry/reuse checks. Legacy cookie/MOBILE refresh-body callers remain supported.
          */
         post: operations["logout"];
         delete?: never;
@@ -579,7 +579,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Xem chi tiết Product thuộc Store hiện tại
+         * @description Đọc Product quản lý trong Store của membership, bao gồm nháp, đã dừng và bị ẩn.
+         */
+        get: operations["getOwnStoreProduct"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1175,7 +1179,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Read owned reviews, including moderated content
+         * @description Only the authenticated Customer owns this page. Public visibility and current catalog status do not remove the ability to edit owned content; editing never clears moderation.
+         */
+        get: operations["listOwnReviews"];
         put?: never;
         /**
          * Viết Review cho OrderItem đã mua
@@ -1803,6 +1811,1050 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Danh sách sản phẩm yêu thích
+         * @description Danh sách sản phẩm yêu thích thuộc tài khoản hiện tại.
+         */
+        get: operations["listFavorites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/favorites/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Lưu sản phẩm yêu thích
+         * @description Thêm sản phẩm đang bán vào danh sách yêu thích của tài khoản hiện tại.
+         */
+        put: operations["addFavorite"];
+        post?: never;
+        /**
+         * Bỏ sản phẩm yêu thích
+         * @description Bỏ sản phẩm khỏi danh sách yêu thích của tài khoản hiện tại.
+         */
+        delete: operations["removeFavorite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/products/{id}/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Bỏ ảnh sản phẩm thuộc Store
+         * @description Ngừng hiển thị ảnh thuộc Product của Store hiện tại; thao tác lặp an toàn.
+         */
+        delete: operations["removeProductImage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/products/{id}/images/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sắp xếp ảnh sản phẩm
+         * @description Sắp xếp ảnh đang hiển thị khi thứ tự hiện tại khớp snapshot; khác biệt trả 409.
+         */
+        post: operations["reorderProductImages"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liệt kê hội thoại của mình
+         * @description Liệt kê hội thoại của mình. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        get: operations["listOwnConversations"];
+        put?: never;
+        /**
+         * Bắt đầu hội thoại với gian hàng
+         * @description Bắt đầu hội thoại với gian hàng. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        post: operations["startStoreConversation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liệt kê hội thoại của Store
+         * @description Liệt kê hội thoại của Store. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        get: operations["listStoreConversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/conversations/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem lịch sử tin nhắn
+         * @description Xem lịch sử tin nhắn. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        get: operations["listOwnConversationMessages"];
+        put?: never;
+        /**
+         * Gửi tin nhắn
+         * @description Gửi tin nhắn. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        post: operations["sendOwnConversationMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/conversations/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem lịch sử tin nhắn
+         * @description Xem lịch sử tin nhắn. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        get: operations["listStoreConversationMessages"];
+        put?: never;
+        /**
+         * Gửi tin nhắn
+         * @description Gửi tin nhắn. Dữ liệu theo tài khoản hoặc membership Store hiện tại.
+         */
+        post: operations["sendStoreConversationMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem thông báo đơn hàng và thanh toán
+         * @description Xem thông báo đơn hàng và thanh toán. Chỉ truy cập dữ liệu của tài khoản hiện tại.
+         */
+        get: operations["listNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Đánh dấu đã đọc thông báo
+         * @description Đánh dấu đã đọc thông báo. Chỉ truy cập dữ liệu của tài khoản hiện tại.
+         */
+        post: operations["markNotificationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/orders/{id}/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tạo yêu cầu đổi trả
+         * @description Tạo yêu cầu đổi trả. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        post: operations["createReturnRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem yêu cầu đổi trả
+         * @description Xem yêu cầu đổi trả. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        get: operations["listOwnReturnRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem yêu cầu đổi trả
+         * @description Xem yêu cầu đổi trả. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        get: operations["listStoreReturnRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/returns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Xử lý yêu cầu đổi trả
+         * @description Xử lý yêu cầu đổi trả. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        patch: operations["updateStoreReturnRequest"];
+        trace?: never;
+    };
+    "/admin/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem yêu cầu đổi trả
+         * @description Xem yêu cầu đổi trả. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        get: operations["listAdminReturnRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/returns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Xử lý yêu cầu đổi trả
+         * @description Xử lý yêu cầu đổi trả. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        patch: operations["updateAdminReturnRequest"];
+        trace?: never;
+    };
+    "/me/returns/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Xác nhận nhận hàng đổi
+         * @description Xác nhận nhận hàng đổi. Yêu cầu toàn đơn; không tự xác nhận hoàn tiền.
+         */
+        post: operations["confirmExchangeReceived"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Danh sách đánh giá để kiểm duyệt
+         * @description Phân trang đánh giá VISIBLE/HIDDEN; cần quyền platform.admin. Không công khai danh tính người mua.
+         */
+        get: operations["listAdminReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Danh sách sản phẩm để kiểm duyệt
+         * @description Phân trang sản phẩm gồm nháp, dừng bán và bị ẩn. Chỉ Admin có platform.admin được truy cập.
+         */
+        get: operations["listAdminProducts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đọc nhật ký catalog
+         * @description Nhật ký metadata phân trang. Chỉ ADMIN có platform.admin; không trả bản chụp dữ liệu riêng tư.
+         */
+        get: operations["listCatalogAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit/commerce": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đọc nhật ký commerce
+         * @description Nhật ký metadata phân trang. Chỉ ADMIN có platform.admin; không trả bản chụp dữ liệu riêng tư.
+         */
+        get: operations["listCommerceAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đọc nhật ký identity
+         * @description Nhật ký metadata phân trang. Chỉ ADMIN có platform.admin; không trả bản chụp dữ liệu riêng tư.
+         */
+        get: operations["listIdentityAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/stores/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Thông tin gian hàng công khai
+         * @description Chỉ trả tên, mô tả và phí giao hàng của Store ACTIVE; không trả liên hệ riêng tư hoặc hồ sơ xét duyệt.
+         */
+        get: operations["getPublicStore"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/orders/{id}/cod-refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Owner xác nhận thủ công đã hoàn đủ COD
+         * @description Chỉ Owner đúng Store xác nhận khoản COD đã thu: đầy đủ biên nhận, người nhận, thời điểm và attestation. Không xác minh ngân hàng.
+         */
+        post: operations["confirmCodRefund"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/reports/money": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đối chiếu sự kiện thu/hoàn đã xác nhận
+         * @description Owner xem báo cáo Store membership hiện hành theo [from,to), nhóm DAY hoặc MONTH. Doanh thu hàng Completed tách tiền đã thu/hoàn và phí; low-stock lấy từ M1 qua contract.
+         */
+        get: operations["listStoreMoneyMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports/money": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đối chiếu sự kiện thu/hoàn đã xác nhận
+         * @description Owner xem báo cáo Store membership hiện hành theo [from,to), nhóm DAY hoặc MONTH. Doanh thu hàng Completed tách tiền đã thu/hoàn và phí; low-stock lấy từ M1 qua contract.
+         */
+        get: operations["listAdminMoneyMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/orders/{id}/delivery-return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * openDeliveryReturn
+         * @description Giao thất bại → nhận và kiểm hàng → đối chiếu tồn/tiền → đóng; không giao lại và không tự hoàn toàn bộ tồn.
+         */
+        post: operations["openDeliveryReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/delivery-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listStoreDeliveryReturns
+         * @description Giao thất bại → nhận và kiểm hàng → đối chiếu tồn/tiền → đóng; không giao lại và không tự hoàn toàn bộ tồn.
+         */
+        get: operations["listStoreDeliveryReturns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/delivery-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listAdminDeliveryReturns
+         * @description Giao thất bại → nhận và kiểm hàng → đối chiếu tồn/tiền → đóng; không giao lại và không tự hoàn toàn bộ tồn.
+         */
+        get: operations["listAdminDeliveryReturns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/orders/{id}/delivery-return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getOwnDeliveryReturn
+         * @description Giao thất bại → nhận và kiểm hàng → đối chiếu tồn/tiền → đóng; không giao lại và không tự hoàn toàn bộ tồn.
+         */
+        get: operations["getOwnDeliveryReturn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/delivery-returns/{id}/inspection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * inspectDeliveryReturn
+         * @description Giao thất bại → nhận và kiểm hàng → đối chiếu tồn/tiền → đóng; không giao lại và không tự hoàn toàn bộ tồn.
+         */
+        post: operations["inspectDeliveryReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/delivery-returns/{id}/settle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * settleDeliveryReturn
+         * @description Giao thất bại → nhận và kiểm hàng → đối chiếu tồn/tiền → đóng; không giao lại và không tự hoàn toàn bộ tồn.
+         */
+        post: operations["settleDeliveryReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payment-callbacks/integration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Private development simulator callback
+         * @description Only development pbl6-fe-verify with explicit adapter flag and raw-body HMAC from private key file. No bank/provider real success claim.
+         */
+        post: operations["integrationPaymentCallback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/returns/{id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * resolveStoreReturn
+         * @description Versioned resolution, fault dispute or explicit exchange-to-refund consent. Never records refund success.
+         */
+        post: operations["resolveStoreReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/returns/{id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * respondOwnReturn
+         * @description Versioned resolution, fault dispute or explicit exchange-to-refund consent. Never records refund success.
+         */
+        post: operations["respondOwnReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/returns/{id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * resolveAdminReturn
+         * @description Versioned resolution, fault dispute or explicit exchange-to-refund consent. Never records refund success.
+         */
+        post: operations["resolveAdminReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/audit/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Owner reads scoped catalog history
+         * @description Store is derived from the current Owner membership. Metadata is joined only through immutable Store relationships. Before/after fields are an allowlisted redacted business projection; unknown historical scope is never exposed to another Store.
+         */
+        get: operations["listStoreCatalogAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/audit/commerce": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Owner reads scoped commerce history
+         * @description Store is derived from the current Owner membership. Metadata is joined only through immutable Store relationships. Before/after fields are an allowlisted redacted business projection; unknown historical scope is never exposed to another Store.
+         */
+        get: operations["listStoreCommerceAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/audit/identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Owner reads scoped identity history
+         * @description Store is derived from the current Owner membership. Metadata is joined only through immutable Store relationships. Before/after fields are an allowlisted redacted business projection; unknown historical scope is never exposed to another Store.
+         */
+        get: operations["listStoreIdentityAudit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/audit/actors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve current labels for audit actors
+         * @description One bounded batch. Owner can resolve only accounts with membership history in the current Store; Admin needs platform.admin. Missing IDs remain unresolved, never relabeled as System. Labels are current account labels, not reconstructed historical names.
+         */
+        post: operations["lookupStoreAuditActors"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit/actors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve current labels for audit actors
+         * @description One bounded batch. Owner can resolve only accounts with membership history in the current Store; Admin needs platform.admin. Missing IDs remain unresolved, never relabeled as System. Labels are current account labels, not reconstructed historical names.
+         */
+        post: operations["lookupAdminAuditActors"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin đối chiếu thu/hoàn theo sự kiện tiền và giờ Việt Nam
+         * @description Thu/hoàn đã xác nhận trong kỳ half-open; giá trị đơn là nhóm đơn tạo trong kỳ. Không gán ngày tạo đơn cho tiền lịch sử thiếu timestamp.
+         */
+        get: operations["getPlatformMoneyReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/reports/unresolved-money": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liệt kê khoản tiền lịch sử chưa xác định được ngày
+         * @description Ngoài mọi kỳ thời gian: counter có thu/hoàn nhưng không có journal sự kiện được xác minh. Không giả ngày tạo đơn là ngày thu/hoàn.
+         */
+        get: operations["listStoreUnresolvedMoneyMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reports/unresolved-money": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Liệt kê khoản tiền lịch sử chưa xác định được ngày
+         * @description Ngoài mọi kỳ thời gian: counter có thu/hoàn nhưng không có journal sự kiện được xác minh. Không giả ngày tạo đơn là ngày thu/hoàn.
+         */
+        get: operations["listAdminUnresolvedMoneyMovements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/inventory/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đối chiếu tồn thương mại và giữ hàng theo kỳ, theo thời điểm ghi bút toán; thiếu lịch sử không dựng số đầu/cuối kỳ.
+         * @description Đối chiếu tồn thương mại và giữ hàng theo kỳ, theo thời điểm ghi bút toán; thiếu lịch sử không dựng số đầu/cuối kỳ.; quyền kho hiện hành, Store lấy từ membership. Chỉ đọc; không cung cấp địa chỉ, điện thoại hoặc dữ liệu khách hàng.
+         */
+        get: operations["getInventoryReconciliation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/stock-commitments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đối chiếu hàng đã trừ nhưng chưa bàn giao và lệnh kho chưa rõ kết quả; không phải tồn vật lý.
+         * @description Đối chiếu hàng đã trừ nhưng chưa bàn giao và lệnh kho chưa rõ kết quả; không phải tồn vật lý.; quyền kho hiện hành, Store lấy từ membership. Chỉ đọc; không cung cấp địa chỉ, điện thoại hoặc dữ liệu khách hàng.
+         */
+        get: operations["listStockCommitments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/orders/{id}/after-sale-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem diễn biến đổi trả, hoàn về và hoàn tiền
+         * @description Lịch sử phân trang theo thời điểm hệ thống ghi nhận, có thời điểm phát sinh riêng cho khoản hoàn. Không trả raw audit, địa chỉ, mã provider hoặc chứng từ nhạy cảm. Owner/Admin được đối chiếu actor trong scope, SELLER không có trang nhật ký Store.
+         */
+        get: operations["listOwnAfterSaleHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/orders/{id}/after-sale-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem diễn biến đổi trả, hoàn về và hoàn tiền
+         * @description Lịch sử phân trang theo thời điểm hệ thống ghi nhận, có thời điểm phát sinh riêng cho khoản hoàn. Không trả raw audit, địa chỉ, mã provider hoặc chứng từ nhạy cảm. Owner/Admin được đối chiếu actor trong scope, SELLER không có trang nhật ký Store.
+         */
+        get: operations["listStoreAfterSaleHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/orders/{id}/after-sale-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem diễn biến đổi trả, hoàn về và hoàn tiền
+         * @description Lịch sử phân trang theo thời điểm hệ thống ghi nhận, có thời điểm phát sinh riêng cho khoản hoàn. Không trả raw audit, địa chỉ, mã provider hoặc chứng từ nhạy cảm. Owner/Admin được đối chiếu actor trong scope, SELLER không có trang nhật ký Store.
+         */
+        get: operations["listAdminAfterSaleHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/orders/{id}/refund-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đối soát và phục hồi hoàn online thất bại
+         * @description Owner đúng Store hoặc Admin yêu cầu đối soát FAILED. UNKNOWN chỉ lookup; lượt provider mới chỉ được tạo sau xác nhận FAILED chưa thực hiện. Parent Refund, số tiền và key logic bất biến; retry command giữ body/operation ID.
+         */
+        get: operations["getStoreRefundRecovery"];
+        put?: never;
+        /**
+         * Đối soát và phục hồi hoàn online thất bại
+         * @description Owner đúng Store hoặc Admin yêu cầu đối soát FAILED. UNKNOWN chỉ lookup; lượt provider mới chỉ được tạo sau xác nhận FAILED chưa thực hiện. Parent Refund, số tiền và key logic bất biến; retry command giữ body/operation ID.
+         */
+        post: operations["requestStoreRefundRecovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/orders/{id}/refund-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Đối soát và phục hồi hoàn online thất bại
+         * @description Owner đúng Store hoặc Admin yêu cầu đối soát FAILED. UNKNOWN chỉ lookup; lượt provider mới chỉ được tạo sau xác nhận FAILED chưa thực hiện. Parent Refund, số tiền và key logic bất biến; retry command giữ body/operation ID.
+         */
+        get: operations["getAdminRefundRecovery"];
+        put?: never;
+        /**
+         * Đối soát và phục hồi hoàn online thất bại
+         * @description Owner đúng Store hoặc Admin yêu cầu đối soát FAILED. UNKNOWN chỉ lookup; lượt provider mới chỉ được tạo sau xác nhận FAILED chưa thực hiện. Parent Refund, số tiền và key logic bất biến; retry command giữ body/operation ID.
+         */
+        post: operations["requestAdminRefundRecovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1831,38 +2883,13 @@ export interface components {
             /** Format: uuid */
             store_id: string;
             amounts: components["schemas"]["MoneyBreakdown"];
-            items: {
-                [key: string]: unknown;
-            }[];
+            items: components["schemas"]["CheckoutLine"][];
+            return_policy_snapshot?: components["schemas"]["ReturnPolicySnapshot"];
         };
-        CheckoutRequest: {
-            cart_item_ids: string[];
-            /** Format: uuid */
-            address_id: string;
-            payment_methods: {
-                [key: string]: "SANDBOX" | "COD";
-            };
-            platform_voucher_code?: string;
-            store_vouchers?: {
-                [key: string]: string;
-            };
-        };
-        CheckoutConfirmRequest: {
-            cart_item_ids: string[];
-            /** Format: uuid */
-            address_id: string;
-            payment_methods: {
-                [key: string]: "SANDBOX" | "COD";
-            };
-            platform_voucher_code?: string;
-            store_vouchers?: {
-                [key: string]: string;
-            };
-            /** Format: uuid */
-            quote_id: string;
-            /** Format: int64 */
-            expected_payable_total_vnd: number;
-        };
+        /** @description Legacy requests without source use CART. BUY_NOW never changes the saved cart. */
+        CheckoutRequest: components["schemas"]["CartCheckoutRequest"] | components["schemas"]["BuyNowCheckoutRequest"];
+        /** @description Legacy requests without source use CART. BUY_NOW never changes the saved cart. */
+        CheckoutConfirmRequest: components["schemas"]["CartCheckoutConfirmRequest"] | components["schemas"]["BuyNowCheckoutConfirmRequest"];
         CheckoutQuote: {
             /** Format: uuid */
             quote_id: string;
@@ -1900,6 +2927,23 @@ export interface components {
             items?: {
                 [key: string]: unknown;
             }[];
+            /** @description Immutable delivery address for authorized order participants; absent on legacy projections. */
+            address_snapshot?: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            created_at?: string;
+            timeline?: {
+                status: string;
+                from_status?: string;
+                /** Format: date-time */
+                occurred_at: string;
+                /** @enum {string} */
+                actor_kind: "CUSTOMER" | "STORE" | "SYSTEM";
+            }[];
+            return_policy_snapshot?: components["schemas"]["ReturnPolicySnapshot"];
+            /** Format: date-time */
+            completed_at?: string;
         };
         Payment: {
             /** Format: uuid */
@@ -1929,7 +2973,7 @@ export interface components {
             redirect_url?: string;
             provider_reference?: string;
             /** @enum {string} */
-            provider?: "SEPAY_TEST";
+            provider?: "SEPAY_TEST" | "INTEGRATION";
             payment_code?: string;
             /** Format: uri */
             qr_url?: string;
@@ -2000,16 +3044,17 @@ export interface components {
         };
         Review: {
             /** Format: uuid */
-            id?: string;
+            id: string;
             /** Format: uuid */
             order_item_id: string;
             /** Format: uuid */
-            product_id?: string;
+            product_id: string;
             rating: number;
             body?: string;
-            status?: string;
+            status: string;
             /** @description Phiên bản hiện tại mà client đã đọc. */
-            version?: number;
+            version: number;
+            product_title?: string;
         };
         StoreApplication: {
             /** Format: uuid */
@@ -2021,6 +3066,12 @@ export interface components {
             decision_reason?: string;
             /** @description Phiên bản hiện tại mà client đã đọc. */
             version?: number;
+            /** Format: uuid */
+            applicant_user_id?: string;
+            /** Format: email */
+            applicant_email?: string;
+            applicant_display_name?: string;
+            applicant_status?: string;
         };
         PasswordResetRequest: {
             /** Format: email */
@@ -2099,6 +3150,8 @@ export interface components {
             };
             is_default?: boolean;
             status?: string;
+            /** @description Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers. */
+            available_quantity?: number;
         };
         Product: {
             /** Format: uuid */
@@ -2119,6 +3172,19 @@ export interface components {
             /** @enum {string} */
             moderation_status?: "VISIBLE" | "HIDDEN";
             version?: number;
+            /** @description Public display names of configured variant axes; optional for older readers. */
+            variant_axes?: {
+                code: string;
+                name: string;
+            }[];
+            /** @description Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence. */
+            moderation_decision?: {
+                /** @enum {string} */
+                status: "VISIBLE" | "HIDDEN";
+                reason: string;
+                /** Format: date-time */
+                decided_at: string;
+            };
         };
         InventoryAdjustment: {
             /** Format: uuid */
@@ -2136,6 +3202,13 @@ export interface components {
             reserved_quantity: number;
             available_quantity: number;
             version: number;
+            /** Format: uuid */
+            product_id?: string;
+            product_title?: string;
+            sku?: string;
+            variant_values?: {
+                [key: string]: string;
+            };
         };
         CartItem: {
             /** Format: uuid */
@@ -2174,6 +3247,16 @@ export interface components {
                 bucket_start: string;
                 /** Format: int64 */
                 completed_goods_revenue_vnd: number;
+            }[];
+            /** @enum {string} */
+            timezone?: "Asia/Ho_Chi_Minh";
+            unresolved_collected_vnd?: number;
+            unresolved_refunded_vnd?: number;
+            cash_series?: {
+                /** Format: date-time */
+                bucket_start: string;
+                collected_vnd: number;
+                refunded_vnd: number;
             }[];
         };
         ChatMessage: {
@@ -2271,6 +3354,9 @@ export interface components {
             /** Format: int64 */
             shipping_fee_vnd?: number;
             version?: number;
+            return_address?: components["schemas"]["ReturnAddress"];
+            owner_email?: string;
+            owner_display_name?: string;
         };
         StoreUpdate: {
             name?: string;
@@ -2278,6 +3364,7 @@ export interface components {
             /** Format: int64 */
             shipping_fee_vnd?: number;
             expected_version: number;
+            return_address?: components["schemas"]["ReturnAddress"];
         };
         ProductImageRequest: {
             /** Format: uri */
@@ -2367,6 +3454,8 @@ export interface components {
             variant_axis?: boolean;
             allowed_values?: string[];
             version?: number;
+            /** @description Mã thuộc tính dùng làm khóa trong Product.attributes. */
+            code: string;
         };
         StoreMembership: {
             /** Format: uuid */
@@ -2407,6 +3496,27 @@ export interface components {
             reason?: string;
             /** Format: date-time */
             occurred_at?: string;
+            /** Format: uuid */
+            product_id?: string;
+            product_title?: string;
+            sku?: string;
+            variant_values?: {
+                [key: string]: string;
+            };
+            delta_reserved?: number;
+            quantity_before?: number;
+            quantity_after?: number;
+            reserved_before?: number;
+            reserved_after?: number;
+            inventory_version?: number;
+            /** Format: uuid */
+            operation_id?: string;
+            /** Format: uuid */
+            actor_user_id?: string;
+            /** Format: uuid */
+            receipt_id?: string;
+            /** Format: date-time */
+            recorded_at?: string;
         };
         UserSummary: {
             /** Format: uuid */
@@ -2415,6 +3525,7 @@ export interface components {
             email: string;
             status: string;
             version?: number;
+            display_name?: string;
         };
         PlatformDashboard: {
             /** Format: int64 */
@@ -2459,6 +3570,12 @@ export interface components {
             total: number;
             page: number;
             size: number;
+            status_counts?: {
+                ALL: number;
+                PENDING: number;
+                APPROVED: number;
+                REJECTED: number;
+            };
         };
         PageStoreStaff: {
             items: components["schemas"]["StoreStaff"][];
@@ -2652,7 +3769,8 @@ export interface components {
             discount_type?: "FIXED" | "PERCENT";
             discount_value?: number;
             min_goods_vnd?: number;
-            max_discount_vnd?: number;
+            /** @description Omit to preserve the existing cap; null explicitly removes the cap. New orders use updated rules; committed orders retain their discount snapshots. */
+            max_discount_vnd?: number | null;
             /** Format: date-time */
             starts_at?: string;
             /** Format: date-time */
@@ -2746,6 +3864,796 @@ export interface components {
             total: number;
             page: number;
             size: number;
+        };
+        FavoritePage: {
+            items: string[];
+            page: number;
+            size: number;
+            total: number;
+        };
+        FavoriteResult: {
+            /** Format: uuid */
+            product_id: string;
+        };
+        ProductImageRemoval: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            product_id: string;
+        };
+        ReorderProductImagesRequest: {
+            expected_image_ids: string[];
+            image_ids: string[];
+        };
+        ReorderProductImagesResult: {
+            /** Format: uuid */
+            product_id: string;
+            image_ids: string[];
+        };
+        StoreConversation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            store_id: string;
+            store_name: string;
+            customer_name: string;
+            last_message?: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StoreMessage: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            conversation_id: string;
+            /** @enum {string} */
+            sender_side: "CUSTOMER" | "STORE";
+            content: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            order_id?: string;
+        };
+        PageStoreConversations: {
+            items: components["schemas"]["StoreConversation"][];
+            total: number;
+            page: number;
+            size: number;
+        };
+        PageStoreMessages: {
+            items: components["schemas"]["StoreMessage"][];
+            total: number;
+            page: number;
+            size: number;
+            /** Format: uuid */
+            conversation_id: string;
+            /** @description Current identity of the authorized conversation, independent of conversation-list pagination; labels already exposed in its authorized list. */
+            conversation?: components["schemas"]["StoreConversation"];
+        };
+        StartStoreConversation: {
+            /** Format: uuid */
+            store_id: string;
+            /** Format: uuid */
+            order_id?: string;
+        };
+        StoreConversationId: {
+            /** Format: uuid */
+            id: string;
+            order_context?: components["schemas"]["ConversationOrderContext"];
+            store_name?: string;
+        };
+        SendStoreMessage: {
+            content: string;
+            /** Format: uuid */
+            client_message_id: string;
+            /** Format: uuid */
+            order_id?: string;
+        };
+        CustomerNotification: {
+            id: string;
+            /** @enum {string} */
+            kind: "ORDER_STATUS" | "PAYMENT_EVENT" | "RETURN_STATUS";
+            /** Format: uuid */
+            order_id: string;
+            event_status: string;
+            /** Format: date-time */
+            created_at: string;
+            read: boolean;
+        };
+        PageCustomerNotifications: {
+            items: components["schemas"]["CustomerNotification"][];
+            total: number;
+            unread: number;
+            page: number;
+            size: number;
+        };
+        CustomerNotificationRead: {
+            id: string;
+        };
+        OrderReturnRequest: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            order_id: string;
+            /** @enum {string} */
+            type: "REFUND" | "EXCHANGE";
+            reason: string;
+            /** @enum {string} */
+            status: "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "EXCHANGE_SENT" | "COMPLETED";
+            version: number;
+            decision_note?: string;
+            replacement_reference?: string;
+            /** @enum {string} */
+            payment_method: "COD" | "SANDBOX";
+            refund_status?: string;
+            amount_vnd: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            return_policy_snapshot?: components["schemas"]["ReturnPolicySnapshot"];
+            legacy_policy?: boolean;
+            /** @enum {string} */
+            original_type?: "REFUND" | "EXCHANGE";
+            /** @enum {string} */
+            fault_party?: "STORE" | "CUSTOMER" | "DISPUTED";
+            /** @enum {string} */
+            fee_payer?: "STORE" | "CUSTOMER";
+            return_instructions?: string;
+            inspection_note?: string;
+            inspection?: components["schemas"]["DeliveryInspectionLine"][];
+            /** @enum {string} */
+            inventory_status?: "NOT_STARTED" | "PENDING" | "APPLIED" | "LEGACY_RECONCILED";
+            /** @enum {string} */
+            exchange_status?: "NOT_STARTED" | "PENDING" | "APPLIED" | "BLOCKED";
+            /** @enum {string} */
+            conversion_status?: "PROPOSED" | "ACCEPTED" | "DECLINED";
+            conversion_note?: string;
+            last_error?: string;
+            items?: {
+                /** Format: uuid */
+                order_item_id: string;
+                /** Format: uuid */
+                product_id: string;
+                /** Format: uuid */
+                variant_id: string;
+                product_snapshot: {
+                    [key: string]: unknown;
+                };
+                sku_snapshot: string;
+                quantity: number;
+                unit_price_vnd?: number;
+            }[];
+            exchange_dispatch?: components["schemas"]["ExchangeDispatchSnapshot"];
+            /** @description Original order identity and current reconciled money state, returned only by authorized Admin return lists. Customer/Store readers omit this context. Current account/Store labels are resolved separately; no fabricated legacy identity. */
+            admin_context?: {
+                /** Format: uuid */
+                store_id: string;
+                /** Format: uuid */
+                customer_user_id: string;
+                /** Format: date-time */
+                order_created_at: string;
+                order_status: string;
+                payment_status?: string;
+                collected_vnd?: number;
+                refunded_vnd?: number;
+            };
+        };
+        PageOrderReturnRequests: {
+            items: components["schemas"]["OrderReturnRequest"][];
+            total: number;
+            page: number;
+            size: number;
+        };
+        CreateOrderReturnRequest: {
+            /** @enum {string} */
+            type: "REFUND" | "EXCHANGE";
+            reason: string;
+            expected_order_version: number;
+        };
+        UpdateOrderReturnRequest: {
+            /** @enum {string} */
+            status: "APPROVED" | "REJECTED" | "RECEIVED" | "EXCHANGE_SENT" | "COMPLETED";
+            expected_version: number;
+            decision_note?: string;
+            replacement_reference?: string;
+            /** Format: uuid */
+            operation_id?: string;
+            /** @enum {string} */
+            fault_party?: "STORE" | "CUSTOMER" | "DISPUTED";
+            return_instructions?: string;
+            inspection?: components["schemas"]["DeliveryInspectionLine"][];
+            inspection_note?: string;
+            legacy_reconciliation_note?: string;
+            replacements?: {
+                /** Format: uuid */
+                order_item_id: string;
+                /** Format: uuid */
+                variant_id: string;
+            }[];
+        };
+        ConfirmOrderExchange: {
+            expected_version: number;
+        };
+        AttributeDefinitionCreate: {
+            name: string;
+            /** Format: uuid */
+            product_type_id: string;
+            /** @enum {string} */
+            data_type: "STRING" | "TEXT" | "NUMBER" | "BOOLEAN";
+            required?: boolean;
+            unit?: string;
+            variant_axis?: boolean;
+            allowed_values?: string[];
+            /** @example shirt_size */
+            code?: string;
+        };
+        AdminAuditEntry: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            service: "M1" | "M2" | "M3";
+            /** Format: uuid */
+            actor_user_id?: string;
+            target_type: string;
+            /** Format: uuid */
+            target_id: string;
+            action: string;
+            request_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * @description NULL history is UNKNOWN; only an explicit system executor is SYSTEM.
+             * @enum {string}
+             */
+            actor_kind?: "UNKNOWN" | "ACCOUNT" | "SYSTEM";
+            /**
+             * Format: uuid
+             * @description Recorded Store scope or provable immutable catalogue target scope. Omitted for global or unresolved history; never inferred from current membership.
+             */
+            store_id?: string;
+        };
+        PageAdminAudit: {
+            items: components["schemas"]["AdminAuditEntry"][];
+            total: number;
+            page: number;
+            size: number;
+        };
+        PublicStore: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description?: string;
+            shipping_fee_vnd: number;
+        };
+        BuyNowSelection: {
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            variant_id: string;
+            quantity: number;
+        };
+        CartCheckoutRequest: {
+            cart_item_ids: string[];
+            /** Format: uuid */
+            address_id: string;
+            payment_methods: {
+                [key: string]: "SANDBOX" | "COD";
+            };
+            platform_voucher_code?: string;
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            source?: "CART";
+        };
+        BuyNowCheckoutRequest: {
+            /** Format: uuid */
+            address_id: string;
+            payment_methods: {
+                [key: string]: "SANDBOX" | "COD";
+            };
+            platform_voucher_code?: string;
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            source: "BUY_NOW";
+            buy_now: components["schemas"]["BuyNowSelection"];
+        };
+        CartCheckoutConfirmRequest: {
+            cart_item_ids: string[];
+            /** Format: uuid */
+            address_id: string;
+            payment_methods: {
+                [key: string]: "SANDBOX" | "COD";
+            };
+            platform_voucher_code?: string;
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            /** Format: uuid */
+            quote_id: string;
+            /** Format: int64 */
+            expected_payable_total_vnd: number;
+            /** @enum {string} */
+            source?: "CART";
+        };
+        BuyNowCheckoutConfirmRequest: {
+            /** Format: uuid */
+            address_id: string;
+            payment_methods: {
+                [key: string]: "SANDBOX" | "COD";
+            };
+            platform_voucher_code?: string;
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            /** Format: uuid */
+            quote_id: string;
+            /** Format: int64 */
+            expected_payable_total_vnd: number;
+            /** @enum {string} */
+            source: "BUY_NOW";
+            buy_now: components["schemas"]["BuyNowSelection"];
+        };
+        CheckoutLine: {
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            variant_id: string;
+            product_title?: string;
+            variant_title?: string;
+            sku?: string;
+            variant_values?: {
+                [key: string]: unknown;
+            };
+            quantity: number;
+            /** Format: int64 */
+            unit_price_vnd: number;
+            /** Format: int64 */
+            line_total_vnd: number;
+        };
+        CodRefundConfirmation: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_order_version: number;
+            expected_return_version?: number;
+            receipt_reference: string;
+            recipient_name: string;
+            /** Format: date-time */
+            refunded_at: string;
+            /** @enum {boolean} */
+            full_amount_confirmed: true;
+            expected_case_version?: number;
+        };
+        MoneyMovement: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            payment_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** @enum {string} */
+            kind: "COLLECTION" | "REFUND";
+            amount_vnd: number;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: date-time */
+            recorded_at: string;
+            source_type: string;
+            source_id: string;
+            /** @enum {string} */
+            time_source: "SYSTEM_CONFIRMED" | "SYSTEM_RECEIVED" | "OWNER_ATTESTED";
+        };
+        PageMoneyMovements: {
+            items: components["schemas"]["MoneyMovement"][];
+            page: number;
+            size: number;
+            total: number;
+        };
+        ReturnAddress: {
+            recipient_name: string;
+            phone: string;
+            line1: string;
+            ward: string;
+            district: string;
+            city: string;
+        };
+        ReturnPolicySnapshot: {
+            /** @enum {string} */
+            version: "PLATFORM_2026_10_30";
+            /** @enum {integer} */
+            window_hours: 168;
+            /** @enum {boolean} */
+            full_refund_includes_original_shipping: true;
+            /** @enum {string} */
+            fault_fee_rule: "STORE_IF_STORE_FAULT_CUSTOMER_IF_CHANGE_OF_MIND_ADMIN_IF_DISPUTED";
+            return_address: components["schemas"]["ReturnAddress"];
+        };
+        DeliveryInspectionLine: {
+            /** Format: uuid */
+            order_item_id: string;
+            received_quantity: number;
+            resellable_quantity: number;
+            damaged_quantity: number;
+            pending_quantity: number;
+        };
+        DeliveryReturnOpen: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_order_version: number;
+            reason: string;
+        };
+        DeliveryReturnInspect: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            lines: components["schemas"]["DeliveryInspectionLine"][];
+            note: string;
+        };
+        DeliveryReturnSettle: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+        };
+        DeliveryReturnCase: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** @enum {string} */
+            status: "OPEN" | "RECEIVED" | "SETTLING" | "CLOSED";
+            reason: string;
+            version: number;
+            /** @enum {string} */
+            inventory_status: "PENDING" | "APPLIED";
+            /** @enum {string} */
+            payment_method: "COD" | "SANDBOX";
+            payment_status: string;
+            amount_vnd: number;
+            money_settled: boolean;
+            inspection: components["schemas"]["DeliveryInspectionLine"][];
+            items: {
+                /** Format: uuid */
+                order_item_id: string;
+                /** Format: uuid */
+                product_id: string;
+                /** Format: uuid */
+                variant_id: string;
+                product_snapshot: {
+                    [key: string]: unknown;
+                };
+                sku_snapshot: string;
+                quantity: number;
+            }[];
+            inspection_note?: string;
+            last_error?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            closed_at?: string;
+        };
+        PageDeliveryReturnCases: {
+            items: components["schemas"]["DeliveryReturnCase"][];
+            total: number;
+            page: number;
+            size: number;
+        };
+        IntegrationPaymentCallback: {
+            provider_event_id: string;
+            provider_reference: string;
+            amount_vnd: number;
+            /** @enum {string} */
+            result: "SUCCESS" | "FAILED" | "CANCELLED";
+        };
+        ReturnResolutionRequest: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            /** @enum {string} */
+            action: "PROPOSE_REFUND" | "ACCEPT_REFUND" | "DECLINE_REFUND" | "DISPUTE" | "RESOLVE";
+            note: string;
+            /** @enum {string} */
+            fault_party?: "STORE" | "CUSTOMER";
+        };
+        StoreAuditEntry: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            service: "M1" | "M2" | "M3";
+            /** Format: uuid */
+            actor_user_id?: string;
+            target_type: string;
+            /** Format: uuid */
+            target_id: string;
+            action: string;
+            request_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            store_id: string;
+            /**
+             * @description SYSTEM is a proven automated executor; ACCOUNT retains the recorded account ID; UNKNOWN is historical evidence with no executor identity. No attribution is inferred from an absent ID.
+             * @enum {string}
+             */
+            actor_kind: "SYSTEM" | "ACCOUNT" | "UNKNOWN";
+            target_label: string;
+            before: {
+                [key: string]: unknown;
+            };
+            after: {
+                [key: string]: unknown;
+            };
+        };
+        PageStoreAudit: {
+            items: components["schemas"]["StoreAuditEntry"][];
+            total: number;
+            page: number;
+            size: number;
+        };
+        AuditActorLookup: {
+            user_ids: string[];
+        };
+        AuditActorLabels: {
+            users: {
+                /** Format: uuid */
+                id: string;
+                label: string;
+                /**
+                 * Format: email
+                 * @description Current account email, returned only by the platform-admin lookup. Store lookup omits this field.
+                 */
+                email?: string;
+                /**
+                 * @description Current account status; Admin lookup only, not the historical status when the action occurred.
+                 * @enum {string}
+                 */
+                status?: "ACTIVE" | "LOCKED";
+            }[];
+        };
+        PlatformMoneyReport: {
+            /** Format: uuid */
+            store_id?: string;
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+            /** Format: int64 */
+            order_value_vnd: number;
+            /** Format: int64 */
+            completed_goods_revenue_vnd: number;
+            /** Format: int64 */
+            collected_vnd: number;
+            /** Format: int64 */
+            refunded_vnd: number;
+            /** Format: int64 */
+            shipping_fee_vnd: number;
+            order_count: number;
+            /** @enum {string} */
+            timezone: "Asia/Ho_Chi_Minh";
+            unresolved_collected_vnd: number;
+            unresolved_refunded_vnd: number;
+            cash_series: {
+                /** Format: date-time */
+                bucket_start: string;
+                collected_vnd: number;
+                refunded_vnd: number;
+            }[];
+        };
+        UnresolvedMoneyMovement: {
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            payment_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** @enum {string} */
+            kind: "COLLECTION" | "REFUND";
+            amount_vnd: number;
+            /** @enum {string} */
+            payment_method: "COD" | "SANDBOX";
+            /** @enum {string} */
+            reconciliation_reason: "MISSING_VERIFIED_EVENT_TIME";
+        };
+        PageUnresolvedMoneyMovements: {
+            items: components["schemas"]["UnresolvedMoneyMovement"][];
+            page: number;
+            size: number;
+            total: number;
+        };
+        ConversationOrderContext: {
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** @enum {string} */
+            status: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING";
+            items: {
+                title?: string;
+                variant_values?: {
+                    [key: string]: unknown;
+                };
+                quantity: number;
+            }[];
+        };
+        InventoryReconciliation: {
+            /** Format: uuid */
+            variant_id: string;
+            /** Format: date-time */
+            from: string;
+            /** Format: date-time */
+            to: string;
+            /** Format: date-time */
+            as_of: string;
+            /** Format: date-time */
+            effective_to: string;
+            period_open: boolean;
+            /** @enum {string} */
+            timezone: "Asia/Ho_Chi_Minh";
+            /** @enum {string} */
+            coverage: "COMPLETE" | "INCOMPLETE";
+            /** Format: date-time */
+            coverage_from?: string;
+            issues: ("NO_TRUSTED_HISTORY" | "LEGACY_PERIOD" | "VERSION_GAP" | "CHECKPOINT_MISMATCH" | "TIME_ORDER_UNCERTAIN" | "HISTORY_LIMIT")[];
+            current: {
+                quantity: number;
+                reserved_quantity: number;
+                available_quantity: number;
+                version: number;
+            };
+            opening?: {
+                quantity: number;
+                reserved_quantity: number;
+                available_quantity: number;
+            };
+            closing?: {
+                quantity: number;
+                reserved_quantity: number;
+                available_quantity: number;
+            };
+            totals: {
+                quantity_in: number;
+                quantity_out: number;
+                reserved_in: number;
+                reserved_out: number;
+                movement_count: number;
+                undated_count: number;
+            };
+            product_title?: string;
+            sku?: string;
+            variant_values?: {
+                [key: string]: string;
+            };
+            /** Format: uuid */
+            product_id?: string;
+        };
+        PageStockCommitments: {
+            items: {
+                /** Format: uuid */
+                order_id: string;
+                order_status: string;
+                /** Format: uuid */
+                variant_id: string;
+                /** Format: uuid */
+                product_id: string;
+                product_title: string;
+                sku?: string;
+                variant_values?: {
+                    [key: string]: string;
+                };
+                quantity: number;
+                inventory_state: string;
+                command_kind?: string;
+                /** @enum {string} */
+                reconciliation: "CONSUMED_NOT_HANDED_OVER" | "PENDING_RECONCILIATION";
+            }[];
+            page: number;
+            size: number;
+            total: number;
+            /** Format: date-time */
+            as_of: string;
+            consumed_quantity: number;
+            uncertain_quantity: number;
+        };
+        LogoutResult: {
+            /** @enum {string} */
+            status: "OK";
+            message?: string;
+            /** @description The requested signed session was revoked; the current browser cookie belongs to a different family and was preserved. */
+            cookie_session_changed?: boolean;
+        };
+        /** @description Read-only safe projection, no raw audit or private COD/provider receipt. Actor IDs only for scoped Owner/Admin; OPERATOR does not infer historical role. */
+        AfterSaleHistoryEvent: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            source: "RETURN_STATUS" | "RETURN_OPERATION" | "DELIVERY" | "REFUND_ACTIVITY" | "MONEY";
+            action: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: date-time */
+            recorded_at: string;
+            /** @enum {string} */
+            actor_kind: "CUSTOMER" | "SYSTEM" | "OPERATOR" | "UNKNOWN";
+            /** Format: uuid */
+            actor_user_id?: string;
+            note?: string;
+            from_status?: string;
+            to_status?: string;
+            fault_party?: string;
+            fee_payer?: string;
+            reference?: string;
+            inspection?: components["schemas"]["DeliveryInspectionLine"][];
+            amount_vnd?: number;
+            /** @enum {string} */
+            time_source?: "SYSTEM_CONFIRMED" | "SYSTEM_RECEIVED" | "OWNER_ATTESTED";
+        };
+        AfterSaleHistoryPage: {
+            items: components["schemas"]["AfterSaleHistoryEvent"][];
+            size: number;
+            next_cursor?: string;
+        };
+        RefundRecoveryCommand: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_order_version: number;
+            expected_refund_version: number;
+            note: string;
+        };
+        RefundRecoveryState: {
+            /** Format: uuid */
+            order_id: string;
+            order_version: number;
+            /** Format: uuid */
+            refund_id: string;
+            refund_version: number;
+            /** @enum {string} */
+            status: "REQUESTED" | "PROCESSING" | "UNKNOWN" | "SUCCEEDED" | "FAILED";
+            amount_vnd: number;
+            can_retry_known_failure: boolean;
+            /** @enum {string} */
+            blocked_reason?: "RECOVERY_PENDING" | "RESULT_UNKNOWN" | "RECONCILIATION_REQUIRED" | "NOT_FAILED" | "RECOVERY_DISABLED";
+            recovery?: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "PENDING" | "REQUEUED" | "RECONCILED" | "BLOCKED";
+                /** Format: date-time */
+                created_at: string;
+                /** Format: date-time */
+                updated_at: string;
+            };
+        };
+        ExchangeDispatchItem: {
+            /** Format: uuid */
+            original_variant_id: string;
+            /** Format: uuid */
+            variant_id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            store_id: string;
+            sku_snapshot: string;
+            unit_price_vnd: number;
+            quantity: number;
+            product_snapshot: {
+                title: string;
+                variant_values: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        ExchangeDispatchSnapshot: {
+            /** Format: date-time */
+            dispatched_at: string;
+            items: components["schemas"]["ExchangeDispatchItem"][];
         };
     };
     responses: never;
@@ -3166,7 +5074,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationResult"];
+                    "application/json": components["schemas"]["LogoutResult"];
                 };
             };
             /** @description Malformed request */
@@ -4396,6 +6304,8 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                q?: string;
+                status?: "PENDING" | "APPROVED" | "REJECTED";
             };
             header?: never;
             path?: never;
@@ -4594,7 +6504,10 @@ export interface operations {
     getOwnStore: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4686,7 +6599,10 @@ export interface operations {
     updateOwnStore: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4785,7 +6701,10 @@ export interface operations {
                 page?: number;
                 size?: number;
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4880,7 +6799,10 @@ export interface operations {
                 page?: number;
                 size?: number;
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4963,7 +6885,10 @@ export interface operations {
     inviteStaff: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5059,7 +6984,10 @@ export interface operations {
     revokeStaffInvitation: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -5797,8 +7725,13 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                q?: string;
+                status?: "DRAFT" | "ACTIVE" | "STOPPED";
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5890,7 +7823,10 @@ export interface operations {
     createProduct: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5993,10 +7929,110 @@ export interface operations {
             };
         };
     };
+    getOwnStoreProduct: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: sửa hoặc ngừng bán product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     updateProduct: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -6100,7 +8136,10 @@ export interface operations {
     createVariant: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -6208,7 +8247,10 @@ export interface operations {
     addProductImage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -6308,8 +8350,17 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                q?: string;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                product_id?: string;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                variant_id?: string;
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6401,7 +8452,10 @@ export interface operations {
     adjustInventory: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -6508,8 +8562,19 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                q?: string;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                product_id?: string;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                variant_id?: string;
+                from?: string;
+                to?: string;
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -7741,6 +9806,12 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Tìm toàn bộ đơn trong phạm vi được phép theo mã đơn/nhóm/Store, tên hoặc điện thoại người nhận, tên/SKU/phân loại snapshot; không tìm từ sản phẩm hiện tại. */
+                q?: string;
+                status?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING";
+                payment_status?: "PENDING" | "UNKNOWN" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "REFUNDED";
+                /** @description Trạng thái lệnh hoàn tiền mới nhất; yêu cầu đổi/trả chưa sinh lệnh hoàn không được coi là đã hoàn. */
+                refund_status?: "REQUESTED" | "PROCESSING" | "UNKNOWN" | "SUCCEEDED" | "FAILED";
             };
             header?: never;
             path?: never;
@@ -8034,8 +10105,17 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Tìm toàn bộ đơn trong phạm vi được phép theo mã đơn/nhóm/Store, tên hoặc điện thoại người nhận, tên/SKU/phân loại snapshot; không tìm từ sản phẩm hiện tại. */
+                q?: string;
+                status?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING";
+                payment_status?: "PENDING" | "UNKNOWN" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "REFUNDED";
+                /** @description Trạng thái lệnh hoàn tiền mới nhất; yêu cầu đổi/trả chưa sinh lệnh hoàn không được coi là đã hoàn. */
+                refund_status?: "REQUESTED" | "PROCESSING" | "UNKNOWN" | "SUCCEEDED" | "FAILED";
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -8127,7 +10207,10 @@ export interface operations {
     getStoreOrder: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -8223,6 +10306,8 @@ export interface operations {
             query?: never;
             header?: {
                 "If-Match"?: string;
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
             };
             path: {
                 id: string;
@@ -8327,7 +10412,10 @@ export interface operations {
     cancelStoreOrder: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -8431,7 +10519,10 @@ export interface operations {
     collectCod: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -8634,7 +10725,10 @@ export interface operations {
                 page?: number;
                 size?: number;
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -8726,7 +10820,10 @@ export interface operations {
     createStoreVoucher: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -8834,7 +10931,10 @@ export interface operations {
     updateStoreVoucher: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -9339,6 +11439,103 @@ export interface operations {
             };
         };
     };
+    listOwnReviews: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                product_id?: string;
+                order_item_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageReviews"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     createReview: {
         parameters: {
             query?: never;
@@ -9748,6 +11945,11 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Tìm toàn bộ dữ liệu trước phân trang: tên/email hoặc ID, hỗ trợ tiếng Việt không dấu. */
+                q?: string;
+                status?: "ACTIVE" | "LOCKED";
+                /** @description Exact identity IDs as a comma-separated list, maximum100. Intersects other filters before count/pagination. Omit to use normal directory search. */
+                ids?: string;
             };
             header?: never;
             path?: never;
@@ -9941,6 +12143,11 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Tìm toàn bộ dữ liệu trước phân trang: tên/email hoặc ID, hỗ trợ tiếng Việt không dấu. */
+                q?: string;
+                status?: "ACTIVE" | "LOCKED";
+                /** @description Exact identity IDs as a comma-separated list, maximum100. Intersects other filters before count/pagination. Omit to use normal directory search. */
+                ids?: string;
             };
             header?: never;
             path?: never;
@@ -10134,6 +12341,13 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Tìm toàn bộ đơn trong phạm vi được phép theo mã đơn/nhóm/Store, tên hoặc điện thoại người nhận, tên/SKU/phân loại snapshot; không tìm từ sản phẩm hiện tại. */
+                q?: string;
+                status?: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING";
+                payment_status?: "PENDING" | "UNKNOWN" | "SUCCEEDED" | "FAILED" | "CANCELLED" | "REFUNDED";
+                store_id?: string;
+                /** @description Trạng thái lệnh hoàn tiền mới nhất; yêu cầu đổi/trả chưa sinh lệnh hoàn không được coi là đã hoàn. */
+                refund_status?: "REQUESTED" | "PROCESSING" | "UNKNOWN" | "SUCCEEDED" | "FAILED";
             };
             header?: never;
             path?: never;
@@ -10943,7 +13157,10 @@ export interface operations {
     updateStaff: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -11055,7 +13272,10 @@ export interface operations {
                 to: string;
                 granularity?: "DAY" | "MONTH";
             };
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -11147,7 +13367,10 @@ export interface operations {
     getStoreVoucherUsage: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
             path: {
                 id: string;
             };
@@ -11729,7 +13952,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TaxonomyCreate"];
+                "application/json": components["schemas"]["AttributeDefinitionCreate"];
             };
         };
         responses: {
@@ -12350,6 +14573,5511 @@ export interface operations {
             };
             /** @description Callback reference/amount/conflict/configuration error */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listFavorites: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoritePage"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addFavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xóa item khỏi giỏ */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteResult"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeFavorite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xóa item khỏi giỏ */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FavoriteResult"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeProductImage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+                image_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: thêm ảnh product hoặc variant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductImageRemoval"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    reorderProductImages: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderProductImagesRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: thêm ảnh product hoặc variant */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReorderProductImagesResult"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listOwnConversations: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreConversations"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startStoreConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartStoreConversation"];
+            };
+        };
+        responses: {
+            /** @description Thành công: thêm địa chỉ giao hàng */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreConversationId"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreConversations: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreConversations"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listOwnConversationMessages: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreMessages"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    sendOwnConversationMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendStoreMessage"];
+            };
+        };
+        responses: {
+            /** @description Thành công: thêm địa chỉ giao hàng */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreMessage"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreConversationMessages: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreMessages"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    sendStoreConversationMessage: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendStoreMessage"];
+            };
+        };
+        responses: {
+            /** @description Thành công: thêm địa chỉ giao hàng */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreMessage"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listNotifications: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageCustomerNotifications"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    markNotificationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerNotificationRead"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createReturnRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderReturnRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: thêm địa chỉ giao hàng */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listOwnReturnRequests: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                order_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageOrderReturnRequests"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreReturnRequests: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                order_id?: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageOrderReturnRequests"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateStoreReturnRequest: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Áo thun cotton",
+                 *       "expected_version": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOrderReturnRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: sửa hoặc ngừng bán product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminReturnRequests: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                order_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê địa chỉ giao hàng của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageOrderReturnRequests"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateAdminReturnRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Áo thun cotton",
+                 *       "expected_version": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOrderReturnRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: sửa hoặc ngừng bán product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    confirmExchangeReceived: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmOrderExchange"];
+            };
+        };
+        responses: {
+            /** @description Thành công: thêm địa chỉ giao hàng */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminReviews: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: "VISIBLE" | "HIDDEN";
+                product_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageReviews"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminProducts: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                q?: string;
+                status?: "DRAFT" | "ACTIVE" | "STOPPED";
+                moderation_status?: "VISIBLE" | "HIDDEN";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem product trong store của mình */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageProducts"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCatalogAudit: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                action?: string;
+                target_type?: string;
+                actor_user_id?: string;
+                target_id?: string;
+                store_id?: string;
+                /** @description Inclusive start timestamp. */
+                from?: string;
+                /** @description Exclusive end timestamp. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageAdminAudit"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCommerceAudit: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                action?: string;
+                target_type?: string;
+                actor_user_id?: string;
+                target_id?: string;
+                store_id?: string;
+                /** @description Inclusive start timestamp. */
+                from?: string;
+                /** @description Exclusive end timestamp. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageAdminAudit"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listIdentityAudit: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                action?: string;
+                target_type?: string;
+                actor_user_id?: string;
+                target_id?: string;
+                store_id?: string;
+                /** @description Inclusive start timestamp. */
+                from?: string;
+                /** @description Exclusive end timestamp. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageAdminAudit"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPublicStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem product và variant hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicStore"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    confirmCodRefund: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodRefundConfirmation"];
+            };
+        };
+        responses: {
+            /** @description Xác nhận thủ công đã hoàn đủ tiền */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Refund"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreMoneyMovements: {
+        parameters: {
+            query: {
+                /** @description Đầu kỳ UTC, bao gồm. */
+                from: string;
+                /** @description Cuối kỳ UTC, không bao gồm; phải lớn hơn from. */
+                to: string;
+                page?: number;
+                size?: number;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sự kiện tiền theo thời điểm xác nhận, có nguồn đối chiếu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageMoneyMovements"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminMoneyMovements: {
+        parameters: {
+            query: {
+                /** @description Đầu kỳ UTC, bao gồm. */
+                from: string;
+                /** @description Cuối kỳ UTC, không bao gồm; phải lớn hơn from. */
+                to: string;
+                page?: number;
+                size?: number;
+                store_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sự kiện tiền theo thời điểm xác nhận, có nguồn đối chiếu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageMoneyMovements"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    openDeliveryReturn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryReturnOpen"];
+            };
+        };
+        responses: {
+            /** @description Hồ sơ hoàn về theo quyền hiện hành */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryReturnCase"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreDeliveryReturns: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                order_id?: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hồ sơ hoàn về theo quyền hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDeliveryReturnCases"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminDeliveryReturns: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hồ sơ hoàn về theo quyền hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageDeliveryReturnCases"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getOwnDeliveryReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hồ sơ hoàn về theo quyền hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryReturnCase"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    inspectDeliveryReturn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryReturnInspect"];
+            };
+        };
+        responses: {
+            /** @description Hồ sơ hoàn về theo quyền hiện hành */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryReturnCase"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    settleDeliveryReturn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeliveryReturnSettle"];
+            };
+        };
+        responses: {
+            /** @description Hồ sơ hoàn về theo quyền hiện hành */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryReturnCase"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    integrationPaymentCallback: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-integration-signature": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationPaymentCallback"];
+            };
+        };
+        responses: {
+            /** @description Thành công: nhận callback sandbox đã ký */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationResult"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Callback reference/amount/conflict/configuration error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    resolveStoreReturn: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Áo thun cotton",
+                 *       "expected_version": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["ReturnResolutionRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: sửa hoặc ngừng bán product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    respondOwnReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Áo thun cotton",
+                 *       "expected_version": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["ReturnResolutionRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: sửa hoặc ngừng bán product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    resolveAdminReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Áo thun cotton",
+                 *       "expected_version": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["ReturnResolutionRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: sửa hoặc ngừng bán product */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderReturnRequest"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreCatalogAudit: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                action?: string;
+                target_type?: string;
+                actor_user_id?: string;
+                target_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreAudit"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreCommerceAudit: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                action?: string;
+                target_type?: string;
+                actor_user_id?: string;
+                target_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreAudit"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreIdentityAudit: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                action?: string;
+                target_type?: string;
+                actor_user_id?: string;
+                target_id?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: xem review đang hiển thị */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStoreAudit"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    lookupStoreAuditActors: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuditActorLookup"];
+            };
+        };
+        responses: {
+            /** @description Scoped current actor labels */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditActorLabels"];
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    lookupAdminAuditActors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuditActorLookup"];
+            };
+        };
+        responses: {
+            /** @description Scoped current actor labels */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditActorLabels"];
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPlatformMoneyReport: {
+        parameters: {
+            query: {
+                /** @description Đầu kỳ UTC, bao gồm. */
+                from: string;
+                /** @description Cuối kỳ UTC, không bao gồm; phải lớn hơn from. */
+                to: string;
+                store_id?: string;
+                granularity?: "DAY" | "MONTH";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sự kiện tiền theo thời điểm xác nhận, có nguồn đối chiếu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformMoneyReport"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreUnresolvedMoneyMovements: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sự kiện tiền theo thời điểm xác nhận, có nguồn đối chiếu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageUnresolvedMoneyMovements"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminUnresolvedMoneyMovements: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                store_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sự kiện tiền theo thời điểm xác nhận, có nguồn đối chiếu */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageUnresolvedMoneyMovements"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getInventoryReconciliation: {
+        parameters: {
+            query: {
+                variant_id: string;
+                from: string;
+                to: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryReconciliation"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStockCommitments: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                q?: string;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                product_id?: string;
+                /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
+                variant_id?: string;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageStockCommitments"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listOwnAfterSaleHistory: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AfterSaleHistoryPage"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listStoreAfterSaleHistory: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                size?: number;
+            };
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AfterSaleHistoryPage"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminAfterSaleHistory: {
+        parameters: {
+            query?: {
+                cursor?: string;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AfterSaleHistoryPage"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getStoreRefundRecovery: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundRecoveryState"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    requestStoreRefundRecovery: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundRecoveryCommand"];
+            };
+        };
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundRecoveryState"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAdminRefundRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundRecoveryState"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    requestAdminRefundRecovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundRecoveryCommand"];
+            };
+        };
+        responses: {
+            /** @description Lịch sử đúng phạm vi hiện hành */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundRecoveryState"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

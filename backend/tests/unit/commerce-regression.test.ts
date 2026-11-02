@@ -29,7 +29,7 @@ beforeEach(()=>{
   jest.restoreAllMocks();manager.query.mockReset();manager.query.mockResolvedValue([]);records=new Map();
   call=jest.fn(async(operation:string,payload:any)=>{
     if(operation==='QuoteVariants') return {items:[{variant_id:VARIANT,store_id:STORE,quantity:1,price_vnd:100000,available_quantity:10,version:0}]};
-    if(operation==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2}]};
+    if(operation==='ResolveCheckoutContext') return {address_snapshot:{id:ADDRESS},stores:[{id:STORE,name:'Store thật',shipping_fee_vnd:30000,version:2,return_address:{recipient_name:'Kho nhận trả',phone:'0900000000',line1:'12 Đường Test',ward:'A',district:'B',city:'Huế'}}]};
     if(operation==='ReserveInventory') return {reservations:[{id:randomUUID(),order_id:payload?.items?.[0]?.order_id ?? randomUUID(),variant_id:VARIANT,quantity:1,expires_at:new Date(Date.now()+600000).toISOString()}]};
     if(operation==='ConsumeReservation') return {operation_id:payload?.operation_id ?? randomUUID(),status:'APPLIED'};
     if(operation==='ReleaseReservation') return {operation_id:randomUUID(),status:'APPLIED'};
@@ -153,8 +153,10 @@ test.each([['PENDING','CONFIRMED'],['PROCESSING','SHIPPED']])('transition %s -> 
   const source=order(from);
   jest.spyOn(OrderRepository.prototype,'lockStoreOrderById').mockResolvedValue(source);
   jest.spyOn(OrderRepository.prototype,'updateOrderStatusWithHistory').mockResolvedValue({...source,status:to,version:2});
+  const history=[{from_status:from,to_status:to,actor_user_id:USER,created_at:new Date()}];
+  jest.spyOn(OrderRepository.prototype,'findStoreOrderById').mockResolvedValue({...source,status:to,version:2,status_history:history});
   const ship=jest.spyOn(OrderRepository.prototype,'ship').mockResolvedValue();
-  await expect(service().transitionStoreOrder(source.id,{expected_version:1,to_status:to as any},seller,'corr')).resolves.toMatchObject({status:to,version:2});
+  await expect(service().transitionStoreOrder(source.id,{expected_version:1,to_status:to as any},seller,'corr')).resolves.toMatchObject({status:to,version:2,timeline:[{from_status:from,status:to,occurred_at:history[0].created_at.toISOString()}]});
   expect(call).not.toHaveBeenCalled();
   expect(ship).toHaveBeenCalledTimes(to==='SHIPPED'?1:0);
 });
@@ -241,7 +243,7 @@ test('BUG-QUOTE-01: Cart rows returned in reverse order keep identical canonical
       };
     }
     if (op === 'ResolveCheckoutContext') {
-      return { address_snapshot: { id: ADDRESS }, stores: [{ id: STORE, name: 'Store thật', shipping_fee_vnd: 30000, version: 1 }] };
+      return { address_snapshot: { id: ADDRESS }, stores: [{ id: STORE, name: 'Store thật', shipping_fee_vnd: 30000, version: 1, return_address:{recipient_name:'Kho nhận trả',phone:'0900000000',line1:'12 Đường Test',ward:'A',district:'B',city:'Huế'} }] };
     }
     throw new Error('unexpected: ' + op);
   });

@@ -34,6 +34,15 @@ export class AuthGuard implements CanActivate {
     if (!token) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
     verifyToken(token, c.publicKey);
     const context = await internalRequest<any>(`${c.identityUrl}/internal/context`, c.id, c.internalKeys[c.id], request.correlationId, { token });
+    const path=request.path??request.url?.split('?')[0]??'';
+    const expected=request.headers['x-store-context'];
+    // This is an assertion about the caller's Store, never a Store selector.
+    // Resolve current authority first, then reject before any handler can write.
+    if(/^\/(?:api\/v1\/)?store(?:\/|$)/i.test(path)&&expected!==undefined){
+      if(typeof expected!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(expected))throw new ApiError(400,'INVALID_STORE_CONTEXT','Mã Store của yêu cầu không hợp lệ.');
+      const member=context.store_membership;
+      if(member?.status!=='ACTIVE'||typeof member.store_id!=='string'||member.store_id.toLowerCase()!==expected.toLowerCase())throw new ApiError(409,'STORE_CONTEXT_CHANGED','Phạm vi Store đã thay đổi. Đọc lại quyền và mở lại công việc trước khi thao tác.');
+    }
     const roles = this.reflector.getAllAndOverride<string[]>('roles', [ctx.getHandler(), ctx.getClass()]);
     const hasRequiredRole = !roles?.length || roles.some(role => context.roles.includes(role));
     const permissions = this.reflector.getAllAndOverride<string[]>('permissions', [ctx.getHandler(), ctx.getClass()]);

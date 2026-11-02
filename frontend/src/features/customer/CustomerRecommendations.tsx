@@ -13,16 +13,16 @@ export function CustomerRecommendations({productId}:{productId?:string}){
  return <Recommendations key={(productId??'for-you')+':'+(customer??'guest')} productId={productId}/>;
 }
 function Recommendations({productId}:{productId?:string}){
- const [products,setProducts]=useState<OperationOutputs['getProduct'][]>([]),[error,setError]=useState<unknown>(),[loading,setLoading]=useState(true),[source,setSource]=useState(''),[page,setPage]=useState(1),[total,setTotal]=useState(0),[retry,setRetry]=useState(0);
+ const [products,setProducts]=useState<OperationOutputs['getProduct'][]>([]),[recent,setRecent]=useState<OperationOutputs['getProduct'][]>([]),[error,setError]=useState<unknown>(),[loading,setLoading]=useState(true),[source,setSource]=useState(''),[page,setPage]=useState(1),[total,setTotal]=useState(0),[retry,setRetry]=useState(0);
  useEffect(()=>{let active=true;setLoading(true);setError(undefined);setProducts([]);
   (async()=>{
    if(productId){const result=await getRelatedProducts(productId,page);if(active){setProducts(result.items);setTotal(result.total)}}
-   else{const result=await getCustomerRecommendations();const values=await Promise.all(result.product_ids.map(async id=>{try{return await callOperation('getProduct',{path:{id}})}catch(e){if(e instanceof ApiError&&e.status===404)return undefined;throw e}}));if(active){setProducts(values.filter((v):v is OperationOutputs['getProduct']=>!!v&&v.status==='ACTIVE'));setSource(result.source)}}
+   else{const result=await getCustomerRecommendations();const ids=[...new Set([...result.product_ids,...result.recently_viewed_product_ids])];const values=await Promise.all(ids.map(async id=>{try{return await callOperation('getProduct',{path:{id}})}catch(e){if(e instanceof ApiError&&e.status===404)return undefined;throw e}}));if(active){const byId=new Map(values.filter((v):v is OperationOutputs['getProduct']=>!!v&&v.status==='ACTIVE'&&!!v.id).map(v=>[v.id!,v]));setProducts(result.product_ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]));setRecent(result.recently_viewed_product_ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]));setSource(result.source)}}
   })().catch(e=>{if(active)setError(e)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false};
  },[productId,page,retry]);
- return <section className="boot-card" aria-label={productId?'Sản phẩm liên quan':'Dành cho bạn'}><h3>{productId?'Sản phẩm liên quan':'Dành cho bạn'}</h3>
-  {loading?<Loading/>:error?<ErrorView error={error} onRetry={()=>setRetry(n=>n+1)}/>:<>{source&&<small>Nguồn gợi ý: {source}</small>}{!products.length&&<p>Chưa có gợi ý phù hợp.</p>}
+ return <><section className="boot-card" aria-label={productId?'Sản phẩm liên quan':'Dành cho bạn'}><h3>{productId?'Sản phẩm liên quan':'Dành cho bạn'}</h3>
+  {loading?<Loading/>:error?<ErrorView error={error} onRetry={()=>setRetry(n=>n+1)}/>:<>{!products.length&&<p>Chưa có gợi ý phù hợp.</p>}
    <div className="market-product-grid">{products.map(p=><CatalogCard key={p.id} product={p}/>)}</div>
    {productId&&<Pagination page={page} size={4} total={total} onPage={setPage}/>}</>}
- </section>;
+ </section>{!productId&&!loading&&!error&&recent.length>0&&<section className="boot-card" aria-label="Sản phẩm đã xem"><h3>Sản phẩm đã xem</h3><div className="market-product-grid">{recent.map(p=><CatalogCard key={p.id} product={p}/>)}</div></section>}</>;
 }

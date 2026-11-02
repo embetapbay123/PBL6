@@ -12,7 +12,7 @@ The default web entry uses `frontend/src/live/LiveApp.tsx`. It brings the existi
 | `/customer/orders` | Owned history, detail, permitted cancellation and a link to online payment |
 | `/customer/settings` | Consent, Store application and invitation flows |
 | `/seller` | Store overview; menu follows the resolved membership permissions |
-| `/seller/products` | Management list including nonpublic Products and the existing active-Product editor |
+| `/seller/products` | Management list and Store-scoped editor including nonpublic Products; the editor can add a Variant or image |
 | `/seller/inventory` | Actual quantity/reserved/available balances and versioned adjustments with a required reason |
 | `/seller/orders` | Store order detail, legal status changes, cancellation and explicit cash-receipt confirmation for COD |
 | `/seller/vouchers` | Owner-only list, create, stop and usage, including a percentage discount cap |
@@ -39,4 +39,4 @@ The default web entry uses `frontend/src/live/LiveApp.tsx`. It brings the existi
 
 Build with `npm --prefix frontend run build`. `frontend/tests/live-market.spec.ts` intercepts every API request and covers the new portals, phone layout, permission denial, version conflicts, immutable stock retries, percentage voucher creation and mixed-payment checkout recovery. Existing Auth, Order, Payment, settings, Review and AI browser suites remain enabled. The full CI runs against disposable integration services; do not run write-oriented CI tests against the shared demo data.
 
-Existing module owners and acceptance criteria remain unchanged. This integration does not complete the remaining Seller Product/Variant/image forms (#9/#10), the management-detail contract for nonpublic Product editing, backend Review (#16/#69), real email delivery, provider Refund or Android device acceptance. Backend 501/503 responses stay visible. Public deployment and actual browser checks must be recorded separately from source/fixture verification.
+Workspace update 28/10/2026: Seller taxonomy/variant/image editors, public Store profile, favorites, messaging, notifications, return/exchange requests, purchased reviews, Admin moderation and audit metadata have concrete implementations. Online returns now enqueue the existing refund kernel using stable request IDs. See [verification evidence](frontend-verification-handoff.md) and [feature matrix](marketplace-feature-matrix.md). Real email delivery, online payment/refund and generative AI provider acceptance remain separate; the code never substitutes fixture success for 501/503. Android is outside this web task.

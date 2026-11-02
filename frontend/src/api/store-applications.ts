@@ -22,9 +22,9 @@ export async function listOwnStoreApplications(page = 1, size = 20): Promise<Pag
   return await callOperation('listOwnStoreApplications', { query: { page, size } }) as PageStoreApplications;
 }
 
-export async function listStoreApplications(page = 1, size = 20): Promise<PageStoreApplications> {
-  if (fixture) return mockListStoreApplications(page, size);
-  return await callOperation('listStoreApplications', { query: { page, size } }) as PageStoreApplications;
+export async function listStoreApplications(page = 1, size = 20,status?:'PENDING'|'APPROVED'|'REJECTED',q?:string): Promise<PageStoreApplications> {
+  if (fixture) return mockListStoreApplications(page, size,status,q);
+  return await callOperation('listStoreApplications', { query: { page, size,...(status?{status}:{}),...(q?{q}:{}) } }) as PageStoreApplications;
 }
 
 export async function reviewStoreApplication(id: string, body: StoreApplicationDecision): Promise<StoreApplication> {

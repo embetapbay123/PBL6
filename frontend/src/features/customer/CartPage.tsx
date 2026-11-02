@@ -1,9 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import {PurchaseActionBar} from '../../components/PurchaseActionBar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {useQueries,useQueryClient} from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { callOperation } from '../../api/operations';
 import { useAuth } from '../../api/auth-context';
+import {StoreLabel} from '../../live/StoreLabel';
 import {CartProduct} from '../../live/CartProduct';
+import {clearBuyNow,checkoutState,variantLabel} from './checkout-intent';
 
 interface CartItem {
   id: string;
@@ -11,13 +15,6 @@ interface CartItem {
   product_id: string;
   store_id: string;
   quantity: number;
-}
-
-interface CartList {
-  items: CartItem[];
-  page: number;
-  size: number;
-  total: number;
 }
 
 const PAGE_SIZE = 100;
@@ -58,6 +55,9 @@ export const CartPage: React.FC = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   const userId = session?.context?.user_id;
+  const cache=useQueryClient(),mutationInFlight=useRef(false);
+  const heading=useRef<HTMLHeadingElement>(null),choices=useRef(new Map<string,HTMLInputElement>());
+  const focusAfterRemove=useRef<string|null|undefined>(undefined);
 
   const [items, setItems] = useState<CartItem[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -65,6 +65,15 @@ export const CartPage: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [needsReconcile,setNeedsReconcile]=useState(false);
+  const [notice,setNotice]=useState('');
+
+  useEffect(()=>{
+    if(focusAfterRemove.current===undefined)return;
+    const next=focusAfterRemove.current;
+    focusAfterRemove.current=undefined;
+    (next?choices.current.get(next):heading.current)?.focus();
+  },[items]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,49 +82,67 @@ export const CartPage: React.FC = () => {
     try {
       const all = await fetchAllCartItems();
       setItems(all);
-      setSelected(new Set(all.map((item) => item.id)));
+      // A readback also settles a DELETE whose acknowledgement was lost. Publish
+      // the complete read to the header instead of leaving its cached count stale.
+      cache.setQueryData(['cart-summary'],{items:all.slice(0,1),page:1,size:1,total:all.length});
+      let previous:string[]|undefined;
+      try{const raw=sessionStorage.getItem(getSelectionKey(userId)??'');if(raw!==null){const values=JSON.parse(raw);if(Array.isArray(values))previous=values.filter(x=>typeof x==='string');}}catch{/* Select defaults only when no valid saved choice exists. */}
+      setSelected(new Set(previous?all.filter(item=>previous!.includes(item.id)).map(item=>item.id):all.map(item=>item.id)));
+      setNeedsReconcile(false);
     } catch (error) {
       setItems(null);
       setLoadError(describe(error));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId,cache]);
 
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(()=>{if(items!==null&&!loading&&userId)try{sessionStorage.setItem(getSelectionKey(userId)!,JSON.stringify([...selected]));}catch{/* Optional storage. */}},[items,selected,loading,userId]);
 
   const changeQuantity = async (item: CartItem, delta: number) => {
     const quantity = item.quantity + delta;
-    if (quantity < 1 || busyId) return;
+    if (quantity < 1 || mutationInFlight.current || needsReconcile) return;
+    mutationInFlight.current=true;
     setBusyId(item.id);
     setActionError(null);
     try {
       await callOperation('updateCartItem', { path: { id: item.id }, body: { quantity } });
       setItems((prev) => prev && prev.map((i) => (i.id === item.id ? { ...i, quantity } : i)));
+      setNotice(`Đã cập nhật ${itemLabel(item)}. Số lượng: ${quantity}.`);
     } catch (error) {
       setActionError(describe(error));
+      if(!(error instanceof ApiError)||error.status===0||error.status===408||error.status>=500)setNeedsReconcile(true);
     } finally {
+      mutationInFlight.current=false;
       setBusyId(null);
     }
   };
 
   const removeItem = async (item: CartItem) => {
-    if (busyId) return;
+    if (mutationInFlight.current||needsReconcile) return;
+    mutationInFlight.current=true;
     setBusyId(item.id);
     setActionError(null);
     try {
       await callOperation('removeCartItem', { path: { id: item.id } });
+      const remaining=(items??[]).filter(i=>i.id!==item.id),index=(items??[]).findIndex(i=>i.id===item.id);
+      focusAfterRemove.current=remaining[Math.min(index,remaining.length-1)]?.id??null;
       setItems((prev) => prev && prev.filter((i) => i.id !== item.id));
+      setNotice(`Đã xóa ${itemLabel(item)} khỏi giỏ. Bạn có thể chọn lại tại trang sản phẩm.`);
       setSelected((prev) => {
         const next = new Set(prev);
         next.delete(item.id);
         return next;
       });
+      await cache.invalidateQueries({queryKey:['cart-summary']});
     } catch (error) {
       setActionError(describe(error));
+      if(!(error instanceof ApiError)||error.status===0||error.status===408||error.status>=500)setNeedsReconcile(true);
     } finally {
+      mutationInFlight.current=false;
       setBusyId(null);
     }
   };
@@ -137,8 +164,10 @@ export const CartPage: React.FC = () => {
   };
 
   const goCheckout = () => {
+    if(!userId||mutationInFlight.current||needsReconcile||loading)return;
     const cartItemIds = Array.from(selected);
     if (cartItemIds.length === 0) return;
+    clearBuyNow(userId);
     const key = getSelectionKey(userId);
     if (key) {
       try {
@@ -147,18 +176,30 @@ export const CartPage: React.FC = () => {
         /* storage can be unavailable */
       }
     }
-    navigate('/checkout', { state: { cartItemIds } });
+    navigate('/checkout', { state: checkoutState(userId,{cartItemIds}) });
   };
 
   const selectedQuantity = (items ?? [])
     .filter((item) => selected.has(item.id))
     .reduce((sum, item) => sum + item.quantity, 0);
+  const productIds=[...new Set((items??[]).map(item=>item.product_id))];
+  const metadata=useQueries({queries:productIds.map(id=>({queryKey:['product',id],queryFn:()=>callOperation('getProduct',{path:{id}}),retry:false}))});
+  const productFor=(item:CartItem)=>{const result=metadata[productIds.indexOf(item.product_id)];return result?.error?undefined:result?.data;};
+  function itemLabel(item:CartItem){
+    const product=productFor(item),variant=product?.variants?.find(v=>v.id===item.variant_id);
+    return `${product?.title??'Sản phẩm mã '+shortId(item.product_id)} · ${variant?variantLabel(variant.variant_values):'Phân loại mã '+shortId(item.variant_id)}`;
+  }
+  const selectedRows=(items??[]).filter(item=>selected.has(item.id));
+  const values=selectedRows.map(item=>productFor(item)?.variants?.find(v=>v.id===item.variant_id)?.price_vnd);
+  const subtotal=values.some(value=>value===undefined)?null:values.reduce<number>((sum,value,index)=>sum+value!*selectedRows[index].quantity,0);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">Giỏ hàng của bạn (Cart)</h1>
+    <div className="cart-page">
+      <h1 ref={heading} tabIndex={-1} className="text-2xl font-bold mb-6">Giỏ hàng của bạn (Cart)</h1>
+      <p role="status" className={notice?'mb-4 text-sm text-slate-700':'sr-only'}>{notice}</p>
 
       {loading && <p className="text-gray-500">Đang tải giỏ hàng...</p>}
+      {needsReconcile&&<p role="alert">Chưa rõ kết quả cập nhật giỏ. <button type="button" disabled={!!busyId} onClick={()=>void load()}>Đọc lại giỏ hàng</button> trước khi tiếp tục; không gửi lại thao tác cũ.</p>}
 
       {!loading && loadError && (
         <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg space-y-3">
@@ -186,36 +227,39 @@ export const CartPage: React.FC = () => {
       )}
 
       {!loading && !loadError && items && items.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
+        <div className="cart-layout">
+          <div className="cart-store-groups">
             {actionError && (
               <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">
                 {actionError}
               </div>
             )}
+            {metadata.some(result=>result.error)&&<p role="alert">Chưa đọc đủ thông tin hàng để tính tạm tính. <button type="button" disabled={metadata.some(result=>result.isFetching)} onClick={()=>{for(const result of metadata)if(result.error)void result.refetch();}}>Đọc lại thông tin hàng</button></p>}
 
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <input type="checkbox" checked={allSelected} onChange={toggleAll} />
               Chọn tất cả
             </label>
 
-            {items.map((item) => (
+            {Array.from(new Set(items.map(item=>item.store_id))).map(storeId=><section className="cart-store-group" key={storeId}><StoreLabel id={storeId}/>{items.filter(item=>item.store_id===storeId).map((item) => (
               <div
                 key={item.id}
+                role="group"
+                aria-label={'Dòng giỏ: '+itemLabel(item)}
                 className="bg-white p-4 rounded-lg shadow flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
-                    aria-label={`Chọn sản phẩm ${shortId(item.product_id)}`}
+                    ref={element=>{if(element)choices.current.set(item.id,element);else choices.current.delete(item.id);}}
+                    aria-label={'Chọn '+itemLabel(item)}
                     checked={selected.has(item.id)}
                     onChange={() => toggleItem(item.id)}
                   />
                   <div>
-                    <CartProduct productId={item.product_id} variantId={item.variant_id}/>
-                    <p className="text-xs text-gray-500">
-                      Biến thể {shortId(item.variant_id)} · Cửa hàng {shortId(item.store_id)}
-                    </p>
+                    <div id={'cart-details-'+item.id}><CartProduct productId={item.product_id} variantId={item.variant_id} quantity={item.quantity}/></div>
+                    <p className="text-sm mt-2">{busyId!==null||needsReconcile?<span>Chọn phân loại khác sau khi đọc lại kết quả cập nhật giỏ.</span>:<Link to={'/products/'+item.product_id}>Chọn phân loại khác</Link>}<br/>Thêm lựa chọn mới, sau đó xóa dòng cũ trong giỏ.</p>
+
                   </div>
                 </div>
 
@@ -224,8 +268,9 @@ export const CartPage: React.FC = () => {
                     <button
                       type="button"
                       aria-label="Giảm số lượng"
+                      aria-describedby={'cart-details-'+item.id}
                       onClick={() => void changeQuantity(item, -1)}
-                      disabled={busyId !== null || item.quantity <= 1}
+                      disabled={busyId !== null || needsReconcile || item.quantity <= 1}
                       className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded font-bold disabled:opacity-50"
                     >
                       -
@@ -234,8 +279,9 @@ export const CartPage: React.FC = () => {
                     <button
                       type="button"
                       aria-label="Tăng số lượng"
+                      aria-describedby={'cart-details-'+item.id}
                       onClick={() => void changeQuantity(item, 1)}
-                      disabled={busyId !== null}
+                      disabled={busyId !== null || needsReconcile}
                       className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded font-bold disabled:opacity-50"
                     >
                       +
@@ -243,32 +289,27 @@ export const CartPage: React.FC = () => {
                   </div>
                   <button
                     type="button"
+                    aria-describedby={'cart-details-'+item.id}
                     onClick={() => void removeItem(item)}
-                    disabled={busyId !== null}
+                    disabled={busyId !== null || needsReconcile}
                     className="text-sm text-red-600 hover:underline disabled:opacity-50"
                   >
                     Xóa
                   </button>
                 </div>
               </div>
-            ))}
+            ))}</section>)}
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow h-fit space-y-4">
+          <div className="purchase-summary space-y-4">
             <h2 className="text-lg font-bold border-b pb-2">Tóm tắt đơn hàng</h2>
             <div className="text-sm space-y-1 text-gray-600">
               <p>Sản phẩm đã chọn: {selected.size}</p>
               <p>Tổng số lượng: {selectedQuantity}</p>
-              <p className="text-xs text-gray-400">Giá cuối cùng được tính ở bước thanh toán.</p>
+              <p aria-live="polite" aria-atomic="true">Tạm tính tiền hàng: {subtotal!==null&&Number.isSafeInteger(subtotal)?subtotal.toLocaleString('vi-VN')+' ₫':'Chưa đủ thông tin để tính'}</p>
+              <p className="text-xs text-gray-400">Tạm tính chỉ gồm tiền hàng, chưa gồm phí giao hàng và ưu đãi. Tổng cuối cùng được xác nhận ở bước thanh toán.</p>
             </div>
-            <button
-              type="button"
-              onClick={goCheckout}
-              disabled={selected.size === 0}
-              className="block w-full bg-indigo-600 text-white text-center py-2.5 rounded-md font-semibold hover:bg-indigo-700 transition disabled:opacity-50"
-            >
-              Tiến hành thanh toán
-            </button>
+            <PurchaseActionBar summary={selected.size+' sản phẩm'} label="Đã chọn" onAction={goCheckout} disabled={selected.size===0||busyId!==null||needsReconcile||loading}>Tiến hành thanh toán</PurchaseActionBar>
           </div>
         </div>
       )}

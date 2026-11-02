@@ -16,7 +16,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   await page.locator('input[type="email"]').fill(`${role.toLowerCase()}@example.test`);
   await page.locator('input[type="password"]').fill('test-password');
   const loginResponse = page.waitForResponse(response => response.url().endsWith('/api/v1/auth/login'));
-  await page.locator('form button').click();
+  await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
   expect((await loginResponse).status()).toBe(200);
   await expect(page.getByText(role, { exact: true })).toBeVisible();
 }
@@ -24,15 +24,19 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
  (fixtureRun ? test.skip : test)('customer submission and history use the API and display the server response', async ({ page }) => {
   await signInAs(page, 'CUSTOMER');
   const submitted: unknown[] = [];
+  let saved:typeof application|undefined;
   await page.route('**/api/v1/me/store-applications*', async route => {
     if (route.request().method() === 'POST') {
       submitted.push(route.request().postDataJSON());
-      await route.fulfill({ json: { ...application, id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' }, status: 201 });
+      saved={ ...application, id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc' };
+      await route.fulfill({ json: saved, status: 201 });
     } else {
-      await route.fulfill({ json: { items: [application], total: 1, page: 1, size: 10 } });
+      // A pending application disables a second submission. Start as a new applicant,
+      // then expose the actual created row in the history readback.
+      await route.fulfill({ json: { items: saved?[saved]:[], total: saved?1:0, page: 1, size: 10 } });
     }
   });
-  await page.locator('a[href="/customer/store-applications"]').click();
+  await page.getByRole('link',{name:'Gian hàng của bạn',exact:true}).click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -53,7 +57,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [], total: 0, page: 1, size: 10 } });
     }
   });
-  await page.locator('a[href="/customer/store-applications"]').click();
+  await page.getByRole('link',{name:'Gian hàng của bạn',exact:true}).click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -77,7 +81,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
     }
   });
   await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
-  await page.locator('a[href="/admin/store-applications"]').click();
+  await page.getByRole('link',{name:'Hồ sơ mở gian hàng',exact:true}).click();
   await page.locator('.store-app-icon-button--approve').first().click();
   await page.locator('.store-app-dialog-actions .store-app-button--primary').click();
   await expect(page.locator('.store-app-notice')).toContainText('API Store');

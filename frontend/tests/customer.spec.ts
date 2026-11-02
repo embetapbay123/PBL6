@@ -202,6 +202,8 @@ test('checkout sends Store-keyed COD methods and preserves confirm key and paylo
   await expect(button).toBeEnabled();
   expect(quoteBodies.length).toBeGreaterThan(0);
   expect(quoteBodies[0].payment_methods).toEqual({ [STORE]: 'COD' });
+  if(process.env.UI_CAPTURE==='1'){for(const width of [1440,1024,768,390]){await page.setViewportSize({width,height:900});await page.screenshot({path:'../artifacts/ui-professional/checkout-fixture-'+width+'.png',fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);}await page.setViewportSize({width:1280,height:800});}
+
 
   await button.click();
   await expect(page.getByRole('alert')).toContainText('Confirm unavailable');
@@ -273,7 +275,7 @@ test('detail adds the selected active variant through the real Cart API', async 
   const item = await response.json();
   try {
     expect(response.request().postDataJSON()).toMatchObject({ product_id: PRODUCT, quantity: 1 });
-    await expect(page.getByRole('status')).toContainText('Đã thêm sản phẩm vào giỏ hàng.');
+    await expect(page.getByRole('status').filter({hasText:'Đã thêm sản phẩm vào giỏ hàng.'})).toBeVisible();
   } finally {
     const old = previous.find((value: { id: string }) => value.id === item.id);
     const cleanup = old

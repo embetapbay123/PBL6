@@ -70,14 +70,14 @@ test('shows QR, code and amount, keeps waiting on PENDING, then shows success on
   expect(c.bodies[0]).toEqual({ expected_order_version: 3 });
 });
 
-test('UNKNOWN stops polling, offers no retry and is not shown as success', async ({ page }) => {
+test('UNKNOWN stops automatic polling and permits read-only reconciliation without another attempt', async ({ page }) => {
   await login(page);
-  const c = await open(page, { payment: () => ({ json: payment('UNKNOWN') }) });
+  const c = await open(page, { payment: n => ({ json: payment(n===1?'UNKNOWN':'SUCCEEDED') }) });
   await expect(page.getByTestId('payment-unknown')).toBeVisible();
-  await page.clock.runFor(12000);
-  expect(c.payments).toBe(1);
-  await expect(page.getByTestId('payment-unknown').getByRole('button')).toHaveCount(0);
+  await page.clock.runFor(12000);expect(c.payments).toBe(1);expect(c.attempts).toBe(1);
   await expect(page.getByTestId('payment-succeeded')).toHaveCount(0);
+  await page.getByRole('button',{name:'Đối soát lại trạng thái',exact:true}).click();
+  await expect(page.getByTestId('payment-succeeded')).toBeVisible();expect(c.payments).toBe(2);expect(c.attempts).toBe(1);
 });
 
 test('FAILED stops polling and offers a new attempt', async ({ page }) => {
@@ -131,4 +131,16 @@ test('REFUNDED is terminal and is not presented as payment success',async({page}
 });
 test('already paid Order is read without creating a payment attempt',async({page})=>{
  await login(page);const c=await open(page,{order:{json:order({status:'CONFIRMED',payment_status:'SUCCEEDED'})},payment:()=>({json:payment('PENDING')})});await expect(page.getByTestId('payment-succeeded')).toBeVisible();expect(c.attempts).toBe(0);
+});
+
+test('integration mode is visibly simulated and offers no bank QR or client-side fake callback',async({page})=>{
+ await login(page);await open(page,{attempt:{json:{...attempt(),provider:'INTEGRATION',qr_url:undefined}},payment:()=>({json:payment('PENDING')})});
+ await expect(page.getByTestId('payment-waiting')).toContainText('Không chuyển tiền thật');await expect(page.getByTestId('payment-waiting')).toContainText('Mã mô phỏng:');
+ await expect(page.getByAltText('Mã QR thanh toán')).toHaveCount(0);await expect(page.getByRole('button',{name:/Mô phỏng.*Callback/})).toHaveCount(0);
+});
+
+
+test('zero payable is explained without a provider attempt, polling or a claim that money was received',async({page})=>{
+ await login(page);const counters=await open(page,{order:{json:order({payment_status:'SUCCEEDED',amounts:{goods_vnd:100000,store_discount_vnd:100000,platform_discount_vnd:0,shipping_vnd:0,payable_vnd:0}})},payment:()=>({json:payment('SUCCEEDED')})});
+ await expect(page.getByTestId('payment-not-required')).toContainText('Đơn 0đ không cần chuyển tiền');expect(counters.attempts).toBe(0);expect(counters.payments).toBe(0);await expect(page.getByText('Đã nhận thanh toán.',{exact:true})).toHaveCount(0);
 });

@@ -1,5 +1,7 @@
-import { FormEvent, useState } from "react";
+import { FormEvent,useEffect,useRef, useState } from "react";
+import {useUnsavedChanges} from '../components/useUnsavedChanges';
 import { useQuery } from "@tanstack/react-query";
+import {ApiError,isUncertainMutation} from "../api/client";
 import { callOperation } from "../api/operations";
 import type {
   OperationInputs,
@@ -12,17 +14,36 @@ type Voucher = OperationOutputs["createStoreVoucher"];
 const localDateTime = (date: Date) =>
   new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
-    .slice(0, 16);
+    .slice(0, 19);
+
+async function readVoucher(scope:'STORE'|'PLATFORM',identity:{id?:string;code?:string}):Promise<Voucher|undefined>{
+  // A saved start date can move the voucher to another page. Read from the beginning.
+  for(let page=1;page<=100;page++){
+    const input={query:{page,size:100}},result=scope==='STORE'?await callOperation('listStoreVouchers',input):await callOperation('listPlatformVouchers',input);
+    const found=result.items.find(v=>identity.id?v.id===identity.id:v.code.toUpperCase()===identity.code?.toUpperCase());
+    if(found)return found;
+    if(result.page*result.size>=result.total)return undefined;
+    if(!result.items.length)throw new ApiError(503,'VOUCHER_READBACK_INCOMPLETE','Danh sách thay đổi trong khi đọc. Đọc lại trước khi thao tác tiếp.');
+  }
+  throw new ApiError(503,'VOUCHER_READBACK_LIMIT','Chưa đọc hết danh sách voucher. Chưa thể kết luận kết quả; giữ nguyên yêu cầu để đối chiếu.');
+}
 
 /** Store is derived by the server from the authenticated membership, never from an editable ID. */
 export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
   const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
+  const [editing,setEditing]=useState<Voucher>();
+  const [statusReview,setStatusReview]=useState<{id:string;code:string;requested:'ACTIVE'|'STOPPED'}>();
   const [usage, setUsage] = useState<{
     code: string;
     value: OperationOutputs["getStoreVoucherUsage"];
   }>();
   const command = useCommand();
+  const formCommand=useCommand();
+  const [formReview,setFormReview]=useState(false);
+  const [formDirty,setFormDirty]=useState(false);
+  const discardDraft=()=>!formDirty||window.confirm('Bạn có thay đổi voucher chưa lưu. Bỏ bản nháp để mở công việc khác?');
+  const controlsLocked=command.busy||formCommand.busy||formReview;
   const list = useQuery({
     queryKey: ["vouchers", scope, page],
     queryFn: () =>
@@ -31,26 +52,36 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
         : callOperation("listPlatformVouchers", { query: { page, size: 20 } }),
   });
 
-  const stop = (voucher: Voucher) => {
-    if (!voucher.id || voucher.version === undefined) return;
+  const changeStatus = (voucher: Voucher, status:"ACTIVE"|"STOPPED") => {
+    if (controlsLocked||!voucher.id || voucher.version === undefined || statusReview?.id===voucher.id || (showForm&&editing?.id===voucher.id)) return;
     void command.run(async () => {
+      setUsage(undefined);
       try {
         const input = {
           path: { id: voucher.id! },
           body: {
-            status: "STOPPED" as const,
+            status,
             expected_version: voucher.version!,
           },
         };
         if (scope === "STORE") await callOperation("updateStoreVoucher", input);
         else await callOperation("updatePlatformVoucher", input);
-        command.setNotice("Đã dừng voucher " + voucher.code + ".");
+        command.setNotice((status==="STOPPED"?"Đã dừng voucher ":"Đã mở lại voucher ") + voucher.code + ". Đơn đã chốt giữ nguyên ưu đãi.");
+      } catch(error) {
+        if(isUncertainMutation(error)||(error instanceof ApiError&&error.status===409))setStatusReview({id:voucher.id!,code:voucher.code,requested:status});
+        throw error;
       } finally {
         // A conflict or uncertain response requires a fresh version before another attempt.
         await list.refetch();
       }
     });
   };
+  const readStatus=()=>void command.run(async()=>{
+    if(!statusReview)return;
+    const current=await readVoucher(scope,{id:statusReview.id});
+    if(!current||current.version===undefined)throw new ApiError(409,'VOUCHER_READBACK_REQUIRED','Chưa tìm thấy phiên bản voucher ở trang này. Quay lại trang có mã voucher rồi đọc lại; chưa gửi quyết định mới.');
+    command.setNotice('Đã đọc lại '+current.code+': '+(current.status==='ACTIVE'?'đang mở':'đang dừng')+'. '+(current.status===statusReview.requested?'Trạng thái đã đạt yêu cầu.':'Trạng thái hiện tại chưa phải yêu cầu trước; hãy kiểm tra trước khi chọn lại thao tác.')+' Không tự gửi lại lệnh.');setStatusReview(undefined);await list.refetch();
+  });
   const showUsage = (voucher: Voucher) =>
     void command.run(async () => {
       setUsage(undefined);
@@ -69,20 +100,28 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
       <p className="text-slate-500">
         Theo dõi ưu đãi, giới hạn sử dụng và số lượt đã áp dụng.
       </p>
-      <button onClick={() => setShowForm((v) => !v)}>
-        {showForm ? "Đóng form tạo" : "Tạo voucher mới"}
+      <button disabled={controlsLocked||!!statusReview} onClick={() => {if(!discardDraft())return;formCommand.setError(undefined);formCommand.setNotice('');setEditing(undefined);setShowForm((v) => !v);}}>
+        {showForm ? editing?"Đóng form sửa":"Đóng form tạo" : "Tạo voucher mới"}
       </button>
       {showForm && (
         <CreateVoucher
+          key={editing?.id??'create'}
           scope={scope}
-          done={() => {
-            setShowForm(false);
+          initial={editing}
+          command={formCommand}
+          onReview={setFormReview}
+          onDirty={setFormDirty}
+          reloadInitial={()=>readVoucher(scope,{id:editing?.id})}
+          done={(notice) => {
+            setFormReview(false);setUsage(undefined);command.setNotice(notice);
+            setShowForm(false);setEditing(undefined);
             void list.refetch();
           }}
         />
       )}
       {command.error != null && <ErrorView error={command.error} />}
       {command.notice && <p role="status">{command.notice}</p>}
+      {statusReview&&<section className="boot-card" aria-label="Kiểm tra quyết định voucher"><h2>Cần đọc lại voucher {statusReview.code}</h2><p>Quyết định trước bị xung đột hoặc chưa rõ kết quả. Tạm khóa sửa và đổi trạng thái mã này để tránh gửi tiếp từ phiên bản cũ.</p><button type="button" disabled={command.busy||list.isFetching} onClick={readStatus}>Đọc lại trạng thái voucher</button></section>}
       {usage && (
         <div className="boot-card" role="status">
           <h3>Lượt dùng {usage.code}</h3>
@@ -121,7 +160,7 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                       {v.discount_type === "PERCENT"
                         ? v.discount_value + "%"
                         : formatMoney(v.discount_value)}
-                      {v.max_discount_vnd != null && (
+                      {v.discount_type === "PERCENT" && v.max_discount_vnd != null && (
                         <p>Tối đa {formatMoney(v.max_discount_vnd)}</p>
                       )}
                     </td>
@@ -140,20 +179,24 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                     </td>
                     <td>
                       <button
-                        disabled={command.busy || !v.id}
+                        disabled={controlsLocked || !v.id}
                         onClick={() => showUsage(v)}
                       >
                         Xem lượt dùng
                       </button>
+                      <button disabled={controlsLocked||!v.id||!!statusReview} onClick={()=>{if(showForm&&editing?.id===v.id)return;if(!discardDraft())return;formCommand.setError(undefined);formCommand.setNotice('');setEditing(v);setShowForm(true);}}>Sửa voucher</button>
+                      {v.status === "STOPPED"&&<button disabled={controlsLocked||list.isFetching||!v.id||v.version===undefined||statusReview?.id===v.id||(showForm&&editing?.id===v.id)} onClick={()=>changeStatus(v,'ACTIVE')}>Mở lại voucher</button>}
                       {v.status === "ACTIVE" && (
                         <button
                           disabled={
-                            command.busy ||
+                            controlsLocked ||
                             list.isFetching ||
                             !v.id ||
-                            v.version === undefined
+                            v.version === undefined ||
+                            statusReview?.id===v.id ||
+                            (showForm&&editing?.id===v.id)
                           }
-                          onClick={() => stop(v)}
+                          onClick={() => changeStatus(v,"STOPPED")}
                         >
                           Dừng voucher
                         </button>
@@ -165,12 +208,12 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
             </table>
             {!list.data.items.length && <p>Chưa có voucher ở trang này.</p>}
           </div>
-          <Pagination
+          <fieldset disabled={controlsLocked||list.isFetching}><legend>Trang voucher</legend><Pagination
             page={page}
             size={list.data.size}
             total={list.data.total}
             onPage={setPage}
-          />
+          /></fieldset>
         </>
       )}
     </section>
@@ -179,25 +222,34 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
 
 function CreateVoucher({
   scope,
-  done,
+  done,initial,reloadInitial,command,onReview,onDirty,
 }: {
+  initial?:Voucher;reloadInitial:()=>Promise<Voucher|undefined>;
   scope: "STORE" | "PLATFORM";
-  done: () => void;
+  done: (notice:string) => void;
+  command:ReturnType<typeof useCommand>;
+  onReview:(value:boolean)=>void;
+  onDirty:(value:boolean)=>void;
 }) {
-  const command = useCommand();
-  const [code, setCode] = useState(""),
-    [type, setType] = useState<"FIXED" | "PERCENT">("FIXED");
-  const [value, setValue] = useState(10000),
-    [minimum, setMinimum] = useState(50000),
-    [cap, setCap] = useState(50000);
-  const [limit, setLimit] = useState(100),
-    [perCustomer, setPerCustomer] = useState(1);
-  const [start, setStart] = useState(() => localDateTime(new Date()));
+  const submitted=useRef<OperationInputs['createStoreVoucher']['body']|undefined>(undefined);
+  const [code, setCode] = useState(initial?.code??""),
+    [type, setType] = useState<"FIXED" | "PERCENT">(initial?.discount_type??"FIXED");
+  const [value, setValue] = useState(initial?.discount_value??10000),
+    [minimum, setMinimum] = useState(initial?.min_goods_vnd??50000),
+    [cap, setCap] = useState(initial?.max_discount_vnd??50000);
+  const [capped,setCapped]=useState(initial?initial.max_discount_vnd!=null:true),[notFound,setNotFound]=useState(false);
+  const [limit, setLimit] = useState(initial?.usage_limit??100),
+    [perCustomer, setPerCustomer] = useState(initial?.per_customer_limit??1);
+  const [start, setStart] = useState(() => localDateTime(initial?new Date(initial.starts_at):new Date()));
   const [end, setEnd] = useState(() =>
-    localDateTime(new Date(Date.now() + 30 * 86400000)),
+    localDateTime(initial?new Date(initial.ends_at):new Date(Date.now() + 30 * 86400000)),
   );
+  const [blocked,setBlocked]=useState(false),[version,setVersion]=useState(initial?.version),[server,setServer]=useState<Voucher>(),[message,setMessage]=useState('');
+  const fields=JSON.stringify({code,type,value,minimum,cap,capped,limit,perCustomer,start,end}),original=useRef(fields),dirty=fields!==original.current;
+  useEffect(()=>{onDirty(dirty);return()=>onDirty(false);},[dirty,onDirty]);
+  const release=useUnsavedChanges(dirty||command.busy||blocked);
   const submit = (event: FormEvent) => {
-    event.preventDefault();
+    event.preventDefault();if(blocked)return;
     void command.run(async () => {
       const body: OperationInputs["createStoreVoucher"]["body"] = {
         code: code.trim(),
@@ -205,26 +257,29 @@ function CreateVoucher({
         discount_type: type,
         discount_value: value,
         min_goods_vnd: minimum,
-        ...(type === "PERCENT" ? { max_discount_vnd: cap } : {}),
-        starts_at: new Date(start).toISOString(),
-        ends_at: new Date(end).toISOString(),
+        ...(type === "PERCENT"&&capped ? { max_discount_vnd: cap } : {}),
+        starts_at: initial&&start===localDateTime(new Date(initial.starts_at))?new Date(initial.starts_at).toISOString():new Date(start).toISOString(),
+        ends_at: initial&&end===localDateTime(new Date(initial.ends_at))?new Date(initial.ends_at).toISOString():new Date(end).toISOString(),
         usage_limit: limit,
         per_customer_limit: perCustomer,
       };
-      if (scope === "STORE")
-        await callOperation("createStoreVoucher", { body });
-      else await callOperation("createPlatformVoucher", { body });
-      done();
+      submitted.current=body;
+      try{
+        if(initial?.id){const {code:_code,scope:_scope,...changes}=body;const input={path:{id:initial.id},body:{...changes,max_discount_vnd:type==='PERCENT'&&capped?cap:null,expected_version:version!}};if(scope==='STORE')await callOperation('updateStoreVoucher',input);else await callOperation('updatePlatformVoucher',input);}
+        else if (scope === "STORE")await callOperation("createStoreVoucher", { body });else await callOperation("createPlatformVoucher", { body });
+        release();done((initial?'Đã cập nhật voucher ':'Đã tạo voucher ')+body.code+'. Đơn đã chốt giữ nguyên ưu đãi.');
+      }catch(error){if(isUncertainMutation(error)||(!!initial&&error instanceof ApiError&&error.status===409)){setBlocked(true);onReview(true);}throw error;}
     });
   };
   return (
     <form className="boot-card" onSubmit={submit}>
-      <h2>Tạo ưu đãi</h2>
-      <fieldset disabled={command.busy} className="market-form-grid">
+      <h2>{initial?"Sửa ưu đãi "+initial.code:"Tạo ưu đãi"}</h2><p>Đơn đã chốt giữ nguyên snapshot ưu đãi. Lượt đã dùng không được phục hồi sau hủy / hoàn; lượt giữ chưa tạo đơn được nhả.</p>
+      <fieldset disabled={command.busy||blocked} className="market-form-grid">
         <label>
           Mã voucher
           <input
             required
+            readOnly={!!initial}
             maxLength={50}
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -268,13 +323,14 @@ function CreateVoucher({
             onChange={(e) => setMinimum(Number(e.target.value))}
           />
         </label>
-        {type === "PERCENT" && (
+        {type==='PERCENT'&&<label><input type="checkbox" checked={capped} onChange={e=>setCapped(e.target.checked)}/>Giới hạn số tiền giảm tối đa</label>}
+        {type === "PERCENT"&&capped && (
           <label>
             Giảm tối đa (VND)
             <input
               required
               type="number"
-              min={1}
+              min={0}
               max={Number.MAX_SAFE_INTEGER}
               step={1}
               value={cap}
@@ -311,6 +367,7 @@ function CreateVoucher({
           <input
             required
             type="datetime-local"
+            step={1}
             value={start}
             onChange={(e) => setStart(e.target.value)}
           />
@@ -320,6 +377,7 @@ function CreateVoucher({
           <input
             required
             type="datetime-local"
+            step={1}
             min={start}
             value={end}
             onChange={(e) => setEnd(e.target.value)}
@@ -327,9 +385,13 @@ function CreateVoucher({
         </label>
       </fieldset>
       {command.error != null && <ErrorView error={command.error} />}
-      <button disabled={command.busy || end <= start || !code.trim()}>
-        Tạo voucher
-      </button>
+      <button disabled={command.busy || blocked || end <= start || !code.trim()}>{initial?"Lưu voucher":"Tạo voucher"}</button>
+      {blocked&&initial&&<button type="button" disabled={command.busy} onClick={()=>void command.run(async()=>{const fresh=await reloadInitial();if(!fresh||fresh.version===undefined)throw new Error('Chưa tìm được phiên bản voucher để đối chiếu. Chưa gửi thay đổi mới.');setVersion(fresh.version);setServer(fresh);setBlocked(false);onReview(false);setMessage('Đã đọc phiên bản mới. Giữ bản nháp; so sánh dữ liệu server bên dưới trước khi bấm lưu.');})}>Đọc lại voucher trước khi sửa tiếp</button>}
+      {blocked&&!initial&&<button type="button" disabled={command.busy} onClick={()=>void command.run(async()=>{const fresh=await readVoucher(scope,{code:submitted.current?.code});setServer(fresh);setNotFound(!fresh);setMessage(fresh?'Đã tìm thấy mã voucher trong phạm vi hiện tại. Đối chiếu dữ liệu server; đây không phải lần tạo mới.':'Chưa tìm thấy mã voucher. Điều này chưa khẳng định lệnh cũ không được ghi; chỉ gửi lại đúng dữ liệu và mã ban đầu nếu muốn thử lại.');})}>Đọc lại kết quả tạo voucher</button>}
+      {blocked&&!initial&&server&&<button type="button" disabled={command.busy} onClick={()=>{release();done('Đã đối chiếu voucher '+server.code+' trên server; không gửi lại lệnh tạo.');}}>Đã đối chiếu, về danh sách</button>}
+      {blocked&&!initial&&notFound&&<button type="button" disabled={command.busy} onClick={()=>void command.run(async()=>{const body=submitted.current;if(!body)return;setNotFound(false);try{if(scope==='STORE')await callOperation('createStoreVoucher',{body});else await callOperation('createPlatformVoucher',{body});release();done('Đã tạo voucher '+body.code+' bằng dữ liệu ban đầu.');}catch(error){setMessage('Chưa xác định được kết quả gửi lại. Đọc lại mã voucher trước khi thao tác tiếp.');throw error;}})}>Gửi lại đúng dữ liệu và mã ban đầu</button>}
+      {server&&<div><h3>Bản hiện tại trên server</h3><p>{server.code} · {server.discount_type==='PERCENT'?server.discount_value+'%':formatMoney(server.discount_value)} · Đơn từ {formatMoney(server.min_goods_vnd??0)} · {server.discount_type!=='PERCENT'?'Giảm số tiền cố định':server.max_discount_vnd==null?'Không giới hạn số tiền giảm':'Tối đa '+formatMoney(server.max_discount_vnd)} · {server.usage_limit} lượt / {server.per_customer_limit} mỗi khách</p><p>{new Date(server.starts_at).toLocaleString('vi-VN')} → {new Date(server.ends_at).toLocaleString('vi-VN')} · {server.status}</p></div>}
+      {message&&<p role="status">{message}</p>}
       {command.error != null && (
         <p>
           Kiểm tra danh sách và mã voucher trước khi gửi lại nếu kết quả chưa

@@ -1,0 +1,27 @@
+.inspection-summary,
+.inspection-summary-list > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.inspection-summary-list {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+}
+.inspection-summary-list > li + li {
+  border-top: 1px solid var(--line, #d9e1ec);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.inspection-summary-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.inspection-summary-counts > div { min-width: 0; }
+.inspection-summary-counts dt { font-size: .875rem; }
+.inspection-summary-counts dd { margin: 4px 0 0; font-weight: 600; }
+@media (max-width: 600px) {
+  .inspection-summary-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

@@ -1,26 +1,19 @@
-import {useEffect,useState} from 'react';
-import {Link} from 'react-router-dom';
-import {useAuth} from '../../api/auth-context';
+import {useEffect} from 'react';
+import {Link,useLocation} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
 import {callOperation} from '../../api/operations';
-import type {OperationOutputs} from '../../api/operations.generated';
 import {ErrorView,Loading,Pagination} from '../../bootstrap/components';
+import {OrderListFilters,OrderListIdentity,useOrderListFilters,refundStatusLabel,paymentMethodLabel,paymentStatusLabel} from '../../components/OrderListTools';
+import {orderStatusLabel,OrderNextStep} from '../../components/OrderPresentation';
+import {canStartOrderPayment} from '../../components/order-actions';
 import {CustomerSubNav} from './CustomerSubNav';
-
-export function OrderHistoryPage(){const {session}=useAuth();return <History key={session?.context?.user_id??'guest'}/>}
-
-function History(){
-  const [page,setPage]=useState(1),[retry,setRetry]=useState(0),[data,setData]=useState<OperationOutputs['listOwnOrders']>(),[error,setError]=useState<unknown>();
-  useEffect(()=>{
-    let active=true;setData(undefined);setError(undefined);
-    callOperation('listOwnOrders',{query:{page,size:20}}).then(v=>{if(active)setData(v)}).catch(e=>{if(active)setError(e)});
-    return()=>{active=false};
-  },[page,retry]);
-
-  return <section className="boot-card">
-    <CustomerSubNav />
-    <h1>Lịch sử đơn hàng</h1>
-    {error!=null?<ErrorView error={error} onRetry={()=>setRetry(n=>n+1)}/>:!data?<Loading/>:<>{!data.items.length&&<p>Bạn chưa có đơn hàng ở trang này.</p>}{data.items.map(order=><article className="boot-card" key={order.id} style={{ marginBottom: '1rem' }}><h2><Link to={'/customer/orders/'+order.id}>Đơn {order.id}</Link></h2><p>{order.status} · {order.payment_method}</p><p>{order.amounts.payable_vnd.toLocaleString('vi-VN')} ₫</p><div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}><Link to={'/customer/orders/'+order.id}>Xem chi tiết</Link>{order.status==='AWAITING_PAYMENT'&&order.payment_method==='SANDBOX'&&<Link to={'/orders/'+order.id+'/pay'} style={{ color: '#059669', fontWeight: 600 }}>Thanh toán ngay →</Link>}</div></article>)}<Pagination page={page} size={data.size} total={data.total} onPage={setPage}/></>}
-  </section>;
+export function OrderHistoryPage(){
+ const filters=useOrderListFilters(),location=useLocation();
+ const query=useQuery({queryKey:['customer-orders',filters.query],staleTime:0,queryFn:({signal})=>callOperation('listOwnOrders',{query:filters.query},{signal})});
+ useEffect(()=>{if(query.data&&!query.isFetching&&!query.error&&filters.page>Math.max(1,Math.ceil(query.data.total/query.data.size)))filters.set('page',String(Math.max(1,Math.ceil(query.data.total/query.data.size))),{replace:true});},[query.data,query.isFetching,query.error,filters.page]);
+ const state={ordersReturnTo:location.pathname+location.search};
+ return <section className="boot-card"><CustomerSubNav/><div className="seller-products-toolbar"><h1>Lịch sử đơn hàng</h1><Link className="ui-button ui-button-secondary" to="/">Tiếp tục mua sắm</Link></div><OrderListFilters filters={filters}/>
+  {query.error?<ErrorView error={query.error} onRetry={()=>void query.refetch()}/>:query.isPending?<Loading/>:query.data&&<>{!query.data.items.length&&<p>Không có đơn hàng phù hợp trong lịch sử của bạn.</p>}{query.data.items.map(order=><article className="boot-card" key={order.id}><h2><Link state={state} to={'/customer/orders/'+order.id}>Đơn #{order.id.slice(-8).toUpperCase()}</Link></h2><p>{orderStatusLabel(order.status)} · {paymentMethodLabel(order.payment_method)} · {paymentStatusLabel(order.payment_status,order.amounts.payable_vnd)}</p><OrderListIdentity order={order} store/><OrderNextStep order={order}/>{order.refund_status&&<p>Lệnh hoàn tiền: {refundStatusLabel(order.refund_status)}</p>}<p>{order.amounts.payable_vnd.toLocaleString('vi-VN')} ₫</p><div className="order-actions"><Link state={state} to={'/customer/orders/'+order.id}>Xem chi tiết</Link>{canStartOrderPayment(order)&&<Link state={state} to={'/orders/'+order.id+'/pay'}>Thanh toán ngay →</Link>}{['AWAITING_PAYMENT','PENDING','CONFIRMED'].includes(order.status)&&order.payment_status!=='UNKNOWN'&&<Link state={state} to={'/customer/orders/'+order.id+'#cancel'}>Hủy đơn</Link>}{order.status==='COMPLETED'&&<><Link state={state} to={'/customer/orders/'+order.id+'#returns'}>Yêu cầu đổi trả</Link><Link state={state} to={'/customer/orders/'+order.id+'#order-items'}>Đánh giá sản phẩm</Link></>}</div></article>)}<Pagination page={filters.page} size={query.data.size} total={query.data.total} onPage={page=>filters.set('page',String(page))}/></>}
+ </section>;
 }
-
 export default OrderHistoryPage;

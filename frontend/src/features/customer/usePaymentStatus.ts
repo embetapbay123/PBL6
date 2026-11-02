@@ -27,6 +27,7 @@ export function usePaymentStatus({ enabled, fetchStatus, expiresAt, intervalMs =
   const [phase, setPhase] = useState<PaymentPhase>('idle');
   const [rawStatus, setRawStatus] = useState<string | null>(null);
   const [lastError, setLastError] = useState<unknown>(null);
+  const [reload,setReload]=useState(0);
   const fetchRef = useRef(fetchStatus);
   fetchRef.current = fetchStatus;
 
@@ -44,6 +45,7 @@ export function usePaymentStatus({ enabled, fetchStatus, expiresAt, intervalMs =
 
     const tick = async () => {
       if (cancelled) return;
+      if(document.hidden){timer=setTimeout(tick,intervalMs);return;}
       const pastExpiry = !Number.isNaN(expiryMs) && Date.now() >= expiryMs;
       try {
         const { status } = await fetchRef.current(controller.signal);
@@ -70,7 +72,7 @@ export function usePaymentStatus({ enabled, fetchStatus, expiresAt, intervalMs =
       controller.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [enabled, expiresAt, intervalMs]);
+  }, [enabled, expiresAt, intervalMs, reload]);
 
-  return { phase, rawStatus, lastError };
+  return { phase, rawStatus, lastError, refresh:()=>setReload(value=>value+1) };
 }

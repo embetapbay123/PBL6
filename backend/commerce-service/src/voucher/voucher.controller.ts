@@ -5,9 +5,9 @@ import {
   UpdateStoreVoucherBodyDto,
   CreatePlatformVoucherBodyDto,
   UpdatePlatformVoucherBodyDto,
-  ValidateVouchersBodyDto,
 } from '../../../shared/src/dtos.generated';
 import { VoucherService } from './voucher.service';
+import type {OperationInputs} from '../../../shared/src/operations.generated';
 
 @Controller()
 @UseGuards(AuthGuard)
@@ -17,7 +17,7 @@ export class VoucherController {
   // --- Customer Voucher Validation ---
   @Post('vouchers/validate')
   @Roles('CUSTOMER')
-  validateVouchers(@Body() dto: ValidateVouchersBodyDto, @Req() req: any) {
+  validateVouchers(@Body() dto: OperationInputs['validateVouchers']['body'], @Req() req: any) {
     return this.service.validateVouchers(dto, req.auth, req.correlationId);
   }
 

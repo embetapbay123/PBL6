@@ -174,6 +174,11 @@
     "path": "/store/products/{id}",
     "internal": false
   },
+  "getOwnStoreProduct": {
+    "method": "GET",
+    "path": "/store/products/{id}",
+    "internal": false
+  },
   "createVariant": {
     "method": "POST",
     "path": "/store/products/{id}/variants",
@@ -339,6 +344,11 @@
     "path": "/me/reviews",
     "internal": false
   },
+  "listOwnReviews": {
+    "method": "GET",
+    "path": "/me/reviews",
+    "internal": false
+  },
   "updateReview": {
     "method": "PATCH",
     "path": "/me/reviews/{id}",
@@ -499,6 +509,291 @@
     "path": "/payment-callbacks/sepay",
     "internal": false
   },
+  "listFavorites": {
+    "method": "GET",
+    "path": "/me/favorites",
+    "internal": false
+  },
+  "addFavorite": {
+    "method": "PUT",
+    "path": "/me/favorites/{id}",
+    "internal": false
+  },
+  "removeFavorite": {
+    "method": "DELETE",
+    "path": "/me/favorites/{id}",
+    "internal": false
+  },
+  "removeProductImage": {
+    "method": "DELETE",
+    "path": "/store/products/{id}/images/{image_id}",
+    "internal": false
+  },
+  "reorderProductImages": {
+    "method": "POST",
+    "path": "/store/products/{id}/images/reorder",
+    "internal": false
+  },
+  "listOwnConversations": {
+    "method": "GET",
+    "path": "/me/conversations",
+    "internal": false
+  },
+  "startStoreConversation": {
+    "method": "POST",
+    "path": "/me/conversations",
+    "internal": false
+  },
+  "listStoreConversations": {
+    "method": "GET",
+    "path": "/store/conversations",
+    "internal": false
+  },
+  "listOwnConversationMessages": {
+    "method": "GET",
+    "path": "/me/conversations/{id}/messages",
+    "internal": false
+  },
+  "sendOwnConversationMessage": {
+    "method": "POST",
+    "path": "/me/conversations/{id}/messages",
+    "internal": false
+  },
+  "listStoreConversationMessages": {
+    "method": "GET",
+    "path": "/store/conversations/{id}/messages",
+    "internal": false
+  },
+  "sendStoreConversationMessage": {
+    "method": "POST",
+    "path": "/store/conversations/{id}/messages",
+    "internal": false
+  },
+  "listNotifications": {
+    "method": "GET",
+    "path": "/me/notifications",
+    "internal": false
+  },
+  "markNotificationRead": {
+    "method": "POST",
+    "path": "/me/notifications/{id}/read",
+    "internal": false
+  },
+  "createReturnRequest": {
+    "method": "POST",
+    "path": "/me/orders/{id}/returns",
+    "internal": false
+  },
+  "listOwnReturnRequests": {
+    "method": "GET",
+    "path": "/me/returns",
+    "internal": false
+  },
+  "listStoreReturnRequests": {
+    "method": "GET",
+    "path": "/store/returns",
+    "internal": false
+  },
+  "updateStoreReturnRequest": {
+    "method": "PATCH",
+    "path": "/store/returns/{id}",
+    "internal": false
+  },
+  "listAdminReturnRequests": {
+    "method": "GET",
+    "path": "/admin/returns",
+    "internal": false
+  },
+  "updateAdminReturnRequest": {
+    "method": "PATCH",
+    "path": "/admin/returns/{id}",
+    "internal": false
+  },
+  "confirmExchangeReceived": {
+    "method": "POST",
+    "path": "/me/returns/{id}/confirm",
+    "internal": false
+  },
+  "listAdminReviews": {
+    "method": "GET",
+    "path": "/admin/reviews",
+    "internal": false
+  },
+  "listAdminProducts": {
+    "method": "GET",
+    "path": "/admin/products",
+    "internal": false
+  },
+  "listCatalogAudit": {
+    "method": "GET",
+    "path": "/admin/audit/catalog",
+    "internal": false
+  },
+  "listCommerceAudit": {
+    "method": "GET",
+    "path": "/admin/audit/commerce",
+    "internal": false
+  },
+  "listIdentityAudit": {
+    "method": "GET",
+    "path": "/admin/audit/identity",
+    "internal": false
+  },
+  "getPublicStore": {
+    "method": "GET",
+    "path": "/stores/{id}",
+    "internal": false
+  },
+  "confirmCodRefund": {
+    "method": "POST",
+    "path": "/store/orders/{id}/cod-refund",
+    "internal": false
+  },
+  "listStoreMoneyMovements": {
+    "method": "GET",
+    "path": "/store/reports/money",
+    "internal": false
+  },
+  "listAdminMoneyMovements": {
+    "method": "GET",
+    "path": "/admin/reports/money",
+    "internal": false
+  },
+  "openDeliveryReturn": {
+    "method": "POST",
+    "path": "/store/orders/{id}/delivery-return",
+    "internal": false
+  },
+  "listStoreDeliveryReturns": {
+    "method": "GET",
+    "path": "/store/delivery-returns",
+    "internal": false
+  },
+  "listAdminDeliveryReturns": {
+    "method": "GET",
+    "path": "/admin/delivery-returns",
+    "internal": false
+  },
+  "getOwnDeliveryReturn": {
+    "method": "GET",
+    "path": "/me/orders/{id}/delivery-return",
+    "internal": false
+  },
+  "inspectDeliveryReturn": {
+    "method": "POST",
+    "path": "/store/delivery-returns/{id}/inspection",
+    "internal": false
+  },
+  "settleDeliveryReturn": {
+    "method": "POST",
+    "path": "/store/delivery-returns/{id}/settle",
+    "internal": false
+  },
+  "integrationPaymentCallback": {
+    "method": "POST",
+    "path": "/payment-callbacks/integration",
+    "internal": false
+  },
+  "resolveStoreReturn": {
+    "method": "POST",
+    "path": "/store/returns/{id}/resolution",
+    "internal": false
+  },
+  "respondOwnReturn": {
+    "method": "POST",
+    "path": "/me/returns/{id}/resolution",
+    "internal": false
+  },
+  "resolveAdminReturn": {
+    "method": "POST",
+    "path": "/admin/returns/{id}/resolution",
+    "internal": false
+  },
+  "listStoreCatalogAudit": {
+    "method": "GET",
+    "path": "/store/audit/catalog",
+    "internal": false
+  },
+  "listStoreCommerceAudit": {
+    "method": "GET",
+    "path": "/store/audit/commerce",
+    "internal": false
+  },
+  "listStoreIdentityAudit": {
+    "method": "GET",
+    "path": "/store/audit/identity",
+    "internal": false
+  },
+  "lookupStoreAuditActors": {
+    "method": "POST",
+    "path": "/store/audit/actors",
+    "internal": false
+  },
+  "lookupAdminAuditActors": {
+    "method": "POST",
+    "path": "/admin/audit/actors",
+    "internal": false
+  },
+  "getPlatformMoneyReport": {
+    "method": "GET",
+    "path": "/admin/reports",
+    "internal": false
+  },
+  "listStoreUnresolvedMoneyMovements": {
+    "method": "GET",
+    "path": "/store/reports/unresolved-money",
+    "internal": false
+  },
+  "listAdminUnresolvedMoneyMovements": {
+    "method": "GET",
+    "path": "/admin/reports/unresolved-money",
+    "internal": false
+  },
+  "getInventoryReconciliation": {
+    "method": "GET",
+    "path": "/store/inventory/reconciliation",
+    "internal": false
+  },
+  "listStockCommitments": {
+    "method": "GET",
+    "path": "/store/stock-commitments",
+    "internal": false
+  },
+  "listOwnAfterSaleHistory": {
+    "method": "GET",
+    "path": "/me/orders/{id}/after-sale-history",
+    "internal": false
+  },
+  "listStoreAfterSaleHistory": {
+    "method": "GET",
+    "path": "/store/orders/{id}/after-sale-history",
+    "internal": false
+  },
+  "listAdminAfterSaleHistory": {
+    "method": "GET",
+    "path": "/admin/orders/{id}/after-sale-history",
+    "internal": false
+  },
+  "getStoreRefundRecovery": {
+    "method": "GET",
+    "path": "/store/orders/{id}/refund-recovery",
+    "internal": false
+  },
+  "requestStoreRefundRecovery": {
+    "method": "POST",
+    "path": "/store/orders/{id}/refund-recovery",
+    "internal": false
+  },
+  "getAdminRefundRecovery": {
+    "method": "GET",
+    "path": "/admin/orders/{id}/refund-recovery",
+    "internal": false
+  },
+  "requestAdminRefundRecovery": {
+    "method": "POST",
+    "path": "/admin/orders/{id}/refund-recovery",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",
@@ -552,6 +847,21 @@
   "ResolveAiMetricsScope": {
     "method": "POST",
     "path": "/internal/ai/metrics-scope",
+    "internal": true
+  },
+  "RestockReceivedItems": {
+    "method": "POST",
+    "path": "/internal/inventory/received-restock",
+    "internal": true
+  },
+  "DispatchExchangeItems": {
+    "method": "POST",
+    "path": "/internal/inventory/exchange-dispatch",
+    "internal": true
+  },
+  "ResolveConversationOrder": {
+    "method": "POST",
+    "path": "/internal/orders/conversation-context",
     "internal": true
   }
 }

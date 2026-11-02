@@ -5,7 +5,7 @@ import { moneyNumber } from '../../../shared/src/money';
 import { VoucherRepository, VoucherRow } from './voucher.repository';
 import { OrderService } from '../order/order.service';
 import { requireStorePermission } from '../scope';
-import { EntityManager } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,8 +31,9 @@ export function voucherResponse(row: VoucherRow): OperationOutputs['createStoreV
 }
 
 export class VoucherService {
+  constructor(private readonly source:DataSource=database){}
   private async write<T>(work:(manager:EntityManager)=>Promise<T>):Promise<T> {
-    try {return await database.transaction(work);}
+    try {return await this.source.transaction(work);}
     catch(error:any) {
       if(error?.driverError?.code==='23505' && error.driverError.constraint==='voucher_code_unique') {
         throw new ApiError(409,'VOUCHER_CODE_EXISTS','Mã voucher đã tồn tại trên hệ thống.');
@@ -60,7 +61,7 @@ export class VoucherService {
     const page = Math.max(1, Number(query?.page ?? 1));
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
-    const repo = new VoucherRepository(database.manager);
+    const repo = new VoucherRepository(this.source.manager);
     const { items, total } = await repo.pageStoreVouchers(storeId, page, size);
 
     return {
@@ -225,7 +226,7 @@ export class VoucherService {
     const page = Math.max(1, Number(query?.page ?? 1));
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
-    const repo = new VoucherRepository(database.manager);
+    const repo = new VoucherRepository(this.source.manager);
     const { items, total } = await repo.pagePlatformVouchers(page, size);
 
     return {
@@ -385,7 +386,7 @@ export class VoucherService {
     auth: any,
     correlation: string
   ): Promise<OperationOutputs['validateVouchers']> {
-    const orderService = new OrderService();
+    const orderService = new OrderService(undefined,{source:this.source});
     return orderService.quoteCheckout(input, auth, correlation);
   }
 
@@ -399,7 +400,7 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Mã voucher id không hợp lệ.');
     }
 
-    const repo = new VoucherRepository(database.manager);
+    const repo = new VoucherRepository(this.source.manager);
     const voucher = await repo.findStoreVoucherById(id, storeId);
     if (!voucher) {
       throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy voucher cửa hàng.');
@@ -425,7 +426,7 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Mã voucher id không hợp lệ.');
     }
 
-    const repo = new VoucherRepository(database.manager);
+    const repo = new VoucherRepository(this.source.manager);
     const voucher = await repo.findPlatformVoucherById(id);
     if (!voucher) {
       throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy voucher toàn sàn.');

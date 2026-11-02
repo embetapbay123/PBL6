@@ -1,44 +1,167 @@
 import type { components } from './generated';
+import {markStoreContextChanged,retainStoreContextNotice} from './store-context-notice';
 export type Product = components['schemas']['Product'];
 export type Profile = components['schemas']['Profile'];
 export type AuthTokens = components['schemas']['AuthTokens'];
 export class ApiError extends Error {
   constructor(public status:number,public code:string,message:string,public correlationId?:string,public details:unknown[]=[]){super(message);}
 }
-let accessToken:string|undefined;
-let credentialEpoch=0;
-let refreshing:Promise<AuthTokens>|undefined;
+/** A failed acknowledgement does not establish that a mutation was rejected. */
+export const isUncertainMutation=(error:unknown)=>!(error instanceof ApiError)||error.status===0||error.status===408||error.status>=500;
+// Token and context form one snapshot; requests and React share its lifetime.
+let session:AuthTokens|undefined;
+let epoch=0;
+let refreshing:{epoch:number;promise:Promise<AuthTokens>}|undefined;
+const listeners=new Set<()=>void>();
+const requests=new Set<AbortController>();
+const cookieReads=new Set<AbortController>();
 const base=import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
-export const setAccessToken=(token?:string)=>{credentialEpoch++;accessToken=token;};
-const csrf=()=>document.cookie.split('; ').find(x=>x.startsWith('pbl6_csrf='))?.split('=')[1] ?? '';
-const restore=()=>{
-  const generation=credentialEpoch;
-  refreshing ??= request<AuthTokens>('/auth/refresh',{method:'POST',body:'{}'},false).then(data=>{if(generation===credentialEpoch)setAccessToken(data.access_token);return data;}).finally(()=>{refreshing=undefined;});
-  return refreshing;
+const signalKey='pbl6_auth_signal';
+let channel:BroadcastChannel|undefined;
+let syncUsers=0;
+let lastSignal:string|undefined;
+/** Cookie rotation is shared by all tabs, unlike the in-memory refresh flight. */
+async function withCookieLock<T>(work:()=>Promise<T>):Promise<T>{
+  if(!navigator.locks)throw new ApiError(0,'SESSION_SYNC_UNAVAILABLE','Không thể đồng bộ phiên trên trình duyệt này. Vui lòng mở bằng trình duyệt hỗ trợ đồng bộ tab.');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+  try{return await navigator.locks.request('pbl6_auth_cookie',{signal:controller.signal},async()=>{clearTimeout(timer);return work();});}
+  catch(error){if(controller.signal.aborted)throw new ApiError(0,'SESSION_BUSY','Tab khác đang xử lý phiên đăng nhập. Vui lòng thử lại sau khi thao tác đó kết thúc.');throw error;}
+  finally{clearTimeout(timer);}
+}
+export function sessionScope(value?:AuthTokens):string {
+  const c=value?.context,m=c?.store_membership;
+  return JSON.stringify([c?.user_id??'guest',[...(c?.roles??[])].sort(),[...(c?.role_permissions??[])].sort(),c?.token_version,
+    m?[m.store_id,m.role,m.status,[...(m.permissions??[])].sort()]:null]);
+}
+const changed=()=>new ApiError(401,'SESSION_CHANGED','Phiên hoặc quyền truy cập đã thay đổi. Hãy kiểm tra lại trước khi thao tác.');
+export const getAuthSession=()=>session;
+export const subscribeAuth=(listener:()=>void)=>{listeners.add(listener);return()=>{listeners.delete(listener);};};
+function clearDrafts(){try{for(const key of Object.keys(sessionStorage))if(/^pbl6_(checkout_selection|checkout_draft|buy_now)_/.test(key))sessionStorage.removeItem(key);}catch{/* Storage is optional. */}}
+function publish(value?:AuthTokens) {
+  const previous=session?.context;
+  if(sessionScope(value)!==sessionScope(session)) {
+    epoch++;
+    for(const controller of requests)controller.abort();
+    if(session)clearDrafts();
+    // Uncertain financial attempts remain isolated by their original user for reconciliation.
+  }
+  session=value;
+  retainStoreContextNotice(value?.context?.user_id);
+  if(previous?.user_id&&previous.user_id===value?.context?.user_id&&previous.store_membership?.store_id&&previous.store_membership.store_id!==value?.context?.store_membership?.store_id)markStoreContextChanged(previous.user_id);
+  for(const listener of listeners)listener();
+}
+function invalidate(){epoch++;clearDrafts();publish(undefined);}
+export const setAccessToken=(token?:string)=>{if(!token)invalidate();else publish({...session,access_token:token,expires_at:session?.expires_at??''});};
+const csrf=()=>document.cookie.split('; ').find(x=>x.startsWith('pbl6_csrf='))?.split('=')[1]??'';
+function notify(kind:'AUTH_CHANGED'|'SIGNED_OUT') {
+  const message={kind,nonce:crypto.randomUUID()};
+  lastSignal=message.nonce;
+  // A token-free marker also lets a tab reject delayed channel notifications.
+  try{localStorage.setItem(signalKey,JSON.stringify(message));}catch{try{localStorage.removeItem(signalKey);}catch{/* Channel remains available. */}}
+  if(channel)channel.postMessage(message);
+}
+function receive(message:unknown) {
+  const {kind,nonce}=(message??{}) as {kind?:string;nonce?:string};
+  if((kind!=='AUTH_CHANGED'&&kind!=='SIGNED_OUT')||typeof nonce!=='string'||nonce===lastSignal)return;
+  try{const latest=JSON.parse(localStorage.getItem(signalKey)??'null');if(latest?.nonce&&latest.nonce!==nonce)return;}catch{/* Storage is optional. */}
+  lastSignal=nonce;
+  const previous=session?.context;
+  invalidate();
+  if(kind==='AUTH_CHANGED'&&csrf())void restore().then(value=>{
+    if(previous?.user_id&&previous.user_id===value.context?.user_id&&session?.context?.user_id===previous.user_id&&previous.store_membership?.store_id&&previous.store_membership.store_id!==value.context?.store_membership?.store_id)markStoreContextChanged(previous.user_id);
+  }).catch(()=>{});
+}
+const storageChanged=(event:StorageEvent)=>{if(event.key===signalKey&&event.newValue)try{receive(JSON.parse(event.newValue));}catch{/* Ignore malformed signals. */}};
+const revalidate=()=>{if(document.visibilityState==='visible'&&csrf())void restore().catch(()=>{});};
+export function startAuthSync(){
+  if(++syncUsers===1){
+    if(typeof BroadcastChannel!=='undefined'){channel=new BroadcastChannel(signalKey);channel.onmessage=event=>receive(event.data);}
+    window.addEventListener('storage',storageChanged);window.addEventListener('focus',revalidate);
+  }
+  return()=>{if(--syncUsers===0){channel?.close();channel=undefined;window.removeEventListener('storage',storageChanged);window.removeEventListener('focus',revalidate);}};
+}
+const restore=():Promise<AuthTokens>=>{
+  const generation=epoch;
+  if(refreshing?.epoch===generation)return refreshing.promise;
+  const flight={epoch:generation,promise:undefined as unknown as Promise<AuthTokens>};
+  flight.promise=withCookieLock(()=>{
+    if(generation!==epoch)throw changed();
+    return request<AuthTokens>('/auth/refresh',{method:'POST',body:'{}'},false);
+  }).then(value=>{
+    if(generation!==epoch)throw changed();
+    const scopeChanged=!!session&&sessionScope(value)!==sessionScope(session);
+    publish(value);if(scopeChanged)notify('AUTH_CHANGED');return value;
+  }).catch(error=>{if(generation===epoch&&error instanceof ApiError&&[401,403].includes(error.status))invalidate();throw error;})
+    .finally(()=>{if(refreshing===flight)refreshing=undefined;});
+  refreshing=flight;return flight.promise;
 };
 export async function request<T>(path:string,options:RequestInit={},retry=true):Promise<T> {
-  const generation=credentialEpoch;
+  const generation=epoch,scope=sessionScope(session),authRequest=path.startsWith('/auth/');
   const headers=new Headers(options.headers);headers.set('Content-Type','application/json');
-  if(accessToken)headers.set('Authorization',`Bearer ${accessToken}`);
+  const store=session?.context?.store_membership?.store_id;
+  if(/^\/store(?:\/|\?|$)/.test(path)&&store){
+    const supplied=headers.get('X-Store-Context');
+    if(supplied&&supplied.toLowerCase()!==store.toLowerCase())throw changed();
+    headers.set('X-Store-Context',store);
+  }
+  if(session?.access_token&&!headers.has('Authorization'))headers.set('Authorization',`Bearer ${session.access_token}`);
   if(options.method && options.method!=='GET')headers.set('X-CSRF-Token',csrf());
-  let response:Response;
-  try {response=await fetch(base+path,{...options,headers,credentials:'include',signal:options.signal ?? AbortSignal.timeout(7000)});}
-  catch {throw new ApiError(0,'NETWORK_ERROR','Không kết nối được API.');}
-  if(response.status===401 && retry && !path.startsWith('/auth/')) {
-    if(generation!==credentialEpoch)throw new ApiError(401,'SESSION_CHANGED','Phiên đăng nhập đã thay đổi. Hãy tải lại dữ liệu.');
-    let restored:AuthTokens;
-    try {restored=await restore();} catch(error) {if(generation===credentialEpoch)setAccessToken();throw error;}
-    if(accessToken!==restored.access_token)throw new ApiError(401,'SESSION_CHANGED','Phiên đăng nhập đã thay đổi. Hãy tải lại dữ liệu.');
+  const controller=new AbortController(),abort=()=>controller.abort();
+  options.signal?.addEventListener('abort',abort,{once:true});if(options.signal?.aborted)controller.abort();
+  if(!authRequest)requests.add(controller);
+  if(path==='/auth/refresh')cookieReads.add(controller);
+  const timer=setTimeout(abort,7000);
+  let response:Response,data:any;
+  try {
+    response=await fetch(base+path,{...options,headers,credentials:'include',signal:controller.signal});
+    data=await response.json().catch(error=>{if(controller.signal.aborted)throw error;return {};});
+  }
+  catch {if(generation!==epoch)throw changed();throw new ApiError(0,'NETWORK_ERROR','Không kết nối được API.');}
+  finally {clearTimeout(timer);requests.delete(controller);cookieReads.delete(controller);options.signal?.removeEventListener('abort',abort);}
+  if(!authRequest&&generation!==epoch)throw changed();
+  if(response.status===401 && retry && !authRequest) {
+    await restore();
+    // Never publish B's response into a query or command originally made for A.
+    if(scope!==sessionScope(session))throw changed();
     return request<T>(path,options,false);
   }
-  const data=await response.json().catch(()=>({}));
+  if(!authRequest&&generation!==epoch)throw changed();
+  const storeChanged=response.status===409&&data.code==='STORE_CONTEXT_CHANGED';
+  if((response.status===403||storeChanged)&&!authRequest&&path!=='/me/context'){
+    // Another denied request may already have published the current, narrower
+    // context. An obsolete failure must not erase that valid session.
+    try{await refreshAuthContext();}catch{if(generation===epoch)invalidate();}
+    if(generation!==epoch)throw changed();
+  }
   if(!response.ok)throw new ApiError(response.status,data.code ?? 'API_ERROR',data.message ?? 'Yêu cầu thất bại.',data.correlation_id,data.details);
   return data as T;
 }
+export async function refreshAuthContext(){
+  const generation=epoch,context=await request<components['schemas']['AuthContext']>('/me/context');
+  if(generation!==epoch||!session)throw changed();
+  if(context.user_id!==session.context?.user_id){invalidate();await restore();return;}
+  const value={...session,context},scopeChanged=sessionScope(value)!==sessionScope(session);
+  publish(value);if(scopeChanged)notify('AUTH_CHANGED');
+}
 export const api={
   restore,
-  login:(email:string,password:string)=>request<AuthTokens>('/auth/login',{method:'POST',body:JSON.stringify({email,password,client_type:'WEB'})}),
-  logout:()=>request('/auth/logout',{method:'POST',body:'{}'}),
+  login:async(email:string,password:string)=>{
+    invalidate();const generation=epoch;
+    for(const controller of cookieReads)controller.abort();
+    return withCookieLock(async()=>{
+      if(generation!==epoch)throw changed();
+      const value=await request<AuthTokens>('/auth/login',{method:'POST',body:JSON.stringify({email,password,client_type:'WEB'})},false);
+      if(generation!==epoch)throw changed();
+      publish(value);notify('AUTH_CHANGED');return value;
+    });
+  },
+  logout:async()=>{
+    const token=session?.access_token;invalidate();for(const controller of cookieReads)controller.abort();
+    notify('SIGNED_OUT');
+    if(!token)return;
+    const result=await withCookieLock(()=>request<components['schemas']['LogoutResult']>('/auth/logout',{method:'POST',body:'{}',headers:{Authorization:'Bearer '+token}},false));
+    if(result.cookie_session_changed&&csrf()){await restore();notify('AUTH_CHANGED');}
+  },
   profile:()=>request<Profile>('/me'),
   products:(page=1,q='')=>request<{items:Product[];total:number;page:number;size:number}>(`/products?page=${page}&size=20&q=${encodeURIComponent(q)}`),
 };

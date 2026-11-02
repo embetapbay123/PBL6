@@ -1,6 +1,6 @@
 import { moneyNumber } from '../../../shared/src/money';
 import type { OperationOutputs } from '../../../shared/src/operations.generated';
-import type { QuoteVariantRow, StockMovementRow, ReservationRow } from './inventory.repository';
+import type { QuoteVariantRow, StockMovementRow, ReservationRow, InventoryIdentity, InventoryBalanceRow } from './inventory.repository';
 
 /** `pg` returns `timestamptz` as a Date; cached idempotent results come back as strings. */
 function isoTime(value: Date | string): string {
@@ -21,6 +21,15 @@ export function quoteItemResponse(row: QuoteVariantRow, quantity: number): Opera
     available_quantity: row.available_quantity,
     version: row.version,
   };
+}
+
+/** Identity is read under the same Store scope as the balance, never from a catalog page. */
+export function inventoryIdentity(row: InventoryIdentity): {product_id?: string; product_title?: string; sku?: string; variant_values?: Record<string,string>} {
+  return Object.fromEntries(Object.entries({ product_id: row.product_id, product_title: row.product_title,
+    sku: row.sku, variant_values: row.variant_values }).filter(([, value]) => value != null));
+}
+export function inventoryView(row: InventoryBalanceRow): OperationOutputs['listStoreInventory']['items'][number] {
+  return { ...inventoryBalance(row), ...inventoryIdentity(row) } as OperationOutputs['listStoreInventory']['items'][number];
 }
 
 /**
@@ -46,10 +55,15 @@ export function stockMovementView(row: StockMovementRow): OperationOutputs['list
   return {
     id: row.id,
     variant_id: row.variant_id,
+    ...inventoryIdentity(row),
+    ...Object.fromEntries(['receipt_id','delta_reserved','operation_id','actor_user_id','quantity_before','quantity_after','reserved_before','reserved_after','inventory_version'].flatMap(key => {
+      const value = row[key as keyof StockMovementRow]; return value == null ? [] : [[key, value]];
+    })),
     ...(row.order_id === null ? {} : { order_id: row.order_id }),
     delta_quantity: row.delta_quantity,
     ...(row.reason === null ? {} : { reason: row.reason }),
     ...(row.occurred_at === null ? {} : { occurred_at: isoTime(row.occurred_at) }),
+    ...(row.recorded_at == null ? {} : {recorded_at:isoTime(row.recorded_at)}),
   };
 }
 

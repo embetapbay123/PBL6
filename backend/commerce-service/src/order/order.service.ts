@@ -1,3 +1,9 @@
+import type {OrderSearch} from './order-search';
+import {orderTimelineActor} from './order-timeline';
+import {readReturnPolicy} from '../returns/return-policy';
+import {DeliveryReturnRunner} from '../returns/delivery-return.runner';
+import {ReturnsRunner} from '../returns/returns.runner';
+import {assertDeliveryNotReturning} from '../returns/delivery-return-guards';
 import { CheckoutRunner, CheckoutPlan, commandId, recoveryPending } from './checkout.runner';
 import { OrderInventoryRunner, queueInventoryCommand, changeOrderStatus, requestClosedRefund } from './order-inventory.runner';
 import { randomUUID } from 'node:crypto';
@@ -28,6 +34,7 @@ interface ProcessedItem {
   variant_id: string;
   product_title?: string;
   variant_title?: string;
+  variant_values?: Record<string,unknown>;
   sku?: string;
   unit_price_vnd: number;
   quantity: number;
@@ -90,7 +97,7 @@ export class OrderService {
   }
   private quoteInput(input: OperationInputs['quoteCheckout']['body']) {
     return {
-      cart_item_ids: [...input.cart_item_ids].sort(),
+      ...(input.source==='BUY_NOW'?{source:'BUY_NOW',buy_now:input.buy_now}:{cart_item_ids:[...input.cart_item_ids].sort()}),
       address_id: input.address_id,
       payment_methods: input.payment_methods
         ? Object.keys(input.payment_methods).sort().reduce((acc, k) => { acc[k] = input.payment_methods[k]; return acc; }, {} as any)
@@ -105,6 +112,10 @@ export class OrderService {
   private mapOrderRowToDto(order: OrderRow & { items: OrderItemRow[] }): OperationOutputs['getOwnOrder'] {
     return {
       id: order.id,
+      ...(order.created_at ? {created_at: new Date(order.created_at).toISOString()} : {}),
+      ...(order.status_history ? {timeline: order.status_history.map(event => ({status: event.to_status,
+        ...(event.from_status ? {from_status: event.from_status} : {}), occurred_at: new Date(event.created_at).toISOString(),
+        actor_kind: orderTimelineActor(event,order.customer_user_id)}))} : {}),
       purchase_group_id: order.purchase_group_id,
       store_id: order.store_id,
       status: order.status as any,
@@ -113,6 +124,9 @@ export class OrderService {
       payment_status: order.payment_status ?? undefined,
       refund_status: order.refund_status ?? undefined,
       payment_expires_at: order.payment_expires_at ? new Date(order.payment_expires_at).toISOString() : undefined,
+      ...(readReturnPolicy(order.return_policy_snapshot) ? {return_policy_snapshot:readReturnPolicy(order.return_policy_snapshot)!} : {}),
+      ...(order.completed_at ? {completed_at:new Date(order.completed_at).toISOString()} : {}),
+      ...(order.address_snapshot?{address_snapshot:order.address_snapshot}:{}),
       amounts: {
         goods_vnd: moneyNumber(order.goods_vnd),
         store_discount_vnd: moneyNumber(order.store_discount_vnd),
@@ -140,14 +154,18 @@ export class OrderService {
     storeVouchersInput: Record<string, string> | undefined,
     platformVoucherCodeInput: string | undefined,
     correlation: string,
-    orderRepo: OrderRepository
+    orderRepo: OrderRepository,
+    buyNow?: {product_id:string;variant_id:string;quantity:number}
   ): Promise<{
     storeList: StoreCalculation[];
     totalPayableVnd: number;
     platformVoucherId?: string;
   }> {
-    const cartItems = await orderRepo.findCartItemsWithOwnership(cartItemIds, userId);
-    if (new Set(cartItemIds).size!==cartItemIds.length || cartItems.length !== cartItemIds.length) {
+    const direct=buyNow?await this.catalog.product(buyNow.product_id,correlation):undefined;
+    if(direct&&(direct.status!=='ACTIVE'||direct.moderation_status!=='VISIBLE'||!direct.variants.some(v=>v.id===buyNow!.variant_id&&v.status==='ACTIVE')))
+      throw new ApiError(409,'PRODUCT_NOT_AVAILABLE','Sản phẩm hoặc phân loại hiện không thể mua.');
+    const cartItems = direct?[{id:'buy-now:'+buyNow!.variant_id,product_id:direct.id,store_id:direct.store_id,variant_id:buyNow!.variant_id,quantity:buyNow!.quantity}]:await orderRepo.findCartItemsWithOwnership(cartItemIds,userId);
+    if (!direct && (new Set(cartItemIds).size!==cartItemIds.length || cartItems.length !== cartItemIds.length)) {
       throw new ApiError(
         404,
         'NOT_FOUND',
@@ -170,6 +188,7 @@ export class OrderService {
 
     const storeMap = new Map<string, StoreCalculation>();
     const products=new Map<string,Awaited<ReturnType<CatalogDirectory['product']>>>();
+    if(direct)products.set(direct.id,direct);
     for (const item of cartItems) {
       if (!item.product_id) throw new ApiError(409,'CART_MAPPING_REQUIRED','Item cũ chưa có Product; hãy xóa và thêm lại.');
       if (!products.has(item.product_id)) products.set(item.product_id,await this.catalog.product(item.product_id,correlation));
@@ -212,6 +231,8 @@ export class OrderService {
       storeCalc.items.push({
         product_id: product.id,
         product_title: product.title,
+        variant_values: variant.variant_values ?? {},
+        variant_title: Object.values(variant.variant_values ?? {}).map(value=>typeof value==='object'?JSON.stringify(value):String(value)).join(' / ') || 'Phân loại tiêu chuẩn',
         sku: variant.sku,
         variant_id: ci.variant_id,
         unit_price_vnd: unitPriceVnd,
@@ -365,6 +386,17 @@ export class OrderService {
     return { storeList, totalPayableVnd, platformVoucherId };
   }
 
+  private validateSelection(input:OperationInputs['quoteCheckout']['body']) {
+    if(input?.source==='BUY_NOW'){
+      const line=input.buy_now;
+      if('cart_item_ids' in input||!line||!UUID_REGEX.test(line.product_id)||!UUID_REGEX.test(line.variant_id)||!Number.isSafeInteger(line.quantity)||line.quantity<1||line.quantity>2147483647)
+        throw new ApiError(422,'VALIDATION_FAILED','Lựa chọn mua ngay không hợp lệ.');
+      return;
+    }
+    if(input?.source!==undefined&&input.source!=='CART'||!input||'buy_now' in input||!Array.isArray(input.cart_item_ids)||!input.cart_item_ids.length||input.cart_item_ids.length>100||input.cart_item_ids.some(id=>!UUID_REGEX.test(id)))
+      throw new ApiError(422,'VALIDATION_FAILED','Danh sách giỏ hàng không hợp lệ.');
+  }
+
   async revalidateQuote(
     input: OperationInputs['quoteCheckout']['body'],
     auth: any,
@@ -376,19 +408,13 @@ export class OrderService {
     payable: number;
     platformVoucherId?: string;
     snapshotHash: string;
+    legacySnapshotHash: string;
   }> {
     const userId = auth?.user_id;
     if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
 
-    const cartItemIds = input?.cart_item_ids;
-    if (!Array.isArray(cartItemIds) || cartItemIds.length === 0) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'cart_item_ids không được rỗng.');
-    }
-    for (const id of cartItemIds) {
-      if (!UUID_REGEX.test(id)) {
-        throw new ApiError(422, 'VALIDATION_FAILED', `cart_item_id không hợp lệ: ${id}`);
-      }
-    }
+    this.validateSelection(input);
+    const cartItemIds = input.source==='BUY_NOW'?[]:input.cart_item_ids;
 
     const addressId = input?.address_id;
     if (!addressId || !UUID_REGEX.test(addressId)) {
@@ -401,7 +427,8 @@ export class OrderService {
       input.store_vouchers,
       input.platform_voucher_code,
       correlation,
-      orderRepo
+      orderRepo,
+      input.source==='BUY_NOW'?input.buy_now:undefined
     );
 
     const context = await this.getInternalClients().call('ResolveCheckoutContext', {
@@ -423,6 +450,7 @@ export class OrderService {
     for (const store of storeList) {
       const snapshot = contextStores?.find((s: any) => s.id === store.store_id);
       if (!snapshot) throw new ApiError(503, 'DEPENDENCY_CONTRACT_INVALID', 'Lookup thiếu Store.');
+      if(!snapshot.return_address || ['recipient_name','phone','line1','ward','district','city'].some(key=>typeof snapshot.return_address![key as keyof typeof snapshot.return_address]!=='string'||!snapshot.return_address![key as keyof typeof snapshot.return_address]!.trim()))throw new ApiError(409,'STORE_RETURN_ADDRESS_REQUIRED','Cửa hàng chưa hoàn thiện địa chỉ nhận trả để nhận đơn mới.');
       store.shipping_vnd = moneyNumber(snapshot.shipping_fee_vnd);
       store.payable_vnd = moneyNumber(BigInt(store.goods_vnd) - BigInt(store.store_discount_vnd) - BigInt(store.platform_discount_vnd) + BigInt(store.shipping_vnd));
     }
@@ -454,9 +482,10 @@ export class OrderService {
     };
 
     const payable = moneyNumber(storeList.reduce((sum, s) => sum + BigInt(s.payable_vnd), 0n));
-    const snapshotHash = fingerprint(canonicalSnapshot);
+    const legacySnapshotHash=fingerprint(canonicalSnapshot);
+    const snapshotHash = fingerprint({...canonicalSnapshot,identity:storeList.map(s=>({store_id:s.store_id,items:s.items.map(it=>({product_id:it.product_id,variant_id:it.variant_id,title:it.product_title,sku:it.sku,variant_values:it.variant_values}))}))});
 
-    return { storeList, context, payable, platformVoucherId, snapshotHash };
+    return { storeList, context, payable, platformVoucherId, snapshotHash,legacySnapshotHash };
   }
 
   async quoteCheckout(
@@ -465,7 +494,7 @@ export class OrderService {
     correlation: string
   ): Promise<OperationOutputs['quoteCheckout']> {
     const orderRepo = new OrderRepository(this.source.manager);
-    const { storeList, payable, snapshotHash } = await this.revalidateQuote(
+    const { storeList, payable, snapshotHash, context } = await this.revalidateQuote(
       input,
       auth,
       correlation,
@@ -478,12 +507,14 @@ export class OrderService {
       user_id: auth.user_id,
       request_hash: fingerprint(this.quoteInput(input)),
       snapshot_hash: snapshotHash,
+      snapshot_version: 2,
       expires_at: expiresAt,
     });
     return {
       quote_id: quoteId,
       stores: storeList.map(store => ({
         store_id: store.store_id,
+        ...(context.stores.find((row:any)=>row.id===store.store_id)?.return_address ? {return_policy_snapshot:{version:'PLATFORM_2026_10_30' as const,window_hours:168 as const,full_refund_includes_original_shipping:true as const,fault_fee_rule:'STORE_IF_STORE_FAULT_CUSTOMER_IF_CHANGE_OF_MIND_ADMIN_IF_DISPUTED' as const,return_address:context.stores.find((row:any)=>row.id===store.store_id)!.return_address!}} : {}),
         amounts: {
           goods_vnd: store.goods_vnd,
           store_discount_vnd: store.store_discount_vnd,
@@ -506,12 +537,15 @@ export class OrderService {
   async recoverOrders() {
     await this.checkoutRunner().tick();
     await new OrderInventoryRunner(this.source,(op,body,corr)=>this.getInternalClients().call(op,body,corr)).tick();
+    await new DeliveryReturnRunner(this.source,(op,body,corr)=>this.getInternalClients().call(op,body,corr)).tick();
+    await new ReturnsRunner(this.source,(op,body,corr)=>this.getInternalClients().call(op,body,corr)).tick();
   }
 
   async confirmCheckout(input:OperationInputs['confirmCheckout']['body'],key:string|undefined,auth:any,correlation:string):Promise<OperationOutputs['confirmCheckout']> {
     if(!auth?.user_id)throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');
     if(!key?.trim() || key.trim().length>200)throw new ApiError(422,'VALIDATION_FAILED','Idempotency-Key không hợp lệ.');
-    const normalized={...input,cart_item_ids:[...input.cart_item_ids].sort()};
+    this.validateSelection(input);
+    const normalized=input.source==='BUY_NOW'?{...input}:{...input,cart_item_ids:[...input.cart_item_ids].sort()};
     try {
       return await this.checkoutRunner().confirm(auth.user_id,key.trim(),fingerprint(normalized),correlation,async()=>{
         const quote=await this.quoteStore.get(input.quote_id);
@@ -519,15 +553,15 @@ export class OrderService {
         if(Date.parse(quote.expires_at)<=Date.now())throw new ApiError(409,'QUOTE_EXPIRED','Quote đã hết hạn.');
         if(quote.request_hash!==fingerprint(this.quoteInput(input)))throw new ApiError(409,'QUOTE_CHANGED','Nội dung khác quote.');
         const calculated=await this.revalidateQuote(input,auth,correlation,new OrderRepository(this.source.manager));
-        if(calculated.snapshotHash!==quote.snapshot_hash || calculated.payable!==input.expected_payable_total_vnd)
+        if((quote.snapshot_version===2?calculated.snapshotHash:calculated.legacySnapshotHash)!==quote.snapshot_hash || calculated.payable!==input.expected_payable_total_vnd)
           throw new ApiError(409,'QUOTE_CHANGED','Giá, tồn kho hoặc địa chỉ đã thay đổi; vui lòng tạo quote mới.');
         const storeIds=new Set(calculated.storeList.map(x=>x.store_id));
         if(Object.keys(input.payment_methods).length!==storeIds.size || Object.keys(input.payment_methods).some(x=>!storeIds.has(x)))
           throw new ApiError(422,'PAYMENT_SCOPE_MISMATCH','Phương thức thanh toán phải khớp đúng các Store đã chọn.');
         const purchaseGroupId=randomUUID();
         const storeOrders=calculated.storeList.map(store=>({ ...store,orderId:randomUUID(),paymentMethod:input.payment_methods[store.store_id],
-          status:input.payment_methods[store.store_id]==='COD'?'PREPARING':'AWAITING_PAYMENT',
-          paymentExpiresAt:input.payment_methods[store.store_id]==='COD'?null:quote.expires_at }));
+          status:input.payment_methods[store.store_id]==='COD'||store.payable_vnd===0?'PREPARING':'AWAITING_PAYMENT',
+          paymentExpiresAt:input.payment_methods[store.store_id]==='COD'||store.payable_vnd===0?null:quote.expires_at }));
         return {userId:auth.user_id,purchaseGroupId,correlation,input:normalized,storeOrders,context:calculated.context,payable:calculated.payable,platformVoucherId:calculated.platformVoucherId,
           reserve:{operation_id:commandId('reserve:'+purchaseGroupId),purchase_group_id:purchaseGroupId,expires_at:quote.expires_at,
             items:storeOrders.flatMap(store=>store.items.map(item=>({variant_id:item.variant_id,store_id:store.store_id,order_id:store.orderId,quantity:item.quantity})))}};
@@ -538,11 +572,13 @@ export class OrderService {
   private async commitCheckout(plan:CheckoutPlan,result:any,manager:EntityManager):Promise<OperationOutputs['confirmCheckout']> {
     const repo=new OrderRepository(manager),{storeOrders,purchaseGroupId,userId}=plan;
     // A second key must not purchase a Cart snapshot already removed or edited by another checkout.
-    await manager.query(`SELECT ci.id FROM cart_item ci JOIN cart c ON c.id=ci.cart_id
-      WHERE ci.id=ANY($1::uuid[]) AND c.customer_user_id=$2 ORDER BY ci.id FOR UPDATE OF ci`,[plan.input.cart_item_ids,userId]);
-    const current=await repo.findCartItemsWithOwnership(plan.input.cart_item_ids,userId);
-    if(current.length!==plan.input.cart_item_ids.length || current.some(ci=>!plan.reserve.items.some(line=>line.variant_id===ci.variant_id && line.store_id===ci.store_id && line.quantity===ci.quantity)))
-      throw new ApiError(409,'CART_CHANGED','Giỏ hàng đã thay đổi trong lúc xác nhận.');
+    if(plan.input.source!=='BUY_NOW'){
+      await manager.query(`SELECT ci.id FROM cart_item ci JOIN cart c ON c.id=ci.cart_id
+        WHERE ci.id=ANY($1::uuid[]) AND c.customer_user_id=$2 ORDER BY ci.id FOR UPDATE OF ci`,[plan.input.cart_item_ids,userId]);
+      const current=await repo.findCartItemsWithOwnership(plan.input.cart_item_ids,userId);
+      if(current.length!==plan.input.cart_item_ids.length || current.some(ci=>!plan.reserve.items.some(line=>line.variant_id===ci.variant_id && line.store_id===ci.store_id && line.quantity===ci.quantity)))
+        throw new ApiError(409,'CART_CHANGED','Giỏ hàng đã thay đổi trong lúc xác nhận.');
+    }
     const voucherRepo=this.vouchers(manager),holds:any[]=[],redemptions:any[]=[];
     for(const store of storeOrders){
       if(store.voucher_id && store.store_discount_vnd>0){
@@ -559,7 +595,10 @@ export class OrderService {
       await repo.createOrder({id:store.orderId,purchase_group_id:purchaseGroupId,customer_user_id:userId,store_id:store.store_id,address_snapshot:plan.context.address_snapshot,
         status:store.status,payment_method:store.paymentMethod,payment_expires_at:store.paymentExpiresAt?new Date(store.paymentExpiresAt):null,
         goods_vnd:store.goods_vnd,store_discount_vnd:store.store_discount_vnd,platform_discount_vnd:store.platform_discount_vnd,shipping_vnd:store.shipping_vnd,payable_vnd:store.payable_vnd,version:0});
-      for(const item of store.items)await repo.createOrderItem({order_id:store.orderId,product_id:item.product_id,variant_id:item.variant_id,product_snapshot:{title:item.product_title},sku_snapshot:item.sku,
+      const returnAddress=plan.context.stores.find((row:any)=>row.id===store.store_id)?.return_address;
+      // Existing durable attempts prepared by the old writer remain legacy/case-by-case.
+      if(returnAddress)await manager.query('UPDATE "order" SET return_policy_snapshot=$2 WHERE id=$1',[store.orderId,{version:'PLATFORM_2026_10_30',window_hours:168,full_refund_includes_original_shipping:true,fault_fee_rule:'STORE_IF_STORE_FAULT_CUSTOMER_IF_CHANGE_OF_MIND_ADMIN_IF_DISPUTED',return_address:returnAddress}]);
+      for(const item of store.items)await repo.createOrderItem({order_id:store.orderId,product_id:item.product_id,variant_id:item.variant_id,product_snapshot:{title:item.product_title,variant_values:item.variant_values,variant_title:item.variant_title},sku_snapshot:item.sku,
         unit_price_vnd:item.unit_price_vnd,quantity:item.quantity,line_total_vnd:item.line_total_vnd});
       await manager.query(`INSERT INTO order_status_history(order_id,from_status,to_status,actor_user_id,reason,operation_id)
         VALUES($1,NULL,$2,$3,'ORDER_CREATED',$4)`,[store.orderId,store.status,userId,commandId('created:'+store.orderId)]);
@@ -568,11 +607,11 @@ export class OrderService {
       const items=store.items.map((x:any)=>({variant_id:x.variant_id,store_id:store.store_id,quantity:x.quantity}));
       await manager.query(`INSERT INTO order_inventory_state(order_id,reservation_ids,items_json,state,correlation_id)
         VALUES($1,$2,$3,'RESERVED',$4)`,[store.orderId,ids,JSON.stringify(items),plan.correlation]);
-      if(store.paymentMethod==='COD')await queueInventoryCommand(manager,store.orderId,'CONSUME',plan.correlation);
+      if(store.paymentMethod==='COD'||store.payable_vnd===0)await queueInventoryCommand(manager,store.orderId,'CONSUME',plan.correlation);
       await audit(manager,'M2',userId,'Order',store.orderId,'CONFIRM_CHECKOUT',plan.correlation,{}, {status:store.status,payable_vnd:store.payable_vnd});
     }
     await voucherRepo.commitVoucherRedemptions(purchaseGroupId,redemptions);
-    await repo.removeCartItems(plan.input.cart_item_ids,userId);
+    if(plan.input.source!=='BUY_NOW')await repo.removeCartItems(plan.input.cart_item_ids,userId);
     const orders=await repo.findOrdersByPurchaseGroupId(purchaseGroupId,userId);
     return {purchase_group_id:purchaseGroupId,order_ids:storeOrders.map(x=>x.orderId),orders:orders.map(o=>this.mapOrderRowToDto(o)),payable_total_vnd:plan.payable};
   }
@@ -600,33 +639,7 @@ export class OrderService {
       );
     }
 
-    const orders: OperationOutputs['getPurchaseGroupOrders']['orders'] = ordersWithItems.map(o => ({
-      id: o.id,
-      purchase_group_id: o.purchase_group_id,
-      store_id: o.store_id,
-      status: o.status as any,
-      version: o.version,
-      payment_method: o.payment_method as any,
-      payment_expires_at: o.payment_expires_at ? new Date(o.payment_expires_at).toISOString() : undefined,
-      amounts: {
-        goods_vnd: moneyNumber(o.goods_vnd),
-        store_discount_vnd: moneyNumber(o.store_discount_vnd),
-        platform_discount_vnd: moneyNumber(o.platform_discount_vnd),
-        shipping_vnd: moneyNumber(o.shipping_vnd),
-        payable_vnd: moneyNumber(o.payable_vnd),
-      },
-      items: o.items.map(it => ({
-        id: it.id,
-        order_id: it.order_id,
-        product_id: it.product_id,
-        variant_id: it.variant_id,
-        product_snapshot: it.product_snapshot,
-        sku_snapshot: it.sku_snapshot,
-        unit_price_vnd: moneyNumber(it.unit_price_vnd),
-        quantity: it.quantity,
-        line_total_vnd: moneyNumber(it.line_total_vnd),
-      })),
-    }));
+    const orders: OperationOutputs['getPurchaseGroupOrders']['orders'] = ordersWithItems.map(this.mapOrderRowToDto);
 
     const payableTotalVnd = orders.reduce((sum, o) => sum + o.amounts.payable_vnd, 0);
 
@@ -641,7 +654,7 @@ export class OrderService {
   // --- ORDER-03: Order Read Endpoints ---
 
   async listOwnOrders(
-    query: { page?: number; size?: number },
+    query: { page?: number; size?: number } & OrderSearch,
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['listOwnOrders']> {
@@ -652,7 +665,7 @@ export class OrderService {
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
     const repo = new OrderRepository(this.source.manager);
-    const { items, total } = await repo.pageCustomerOrders(userId, page, size);
+    const { items, total } = await repo.pageCustomerOrders(userId, page, size, query);
 
     return {
       items: items.map(this.mapOrderRowToDto),
@@ -684,7 +697,7 @@ export class OrderService {
   }
 
   async listStoreOrders(
-    query: { page?: number; size?: number },
+    query: { page?: number; size?: number } & OrderSearch,
     auth: any,
     _correlation: string
   ): Promise<OperationOutputs['listStoreOrders']> {
@@ -697,7 +710,7 @@ export class OrderService {
     const size = Math.min(100, Math.max(1, Number(query?.size ?? 20)));
 
     const repo = new OrderRepository(this.source.manager);
-    const { items, total } = await repo.pageStoreOrders(storeId, page, size);
+    const { items, total } = await repo.pageStoreOrders(storeId, page, size, query);
 
     return {
       items: items.map(this.mapOrderRowToDto),
@@ -768,6 +781,7 @@ export class OrderService {
         throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản đơn hàng không khớp (xung đột dữ liệu).');
       }
 
+      await assertDeliveryNotReturning(manager,id);
       // Legal state transitions:
       // PENDING is reached only after inventory consumption by the checkout/payment workflow.
       // CONFIRMED -> PROCESSING
@@ -830,12 +844,9 @@ export class OrderService {
         );
       }
 
-      return this.mapOrderRowToDto({
-        ...updated,
-        items: order.items,
-        payment_status: order.payment_status,
-        refund_status: order.refund_status,
-      });
+      const current=await repo.findStoreOrderById(id,storeId);
+      if(!current)throw new ApiError(409,'ORDER_STATE_CONFLICT','Không đọc được Order sau khi cập nhật.');
+      return this.mapOrderRowToDto(current);
     });
   }
 
@@ -890,6 +901,7 @@ export class OrderService {
       const repo=new OrderRepository(manager),order=await repo.lockStoreOrderById(id,storeId);
       if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
       if(order.version!==input.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
+      if(BigInt(order.payable_vnd)===0n)throw new ApiError(409,'PAYMENT_NOT_REQUIRED','Đơn 0đ không cần thu tiền.');
       if(order.status!=='SHIPPED' || order.payment_method!=='COD') throw new ApiError(409,'INVALID_STATE_TRANSITION','Chỉ thu COD cho đơn đang giao.');
       const payment=await repo.lockPaymentByOrderId(id);
       if(!payment || ['SUCCEEDED','CANCELLED'].includes(payment.status)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment không cho phép thu COD.');
@@ -898,7 +910,9 @@ export class OrderService {
       if(result.status!=='SUCCEEDED' || result.order_id!==id || result.collected_vnd!==moneyNumber(payment.collectible_vnd)) throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment chưa xác nhận thu đủ COD.');
       const updated=await repo.incrementOrderVersion(id,input.expected_version);
       if(!updated) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
-      return this.mapOrderRowToDto({...updated,items:order.items,payment_status:result.status,refund_status:order.refund_status});
+      const current=await repo.findStoreOrderById(id,storeId);
+      if(!current)throw new ApiError(409,'ORDER_STATE_CONFLICT','Không đọc được Order sau khi xác nhận COD.');
+      return this.mapOrderRowToDto(current);
     });
   }
 
@@ -915,7 +929,7 @@ export class OrderService {
     if (!customerUserId || !UUID_REGEX.test(customerUserId)) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'customer_user_id không hợp lệ.');
     }
-    if (!productId || !UUID_REGEX.test(productId)) {
+    if (productId !== undefined && !UUID_REGEX.test(productId)) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'product_id không hợp lệ.');
     }
 
@@ -936,7 +950,7 @@ export class OrderService {
       };
     }
 
-    if (item.product_id !== productId) {
+    if (productId !== undefined && item.product_id !== productId) {
       return {
         eligible: false,
         reason: 'Sản phẩm không khớp với mục đơn hàng.',
@@ -952,6 +966,7 @@ export class OrderService {
 
     return {
       eligible: true,
+      ...(productId === undefined ? {product_id:item.product_id} : {}),
     };
   }
 }

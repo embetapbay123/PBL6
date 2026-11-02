@@ -1,5 +1,8 @@
 import { connect as connectTls, ConnectionOptions, TLSSocket } from 'node:tls';
 import { randomUUID } from 'node:crypto';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { ApiError } from '../../../shared/src/errors';
 import type { IEmailAdapter } from './auth.service';
 
@@ -20,17 +23,31 @@ export class DevelopmentMockEmailAdapter implements IEmailAdapter {
   async sendStaffInvitationEmail(_email: string): Promise<void> { this.unavailable(); }
 }
 
-// Only the disposable M3 HTTP integration stack can select this no-network adapter.
+// Private ephemeral inbox, never an artifact/log or a public unauthenticated endpoint.
+// Only the explicitly enabled development integration stack may select this adapter.
 export class IntegrationCaptureEmailAdapter implements IEmailAdapter {
-  async sendVerificationEmail(_email: string, _token: string): Promise<void> {}
-  async sendPasswordResetEmail(_email: string, _token: string): Promise<void> {}
-  async sendStaffInvitationEmail(_email: string): Promise<void> {}
+  constructor(private readonly directory = join(tmpdir(), 'pbl6-integration-email'), private readonly origin = 'http://127.0.0.1:3109') {}
+  private async capture(kind: string, email: string, link: string) {
+    try {
+      await mkdir(this.directory, {recursive: true, mode: 0o700});
+      await writeFile(join(this.directory, randomUUID() + '.json'), JSON.stringify({kind, email, link, captured_at: new Date().toISOString()}), {flag: 'wx', mode: 0o600});
+    } catch { throw new ApiError(503, 'EMAIL_DELIVERY_UNAVAILABLE', 'Không ghi được hộp thư kiểm thử.'); }
+  }
+  sendVerificationEmail(email: string, token: string): Promise<void> {
+    return this.capture('VERIFICATION', email, emailActionLink({publicUrl: this.origin}, 'verify-email', token));
+  }
+  sendPasswordResetEmail(email: string, token: string): Promise<void> {
+    return this.capture('PASSWORD_RESET', email, emailActionLink({publicUrl: this.origin}, 'reset-password', token));
+  }
+  sendStaffInvitationEmail(email: string): Promise<void> {
+    return this.capture('STAFF_INVITATION', email, new URL('/customer/invitations', this.origin).toString());
+  }
 }
 
 export function createEmailAdapter(env: NodeJS.ProcessEnv = process.env): IEmailAdapter {
   const mode = env.EMAIL_ADAPTER ?? 'smtp';
   if (mode === 'mock' && env.NODE_ENV === 'development') return new DevelopmentMockEmailAdapter();
-  if (mode === 'capture' && env.NODE_ENV === 'development' && env.PBL6_REQUIRE_M3_INTEGRATION === '1') return new IntegrationCaptureEmailAdapter();
+  if (mode === 'capture' && env.NODE_ENV === 'development' && env.PBL6_REQUIRE_M3_INTEGRATION === '1') return new IntegrationCaptureEmailAdapter(env.EMAIL_CAPTURE_DIR, env.WEB_ORIGIN);
   if (mode !== 'smtp') throw new Error('Invalid EMAIL_ADAPTER configuration');
   return new SmtpEmailAdapter(smtpSettings(env));
 }

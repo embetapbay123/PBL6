@@ -11,8 +11,9 @@ import { validateSync } from 'class-validator';
 const fixtures=require('../../shared/src/fixtures.generated.json');
 const events=require('../../shared/src/event-fixtures.generated.json');
 test('every operation has executable DTO validation and valid request/response fixtures',()=>{
-  expect(Object.keys(operationContracts)).toHaveLength(111);
-  expect(Object.values(operationContracts).filter(r=>!r.internal)).toHaveLength(100);
+  expect(Object.keys(operationContracts)).toHaveLength(173);
+  expect(Object.values(operationContracts).filter(r=>!r.internal)).toHaveLength(159);
+  expect(Object.keys(fixtures).sort()).toEqual(Object.keys(operationContracts).sort());
   for(const [id,f] of Object.entries(fixtures) as [any,any][]) {
     expect(()=>validateOperation(id,f.request)).not.toThrow();
     const spec=(operationContracts as any)[id].responses[String(f.status)];

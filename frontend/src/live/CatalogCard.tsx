@@ -1,6 +1,9 @@
+import {ProductImage} from '../components/ProductImage';
 import { Link } from "react-router-dom";
-import { ImageOff, ShoppingBag, Store } from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight, Store } from "lucide-react";
+import {ProductCardActions} from './ProductCardActions';
+import {StoreLabel} from './StoreLabel';
+import {variantCanOrder} from '../components/variant-availability';
 import type { OperationOutputs } from "../api/operations.generated";
 export function CatalogCard({
   product,
@@ -11,30 +14,22 @@ export function CatalogCard({
   category?: string;
   edit?: boolean;
 }) {
-  const [failed, setFailed] = useState(false);
   const variants = product.variants?.filter((v) => v.status === "ACTIVE") ?? [];
-  const price = variants.length
-    ? Math.min(...variants.map((v) => v.price_vnd))
+  const orderable=variants.filter(variantCanOrder),priced=orderable.length?orderable:variants;
+  const price = priced.length
+    ? Math.min(...priced.map((v) => v.price_vnd))
     : undefined;
   return (
-    <article>
+    <article className="product-card">
       <Link className="market-product-link" to={"/products/" + product.id}>
         <div className="market-card-image">
-          {product.images?.[0]?.image_url && !failed ? (
-            <img
-              loading="lazy"
-              src={product.images[0].image_url}
-              alt={product.title}
-              onError={() => setFailed(true)}
-            />
-          ) : (
-            <ImageOff className="text-slate-300" size={44} />
-          )}
+          <ProductImage loading="lazy" src={product.images?.[0]?.image_url} alt={product.title} name={product.title}/>
+
         </div>
         <div className="market-product-content">
           <small>
             {category ??
-              (typeof product.attributes.brand === "string"
+              (typeof product.attributes?.brand === "string"
                 ? product.attributes.brand
                 : "Sản phẩm")}
           </small>
@@ -49,12 +44,14 @@ export function CatalogCard({
               <Store size={12} />
               {variants.length} lựa chọn
             </small>
-            <span className="rounded-full bg-emerald-50 p-2 text-emerald-600">
-              <ShoppingBag size={15} />
+            <span className="product-detail-affordance">
+              Xem chi tiết <ArrowUpRight size={14}/>
             </span>
           </div>
         </div>
       </Link>
+      {!edit&&<ProductCardActions product={product}/>}
+      {product.store_id&&<StoreLabel id={product.store_id} prefix="Gian hàng: " className="product-store-link"/>}
       {edit && (
         <div className="px-4 pb-4">
           <Link to={"/seller/products/" + product.id + "/edit"}>

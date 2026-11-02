@@ -10,6 +10,7 @@ async function setup(page:Page,{existing=false,unavailable=false,conflict=false}
  await page.route('**/api/v1/**',route=>{
   const req=route.request(),path=new URL(req.url()).pathname;
   if(path.endsWith('/auth/login')||path.endsWith('/auth/refresh'))return route.fulfill({json:auth,headers:{'set-cookie':'pbl6_csrf=fixture-only; Path=/; SameSite=Strict'}});
+  if(path==='/api/v1/me/favorites')return route.fulfill({json:{items:[],total:0,page:1,size:100}});
   if(path==='/api/v1/products/'+product)return route.fulfill({json:{...fixtures.getProduct.response,id:product}});
   if(path==='/api/v1/products/'+product+'/related')return route.fulfill({json:{items:[],total:0,page:1,size:4}});
   if(path.endsWith('/reviews')&&req.method()==='GET')return route.fulfill(unavailable?{status:501,json:{code:'FEATURE_NOT_IMPLEMENTED',message:'Review backend pending',details:[]}}:{json:{items:reviews,total:reviews.length,page:1,size:20}});

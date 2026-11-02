@@ -1,30 +1,40 @@
+import type {DataSource} from 'typeorm';
+import {searchPattern} from '../../../shared/src/search';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import { audit } from '../../../shared/src/audit';
 import { emitEvent } from '../../../shared/src/events';
 import { randomUUID } from 'node:crypto';
 import { returnedRow } from '../../../shared/src/postgres-returning';
+import type {OperationOutputs} from '../../../shared/src/operations.generated';
+
+/** Exact batched identity lookup uses the existing authorized directory and its pagination. */
+function identityIds(value?:string):string[]|undefined {
+  if(value===undefined)return undefined;
+  if(typeof value!=='string')throw new ApiError(422,'INVALID_IDENTITY_IDS','Danh sách mã không hợp lệ.');
+  const ids=value.split(',');
+  if(!ids.length||ids.length>100||ids.some(id=>!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(id)))throw new ApiError(422,'INVALID_IDENTITY_IDS','Chỉ đọc tối đa100 mã UUID mỗi lần.');
+  return [...new Set(ids)];
+}
 
 export class AdministrationRepository {
-  async listUsers(page = 1, size = 20) {
-    page = Math.max(1, Math.trunc(page));
-    size = Math.min(100, Math.max(1, Math.trunc(size)));
-    const offset = Math.max(0, (page - 1) * size);
-    const [totalRow] = await database.query('SELECT count(*)::int AS total FROM "user"');
-    const items = await database.query(
-      'SELECT id, email, status, version FROM "user" ORDER BY created_at DESC, id LIMIT $1 OFFSET $2',
-      [size, offset]
-    );
-    return {
-      items,
-      total: totalRow?.total ?? 0,
-      page,
-      size,
-    };
+  constructor(private readonly source:DataSource=database) {}
+  async listUsers(page = 1, size = 20, q?:string, status?:string, ids?:string):Promise<OperationOutputs['listUsers']> {
+    page=Math.max(1,Math.trunc(page));size=Math.min(100,Math.max(1,Math.trunc(size)));
+    const args:unknown[]=[],conditions:string[]=[];
+    const selected=identityIds(ids);if(selected){args.push(selected);conditions.push(`u.id=ANY($${args.length}::uuid[])`);}
+    if(q?.trim()){args.push(searchPattern(q));conditions.push(`marketplace_search(concat_ws(' ',u.email,u.id::text,p.display_name)) LIKE $${args.length}`);}
+    if(status){args.push(status);conditions.push(`u.status=$${args.length}`);}
+    const from=` FROM "user" u LEFT JOIN customer_profile p ON p.user_id=u.id`+(conditions.length?' WHERE '+conditions.join(' AND '):'');
+    const [count]=await this.source.query('SELECT count(*)::int AS total'+from,args);
+    const rows=await this.source.query('SELECT u.id,u.email,u.status,u.version,p.display_name'+from+` ORDER BY u.created_at DESC,u.id LIMIT $${args.length+1} OFFSET $${args.length+2}`,[...args,size,(page-1)*size]);
+    return {items:rows.map((row:any)=>({id:row.id,email:row.email,status:row.status,version:row.version,...(row.display_name?{display_name:row.display_name}:{})})),total:count.total,page,size};
   }
 
   async updateUserState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
-    return database.transaction(async manager => {
+    if(!['ACTIVE','LOCKED'].includes(status)||!reason?.trim())throw new ApiError(422,'INVALID_STATE_DECISION','Cần trạng thái hợp lệ và lý do cụ thể.');
+    reason=reason.trim();
+    return this.source.transaction(async manager => {
       const [user] = await manager.query('SELECT * FROM "user" WHERE id=$1 FOR UPDATE', [id]);
       if (!user) throw new ApiError(404, 'NOT_FOUND', 'Người dùng không tồn tại.');
       if (user.version !== expectedVersion) {
@@ -70,49 +80,34 @@ export class AdministrationRepository {
     });
   }
 
-  async listStores(page = 1, size = 20) {
-    page = Math.max(1, Math.trunc(page));
-    size = Math.min(100, Math.max(1, Math.trunc(size)));
-    const offset = Math.max(0, (page - 1) * size);
-    const [totalRow] = await database.query('SELECT count(*)::int AS total FROM store');
-    const rows = await database.query(
-      `SELECT s.id, m.user_id AS owner_user_id, s.name, s.status, s.shipping_fee_vnd, s.version
-       FROM store s
-       LEFT JOIN store_membership m ON m.store_id=s.id AND m.role='OWNER' AND m.status='ACTIVE'
-       ORDER BY s.id
-       LIMIT $1 OFFSET $2`,
-      [size, offset]
-    );
-    const items = rows.map((r: any) => ({
-      id: r.id,
-      owner_user_id: r.owner_user_id ?? '00000000-0000-0000-0000-000000000000',
-      name: r.name,
-      status: r.status,
-      shipping_fee_vnd: Number(r.shipping_fee_vnd),
-      version: r.version,
-    }));
-    return {
-      items,
-      total: totalRow?.total ?? 0,
-      page,
-      size,
-    };
+  async listStores(page = 1, size = 20, q?:string, status?:string, ids?:string):Promise<OperationOutputs['listStores']> {
+    page=Math.max(1,Math.trunc(page));size=Math.min(100,Math.max(1,Math.trunc(size)));
+    const args:unknown[]=[],conditions:string[]=[];
+    const selected=identityIds(ids);if(selected){args.push(selected);conditions.push(`s.id=ANY($${args.length}::uuid[])`);}
+    if(q?.trim()){args.push(searchPattern(q));conditions.push(`marketplace_search(concat_ws(' ',s.name,s.slug,s.id::text,m.user_id::text,u.email,p.display_name)) LIKE $${args.length}`);}
+    if(status){args.push(status);conditions.push(`s.status=$${args.length}`);}
+    const from=` FROM store s LEFT JOIN store_membership m ON m.store_id=s.id AND m.role='OWNER' AND m.status='ACTIVE' LEFT JOIN "user" u ON u.id=m.user_id LEFT JOIN customer_profile p ON p.user_id=u.id`+(conditions.length?' WHERE '+conditions.join(' AND '):'');
+    const [count]=await this.source.query('SELECT count(*)::int AS total'+from,args);
+    const rows=await this.source.query('SELECT s.id,s.name,s.status,s.shipping_fee_vnd,s.version,m.user_id AS owner_user_id,u.email AS owner_email,p.display_name AS owner_display_name'+from+` ORDER BY s.id LIMIT $${args.length+1} OFFSET $${args.length+2}`,[...args,size,(page-1)*size]);
+    return {items:rows.map((row:any)=>({id:row.id,name:row.name,status:row.status,shipping_fee_vnd:Number(row.shipping_fee_vnd),version:row.version,...(row.owner_user_id?{owner_user_id:row.owner_user_id}:{}),...(row.owner_email?{owner_email:row.owner_email}:{}),...(row.owner_display_name?{owner_display_name:row.owner_display_name}:{})})),total:count.total,page,size};
   }
 
   async listRoles() {
     const [roles, permissions] = await Promise.all([
-      database.query(
+      this.source.query(
         `SELECT r.id,r.code AS name,r.version,
           COALESCE(array_agg(rp.permission_id ORDER BY rp.permission_id) FILTER (WHERE rp.permission_id IS NOT NULL), ARRAY[]::uuid[]) AS permission_ids
          FROM role r LEFT JOIN role_permission rp ON rp.role_id=r.id
          GROUP BY r.id ORDER BY r.code`),
-      database.query('SELECT id,code,resource,action FROM permission ORDER BY resource,action,code'),
+      this.source.query('SELECT id,code,resource,action FROM permission ORDER BY resource,action,code'),
     ]);
     return { roles, permissions };
   }
 
   async updateStoreState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
-    return database.transaction(async manager => {
+    if(!['ACTIVE','LOCKED'].includes(status)||!reason?.trim())throw new ApiError(422,'INVALID_STATE_DECISION','Cần trạng thái hợp lệ và lý do cụ thể.');
+    reason=reason.trim();
+    return this.source.transaction(async manager => {
       const [store] = await manager.query('SELECT * FROM store WHERE id=$1 FOR UPDATE', [id]);
       if (!store) throw new ApiError(404, 'NOT_FOUND', 'Cửa hàng không tồn tại.');
       if (store.version !== expectedVersion) {
@@ -154,7 +149,7 @@ export class AdministrationRepository {
 
       return {
         id: updated.id,
-        owner_user_id: ownerRow?.user_id ?? '00000000-0000-0000-0000-000000000000',
+        ...(ownerRow?.user_id?{owner_user_id:ownerRow.user_id}:{}),
         name: updated.name,
         status: updated.status,
         shipping_fee_vnd: Number(updated.shipping_fee_vnd),
@@ -164,7 +159,7 @@ export class AdministrationRepository {
   }
 
   async updateRole(id: string, permissionIds: string[], expectedVersion: number, actorUserId: string, correlationId: string) {
-    return database.transaction(async manager => {
+    return this.source.transaction(async manager => {
       const [role] = await manager.query('SELECT * FROM role WHERE id=$1 FOR UPDATE', [id]);
       if (!role) throw new ApiError(404, 'NOT_FOUND', 'Vai trò không tồn tại.');
       if (role.version !== expectedVersion) throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');

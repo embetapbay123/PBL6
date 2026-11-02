@@ -514,6 +514,7 @@ describe('OrderService.listOwnOrders & getOwnOrder Business Logic (ORDER-03)', (
       mockQuery.mockResolvedValueOnce([orderFromDb]);
       mockQuery.mockResolvedValueOnce(itemsFromDb);
 
+      mockQuery.mockResolvedValueOnce([]); // status history for legacy detail fixture
       const result = await service.getOwnOrder(orderId, mockAuth, correlation);
 
       expect(result.id).toBe(orderId);
@@ -690,6 +691,7 @@ describe('OrderService.listStoreOrders & getStoreOrder Business Logic (ORDER-03)
 
       mockQuery.mockResolvedValueOnce([orderFromDb]);
       mockQuery.mockResolvedValueOnce(itemsFromDb);
+      mockQuery.mockResolvedValueOnce([]); // status history (legacy fixture has no events)
 
       const result = await service.getStoreOrder(orderId, mockSellerAuth, correlation);
 
@@ -745,7 +747,7 @@ describe('OrderService.verifyReviewEligibility (REVIEW-ELIG-01 & BR-37)', () => 
     });
   });
 
-  test('throws 422 VALIDATION_FAILED when product_id is missing or not a valid UUID', async () => {
+  test('throws 422 VALIDATION_FAILED when supplied product_id is not a valid UUID', async () => {
     await expect(
       service.verifyReviewEligibility({
         order_item_id: validOrderItemId,
@@ -756,6 +758,11 @@ describe('OrderService.verifyReviewEligibility (REVIEW-ELIG-01 & BR-37)', () => 
       status: 422,
       response: { code: 'VALIDATION_FAILED' },
     });
+  });
+
+  test('resolves the canonical Product for an owned completed item when product_id is omitted',async()=>{
+    mockQuery.mockResolvedValueOnce([{order_item_id:validOrderItemId,order_id:validOrderId,product_id:validProductId,customer_user_id:validCustomerId,order_status:'COMPLETED'}]);
+    await expect(service.verifyReviewEligibility({order_item_id:validOrderItemId,customer_user_id:validCustomerId})).resolves.toEqual({eligible:true,product_id:validProductId});
   });
 
   test('returns eligible: false when order item is not found in database', async () => {
@@ -978,6 +985,7 @@ describe('OrderService.verifyReviewEligibility (REVIEW-ELIG-01 & BR-37)', () => 
         items: [],
       }]);
       mockQuery.mockResolvedValueOnce([]); // order_item
+      mockQuery.mockResolvedValueOnce([]); // status history (legacy fixture has no events)
 
       await expect(
         orderService.cancelOwnOrder(testOrderId, { expected_version: 1 }, customerAuth, correlation)
@@ -997,6 +1005,7 @@ describe('OrderService.verifyReviewEligibility (REVIEW-ELIG-01 & BR-37)', () => 
         items: [],
       }]);
       mockQuery.mockResolvedValueOnce([]); // order_item
+      mockQuery.mockResolvedValueOnce([]); // status history (legacy fixture has no events)
 
       await expect(
         orderService.cancelOwnOrder(testOrderId, { expected_version: 1 }, customerAuth, correlation)

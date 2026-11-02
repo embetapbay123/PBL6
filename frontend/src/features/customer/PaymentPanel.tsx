@@ -3,6 +3,7 @@ import { callOperation } from '../../api/operations';
 import { ApiError } from '../../api/client';
 import type { OperationOutputs } from '../../api/operations.generated';
 import { usePaymentStatus } from './usePaymentStatus';
+import {canStartOrderPayment} from '../../components/order-actions';
 
 type Attempt = OperationOutputs['createPaymentAttempt'];
 type Order = OperationOutputs['getOwnOrder'];
@@ -31,6 +32,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
   const [setupError, setSetupError] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [round, setRound] = useState(0);
+  const [readOnly,setReadOnly]=useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   // Đọc Order mới nhất rồi tạo attempt (server dùng lại attempt/QR cũ nếu gọi ซ้ำ)
@@ -44,7 +46,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
         const o = await callOperation('getOwnOrder', { path: { id: orderId } });
         if (cancelled) return;
         setOrder(o);
-        if (o.status !== 'AWAITING_PAYMENT' || o.payment_method !== 'SANDBOX') return;
+        if (!canStartOrderPayment(o)||readOnly) return;
         const a = await callOperation('createPaymentAttempt', {
           path: { id: orderId },
           body: { expected_order_version: o.version },
@@ -57,9 +59,9 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [orderId, round]);
+  }, [orderId, round,readOnly]);
 
-  const { phase, rawStatus, lastError } = usePaymentStatus({
+  const { phase, rawStatus, lastError, refresh } = usePaymentStatus({
     enabled: !!attempt,
     expiresAt: attempt?.expires_at,
     fetchStatus: signal => callOperation('getPayment', { path: { id: attempt!.payment_id } }, {signal}),
@@ -83,9 +85,13 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
     );
   }
 
+  if(order?.amounts.payable_vnd===0)return <p data-testid="payment-not-required">Đơn 0đ không cần chuyển tiền. Theo dõi xử lý hàng trong chi tiết đơn; không có giao dịch thu hoặc hoàn tiền.</p>;
+
   if (!attempt) {
+    if(order?.payment_status==='UNKNOWN')return <div role="alert" data-testid="payment-unknown"><p>Chưa xác nhận được kết quả thanh toán. Đừng thanh toán lại; giao dịch đang được đối soát.</p><button onClick={()=>{setReadOnly(true);setRound(r=>r+1);}}>Đọc lại đơn và kết quả thanh toán</button></div>;
     if (order?.payment_status==='SUCCEEDED') return <p data-testid="payment-succeeded">Đã nhận thanh toán.</p>;
     if (order?.payment_status==='REFUNDED' || order?.refund_status==='SUCCEEDED') return <p data-testid="payment-refunded">Đã hoàn tiền.</p>;
+    if(order&&readOnly&&canStartOrderPayment(order))return <div><p>Đơn hiện cho phép thanh toán. Nếu đã chuyển tiền nhưng chưa được ghi nhận, liên hệ hỗ trợ trước khi trả thêm.</p><button onClick={()=>{setReadOnly(false);setRound(r=>r+1);}}>Tạo mã thanh toán</button></div>;
     return (
       <p data-testid="payment-not-awaiting">
         Đơn hàng không ở trạng thái chờ thanh toán{order ? ` (${order.status})` : ''}.
@@ -111,7 +117,8 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
     case 'unknown':
       return (
         <div role="alert" data-testid="payment-unknown">
-          Chưa xác nhận được kết quả thanh toán. Đừng thanh toán lại; giao dịch đang được đối soát.
+          <p>Chưa xác nhận được kết quả thanh toán. Đừng thanh toán lại; giao dịch đang được đối soát.</p>
+          <button onClick={refresh}>Đối soát lại trạng thái</button>
         </div>
       );
     case 'expired':
@@ -119,64 +126,26 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
         <div role="alert" data-testid="payment-expired">
           <p>Mã thanh toán đã hết hạn.</p>
           <p>Không thanh toán bằng mã đã hết hạn. Hãy kiểm tra lại đơn hàng.</p>
+          <button onClick={refresh}>Đọc lại trạng thái thanh toán</button>
         </div>
       );
     case 'error':
       return (
         <div role="alert" data-testid="payment-poll-error">
           <p>{describePaymentError(lastError)}</p>
-          <button onClick={() => window.location.reload()}>Tải lại trang</button>
+          <button onClick={refresh}>Thử đọc lại trạng thái</button>
         </div>
       );
     default:
       return (
         <div data-testid="payment-waiting">
+          {attempt.provider==='INTEGRATION'&&<p role="status">Môi trường mô phỏng kiểm thử. Không chuyển tiền thật; kết quả được cấp bởi adapter kiểm thử riêng.</p>}
           {attempt.qr_url && <img src={attempt.qr_url} alt="Mã QR thanh toán" width={240} height={240} />}
-          {attempt.payment_code && <p>Nội dung chuyển khoản: <b>{attempt.payment_code}</b></p>}
+          {attempt.payment_code && <p>{attempt.provider==='INTEGRATION'?'Mã mô phỏng:':'Nội dung chuyển khoản:'} <b>{attempt.payment_code}</b></p>}
           {order && <p>Số tiền: <b>{formatVnd(order.amounts.payable_vnd)}</b></p>}
           {remaining !== null && <p>Còn lại: <span data-testid="payment-countdown">{formatClock(remaining)}</span></p>}
           <p>Đang chờ xác nhận thanh toán{rawStatus ? ` (${rawStatus})` : ''}...</p>
-          {import.meta.env.DEV && (
-            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await callOperation('sandboxCallback', {
-                      headers: { 'x-sandbox-signature': 'sim' },
-                      body: {
-                        provider_event_id: 'evt-' + Date.now(),
-                        provider_reference: attempt.payment_id,
-                        result: 'SUCCESS',
-                        signature: 'sim',
-                      },
-                    });
-                  } catch {}
-                }}
-              >
-                Mô phỏng Sandbox Callback
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await callOperation('sepayCallback', {
-                      headers: { 'x-sepay-signature': 'sim', 'x-sepay-timestamp': String(Date.now()) },
-                      body: {
-                        id: Date.now(),
-                        transferType: 'in',
-                        transferAmount: order?.amounts.payable_vnd ?? 0,
-                        accountNumber: 'VNPAY-01',
-                        content: attempt.payment_code ?? 'PAY',
-                      },
-                    });
-                  } catch {}
-                }}
-              >
-                Mô phỏng SePay Callback
-              </button>
-            </div>
-          )}
+
         </div>
       );
   }

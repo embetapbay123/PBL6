@@ -18,7 +18,8 @@ def test_injected_pool_is_reused_without_closing_or_leaking_request_headers():
     asyncio.run(run())
     assert {h['x-correlation-id'] for h in seen}=={'flow-a','flow-b'}
 
-def test_model_uses_own_timeout_and_stream_does_not_close_shared_pool():
+def test_model_uses_own_timeout_and_stream_does_not_close_shared_pool(monkeypatch):
+    monkeypatch.setenv('CHAT_TIMEOUT_SECONDS','2')
     def handler(request):
         assert request.extensions['timeout']['read']==2
         assert request.headers['x-correlation-id']=='chat-flow'

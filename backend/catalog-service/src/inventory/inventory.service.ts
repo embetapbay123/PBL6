@@ -1,12 +1,21 @@
+import type { DataSource } from 'typeorm';
+import {reconcileInventory} from './inventory-reconciliation';
 import { database } from '../../../shared/src/database';
 import { config } from '../../../shared/src/config';
 import { audit } from '../../../shared/src/audit';
 import { ApiError } from '../../../shared/src/errors';
 import { InternalClients } from '../../../shared/src/internal-clients';
-import { once } from '../../../shared/src/idempotency';
+import { once, fingerprint } from '../../../shared/src/idempotency';
 import type { OperationInputs, OperationOutputs } from '../../../shared/src/operations.generated';
-import { InventoryRepository, InventoryRow, QuoteVariantRow, ReservationRow } from './inventory.repository';
-import { inventoryBalance, isoTime, quoteItemResponse, stockMovementView, reservationView } from './inventory.mapper';
+import { InventoryRepository, InventoryRow, QuoteVariantRow, ReservationRow,type InventoryFilters } from './inventory.repository';
+import { inventoryBalance, inventoryView, isoTime, quoteItemResponse, stockMovementView, reservationView } from './inventory.mapper';
+import {attributeErrors,variantAttributeErrors} from '../catalog/catalog.validation';
+
+/** Unset preserves existing deployments. Explicit malformed values pause new writes. */
+export function exchangeDispatchWritesEnabled(): boolean {
+  return process.env.EXCHANGE_DISPATCH_WRITES_ENABLED === undefined
+    || process.env.EXCHANGE_DISPATCH_WRITES_ENABLED === 'true';
+}
 
 /** Owner always manages stock; a Seller needs the store inventory permission group (RBAC). */
 export function hasInventoryPermission(role: string | undefined, permissions: string[]): boolean {
@@ -22,6 +31,12 @@ export interface ActiveStoreDirectory {
 }
 
 const SYSTEM_ACTOR = '00000000-0000-0000-0000-000000000000';
+function assertSellableConfiguration(row:QuoteVariantRow){
+  if(row.product_status!=='ACTIVE'||row.moderation_status!=='VISIBLE'||row.taxonomy_status!=='ACTIVE')throw new ApiError(409,'PRODUCT_UNAVAILABLE','Sản phẩm hoặc loại sản phẩm hiện không được bán.');
+  if(row.variant_status!=='ACTIVE')throw new ApiError(409,'VARIANT_UNAVAILABLE','Phân loại hiện không được bán.');
+  if(!Array.isArray(row.attribute_definitions)||!row.product_attributes||typeof row.product_attributes!=='object'||Array.isArray(row.product_attributes)||attributeErrors(row.product_attributes,row.attribute_definitions).length||variantAttributeErrors(row.variant_values!,row.attribute_definitions).length)
+    throw new ApiError(409,'VARIANT_CONFIGURATION_INVALID','Phân loại chưa khớp cấu hình sản phẩm hiện hành. Cửa hàng cần kiểm tra trước khi nhận đơn mới.');
+}
 function millis(value: Date | string): number { return value instanceof Date ? value.getTime() : Date.parse(value); }
 
 function tally(lines: { variant_id: string; quantity: number }[]): Map<string, number> {
@@ -44,7 +59,9 @@ export function restockMatches(consumed: { variant_id: string; quantity: number 
 
 // Extension point for inventory; controller delegates here after implementation.
 export class InventoryService {
-  constructor(private readonly stores?: ActiveStoreDirectory) {}
+  constructor(private readonly stores?: ActiveStoreDirectory, private readonly source?: DataSource) {}
+
+  private get db(): DataSource { return this.source ?? database; }
 
   private clients(): InternalClients {
     const c = config('M1');
@@ -78,25 +95,24 @@ export class InventoryService {
   async quote(input: OperationInputs['QuoteVariants']['body'], correlation: string): Promise<OperationOutputs['QuoteVariants']> {
     const activeStoreIds = (await this.directory().call('ActiveStores', undefined, correlation)).ids;
     const variantIds = [...new Set(input.items.map(item => item.variant_id))];
-    const rows = await new InventoryRepository(database.manager).variantsForQuote(variantIds);
+    const rows = await new InventoryRepository(this.db.manager).variantsForQuote(variantIds);
     const byVariantId = new Map<string, QuoteVariantRow>(rows.map(row => [row.variant_id, row] as const));
 
     return { items: input.items.map(item => {
       const row = byVariantId.get(item.variant_id);
       if (!row || row.store_id !== item.store_id) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy Variant trong Store.');
       if (!activeStoreIds.includes(item.store_id)) throw new ApiError(409, 'STORE_UNAVAILABLE', 'Store đang không được phép bán.');
-      if (row.product_status !== 'ACTIVE' || row.moderation_status !== 'VISIBLE') throw new ApiError(409, 'PRODUCT_UNAVAILABLE', 'Sản phẩm không còn được bán.');
-      if (row.variant_status !== 'ACTIVE') throw new ApiError(409, 'VARIANT_UNAVAILABLE', 'Variant không còn được bán.');
+      assertSellableConfiguration(row);
       if (item.quantity > row.available_quantity) throw new ApiError(409, 'INSUFFICIENT_STOCK', 'Số lượng vượt quá tồn kho khả dụng.');
       return quoteItemResponse(row, item.quantity);
     })};
   }
 
   /** listStoreInventory — trang tồn kho của Store mà người gọi là thành viên. */
-  async listStoreInventory(query: { page: number; size: number }, context: any): Promise<OperationOutputs['listStoreInventory']> {
+  async listStoreInventory(query: { page: number; size: number }&InventoryFilters, context: any): Promise<OperationOutputs['listStoreInventory']> {
     const { storeId } = this.requireStoreScope(context);
-    const page = await new InventoryRepository(database.manager).pageInventory(storeId, query.page, query.size);
-    return { items: page.items, total: page.total, page: query.page, size: query.size };
+    const page = await new InventoryRepository(this.db.manager).pageInventory(storeId, query.page, query.size,query);
+    return { items: page.items.map(inventoryView), total: page.total, page: query.page, size: query.size };
   }
 
   /**
@@ -108,7 +124,7 @@ export class InventoryService {
   async adjustInventory(input: OperationInputs['adjustInventory']['body'], context: any, correlation: string):
   Promise<OperationOutputs['adjustInventory']> {
     const { storeId, actorUserId } = this.requireStoreScope(context);
-    return database.transaction(async manager => {
+    return this.db.transaction(async manager => {
       const repository = new InventoryRepository(manager);
       // Store nằm trong fingerprint để cùng operation ID không thể dùng lại cho Store khác.
       return once(manager, 'M1.Inventory.adjust', input.operation_id, { ...input, store_id: storeId }, async () => {
@@ -126,8 +142,8 @@ export class InventoryService {
         await repository.insertStockMovement({ inventoryId: row.id, operationId: input.operation_id,
           deltaQuantity: input.delta_quantity, reason: input.reason, actorUserId });
         await audit(manager, 'M1', actorUserId, 'Inventory', row.id, 'ADJUST', correlation,
-          { quantity: row.quantity, reserved_quantity: row.reserved_quantity, version: row.version },
-          { quantity: next, reserved_quantity: row.reserved_quantity, version: row.version + 1, reason: input.reason });
+          { variant_id: row.variant_id, quantity: row.quantity, reserved_quantity: row.reserved_quantity, version: row.version },
+          { variant_id: row.variant_id, quantity: next, reserved_quantity: row.reserved_quantity, version: row.version + 1, reason: input.reason });
         return inventoryBalance({ variant_id: row.variant_id, quantity: next,
           reserved_quantity: row.reserved_quantity, version: row.version + 1 });
       });
@@ -135,10 +151,24 @@ export class InventoryService {
   }
 
   /** listStockMovements — lịch sử nhập/xuất của Store, chỉ đọc. */
-  async listStockMovements(query: { page: number; size: number }, context: any): Promise<OperationOutputs['listStockMovements']> {
+  async listStockMovements(query: { page: number; size: number }&InventoryFilters, context: any): Promise<OperationOutputs['listStockMovements']> {
     const { storeId } = this.requireStoreScope(context);
-    const page = await new InventoryRepository(database.manager).pageMovements(storeId, query.page, query.size);
+    const filters={...query,...(query.from?{from:new Date(query.from).toISOString()}:{}),...(query.to?{to:new Date(query.to).toISOString()}:{})};
+    const page = await new InventoryRepository(this.db.manager).pageMovements(storeId, query.page, query.size,filters);
     return { items: page.items.map(stockMovementView), total: page.total, page: query.page, size: query.size };
+  }
+
+  async getInventoryReconciliation(query:OperationInputs['getInventoryReconciliation']['query'],context:any):Promise<OperationOutputs['getInventoryReconciliation']>{
+    const {storeId}=this.requireStoreScope(context),start=Date.parse(query.from),end=Date.parse(query.to);
+    if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end||end-start>366*86400000||start>Date.now())throw new ApiError(422,'INVALID_PERIOD','Chọn kỳ hợp lệ không quá 366 ngày, bắt đầu trước hiện tại.');
+    return this.db.transaction('REPEATABLE READ',async manager=>{
+      const repository=new InventoryRepository(manager),page=await repository.pageInventory(storeId,1,1,{variant_id:query.variant_id});
+      if(!page.items[0])throw new ApiError(404,'INVENTORY_NOT_FOUND','Không tìm thấy phân loại trong kho Store.');
+      const rows=await repository.reconciliationMovements(storeId,query.variant_id);
+      if(rows.length>20000)throw new ApiError(503,'RECONCILIATION_HISTORY_LIMIT','Lịch sử vượt giới hạn đối chiếu trực tuyến; cần hỗ trợ tạo mốc đối chiếu, không suy số đầu kỳ.');
+      const [clock]=await manager.query('SELECT clock_timestamp() AS as_of');
+      return reconcileInventory(page.items[0],rows,query.from,query.to,new Date(clock.as_of).toISOString());
+    });
   }
 
   /**
@@ -158,7 +188,7 @@ export class InventoryService {
     const threshold = input.threshold ?? 5;
     const page = input.page ?? 1;
     const size = input.size ?? 20;
-    const result = await new InventoryRepository(database.manager).pageLowStock(input.store_id, threshold, page, size);
+    const result = await new InventoryRepository(this.db.manager).pageLowStock(input.store_id, threshold, page, size);
     return { store_id: input.store_id, items: result.items, page, size, total: result.total };
   }
 
@@ -173,7 +203,7 @@ export class InventoryService {
   async reserve(input: OperationInputs['ReserveInventory']['body']): Promise<OperationOutputs['ReserveInventory']> {
     const variantIds = [...new Set(input.items.map(line => line.variant_id))].sort();
 
-    return database.transaction(async manager => {
+    return this.db.transaction(async manager => {
       const repository = new InventoryRepository(manager);
       return once(manager, 'M2.Inventory.reserve', input.operation_id, input, async () => {
         // Business validation follows the idempotency check, including malformed duplicate lines.
@@ -186,6 +216,11 @@ export class InventoryService {
         // Serialize competing commands for an Order even when they use disjoint stock rows.
         const orderIds = [...new Set(input.items.map(line => line.order_id))].sort();
         await repository.lockReservationOrders(orderIds);
+        // Product locks precede stock locks, matching catalog writes. Taxonomy
+        // parent SHARE locks block definition writers until the hold commits.
+        // The final read has a fresh READ COMMITTED snapshot after each lock wait.
+        const sellable=await repository.variantsForQuote(variantIds,true),bySellable=new Map(sellable.map(row=>[row.variant_id,row]));
+        for(const line of input.items){const row=bySellable.get(line.variant_id);if(!row||row.store_id!==line.store_id)throw new ApiError(404,'VARIANT_NOT_FOUND','Không tìm thấy phân loại trong cửa hàng.');assertSellableConfiguration(row);}
         const stock = await repository.lockInventoryByVariant(variantIds);
         // A replay is returned by once before checking time-dependent conditions.
         if (millis(input.expires_at) <= Date.now()) throw new ApiError(422, 'INVALID_EXPIRY', 'Thời điểm hết hạn phải ở tương lai.');
@@ -245,7 +280,7 @@ export class InventoryService {
     const operationKey = mode === 'CONSUME' ? 'M2.Inventory.consume' : 'M2.Inventory.release';
     const reservationIds = [...new Set(input.reservation_ids)];
 
-    return database.transaction(async manager => {
+    return this.db.transaction(async manager => {
       const repository = new InventoryRepository(manager);
       return once(manager, operationKey, input.operation_id, input, async () => {
         const reservations = await repository.lockReservations(reservationIds, input.order_id);
@@ -283,7 +318,7 @@ export class InventoryService {
    * ID khác thì trả ALREADY_APPLIED thay vì cộng tồn lần hai.
    */
   async restockOrder(input: OperationInputs['RestockOrder']['body']): Promise<OperationOutputs['RestockOrder']> {
-    return database.transaction(async manager => {
+    return this.db.transaction(async manager => {
       const repository = new InventoryRepository(manager);
       return once(manager, 'M2.Inventory.restock', input.operation_id, input, async () => {
         // Serialize against reserve/release/restock for the same Order, even on disjoint stock rows.
@@ -300,6 +335,7 @@ export class InventoryService {
         if (!restockMatches(consumed, input.items))
           throw new ApiError(409, 'RESTOCK_MISMATCH', 'Danh sách hoàn kho không khớp reservation đã consume.');
 
+        if(await repository.hasReceivedInspection(input.order_id))throw new ApiError(409,'INSPECTED_RETURN_EXISTS','Đơn đã có kiểm hàng hoàn; không dùng hoàn toàn bộ tồn của luồng hủy.');
         if (await repository.hasRestockMovement(input.order_id))
           return { operation_id: input.operation_id, status: 'ALREADY_APPLIED' as const };
 
@@ -315,6 +351,74 @@ export class InventoryService {
     });
   }
 
+  /** Receipt is immutable. Aggregate sellable returns can never exceed originally consumed stock. */
+  async restockReceived(input:OperationInputs['RestockReceivedItems']['body']):Promise<OperationOutputs['RestockReceivedItems']> {
+    return this.db.transaction(async manager=>{
+      const repository=new InventoryRepository(manager);
+      const canonical={...input,items:[...input.items].sort((a,b)=>a.variant_id.localeCompare(b.variant_id))};
+      return once(manager,'M2.Inventory.received-restock',input.operation_id,canonical,async()=>{
+        await repository.lockReservationOrders([input.order_id]);
+        const hash=fingerprint({order_id:input.order_id,actor_user_id:input.actor_user_id,items:canonical.items});
+        const [receipt]=await manager.query('SELECT payload_hash FROM inventory_return_receipt WHERE id=$1',[input.receipt_id]);
+        if(receipt){if(receipt.payload_hash!==hash)throw new ApiError(409,'RETURN_RECEIPT_CONFLICT','Biên bản kiểm hàng đã được ghi với nội dung khác.');return {operation_id:input.operation_id,status:'ALREADY_APPLIED' as const};}
+        const reservation=await repository.reservationByOrder(input.order_id);
+        if(!reservation)throw new ApiError(404,'RESERVATION_NOT_FOUND','Không tìm thấy dữ liệu xuất tồn của đơn.');
+        const consumed=(await repository.reservationItems([reservation.id])).filter(row=>row.status==='CONSUMED');
+        const returned=await repository.receivedTotals(input.order_id),seen=new Set<string>();
+        for(const item of input.items){
+          if(seen.has(item.variant_id)||!Number.isSafeInteger(item.quantity)||item.quantity<=0)throw new ApiError(422,'INVALID_RECEIVED_ITEMS','Phân loại phải duy nhất và lượng bán lại là số nguyên dương.');seen.add(item.variant_id);
+          const original=consumed.find(row=>row.variant_id===item.variant_id&&row.store_id===item.store_id);
+          if(!original||item.quantity+(returned.get(item.variant_id)??0)>original.quantity)throw new ApiError(409,'RECEIVED_QUANTITY_EXCEEDED','Không cộng vượt lượng thương mại đã trừ của chính đơn.');
+        }
+        if(!consumed.length)throw new ApiError(409,'RETURN_NOT_CONSUMED','Đơn chưa được trừ tồn thương mại.');
+        const balances=await repository.lockInventoryById(consumed.filter(row=>seen.has(row.variant_id)).map(row=>row.inventory_id));
+        for(const item of input.items){const balance=balances.find(row=>row.variant_id===item.variant_id);if(!balance||balance.quantity+item.quantity>2147483647)throw new ApiError(409,'STOCK_LIMIT_EXCEEDED','Lượng sau nhận hoàn vượt giới hạn tồn thương mại.');}
+        await manager.query('INSERT INTO inventory_return_receipt(id,order_id,operation_id,payload_hash,actor_user_id,items_json) VALUES($1,$2,$3,$4,$5,$6)',[input.receipt_id,input.order_id,input.operation_id,hash,input.actor_user_id,JSON.stringify(canonical.items)]);
+        for(const item of input.items){const original=consumed.find(row=>row.variant_id===item.variant_id)!;await repository.restockStock(original.inventory_id,item.quantity);await repository.insertMovement({inventoryId:original.inventory_id,reservationItemId:original.id,orderId:input.order_id,operationId:input.operation_id,deltaQuantity:item.quantity,deltaReserved:0,reason:'RETURN_RECEIVED',actorUserId:input.actor_user_id,receiptId:input.receipt_id});}
+        return {operation_id:input.operation_id,status:'APPLIED' as const};
+      });
+    });
+  }
+
+  /** One same-price replacement dispatch per inspected receipt; no stock effect on rejection. */
+  async dispatchExchange(input:OperationInputs['DispatchExchangeItems']['body']):Promise<OperationOutputs['DispatchExchangeItems']> {
+    const canonical={...input,items:[...input.items].sort((a,b)=>a.original_variant_id.localeCompare(b.original_variant_id))};
+    return this.db.transaction(async manager=>once(manager,'M2.Inventory.exchange-dispatch',input.operation_id,canonical,async()=>{
+      const repository=new InventoryRepository(manager);await repository.lockReservationOrders([input.order_id]);
+      const [receipt]=await manager.query('SELECT id FROM inventory_return_receipt WHERE id=$1 AND order_id=$2',[input.receipt_id,input.order_id]);
+      if(!receipt)throw new ApiError(409,'RETURN_RECEIPT_REQUIRED','Cần đối chiếu biên bản nhận hàng trước khi giao hàng đổi.');
+      const hash=fingerprint({...canonical,operation_id:undefined});
+      const [prior]=await manager.query('SELECT payload_hash,dispatch_snapshot FROM inventory_exchange_dispatch WHERE receipt_id=$1',[input.receipt_id]);
+      if(prior){if(prior.payload_hash!==hash)throw new ApiError(409,'EXCHANGE_DISPATCH_CONFLICT','Biên bản đã có nội dung hàng đổi khác.');return {operation_id:input.operation_id,status:'ALREADY_APPLIED' as const,...(prior.dispatch_snapshot?{exchange_dispatch:prior.dispatch_snapshot}:{})};}
+      // Committed operation/receipt replay must remain available during a writer rollback.
+      // Keep this gate inside the transaction, before any new dispatch or stock effect.
+      if(!exchangeDispatchWritesEnabled())throw new ApiError(503,'EXCHANGE_DISPATCH_PAUSED','Tạm dừng xác nhận bàn giao hàng đổi; giữ nguyên yêu cầu để tiếp tục đối chiếu.');
+      const reservation=await repository.reservationByOrder(input.order_id);
+      const consumed=reservation?(await repository.reservationItems([reservation.id])).filter(row=>row.status==='CONSUMED'):[];
+      if(!consumed.length||input.items.length!==consumed.length||new Set(input.items.map(row=>row.original_variant_id)).size!==consumed.length)throw new ApiError(409,'EXCHANGE_ITEMS_MISMATCH','Chỉ đổi đủ các dòng của đơn, không đổi một phần.');
+      const ids=[...new Set([...consumed.map(row=>row.variant_id),...input.items.map(row=>row.variant_id)])].sort();
+      const variants=await manager.query(`SELECT v.id,v.product_id,v.store_id,v.price_vnd,v.status,v.sku,v.variant_values_json,p.title,p.status AS product_status,p.moderation_status FROM product_variant v JOIN product p ON p.id=v.product_id WHERE v.id=ANY($1::uuid[]) ORDER BY v.id FOR SHARE OF v,p`,[ids]);
+      const balances=await manager.query('SELECT * FROM inventory WHERE variant_id=ANY($1::uuid[]) ORDER BY id FOR UPDATE',[ids]);
+      const totals=new Map<string,number>();
+      for(const item of input.items){
+        const original=consumed.find(row=>row.variant_id===item.original_variant_id&&row.store_id===item.store_id);
+        const from=variants.find((row:any)=>row.id===item.original_variant_id),to=variants.find((row:any)=>row.id===item.variant_id&&row.store_id===item.store_id);
+        if(!original||original.quantity!==item.quantity||!to||to.product_id!==from?.product_id||BigInt(to.price_vnd)!==BigInt(item.unit_price_vnd)||to.status!=='ACTIVE'||to.product_status!=='ACTIVE'||to.moderation_status!=='VISIBLE')throw new ApiError(409,'EXCHANGE_VARIANT_UNAVAILABLE','Chỉ đổi phân loại cùng sản phẩm, cùng giá đã mua và đang bán. Có thể đề nghị hoàn tiền để khách xác nhận.');
+        totals.set(item.variant_id,(totals.get(item.variant_id)??0)+item.quantity);
+      }
+      for(const [variant,quantity] of totals){const balance=balances.find((row:any)=>row.variant_id===variant);if(!balance||balance.quantity-balance.reserved_quantity<quantity)throw new ApiError(409,'EXCHANGE_OUT_OF_STOCK','Không đủ tồn khả dụng cho hàng đổi; không trừ tồn.');}
+      const [clock]=await manager.query('SELECT now() AS dispatched_at');
+      const exchange_dispatch={dispatched_at:new Date(clock.dispatched_at).toISOString(),items:canonical.items.map(item=>{
+        const variant=variants.find((v:any)=>v.id===item.variant_id);
+        return {original_variant_id:item.original_variant_id,variant_id:item.variant_id,product_id:variant.product_id,store_id:item.store_id,sku_snapshot:variant.sku,
+          quantity:item.quantity,unit_price_vnd:item.unit_price_vnd,product_snapshot:{title:variant.title,variant_values:variant.variant_values_json}};
+      })};
+      await manager.query('INSERT INTO inventory_exchange_dispatch(receipt_id,operation_id,payload_hash,items_json,actor_user_id,dispatch_snapshot) VALUES($1,$2,$3,$4,$5,$6)',[input.receipt_id,input.operation_id,hash,JSON.stringify(canonical.items),input.actor_user_id,JSON.stringify(exchange_dispatch)]);
+      for(const [variant,quantity] of totals){const balance=balances.find((row:any)=>row.variant_id===variant);await manager.query('UPDATE inventory SET quantity=quantity-$2,version=version+1 WHERE id=$1',[balance.id,quantity]);await repository.insertMovement({inventoryId:balance.id,orderId:input.order_id,operationId:input.operation_id,deltaQuantity:-quantity,deltaReserved:0,reason:'EXCHANGE_DISPATCH',actorUserId:input.actor_user_id,receiptId:input.receipt_id});}
+      return {operation_id:input.operation_id,status:'APPLIED' as const,exchange_dispatch};
+    }));
+  }
+
   /**
    * Đối soát reservation quá hạn — **chỉ đọc**.
    *
@@ -326,7 +430,7 @@ export class InventoryService {
    */
   async overdueReservations(limit = 100): Promise<{ reservation_id: string; order_id: string;
     expires_at: string; reserved_quantity: number }[]> {
-    const rows = await new InventoryRepository(database.manager)
+    const rows = await new InventoryRepository(this.db.manager)
       .overdueReservations(Math.min(Math.max(limit, 1), 100));
     return rows.map(row => ({ reservation_id: row.reservation_id, order_id: row.order_id,
       expires_at: isoTime(row.expires_at), reserved_quantity: row.reserved_quantity }));

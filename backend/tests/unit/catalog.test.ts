@@ -7,11 +7,11 @@ test('categoryResponse omits a null parent instead of sending null', () => {
 });
 
 test('productTypeResponse maps variant_factor to variant_axis and skips absent optionals', () => {
-  const definition = { id: 'd', product_type_id: 't', name: 'Size', data_type: 'STRING',
+  const definition = { id: 'd', product_type_id: 't', code: 'size', name: 'Size', data_type: 'STRING',
     required: true, variant_factor: true, allowed_values: ['S', 'M'], unit: null };
   expect(productTypeResponse({ id: 't', name: 'Demo type', status: 'ACTIVE', category_id: null }, [definition]))
     .toEqual({ id: 't', name: 'Demo type', status: 'ACTIVE', attribute_definitions: [
-      { id: 'd', product_type_id: 't', name: 'Size', data_type: 'STRING', required: true,
+      { id: 'd', product_type_id: 't', code: 'size', name: 'Size', data_type: 'STRING', required: true,
         variant_axis: true, allowed_values: ['S', 'M'] },
     ] });
   // A non-array allowed_values must be dropped, not forwarded as an object.
@@ -31,4 +31,12 @@ test('productResponse attaches only the images and variants of the same product'
   expect(response.variants).toHaveLength(1);
   expect(response.variants![0]).toMatchObject({ id: 'v1', price_vnd: 100000 });
   expect(response.images).toEqual([{ id: 'i1', product_id: 'p1', image_url: 'https://example.test/a.png', position: 0 }]);
+});
+
+test('public availability zero is real while absent or invalid legacy availability stays omitted',()=>{
+ const row={id:'p',store_id:'s',product_type_id:'t',title:'A',attributes:{},status:'ACTIVE',moderation_status:'VISIBLE',version:0,variant_axes:[{code:'size',name:'Cỡ'}]};
+ const variant={id:'v',product_id:'p',sku:'SKU',price_vnd:'100',variant_values:{size:'M'},status:'ACTIVE'};
+ for(const available of [0,1,2147483647])expect(productResponse(row,[{...variant,available_quantity:available}]).variants?.[0].available_quantity).toBe(available);
+ for(const available of [undefined,null,-1,NaN,Infinity,0.5,'4'])expect(productResponse(row,[{...variant,available_quantity:available}]).variants?.[0]).not.toHaveProperty('available_quantity');
+ expect(productResponse(row,[variant]).variant_axes).toEqual([{code:'size',name:'Cỡ'}]);expect(productResponse({...row,variant_axes:undefined},[variant])).not.toHaveProperty('variant_axes');
 });

@@ -28,7 +28,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** ActiveStores */
+        /**
+         * ActiveStores
+         * @description Active Store IDs. First-party readers request cursor pages with size<=100; after is the last returned UUID. Without size/after, the legacy unpaged response remains available during reader-first rollout. Each page reads current ACTIVE status; it is not a transaction spanning membership or Store changes.
+         */
         get: operations["ActiveStores"];
         put?: never;
         post?: never;
@@ -191,6 +194,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/inventory/received-restock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restock only inspected sellable received items
+         * @description M2 provides one immutable receipt. M1 checks consumed quantities and all previous returns under an Order lock. Empty items records a wholly non-sellable receipt without increasing inventory.
+         */
+        post: operations["RestockReceivedItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/inventory/exchange-dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Consume same-price replacements after inspected return receipt
+         * @description One immutable dispatch per return receipt. Validates original consumed variants, equal snapshot price, replacement product and current available stock. Different-price or partial exchanges are refused.
+         */
+        post: operations["DispatchExchangeItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/orders/conversation-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Kiểm quyền hiện hành và phạm vi đơn khi gắn ngữ cảnh hội thoại */
+        post: operations["ResolveConversationOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -223,6 +283,11 @@ export interface components {
         };
         ActiveStores: {
             ids: string[];
+            /**
+             * Format: uuid
+             * @description Last returned UUID when more ACTIVE IDs follow; null when the cursor page ends. Omitted by legacy unpaged readers.
+             */
+            next_after?: string | null;
         };
         VariantQuantity: {
             /** Format: uuid */
@@ -306,11 +371,16 @@ export interface components {
             /** Format: uuid */
             customer_user_id: string;
             /** Format: uuid */
-            product_id: string;
+            product_id?: string;
         };
         ReviewEligibilityResult: {
             eligible: boolean;
             reason?: string;
+            /**
+             * Format: uuid
+             * @description Canonical Product of an eligible owned OrderItem, returned when product_id is omitted.
+             */
+            product_id?: string;
         };
         CheckoutContextRequest: {
             token: string;
@@ -328,6 +398,7 @@ export interface components {
                 name: string;
                 shipping_fee_vnd: number;
                 version: number;
+                return_address?: components["schemas"]["ReturnAddress"];
             }[];
         };
         LowStockRequest: {
@@ -367,6 +438,68 @@ export interface components {
             store_id?: string;
             token_version: number;
         };
+        ReceivedItemsRestockCommand: {
+            /** Format: uuid */
+            operation_id: string;
+            /** Format: uuid */
+            order_id: string;
+            items: components["schemas"]["VariantQuantity"][];
+            /** Format: uuid */
+            receipt_id: string;
+            /** Format: uuid */
+            actor_user_id: string;
+        };
+        ExchangeDispatchCommand: {
+            /** Format: uuid */
+            operation_id: string;
+            /** Format: uuid */
+            receipt_id: string;
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            actor_user_id: string;
+            items: {
+                /** Format: uuid */
+                original_variant_id: string;
+                /** Format: uuid */
+                variant_id: string;
+                /** Format: uuid */
+                store_id: string;
+                quantity: number;
+                unit_price_vnd: number;
+            }[];
+        };
+        ConversationOrderLookupRequest: {
+            token: string;
+            /** Format: uuid */
+            order_id: string;
+            /** @enum {string} */
+            side: "CUSTOMER" | "STORE";
+        };
+        ConversationOrderLookupResult: {
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** @enum {string} */
+            status: "PREPARING" | "AWAITING_PAYMENT" | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "COMPLETED" | "CANCELLED" | "EXPIRED" | "RECOVERING";
+            items: {
+                title?: string;
+                variant_values?: {
+                    [key: string]: unknown;
+                };
+                quantity: number;
+            }[];
+            /** Format: uuid */
+            customer_user_id: string;
+        };
+        ExchangeDispatchResult: {
+            /** Format: uuid */
+            operation_id: string;
+            /** @enum {string} */
+            status: "APPLIED" | "ALREADY_APPLIED";
+            exchange_dispatch?: components["schemas"]["ExchangeDispatchSnapshot"];
+        };
         Address: {
             /** Format: uuid */
             id?: string;
@@ -377,6 +510,38 @@ export interface components {
             district: string;
             city: string;
             is_default?: boolean;
+        };
+        ReturnAddress: {
+            recipient_name: string;
+            phone: string;
+            line1: string;
+            ward: string;
+            district: string;
+            city: string;
+        };
+        ExchangeDispatchItem: {
+            /** Format: uuid */
+            original_variant_id: string;
+            /** Format: uuid */
+            variant_id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            store_id: string;
+            sku_snapshot: string;
+            unit_price_vnd: number;
+            quantity: number;
+            product_snapshot: {
+                title: string;
+                variant_values: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        ExchangeDispatchSnapshot: {
+            /** Format: date-time */
+            dispatched_at: string;
+            items: components["schemas"]["ExchangeDispatchItem"][];
         };
     };
     responses: never;
@@ -469,7 +634,10 @@ export interface operations {
     };
     ActiveStores: {
         parameters: {
-            query?: never;
+            query?: {
+                size?: number;
+                after?: string;
+            };
             header?: {
                 "X-Correlation-Id"?: string;
             };
@@ -1205,6 +1373,246 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiMetricsScopeResult"];
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    RestockReceivedItems: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceivedItemsRestockCommand"];
+            };
+        };
+        responses: {
+            /** @description Contract result after implementation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationResult"];
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    DispatchExchangeItems: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeDispatchCommand"];
+            };
+        };
+        responses: {
+            /** @description Contract result after implementation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeDispatchResult"];
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ResolveConversationOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationOrderLookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Contract result after implementation */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOrderLookupResult"];
                 };
             };
             /** @description Service error */

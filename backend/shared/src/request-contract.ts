@@ -42,7 +42,7 @@ export class RequestContractInterceptor implements NestInterceptor {
         (r.internal ? r.route : '/api/v1' + r.route) === route;
     });
     // Raw callback authentication belongs before body validation in its controller.
-    if (id && !['sepayCallback','sandboxCallback'].includes(id)) validateHttpRequest(id, request);
+    if (id && !['sepayCallback','sandboxCallback','integrationPaymentCallback'].includes(id)) validateHttpRequest(id, request);
     return next.handle();
   }
 }

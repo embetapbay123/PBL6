@@ -107,15 +107,11 @@ export async function mockListOwnStoreApplications(
 }
 
 /** GET /admin/store-applications — Admin lists all applications */
-export async function mockListStoreApplications(
-  page = 1,
-  size = 20,
-): Promise<PageStoreApplications> {
-  await delay(250);
-  const apps = loadAll();
-  const start = (page - 1) * size;
-  const items = apps.slice(start, start + size);
-  return { items, total: apps.length, page, size };
+export async function mockListStoreApplications(page=1,size=20,status?:'PENDING'|'APPROVED'|'REJECTED',q?:string):Promise<PageStoreApplications>{
+  await delay(250);const normalize=(value:string)=>value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+  const all=loadAll().filter(a=>!q||normalize([a.proposed_name,a.contact,a.id].join(' ')).includes(normalize(q)));
+  const status_counts={ALL:all.length,PENDING:all.filter(a=>a.status==='PENDING').length,APPROVED:all.filter(a=>a.status==='APPROVED').length,REJECTED:all.filter(a=>a.status==='REJECTED').length};
+  const matched=all.filter(a=>!status||a.status===status);return {items:matched.slice((page-1)*size,page*size),total:matched.length,page,size,status_counts};
 }
 
 /** PATCH /admin/store-applications/:id — Admin approves or rejects */

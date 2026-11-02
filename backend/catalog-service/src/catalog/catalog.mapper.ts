@@ -8,8 +8,10 @@ import { moneyNumber } from '../../../shared/src/money';
  */
 export function productResponse(row:any,variants:any[],images:any[]=[]):OperationOutputs['getProduct'] {
   return {id:row.id,store_id:row.store_id,product_type_id:row.product_type_id,title:row.title,
-    description:row.description,attributes:row.attributes,status:row.status,moderation_status:row.moderation_status,version:row.version,
-    variants:variants.filter(v=>v.product_id===row.id).map(v=>({id:v.id,sku:v.sku,price_vnd:moneyNumber(v.price_vnd),variant_values:v.variant_values,is_default:v.is_default,status:v.status})),
+    ...(row.description==null?{}:{description:row.description}),attributes:row.attributes,status:row.status,moderation_status:row.moderation_status,version:row.version,
+    ...(Array.isArray(row.variant_axes)?{variant_axes:row.variant_axes}:{}),
+    ...(row.moderation_decision?{moderation_decision:row.moderation_decision}:{}),
+    variants:variants.filter(v=>v.product_id===row.id).map(v=>({id:v.id,sku:v.sku,price_vnd:moneyNumber(v.price_vnd),variant_values:v.variant_values,is_default:v.is_default,status:v.status,...(Number.isSafeInteger(v.available_quantity)&&v.available_quantity>=0?{available_quantity:v.available_quantity}:{})})),
     images:images.filter(i=>i.product_id===row.id).map(i=>({id:i.id,product_id:i.product_id,image_url:i.image_url,position:i.position}))};
 }
 
@@ -20,7 +22,7 @@ export function categoryResponse(row:any):OperationOutputs['listCategories']['it
 }
 
 export function attributeDefinitionResponse(d:any) {
-  return {id:d.id,product_type_id:d.product_type_id,name:d.name,data_type:d.data_type,
+  return {id:d.id,product_type_id:d.product_type_id,code:d.code,name:d.name,data_type:d.data_type,
     ...(d.unit==null?{}:{unit:d.unit}),required:d.required,variant_axis:d.variant_factor,
     ...(Array.isArray(d.allowed_values)?{allowed_values:d.allowed_values}:{}),
     ...(d.version===undefined?{}:{version:d.version})};

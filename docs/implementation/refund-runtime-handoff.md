@@ -46,3 +46,7 @@ REFUND_REQUIRED trên Order đóng được enqueue với chính operation_id c�
 10 PostgreSQL integration cases ở schema cô lập kiểm replay/concurrency/amount/state/ownership/rollback, Disabled provider, receipt mismatch, UNKNOWN→lookup→NOT_FOUND→same-ID retry, expired lease, audit rollback/restart và late payment/tiền dư. Provider test double chỉ nằm trong test, không chứng nhận đã chuyển tiền ngân hàng. Chạy toàn bộ integration và CI trước merge.
 
 Để nghiệm thu PAY-03: chọn phương thức/provider hỗ trợ refund và lookup thật hoặc quy trình đối soát được chốt; kiểm timeout/restart từ provider đó, ghép Hoa cancel/expiry với port, xử lý khoản chuyển dư riêng và demo đúng bằng chứng tiền. Không trả fake SUCCEEDED để hoàn thành issue.
+
+## Mở rộng đổi trả online — 28/10/2026
+
+Worker enqueueReturnRefunds bổ sung Order COMPLETED có yêu cầu REFUND/RECEIVED, payment online đã thu đủ và attempt SUCCEEDED. ID yêu cầu là operation_id cố định. RefundService và kernel claim/finish kiểm tra lại trạng thái yêu cầu dưới khóa Order; không thay quy tắc chứng từ, UNKNOWN/lookup hoặc số tiền. Provider disabled chỉ enqueue REQUESTED. Hoàn COD và provider chuyển tiền thật chưa được cấu hình. Kiểm thử PostgreSQL mới nằm trong refund.runtime.test.ts.

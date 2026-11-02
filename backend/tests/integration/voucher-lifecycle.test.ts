@@ -1,3 +1,6 @@
+import 'reflect-metadata';
+import {readdirSync,readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { VoucherService } from '../../commerce-service/src/voucher/voucher.service';
@@ -5,8 +8,8 @@ import { VoucherRepository } from '../../commerce-service/src/voucher/voucher.re
 
 const postgres = process.env.M2_DATABASE_URL ? describe : describe.skip;
 postgres('Voucher lifecycle with the caller PostgreSQL transaction', () => {
-  let db: DataSource;
-  const service = new VoucherService();
+  let db: DataSource,root:DataSource,schema:string;
+  let service:VoucherService;
   let vouchers: string[] = [], orders: string[] = [];
   const tx = <T>(work: (manager: any) => Promise<T>) => db.transaction(work);
   const reserve = (input: any) => tx(manager => service.reserveVoucher(manager, input));
@@ -50,7 +53,11 @@ postgres('Voucher lifecycle with the caller PostgreSQL transaction', () => {
       [input.voucher_id, input.purchase_group_id]);
     return row?.status;
   }
-  beforeAll(async () => { db = new DataSource({ type: 'postgres', url: process.env.M2_DATABASE_URL }); await db.initialize(); });
+  beforeAll(async () => {
+    root=await new DataSource({type:'postgres',url:process.env.M2_DATABASE_URL}).initialize();schema='voucher_fix_'+randomUUID().replace(/-/g,'');await root.query('CREATE SCHEMA '+schema);
+    db=await new DataSource({type:'postgres',url:process.env.M2_DATABASE_URL,extra:{options:'-csearch_path='+schema+',public',statement_timeout:10000}}).initialize();
+    const dir=resolve(__dirname,'../../commerce-service/migrations');for(const file of readdirSync(dir).filter(f=>f.endsWith('.sql')).sort())await db.query(readFileSync(resolve(dir,file),'utf8'));service=new VoucherService(db);
+  });
   afterEach(async () => {
     if (vouchers.length) {
       await db.query('DELETE FROM voucher_redemption WHERE voucher_id=ANY($1::uuid[])', [vouchers]);
@@ -60,7 +67,7 @@ postgres('Voucher lifecycle with the caller PostgreSQL transaction', () => {
     if (orders.length) await db.query('DELETE FROM "order" WHERE id=ANY($1::uuid[])', [orders]);
     vouchers = []; orders = [];
   });
-  afterAll(async () => { await db.destroy(); });
+  afterAll(async () => {if(db?.isInitialized)await db.destroy();if(root?.isInitialized){if(/^voucher_fix_[a-f0-9]{32}$/.test(schema))await root.query('DROP SCHEMA '+schema+' CASCADE');await root.destroy();}});
 
   test('identical reserve replay keeps its ID; changed customer, Store, amount or expiry returns 409', async () => {
     const input = hold(await voucher()); const first = await reserve(input);
@@ -222,5 +229,12 @@ postgres('Voucher lifecycle with the caller PostgreSQL transaction', () => {
     expect(await db.query('SELECT id FROM "order" WHERE id=$1', [created])).toEqual([]);
     expect(await ledger(input.voucher_id)).toHaveLength(0); expect(await status(input)).toBe('ACTIVE');
     await release(input.purchase_group_id); expect(await status(input)).toBe('RELEASED');
+  });
+  test('Owner usage counts distinguish an active hold, released hold and committed use without counting a group twice',async()=>{
+    const id=await voucher({limit:2}),owner={user_id:randomUUID(),roles:['STORE_OWNER'],store_membership:{store_id:store,role:'OWNER',status:'ACTIVE',permissions:[]}};
+    const a=hold(id);await reserve(a);expect(await service.getStoreVoucherUsage(id,owner,'usage-held')).toMatchObject({reserved_count:1,redeemed_count:0,remaining_count:1});await release(a.purchase_group_id);expect(await service.getStoreVoucherUsage(id,owner,'usage-released')).toMatchObject({reserved_count:0,redeemed_count:0,remaining_count:2});
+    const b=hold(id);await reserve(b);const created=await order(b);await commit(b.purchase_group_id,[redemption(b,created)]);expect(await service.getStoreVoucherUsage(id,owner,'usage-used')).toMatchObject({reserved_count:0,redeemed_count:1,remaining_count:1});
+    await db.query("UPDATE voucher SET discount_value=20000,status='STOPPED',version=version+1 WHERE id=$1",[id]);expect((await db.query('SELECT store_discount_vnd,payable_vnd FROM "order" WHERE id=$1',[created]))[0]).toEqual({store_discount_vnd:'10000',payable_vnd:'90000'});await db.query("UPDATE \"order\" SET status='CANCELLED' WHERE id=$1",[created]);await release(b.purchase_group_id);expect(await service.getStoreVoucherUsage(id,owner,'usage-cancelled')).toMatchObject({reserved_count:0,redeemed_count:1,remaining_count:1});
+    await expect(service.getStoreVoucherUsage(id,{...owner,store_membership:{...owner.store_membership,store_id:randomUUID()}},'other-store')).rejects.toMatchObject({status:404});
   });
 });

@@ -1,3 +1,4 @@
+const returnAddress={recipient_name:'Kho nhận trả kiểm thử',phone:'0900000000',line1:'12 Đường Kiểm Thử',ward:'Phường A',district:'Quận B',city:'Huế'};
 import { IdLookupService } from '../../identity-store-service/src/auth/id-lookup.service';
 const query = jest.fn(), resolve = jest.fn();
 const service = new IdLookupService({ query }, { resolve });
@@ -22,11 +23,11 @@ test('checkout rejects an unavailable store', async () => {
 });
 test('checkout maps BIGINT to a safe number and retains the contract snapshot', async () => {
   const address = { id: input.address_id, recipient_name: 'A', phone: '0900000000', line1: '1 Main', ward: 'Ward', district: 'District', city: 'Hue', is_default: true };
-  query.mockResolvedValueOnce([address]).mockResolvedValueOnce([{ id: store, name: 'Store', shipping_fee_vnd: '25000', version: 7 }]);
-  await expect(service.resolveCheckoutContext(input)).resolves.toEqual({ customer_user_id: user, address_snapshot: address, stores: [{ id: store, name: 'Store', shipping_fee_vnd: 25000, version: 7 }] });
+  query.mockResolvedValueOnce([address]).mockResolvedValueOnce([{ id: store, name: 'Store', shipping_fee_vnd: '25000', version: 7, return_address:returnAddress }]);
+  await expect(service.resolveCheckoutContext(input)).resolves.toEqual({ customer_user_id: user, address_snapshot: address, stores: [{ id: store, name: 'Store', shipping_fee_vnd: 25000, version: 7, return_address:returnAddress }] });
 });
 test('checkout rejects unsafe shipping fees', async () => {
-  query.mockResolvedValueOnce([{}]).mockResolvedValueOnce([{ id: store, name: 'Store', shipping_fee_vnd: '9007199254740992', version: 7 }]);
+  query.mockResolvedValueOnce([{}]).mockResolvedValueOnce([{ id: store, name: 'Store', shipping_fee_vnd: '9007199254740992', version: 7, return_address:returnAddress }]);
   await expect(service.resolveCheckoutContext(input)).rejects.toMatchObject({ status: 500 });
 });
 test('an Admin with the current effective platform.admin permission receives platform metrics', async () => {
@@ -62,4 +63,9 @@ test('Admin requested store must exist and be active', async () => {
   resolve.mockResolvedValue({ user_id: user, roles: ['ADMIN'], role_permissions: ['platform.admin'], token_version: 4 });
   query.mockResolvedValueOnce([]);
   await expect(service.resolveAiMetricsScope({ token: 'token', store_id: store })).rejects.toMatchObject({ status: 404 });
+});
+
+test('checkout blocks a Store without return receiving information without blocking existing fulfillment readers',async()=>{
+ query.mockResolvedValueOnce([{}]).mockResolvedValueOnce([{id:store,name:'Store',shipping_fee_vnd:'0',version:1}]);
+ await expect(service.resolveCheckoutContext(input)).rejects.toMatchObject({status:409,response:{code:'STORE_RETURN_ADDRESS_REQUIRED'}});
 });

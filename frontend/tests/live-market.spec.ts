@@ -128,6 +128,9 @@ async function setup(
           version: 0,
         },
       });
+    if(call.path==='/me/favorites')return route.fulfill({json:pageData([],100)});
+    if(call.path==='/stores/'+store)return route.fulfill({json:{id:store,name:'Live Store',shipping_fee_vnd:20000}});
+    if(['/store/inventory/movements','/store/stock-commitments'].includes(call.path))return route.fulfill({json:pageData([])});
     if (
       [
         "/categories",
@@ -226,6 +229,7 @@ test("inventory retries preserve operation ID, payload and version across a relo
         json: pageData([
           {
             variant_id: variant,
+            product_id:product,product_title:'Live product from API',sku:'LIVE-SKU',variant_values:{color:'Đỏ',size:'M'},
             quantity: 15,
             reserved_quantity: 2,
             available_quantity: 13,
@@ -259,19 +263,19 @@ test("inventory retries preserve operation ID, payload and version across a relo
   });
   await page.goto("/seller/inventory");
   await expect(
-    page.getByRole("cell", { name: "Live product from API · LIVE-SKU" }),
+    page.getByRole("cell").filter({hasText:'Live product from API · Đỏ / M · SKU: LIVE-SKU'}),
   ).toBeVisible();
   await page.getByRole("button", { name: "Điều chỉnh", exact: true }).click();
-  await page.getByLabel("Số lượng thay đổi").fill("2");
+  await page.getByRole('spinbutton',{name:'Số lượng',exact:true}).fill("2");
   await page.getByLabel("Lý do").fill("Received shipment");
   await page.getByRole("button", { name: "Lưu điều chỉnh" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Stock response unavailable",
   );
-  await expect(page.getByLabel("Số lượng thay đổi")).toBeDisabled();
+  await expect(page.getByRole('spinbutton',{name:'Số lượng',exact:true})).toBeDisabled();
   await page.reload();
   await page.getByRole("button", { name: "Điều chỉnh", exact: true }).click();
-  await expect(page.getByLabel("Số lượng thay đổi")).toHaveValue("2");
+  await expect(page.getByRole('spinbutton',{name:/^Số lượng(?: thay đổi có dấu)?$/})).toHaveValue("2");
   await page.getByRole("button", { name: "Thử lại điều chỉnh" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const writes = calls.filter((c) => c.path === "/store/inventory/adjustments");
@@ -317,14 +321,14 @@ test("Store order conflicts block further writes until a fresh version is read",
   });
   await page.goto("/seller/orders");
   await page.getByRole("button", { name: "Xem đơn", exact: true }).click();
-  await page.getByRole("button", { name: "Chuyển sang CONFIRMED" }).click();
+  await page.getByRole("button", { name: "Xác nhận đơn",exact:true }).click();
   await expect(page.getByRole("alert")).toContainText("Order changed");
   await expect(
-    page.getByRole("button", { name: "Chuyển sang CONFIRMED" }),
+    page.getByRole("button", { name: "Xác nhận đơn",exact:true }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Đọc lại đơn" }).click();
-  await page.getByRole("button", { name: "Chuyển sang CONFIRMED" }).click();
-  await expect(page.getByRole("dialog")).toContainText("CONFIRMED");
+  await page.getByRole("button", { name: "Xác nhận đơn",exact:true }).click();
+  await expect(page.getByRole("dialog")).toContainText("Đã xác nhận");
   expect(
     calls.filter((c) => c.path.endsWith("/status")).map((c) => c.body),
   ).toEqual([
@@ -358,7 +362,7 @@ test("COD requires explicit cash confirmation and a failed API never reports col
   await expect(page.getByRole("alert")).toContainText("Collection unavailable");
   await expect(collect).toBeDisabled();
   await expect(
-    page.getByRole("button", { name: "Chuyển sang COMPLETED" }),
+    page.getByRole("button", { name: "Xác nhận giao thành công và hoàn tất",exact:true }),
   ).toBeDisabled();
   expect(
     calls.filter((c) => c.path.endsWith("/cod-collection")).map((c) => c.body),
@@ -678,4 +682,129 @@ test("changing payment input cannot confirm with a previous quote while replacem
     },
   });
   await expect(confirm).toBeEnabled();
+});
+
+test('catalog action buttons add the actual variant and toggle its favorite through APIs',async({page})=>{
+  let saved=false;
+  const calls=await setup(page,'CUSTOMER',(route,c)=>{
+    if(c.path==='/cart/items')return route.fulfill({json:c.method==='GET'?pageData([]):{id:item,product_id:product,variant_id:variant,quantity:1}});
+    if(c.path==='/me/favorites')return route.fulfill({json:pageData(saved?[product]:[],100)});
+    if(c.path==='/me/favorites/'+product){saved=c.method==='PUT';return route.fulfill({json:{product_id:product}});}
+  });
+  await page.goto('/');const card=page.locator('article.product-card').first();
+  await card.getByRole('button',{name:'Thêm vào giỏ',exact:true}).click();
+  await expect(card.getByRole('status')).toContainText('Đã thêm vào giỏ');
+  expect(calls.find(c=>c.path==='/cart/items'&&c.method==='POST')?.body).toEqual({product_id:product,variant_id:variant,quantity:1});
+  const favorite=card.getByRole('button',{name:'Yêu thích Live product from API',exact:true});await favorite.click();
+  await expect(card.getByRole('button',{name:'Bỏ yêu thích Live product from API'})).toHaveAttribute('aria-pressed','true');
+  await card.getByRole('button',{name:'Bỏ yêu thích Live product from API'}).click();
+  expect(calls.filter(c=>c.path==='/me/favorites/'+product).map(c=>c.method)).toEqual(['PUT','DELETE']);
+});
+
+test('catalog variant chooser traps focus and blocks another add after an uncertain response',async({page})=>{
+  let posts=0;
+  await setup(page,'CUSTOMER',(route,c)=>{
+    if(c.path==='/products')return route.fulfill({json:pageData([{...productData,variants:[...productData.variants,{...productData.variants[0],id:id(70),sku:'BLUE',is_default:false}]}])});
+    if(c.path==='/cart/items'){
+      if(c.method==='GET')return route.fulfill({json:pageData([])});
+      posts++;expect(c.body.variant_id).toBe(id(70));return route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'Chưa xác định kết quả thêm giỏ',details:[]}});
+    }
+  });
+  await page.goto('/');await page.getByRole('button',{name:'Thêm vào giỏ',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Chọn phân loại Live product from API'});
+  await dialog.getByLabel('Phân loại').selectOption(id(70));
+  await dialog.getByRole('button',{name:'Thêm vào giỏ hàng',exact:true}).focus();await page.keyboard.press('Tab');await expect(dialog.getByLabel('Phân loại')).toBeFocused();
+  await dialog.getByRole('button',{name:'Thêm vào giỏ hàng',exact:true}).click();
+  await expect(dialog.getByRole('alert')).toContainText('Chưa xác định');await expect(page.getByRole('alert')).toHaveCount(1);
+  await expect(dialog.getByRole('button',{name:'Thêm vào giỏ hàng',exact:true})).toBeDisabled();
+  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(page.getByRole('button',{name:'Thêm vào giỏ',exact:true})).toBeDisabled();expect(posts).toBe(1);
+});
+
+test('buy now carries the stepper quantity to checkout without changing the saved cart',async({page})=>{
+  const calls=await setup(page,'CUSTOMER',(route,c)=>{
+    if(c.path==='/cart/items')return route.fulfill({json:c.method==='GET'?pageData([{id:item,product_id:product,variant_id:variant,store_id:store,quantity:2}]):{id:item,product_id:product,variant_id:variant,store_id:store,quantity:2}});
+    if(c.path.includes('/addresses'))return route.fulfill({json:pageData([])});
+    if(c.path==='/products/'+product+'/reviews')return route.fulfill({json:pageData([])});
+  });
+  await page.goto('/products/'+product);
+  await page.getByRole('button',{name:'Tăng số lượng',exact:true}).click();await page.getByRole('button',{name:'Tăng số lượng',exact:true}).click();await page.getByRole('button',{name:'Giảm số lượng',exact:true}).click();
+  await expect(page.getByLabel('Số lượng',{exact:true})).toHaveValue('2');
+  await page.getByRole('button',{name:'Mua ngay',exact:true}).click();await expect(page).toHaveURL(/\/checkout$/);
+  expect(calls.filter(c=>c.path==='/cart/items'&&c.method==='POST')).toEqual([]);
+  expect(await page.evaluate(key=>JSON.parse(sessionStorage.getItem(key)??'null'),'pbl6_buy_now_'+id(20))).toMatchObject({checkoutUserId:id(20),buyNow:{product_id:product,variant_id:variant,quantity:2}});
+});
+
+test('seller list actions show details, filter rows and confirm the versioned sale status',async({page})=>{
+  let status='ACTIVE',version=7;
+  const calls=await setup(page,'OWNER',(route,c)=>{
+    if(c.path==='/store/products')return route.fulfill({json:pageData(new URL(route.request().url()).searchParams.get('q')==='No match'?[]:[{...productData,status,version}])});
+    if(c.path==='/store/products/'+product&&c.method==='PATCH'){status=c.body.status;version++;return route.fulfill({json:{...productData,status,version}});}
+  });
+  await page.goto('/seller/products');await page.getByRole('button',{name:'Thao tác Live product from API',exact:true}).click();await page.getByRole('button',{name:'Chi tiết Live product from API',exact:true}).click();
+  const detail=page.getByRole('dialog',{name:'Chi tiết Live product from API'});await expect(detail.getByText(/LIVE-SKU/)).toBeVisible();await detail.getByRole('button',{name:'Đóng',exact:true}).click();
+  await page.getByLabel('Tìm tên hoặc SKU trong Store',{exact:true}).fill('No match');await expect(page.locator('tbody tr')).toHaveCount(0);await page.getByLabel('Tìm tên hoặc SKU trong Store',{exact:true}).fill('');
+  await page.getByRole('button',{name:'Thao tác Live product from API',exact:true}).click();await page.getByRole('button',{name:'Dừng bán Live product from API',exact:true}).click();const confirm=page.getByRole('dialog',{name:'Dừng bán sản phẩm',exact:true});await confirm.getByRole('button',{name:'Xác nhận dừng bán'}).click();await expect(confirm).toHaveCount(0);
+  await page.getByRole('button',{name:'Thao tác Live product from API',exact:true}).click();await expect(page.getByRole('button',{name:'Mở bán Live product from API',exact:true})).toBeVisible();await page.keyboard.press('Escape');expect(calls.find(c=>c.method==='PATCH')?.body).toEqual({status:'STOPPED',expected_version:7});
+  await page.getByRole('button',{name:'Thêm sản phẩm mới',exact:true}).click();await expect(page.getByRole('dialog',{name:'Thêm sản phẩm mới',exact:true})).toBeVisible();await page.keyboard.press('Escape');await expect(page).not.toHaveURL(/create=1/);
+});
+
+test('header search button submits the entered query and layouts contain phone and tablet content',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await setup(page);await page.goto('/');await expect(page.locator('article.product-card')).toHaveCount(1);
+  await page.getByLabel('Tìm kiếm toàn sàn',{exact:true}).fill('Áo xanh');await page.getByRole('button',{name:'Tìm toàn sàn',exact:true}).click();await expect.poll(()=>new URL(page.url()).searchParams.get('q')).toBe('Áo xanh');
+  for(const width of [1440,768,390]){
+    await page.setViewportSize({width,height:900});await expect(page.getByRole('button',{name:'Thêm vào giỏ',exact:true})).toBeVisible();
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if(width===390){await expect(page.getByRole('navigation',{name:'Điều hướng nhanh trên điện thoại'})).toBeVisible();await page.getByRole('button',{name:'Mở menu'}).click();await expect(page.getByRole('navigation',{name:'Điều hướng chính'})).toBeVisible();}
+  }
+  expect(errors).toEqual([]);
+});
+
+test('Admin order queue sends server filters and opens actual order amounts in a keyboard modal',async({page})=>{
+  const filters:string[]=[];await setup(page,'ADMIN',(route,c)=>{if(c.path!=='/admin/orders')return undefined;const status=new URL(route.request().url()).searchParams.get('status');filters.push(status??'');return route.fulfill({json:pageData(status&&status!==order.status?[]:[{...order,refund_status:'PENDING'}])});});
+  await page.goto('/admin?tab=orders');await page.getByRole('button',{name:'Chi tiết đơn '+orderId,exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Chi tiết đơn '+orderId,exact:true});await expect(dialog).toContainText('120.000');await expect(dialog).toContainText('PENDING');await dialog.getByRole('link',{name:'Xem yêu cầu đổi trả'}).focus();await page.keyboard.press('Tab');await expect(dialog.getByRole('button',{name:'Đóng',exact:true})).toBeFocused();
+  await page.keyboard.press('Escape');await expect(dialog).toHaveCount(0);await expect(page.getByRole('button',{name:'Chi tiết đơn '+orderId,exact:true})).toBeFocused();
+  await page.getByRole('combobox',{name:'Trạng thái đơn',exact:true}).selectOption('COMPLETED');await expect.poll(()=>filters.includes('COMPLETED')).toBe(true);await expect(page.getByText('Không có đơn hàng phù hợp.',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Bỏ bộ lọc đơn',exact:true}).click();await expect(page.getByRole('button',{name:'Chi tiết đơn '+orderId,exact:true})).toBeVisible();
+  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+});
+
+test('Seller sale conflict requires explicit fresh read and then uses the new version',async({page})=>{
+  let version=7,patches=0;
+  const calls=await setup(page,'OWNER',(route,c)=>{
+    if(c.path==='/store/products')return route.fulfill({json:pageData([{...productData,version}])});
+    if(c.path==='/store/products/'+product&&c.method==='PATCH'){
+      patches++;if(patches===1){version=8;return route.fulfill({status:409,json:{code:'VERSION_CONFLICT',message:'Sản phẩm vừa được cập nhật',details:[]}});}
+      return route.fulfill({json:{...productData,status:'STOPPED',version:9}});
+    }
+  });
+  await page.goto('/seller/products');await page.getByRole('button',{name:'Thao tác Live product from API',exact:true}).click();await page.getByRole('button',{name:'Dừng bán Live product from API',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Dừng bán sản phẩm',exact:true});await dialog.getByRole('button',{name:'Xác nhận dừng bán'}).click();await expect(dialog.getByRole('alert')).toContainText('Sản phẩm vừa được cập nhật');await expect(dialog.getByRole('button',{name:'Xác nhận dừng bán'})).toHaveCount(0);expect(patches).toBe(1);
+  await dialog.getByRole('button',{name:'Tải lại danh sách'}).click();await expect(dialog).toHaveCount(0);await page.getByRole('button',{name:'Thao tác Live product from API',exact:true}).click();await page.getByRole('button',{name:'Dừng bán Live product from API',exact:true}).click();await dialog.getByRole('button',{name:'Xác nhận dừng bán'}).click();await expect(dialog).toHaveCount(0);expect(calls.filter(c=>c.method==='PATCH').map(c=>c.body.expected_version)).toEqual([7,8]);
+});
+
+test('guest product action requests login without issuing a cart write',async({page})=>{
+  let writes=0;await page.route('**/api/v1/**',route=>{
+    const path=new URL(route.request().url()).pathname;
+    if(path.endsWith('/cart/items')&&route.request().method()==='POST')writes++;
+    return route.fulfill({json:path.endsWith('/products')?pageData([productData]):pageData([])});
+  });
+  await page.goto('/');await page.getByRole('button',{name:'Menu tài khoản',exact:true}).click();await expect(page.getByRole('link',{name:'Đăng ký',exact:true})).toBeVisible();await page.keyboard.press('Escape');await page.getByRole('button',{name:'Thêm vào giỏ',exact:true}).click();await expect(page).toHaveURL(/\/login$/);expect(writes).toBe(0);
+});
+
+test('catalog favorite button reads persisted favorites after a reload',async({page})=>{
+  const calls=await setup(page,'CUSTOMER',(route,c)=>{
+    if(c.path==='/me/favorites')return route.fulfill({json:pageData([product],100)});
+    if(c.path==='/me/favorites/'+product)return route.fulfill({json:{product_id:product}});
+  });
+  await page.goto('/');await expect(page.getByRole('button',{name:'Bỏ yêu thích Live product from API'})).toHaveAttribute('aria-pressed','true');
+  await page.reload();await page.getByRole('button',{name:'Bỏ yêu thích Live product from API'}).click();await expect(page.getByRole('button',{name:'Yêu thích Live product from API',exact:true})).toHaveAttribute('aria-pressed','false');expect(calls.filter(c=>c.path==='/me/favorites/'+product).map(c=>c.method)).toEqual(['DELETE']);
+});
+
+test('mobile catalog filter applies only after confirmation and account menu exposes secondary routes',async({page})=>{
+ const calls=await setup(page);await page.setViewportSize({width:390,height:844});await page.goto('/');await page.getByRole('button',{name:'Bộ lọc',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Bộ lọc sản phẩm',exact:true});await expect(dialog).toBeVisible();await dialog.getByRole('button',{name:'Áp dụng',exact:true}).click();await expect(dialog).not.toBeVisible();
+ await page.getByRole('button',{name:'Menu tài khoản',exact:true}).click();const menu=page.getByRole('navigation',{name:'Menu tài khoản',exact:true});await expect(menu.getByRole('link',{name:'Sổ địa chỉ',exact:true})).toBeVisible();await menu.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect(page).toHaveURL(/\/profile$/);await expect(page.getByRole('complementary',{name:'Điều hướng tài khoản'})).toBeVisible();expect(calls.filter(c=>c.path==='/products').length).toBeGreaterThan(0);
+});
+
+test('Seller shell collapses navigation and never shows the customer chat launcher',async({page})=>{
+ await setup(page,'OWNER');await page.goto('/seller/products');await expect(page.getByRole('button',{name:'Mở chat',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'Thu gọn menu',exact:true}).click();await expect(page.locator('.live-market')).toHaveClass(/sidebar-collapsed/);await page.getByRole('button',{name:'Mở rộng menu',exact:true}).click();await expect(page.locator('.live-market')).not.toHaveClass(/sidebar-collapsed/);
 });

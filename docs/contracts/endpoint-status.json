@@ -434,6 +434,19 @@
     ]
   },
   {
+    "method": "GET",
+    "path": "/store/products/{id}",
+    "operation_id": "getOwnStoreProduct",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
     "method": "POST",
     "path": "/store/products/{id}/variants",
     "operation_id": "createVariant",
@@ -822,7 +835,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "GUEST",
       "CUSTOMER"
@@ -835,7 +848,19 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/reviews",
+    "operation_id": "listOwnReviews",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -847,7 +872,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "CUSTOMER"
     ]
@@ -859,7 +884,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -871,7 +896,7 @@
     "service": "M1",
     "module": "review",
     "owner": "Thịnh",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -883,7 +908,7 @@
     "service": "M3",
     "module": "administration",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -907,7 +932,7 @@
     "service": "M3",
     "module": "administration",
     "owner": "Trí",
-    "status": "NOT_IMPLEMENTED",
+    "status": "IMPLEMENTED",
     "roles": [
       "ADMIN"
     ]
@@ -1226,6 +1251,709 @@
     "status": "NOT_IMPLEMENTED",
     "roles": [
       "SEPAY_TEST"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/favorites",
+    "operation_id": "listFavorites",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/me/favorites/{id}",
+    "operation_id": "addFavorite",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/favorites/{id}",
+    "operation_id": "removeFavorite",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/store/products/{id}/images/{image_id}",
+    "operation_id": "removeProductImage",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/products/{id}/images/reorder",
+    "operation_id": "reorderProductImages",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/conversations",
+    "operation_id": "listOwnConversations",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/conversations",
+    "operation_id": "startStoreConversation",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/conversations",
+    "operation_id": "listStoreConversations",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/conversations/{id}/messages",
+    "operation_id": "listOwnConversationMessages",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/conversations/{id}/messages",
+    "operation_id": "sendOwnConversationMessage",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/conversations/{id}/messages",
+    "operation_id": "listStoreConversationMessages",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/conversations/{id}/messages",
+    "operation_id": "sendStoreConversationMessage",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/notifications",
+    "operation_id": "listNotifications",
+    "service": "M2",
+    "module": "notification",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/notifications/{id}/read",
+    "operation_id": "markNotificationRead",
+    "service": "M2",
+    "module": "notification",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/orders/{id}/returns",
+    "operation_id": "createReturnRequest",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/returns",
+    "operation_id": "listOwnReturnRequests",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/returns",
+    "operation_id": "listStoreReturnRequests",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/store/returns/{id}",
+    "operation_id": "updateStoreReturnRequest",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/returns",
+    "operation_id": "listAdminReturnRequests",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "PATCH",
+    "path": "/admin/returns/{id}",
+    "operation_id": "updateAdminReturnRequest",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/returns/{id}/confirm",
+    "operation_id": "confirmExchangeReceived",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/reviews",
+    "operation_id": "listAdminReviews",
+    "service": "M1",
+    "module": "review",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/products",
+    "operation_id": "listAdminProducts",
+    "service": "M1",
+    "module": "catalog",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/audit/catalog",
+    "operation_id": "listCatalogAudit",
+    "service": "M1",
+    "module": "audit",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/audit/commerce",
+    "operation_id": "listCommerceAudit",
+    "service": "M2",
+    "module": "audit",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/audit/identity",
+    "operation_id": "listIdentityAudit",
+    "service": "M3",
+    "module": "audit",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/stores/{id}",
+    "operation_id": "getPublicStore",
+    "service": "M3",
+    "module": "store",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/cod-refund",
+    "operation_id": "confirmCodRefund",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/reports/money",
+    "operation_id": "listStoreMoneyMovements",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/reports/money",
+    "operation_id": "listAdminMoneyMovements",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/delivery-return",
+    "operation_id": "openDeliveryReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/delivery-returns",
+    "operation_id": "listStoreDeliveryReturns",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/delivery-returns",
+    "operation_id": "listAdminDeliveryReturns",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/orders/{id}/delivery-return",
+    "operation_id": "getOwnDeliveryReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/delivery-returns/{id}/inspection",
+    "operation_id": "inspectDeliveryReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/delivery-returns/{id}/settle",
+    "operation_id": "settleDeliveryReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/payment-callbacks/integration",
+    "operation_id": "integrationPaymentCallback",
+    "service": "M2",
+    "module": "payment",
+    "owner": "Công",
+    "status": "NOT_IMPLEMENTED",
+    "roles": [
+      "SANDBOX_PROVIDER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/returns/{id}/resolution",
+    "operation_id": "resolveStoreReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/returns/{id}/resolution",
+    "operation_id": "respondOwnReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/returns/{id}/resolution",
+    "operation_id": "resolveAdminReturn",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/audit/catalog",
+    "operation_id": "listStoreCatalogAudit",
+    "service": "M1",
+    "module": "audit",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/audit/commerce",
+    "operation_id": "listStoreCommerceAudit",
+    "service": "M2",
+    "module": "audit",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/audit/identity",
+    "operation_id": "listStoreIdentityAudit",
+    "service": "M3",
+    "module": "audit",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/audit/actors",
+    "operation_id": "lookupStoreAuditActors",
+    "service": "M3",
+    "module": "audit",
+    "owner": null,
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/audit/actors",
+    "operation_id": "lookupAdminAuditActors",
+    "service": "M3",
+    "module": "audit",
+    "owner": null,
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/reports",
+    "operation_id": "getPlatformMoneyReport",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/reports/unresolved-money",
+    "operation_id": "listStoreUnresolvedMoneyMovements",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/reports/unresolved-money",
+    "operation_id": "listAdminUnresolvedMoneyMovements",
+    "service": "M2",
+    "module": "report",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/inventory/reconciliation",
+    "operation_id": "getInventoryReconciliation",
+    "service": "M1",
+    "module": "inventory",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/stock-commitments",
+    "operation_id": "listStockCommitments",
+    "service": "M2",
+    "module": "order",
+    "owner": "Thịnh",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "SELLER",
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/orders/{id}/after-sale-history",
+    "operation_id": "listOwnAfterSaleHistory",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/orders/{id}/after-sale-history",
+    "operation_id": "listStoreAfterSaleHistory",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/orders/{id}/after-sale-history",
+    "operation_id": "listAdminAfterSaleHistory",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/orders/{id}/refund-recovery",
+    "operation_id": "getStoreRefundRecovery",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/orders/{id}/refund-recovery",
+    "operation_id": "requestStoreRefundRecovery",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/admin/orders/{id}/refund-recovery",
+    "operation_id": "getAdminRefundRecovery",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/admin/orders/{id}/refund-recovery",
+    "operation_id": "requestAdminRefundRecovery",
+    "service": "M2",
+    "module": "returns",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "ADMIN"
     ]
   }
 ]

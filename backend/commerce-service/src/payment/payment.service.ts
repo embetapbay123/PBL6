@@ -1,3 +1,6 @@
+import {assertDeliveryNotReturning} from '../returns/delivery-return-guards';
+import {settleZeroDue} from './zero-due';
+import {recordMoneyMovement} from './money-journal';
 import { EntityManager } from 'typeorm';
 import { PaymentPort, PaymentDraft, CodDraft, RefundDraft } from './payment.port';
 import { RefundService } from './refund.service';
@@ -34,8 +37,9 @@ export class PaymentService implements PaymentPort {
       const [payment]=await this.manager.query("INSERT INTO payment(order_id,method,status,payable_vnd,collectible_vnd) VALUES($1,$2,'PENDING',$3,$4) RETURNING *",
         [input.order_id,input.method,input.payable_vnd.toString(),input.method==='COD'?input.payable_vnd.toString():'0']);
       if(input.method==='COD')await this.manager.query("INSERT INTO c_o_d_collection(order_id,amount_due_vnd,amount_collected_vnd,status,operation_id) VALUES($1,$2,0,'PENDING',$3)",[input.order_id,input.payable_vnd.toString(),input.operation_id]);
-      await audit(this.manager,'M2',order.customer_user_id,'Payment',payment.id,'CREATE',input.correlation_id ?? input.operation_id,{},mapPayment(payment));
-      return mapPayment(payment);
+      const settled=await settleZeroDue(this.manager,order,payment,input.correlation_id??input.operation_id);
+      await audit(this.manager,'M2',order.customer_user_id,'Payment',payment.id,'CREATE',input.correlation_id ?? input.operation_id,{},mapPayment(settled));
+      return mapPayment(settled);
     });
   }
   async recordCodCollection(input:CodDraft):Promise<OperationOutputs['getPayment']> {
@@ -43,6 +47,8 @@ export class PaymentService implements PaymentPort {
     const order=await this.repo.lockOrder(input.order_id);
     if(!order)throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
     return once(this.manager,'M2.Payment.cod',input.operation_id,{order_id:input.order_id,amount_vnd:input.amount_vnd.toString(),actor_user_id:input.actor_user_id},async()=>{
+      if(BigInt(order.payable_vnd)===0n)throw new ApiError(409,'PAYMENT_NOT_REQUIRED','Đơn 0đ không cần thu tiền; không ghi biên nhận thu giả.');
+      await assertDeliveryNotReturning(this.manager,input.order_id);
       if(order.status!=='SHIPPED' || order.payment_method!=='COD')throw new ApiError(409,'ORDER_STATE_CONFLICT','Chỉ thu COD khi Order đang giao.');
       const payment=await this.repo.byOrder(input.order_id);
       if(!payment || payment.method!=='COD' || payment.status!=='PENDING')throw new ApiError(409,'PAYMENT_STATE_CONFLICT','Payment không cho phép thu COD.');
@@ -54,6 +60,7 @@ export class PaymentService implements PaymentPort {
       else await this.manager.query("INSERT INTO c_o_d_collection(order_id,amount_due_vnd,amount_collected_vnd,status,operation_id,collected_at) VALUES($1,$2,$2,'SUCCEEDED',$3,now())",[input.order_id,input.amount_vnd.toString(),input.operation_id]);
       await this.manager.query("UPDATE payment SET status='SUCCEEDED',collected_vnd=$2,version=version+1 WHERE id=$1",[payment.id,input.amount_vnd.toString()]);
       await this.manager.query("INSERT INTO payment_event(payment_id,provider_event_id,event_type,payload_hash) VALUES($1,$2,'COD_COLLECTED',$3)",[payment.id,'cod:'+input.operation_id,fingerprint({order_id:input.order_id,amount_vnd:input.amount_vnd.toString()})]);
+      await recordMoneyMovement(this.manager,{paymentId:payment.id,orderId:order.id,storeId:order.store_id,kind:'COLLECTION',amount:input.amount_vnd.toString(),sourceType:'COD_COLLECTION_OPERATION',sourceId:input.operation_id,timeSource:'SYSTEM_CONFIRMED'});
       const result=mapPayment({...payment,status:'SUCCEEDED',collected_vnd:input.amount_vnd.toString(),version:payment.version+1});
       await audit(this.manager,'M2',input.actor_user_id,'Payment',payment.id,'COD_COLLECT',input.correlation_id ?? input.operation_id,mapPayment(payment),result);
       return result;

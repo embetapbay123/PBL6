@@ -22,6 +22,10 @@ for file in files:
         link=unquote(match.group(1))
         if '://' in link or link.startswith('mailto:'): continue
         rel,_,anchor=link.partition('#')
+        # Review evidence uses editor file links with a one-based :line suffix.
+        # The suffix is a location, not part of the filesystem path. Historical
+        # reviews retain their original line numbers when the source later moves.
+        rel=re.sub(r':\d+$','',rel)
         dest=(file.parent/rel).resolve() if rel else file
         if not dest.exists():
             errors.append((file,f'missing link {link}'))
@@ -78,7 +82,8 @@ acceptids=set(re.findall(r'^\| (TC-(?:FR|NFR)-[A-Z0-9-]+) \|',accept,re.M))
 if len(acceptids)!=len(fr)+len(nfr): errors.append(('acceptance count',len(acceptids)))
 if 'Có môi trường/dữ liệu test cố định và log theo correlation ID' in accept:
     errors.append(('NFR acceptance still generic',))
-if len(ops)!=100: errors.append(('API count',len(ops)))
+# Includes core-fix35 history readers and core-fix36 Owner/Admin refund recovery.
+if len(ops)!=159: errors.append(('API count',len(ops)))
 status_index=json.loads((DOCS/'contracts'/'endpoint-status.json').read_text(encoding='utf-8'))
 if len(status_index)!=len(ops) or {row['operation_id'] for row in status_index}!=opids:
     errors.append(('endpoint status coverage',))

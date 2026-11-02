@@ -1,3 +1,4 @@
+import {orderSearch,type OrderSearch} from './order-search';
 import { EntityManager } from 'typeorm';
 import { OwnedRepository } from '../../../shared/src/repository';
 import { ApiError } from '../../../shared/src/errors';
@@ -39,7 +40,12 @@ export interface IdempotencyRecordRow {
   expires_at: Date;
 }
 
+export interface OrderTimelineRow { from_status: string | null; to_status: string; actor_user_id: string; created_at: Date | string; }
+
 export interface OrderRow {
+  return_policy_snapshot?: Record<string,unknown> | null;
+  completed_at?: Date|string|null;
+  status_history?: OrderTimelineRow[];
   id: string;
   purchase_group_id: string;
   customer_user_id: string;
@@ -301,14 +307,16 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<Array<OrderRow & { items: OrderItemRow[] }>> {
     const orders: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
+              (SELECT h.created_at FROM order_status_history h WHERE h.order_id=o.id AND h.to_status='COMPLETED' ORDER BY h.created_at,h.id LIMIT 1) AS completed_at,
+              (SELECT jsonb_agg(jsonb_build_object('from_status',h.from_status,'to_status',h.to_status,'actor_user_id',h.actor_user_id,'created_at',h.created_at) ORDER BY h.created_at,h.id) FROM order_status_history h WHERE h.order_id=o.id) AS status_history,
               p.status AS payment_status,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
        LEFT JOIN LATERAL (
-         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1
        ) r ON true
        WHERE o.purchase_group_id = $1 AND o.customer_user_id = $2
        ORDER BY o.created_at ASC, o.id ASC`,
@@ -346,28 +354,27 @@ export class OrderRepository extends OwnedRepository {
   async pageCustomerOrders(
     customerUserId: string,
     page: number,
-    size: number
+    size: number,
+    filters:OrderSearch={}
   ): Promise<{ items: Array<OrderRow & { items: OrderItemRow[] }>; total: number }> {
-    const [countRow] = await this.manager.query(
-      `SELECT count(*)::int AS total FROM "order" WHERE customer_user_id = $1`,
-      [customerUserId]
-    );
+    const args:unknown[]=[customerUserId],extra=orderSearch(filters,args);
+    const [countRow] = await this.manager.query(extra?`SELECT count(*)::int AS total FROM "order" o WHERE o.customer_user_id = $1${extra}`:`SELECT count(*)::int AS total FROM "order" WHERE customer_user_id = $1`,args);
     const offset = (page - 1) * size;
     const orders: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
        LEFT JOIN LATERAL (
-         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1
        ) r ON true
-       WHERE o.customer_user_id = $1
+       WHERE o.customer_user_id = $1${extra}
        ORDER BY o.created_at DESC, o.id ASC
-       LIMIT $2 OFFSET $3`,
-      [customerUserId, size, offset]
+       LIMIT $${args.length+1} OFFSET $${args.length+2}`,
+      [...args, size, offset]
     );
 
     if (!orders.length) {
@@ -407,14 +414,14 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<(OrderRow & { items: OrderItemRow[] }) | undefined> {
     const [order]: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
        LEFT JOIN LATERAL (
-         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1
        ) r ON true
        WHERE o.id = $1 AND o.customer_user_id = $2`,
       [orderId, customerUserId]
@@ -431,37 +438,40 @@ export class OrderRepository extends OwnedRepository {
       [orderId]
     );
 
+    const status_history = await this.manager.query(
+      'SELECT from_status,to_status,actor_user_id,created_at FROM order_status_history WHERE order_id=$1 ORDER BY created_at,id', [orderId]);
     return {
       ...order,
       items,
+      status_history,
+      completed_at: status_history.find((event:OrderTimelineRow)=>event.to_status==='COMPLETED')?.created_at ?? null,
     };
   }
 
   async pageStoreOrders(
     storeId: string,
     page: number,
-    size: number
+    size: number,
+    filters:OrderSearch={}
   ): Promise<{ items: Array<OrderRow & { items: OrderItemRow[] }>; total: number }> {
-    const [countRow] = await this.manager.query(
-      `SELECT count(*)::int AS total FROM "order" WHERE store_id = $1`,
-      [storeId]
-    );
+    const args:unknown[]=[storeId],extra=orderSearch(filters,args);
+    const [countRow] = await this.manager.query(extra?`SELECT count(*)::int AS total FROM "order" o WHERE o.store_id = $1${extra}`:`SELECT count(*)::int AS total FROM "order" WHERE store_id = $1`,args);
     const offset = (page - 1) * size;
     const orders: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
        LEFT JOIN LATERAL (
-         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1
        ) r ON true
-       WHERE o.store_id = $1
+       WHERE o.store_id = $1${extra}
        ORDER BY o.created_at DESC, o.id ASC
-       LIMIT $2 OFFSET $3`,
-      [storeId, size, offset]
+       LIMIT $${args.length+1} OFFSET $${args.length+2}`,
+      [...args, size, offset]
     );
 
     if (!orders.length) {
@@ -501,14 +511,14 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<(OrderRow & { items: OrderItemRow[] }) | undefined> {
     const [order]: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
        FROM "order" o
        LEFT JOIN payment p ON p.order_id = o.id
        LEFT JOIN LATERAL (
-         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1
+         SELECT status FROM refund WHERE order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1
        ) r ON true
        WHERE o.id = $1 AND o.store_id = $2`,
       [orderId, storeId]
@@ -525,9 +535,13 @@ export class OrderRepository extends OwnedRepository {
       [orderId]
     );
 
+    const status_history = await this.manager.query(
+      'SELECT from_status,to_status,actor_user_id,created_at FROM order_status_history WHERE order_id=$1 ORDER BY created_at,id', [orderId]);
     return {
       ...order,
       items,
+      status_history,
+      completed_at: status_history.find((event:OrderTimelineRow)=>event.to_status==='COMPLETED')?.created_at ?? null,
     };
   }
 

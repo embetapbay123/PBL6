@@ -1,5 +1,16 @@
 // Use only this service database; parameterize queries and pass transaction managers explicitly.
 import { OwnedRepository } from '../../../shared/src/repository';
+import {searchPattern} from '../../../shared/src/search';
+import type {AttributeDefinitionRow} from '../catalog/catalog.validation';
+
+export type InventoryFilters={q?:string;product_id?:string;variant_id?:string;from?:string;to?:string};
+const inventoryJoins=' FROM inventory i LEFT JOIN product_variant v ON v.id=i.variant_id AND v.store_id=i.store_id LEFT JOIN product p ON p.id=v.product_id AND p.store_id=i.store_id';
+function inventoryPredicate(store:string,filters:InventoryFilters){
+ const values:unknown[]=[store],conditions=['i.store_id=$1'];
+ for(const [column,value] of [['v.product_id',filters.product_id],['i.variant_id',filters.variant_id]] as const){if(value){values.push(value);conditions.push(column+'=$'+values.length);}}
+ const pattern=searchPattern(filters.q);if(pattern){values.push(pattern);const arg='$'+values.length;conditions.push(`(marketplace_search(p.title) LIKE ${arg} OR marketplace_search(v.sku) LIKE ${arg} OR marketplace_search(v.variant_values_json::text) LIKE ${arg})`);}
+ return {values,where:' WHERE '+conditions.join(' AND ')};
+}
 
 /** Read-only facts QuoteVariants needs for one snapshot. No lock, no write, no reservation. */
 export interface QuoteVariantRow {
@@ -12,6 +23,10 @@ export interface QuoteVariantRow {
   moderation_status: string;
   available_quantity: number;
   version: number;
+  taxonomy_status?:string;
+  variant_values?:Record<string,unknown>;
+  product_attributes?:Record<string,unknown>;
+  attribute_definitions?:AttributeDefinitionRow[];
 }
 
 /** A stock row addressed by Store, used by the adjust path under `FOR UPDATE`. */
@@ -24,7 +39,14 @@ export interface InventoryRecord {
   version: number;
 }
 
-export interface InventoryBalanceRow {
+export interface InventoryIdentity {
+  product_id?: string | null;
+  product_title?: string | null;
+  sku?: string | null;
+  variant_values?: Record<string, string> | null;
+}
+
+export interface InventoryBalanceRow extends InventoryIdentity {
   variant_id: string;
   quantity: number;
   reserved_quantity: number;
@@ -32,7 +54,17 @@ export interface InventoryBalanceRow {
   version: number;
 }
 
-export interface StockMovementRow {
+export interface StockMovementRow extends InventoryIdentity {
+  recorded_at?: Date|string|null;
+  receipt_id?: string | null;
+  delta_reserved?: number;
+  operation_id?: string;
+  actor_user_id?: string;
+  quantity_before?: number | null;
+  quantity_after?: number | null;
+  reserved_before?: number | null;
+  reserved_after?: number | null;
+  inventory_version?: number | null;
   id: string;
   variant_id: string;
   order_id: string | null;
@@ -73,28 +105,39 @@ export class InventoryRepository extends OwnedRepository {
    * A missing inventory row still returns the Variant with zero availability instead of
    * dropping it, so the caller gets an explicit business error rather than a silent omission.
    */
-  async variantsForQuote(variantIds: string[]): Promise<QuoteVariantRow[]> {
+  async variantsForQuote(variantIds: string[],lock=false): Promise<QuoteVariantRow[]> {
+    if(lock){
+      const products=await this.manager.query('SELECT id,product_type_id FROM product WHERE id IN (SELECT product_id FROM product_variant WHERE id=ANY($1::uuid[])) ORDER BY id FOR SHARE',[variantIds]);
+      const typeIds=[...new Set(products.map((p:any)=>p.product_type_id))].sort();
+      if(typeIds.length)await this.manager.query('SELECT id FROM product_type WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE',[typeIds]);
+      await this.manager.query('SELECT id FROM product_variant WHERE id=ANY($1::uuid[]) ORDER BY id FOR SHARE',[variantIds]);
+    }
     return this.manager.query(
       `SELECT v.id AS variant_id, v.product_id, v.store_id, v.price_vnd,
               v.status AS variant_status, p.status AS product_status, p.moderation_status,
+              t.status AS taxonomy_status,v.variant_values_json AS variant_values,p.attributes_json AS product_attributes,
+              (SELECT coalesce(jsonb_agg(jsonb_build_object('code',d.code,'required',d.required,'data_type',d.data_type,'allowed_values',d.allowed_values,'variant_factor',d.variant_factor) ORDER BY d.code),'[]'::jsonb) FROM attribute_definition d WHERE d.product_type_id=t.id) AS attribute_definitions,
               greatest(coalesce(i.quantity,0) - coalesce(i.reserved_quantity,0), 0) AS available_quantity,
               coalesce(i.version,0) AS version
          FROM product_variant v
          JOIN product p ON p.id = v.product_id
+         JOIN product_type t ON t.id=p.product_type_id
          LEFT JOIN inventory i ON i.variant_id = v.id AND i.store_id = v.store_id
-        WHERE v.id = ANY($1::uuid[])`,
+        WHERE v.id = ANY($1::uuid[]) ORDER BY p.id,v.id`,
       [variantIds]);
   }
 
   /* ------------------------------ INV-01: store inventory read, adjust, movements */
 
-  async pageInventory(storeId: string, page: number, size: number): Promise<{ items: InventoryBalanceRow[]; total: number }> {
-    const [count] = await this.manager.query('SELECT count(*)::int AS total FROM inventory WHERE store_id=$1', [storeId]);
+  async pageInventory(storeId: string, page: number, size: number,filters:InventoryFilters={}): Promise<{ items: InventoryBalanceRow[]; total: number }> {
+    const {values,where}=inventoryPredicate(storeId,filters);
+    const [count] = await this.manager.query('SELECT count(*)::int AS total'+inventoryJoins+where,values);
     const items = await this.manager.query(
-      `SELECT variant_id, quantity, reserved_quantity,
-              greatest(quantity-reserved_quantity,0) AS available_quantity, version
-         FROM inventory WHERE store_id=$1 ORDER BY variant_id LIMIT $2 OFFSET $3`,
-      [storeId, size, (page - 1) * size]);
+      `SELECT i.variant_id, i.quantity, i.reserved_quantity,
+              greatest(i.quantity-i.reserved_quantity,0) AS available_quantity, i.version,
+              p.id AS product_id, p.title AS product_title, v.sku, v.variant_values_json AS variant_values
+         ${inventoryJoins}${where} ORDER BY i.variant_id LIMIT $${values.length+1} OFFSET $${values.length+2}`,
+      [...values, size, (page - 1) * size]);
     return { items, total: count.total };
   }
 
@@ -114,16 +157,24 @@ export class InventoryRepository extends OwnedRepository {
     await this.manager.query('UPDATE inventory SET quantity=$2, version=version+1 WHERE id=$1', [inventoryId, quantity]);
   }
 
-  async pageMovements(storeId: string, page: number, size: number): Promise<{ items: StockMovementRow[]; total: number }> {
+  async pageMovements(storeId: string, page: number, size: number,filters:InventoryFilters={}): Promise<{ items: StockMovementRow[]; total: number }> {
+    const predicate=inventoryPredicate(storeId,filters),values=predicate.values,joins=inventoryJoins+' JOIN stock_movement m ON m.inventory_id=i.id';
+    let where=predicate.where;
+    for(const [operator,value] of [['>=',filters.from],['<',filters.to]] as const)if(value){values.push(value);where+=` AND coalesce(m.recorded_at,m.created_at) ${operator} $${values.length}::timestamptz`;}
     const [count] = await this.manager.query(
-      `SELECT count(*)::int AS total FROM stock_movement m
-         JOIN inventory i ON i.id=m.inventory_id WHERE i.store_id=$1`, [storeId]);
+      'SELECT count(*)::int AS total'+joins+where, values);
     const items = await this.manager.query(
-      `SELECT m.id, i.variant_id, m.order_id, m.delta_quantity, m.reason, m.created_at AS occurred_at
-         FROM stock_movement m JOIN inventory i ON i.id=m.inventory_id
-        WHERE i.store_id=$1 ORDER BY m.created_at DESC, m.id LIMIT $2 OFFSET $3`,
-      [storeId, size, (page - 1) * size]);
+      `SELECT m.id, i.variant_id, m.order_id, m.delta_quantity, m.delta_reserved, m.reason, m.created_at AS occurred_at,
+              m.recorded_at, m.receipt_id, m.operation_id, m.actor_user_id, m.quantity_before, m.quantity_after,
+              m.reserved_before, m.reserved_after, m.inventory_version,
+              p.id AS product_id, p.title AS product_title, v.sku, v.variant_values_json AS variant_values
+         ${joins}${where} ORDER BY coalesce(m.recorded_at,m.created_at) DESC, m.inventory_version DESC NULLS LAST, m.id LIMIT $${values.length+1} OFFSET $${values.length+2}`,
+      [...values, size, (page - 1) * size]);
     return { items, total: count.total };
+  }
+
+  async reconciliationMovements(storeId:string,variantId:string):Promise<StockMovementRow[]>{
+    return this.manager.query(`SELECT m.*,i.variant_id,m.created_at AS occurred_at FROM stock_movement m JOIN inventory i ON i.id=m.inventory_id WHERE i.store_id=$1 AND i.variant_id=$2 ORDER BY m.inventory_version NULLS FIRST,m.id LIMIT 20001`,[storeId,variantId]);
   }
 
   /** Available stock at or below the threshold. A dependency failure must surface as 503, never as an empty page. */
@@ -144,8 +195,10 @@ export class InventoryRepository extends OwnedRepository {
     reason: string; actorUserId: string }): Promise<void> {
     await this.manager.query(
       `INSERT INTO stock_movement(inventory_id,reservation_item_id,order_id,operation_id,
-                                  delta_quantity,delta_reserved,reason,actor_user_id)
-       VALUES($1,NULL,NULL,$2,$3,0,$4,$5)`,
+                                  delta_quantity,delta_reserved,reason,actor_user_id,
+                                  quantity_before,quantity_after,reserved_before,reserved_after,inventory_version)
+       SELECT $1,NULL,NULL,$2,$3,0,$4,$5,quantity-$3,quantity,reserved_quantity,reserved_quantity,version
+         FROM inventory WHERE id=$1`,
       [input.inventoryId, input.operationId, input.deltaQuantity, input.reason, input.actorUserId]);
   }
 
@@ -207,14 +260,14 @@ export class InventoryRepository extends OwnedRepository {
       [inventoryId, quantity]);
   }
 
-  /** Consume ships the goods: stock leaves and the hold is cleared in the same statement. */
+  /** Consume commits commercial stock: quantity decreases and the hold is cleared in the same statement. */
   async consumeStock(inventoryId: string, quantity: number): Promise<void> {
     await this.manager.query(
       'UPDATE inventory SET quantity=quantity-$2, reserved_quantity=reserved_quantity-$2, version=version+1 WHERE id=$1',
       [inventoryId, quantity]);
   }
 
-  /** Release only clears the hold; physical stock is untouched. */
+  /** Release only clears the hold; commercial quantity is untouched. */
   async releaseStock(inventoryId: string, quantity: number): Promise<void> {
     await this.manager.query(
       'UPDATE inventory SET reserved_quantity=reserved_quantity-$2, version=version+1 WHERE id=$1',
@@ -247,22 +300,24 @@ export class InventoryRepository extends OwnedRepository {
   }
 
   /**
-   * Stock audit trail. `delta_quantity` tracks physical stock and `delta_reserved` tracks the
+   * Stock audit trail. `delta_quantity` tracks commercial quantity and `delta_reserved` tracks the
    * hold, so reservation history can be reconstructed from movements alone.
    */
-  async insertMovement(input: { inventoryId: string; reservationItemId: string; orderId: string;
-    operationId: string; deltaQuantity: number; deltaReserved: number; reason: string; actorUserId: string }): Promise<void> {
+  async insertMovement(input: { inventoryId: string; reservationItemId?: string; orderId: string;
+    operationId: string; deltaQuantity: number; deltaReserved: number; reason: string; actorUserId: string; receiptId?:string }): Promise<void> {
     await this.manager.query(
       `INSERT INTO stock_movement(inventory_id,reservation_item_id,order_id,operation_id,
-                                  delta_quantity,delta_reserved,reason,actor_user_id)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
-      [input.inventoryId, input.reservationItemId, input.orderId, input.operationId,
-        input.deltaQuantity, input.deltaReserved, input.reason, input.actorUserId]);
+                                  delta_quantity,delta_reserved,reason,actor_user_id,
+                                  quantity_before,quantity_after,reserved_before,reserved_after,inventory_version,receipt_id)
+       SELECT $1,$2,$3,$4,$5,$6,$7,$8,quantity-$5,quantity,reserved_quantity-$6,reserved_quantity,version,$9
+         FROM inventory WHERE id=$1`,
+      [input.inventoryId, input.reservationItemId ?? null, input.orderId, input.operationId,
+        input.deltaQuantity, input.deltaReserved, input.reason, input.actorUserId, input.receiptId ?? null]);
   }
 
   /* --------------------------------------------- INV-03: restock a consumed Order */
 
-  /** Restock returns physical stock after a consumed Order is cancelled; the hold is already cleared. */
+  /** Restock returns commercial quantity after a consumed Order is cancelled; the hold is already cleared. */
   async restockStock(inventoryId: string, quantity: number): Promise<void> {
     await this.manager.query(
       'UPDATE inventory SET quantity=quantity+$2, version=version+1 WHERE id=$1', [inventoryId, quantity]);
@@ -297,6 +352,14 @@ export class InventoryRepository extends OwnedRepository {
        HAVING coalesce(sum(ri.quantity) FILTER (WHERE ri.status='ACTIVE'),0) > 0
         ORDER BY r.expires_at, r.id LIMIT $1`,
       [limit]);
+  }
+
+  async hasReceivedInspection(orderId:string):Promise<boolean> {
+    return (await this.manager.query('SELECT id FROM inventory_return_receipt WHERE order_id=$1 LIMIT 1',[orderId])).length>0;
+  }
+  async receivedTotals(orderId:string):Promise<Map<string,number>> {
+    const rows=await this.manager.query("SELECT i.variant_id,sum(m.delta_quantity)::int AS quantity FROM stock_movement m JOIN inventory i ON i.id=m.inventory_id WHERE m.order_id=$1 AND m.reason IN ('RESTOCK','RETURN_RECEIVED') GROUP BY i.variant_id",[orderId]);
+    return new Map(rows.map((row:any)=>[row.variant_id,row.quantity]));
   }
 
 }

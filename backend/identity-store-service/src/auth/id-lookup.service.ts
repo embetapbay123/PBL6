@@ -21,7 +21,7 @@ export class IdLookupService {
     );
     if (!address) throw new ApiError(404, 'ADDRESS_NOT_FOUND', 'Không tìm thấy địa chỉ hoạt động của khách hàng.');
     const stores = await this.db.query(
-      `SELECT id,name,shipping_fee_vnd,version FROM store WHERE id=ANY($1::uuid[]) AND status='ACTIVE'`,
+      `SELECT id,name,shipping_fee_vnd,version,return_address FROM store WHERE id=ANY($1::uuid[]) AND status='ACTIVE'`,
       [input.store_ids],
     );
     const byId = new Map(stores.map(row => [row.id, row]));
@@ -32,7 +32,8 @@ export class IdLookupService {
       address_snapshot: address,
       stores: input.store_ids.map(id => {
         const store = byId.get(id)!;
-        return { id: store.id, name: store.name, shipping_fee_vnd: moneyNumber(store.shipping_fee_vnd), version: store.version };
+        if(!store.return_address || ['recipient_name','phone','line1','ward','district','city'].some(key=>typeof store.return_address[key]!=='string'||!store.return_address[key].trim()))throw new ApiError(409,'STORE_RETURN_ADDRESS_REQUIRED','Cửa hàng chưa hoàn thiện địa chỉ nhận trả để nhận đơn mới.');
+        return { return_address:store.return_address, id: store.id, name: store.name, shipping_fee_vnd: moneyNumber(store.shipping_fee_vnd), version: store.version };
       }),
     };
   }

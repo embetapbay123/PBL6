@@ -3,16 +3,16 @@ import { AdministrationRepository } from './administration.repository';
 export class AdministrationService {
   constructor(private readonly repository = new AdministrationRepository()) {}
 
-  listUsers(page = 1, size = 20) {
-    return this.repository.listUsers(page, size);
+  listUsers(page = 1, size = 20, q?:string, status?:string, ids?:string) {
+    return this.repository.listUsers(page, size, q, status,ids);
   }
 
   updateUserState(id: string, status: string, reason: string, expectedVersion: number, actorUserId: string, correlationId: string) {
     return this.repository.updateUserState(id, status, reason, expectedVersion, actorUserId, correlationId);
   }
 
-  listStores(page = 1, size = 20) {
-    return this.repository.listStores(page, size);
+  listStores(page = 1, size = 20, q?:string, status?:string, ids?:string) {
+    return this.repository.listStores(page, size, q, status,ids);
   }
 
   listRoles() {

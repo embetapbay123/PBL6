@@ -7,6 +7,7 @@ export interface CheckoutQuoteRecord {
   request_hash: string;
   snapshot_hash: string;
   expires_at: string;
+  snapshot_version?: 2;
 }
 export interface QuoteStore {
   put(id: string, record: CheckoutQuoteRecord): Promise<void>;

@@ -1,15 +1,11 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
-import { IsArray, IsEmail, IsInt, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsEmail, IsString, MaxLength } from 'class-validator';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import { ApiError } from '../../../shared/src/errors';
 import { StaffService } from './staff.service';
-import { ListStoreStaffQueryDto, UpdateStaffBodyDto, UpdateStaffPathDto } from '../../../shared/src/dtos.generated';
+import { ListStoreStaffQueryDto, ListStaffInvitationsQueryDto, ListOwnInvitationsQueryDto, UpdateStaffBodyDto, UpdateStaffPathDto } from '../../../shared/src/dtos.generated';
 import { AuthService } from '../auth/auth.service';
 
-class PageQueryDto {
-  @IsInt() @Min(1) @Max(1_000_000) page = 1;
-  @IsInt() @Min(1) @Max(100) size = 20;
-}
 class InviteStaffDto {
   @IsEmail() @MaxLength(254) invited_email!: string;
   @IsArray() @IsString({ each: true }) @MaxLength(200, { each: true }) permissions!: string[];
@@ -35,7 +31,7 @@ export class StaffSkeletonController {
   }
 
   @Get('store/staff/invitations') @Roles('STORE_OWNER')
-  listStaffInvitations(@Req() req: any, @Query() query: PageQueryDto) {
+  listStaffInvitations(@Req() req: any, @Query() query: ListStaffInvitationsQueryDto) {
     const scope = this.ownerScope(req);
     return this.service.listStoreInvitations(scope.userId, scope.storeId, query.page, query.size);
   }
@@ -59,7 +55,7 @@ export class StaffSkeletonController {
   }
 
   @Get('me/invitations') @Roles('CUSTOMER')
-  listOwnInvitations(@Req() req: any, @Query() query: PageQueryDto) {
+  listOwnInvitations(@Req() req: any, @Query() query: ListOwnInvitationsQueryDto) {
     return this.service.listOwnInvitations(this.context(req).userId, query.page, query.size);
   }
 

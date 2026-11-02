@@ -1,3 +1,4 @@
+import type {OperationInputs} from '../../../shared/src/operations.generated';
 import { Controller, Post, UseGuards, Body, Req, HttpCode } from '@nestjs/common';
 import { ServiceGuard,ServiceCallers } from '../../../shared/src/auth';
 import { ListLowStockVariantsBodyDto, QuoteVariantsBodyDto, ReserveInventoryBodyDto,
@@ -20,5 +21,7 @@ export class InventoryInternalController {
   @Post('inventory/consume') @HttpCode(200) consume(@Body() dto: ConsumeReservationBodyDto) {return this.service.consume(dto);}
   @Post('inventory/release') @HttpCode(200) release(@Body() dto: ReleaseReservationBodyDto) {return this.service.release(dto);}
   // RestockOrder: chỉ hoàn kho cho reservation đã CONSUMED, một lần cho mỗi Order; guard nằm trong service.
+  @Post('inventory/received-restock') @HttpCode(200) received(@Req() request:any) {return this.service.restockReceived(request.contract.body as OperationInputs['RestockReceivedItems']['body']);}
+  @Post('inventory/exchange-dispatch') @HttpCode(200) exchange(@Req() request:any) {return this.service.dispatchExchange(request.contract.body as OperationInputs['DispatchExchangeItems']['body']);}
   @Post('inventory/restock') @HttpCode(200) restock(@Body() dto: RestockOrderBodyDto) {return this.service.restockOrder(dto);}
 }

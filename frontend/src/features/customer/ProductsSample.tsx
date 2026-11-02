@@ -93,32 +93,39 @@ export function ProductsSample() {
   return (
     <div>
       <section className="market-hero">
+        <div className="market-hero-copy">
         <small>
           <Sparkles size={13} />
-          MUA SẮM ĐA GIAN HÀNG
+          KHÁM PHÁ PBL6 MARKET
         </small>
         <h1>
-          Mọi lựa chọn yêu thích,
+          Tìm điều bạn thích,
           <br />
-          <span className="text-emerald-300">trong cùng một giỏ hàng.</span>
+          <span className="text-emerald-300">từ những gian hàng bạn yêu.</span>
         </h1>
         <p>
           Khám phá sản phẩm, kết hợp ưu đãi và theo dõi từng đơn hàng từ các
           gian hàng bạn chọn.
         </p>
         <div className="flex flex-wrap gap-3">
-          <Link to="/cart">
-            <ShoppingBag size={16} />
-            Khám phá giỏ hàng
-            <ArrowRight size={15} />
-          </Link>
+          <a href="#san-pham">
+            Khám phá sản phẩm
+            <ArrowRight size={16} />
+          </a>
           <Link to="/customer/store-applications">
             <Store size={16} />
             Mở gian hàng của bạn
           </Link>
         </div>
+        </div>
+        <div className="market-hero-art" aria-hidden="true">
+          <div className="market-hero-orbit orbit-one" />
+          <div className="market-hero-orbit orbit-two" />
+          <div className="market-hero-bag"><ShoppingBag size={64} strokeWidth={1.2} /></div>
+          <span className="market-hero-note">MỖI NGÀY MỘT KHÁM PHÁ MỚI <Sparkles size={16} /></span>
+        </div>
       </section>
-      <section aria-label="Danh mục ngành hàng">
+      <section className="market-categories" aria-label="Danh mục ngành hàng">
         <div className="flex items-center gap-2">
           <Tag className="text-emerald-600" size={18} />
           <h2>Danh mục ngành hàng</h2>
@@ -151,9 +158,10 @@ export function ProductsSample() {
           </p>
         )}
       </section>
-      <section aria-label="Danh sách sản phẩm">
+      <section id="san-pham" className="market-catalog" aria-label="Danh sách sản phẩm">
         <div className="flex items-end justify-between gap-3">
           <div>
+            <span className="market-eyebrow">DÀNH CHO BẠN</span>
             <h2>Khám phá sản phẩm</h2>
             {data && !isFetching && (
               <p className="text-sm text-slate-500">

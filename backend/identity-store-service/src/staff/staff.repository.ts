@@ -1,3 +1,4 @@
+import type {DataSource} from 'typeorm';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
@@ -35,6 +36,7 @@ function pageValues(page = 1, size = 20) {
 }
 
 export class StaffRepository {
+  constructor(private readonly source:DataSource=database) {}
   private async assertOwner(manager: any, userId: string, storeId: string) {
     if (!UUID_RE.test(storeId ?? '')) throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy Store đang hoạt động.');
     const [row] = await manager.query(
@@ -47,10 +49,10 @@ export class StaffRepository {
 
   async listStaff(userId: string, storeId: string, page = 1, size = 20) {
     const paging = pageValues(page, size);
-    await this.assertOwner(database.manager, userId, storeId);
-    const [count] = await database.query(
+    await this.assertOwner(this.source.manager, userId, storeId);
+    const [count] = await this.source.query(
       `SELECT count(*)::int AS total FROM store_membership WHERE store_id=$1 AND role='SELLER'`, [storeId]);
-    const rows = await database.query(
+    const rows = await this.source.query(
       `SELECT m.id,m.store_id,m.user_id,m.role,u.email,m.status,m.version,
          COALESCE(array_agg(p.code ORDER BY p.code) FILTER (WHERE p.code IS NOT NULL), ARRAY[]::varchar[]) AS permissions
        FROM store_membership m JOIN "user" u ON u.id=m.user_id
@@ -71,13 +73,14 @@ export class StaffRepository {
     if (permissions?.some(permission => !SELLER_PERMISSIONS.has(permission)))
       throw new ApiError(422, 'VALIDATION_FAILED', 'Chỉ có thể cấp quyền Seller của Store.');
 
-    return database.transaction(async manager => {
+    return this.source.transaction(async manager => {
       await this.assertOwner(manager, userId, storeId);
       const [member] = await manager.query(
         `SELECT m.*,u.email FROM store_membership m JOIN "user" u ON u.id=m.user_id
          WHERE m.id=$1 AND m.store_id=$2 AND m.role='SELLER' FOR UPDATE OF m`, [membershipId, storeId]);
       if (!member) throw new ApiError(404, 'NOT_FOUND', 'Nhân viên không tồn tại trong Store.');
       if (member.version !== input.expected_version) throw new ApiError(409, 'VERSION_CONFLICT', 'Phiên bản không khớp.');
+      const beforePermissions = (await manager.query(`SELECT p.code FROM membership_permission mp JOIN permission p ON p.id=mp.permission_id WHERE mp.membership_id=$1 ORDER BY p.code`, [membershipId])).map((row:any)=>row.code);
 
       if (permissions !== undefined) {
         const allowed = permissions.length ? await manager.query('SELECT id,code FROM permission WHERE code=ANY($1::varchar[])', [permissions]) : [];
@@ -91,14 +94,15 @@ export class StaffRepository {
       }
       const status = input.status ?? member.status;
       const version = member.version + 1;
-      const [updated] = await manager.query(
+      const updated = returnedRow<{id:string;user_id:string;status:string;version:number}>(await manager.query(
         `UPDATE store_membership SET status=$1,version=$2 WHERE id=$3
-         RETURNING id,user_id,status,version`, [status, version, membershipId]);
+         RETURNING id,user_id,status,version`, [status, version, membershipId]));
+      if(!updated)throw new ApiError(503,'MEMBERSHIP_WRITE_UNCONFIRMED','Chưa đọc được kết quả cập nhật nhân viên.');
       const updatedPermissions = permissions ?? (await manager.query(
         `SELECT p.code FROM membership_permission mp JOIN permission p ON p.id=mp.permission_id
          WHERE mp.membership_id=$1 ORDER BY p.code`, [membershipId])).map((row: any) => row.code);
       await audit(manager, 'M3', userId, 'StoreMembership', membershipId, 'STAFF_MEMBERSHIP_UPDATED', correlationId,
-        { status: member.status, version: member.version }, { status, permissions: updatedPermissions, version });
+        { status: member.status, permissions: beforePermissions, version: member.version }, { status, permissions: updatedPermissions, version });
       await emitEvent(manager, 'MembershipChanged', { user_id: updated.user_id, store_id: storeId, version }, correlationId);
       return { id: updated.id, store_id: storeId, user_id: updated.user_id, email: member.email, role: 'SELLER',
         status: updated.status, permissions: updatedPermissions, version: updated.version };
@@ -107,9 +111,9 @@ export class StaffRepository {
 
   async listStoreInvitations(userId: string, storeId: string, page = 1, size = 20) {
     const paging = pageValues(page, size);
-    await this.assertOwner(database.manager, userId, storeId);
-    const [count] = await database.query(`SELECT count(*)::int AS total FROM staff_invitation WHERE store_id=$1`, [storeId]);
-    const rows = await database.query(
+    await this.assertOwner(this.source.manager, userId, storeId);
+    const [count] = await this.source.query(`SELECT count(*)::int AS total FROM staff_invitation WHERE store_id=$1`, [storeId]);
+    const rows = await this.source.query(
       `SELECT id,store_id,invited_email,
          CASE WHEN status='PENDING' AND expires_at<=now() THEN 'EXPIRED' ELSE status END AS status,
          expires_at,created_at,permissions
@@ -128,7 +132,7 @@ export class StaffRepository {
     if (!Array.isArray(input.permissions) || permissions.some(p => typeof p !== 'string' || !SELLER_PERMISSIONS.has(p))) {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Chỉ có thể cấp các quyền Seller của Store.');
     }
-    return database.transaction(async manager => {
+    return this.source.transaction(async manager => {
       await manager.query('SELECT id FROM store WHERE id=$1 FOR UPDATE', [storeId]);
       await this.assertOwner(manager, userId, storeId);
       const [recipient] = await manager.query(`SELECT id FROM "user" WHERE lower(email)=lower($1)`, [email]);
@@ -167,7 +171,7 @@ export class StaffRepository {
 
   async revokeInvitation(userId: string, storeId: string, id: string, correlationId: string) {
     if (!UUID_RE.test(id ?? '')) throw new ApiError(404, 'NOT_FOUND', 'Lời mời không tồn tại.');
-    const result = await database.transaction(async manager => {
+    const result = await this.source.transaction(async manager => {
       await this.assertOwner(manager, userId, storeId);
       const [row] = await manager.query(`SELECT * FROM staff_invitation WHERE id=$1 AND store_id=$2 FOR UPDATE`, [id, storeId]);
       if (!row) throw new ApiError(404, 'NOT_FOUND', 'Lời mời không tồn tại.');
@@ -193,26 +197,27 @@ export class StaffRepository {
   }
 
   async failInvitationDelivery(storeId: string, id: string, correlationId: string) {
-    await database.transaction(async manager => {
+    await this.source.transaction(async manager => {
       const [row] = await manager.query(
         `SELECT id,status,version,invited_by_user_id FROM staff_invitation WHERE id=$1 AND store_id=$2 FOR UPDATE`, [id, storeId]);
       // Delivery can fail after a concurrent accept/revoke. Preserve the completed transition.
       if (!row || row.status !== 'PENDING') return;
-      const [updated] = await manager.query(
+      const updated = returnedRow<{version:number}>(await manager.query(
         `UPDATE staff_invitation SET status='REVOKED',revoked_at=now(),version=version+1
-         WHERE id=$1 AND status='PENDING' RETURNING version`, [id]);
-      if (updated) await audit(manager, 'M3', row.invited_by_user_id, 'StaffInvitation', id, 'STAFF_INVITATION_DELIVERY_FAILED', correlationId,
+         WHERE id=$1 AND status='PENDING' RETURNING version`, [id]));
+      if (!updated) throw new ApiError(503,'INVITATION_WRITE_UNCONFIRMED','Chưa đọc được kết quả thu hồi lời mời sau lỗi gửi email.');
+      await audit(manager, 'M3', row.invited_by_user_id, 'StaffInvitation', id, 'STAFF_INVITATION_DELIVERY_FAILED', correlationId,
         { status: 'PENDING', version: row.version }, { status: 'REVOKED', version: updated.version });
     });
   }
 
   async listOwnInvitations(userId: string, page = 1, size = 20) {
     const paging = pageValues(page, size);
-    const [user] = await database.query(`SELECT lower(email) AS email FROM "user" WHERE id=$1 AND status='ACTIVE' AND email_verified_at IS NOT NULL`, [userId]);
+    const [user] = await this.source.query(`SELECT lower(email) AS email FROM "user" WHERE id=$1 AND status='ACTIVE' AND email_verified_at IS NOT NULL`, [userId]);
     if (!user) throw new ApiError(401, 'EMAIL_NOT_VERIFIED', 'Cần xác minh email để xem lời mời.');
     const args = [user.email];
-    const [count] = await database.query(`SELECT count(*)::int AS total FROM staff_invitation WHERE lower(invited_email)=$1`, args);
-    const rows = await database.query(
+    const [count] = await this.source.query(`SELECT count(*)::int AS total FROM staff_invitation WHERE lower(invited_email)=$1`, args);
+    const rows = await this.source.query(
       `SELECT i.id,i.store_id,i.invited_email,
          CASE WHEN i.status='PENDING' AND i.expires_at<=now() THEN 'EXPIRED' ELSE i.status END AS status,
          i.expires_at,i.created_at,i.permissions,s.name AS store_name
@@ -224,7 +229,7 @@ export class StaffRepository {
 
   async acceptInvitation(userId: string, id: string, correlationId: string) {
     if (!UUID_RE.test(id ?? '')) throw new ApiError(404, 'NOT_FOUND', 'Lời mời không tồn tại.');
-    const result = await database.transaction(async manager => {
+    const result = await this.source.transaction(async manager => {
       const [identity] = await manager.query(`SELECT id,lower(email) AS email,email_verified_at,status FROM "user" WHERE id=$1 FOR UPDATE`, [userId]);
       if (!identity || identity.status !== 'ACTIVE' || !identity.email_verified_at) throw new ApiError(401, 'EMAIL_NOT_VERIFIED', 'Cần xác minh email để nhận lời mời.');
       const [row] = await manager.query(`SELECT i.*,s.name AS store_name FROM staff_invitation i JOIN store s ON s.id=i.store_id WHERE i.id=$1 FOR UPDATE OF i`, [id]);

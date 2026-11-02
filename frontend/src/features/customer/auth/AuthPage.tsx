@@ -1,4 +1,6 @@
-import {Link,useLocation} from 'react-router-dom';
+import {Link,useLocation,useNavigate} from 'react-router-dom';
+import {useEffect,useState} from 'react';
+import {takeAuthReturn,peekAuthReturn,clearAuthReturn} from './auth-return';
 import {useQueryClient} from '@tanstack/react-query';
 import {useAuth} from '../../../api/auth-context';
 import {ErrorView,ProtectedRoute} from '../../../bootstrap/components';
@@ -10,6 +12,9 @@ import {ResetPasswordForm} from './ResetPasswordForm';
 import {ChangePasswordForm} from './ChangePasswordForm';
 import {useAuthCommand} from './useAuthCommand';
 export function AuthPage(){const {pathname}=useLocation(),auth=useAuth(),cache=useQueryClient(),command=useAuthCommand();const forms:Record<string,React.ReactNode>={'/register':<RegisterForm/>,'/verify-email':<VerifyForm/>,'/forgot-password':<ForgotPasswordForm/>,'/reset-password':<ResetPasswordForm/>,'/change-password':<ProtectedRoute><ChangePasswordForm/></ProtectedRoute>};
+ const navigate=useNavigate(),[pending,setPending]=useState(()=>peekAuthReturn());
+ useEffect(()=>{const current=peekAuthReturn();setPending(current);if(pathname==='/login'&&auth.session&&current&&!current.expired){const target=takeAuthReturn();if(target)navigate(target.path,{state:target.state,replace:true});}},[pathname,auth.session,navigate]);
+ const resume=()=>{const current=peekAuthReturn();if(!current||current.expired){setPending(current);return;}const target=takeAuthReturn();if(target)navigate(target.path,{state:target.state,replace:true});};
  const login=auth.session?<section className="boot-card"><h2>Đã đăng nhập</h2><p>{auth.session.context?.roles?.join(', ')}</p><button onClick={()=>void command.run(async()=>{await auth.logout();cache.clear()})}>Đăng xuất</button>{command.error!=null&&<ErrorView error={command.error}/>}<Link to="/change-password">Đổi mật khẩu</Link></section>:<LoginForm/>;
- return <section key={pathname}>{forms[pathname]??login}<p><Link to="/login">Đăng nhập</Link> · <Link to="/register">Đăng ký tài khoản</Link> · <Link to="/forgot-password">Quên mật khẩu</Link></p></section>;
+ return <section key={pathname} className="auth-page">{auth.session&&pending&&<section className="boot-card" aria-label="Tiếp tục hành trình mua"><h2>Tiếp tục mua sắm</h2>{pending.expired?<><p role="status">Lựa chọn mua trước đó đã hết hạn. Mở lại trang mua sắm để chọn và kiểm tra thông tin hiện tại.</p><Link to={pending.path} onClick={()=>{clearAuthReturn();setPending(undefined);}}>Mở lại trang mua sắm</Link></>:<><p>Đã đăng nhập ở phiên hiện tại. Mở lại lựa chọn để kiểm tra giá, tồn và số lượng trước khi tiếp tục.</p><button type="button" onClick={resume}>Tiếp tục lựa chọn mua</button></>}</section>}{auth.session&&pathname==='/register'?<p>Bạn đang đăng nhập. Đăng xuất trong mục quản lý đăng nhập nếu muốn tạo tài khoản khác.</p>:forms[pathname]??login}<p><Link to="/login">Đăng nhập</Link> · <Link to="/register">Đăng ký tài khoản</Link> · <Link to="/forgot-password">Quên mật khẩu</Link></p></section>;
 }

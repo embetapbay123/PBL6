@@ -1,18 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect,useRef, useState } from 'react';
 import { callOperation } from '../../api/operations';
-import { ErrorView, Loading } from '../../bootstrap/components';
+import { ErrorView, Loading,Pagination } from '../../bootstrap/components';
 import { SellerSubNav } from '../../live/SellerWorkspace';
-
-const sellerPermissions = [
-  ['product.store.read_write', 'Quản lý sản phẩm'],
-  ['inventory.store.read_adjust', 'Xem và điều chỉnh kho'],
-  ['order.store.read_status_cancel', 'Xem và xử lý đơn hàng'],
-  ['cod.store.collect', 'Ghi nhận thu COD'],
-] as const;
+import {isUncertainMutation} from '../../api/client';
+import {invitationLabels, invitationStatus, invitationTime, sellerPermissions, useInvitationClock} from '../staff-presentation';
 type Staff = { id: string; user_id: string; email: string; status: string; version: number; permissions: string[] };
 type Invitation = { id: string; invited_email: string; permissions: string[]; status: string; expires_at: string };
 
 export function StaffPage() {
+  const [staffPage,setStaffPage]=useState(1),[invitePage,setInvitePage]=useState(1),[staffTotal,setStaffTotal]=useState(0),[inviteTotal,setInviteTotal]=useState(0),generation=useRef(0);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [email, setEmail] = useState('');
@@ -20,89 +16,98 @@ export function StaffPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [loadError,setLoadError]=useState<unknown>();
   const [notice, setNotice] = useState('');
+  const flight = useRef(false), alive = useRef(true);
+  const now = useInvitationClock(invitations);
+  const locked = busy || loading || loadError !== undefined;
 
   const load = useCallback(async () => {
-    setLoading(true); setError(undefined);
+    const epoch=++generation.current;setLoading(true);setLoadError(undefined);
     try {
-      const [staffPage, invitationPage] = await Promise.all([
-        callOperation('listStoreStaff', { query: { page: 1, size: 100 } }),
-        callOperation('listStaffInvitations', { query: { page: 1, size: 100 } }),
+      const [membersPage, invitationPage] = await Promise.all([
+        callOperation('listStoreStaff', { query: { page: staffPage, size: 20 } }),
+        callOperation('listStaffInvitations', { query: { page: invitePage, size: 20 } }),
       ]);
-      setStaff(staffPage.items as unknown as Staff[]); setInvitations(invitationPage.items as unknown as Invitation[]);
-    } catch (cause) { setError(cause); }
-    finally { setLoading(false); }
-  }, []);
-  useEffect(() => { void load(); }, [load]);
+      if(epoch!==generation.current)return false;setStaff(membersPage.items as unknown as Staff[]);setStaffTotal(membersPage.total);setInviteTotal(invitationPage.total); setInvitations(invitationPage.items as unknown as Invitation[]);if(staffPage>Math.max(1,Math.ceil(membersPage.total/20)))setStaffPage(Math.max(1,Math.ceil(membersPage.total/20)));if(invitePage>Math.max(1,Math.ceil(invitationPage.total/20)))setInvitePage(Math.max(1,Math.ceil(invitationPage.total/20)));
+      return true;
+    } catch (cause) {if(epoch===generation.current)setLoadError(cause);return false; }
+    finally {if(epoch===generation.current)setLoading(false); }
+  }, [staffPage,invitePage]);
+  useEffect(() => { void load();return()=>{generation.current++;}; }, [load]);
+  useEffect(() => {alive.current=true;return()=>{alive.current=false;};}, []);
+
+  async function mutate(command:()=>Promise<unknown>, success:string, onSuccess?:()=>void) {
+    if(flight.current || locked)return;
+    flight.current=true;setBusy(true);setError(undefined);setNotice('');
+    try {
+      await command();if(!alive.current)return;
+      onSuccess?.();setNotice(success);await load();
+    } catch(cause) {
+      if(!alive.current)return;setError(cause);
+      if(isUncertainMutation(cause))setNotice('Chưa rõ kết quả thao tác. Đọc lại danh sách để đối chiếu; hệ thống không tự gửi lại lệnh.');
+      await load();
+    } finally {flight.current=false;if(alive.current)setBusy(false);}
+  }
 
   const invite = async (event: React.FormEvent) => {
-    event.preventDefault(); setBusy(true); setError(undefined); setNotice('');
-    try {
-      await callOperation('inviteStaff', {
+    event.preventDefault();
+    await mutate(() => callOperation('inviteStaff', {
         body: {
           invited_email: email,
           permissions: invitePermissions as ("product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect")[],
         },
-      });
-      setEmail(''); setInvitePermissions([]); setNotice('Đã tạo lời mời. Người nhận có thể xem trong mục lời mời của tài khoản.'); await load();
-    } catch (cause) { setError(cause); await load(); setError(cause); }
-    finally { setBusy(false); }
+      }), 'Đã tạo lời mời. Người nhận có thể xem trong mục lời mời của tài khoản.', () => {setEmail('');setInvitePermissions([]);setInvitePage(1);});
   };
 
   const update = async (member: Staff, changes: { status?: string; permissions?: string[] }) => {
-    setBusy(true); setError(undefined);
-    try {
-      await callOperation('updateStaff', {
+    await mutate(() => callOperation('updateStaff', {
         path: { id: member.id },
         body: {
           expected_version: member.version,
           status: changes.status as "ACTIVE" | "LOCKED" | undefined,
           permissions: changes.permissions,
         },
-      });
-      await load();
-    } catch (cause) { setError(cause); }
-    finally { setBusy(false); }
+      }), 'Đã cập nhật nhân viên. Danh sách dưới đây thể hiện quyền hiện hành.');
   };
   const revoke = async (invitation: Invitation) => {
-    setBusy(true); setError(undefined);
-    try { await callOperation('revokeStaffInvitation', { path: { id: invitation.id } }); await load(); }
-    catch (cause) { setError(cause); }
-    finally { setBusy(false); }
+    if(invitationStatus(invitation,Date.now())!=='PENDING')return;
+    await mutate(() => callOperation('revokeStaffInvitation', { path: { id: invitation.id } }), 'Đã thu hồi lời mời.');
   };
 
   return <main className="boot-card">
     <SellerSubNav />
     <h2>Quản lý nhân viên Store</h2>
-    {error !== undefined && <ErrorView error={error} />}
+    {error !== undefined && <ErrorView error={error} />}{loadError!==undefined&&<ErrorView error={loadError} onRetry={()=>void load()}/>}
     {notice && <p role="status">{notice}</p>}
     <form onSubmit={invite}>
       <h3>Mời nhân viên</h3>
-      <label>Email nhân viên <input type="email" required maxLength={254} value={email} onChange={event => setEmail(event.target.value)} /></label>
-      <fieldset><legend>Quyền được cấp</legend>
+      <label>Email nhân viên <input disabled={locked} type="email" required maxLength={254} value={email} onChange={event => setEmail(event.target.value)} /></label>
+      <fieldset disabled={locked}><legend>Quyền được cấp</legend>
         {sellerPermissions.map(([code, label]) => <label key={code} style={{ display: 'block' }}>
           <input type="checkbox" checked={invitePermissions.includes(code)} onChange={event => setInvitePermissions(current => event.target.checked ? [...current, code] : current.filter(item => item !== code))} /> {label}
         </label>)}
       </fieldset>
-      <button disabled={busy}>Gửi lời mời</button>
+      <button disabled={locked}>Gửi lời mời</button>
     </form>
-    {loading ? <Loading /> : <>
-      <h3>Nhân viên</h3>
-      {staff.length === 0 ? <p>Chưa có nhân viên.</p> : staff.map(member => <article key={member.id} className="boot-card">
-        <strong>{member.email}</strong> · {member.status} · phiên bản {member.version}
+    {loading ? <Loading /> : loadError?null:<>
+      <h3>Nhân viên</h3><p>SELLER là nhân viên của Store này; các quyền dưới đây không cấp quyền Owner hoặc quản trị toàn sàn.</p>
+      {staff.length === 0 ? <p>Không có nhân viên ở trang này.</p> : staff.map(member => <article key={member.id} className="boot-card">
+        <strong>{member.email}</strong> · {member.status==='ACTIVE'?'Đang hoạt động':member.status==='LOCKED'?'Đã khóa':member.status} · phiên bản {member.version}
         <div>{sellerPermissions.map(([code, label]) => <label key={code} style={{ display: 'block' }}>
-          <input type="checkbox" checked={member.permissions.includes(code)} disabled={busy || member.status !== 'ACTIVE'}
+          <input type="checkbox" checked={member.permissions.includes(code)} disabled={locked || member.status !== 'ACTIVE'}
             onChange={event => update(member, { permissions: event.target.checked ? [...member.permissions, code] : member.permissions.filter(item => item !== code) })} /> {label}
         </label>)}</div>
-        <button disabled={busy} onClick={() => update(member, { status: member.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE' })}>
+        <button disabled={locked} onClick={() => update(member, { status: member.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE' })}>
           {member.status === 'ACTIVE' ? 'Khóa nhân viên' : 'Mở khóa'}
         </button>
       </article>)}
-      <h3>Lời mời</h3>
-      {invitations.length === 0 ? <p>Chưa có lời mời.</p> : invitations.map(invitation => <article key={invitation.id}>
-        {invitation.invited_email} · {invitation.status} · hết hạn {new Date(invitation.expires_at).toLocaleString('vi-VN')}
-        {invitation.status === 'PENDING' && <button disabled={busy} onClick={() => revoke(invitation)}>Thu hồi</button>}
+      <fieldset disabled={locked}><legend>Trang nhân viên</legend><Pagination page={staffPage} size={20} total={staffTotal} onPage={setStaffPage}/></fieldset><h3>Lời mời</h3>
+      {invitations.length === 0 ? <p>Không có lời mời ở trang này.</p> : invitations.map(invitation => <article key={invitation.id}>
+        {invitation.invited_email} · {invitationLabels[invitationStatus(invitation,now)]??'Chưa rõ trạng thái'} · hết hạn {invitationTime(invitation.expires_at)}
+        {invitationStatus(invitation,now) === 'PENDING' && <button disabled={locked} onClick={() => revoke(invitation)}>Thu hồi</button>}
       </article>)}
+      <fieldset disabled={locked}><legend>Trang lời mời</legend><Pagination page={invitePage} size={20} total={inviteTotal} onPage={setInvitePage}/></fieldset>
     </>}
   </main>;
 }

@@ -125,6 +125,24 @@ test('listOwnStoreProducts returns the management view including drafts and hidd
   expect((await api('/store/products')).status).toBe(401);
 });
 
+test('management detail includes drafts and hidden products but enforces Store scope', async () => {
+  await m1.query("UPDATE product SET status='DRAFT', moderation_status='HIDDEN' WHERE id=$1", [PRODUCTS_A[0]]);
+  const own = await api(`/store/products/${PRODUCTS_A[0]}`, owner);
+  expect(own.status).toBe(200);
+  expect(await own.json()).toMatchObject({id: PRODUCTS_A[0], status:'DRAFT', moderation_status:'HIDDEN'});
+  expect((await api(`/store/products/${productB}`, owner)).status).toBe(404);
+  expect((await api(`/store/products/${PRODUCTS_A[0]}`)).status).toBe(401);
+  await m3.query("UPDATE store_membership SET role='SELLER' WHERE id=$1", [OWNER_MEMBERSHIP]);
+  expect((await api(`/store/products/${PRODUCTS_A[0]}`, owner)).status).toBe(403);
+});
+
+test('product type definitions expose the codes used by product attributes', async () => {
+  const page = await json('/product-types?page=1&size=100');
+  const definitions = page.items.flatMap((item: any) => item.attribute_definitions);
+  const rows = await m1.query('SELECT id,code FROM attribute_definition WHERE id = ANY($1::uuid[])', [definitions.map((d:any)=>d.id)]);
+  for (const definition of definitions) expect(definition.code).toBe(rows.find((row:any)=>row.id===definition.id)?.code);
+});
+
 test('the management list follows the membership, so two Stores cannot read each other', async () => {
   // Store A's owner never sees another Store's management rows.
   const asOwnerA = await json('/store/products', owner);

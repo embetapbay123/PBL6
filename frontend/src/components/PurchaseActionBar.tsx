@@ -1,0 +1,2 @@
+import type {ReactNode} from 'react';
+export function PurchaseActionBar({summary,label,onAction,disabled,children}:{summary:ReactNode;label:string;onAction:()=>void;disabled:boolean;children:ReactNode}){return <div className="commerce-purchase-action"><div className="purchase-mobile-total"><span>{label}</span><strong>{summary}</strong></div><button type="button" className="ui-button ui-button-primary" onClick={onAction} disabled={disabled}>{children}</button></div>;}
