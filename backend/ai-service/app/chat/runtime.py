@@ -12,11 +12,23 @@ def digest(value):return hashlib.sha256(value.encode()).hexdigest()
 class ChatRuntime:
     def __init__(self,engine,catalog,selector=None):
         self.engine,self.catalog,self.selector=engine,catalog,selector or CatalogSelector()
+        import os
+        self.request_limit=int(os.getenv('CHAT_DAILY_REQUEST_LIMIT','100'))
+        self.token_limit=int(os.getenv('CHAT_DAILY_TOKEN_LIMIT','100000'))
+        if not 1<=self.request_limit<=10000 or not 1<=self.token_limit<=10000000:raise ValueError('Invalid daily chat allowance')
 
     def budget(self,scope,estimated=0,request=True):
         with self.engine.begin() as db:
-            row=db.execute(text('INSERT INTO ai_usage_budget(scope_hash,day,requests,tokens) VALUES(:s,current_date,:n,:t) ON CONFLICT(scope_hash,day) DO UPDATE SET requests=ai_usage_budget.requests+:n,tokens=ai_usage_budget.tokens+EXCLUDED.tokens WHERE ai_usage_budget.requests+:n<=100 AND ai_usage_budget.tokens+:t<=100000 RETURNING requests'),{'s':digest(scope),'t':estimated,'n':int(request)}).first()
+            row=db.execute(text('INSERT INTO ai_usage_budget(scope_hash,day,requests,tokens) VALUES(:s,current_date,:n,:t) ON CONFLICT(scope_hash,day) DO UPDATE SET requests=ai_usage_budget.requests+:n,tokens=ai_usage_budget.tokens+EXCLUDED.tokens WHERE ai_usage_budget.requests+:n<=:request_limit AND ai_usage_budget.tokens+:t<=:token_limit RETURNING requests,day'),{'s':digest(scope),'t':estimated,'n':int(request),'request_limit':self.request_limit,'token_limit':self.token_limit}).first()
             if not row:raise InternalError(429,'CHAT_BUDGET_EXCEEDED','Đã hết ngân sách chat trong ngày.')
+            return row[1]
+
+    def settle_budget(self,scope,reserved,actual,day):
+        # A known provider usage replaces its conservative reservation exactly once.
+        # Unknown outcomes retain the reservation; never auto-repeat the paid request.
+        if not reserved or type(actual) is not int or not 0<=actual<=100000:return
+        with self.engine.begin() as db:
+            db.execute(text('UPDATE ai_usage_budget SET tokens=GREATEST(0,tokens+:delta) WHERE scope_hash=:s AND day=:day'),{'s':digest(scope),'day':day,'delta':actual-reserved})
 
     def create(self,user,ip,first=None):
         self.budget('create:'+ip)
@@ -34,7 +46,7 @@ class ChatRuntime:
             row=db.execute(text("SELECT * FROM chat_session WHERE id=:s AND status='ACTIVE' AND created_at>now()-interval '30 days'"),{'s':id}).mappings().first()
             owned=row and (str(row['user_id'])==user if user else row['user_id'] is None and key and hmac.compare_digest(row['anonymous_key'],digest(key)))
             if not owned:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
-            history=db.execute(text('SELECT role,content FROM chat_message WHERE session_id=:s ORDER BY created_at DESC,id DESC LIMIT 20'),{'s':id}).mappings().all()
+            history=db.execute(text('SELECT role,content FROM chat_message WHERE session_id=:s ORDER BY created_at DESC,id DESC LIMIT 40'),{'s':id}).mappings().all()
             return row['version'],list(reversed([dict(r) for r in history]))
 
     def list(self,user,query):
@@ -70,20 +82,22 @@ class ChatRuntime:
         try:
             async with asyncio.timeout(max(4,getattr(self.selector,'timeout',2)+2)):
                 candidates=await self.catalog.snapshot(correlation)
-                retrieved=await run_in_threadpool(retrieve,self.engine,contextual_question(question,history),candidates)
+                search=contextual_question(question,history)
+                retrieved=await run_in_threadpool(retrieve,self.engine,search,candidates)
                 if user:
                     from ..recommendation.runtime import RecommendationRuntime
                     personalized,_,_=await run_in_threadpool(RecommendationRuntime(self.engine,self.catalog).personal,user,retrieved)
                     order={p:i for i,p in enumerate(personalized)}
                     retrieved.sort(key=lambda p:order.get(p['id'],len(order)))
-                estimated=request_estimate(question,retrieved,history,output_tokens=getattr(self.selector,'max_output_tokens',512)) if retrieved and getattr(self.selector,'provider','none')!='none' else 0
-                await run_in_threadpool(self.budget,scope,estimated,False)
+                estimated=request_estimate(question,retrieved,history,output_tokens=getattr(self.selector,'max_output_tokens',512)) if getattr(self.selector,'provider','none')!='none' else 0
+                reservation_day=await run_in_threadpool(self.budget,scope,estimated,False)
                 session_token=CHAT_SESSION.set(digest('session:'+str(id)))
                 try:selection=await self.selector.select(question,retrieved,history,correlation)
                 finally:CHAT_SESSION.reset(session_token)
+                await run_in_threadpool(self.settle_budget,scope,estimated,selection.actual_tokens,reservation_day)
                 # Resolve selected cards again after generation; no stale cached price or hidden card.
                 current=await asyncio.gather(*(self.catalog.product(p,correlation) for p in selection.ids))
-                maximum=budget(question)
+                maximum=budget(search)
                 if maximum is not None:current=[p for p in current if price(p)<=maximum]
                 # A model explanation belongs to the exact source snapshot, not merely its IDs.
                 before={p['id']:p for p in retrieved}

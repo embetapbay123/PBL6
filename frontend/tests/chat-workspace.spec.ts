@@ -161,6 +161,84 @@ async function setup(page: Page) {
   return sends;
 }
 test.use({ viewport: { width: 1440, height: 900 } });
+
+test("long AI history opens at the latest page and new answers stay visible after reading an older page", async ({
+  page,
+}) => {
+  await setup(page);
+  const dialog = page.getByRole("dialog");
+  const messages = Array.from({ length: 44 }, (_, i) => ({
+    id: "long-" + i,
+    role: i % 2 ? "ASSISTANT" : "USER",
+    content: i === 0 ? "Tìm áo làm quà" : "Tin trong phiên dài " + i,
+  }));
+  await page.route("**/api/v1/me/chat/sessions**", (route) => {
+    const url = new URL(route.request().url()),
+      id = url.searchParams.get("session_id");
+    if (!id) return route.fallback();
+    const p = Number(url.searchParams.get("message_page") || 1);
+    return route.fulfill({
+      json: {
+        items: [
+          {
+            id,
+            created_at: "2026-11-03T00:00:00Z",
+            messages: {
+              items: messages.slice((p - 1) * 20, p * 20),
+              total: messages.length,
+              page: p,
+              size: 20,
+            },
+          },
+        ],
+        page: 1,
+        size: 20,
+        total: 1,
+      },
+    });
+  });
+  await page.route("**/api/v1/chat/sessions/*/messages", (route) => {
+    const question = route.request().postDataJSON().content,
+      answer = {
+        id: "new-answer",
+        role: "ASSISTANT",
+        content: "Câu trả lời mới nhất của phiên dài.",
+        fallback: false,
+        product_cards: [],
+      };
+    messages.push(
+      { id: "new-question", role: "USER", content: question },
+      answer,
+    );
+    return route.fulfill({ json: answer });
+  });
+  await dialog
+    .getByRole("region", { name: "Lịch sử chat" })
+    .getByRole("button", { name: /#0002/ })
+    .click();
+  await expect(dialog.getByRole("log")).toContainText("Tin trong phiên dài 43");
+  await expect(dialog.locator(".boot-pagination").last()).toContainText(
+    "Trang 3",
+  );
+  await dialog
+    .getByRole("button", { name: "Trang trước", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Trang trước", exact: true })
+    .click();
+  await expect(dialog.getByRole("log")).toContainText("Tìm áo làm quà");
+  await dialog
+    .getByRole("textbox", { name: "Câu hỏi", exact: true })
+    .fill("Nhắc lại những lựa chọn cuối cùng");
+  await dialog
+    .getByRole("button", { name: "Gửi câu hỏi", exact: true })
+    .click();
+  await expect(dialog.getByRole("log")).toContainText("Câu trả lời mới nhất");
+  await expect(dialog.locator(".boot-pagination").last()).toContainText(
+    "Trang 3 · 46",
+  );
+  await expect(dialog.getByRole("log")).not.toContainText("Tìm áo làm quà");
+});
 test("AI history selection sends to the chosen session and a new session clears the selection", async ({
   page,
 }, info) => {

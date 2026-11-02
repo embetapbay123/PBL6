@@ -24,9 +24,9 @@ def test_compatible_api_generates_prose_and_keeps_key_out_of_payload_and_shared_
     assert result.actual_tokens==80 and result.model=='account-model'
     content,cards=compose(result,PRODUCTS)
     assert content.startswith(result.answer) and cards[0]['current_price_vnd']==100
-    assert PROMPT_VERSION=='catalog-answer-v4'
+    assert PROMPT_VERSION=='shopping-conversation-v5'
 
-@pytest.mark.parametrize('answer',['Giá chỉ 1 VND','<script>alert()</script>','https://evil.invalid','[click](evil)','api_key=private','', 'x'*901])
+@pytest.mark.parametrize('answer',['Giá chỉ 1 VND','<script>alert()</script>','https://evil.invalid','[click](evil)','api_key=private','', 'x'*4001])
 def test_unsafe_or_unbounded_prose_is_rejected(answer):
     result=asyncio.run(selector(lambda r:httpx.Response(200,json=envelope(answer))).select('camera',PRODUCTS))
     assert result.fallback and result.answer is None
@@ -91,7 +91,8 @@ def test_numbers_in_exact_catalog_title_are_allowed_but_invented_prices_are_not(
     products=[dict(PRODUCTS[0],title='Camera X100')]
     ok=selector(lambda r:httpx.Response(200,json=envelope(answer='Camera X100 nhỏ gọn để bạn tham khảo.')))
     assert not asyncio.run(ok.select('camera',products)).fallback
-    bad=selector(lambda r:httpx.Response(200,json=envelope(answer='Camera X100 có giá 100 đồng.')))
+    assert not asyncio.run(selector(lambda r:httpx.Response(200,json=envelope(answer='Camera X100 có giá 100 đồng.'))).select('camera',products)).fallback
+    bad=selector(lambda r:httpx.Response(200,json=envelope(answer='Camera X100 có giá 101 đồng.')))
     assert asyncio.run(bad.select('camera',products)).fallback
 
 
@@ -131,7 +132,7 @@ def test_thinking_extension_is_omitted_for_auto_and_rejected_for_unsupported_mod
         CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='other-model',api_key='test',thinking_mode='disabled')
 
 
-@pytest.mark.parametrize('mode,output_tokens',[('auto',1024),('enabled',1024),('disabled',512)])
+@pytest.mark.parametrize('mode,output_tokens',[('auto',4096),('enabled',4096),('disabled',2048)])
 def test_deepseek_reasoning_budget_leaves_room_for_complete_json(mode,output_tokens):
     from app.chat.provider import request_estimate
     def handler(request):

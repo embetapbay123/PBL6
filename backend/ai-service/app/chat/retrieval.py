@@ -6,14 +6,8 @@ from ..safety import embedding,public_text,tokens,budget,price
 from ..catalog import LiveCatalog
 
 def contextual_question(question,history):
-    """Explicit reference follow-up only; a new product query keeps its own scope."""
-    import re,unicodedata
-    folded=unicodedata.normalize('NFKD',question.lower()).replace('đ','d')
-    folded=''.join(c for c in folded if not unicodedata.combining(c))
-    if re.search(r'\b(cai do|cai nay|loai do|loai nay|san pham do|vua roi)\b',folded):
-        previous=next((m.get('content','') for m in reversed(history) if m.get('role')=='USER'), '')
-        return question+' '+previous[:1000]
-    return question
+    from .conversation import search_question
+    return search_question(question,history)
 
 def retrieve(engine,question,candidates):
     if not candidates:return []

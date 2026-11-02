@@ -36,13 +36,13 @@ def budget(value):
     """Bounded Vietnamese maximum-price baseline; unsupported phrasing stays unparsed."""
     folded=unicodedata.normalize('NFKD',value.lower()).replace('đ','d')
     folded=''.join(c for c in folded if not unicodedata.combining(c))
-    match=re.search(r'(duoi|toi da|khong qua)\s+(\d[\d.,]*)(?:\s*(trieu|tr|k))?\b',folded)
+    match=re.search(r'(duoi|toi da|khong qua)\s+(\d[\d.,]*)(?:\s*(trieu|tr|k|nghin|ngan(?!\s+sach)))?\b',folded)
     if not match:return None
     amount=match.group(2);unit=match.group(3)
     try:
         if unit:
             from decimal import Decimal
-            result=Decimal(amount.replace(',','.'))*(1000 if unit=='k' else 1000000)
+            result=Decimal(amount.replace(',','.'))*(1000 if unit in ('k','nghin','ngan') else 1000000)
             if result!=result.to_integral_value():return None
             result=int(result)
         else:result=int(amount.replace('.','').replace(',',''))

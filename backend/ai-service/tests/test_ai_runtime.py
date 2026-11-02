@@ -74,6 +74,55 @@ def test_generation_budget_reserves_context_once_and_refuses_excess(engine):
         assert tuple(db.execute(text('SELECT requests,tokens FROM ai_usage_budget WHERE scope_hash=:s'),{'s':digest(scope)}).one())==(1,99999)
     with pytest.raises(InternalError):s.budget(scope,2,False)
 
+
+def test_known_usage_replaces_reserved_estimate_but_unknown_usage_is_retained(engine):
+    s=service(engine);scope='conversation-usage';s.budget(scope)
+    day=s.budget(scope,20000,False);s.settle_budget(scope,20000,80,day)
+    with engine.connect() as db:
+        assert db.execute(text('SELECT tokens FROM ai_usage_budget WHERE scope_hash=:s'),{'s':digest(scope)}).scalar_one()==80
+    day=s.budget(scope,30000,False);s.settle_budget(scope,30000,None,day)
+    with engine.connect() as db:
+        assert db.execute(text('SELECT tokens FROM ai_usage_budget WHERE scope_hash=:s'),{'s':digest(scope)}).scalar_one()==30080
+
+
+def test_chat_provider_continues_empty_results_and_budgeted_followups(engine):
+    import httpx
+    from app.safety import budget as price_budget
+    catalog=Catalog()
+    for p in catalog.items:p['title']='Áo thun Everyday';p['variants'][0]['price_vnd']=149000
+    calls=[]
+    def handler(request):
+        body=json.loads(request.content);context=json.loads(body['messages'][-1]['content']);calls.append(context)
+        ids=[context['catalog'][0]['id']] if context['catalog'] else []
+        answer='Mình chưa tìm thấy áo dưới 100k. Bạn muốn tăng ngân sách không?' if not ids else 'Bạn có thể cân nhắc mẫu áo này theo ngân sách vừa điều chỉnh.'
+        return httpx.Response(200,json={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({'product_ids':ids,'answer':answer})}}],'usage':{'total_tokens':100}})
+    selector=CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='deepseek-demo',api_key='fixture',thinking_mode='disabled',transport=httpx.MockTransport(handler))
+    s=ChatRuntime(engine,catalog,selector);user=str(uuid.uuid4());session=s.create(user,'test')
+    for question in ['Tôi muốn tìm quà tặng áo thun dưới 100k','Tặng bạn nam, size M, ưu tiên màu đen.','Nếu tăng ngân sách lên tối đa 200k thì sao?']:
+        result=asyncio.run(s.answer(session['id'],user,None,question,'conversation-test'))
+        assert not result['fallback']
+    assert calls[0]['catalog']==calls[1]['catalog']==[]
+    assert calls[0]['budget_max_vnd']==calls[1]['budget_max_vnd']==99999
+    assert calls[2]['budget_max_vnd']==200000 and result['product_cards'][0]['current_price_vnd']==149000
+    with engine.connect() as db:
+        assert db.execute(text('SELECT tokens FROM ai_usage_budget WHERE scope_hash=:s'),{'s':digest('turn:'+user)}).scalar_one()==300
+
+
+def test_twelve_turns_keep_role_history_and_charge_reported_usage(engine):
+    import httpx
+    lengths=[]
+    def handler(request):
+        messages=json.loads(request.content)['messages'];lengths.append(len(messages))
+        return httpx.Response(200,json={'choices':[{'finish_reason':'stop','message':{'content':json.dumps({'product_ids':[],'answer':'Mình vẫn nhớ bạn đang tìm áo thun làm quà trong ngân sách đã trao đổi.'})}}],'usage':{'total_tokens':100}})
+    selector=CatalogSelector(provider='openai_compatible',url='https://provider.invalid/v1',model='deepseek-demo',api_key='fixture',thinking_mode='disabled',transport=httpx.MockTransport(handler))
+    s=ChatRuntime(engine,Catalog(),selector);user=str(uuid.uuid4());session=s.create(user,'test')
+    for i in range(12):
+        result=asyncio.run(s.answer(session['id'],user,None,'Tôi muốn tìm áo thun dưới 100k' if i==0 else 'Tóm tắt yêu cầu lúc đầu giúp tôi','long-conversation'))
+        assert not result['fallback']
+    assert lengths[-1]==24 and len(s.load(session['id'],user,None)[1])==24
+    with engine.connect() as db:
+        assert db.execute(text('SELECT tokens FROM ai_usage_budget WHERE scope_hash=:s'),{'s':digest('turn:'+user)}).scalar_one()==1200
+
 def test_chat_trace_failure_rolls_back_both_messages_and_version(engine):
     s=service(engine);user=str(uuid.uuid4());created=s.create(user,'ip')
     with engine.begin() as db:

@@ -113,35 +113,53 @@ export function AiChatPanel({ active }: { active: boolean }) {
       setShowLatest(false);
     }
   }
-  async function choose(id: string, p = 1) {
+  async function choose(id: string, p?: number) {
     if (flight.current) return;
     flight.current = true;
     setBusy(true);
     setError(undefined);
     try {
-      const result = await listOwnChatSessions({
+      let result = await listOwnChatSessions({
         session_id: id,
         page: 1,
         size: 20,
-        message_page: p,
+        message_page: p ?? 1,
         message_size: 20,
       });
-      const selected = result.items.find((v) => v.id === id);
+      let selected = result.items.find((v) => v.id === id);
       if (!selected)
         throw new ApiError(
           404,
           "NOT_FOUND",
           "Không tìm thấy phiên chat của bạn.",
         );
+      const first = selected.messages?.items.find(
+        (message) => message.role === "USER",
+      );
+      const targetPage =
+        p ?? Math.max(1, Math.ceil((selected.messages?.total ?? 0) / 20));
+      if (targetPage !== (selected.messages?.page ?? 1)) {
+        result = await listOwnChatSessions({
+          session_id: id,
+          page: 1,
+          size: 20,
+          message_page: targetPage,
+          message_size: 20,
+        });
+        selected = result.items.find((value) => value.id === id);
+        if (!selected)
+          throw new ApiError(
+            404,
+            "NOT_FOUND",
+            "Không tìm thấy phiên chat của bạn.",
+          );
+      }
       if (alive.current) {
         setCurrent(selected);
         setMessages(selected.messages?.items ?? []);
-        setMessagePage(p);
+        setMessagePage(targetPage);
         setMessageTotal(selected.messages?.total ?? 0);
-        if (p === 1) {
-          const first = selected.messages?.items.find(
-            (message) => message.role === "USER",
-          );
+        if (p === undefined || p === 1) {
           if (first) setTitles((t) => ({ ...t, [id]: first.content }));
         }
       }
@@ -181,9 +199,40 @@ export function AiChatPanel({ active }: { active: boolean }) {
         setTitles((t) => ({ ...t, [selected.id]: t[selected.id] ?? content }));
         setMessages((v) => [...v, { content, role: "USER" }, answer]);
         setDraft("");
-        setMessageTotal(0);
+        const nextTotal = (messageTotal || messages.length) + 2;
+        setMessageTotal(nextTotal);
         setReload((n) => n + 1);
         following.current = true;
+        if (customer && nextTotal > 20) {
+          // The answer is already acknowledged: a history read failure must not resend it.
+          try {
+            const targetPage = Math.ceil(nextTotal / 20),
+              latest = await listOwnChatSessions({
+                session_id: selected.id,
+                page: 1,
+                size: 20,
+                message_page: targetPage,
+                message_size: 20,
+              });
+            const saved = latest.items.find(
+              (value) => value.id === selected.id,
+            );
+            if (alive.current && saved?.messages) {
+              setMessages(saved.messages.items);
+              setMessagePage(targetPage);
+              setMessageTotal(saved.messages.total);
+            }
+          } catch {
+            if (alive.current)
+              setError(
+                new ApiError(
+                  503,
+                  "CHAT_HISTORY_UNAVAILABLE",
+                  "Đã nhận câu trả lời, nhưng chưa tải được trang lịch sử mới nhất. Mở lại phiên để đọc lại; không cần gửi lại câu hỏi.",
+                ),
+              );
+          }
+        }
       }
     } catch (e) {
       if (alive.current) setError(e);
