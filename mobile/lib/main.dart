@@ -19,6 +19,8 @@ import 'features/catalog/product_detail_page.dart';
 import 'features/cart/cart_page.dart';
 import 'features/checkout/checkout_page.dart';
 import 'features/checkout/order_success_page.dart';
+import 'features/orders/order_list_page.dart';
+import 'features/orders/order_detail_page.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
 
@@ -184,8 +186,20 @@ class BootstrapApp extends StatelessWidget {
               builder: (_) => AddressFormPage(initialAddress: args),
             );
           case '/orders':
+            final args = settings.arguments as Map<String, dynamic>?;
+            final initialIndex = (args?['initialIndex'] as int?) ?? 0;
             return MaterialPageRoute(
-              builder: (_) => const PendingPage('Đơn hàng (Orders)'),
+              builder: (_) => OrderListPage(initialIndex: initialIndex),
+            );
+          case '/order-detail':
+            final args = settings.arguments as Map<String, dynamic>? ?? {};
+            final orderId = args['orderId']?.toString() ?? '';
+            final order = args['order'] as Map<String, dynamic>?;
+            return MaterialPageRoute(
+              builder: (_) => OrderDetailPage(
+                orderId: orderId,
+                initialOrder: order,
+              ),
             );
           case '/chat':
             return MaterialPageRoute(

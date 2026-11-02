@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../orders/order_list_page.dart';
 import '../shared/app_bottom_nav.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -164,7 +165,7 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // 2. Section "Đơn hàng của tôi"
-                _buildMyOrdersSection(context),
+                _buildMyOrdersSection(context, ref),
                 const SizedBox(height: 16),
 
                 // 3. Section "Hoạt động mua sắm" (2x2 Grid)
@@ -373,7 +374,28 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// 2. Khối "Đơn hàng của tôi"
-  Widget _buildMyOrdersSection(BuildContext context) {
+  Widget _buildMyOrdersSection(BuildContext context, WidgetRef ref) {
+    final ordersAsync = ref.watch(customerOrdersProvider);
+    int? pendingCount;
+    int? processingCount;
+    int? shippedCount;
+
+    ordersAsync.whenData((data) {
+      final items = (data['items'] as List?) ?? [];
+      int pending = 0;
+      int processing = 0;
+      int shipped = 0;
+      for (final it in items) {
+        final st = (it as Map)['status']?.toString().toUpperCase() ?? '';
+        if (st == 'CREATED' || st == 'PENDING') pending++;
+        if (st == 'CONFIRMED' || st == 'PROCESSING') processing++;
+        if (st == 'SHIPPED') shipped++;
+      }
+      pendingCount = pending;
+      processingCount = processing;
+      shippedCount = shipped;
+    });
+
     return Container(
       decoration: AppDecorations.card(radius: 16),
       child: Material(
@@ -397,7 +419,11 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ),
                   InkWell(
-                    onTap: () => Navigator.pushNamed(context, '/orders'),
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/orders',
+                      arguments: {'initialIndex': 0},
+                    ),
                     borderRadius: BorderRadius.circular(8),
                     child: const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -430,29 +456,34 @@ class ProfilePage extends ConsumerWidget {
                 children: [
                   _buildOrderStatusItem(
                     context,
+                    initialIndex: 1,
                     icon: Icons.receipt_long_outlined,
                     label: 'Chờ xác nhận',
-                    badgeCount: 2,
+                    badgeCount: pendingCount ?? 2,
                   ),
                   _buildOrderStatusItem(
                     context,
+                    initialIndex: 2,
                     icon: Icons.inventory_2_outlined,
                     label: 'Đang xử lý',
-                    badgeCount: 1,
+                    badgeCount: processingCount ?? 1,
                   ),
                   _buildOrderStatusItem(
                     context,
+                    initialIndex: 3,
                     icon: Icons.local_shipping_outlined,
                     label: 'Đang giao',
-                    badgeCount: 1,
+                    badgeCount: shippedCount ?? 1,
                   ),
                   _buildOrderStatusItem(
                     context,
+                    initialIndex: 4,
                     icon: Icons.check_circle_outline_rounded,
                     label: 'Hoàn thành',
                   ),
                   _buildOrderStatusItem(
                     context,
+                    initialIndex: 5,
                     icon: Icons.cancel_outlined,
                     label: 'Đã hủy',
                   ),
@@ -467,6 +498,7 @@ class ProfilePage extends ConsumerWidget {
 
   Widget _buildOrderStatusItem(
     BuildContext context, {
+    required int initialIndex,
     required IconData icon,
     required String label,
     int? badgeCount,
@@ -474,7 +506,11 @@ class ProfilePage extends ConsumerWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.pushNamed(context, '/orders'),
+        onTap: () => Navigator.pushNamed(
+          context,
+          '/orders',
+          arguments: {'initialIndex': initialIndex},
+        ),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),

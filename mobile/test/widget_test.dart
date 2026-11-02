@@ -19,6 +19,8 @@ import 'package:pbl6_mobile/main.dart';
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
 import 'package:pbl6_mobile/features/checkout/checkout_page.dart';
 import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
+import 'package:pbl6_mobile/features/orders/order_list_page.dart';
+import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 
 class MockApiClient extends ApiClient {
   @override
@@ -225,6 +227,96 @@ class MockApiClient extends ApiClient {
     'display_name': 'Nguyễn Văn A',
     'phone_number': '0901234567',
   };
+
+  @override
+  Future<Map<String, dynamic>> listOwnOrders({
+    int page = 1,
+    int size = 50,
+  }) async => {
+    'items': [
+      {
+        'id': 'order-test-01',
+        'purchase_group_id': 'pg-01',
+        'store_id': 'store-tech',
+        'store_name': 'PBL Tech Store',
+        'status': 'PENDING',
+        'version': 1,
+        'payment_method': 'COD',
+        'amounts': {'payable_vnd': 350000},
+        'items': [
+          {
+            'id': 'oi-01',
+            'order_id': 'order-test-01',
+            'product_id': 'prod-01',
+            'product_title': 'Chuột Gaming không dây',
+            'sku': 'MOUSE-RGB',
+            'price_vnd': 350000,
+            'quantity': 1,
+          },
+        ],
+      },
+      {
+        'id': 'order-test-02',
+        'purchase_group_id': 'pg-02',
+        'store_id': 'store-fashion',
+        'store_name': 'PBL Fashion Hub',
+        'status': 'COMPLETED',
+        'version': 1,
+        'payment_method': 'SANDBOX',
+        'amounts': {'payable_vnd': 450000},
+        'items': [
+          {
+            'id': 'oi-02',
+            'order_id': 'order-test-02',
+            'product_id': 'prod-02',
+            'product_title': 'Áo hoodie Unisex',
+            'sku': 'HOODIE-BLACK-L',
+            'price_vnd': 450000,
+            'quantity': 1,
+          },
+        ],
+      },
+    ],
+    'total': 2,
+    'page': 1,
+    'size': 50,
+  };
+
+  @override
+  Future<Map<String, dynamic>> getOwnOrder(String id) async => {
+    'id': id,
+    'purchase_group_id': 'pg-01',
+    'store_id': 'store-tech',
+    'store_name': 'PBL Tech Store',
+    'status': 'PENDING',
+    'version': 1,
+    'payment_method': 'COD',
+    'amounts': {
+      'goods_vnd': 350000,
+      'shipping_vnd': 30000,
+      'store_discount_vnd': 0,
+      'platform_discount_vnd': 0,
+      'payable_vnd': 380000,
+    },
+    'items': [
+      {
+        'id': 'oi-01',
+        'order_id': id,
+        'product_id': 'prod-01',
+        'product_title': 'Chuột Gaming không dây',
+        'sku': 'MOUSE-RGB',
+        'price_vnd': 350000,
+        'quantity': 1,
+      },
+    ],
+  };
+
+  @override
+  Future<Map<String, dynamic>> cancelOwnOrder(
+    String id, {
+    required int expectedVersion,
+    String? reason,
+  }) async => {'status': 'CANCELLED'};
 }
 
 void main() {
@@ -332,6 +424,7 @@ void main() {
     testWidgets('ProfilePage displays profile data correctly', (tester) async {
       final container = ProviderContainer(
         overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
           profileProvider.overrideWith(
             (ref) async => {
               'email': 'user@example.com',
@@ -811,6 +904,68 @@ void main() {
       expect(find.text('Store: store-b'), findsOneWidget);
       expect(find.text('CONFIRMED'), findsOneWidget);
       expect(find.text('PENDING'), findsOneWidget);
+    });
+  });
+
+  group('MOB-04 Order History, Details & Cancellation Screen Tests', () {
+    testWidgets('OrderListPage renders tabs and displays orders from API', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(home: OrderListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Đơn hàng của tôi'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Tất cả'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Chờ xác nhận'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Đang xử lý'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Đang giao'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Hoàn thành'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Đã hủy'), findsOneWidget);
+
+      expect(find.text('PBL Tech Store'), findsOneWidget);
+      expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+      expect(find.text('PBL Fashion Hub'), findsOneWidget);
+      expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+    });
+
+    testWidgets('OrderListPage displays empty state when tab has no orders', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            customerOrdersProvider.overrideWith((ref) async => {'items': [], 'total': 0}),
+          ],
+          child: const MaterialApp(home: OrderListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chưa có đơn hàng nào'), findsOneWidget);
+      expect(find.text('Tiếp tục mua sắm'), findsOneWidget);
+    });
+
+    testWidgets('OrderDetailPage renders order details, items and billing', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: OrderDetailPage(orderId: 'order-test-01'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Chi tiết đơn hàng'), findsOneWidget);
+      expect(find.text('PBL Tech Store'), findsOneWidget);
+      expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+      expect(find.text('Phương thức thanh toán'), findsOneWidget);
+      expect(find.text('Thanh toán khi nhận hàng (COD)'), findsOneWidget);
+      expect(find.text('Chi tiết thanh toán'), findsOneWidget);
+      expect(find.text('380.000 đ'), findsWidgets);
+      expect(find.text('Hủy đơn hàng'), findsOneWidget);
     });
   });
 

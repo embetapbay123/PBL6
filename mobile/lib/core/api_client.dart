@@ -676,4 +676,50 @@ class ApiClient {
     );
     return (res is Map) ? Map<String, dynamic>.from(res) : {};
   }
+
+  // --- Order Management (MOB-04) ---
+  Future<Map<String, dynamic>> listOwnOrders({
+    int page = 1,
+    int size = 50,
+  }) async {
+    final res = await get('/me/orders', query: {'page': page, 'size': size});
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> getOwnOrder(String id) async {
+    final res = await get('/me/orders/$id');
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> cancelOwnOrder(
+    String id, {
+    required int expectedVersion,
+    String? reason,
+  }) async {
+    final body = <String, dynamic>{
+      'expected_version': expectedVersion,
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    };
+    final res = await post('/me/orders/$id/cancel', data: body);
+    return (res is Map)
+        ? Map<String, dynamic>.from(res)
+        : {'status': 'CANCELLED'};
+  }
+
+  Future<Map<String, dynamic>> createReview({
+    required String productId,
+    required String orderItemId,
+    required int rating,
+    String? comment,
+  }) async {
+    final body = <String, dynamic>{
+      'product_id': productId,
+      'order_item_id': orderItemId,
+      'rating': rating,
+      if (comment != null && comment.trim().isNotEmpty)
+        'comment': comment.trim(),
+    };
+    final res = await post('/me/reviews', data: body);
+    return (res is Map) ? Map<String, dynamic>.from(res) : {'status': 'success'};
+  }
 }
