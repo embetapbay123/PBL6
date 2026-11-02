@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import {useEffect,useRef,useState,type FormEvent} from 'react';
 import {Link,useNavigate,type RouteObject} from 'react-router-dom';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
@@ -68,7 +69,7 @@ function CustomerStoreApplicationPage(){
    <form onSubmit={submit} className="store-app-form"><fieldset disabled={blocked||pending}><legend>Thông tin đề nghị mở Store</legend>
     <label>Tên cửa hàng <span aria-hidden="true">*</span><input ref={nameInput} value={name} onChange={e=>setName(e.target.value)} placeholder="Ví dụ: Cửa hàng Minh An" required minLength={2} maxLength={200}/></label>
     <label>Email hoặc số điện thoại liên hệ <span aria-hidden="true">*</span><input value={contact} onChange={e=>setContact(e.target.value)} placeholder="email@example.com hoặc 0901234567" required minLength={3} maxLength={200}/></label>
-    <button className="store-app-button store-app-button--primary">{busy?'Đang xử lý…':dataMode==='fixture'?'Tạo hồ sơ fixture':'Gửi hồ sơ đăng ký'}</button>
+    <UiButton variant="primary" type="submit">{busy?'Đang xử lý…':dataMode==='fixture'?'Tạo hồ sơ fixture':'Gửi hồ sơ đăng ký'}</UiButton>
    </fieldset></form>{readRequired&&<p>Đang khóa việc gửi mới cho đến khi đọc lại được trạng thái hồ sơ.</p>}
   </section>}
   <section className="boot-card store-app-card"><h2>Hồ sơ của bạn</h2>

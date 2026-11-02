@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { Modal } from "../../components/Modal";
 import { useConfirm } from "../../components/ConfirmDialog";
 import { useUnsavedChanges } from "../../components/useUnsavedChanges";
@@ -276,14 +277,14 @@ function ProductDecision({
               {busy ? "Đang lưu…" : visible ? "Ẩn sản phẩm" : "Bỏ ẩn sản phẩm"}
             </button>
           </form>
-          <button
+          <UiButton
             type="button"
-            className="ui-button ui-button-secondary"
+            variant="secondary"
             disabled={busy || blocked}
             onClick={() => void closeDecision()}
           >
             Hủy kiểm duyệt
-          </button>
+          </UiButton>
           {!visible && <p>Bỏ ẩn giữ nguyên trạng thái bán của gian hàng.</p>}
           {error !== undefined && <ErrorView error={error} />}{" "}
           {(blocked || missing) && (

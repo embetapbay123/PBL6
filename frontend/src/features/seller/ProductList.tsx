@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { FormEvent, useState } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -126,14 +127,14 @@ export function SellerProductList() {
           <p>Quản lý sản phẩm, phân loại và trạng thái hiển thị.</p>
         </div>
         <div>
-          <button
-            className="ui-button ui-button-secondary"
+          <UiButton
+            variant="secondary" type="submit"
             onClick={() => void refetch()}
             disabled={isFetching}
           >
             <RefreshCw size={15} />
             Làm mới
-          </button>
+          </UiButton>
           {access.id && (
             <Link
               className="ui-button ui-button-secondary"
@@ -143,14 +144,14 @@ export function SellerProductList() {
               Xem gian hàng
             </Link>
           )}
-          <button
-            className="ui-button ui-button-primary"
+          <UiButton
+            variant="primary" type="submit"
             disabled={!canWrite}
             onClick={() => create(true)}
           >
             <Plus size={17} />
             Thêm sản phẩm mới
-          </button>
+          </UiButton>
         </div>
       </div>
       {showCreate && canWrite && (
@@ -270,16 +271,16 @@ export function SellerProductList() {
                           Sửa sản phẩm
                         </Link>
                         <ActionMenu label={"Thao tác " + product.title}>
-                          <button
-                            className="ui-button ui-button-secondary"
+                          <UiButton
+                            variant="secondary" type="submit"
                             aria-label={"Chi tiết " + product.title}
                             onClick={() => setInspect(product)}
                           >
                             <Eye size={13} />
                             Chi tiết
-                          </button>
-                          <button
-                            className="ui-button ui-button-secondary"
+                          </UiButton>
+                          <UiButton
+                            variant="secondary" type="submit"
                             disabled={
                               !canWrite ||
                               product.version === undefined ||
@@ -302,7 +303,7 @@ export function SellerProductList() {
                               : product.status === "DRAFT"
                                 ? "Đăng bán"
                                 : "Mở bán"}
-                          </button>
+                          </UiButton>
                         </ActionMenu>
                       </div>
                     </td>
@@ -353,12 +354,12 @@ export function SellerProductList() {
             ))}
           </ul>
           <div className="ui-actions">
-            <button
-              className="ui-button ui-button-secondary"
+            <UiButton
+              variant="secondary" type="submit"
               onClick={() => setInspect(undefined)}
             >
               Đóng
-            </button>
+            </UiButton>
             <Link
               className="ui-button ui-button-primary"
               state={{ returnTo }}
@@ -392,16 +393,16 @@ export function SellerProductList() {
           </p>
           {actionError !== undefined && <ErrorView error={actionError} />}
           <div className="ui-actions">
-            <button
-              className="ui-button ui-button-secondary"
+            <UiButton
+              variant="secondary" type="submit"
               disabled={busy}
               onClick={() => setDecision(undefined)}
             >
               Quay lại
-            </button>
+            </UiButton>
             {blocked ? (
-              <button
-                className="ui-button ui-button-primary"
+              <UiButton
+                variant="primary" type="submit"
                 onClick={() =>
                   void refetch().then((result) => {
                     if (!result.error) setDecision(undefined);
@@ -409,10 +410,10 @@ export function SellerProductList() {
                 }
               >
                 Tải lại danh sách
-              </button>
+              </UiButton>
             ) : (
-              <button
-                className="ui-button ui-button-primary"
+              <UiButton
+                variant="primary" type="submit"
                 disabled={busy}
                 onClick={() => void changeStatus()}
               >
@@ -421,7 +422,7 @@ export function SellerProductList() {
                   : decision.status === "ACTIVE"
                     ? "Xác nhận dừng bán"
                     : "Xác nhận mở bán"}
-              </button>
+              </UiButton>
             )}
           </div>
         </Modal>

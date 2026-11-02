@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { StarRating } from "../../components/StarRating";
 import { Modal } from "../../components/Modal";
 import { useConfirm } from "../../components/ConfirmDialog";
@@ -179,14 +180,14 @@ function Moderate({
                   : "Ẩn đánh giá"}
             </button>
           </form>
-          <button
+          <UiButton
             type="button"
-            className="ui-button ui-button-secondary"
+            variant="secondary"
             disabled={busy || blocked}
             onClick={() => void closeDecision()}
           >
             Hủy kiểm duyệt
-          </button>
+          </UiButton>
           {error !== undefined && <ErrorView error={error} />}
           {blocked && (
             <button

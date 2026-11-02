@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import {Link,useSearchParams} from 'react-router-dom';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { request,ApiError } from '../../api/client';
@@ -100,7 +101,7 @@ export function AdminCatalogManagement() {
   };
   return <section className="boot-card admin-catalog"><h3>Taxonomy và kiểm duyệt</h3>
     <p>Quản lý danh mục, loại sản phẩm và thuộc tính dùng chung cho các gian hàng.</p>
-    <nav className="admin-catalog-shortcuts" aria-label="Công cụ danh mục">{[['taxonomy','Danh mục & loại sản phẩm'],['attributes','Thuộc tính'],['products','Kiểm duyệt sản phẩm'],['reviews','Kiểm duyệt đánh giá']].map(([value,label])=><Link key={value} className={'ui-button '+(section===value?'ui-button-primary':'ui-button-secondary')} aria-current={section===value?'page':undefined} to={'/admin?tab=catalog&section='+value}>{label}</Link>)}{(section==='taxonomy'||section==='attributes')&&<button className="ui-button ui-button-secondary" disabled={busy||loading} onClick={()=>void load()}>Tải lại taxonomy</button>}</nav>
+    <nav className="admin-catalog-shortcuts" aria-label="Công cụ danh mục">{[['taxonomy','Danh mục & loại sản phẩm'],['attributes','Thuộc tính'],['products','Kiểm duyệt sản phẩm'],['reviews','Kiểm duyệt đánh giá']].map(([value,label])=><Link key={value} className={'ui-button '+(section===value?'ui-button-primary':'ui-button-secondary')} aria-current={section===value?'page':undefined} to={'/admin?tab=catalog&section='+value}>{label}</Link>)}{(section==='taxonomy'||section==='attributes')&&<UiButton variant="secondary" type="submit" disabled={busy||loading} onClick={()=>void load()}>Tải lại taxonomy</UiButton>}</nav>
     {error !== undefined && <ErrorView error={error} />}{notice && <p role="status">{notice}</p>}
     {(section==='taxonomy'||section==='attributes')&&(loading ? <Loading /> : <>
       {section==='taxonomy'&&<div id="taxonomy" className="admin-taxonomy-grid">

@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
@@ -27,14 +28,14 @@ export function VoucherPicker({
     <Modal label="Chọn mã ưu đãi" onClose={onClose}>
       <header className="modal-section-header">
         <h2>Chọn mã ưu đãi</h2>
-        <button
+        <UiButton
           type="button"
-          className="ui-button ui-button-secondary"
+          variant="secondary"
           onClick={onClose}
           aria-label="Đóng danh sách ưu đãi"
         >
           Đóng
-        </button>
+        </UiButton>
       </header>
       <p>
         Mã đang mở của sàn và các cửa hàng trong đơn. Điều kiện và lượt còn lại
@@ -86,8 +87,8 @@ export function VoucherPicker({
                     year: "numeric",
                   })}
                 </p>
-                <button
-                  className="ui-button ui-button-secondary"
+                <UiButton
+                  variant="secondary" type="submit"
                   onClick={() => {
                     onPick(
                       v.scope === "STORE" ? v.store_id : undefined,
@@ -97,7 +98,7 @@ export function VoucherPicker({
                   }}
                 >
                   Chọn {v.code}
-                </button>
+                </UiButton>
               </article>
             ))}
           </div>

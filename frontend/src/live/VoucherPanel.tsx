@@ -309,25 +309,27 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                       <span className="market-badge">{v.status ?? "—"}</span>
                     </td>
                     <td>
-                      <button
-                        disabled={controlsLocked || !v.id}
-                        onClick={() => showUsage(v)}
-                      >
-                        Xem lượt dùng
-                      </button>
-                      <button
-                        disabled={controlsLocked || !v.id || !!statusReview}
-                        onClick={async () => {
-                          if (showForm && editing?.id === v.id) return;
-                          if (!(await discardDraft())) return;
-                          formCommand.setError(undefined);
-                          formCommand.setNotice("");
-                          setEditing(v);
-                          setShowForm(true);
-                        }}
-                      >
-                        Sửa voucher
-                      </button>
+                      <div className="ui-actions">
+                        <button
+                          disabled={controlsLocked || !v.id}
+                          onClick={() => showUsage(v)}
+                        >
+                          Xem lượt dùng
+                        </button>
+                        <button
+                          disabled={controlsLocked || !v.id || !!statusReview}
+                          onClick={async () => {
+                            if (showForm && editing?.id === v.id) return;
+                            if (!(await discardDraft())) return;
+                            formCommand.setError(undefined);
+                            formCommand.setNotice("");
+                            setEditing(v);
+                            setShowForm(true);
+                          }}
+                        >
+                          Sửa voucher
+                        </button>
+                      </div>
                       {v.status === "STOPPED" && (
                         <button
                           disabled={

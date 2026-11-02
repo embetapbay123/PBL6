@@ -36,7 +36,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: saved?[saved]:[], total: saved?1:0, page: 1, size: 10 } });
     }
   });
-  await page.getByRole('link',{name:'Gian hàng của bạn',exact:true}).click();
+  await page.getByRole('link',{name:'Đăng ký bán hàng',exact:true}).click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -57,7 +57,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [], total: 0, page: 1, size: 10 } });
     }
   });
-  await page.getByRole('link',{name:'Gian hàng của bạn',exact:true}).click();
+  await page.getByRole('link',{name:'Đăng ký bán hàng',exact:true}).click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -80,10 +80,10 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [application], total: 1, page: 1, size: 10 } });
     }
   });
-  await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
+  await page.getByRole('link',{name:'Quản trị',exact:true}).click();
   await page.getByRole('link',{name:'Hồ sơ mở gian hàng',exact:true}).click();
   await page.locator('.store-app-icon-button--approve').first().click();
-  await page.locator('.store-app-dialog-actions .store-app-button--primary').click();
+  await page.getByRole('button',{name:'Xác nhận duyệt',exact:true}).click();
   await expect(page.locator('.store-app-notice')).toContainText('API Store');
   expect(requests.some(request => request.method === 'GET')).toBe(true);
   expect(requests).toContainEqual({
@@ -111,10 +111,10 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   await signInAs(page, 'ADMIN');
   let reviewCalls = 0;
   await page.route(url => new URL(url).pathname.startsWith('/api/v1/admin/store-applications'), route => { reviewCalls += 1; return route.continue(); });
-  await page.getByRole('link',{name:'Admin Portal',exact:true}).click();
+  await page.getByRole('link',{name:'Quản trị',exact:true}).click();
   await page.locator('a[href="/admin/store-applications"]').click();
   await page.locator('.store-app-icon-button--approve').first().click();
-  await page.locator('.store-app-dialog-actions .store-app-button--primary').click();
+  await page.getByRole('button',{name:'Xác nhận duyệt',exact:true}).click();
   await expect(page.locator('.store-app-notice')).toContainText('No real Store or membership was created');
   expect(await page.evaluate(() => localStorage.getItem('pbl6_mock_store_applications'))).not.toBeNull();
   expect(reviewCalls).toBe(0);

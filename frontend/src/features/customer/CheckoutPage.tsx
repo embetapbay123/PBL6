@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { VoucherPicker } from "./VoucherPicker";
 import { CheckCircle2 } from "lucide-react";
 import { paymentMethodLabel } from "../../components/OrderListTools";
@@ -991,13 +992,13 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
             >
               <h2 className="text-lg font-bold mb-3">4. Mã ưu đãi</h2>
               {!attempt && (
-                <button
+                <UiButton
                   type="button"
-                  className="ui-button ui-button-secondary"
+                  variant="secondary"
                   onClick={() => setPickerOpen(true)}
                 >
                   Chọn mã ưu đãi
-                </button>
+                </UiButton>
               )}
               {pickerOpen && !attempt && (
                 <VoucherPicker
@@ -1199,13 +1200,13 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
               (quoteError ||
                 conflictNotice ||
                 (!!shownQuote && Date.parse(shownQuote.expires_at) <= now)) && (
-                <button
+                <UiButton
                   type="button"
                   onClick={() => setQuoteTick((n) => n + 1)}
-                  className="ui-button ui-button-secondary"
+                  variant="secondary"
                 >
                   Tính lại báo giá
-                </button>
+                </UiButton>
               )}
 
             <PurchaseActionBar

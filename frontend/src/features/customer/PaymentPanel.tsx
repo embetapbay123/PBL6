@@ -1,4 +1,7 @@
 import { CopyButton } from "../../components/CopyButton";
+import { Button } from "../../components/ui/Button";
+import { Alert } from "../../components/ui/Alert";
+import { LoadingState } from "../../components/ui/Skeleton";
 import React, { useEffect, useState } from "react";
 import { callOperation } from "../../api/operations";
 import { ApiError } from "../../api/client";
@@ -90,17 +93,40 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
   }, [attempt?.expires_at, phase]);
 
   if (loading)
-    return <p data-testid="payment-loading">Đang tạo mã thanh toán...</p>;
+    return (
+      <div data-testid="payment-loading">
+        <LoadingState label="Đang tạo mã thanh toán..." />
+      </div>
+    );
 
   if (setupError) {
     const blocked = setupError instanceof ApiError && setupError.status === 409;
     return (
-      <div role="alert" data-testid="payment-setup-error">
+      <Alert
+        level={blocked ? "warning" : "error"}
+        title={
+          blocked ? "Cần kiểm tra giao dịch" : "Chưa thể tạo mã thanh toán"
+        }
+        data-testid="payment-setup-error"
+      >
         <p>{describePaymentError(setupError)}</p>
         {!blocked && (
-          <button onClick={() => setRound((r) => r + 1)}>Thử lại</button>
+          <Button variant="secondary" onClick={() => setRound((r) => r + 1)}>
+            Thử lại
+          </Button>
         )}
-      </div>
+        {setupError instanceof ApiError && setupError.correlationId && (
+          <div className="ui-error-support">
+            <span>Mã yêu cầu</span>
+            <code>{setupError.correlationId}</code>
+            <CopyButton
+              value={setupError.correlationId}
+              label="Sao chép mã yêu cầu"
+              compact
+            />
+          </div>
+        )}
+      </Alert>
     );
   }
 
@@ -115,28 +141,41 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
   if (!attempt) {
     if (order?.payment_status === "UNKNOWN")
       return (
-        <div role="alert" data-testid="payment-unknown">
+        <Alert
+          level="warning"
+          title="Chưa rõ kết quả thanh toán"
+          data-testid="payment-unknown"
+        >
           <p>
             Chưa xác nhận được kết quả thanh toán. Đừng thanh toán lại; giao
             dịch đang được đối soát.
           </p>
-          <button
+          <Button
+            variant="secondary"
             onClick={() => {
               setReadOnly(true);
               setRound((r) => r + 1);
             }}
           >
             Đọc lại đơn và kết quả thanh toán
-          </button>
-        </div>
+          </Button>
+        </Alert>
       );
     if (order?.payment_status === "SUCCEEDED")
-      return <p data-testid="payment-succeeded">Đã nhận thanh toán.</p>;
+      return (
+        <Alert level="success" data-testid="payment-succeeded">
+          Đã nhận thanh toán.
+        </Alert>
+      );
     if (
       order?.payment_status === "REFUNDED" ||
       order?.refund_status === "SUCCEEDED"
     )
-      return <p data-testid="payment-refunded">Đã hoàn tiền.</p>;
+      return (
+        <Alert level="success" data-testid="payment-refunded">
+          Đã hoàn tiền.
+        </Alert>
+      );
     if (order && readOnly && canStartOrderPayment(order))
       return (
         <div>
@@ -144,14 +183,14 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
             Đơn hiện cho phép thanh toán. Nếu đã chuyển tiền nhưng chưa được ghi
             nhận, liên hệ hỗ trợ trước khi trả thêm.
           </p>
-          <button
+          <Button
             onClick={() => {
               setReadOnly(false);
               setRound((r) => r + 1);
             }}
           >
             Tạo mã thanh toán
-          </button>
+          </Button>
         </div>
       );
     return (
@@ -170,40 +209,72 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
 
   switch (phase) {
     case "succeeded":
-      return <p data-testid="payment-succeeded">Đã nhận thanh toán.</p>;
+      return (
+        <Alert level="success" data-testid="payment-succeeded">
+          Đã nhận thanh toán.
+        </Alert>
+      );
     case "refunded":
-      return <p data-testid="payment-refunded">Đã hoàn tiền.</p>;
+      return (
+        <Alert level="success" data-testid="payment-refunded">
+          Đã hoàn tiền.
+        </Alert>
+      );
     case "failed":
       return (
-        <div role="alert" data-testid="payment-failed">
+        <Alert
+          level="error"
+          title="Thanh toán thất bại"
+          data-testid="payment-failed"
+        >
           <p>Thanh toán không thành công.</p>
-          <button onClick={() => setRound((r) => r + 1)}>Tạo mã mới</button>
-        </div>
+          <Button variant="secondary" onClick={() => setRound((r) => r + 1)}>
+            Tạo mã mới
+          </Button>
+        </Alert>
       );
     case "unknown":
       return (
-        <div role="alert" data-testid="payment-unknown">
+        <Alert
+          level="warning"
+          title="Chưa rõ kết quả thanh toán"
+          data-testid="payment-unknown"
+        >
           <p>
             Chưa xác nhận được kết quả thanh toán. Đừng thanh toán lại; giao
             dịch đang được đối soát.
           </p>
-          <button onClick={refresh}>Đối soát lại trạng thái</button>
-        </div>
+          <Button variant="secondary" onClick={refresh}>
+            Đối soát lại trạng thái
+          </Button>
+        </Alert>
       );
     case "expired":
       return (
-        <div role="alert" data-testid="payment-expired">
+        <Alert
+          level="warning"
+          title="Mã QR không còn hiệu lực"
+          data-testid="payment-expired"
+        >
           <p>Mã thanh toán đã hết hạn.</p>
           <p>Không thanh toán bằng mã đã hết hạn. Hãy kiểm tra lại đơn hàng.</p>
-          <button onClick={refresh}>Đọc lại trạng thái thanh toán</button>
-        </div>
+          <Button variant="secondary" onClick={refresh}>
+            Đọc lại trạng thái thanh toán
+          </Button>
+        </Alert>
       );
     case "error":
       return (
-        <div role="alert" data-testid="payment-poll-error">
+        <Alert
+          level="error"
+          title="Chưa đọc được trạng thái thanh toán"
+          data-testid="payment-poll-error"
+        >
           <p>{describePaymentError(lastError)}</p>
-          <button onClick={refresh}>Thử đọc lại trạng thái</button>
-        </div>
+          <Button variant="secondary" onClick={refresh}>
+            Thử đọc lại trạng thái
+          </Button>
+        </Alert>
       );
     default:
       return (
@@ -251,7 +322,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
               </span>
             </p>
           )}
-          <p>Đang chờ xác nhận thanh toán...</p>
+          <LoadingState label="Đang chờ xác nhận thanh toán..." />
         </div>
       );
   }

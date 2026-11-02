@@ -1,3 +1,4 @@
+import { Button as UiButton } from "../../components/ui/Button";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -13,7 +14,12 @@ import {
 } from "lucide-react";
 import { callOperation } from "../../api/operations";
 import type { OperationOutputs } from "../../api/operations.generated";
-import { Empty, ErrorView, Pagination } from "../../bootstrap/components";
+import {
+  Empty,
+  ErrorView,
+  Loading,
+  Pagination,
+} from "../../bootstrap/components";
 import { CatalogCard } from "../../live/CatalogCard";
 import { Modal } from "../../components/Modal";
 import { CustomerRecommendations } from "./CustomerRecommendations";
@@ -306,8 +312,10 @@ export function MarketplaceHome() {
           aria-busy={products.isFetching}
         >
           <div className="catalog-toolbar">
-            <button
-              className="ui-button ui-button-secondary catalog-filter-trigger"
+            <UiButton
+              variant="secondary"
+              className="catalog-filter-trigger"
+              type="submit"
               onClick={() => {
                 setFilterCategory(category);
                 setFilterOpen(true);
@@ -315,11 +323,13 @@ export function MarketplaceHome() {
             >
               <SlidersHorizontal size={17} />
               Bộ lọc
-            </button>
+            </UiButton>
             <span className="catalog-result-count">
               {products.data
                 ? `${products.data.total} kết quả`
-                : "Đang tải sản phẩm"}
+                : products.error
+                  ? "Chưa tải được sản phẩm"
+                  : "Đang tải sản phẩm"}
             </span>
             <label>
               Sắp xếp
@@ -378,9 +388,11 @@ export function MarketplaceHome() {
               <button onClick={() => setParams({})}>Xóa bộ lọc</button>
             </div>
           )}
-          <div className="catalog-read-status" role="status">
-            {products.isFetching ? "Đang cập nhật kết quả…" : ""}
-          </div>
+          {products.isFetching && !products.isPending && (
+            <div className="catalog-read-status" role="status">
+              Đang cập nhật kết quả…
+            </div>
+          )}
           {products.error && (
             <ErrorView
               error={products.error}
@@ -389,11 +401,7 @@ export function MarketplaceHome() {
             />
           )}
           {products.isPending && (
-            <div className="catalog-skeleton" aria-label="Đang tải sản phẩm">
-              {Array.from({ length: 10 }, (_, index) => (
-                <div key={index} />
-              ))}
-            </div>
+            <Loading variant="cards" label="Đang tải sản phẩm" />
           )}
           {!products.error && products.data && (
             <>
@@ -469,30 +477,33 @@ export function MarketplaceHome() {
             }}
           />
           <div className="ui-actions">
-            <button
-              className="ui-button ui-button-secondary"
+            <UiButton
+              variant="secondary"
+              type="submit"
               onClick={() => {
                 setFilterCategory("");
                 update({ category: "", min: "", max: "" });
               }}
             >
               Xóa lọc
-            </button>
-            <button
-              className="ui-button ui-button-primary"
+            </UiButton>
+            <UiButton
+              variant="primary"
+              type="submit"
               onClick={() => {
                 update({ category: filterCategory });
                 setFilterOpen(false);
               }}
             >
               Áp dụng
-            </button>
-            <button
-              className="ui-button ui-button-secondary"
+            </UiButton>
+            <UiButton
+              variant="secondary"
+              type="submit"
               onClick={() => setFilterOpen(false)}
             >
               Đóng
-            </button>
+            </UiButton>
           </div>
         </Modal>
       )}

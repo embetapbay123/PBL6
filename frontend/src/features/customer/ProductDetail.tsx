@@ -1,3 +1,4 @@
+import { Button as UiButton } from "../../components/ui/Button";
 import { StarRating } from "../../components/StarRating";
 import { ProductImage } from "../../components/ProductImage";
 import { useFavorite } from "./favorite-state";
@@ -447,22 +448,26 @@ export function ProductDetail() {
           <div className="purchase-actions">
             {session ? (
               <>
-                <button
-                  className="ui-button ui-button-secondary"
-                  disabled={!canSubmit || busy || uncertain || !customer}
-                  onClick={() => void add()}
-                >
-                  <ShoppingCart size={19} />
-                  {busy ? "Đang xử lý…" : "Thêm vào giỏ hàng"}
-                </button>
-                <button
-                  className="ui-button ui-button-primary"
-                  disabled={!canSubmit || busy || uncertain || !customer}
-                  onClick={() => void add(true)}
-                >
-                  <Zap size={18} />
-                  {busy ? "Đang xử lý…" : "Mua ngay"}
-                </button>
+                <div className="ui-actions">
+                  <UiButton
+                    variant="secondary"
+                    type="submit"
+                    disabled={!canSubmit || busy || uncertain || !customer}
+                    onClick={() => void add()}
+                  >
+                    <ShoppingCart size={19} />
+                    {busy ? "Đang xử lý…" : "Thêm vào giỏ hàng"}
+                  </UiButton>
+                  <UiButton
+                    variant="primary"
+                    type="submit"
+                    disabled={!canSubmit || busy || uncertain || !customer}
+                    onClick={() => void add(true)}
+                  >
+                    <Zap size={18} />
+                    {busy ? "Đang xử lý…" : "Mua ngay"}
+                  </UiButton>
+                </div>
               </>
             ) : canSubmit ? (
               <>
@@ -510,8 +515,8 @@ export function ProductDetail() {
           {success && <p role="status">Đã thêm sản phẩm vào giỏ hàng.</p>}
           {session?.context?.roles.includes("CUSTOMER") && (
             <div className="purchase-secondary-actions">
-              <button
-                className="ui-button ui-button-secondary"
+              <UiButton
+                variant="secondary"
                 type="button"
                 aria-pressed={favoriteSaved}
                 disabled={favoriteBusy}
@@ -523,7 +528,7 @@ export function ProductDetail() {
                   : favoriteBusy
                     ? "Đang lưu…"
                     : "Lưu yêu thích"}
-              </button>{" "}
+              </UiButton>{" "}
               <Link to="/customer/favorites">Xem danh sách yêu thích</Link>
             </div>
           )}

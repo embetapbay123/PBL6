@@ -1,3 +1,4 @@
+import { Button as UiButton } from "../../components/ui/Button";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../../api/client";
@@ -289,26 +290,28 @@ export const ProfilePage: React.FC = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {saving ? "Đang lưu..." : "Lưu thay đổi"}
-            </button>
-            <button
-              type="button"
-              className="ui-button ui-button-secondary"
-              disabled={saving}
-              onClick={() => {
-                setDisplayName(original?.displayName ?? "");
-                setPhone(original?.phone ?? "");
-                setSaveError(null);
-                setEditing(false);
-              }}
-            >
-              Hủy thay đổi
-            </button>
+            <div className="ui-actions">
+              <button
+                type="submit"
+                disabled={saving}
+                className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+              <UiButton
+                type="button"
+                variant="secondary"
+                disabled={saving}
+                onClick={() => {
+                  setDisplayName(original?.displayName ?? "");
+                  setPhone(original?.phone ?? "");
+                  setSaveError(null);
+                  setEditing(false);
+                }}
+              >
+                Hủy thay đổi
+              </UiButton>
+            </div>
           </fieldset>
         </form>
       )}

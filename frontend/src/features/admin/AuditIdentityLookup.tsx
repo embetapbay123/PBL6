@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { OperationOutputs } from "../../api/operations.generated";
@@ -53,14 +54,14 @@ export function AuditIdentityLookup({
         {!query.isFetching &&
           query.data?.items.map((item) => (
             <li key={item.id}>
-              <button
+              <UiButton
                 type="button"
-                className="ui-button ui-button-secondary"
+                variant="secondary"
                 onClick={() => onPick(item.id)}
               >
                 {"email" in item ? item.display_name || item.email : item.name}
                 <small>#{item.id.slice(-8).toUpperCase()}</small>
-              </button>
+              </UiButton>
             </li>
           ))}
       </ul>

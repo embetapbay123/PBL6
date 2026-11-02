@@ -1,3 +1,4 @@
+import { Button as UiButton } from "../../components/ui/Button";
 import { useConfirm } from "../../components/ConfirmDialog";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RouteObject } from "react-router-dom";
@@ -148,17 +149,17 @@ function ReviewDialog({
             </label>
           )}
           <div className="store-app-dialog-actions">
-            <button
+            <UiButton
               type="button"
-              className="store-app-button store-app-button--secondary"
+              variant="secondary"
               onClick={cancel}
               disabled={busy || blocked}
             >
               Quay lại
-            </button>
-            <button
+            </UiButton>
+            <UiButton
               type="button"
-              className={`store-app-button ${approve ? "store-app-button--primary" : "store-app-button--danger"}`}
+              variant={approve ? "primary" : "danger"}
               disabled={
                 busy ||
                 blocked ||
@@ -172,7 +173,7 @@ function ReviewDialog({
                 : approve
                   ? "Xác nhận duyệt"
                   : "Xác nhận từ chối"}
-            </button>
+            </UiButton>
           </div>
         </section>
       </Modal>
@@ -427,14 +428,14 @@ function AdminStoreApplicationPage() {
             <p className="store-app-eyebrow">DANH SÁCH HỒ SƠ</p>
             <h2>{filter === "ALL" ? "Tất cả hồ sơ" : labels[filter]}</h2>
           </div>
-          <button
-            className="store-app-button store-app-button--secondary"
+          <UiButton
+            variant="secondary"
             type="button"
             onClick={() => void load(page)}
             disabled={loading}
           >
             Làm mới
-          </button>
+          </UiButton>
         </div>
         {loading ? (
           <Loading />
@@ -481,26 +482,28 @@ function AdminStoreApplicationPage() {
                             </button>
                             {app.status === "PENDING" && (
                               <>
-                                <button
-                                  type="button"
-                                  className="store-app-icon-button store-app-icon-button--approve"
-                                  onClick={() =>
-                                    setReview({ app, decision: "APPROVED" })
-                                  }
-                                  disabled={busy}
-                                >
-                                  <Check size={16} /> Duyệt
-                                </button>
-                                <button
-                                  type="button"
-                                  className="store-app-icon-button store-app-icon-button--reject"
-                                  onClick={() =>
-                                    setReview({ app, decision: "REJECTED" })
-                                  }
-                                  disabled={busy}
-                                >
-                                  <X size={16} /> Từ chối
-                                </button>
+                                <div className="ui-actions">
+                                  <button
+                                    type="button"
+                                    className="store-app-icon-button store-app-icon-button--approve"
+                                    onClick={() =>
+                                      setReview({ app, decision: "APPROVED" })
+                                    }
+                                    disabled={busy}
+                                  >
+                                    <Check size={16} /> Duyệt
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="store-app-icon-button store-app-icon-button--reject"
+                                    onClick={() =>
+                                      setReview({ app, decision: "REJECTED" })
+                                    }
+                                    disabled={busy}
+                                  >
+                                    <X size={16} /> Từ chối
+                                  </button>
+                                </div>
                               </>
                             )}
                           </div>
@@ -564,35 +567,37 @@ function AdminStoreApplicationPage() {
               </div>
             </dl>
             <div className="store-app-dialog-actions">
-              <button
+              <UiButton
                 type="button"
-                className="store-app-button store-app-button--secondary"
+                variant="secondary"
                 onClick={() => setSelected(undefined)}
               >
                 Đóng
-              </button>
+              </UiButton>
               {selected.status === "PENDING" && (
                 <>
-                  <button
-                    type="button"
-                    className="store-app-button store-app-button--primary"
-                    onClick={() => {
-                      setReview({ app: selected, decision: "APPROVED" });
-                      setSelected(undefined);
-                    }}
-                  >
-                    Duyệt hồ sơ
-                  </button>
-                  <button
-                    type="button"
-                    className="store-app-button store-app-button--danger"
-                    onClick={() => {
-                      setReview({ app: selected, decision: "REJECTED" });
-                      setSelected(undefined);
-                    }}
-                  >
-                    Từ chối
-                  </button>
+                  <div className="ui-actions">
+                    <UiButton
+                      type="button"
+                      variant="primary"
+                      onClick={() => {
+                        setReview({ app: selected, decision: "APPROVED" });
+                        setSelected(undefined);
+                      }}
+                    >
+                      Duyệt hồ sơ
+                    </UiButton>
+                    <UiButton
+                      type="button"
+                      variant="danger"
+                      onClick={() => {
+                        setReview({ app: selected, decision: "REJECTED" });
+                        setSelected(undefined);
+                      }}
+                    >
+                      Từ chối
+                    </UiButton>
+                  </div>
                 </>
               )}
             </div>

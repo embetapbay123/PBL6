@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { Modal } from "../../components/Modal";
 import { useConfirm } from "../../components/ConfirmDialog";
 import { useUnsavedChanges } from "../../components/useUnsavedChanges";
@@ -361,14 +362,14 @@ function DefinitionForm({
                   : "Tạo thuộc tính"}
             </button>
           </fieldset>
-          <button
+          <UiButton
             type="button"
-            className="ui-button ui-button-secondary"
+            variant="secondary"
             disabled={busy || blocked}
             onClick={() => void cancel()}
           >
             Hủy thay đổi
-          </button>
+          </UiButton>
           {error !== undefined && <ErrorView error={error} />}{" "}
           {(blocked || missingVersion) && (
             <p>

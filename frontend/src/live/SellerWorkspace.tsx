@@ -1,3 +1,4 @@
+import { Button as UiButton } from "../components/ui/Button";
 import { useUnsavedChanges } from "../components/useUnsavedChanges";
 import { AddressSuggestions } from "../components/AddressSuggestions";
 import { variantLabel } from "../components/variant-identity";
@@ -413,35 +414,37 @@ function StoreSettingsForm({
         />
       </fieldset>
       <p>Trạng thái: {store.status}</p>
-      <button
-        disabled={
-          command.busy || stale || reading || store.version === undefined
-        }
-      >
-        Lưu thông tin
-      </button>
-      <button
-        type="button"
-        className="ui-button ui-button-secondary"
-        disabled={command.busy || stale || reading}
-        onClick={() => {
-          setName(store.name);
-          setShipping(store.shipping_fee_vnd ?? 0);
-          setReturnAddress(
-            store.return_address ?? {
-              recipient_name: "",
-              phone: "",
-              line1: "",
-              ward: "",
-              district: "",
-              city: "",
-            },
-          );
-          setEditing(false);
-        }}
-      >
-        Hủy thay đổi
-      </button>
+      <div className="ui-actions">
+        <button
+          disabled={
+            command.busy || stale || reading || store.version === undefined
+          }
+        >
+          Lưu thông tin
+        </button>
+        <UiButton
+          type="button"
+          variant="secondary"
+          disabled={command.busy || stale || reading}
+          onClick={() => {
+            setName(store.name);
+            setShipping(store.shipping_fee_vnd ?? 0);
+            setReturnAddress(
+              store.return_address ?? {
+                recipient_name: "",
+                phone: "",
+                line1: "",
+                ward: "",
+                district: "",
+                city: "",
+              },
+            );
+            setEditing(false);
+          }}
+        >
+          Hủy thay đổi
+        </UiButton>
+      </div>
       {command.error != null && (
         <ErrorView
           error={command.error}
@@ -1054,20 +1057,22 @@ function StockAdjustment({
             Dữ liệu đã thay đổi. Đóng và tải lại kho trước khi điều chỉnh tiếp.
           </p>
         )}
-        <button
-          disabled={
-            command.busy || stale || (!uncertain && !valid) || !reason.trim()
-          }
-        >
-          {uncertain ? "Thử lại điều chỉnh" : "Lưu điều chỉnh"}
-        </button>
-        <button
-          type="button"
-          disabled={command.busy || uncertain}
-          onClick={close}
-        >
-          Đóng
-        </button>
+        <div className="ui-actions">
+          <button
+            disabled={
+              command.busy || stale || (!uncertain && !valid) || !reason.trim()
+            }
+          >
+            {uncertain ? "Thử lại điều chỉnh" : "Lưu điều chỉnh"}
+          </button>
+          <button
+            type="button"
+            disabled={command.busy || uncertain}
+            onClick={close}
+          >
+            Đóng
+          </button>
+        </div>
       </form>
     </Modal>
   );
@@ -1345,12 +1350,14 @@ function StoreOrderActions({
           Ghi nhận giao thất bại / theo dõi hoàn về
         </Link>
       )}
-      <button onClick={reload} disabled={command.busy}>
-        Đọc lại đơn
-      </button>
-      <button onClick={close} disabled={command.busy}>
-        Đóng
-      </button>
+      <div className="ui-actions">
+        <button onClick={reload} disabled={command.busy}>
+          Đọc lại đơn
+        </button>
+        <button onClick={close} disabled={command.busy}>
+          Đóng
+        </button>
+      </div>
     </Modal>
   );
 }

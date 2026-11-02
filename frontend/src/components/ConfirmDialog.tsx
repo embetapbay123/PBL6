@@ -1,3 +1,4 @@
+import {Button as UiButton} from './ui/Button';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "./Modal";
 type Confirmation = {
@@ -33,21 +34,21 @@ export function useConfirm() {
       <h2>{pending.title}</h2>
       <p>{pending.description}</p>
       <div className="ui-actions">
-        <button
+        <UiButton
           type="button"
-          className="ui-button ui-button-secondary"
+          variant="secondary"
           autoFocus
           onClick={() => settle(false)}
         >
           Quay lại
-        </button>
-        <button
+        </UiButton>
+        <UiButton
           type="button"
-          className="ui-button ui-button-primary"
+          variant="primary"
           onClick={() => settle(true)}
         >
           {pending.confirmLabel ?? "Xác nhận"}
-        </button>
+        </UiButton>
       </div>
     </Modal>
   ) : null;

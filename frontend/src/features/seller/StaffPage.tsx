@@ -300,28 +300,30 @@ export function StaffPage() {
                         </li>
                       ))}
                     </ul>
-                    <button
-                      disabled={locked || member.status !== "ACTIVE"}
-                      onClick={() => {
-                        setError(undefined);
-                        setPermissionEdit(member);
-                      }}
-                    >
-                      Sửa quyền
-                    </button>
-                    <button
-                      disabled={locked}
-                      onClick={() =>
-                        update(member, {
-                          status:
-                            member.status === "ACTIVE" ? "LOCKED" : "ACTIVE",
-                        })
-                      }
-                    >
-                      {member.status === "ACTIVE"
-                        ? "Khóa nhân viên"
-                        : "Mở khóa"}
-                    </button>
+                    <div className="ui-actions">
+                      <button
+                        disabled={locked || member.status !== "ACTIVE"}
+                        onClick={() => {
+                          setError(undefined);
+                          setPermissionEdit(member);
+                        }}
+                      >
+                        Sửa quyền
+                      </button>
+                      <button
+                        disabled={locked}
+                        onClick={() =>
+                          update(member, {
+                            status:
+                              member.status === "ACTIVE" ? "LOCKED" : "ACTIVE",
+                          })
+                        }
+                      >
+                        {member.status === "ACTIVE"
+                          ? "Khóa nhân viên"
+                          : "Mở khóa"}
+                      </button>
+                    </div>
                   </article>
                 ))
               )}

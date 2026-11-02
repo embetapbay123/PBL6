@@ -1,0 +1,293 @@
+/* Shared controls own their spacing. Layout containers own gaps between controls. */
+.live-market .ui-button,
+.market-native-dialog .ui-button,
+.boot .ui-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 14px;
+  min-height: var(--ui-control-md);
+  font:
+    600 var(--ui-text-body) / 1.4 "Be Vietnam Pro",
+    sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  vertical-align: middle;
+}
+.live-market .ui-button-primary,
+.market-native-dialog .ui-button-primary,
+.boot .ui-button-primary {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: white;
+}
+.live-market .ui-button-secondary,
+.market-native-dialog .ui-button-secondary,
+.boot .ui-button-secondary {
+  background: var(--ui-surface);
+  border-color: var(--ui-line);
+  color: var(--ui-ink);
+}
+.live-market .ui-button-danger,
+.market-native-dialog .ui-button-danger,
+.boot .ui-button-danger {
+  background: var(--ui-danger);
+  border-color: var(--ui-danger);
+  color: white;
+}
+.live-market .ui-button-ghost,
+.market-native-dialog .ui-button-ghost,
+.boot .ui-button-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ui-ink);
+}
+.live-market .ui-button-icon,
+.market-native-dialog .ui-button-icon {
+  background: white;
+  border-color: var(--ui-line);
+  color: var(--ui-muted);
+  width: 40px;
+  min-width: 40px;
+  padding: 8px;
+}
+.live-market .ui-button-size-sm,
+.market-native-dialog .ui-button-size-sm,
+.boot .ui-button-size-sm {
+  min-height: var(--ui-control-sm);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.live-market .ui-button-size-lg,
+.market-native-dialog .ui-button-size-lg,
+.boot .ui-button-size-lg {
+  min-height: var(--ui-control-lg);
+  padding: 12px 20px;
+}
+.ui-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ui-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+}
+.ui-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid;
+  border-radius: 8px;
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.ui-alert-error {
+  color: var(--ui-danger-text);
+  background: var(--ui-danger-bg);
+  border-color: var(--ui-danger-border);
+}
+.ui-alert-warning {
+  color: var(--ui-warning);
+  background: var(--ui-warning-bg);
+  border-color: var(--ui-warning-border);
+}
+.ui-alert-success {
+  color: var(--ui-success);
+  background: var(--ui-success-bg);
+  border-color: var(--ui-success-border);
+}
+.ui-alert-info {
+  color: var(--ui-info);
+  background: var(--ui-info-bg);
+  border-color: var(--ui-info-border);
+}
+.ui-alert-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.ui-alert-content {
+  flex: 1;
+  min-width: 0;
+}
+.ui-alert-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.live-market .ui-alert p,
+.boot .ui-alert p {
+  color: inherit;
+  margin: 0 0 10px;
+}
+.ui-alert-content > :last-child {
+  margin-bottom: 0 !important;
+}
+.ui-alert .ui-actions {
+  margin-top: 12px;
+}
+.ui-error-support {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid currentColor;
+  border-top-color: color-mix(in srgb, currentColor 18%, transparent);
+  font-size: 12px;
+}
+.ui-error-support > span {
+  font-weight: 600;
+}
+.ui-error-support code {
+  display: block;
+  padding: 3px 6px;
+  border: 1px solid var(--ui-danger-border);
+  border-radius: 4px;
+  background: white;
+  color: var(--ui-ink);
+  font-size: 12px;
+  user-select: all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.ui-copy {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ui-copy-feedback {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ui-copy-feedback:empty {
+  display: none;
+}
+.ui-loading {
+  padding-block: 12px;
+  color: var(--ui-muted);
+  font-size: 13px;
+}
+.ui-loading-label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.ui-spinner {
+  flex-shrink: 0;
+  animation: ui-spin 1s linear infinite;
+}
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ui-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 16px;
+}
+.ui-skeleton-item {
+  min-width: 0;
+}
+.ui-skeleton-picture,
+.ui-skeleton-line {
+  background: var(--ui-line);
+  border-radius: 6px;
+  animation: ui-pulse 1.6s ease-in-out infinite;
+}
+.ui-skeleton-picture {
+  aspect-ratio: 4/5;
+  margin-bottom: 14px;
+}
+.ui-skeleton-line {
+  height: 14px;
+  margin-bottom: 10px;
+}
+.ui-skeleton-short {
+  width: 58%;
+}
+.ui-loading-rows .ui-skeleton-grid {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.ui-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px;
+  border: 1px dashed var(--ui-line);
+  border-radius: 8px;
+  color: var(--ui-muted);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-block: 12px;
+}
+.ui-empty > svg {
+  flex-shrink: 0;
+  color: var(--ui-muted);
+}
+.ui-empty > div {
+  min-width: 0;
+}
+.market-portal-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+  padding-left: 20px;
+  border-left: 1px solid var(--ui-line);
+}
+.market-portal-links > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.market-portal-links .navigation-sell {
+  margin-left: 0;
+}
+.live-market :where(.store-app-form, .store-app-dialog) label {
+  font-size: var(--ui-text-label);
+  font-weight: 600;
+}
+@keyframes ui-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-spinner,
+  .ui-skeleton-picture,
+  .ui-skeleton-line {
+    animation: none;
+  }
+}
+@media (max-width: 1023px) {
+  .ui-skeleton-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .ui-skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .market-portal-links {
+    margin-left: 0;
+    padding: 10px 12px;
+    border-left: 0;
+    flex-wrap: wrap;
+  }
+}

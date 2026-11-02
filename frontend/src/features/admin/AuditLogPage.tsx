@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../../components/ui/Button';
 import { SourceNavigation } from "../../components/SourceNavigation";
 import { AuditIdentityLookup } from "./AuditIdentityLookup";
 import { useEffect, useState, type FormEvent } from "react";
@@ -254,9 +255,9 @@ export function AuditLogPage() {
         </details>
         {validation && <p role="alert">{validation}</p>}
         <button>Áp dụng bộ lọc nhật ký</button>
-        <button
+        <UiButton
           type="button"
-          className="ui-button ui-button-secondary"
+          variant="secondary"
           onClick={() => {
             setDraft(draftFrom(new URLSearchParams()));
             setValidation("");
@@ -270,7 +271,7 @@ export function AuditLogPage() {
           }}
         >
           Xóa tất cả bộ lọc
-        </button>
+        </UiButton>
       </form>
       <p>
         Khoảng thời gian gồm mốc bắt đầu và không gồm mốc kết thúc. Log cũ chưa

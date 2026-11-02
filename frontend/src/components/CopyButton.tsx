@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { Copy, Check } from "lucide-react";
+import { Button } from "./ui/Button";
 export function CopyButton({
   value,
   label = "Sao chép nội dung",
+  compact = false,
 }: {
   value: string;
   label?: string;
+  compact?: boolean;
 }) {
   const [status, setStatus] = useState("");
   useEffect(() => setStatus(""), [value]);
@@ -19,15 +23,22 @@ export function CopyButton({
     }
   }
   return (
-    <>
-      <button
-        type="button"
-        className="ui-button ui-button-secondary"
+    <span className={compact ? "ui-copy ui-copy-compact" : "ui-copy"}>
+      <Button
+        variant="secondary"
+        size={compact ? "sm" : "md"}
         onClick={() => void copy()}
       >
+        {status === "Đã sao chép nội dung." ? (
+          <Check size={14} aria-hidden="true" />
+        ) : (
+          <Copy size={14} aria-hidden="true" />
+        )}
         {label}
-      </button>
-      <p role="status">{status}</p>
-    </>
+      </Button>
+      <span className="ui-copy-feedback" role="status">
+        {status}
+      </span>
+    </span>
   );
 }

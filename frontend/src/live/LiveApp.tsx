@@ -1,3 +1,4 @@
+import {Button as UiButton} from '../components/ui/Button';
 import { RouteFocus } from "../components/RouteFocus";
 import { UnsavedChangesBoundary } from "../components/UnsavedChangesBoundary";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -48,9 +49,8 @@ import { ChatCenter } from "../chat/ChatCenter";
 import { ErrorView, Loading } from "../bootstrap/components";
 import "../bootstrap/bootstrap.css";
 import "./commerce.css";
-import "../features/customer/marketplace-refresh.css";
-import "../features/customer/ui-review-fixes.css";
 import "../chat/chat-workspace.css";
+import "../styles/ui-components.css";
 import { StoreContextNotice } from "../components/StoreContextNotice";
 import { MarketplaceHeader } from "./MarketplaceHeader";
 import { listenFavoritesChange } from "../features/customer/favorite-state";
@@ -321,14 +321,14 @@ function Market() {
       <MarketplaceHeader />
       {portal && (
         <div className="workspace-topbar market-width">
-          <button
-            className="ui-button ui-button-secondary"
+          <UiButton
+            variant="secondary" type="submit"
             aria-label={collapsed ? "Mở rộng menu" : "Thu gọn menu"}
             onClick={() => setCollapsed((value) => !value)}
           >
             <Menu size={18} />
             <span>{collapsed ? "Mở rộng menu" : "Thu gọn menu"}</span>
-          </button>
+          </UiButton>
           <nav aria-label="Breadcrumb">
             <Link to="/">PBL6 Market</Link>
             <span>/</span>

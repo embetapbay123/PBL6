@@ -344,15 +344,21 @@ export function MarketplaceHeader() {
             <Link to="/#danh-muc">Danh mục ngành hàng</Link>
             <Link to="/customer/favorites">Sản phẩm đã lưu</Link>
             <Link to="/customer/messages">Tin nhắn</Link>
-            {merchant && <Link to="/seller">Store Portal</Link>}
-            {admin && <Link to="/admin">Admin Portal</Link>}
-            <Link
-              className="navigation-sell"
-              to={merchant ? "/seller" : "/customer/store-applications"}
-            >
-              <Store size={17} />
-              Gian hàng của bạn
-            </Link>
+            <div className="market-portal-links">
+              {admin && (
+                <Link to="/admin">
+                  <ShieldCheck size={16} />
+                  Quản trị
+                </Link>
+              )}
+              <Link
+                className="navigation-sell"
+                to={merchant ? "/seller" : "/customer/store-applications"}
+              >
+                <Store size={17} />
+                {merchant ? "Quản lý Store" : "Đăng ký bán hàng"}
+              </Link>
+            </div>
           </nav>
         )}
         {portal && (
