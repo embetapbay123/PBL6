@@ -23,6 +23,8 @@ DeepSeek thinking disabled for ordinary shopping conversation; output allowance 
 
 ## Validation
 
-91 provider/algorithm/catalog unit tests and 10 focused integrations passed. Integrations use isolated schemas on the QA database, cover empty-result → size/color → increased-budget, 12 turns of role history and actual token settlement, plus existing ownership/version/budget guards. Ten desktop browser tests passed, including a 44-message session, reopening at the latest page and sending after viewing older messages. TypeScript passed.
+92 provider/algorithm/catalog unit tests and 10 focused integrations passed. Integrations use isolated schemas on the QA database, cover empty-result → size/color → increased-budget, 12 turns of role history and actual token settlement, plus existing ownership/version/budget guards. Ten desktop browser tests passed, including a 44-message session, reopening at the latest page and sending after viewing older messages. TypeScript passed.
 
 Evidence under ignored `artifacts/chat-natural/`: `before.json`/`.png`, browser regressions and the controlled multi-turn script. Live verification after deployment is recorded separately. No mobile/device testing was performed. Bounded context and output are retained; these tests do not claim infinite memory or perfect generative factual accuracy.
+
+Live check: the revised prompt completed a 12-turn desktop conversation with MODEL_GENERATED on every turn, remembered recipient/size/color and both budgets, and returned no cards above the effective budget. The first revision (also retained) had one rejected summary. A subsequent focused fix prevents wrapping/purchase-advice text from replacing the shirt search topic; its regression test passes. Evidence: `after-v2.json`.

@@ -21,6 +21,13 @@ def test_new_topic_resets_the_item_but_keeps_the_budget_until_explicitly_changed
     assert 'ao thun' in search_question('200k nhé',HISTORY)
     assert budget(search_question('Bạn ấy cao và thích mặc rộng',HISTORY))==99999
 
+def test_wrapping_and_purchase_advice_do_not_replace_the_product_topic():
+    history=HISTORY+[{'role':'USER','content':'Ngân sách tăng lên 200k nhé'},{'role':'USER','content':'Trước khi mua, tôi cần hỏi người nhận những gì?'},{'role':'USER','content':'Gợi ý cách gói quà đơn giản, không cần mua thêm phụ kiện.'}]
+    query=search_question('Tóm tắt các tiêu chí và cách chọn quà chúng ta đã bàn',history)
+    assert 'ao thun' in query and budget(query)==200000
+    history.append({'role':'USER','content':'Quay lại áo thun: chỉ chọn món trong danh sách hiện tại và không vượt ngân sách.'})
+    assert 'ao thun' in search_question('Tóm tắt lại giúp tôi',history)
+
 @pytest.mark.parametrize('text', ['dưới 100k','dưới 100 nghìn','dưới 100 ngàn'])
 def test_common_vietnamese_budget_units(text):assert budget(text)==99999
 

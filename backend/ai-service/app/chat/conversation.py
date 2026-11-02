@@ -9,8 +9,9 @@ def folded(value):
 def followup(value):
     text=folded(value)
     # A new explicit product search starts a new topic, even if it mentions a color.
-    if re.search(r'\b(tim|mua|doi sang)\b',text) and not re.search(r'\b(vua|da|tu dau|truoc do)\b',text):return False
-    return turn_budget(value) is not None or bool(re.search(r'\b(cai do|cai nay|loai do|loai nay|san pham do|size|mau|ngan sach|tang len|neu tang|so sanh|tom tat|nhac lai|ban nam|ban nu|uu tien|chon|vua|truoc do|con mau|co mau)\b',text))
+    search_text=re.sub(r'\bkhong(?: can| muon)? mua\b','',text)
+    if re.search(r'\b(tim|muon mua|can mua|doi sang|quay lai)\b',search_text) and not re.search(r'\b(tom tat|nhac lai|vua|da|tu dau|truoc do)\b',text):return False
+    return turn_budget(value) is not None or bool(re.search(r'\b(cai do|cai nay|loai do|loai nay|san pham do|size|mau|ngan sach|tang len|neu tang|so sanh|tom tat|nhac lai|ban nam|ban nu|uu tien|chon|vua|truoc do|con mau|co mau|cach|truoc khi|nguoi nhan|goi qua)\b',text))
 
 def turn_budget(question):
     maximum=budget(question)
