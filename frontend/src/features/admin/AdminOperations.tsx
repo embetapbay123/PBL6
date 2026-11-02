@@ -43,6 +43,7 @@ export function AdminCatalogManagement() {
   const [categories, setCategories] = useState<Category[]>([]); const [productTypes, setProductTypes] = useState<ProductType[]>([]);
   const [categoryName, setCategoryName] = useState(''); const [typeName, setTypeName] = useState(''); const [categoryId, setCategoryId] = useState('');
   const [editCategoryId, setEditCategoryId] = useState(''); const [editTypeId, setEditTypeId] = useState('');
+  const [editCategoryName, setEditCategoryName] = useState(''); const [editTypeName, setEditTypeName] = useState('');
   const [productId, setProductId] = useState(''); const [reviewId, setReviewId] = useState(''); const [version, setVersion] = useState(0); const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true); const [busy, setBusy] = useState(false); const [error, setError] = useState<unknown>(); const [notice, setNotice] = useState('');
   const load = useCallback(async () => { setLoading(true); setError(undefined); try {
@@ -59,7 +60,7 @@ export function AdminCatalogManagement() {
     void submit(`/admin/${kind}/${id}/${action}`, 'POST', { reason, expected_version: version });
   };
   return <section className="boot-card"><h3>Taxonomy và kiểm duyệt</h3>
-    <p>Danh mục và loại sản phẩm đang đọc dữ liệu API công khai; thay đổi kiểm duyệt cần API quản trị M1.</p>
+    <p>Chọn danh mục hoặc loại sản phẩm để sửa. Chọn nội dung để duyệt ẩn/khôi phục theo phiên bản hiện tại.</p>
     {error !== undefined && <ErrorView error={error} />}{notice && <p role="status">{notice}</p>}
     {loading ? <Loading /> : <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(250px,1fr))', gap: '1rem' }}>
@@ -67,8 +68,8 @@ export function AdminCatalogManagement() {
           <form onSubmit={event => { event.preventDefault(); void submit('/admin/categories', 'POST', { name: categoryName }); }}>
             <label>Tên danh mục<input required value={categoryName} onChange={event => setCategoryName(event.target.value)} /></label><button disabled={busy}>Tạo danh mục</button>
           </form>
-          <label>Sửa danh mục<select value={editCategoryId} onChange={event => setEditCategoryId(event.target.value)}><option value="">Chọn danh mục</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <button disabled={busy || !editCategoryId} onClick={() => { const item = categories.find(row => row.id === editCategoryId); if (item) void submit(`/admin/categories/${item.id}`, 'PATCH', { name: categoryName || item.name, expected_version: item.version }); }}>Cập nhật danh mục</button>
+          <label>Sửa danh mục<select value={editCategoryId} onChange={event => { const id = event.target.value; setEditCategoryId(id); setEditCategoryName(categories.find(row => row.id === id)?.name ?? ''); }}><option value="">Chọn danh mục</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          {editCategoryId && <><label>Tên mới<input required value={editCategoryName} onChange={event => setEditCategoryName(event.target.value)} /></label><button disabled={busy || !editCategoryName.trim()} onClick={() => { const item = categories.find(row => row.id === editCategoryId); if (item) void submit(`/admin/categories/${item.id}`, 'PATCH', { name: editCategoryName.trim(), expected_version: item.version }); }}>Lưu danh mục</button></>}
         </div>
         <div><h4>Loại sản phẩm</h4><ul>{productTypes.map(item => <li key={item.id}>{item.name}</li>)}</ul>
           <form onSubmit={event => { event.preventDefault(); void submit('/admin/product-types', 'POST', { name: typeName, category_id: categoryId }); }}>
@@ -76,8 +77,8 @@ export function AdminCatalogManagement() {
             <label>Danh mục<select required value={categoryId} onChange={event => setCategoryId(event.target.value)}><option value="">Chọn danh mục</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
             <button disabled={busy}>Tạo loại sản phẩm</button>
           </form>
-          <label>Sửa loại sản phẩm<select value={editTypeId} onChange={event => setEditTypeId(event.target.value)}><option value="">Chọn loại sản phẩm</option>{productTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <button disabled={busy || !editTypeId} onClick={() => { const item = productTypes.find(row => row.id === editTypeId); if (item) void submit(`/admin/product-types/${item.id}`, 'PATCH', { name: typeName || item.name, expected_version: item.version }); }}>Cập nhật loại sản phẩm</button>
+          <label>Sửa loại sản phẩm<select value={editTypeId} onChange={event => { const id = event.target.value; setEditTypeId(id); setEditTypeName(productTypes.find(row => row.id === id)?.name ?? ''); }}><option value="">Chọn loại sản phẩm</option>{productTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          {editTypeId && <><label>Tên mới<input required value={editTypeName} onChange={event => setEditTypeName(event.target.value)} /></label><button disabled={busy || !editTypeName.trim()} onClick={() => { const item = productTypes.find(row => row.id === editTypeId); if (item) void submit(`/admin/product-types/${item.id}`, 'PATCH', { name: editTypeName.trim(), expected_version: item.version }); }}>Lưu loại sản phẩm</button></>}
         </div>
       </div>
       <h4>Ẩn hoặc khôi phục nội dung</h4>
