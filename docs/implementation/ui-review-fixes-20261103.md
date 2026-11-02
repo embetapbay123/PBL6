@@ -59,9 +59,9 @@ Snapshot chỉ gợi ý từ [Province Open API v2](https://provinces.open-api.v
 | --- | --- | --- |
 | Browser payment/order/notification | 24 PASS | `artifacts/ui-review-fixes/regression-connected/.last-run.json` |
 | Recovery review/staff/voucher | 29 ca được kiểm; 27 PASS lượt đầu, 2 locator vùng lỗi được sửa và cả 4 review PASS lượt cuối | `recovery-regression/` + `final-browser/` |
-| UI mới | 14 PASS, gồm 1440/390px | `final-browser/` (18 PASS gồm 4 review đã tính ở hàng trên) |
+| UI mới | 15 PASS, gồm 1440/390px | `final-browser/` (18 PASS gồm 4 review đã tính ở hàng trên; thêm ca empty returns chạy riêng) |
 | Unit | 75 ca được kiểm; 73 PASS lượt tổng, 2 mock bổ sung aggregate và cả 37 voucher PASS khi chạy lại | `unit-final.json` + `voucher-final.json` |
 | PostgreSQL mới | 2 PASS trên schema riêng; schema được dọn trong afterAll | `integration-verified.json` |
 | Build/contracts/docs | PASS; giữ cảnh báo bundle chính trên 500 kB, không suy thành số đo hiệu năng | log build và contract check |
 
-Tổng browser theo tên ca duy nhất: **67**, không cộng lần chạy lại hoặc số screenshot thành ca mới.
+Tổng browser theo tên ca duy nhất: **68**, không cộng lần chạy lại hoặc số screenshot thành ca mới.
