@@ -667,11 +667,10 @@ void main() {
         );
         await tester.pump();
 
-        expect(find.text('PBL6 MARKETPLACE'), findsOneWidget);
-        expect(find.text('Dành riêng cho bạn', skipOffstage: false), findsOneWidget);
-        expect(find.text('Gợi ý Baseline / Mock', skipOffstage: false), findsOneWidget);
-        expect(find.text('Thời trang', skipOffstage: false), findsOneWidget);
-        expect(find.text('Điện tử', skipOffstage: false), findsOneWidget);
+        expect(find.text('PBL6 Market'), findsOneWidget);
+        expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
+        expect(find.text('Thời trang', skipOffstage: false), findsWidgets);
+        expect(find.text('Góc làm việc', skipOffstage: false), findsOneWidget);
         expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
         expect(find.text('250000 ₫', skipOffstage: false), findsOneWidget);
       },

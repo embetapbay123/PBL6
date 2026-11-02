@@ -127,8 +127,10 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
         onTap: (index) {
           if (index == 0) {
             Navigator.popUntil(context, (route) => route.isFirst);
-          } else if (index == 3) {
+          } else if (index == 2) {
             Navigator.pushNamed(context, '/cart');
+          } else if (index == 3) {
+            ChatAiModal.show(context);
           } else if (index == 4) {
             Navigator.pushNamed(context, '/profile');
           }

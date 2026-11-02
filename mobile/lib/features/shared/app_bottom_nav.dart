@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
-import '../chat/chat_ai_modal.dart';
 
 class AppBottomNav extends ConsumerWidget {
   const AppBottomNav({
@@ -44,64 +43,32 @@ class AppBottomNav extends ConsumerWidget {
                 index: 0,
                 icon: Icons.home_rounded,
                 unselectedIcon: Icons.home_outlined,
-                label: 'Trang chủ',
+                label: 'Khám phá',
               ),
               _buildNavItem(
                 index: 1,
-                icon: Icons.explore_rounded,
-                unselectedIcon: Icons.explore_outlined,
-                label: 'Khám phá',
-              ),
-              // Center Raised AI Chat Button
-              GestureDetector(
-                onTap: () {
-                  ChatAiModal.show(context);
-                  onTap(2);
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: AppDecorations.aiGlow(radius: 22),
-                        child: const Center(
-                          child: Icon(
-                            Icons.auto_awesome,
-                            color: Colors.white,
-                            size: 22,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'Chat AI',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                icon: Icons.favorite_rounded,
+                unselectedIcon: Icons.favorite_border_rounded,
+                label: 'Đã lưu',
               ),
               _buildNavItem(
-                index: 3,
+                index: 2,
                 icon: Icons.shopping_cart_rounded,
                 unselectedIcon: Icons.shopping_cart_outlined,
                 label: 'Giỏ hàng',
                 badgeCount: effectiveCartCount,
               ),
               _buildNavItem(
+                index: 3,
+                icon: Icons.chat_bubble_rounded,
+                unselectedIcon: Icons.chat_bubble_outline_rounded,
+                label: 'Chat',
+              ),
+              _buildNavItem(
                 index: 4,
                 icon: Icons.person_rounded,
                 unselectedIcon: Icons.person_outline_rounded,
-                label: 'Tài khoản',
+                label: 'Cá nhân',
               ),
             ],
           ),

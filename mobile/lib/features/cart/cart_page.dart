@@ -4,6 +4,7 @@ import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
+import '../chat/chat_ai_modal.dart';
 import '../checkout/checkout_page.dart';
 import '../shared/app_bottom_nav.dart';
 
@@ -125,17 +126,17 @@ class _CartPageState extends ConsumerState<CartPage> {
             children: [
               if (items.isNotEmpty) _buildBottomCheckoutBar(items),
               AppBottomNav(
-                currentIndex: 3,
+                currentIndex: 2,
                 onTap: (index) {
-                  if (index == 3) return;
+                  if (index == 2) return;
                   if (index == 0) {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       '/',
                       (route) => false,
                     );
-                  } else if (index == 1) {
-                    Navigator.pushNamed(context, '/explore');
+                  } else if (index == 3) {
+                    ChatAiModal.show(context);
                   } else if (index == 4) {
                     Navigator.pushNamed(context, '/profile');
                   }
@@ -145,13 +146,13 @@ class _CartPageState extends ConsumerState<CartPage> {
           );
         },
         orElse: () => AppBottomNav(
-          currentIndex: 3,
+          currentIndex: 2,
           onTap: (index) {
-            if (index == 3) return;
+            if (index == 2) return;
             if (index == 0) {
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            } else if (index == 1) {
-              Navigator.pushNamed(context, '/explore');
+            } else if (index == 3) {
+              ChatAiModal.show(context);
             } else if (index == 4) {
               Navigator.pushNamed(context, '/profile');
             }

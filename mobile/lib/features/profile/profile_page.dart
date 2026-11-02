@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../chat/chat_ai_modal.dart';
 import '../orders/order_list_page.dart';
 import '../shared/app_bottom_nav.dart';
 
@@ -72,12 +73,13 @@ class ProfilePage extends ConsumerWidget {
         currentIndex: 4,
         cartCount: 0,
         onTap: (index) {
+          if (index == 4) return;
           if (index == 0) {
             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-          } else if (index == 1) {
-            Navigator.pushNamed(context, '/products');
-          } else if (index == 3) {
+          } else if (index == 2) {
             Navigator.pushNamed(context, '/cart');
+          } else if (index == 3) {
+            ChatAiModal.show(context);
           }
         },
       ),
