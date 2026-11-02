@@ -39,7 +39,6 @@ def search_question(question,history):
     return (f'toi da {maximum} VND; ' if maximum is not None else '')+question+' '+topic
 
 MONEY=re.compile(r'(?<![\w\d])(-?\d[\d.,]*)(?:\s*)(triệu|trieu|nghìn|nghin|ngàn|ngan|đồng|dong|vnd|₫|đ|k|tr)(?!\w)',re.I)
-NUMBER=re.compile(r'\d[\d.,]*')
 
 def amount(number,unit):
     try:
@@ -51,9 +50,10 @@ def amount(number,unit):
     except (InvalidOperation,ValueError):return None
 
 def grounded_numbers(prose,question,products,history,ids):
-    """Allow source prices, the user's budget, sizes and verifiable selection counts.
+    """Check monetary references without rejecting ordinary narrative numbers.
 
-    Cards remain the authoritative live price; arbitrary new numeric claims fail.
+    A numbered list or a summary of earlier choices is not a current SKU count.
+    Cards remain the authoritative live prices and selectable product IDs.
     """
     user_text=' '.join([question]+[m.get('content','') for m in history if m.get('role')=='USER'])
     money={price(p) for p in products}|{amount(*m.groups()) for m in MONEY.finditer(user_text)}
@@ -70,11 +70,4 @@ def grounded_numbers(prose,question,products,history,ids):
         title=redact(p.get('title'),200)
         if title:check=check.replace(title,'')
     check=MONEY.sub(remove_money,check)
-    check=re.sub(r'(?m)^\s*\d{1,2}[.)]\s+','',check)
-    check=re.sub(r'\b[1-9]\s+(?:cách|bước|lưu ý|điểm|hướng)\b','',check,flags=re.I)
-    check=re.sub(r'\b([1-3])\s+(?:mẫu|lựa chọn|sản phẩm|gợi ý)\b',lambda m:'' if int(m.group(1))<=len(ids) else m.group(),check,flags=re.I)
-    supplied=set(NUMBER.findall(user_text))
-    for p in products:
-        for v in p.get('variants',[]):
-            supplied.update(NUMBER.findall(str(v.get('variant_values',{}))))
-    return valid and all(m.group() in supplied or amount(m.group(),'vnd') in money for m in NUMBER.finditer(check))
+    return valid

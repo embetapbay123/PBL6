@@ -13,7 +13,7 @@ The old prompt enforced two short sentences and 900 characters, prohibited every
 - Empty results still invoke the configured model. It can explain the mismatch and ask whether to change criteria. Empty product IDs are valid and no longer force an unrelated “no products” suffix onto greetings or summaries.
 - Recent history retains user/assistant roles, up to 40 messages, with useful message lengths. The prompt allows explanations/comparisons and up to 4000 answer characters. This follows the [DeepSeek multi-round conversation pattern](https://api-docs.deepseek.com/guides/multi_round_chat/).
 - Follow-up search retains the product topic for size/color/budget/selection questions. Budget persists until explicitly changed/cleared, including short replies such as “200k nhé”. A new item search resets the topic. Current live cards are checked against the effective budget, not merely the latest sentence.
-- Current prices, public variant values, user-provided budgets and ordinary list/selection counts may appear in prose. Unknown prices, product IDs, unsafe links/markup, sensitive strings and unsupported numeric claims remain rejected. No blanket removal of ownership or purchase/price validation.
+- Current prices, public variant values, user-provided budgets and ordinary narrative numbers may appear in prose. Unknown monetary amounts/product IDs, unsafe links/markup and sensitive strings remain rejected. Counts in a summary are not tied to how many new product cards it selects. Non-monetary prose relies on the model's grounding instructions; it is not claimed semantically verified. Ownership and purchase/price validation remain.
 - History opens at its latest page. Sending while reading an older page moves to the new answer; an acknowledged send is not repeated if a subsequent history read fails.
 - Known provider usage settles its reservation on the reservation date. Unknown outcomes retain the reservation. No automatic paid-request replay or database reset.
 
@@ -23,6 +23,6 @@ DeepSeek thinking disabled for ordinary shopping conversation; output allowance 
 
 ## Validation
 
-90 provider/algorithm/catalog unit tests and 10 focused integrations passed. Integrations use isolated schemas on the QA database, cover empty-result → size/color → increased-budget, 12 turns of role history and actual token settlement, plus existing ownership/version/budget guards. Ten desktop browser tests passed, including a 44-message session, reopening at the latest page and sending after viewing older messages. TypeScript passed.
+91 provider/algorithm/catalog unit tests and 10 focused integrations passed. Integrations use isolated schemas on the QA database, cover empty-result → size/color → increased-budget, 12 turns of role history and actual token settlement, plus existing ownership/version/budget guards. Ten desktop browser tests passed, including a 44-message session, reopening at the latest page and sending after viewing older messages. TypeScript passed.
 
 Evidence under ignored `artifacts/chat-natural/`: `before.json`/`.png`, browser regressions and the controlled multi-turn script. Live verification after deployment is recorded separately. No mobile/device testing was performed. Bounded context and output are retained; these tests do not claim infinite memory or perfect generative factual accuracy.
