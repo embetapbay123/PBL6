@@ -50,6 +50,32 @@ final recommendationProvider = FutureProvider<Map<String, dynamic>>((
   return await ref.read(apiProvider).getRecommendations();
 });
 
+final productThumbnailProvider =
+    FutureProvider.family<String?, String>((ref, productId) async {
+  if (productId.isEmpty) return null;
+  final catalogAsync = ref.watch(catalogProductsProvider(''));
+  final items = (catalogAsync.value?['items'] as List?) ?? [];
+  for (final p in items) {
+    if ((p as Map)['id']?.toString() == productId) {
+      final images = p['images'] as List?;
+      if (images != null && images.isNotEmpty) {
+        final first = images[0];
+        return first is Map ? first['image_url']?.toString() : first?.toString();
+      }
+    }
+  }
+  try {
+    final client = ref.read(apiProvider);
+    final p = await client.getProduct(productId);
+    final images = p['images'] as List?;
+    if (images != null && images.isNotEmpty) {
+      final first = images[0];
+      return first is Map ? first['image_url']?.toString() : first?.toString();
+    }
+  } catch (_) {}
+  return null;
+});
+
 final cartItemsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).getAllCartItems();
 });

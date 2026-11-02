@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
@@ -491,45 +492,56 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                 // Items preview
                 if (items.isNotEmpty) ...[
                   ...items.take(2).map((it) {
-                    final title = it['product_title']?.toString() ??
-                        it['title']?.toString() ??
-                        'Sản phẩm';
-                    final sku = it['sku']?.toString() ?? 'Mặc định';
+                    final title = _extractItemTitle(it);
+                    final sku = _extractItemSku(it);
                     final qty = (it['quantity'] as num?)?.toInt() ?? 1;
                     final price = (it['price_vnd'] as num?)?.toInt() ??
                         (it['unit_price_vnd'] as num?)?.toInt() ??
                         0;
-                    final imgUrl = it['image_url']?.toString();
+                    final productId = it['product_id']?.toString() ?? '';
+                    final directImg = it['image_url']?.toString() ??
+                        (it['product_snapshot'] is Map
+                            ? (it['product_snapshot'] as Map)['image_url']?.toString()
+                            : null);
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              width: 56,
-                              height: 56,
-                              color: Colors.grey.shade100,
-                              child: imgUrl != null && imgUrl.isNotEmpty
-                                  ? Image.network(
-                                      imgUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (ctx, _, _) => const Center(
-                                        child: Icon(
-                                          Icons.shopping_bag_outlined,
-                                          color: Colors.grey,
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final liveImg = ref
+                                  .watch(productThumbnailProvider(productId))
+                                  .value;
+                              final imgUrl = directImg ?? liveImg;
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  width: 56,
+                                  height: 56,
+                                  color: Colors.grey.shade100,
+                                  child: imgUrl != null && imgUrl.isNotEmpty
+                                      ? Image.network(
+                                          imgUrl,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (ctx, _, _) =>
+                                              const Center(
+                                            child: Icon(
+                                              Icons.shopping_bag_outlined,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        )
+                                      : const Center(
+                                          child: Icon(
+                                            Icons.shopping_bag_outlined,
+                                            color: Colors.grey,
+                                          ),
                                         ),
-                                      ),
-                                    )
-                                  : const Center(
-                                      child: Icon(
-                                        Icons.shopping_bag_outlined,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                            ),
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -875,5 +887,33 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         );
       }
     }
+  }
+
+  String _extractItemTitle(Map<String, dynamic> it) {
+    final snapshot = it['product_snapshot'];
+    if (snapshot is Map && snapshot['title'] != null) {
+      return snapshot['title'].toString();
+    }
+    if (snapshot is String && snapshot.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(snapshot);
+        if (decoded is Map && decoded['title'] != null) {
+          return decoded['title'].toString();
+        }
+      } catch (_) {}
+    }
+    final direct = it['product_title'] ?? it['title'] ?? it['name'];
+    if (direct != null && direct.toString().trim().isNotEmpty) {
+      return direct.toString().trim();
+    }
+    return 'Sản phẩm';
+  }
+
+  String _extractItemSku(Map<String, dynamic> it) {
+    final sku = it['sku_snapshot'] ?? it['sku'] ?? it['variant_sku'] ?? it['variant_title'];
+    if (sku != null && sku.toString().trim().isNotEmpty) {
+      return sku.toString().trim();
+    }
+    return 'Mặc định';
   }
 }
