@@ -166,3 +166,5 @@ Internal API có 11 operation: **8 IMPLEMENTED, 2 IMPLEMENTED_SAMPLE, 1 NOT_IMPL
 | `GET /admin/reports/unresolved-money` | listAdminUnresolvedMoneyMovements | M2 / report | Hoa | IMPLEMENTED |
 | `GET /store/inventory/reconciliation` | getInventoryReconciliation | M1 / inventory | Thịnh | IMPLEMENTED |
 | `GET /store/stock-commitments` | listStockCommitments | M2 / order | Thịnh | IMPLEMENTED |
+
+| `POST /auth/demo-login` | demoLogin | M3 / auth | Trí | IMPLEMENTED |

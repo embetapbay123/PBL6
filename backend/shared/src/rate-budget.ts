@@ -11,6 +11,6 @@ export function rateBudget(service: string, method: string, path: string, ip: st
     const caller = verifyService(headers, keys, ['M2', 'M4']);
     return { scope: 'catalog-service:' + caller, limit: 6000 };
   }
-  const login = path === '/api/v1/auth/login';
+  const login = path === '/api/v1/auth/login' || path === '/api/v1/auth/demo-login';
   return { scope: (login ? 'login:' : 'api:') + ip, limit: login ? 30 : 600 };
 }

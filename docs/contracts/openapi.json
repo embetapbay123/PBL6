@@ -22702,6 +22702,133 @@
           }
         }
       }
+    },
+    "/auth/demo-login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "demoLogin",
+        "summary": "Đăng nhập nhanh tài khoản tổng hợp trên môi trường demo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Thành công: đăng nhập và nhận phiên",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokens"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoLoginRequest"
+              },
+              "example": {
+                "account": "customerA"
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-required-roles": [
+          "GUEST",
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC",
+        "description": "Explicit demo opt-in only; seven fixed synthetic accounts, normal live session/permission checks, WEB cookies and origin validation. Disabled in production.",
+        "x-session-transport": "WEB cookie / MOBILE body; client_type on login",
+        "x-service-owner": "M3",
+        "x-module": "auth",
+        "x-member-owner": "Trí",
+        "x-implementation-status": "IMPLEMENTED"
+      }
     }
   },
   "components": {
@@ -29568,6 +29695,27 @@
           "items"
         ],
         "additionalProperties": false
+      },
+      "DemoLoginRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account"
+        ],
+        "properties": {
+          "account": {
+            "type": "string",
+            "enum": [
+              "customerA",
+              "customerB",
+              "ownerA",
+              "ownerB",
+              "staffA",
+              "staffB",
+              "admin"
+            ]
+          }
+        }
       }
     }
   }

@@ -3,6 +3,8 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
+ARG VITE_DEMO_LOGIN_ENABLED=0
+ENV VITE_DEMO_LOGIN_ENABLED=$VITE_DEMO_LOGIN_ENABLED
 RUN npm run build
 FROM caddy:2.10.0-alpine
 COPY --from=build /app/dist /srv

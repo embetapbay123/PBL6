@@ -6,6 +6,7 @@ import { database } from '../../../shared/src/database';
 import { config, required } from '../../../shared/src/config';
 import { ApiError } from '../../../shared/src/errors';
 import { verifyToken } from '../../../shared/src/auth';
+import { demoAccounts } from './demo-accounts';
 export const digest = (value: string) => createHash('sha256').update(value).digest('hex');
 export interface IEmailAdapter {
   sendVerificationEmail(email: string, token: string): Promise<void>;
@@ -168,6 +169,16 @@ export class AuthService {
     return { status: 'OK', message: 'Xác thực email thành công.' };
   }
 
+  async demoLogin(account: string) {
+    if (process.env.DEMO_LOGIN_ENABLED !== '1' || process.env.NODE_ENV === 'production')
+      throw new ApiError(404, 'DEMO_LOGIN_UNAVAILABLE', 'Đăng nhập demo chưa được bật.');
+    const email = Object.hasOwn(demoAccounts, account) ? demoAccounts[account] : undefined;
+    if (!email) throw new ApiError(422, 'VALIDATION_FAILED', 'Tài khoản demo không hợp lệ.');
+    const [user] = await database.query(`SELECT u.id FROM "user" u JOIN customer_profile p ON p.user_id=u.id
+      WHERE u.email=$1 AND u.status='ACTIVE' AND u.email_verified_at IS NOT NULL AND p.display_name LIKE '[DEMO] %'`, [email]);
+    if (!user) throw new ApiError(404, 'DEMO_LOGIN_UNAVAILABLE', 'Tài khoản demo chưa sẵn sàng hoặc đã bị khóa.');
+    return this.login(email, required('SEED_PASSWORD'));
+  }
   async login(email: string,password: string) {
     const [user] = await database.query('SELECT id,password_hash,status FROM "user" WHERE lower(email)=lower($1)',[email]);
     const dummy = '$2b$10$8hVpt.bXmhHRfERkH5eDyOlEE8rfOySwvmXsMbSJDvjgeRcoDOkGq';

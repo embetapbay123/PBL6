@@ -1955,5 +1955,18 @@
     "roles": [
       "ADMIN"
     ]
+  },
+  {
+    "method": "POST",
+    "path": "/auth/demo-login",
+    "operation_id": "demoLogin",
+    "service": "M3",
+    "module": "auth",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
   }
 ]

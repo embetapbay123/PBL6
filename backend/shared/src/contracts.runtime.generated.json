@@ -28813,6 +28813,148 @@
         }
       }
     },
+    "demoLogin": {
+      "method": "POST",
+      "route": "/auth/demo-login",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account"
+        ],
+        "properties": {
+          "account": {
+            "type": "string",
+            "enum": [
+              "customerA",
+              "customerB",
+              "ownerA",
+              "ownerB",
+              "staffA",
+              "staffB",
+              "admin"
+            ]
+          }
+        }
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "access_token": {
+              "type": "string",
+              "maxLength": 4096
+            },
+            "refresh_token": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "context": {
+              "type": "object",
+              "properties": {
+                "user_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "roles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "CUSTOMER",
+                      "SELLER",
+                      "STORE_OWNER",
+                      "ADMIN"
+                    ]
+                  },
+                  "maxItems": 100
+                },
+                "role_permissions": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "maxItems": 100
+                },
+                "store_membership": {
+                  "type": "object",
+                  "properties": {
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "SELLER",
+                        "OWNER"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "maxItems": 100
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "token_version": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "user_id",
+                "roles",
+                "role_permissions",
+                "token_version"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "access_token",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
     "ResolveContext": {
       "method": "POST",
       "route": "/internal/context",

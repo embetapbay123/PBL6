@@ -2855,6 +2855,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/demo-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Đăng nhập nhanh tài khoản tổng hợp trên môi trường demo
+         * @description Explicit demo opt-in only; seven fixed synthetic accounts, normal live session/permission checks, WEB cookies and origin validation. Disabled in production.
+         */
+        post: operations["demoLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4654,6 +4674,10 @@ export interface components {
             /** Format: date-time */
             dispatched_at: string;
             items: components["schemas"]["ExchangeDispatchItem"][];
+        };
+        DemoLoginRequest: {
+            /** @enum {string} */
+            account: "customerA" | "customerB" | "ownerA" | "ownerB" | "staffA" | "staffB" | "admin";
         };
     };
     responses: never;
@@ -20078,6 +20102,107 @@ export interface operations {
             };
             /** @description Rate limited */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    demoLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "account": "customerA"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DemoLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Thành công: đăng nhập và nhận phiên */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthTokens"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
                 headers: {
                     [name: string]: unknown;
                 };

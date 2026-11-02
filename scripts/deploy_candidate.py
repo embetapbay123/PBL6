@@ -72,7 +72,7 @@ def reset_commands(command, backup):
     return result
 
 
-def override(source, revision):
+def override(source, revision, demo_login=False):
     services = {}
     for names, family, dockerfile in ((NODE, 'node', 'backend/Dockerfile'),
                                       (AI, 'ai', 'backend/ai-service/Dockerfile'),
@@ -84,6 +84,8 @@ def override(source, revision):
                           'labels': {'org.opencontainers.image.revision': revision}},
                 'labels': {'org.opencontainers.image.revision': revision},
             }
+    services['m3']['environment'] = {'DEMO_LOGIN_ENABLED': '1' if demo_login else '0'}
+    services['web']['build']['args'] = {'VITE_DEMO_LOGIN_ENABLED': '1' if demo_login else '0'}
     services['gateway'] = {'volumes': [
         {'type': 'bind', 'source': str(source / 'infrastructure/Caddyfile'),
          'target': '/etc/caddy/Caddyfile', 'read_only': True}]}
@@ -102,6 +104,7 @@ def main():
                         help='Existing checkout holding infrastructure/.env and secrets')
     parser.add_argument('--gateway-url', default='http://127.0.0.1:8080')
     parser.add_argument('--apply', action='store_true')
+    parser.add_argument('--demo-login', action='store_true', help='Enable quick login for the seven synthetic demo accounts only')
     parser.add_argument('--reset-demo', action='store_true',
                         help='After backup AND restore drill, recreate only m1-m4 and seed synthetic test data')
     parser.add_argument('--confirm-reset', help='Explicit target acknowledgement; see --reset-demo plan')
@@ -124,10 +127,10 @@ def main():
     folder = ROOT / 'artifacts/deployments' / run
     folder.mkdir(parents=True)
     overlay = folder / 'candidate.compose.json'
-    overlay.write_text(json.dumps(override(ROOT, revision), indent=2), encoding='utf-8')
+    overlay.write_text(json.dumps(override(ROOT, revision, args.demo_login), indent=2), encoding='utf-8')
     command = compose(runtime, overlay)
     report = {'revision': revision, 'status': 'PLANNED', 'steps': [],
-              'reset_demo': args.reset_demo,
+              'reset_demo': args.reset_demo, 'demo_login': args.demo_login,
               'limits': [('Explicit synthetic demo reset after backup/restore verification' if args.reset_demo else 'No seed/reset') + '; no automatic database rollback',
                          'Health/version checks do not accept provider, UI, load or AI quality',
                          'Tunnel and persistent dependencies are preserved']}

@@ -82,8 +82,8 @@ acceptids=set(re.findall(r'^\| (TC-(?:FR|NFR)-[A-Z0-9-]+) \|',accept,re.M))
 if len(acceptids)!=len(fr)+len(nfr): errors.append(('acceptance count',len(acceptids)))
 if 'Có môi trường/dữ liệu test cố định và log theo correlation ID' in accept:
     errors.append(('NFR acceptance still generic',))
-# Includes core-fix35 history readers and core-fix36 Owner/Admin refund recovery.
-if len(ops)!=159: errors.append(('API count',len(ops)))
+# Includes history readers, refund recovery and explicitly gated demo authentication.
+if len(ops)!=160: errors.append(('API count',len(ops)))
 status_index=json.loads((DOCS/'contracts'/'endpoint-status.json').read_text(encoding='utf-8'))
 if len(status_index)!=len(ops) or {row['operation_id'] for row in status_index}!=opids:
     errors.append(('endpoint status coverage',))

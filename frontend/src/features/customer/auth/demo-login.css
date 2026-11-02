@@ -1,0 +1,10 @@
+.demo-login>p{color:#52525b;line-height:1.6}
+.demo-login fieldset{padding:0;border:0;min-width:0}
+.demo-login legend{font-size:.875rem;font-weight:600;margin-bottom:12px}
+.demo-login-accounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.demo-login-accounts button{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-height:72px;text-align:left;border:1px solid #d4d4d8;border-radius:8px;padding:12px;background:#fafafa;color:#18181b;white-space:normal;overflow-wrap:anywhere}
+.demo-login-accounts button:hover{background:#fff7ed;border-color:#c2410c}
+.demo-login-accounts button:focus-visible{outline:3px solid #c2410c;outline-offset:2px}
+.demo-login-accounts button:disabled{opacity:.6;cursor:wait}
+.demo-login-accounts span{font-size:.8125rem;font-weight:400;color:#52525b}
+@media(max-width:480px){.demo-login-accounts{grid-template-columns:1fr}}

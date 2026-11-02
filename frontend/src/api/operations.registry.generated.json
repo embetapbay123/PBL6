@@ -794,6 +794,11 @@
     "path": "/admin/orders/{id}/refund-recovery",
     "internal": false
   },
+  "demoLogin": {
+    "method": "POST",
+    "path": "/auth/demo-login",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",

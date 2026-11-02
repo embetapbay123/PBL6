@@ -1,4 +1,5 @@
 import type { components } from './generated';
+import type {OperationInputs} from './operations.generated';
 import {markStoreContextChanged,retainStoreContextNotice} from './store-context-notice';
 export type Product = components['schemas']['Product'];
 export type Profile = components['schemas']['Profile'];
@@ -143,18 +144,20 @@ export async function refreshAuthContext(){
   const value={...session,context},scopeChanged=sessionScope(value)!==sessionScope(session);
   publish(value);if(scopeChanged)notify('AUTH_CHANGED');
 }
-export const api={
-  restore,
-  login:async(email:string,password:string)=>{
+async function establishSession(path:string,body:unknown){
     invalidate();const generation=epoch;
     for(const controller of cookieReads)controller.abort();
     return withCookieLock(async()=>{
       if(generation!==epoch)throw changed();
-      const value=await request<AuthTokens>('/auth/login',{method:'POST',body:JSON.stringify({email,password,client_type:'WEB'})},false);
+      const value=await request<AuthTokens>(path,{method:'POST',body:JSON.stringify(body)},false);
       if(generation!==epoch)throw changed();
       publish(value);notify('AUTH_CHANGED');return value;
     });
-  },
+}
+export const api={
+  restore,
+  login:(email:string,password:string)=>establishSession('/auth/login',{email,password,client_type:'WEB'}),
+  demoLogin:(account:OperationInputs['demoLogin']['body']['account'])=>establishSession('/auth/demo-login',{account}),
   logout:async()=>{
     const token=session?.access_token;invalidate();for(const controller of cookieReads)controller.abort();
     notify('SIGNED_OUT');

@@ -15,6 +15,13 @@ from deploy_candidate import ROOT, NODE, AI, APPS, compose, override
 
 
 class CandidateConfiguration(unittest.TestCase):
+    def test_demo_login_requires_explicit_deployment_opt_in_for_both_server_and_ui(self):
+        for enabled in (False, True):
+            services = override(ROOT, 'revision', enabled)['services']
+            value = '1' if enabled else '0'
+            self.assertEqual(services['m3']['environment']['DEMO_LOGIN_ENABLED'], value)
+            self.assertEqual(services['web']['build']['args']['VITE_DEMO_LOGIN_ENABLED'], value)
+
     def test_reset_keeps_retired_messages_but_refuses_pending_current_or_unknown_work(self):
         current = '\n'.join(name + '\t0\t0' for name in sorted(deploy_candidate.ACTIVE_QUEUES))
         retired = current + '\npbl6.m1.bootstrap\t130\t0\npbl6.m2.bootstrap.v1.dead\t2\t0'

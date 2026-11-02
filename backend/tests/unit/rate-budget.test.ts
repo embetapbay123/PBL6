@@ -4,6 +4,7 @@ const budget = (headers:Record<string,unknown>={}, method='GET', path='/api/v1/p
 test('ordinary public and login limits remain unchanged', () => {
   expect(budget()).toEqual({scope:'api:127.0.0.1',limit:600});
   expect(budget({},'POST','/api/v1/auth/login')).toEqual({scope:'login:127.0.0.1',limit:30});
+  expect(budget({},'POST','/api/v1/auth/demo-login')).toEqual({scope:'login:127.0.0.1',limit:30});
 });
 test.each(['M2','M4'])('authenticated %s Catalog reads use their own bounded shared budget', caller => {
   expect(budget({'x-service-id':caller,'x-service-key':keys[caller as keyof typeof keys]})).toEqual({scope:'catalog-service:'+caller,limit:6000});

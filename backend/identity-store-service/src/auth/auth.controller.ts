@@ -4,7 +4,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { AuthGuard, Public, ServiceGuard, ServiceCallers, verifyService } from '../../../shared/src/auth';
 import { config } from '../../../shared/src/config';
 import { StoreService } from '../store/store.service';
-import { ActiveStoresQueryDto } from '../../../shared/src/dtos.generated';
+import { ActiveStoresQueryDto, DemoLoginBodyDto } from '../../../shared/src/dtos.generated';
 import { ApiError } from '../../../shared/src/errors';
 import { ProfileService } from '../profile/profile.service';
 import { AuthService } from './auth.service';
@@ -61,6 +61,12 @@ export class AuthController {
     const web = dto.client_type === 'WEB';
     if (web && req.headers.origin !== config('M3').origin) throw new ApiError(403,'CSRF_REJECTED','Origin không hợp lệ.');
     return this.deliver(await this.service.login(dto.email,dto.password),res,web);
+  }
+  @Post('auth/demo-login') @HttpCode(200) @Public()
+  async demoLogin(@Body() dto: DemoLoginBodyDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {
+    if (req.headers.origin !== config('M3').origin) throw new ApiError(403,'CSRF_REJECTED','Origin không hợp lệ.');
+    res.setHeader('Cache-Control', 'no-store');
+    return this.deliver(await this.service.demoLogin(dto.account),res,true);
   }
   @Post('auth/refresh') @HttpCode(200) @Public()
   async refresh(@Body() dto: RefreshDto,@Req() req: Request,@Res({passthrough:true}) res: Response) {

@@ -2739,6 +2739,16 @@ export class RequestAdminRefundRecoveryQueryDto {
 }
 export class RequestAdminRefundRecoveryHeadersDto {
 }
+export class DemoLoginBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["customerA", "customerB", "ownerA", "ownerB", "staffA", "staffB", "admin"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "account"!: "customerA" | "customerB" | "ownerA" | "ownerB" | "staffA" | "staffB" | "admin";
+}
+export class DemoLoginPathDto {
+}
+export class DemoLoginQueryDto {
+}
+export class DemoLoginHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3143,6 +3153,7 @@ export const runtimeDtos = {
   requestStoreRefundRecovery: {body: RequestStoreRefundRecoveryBodyDto, path: RequestStoreRefundRecoveryPathDto, query: RequestStoreRefundRecoveryQueryDto, headers: RequestStoreRefundRecoveryHeadersDto},
   getAdminRefundRecovery: {body: undefined, path: GetAdminRefundRecoveryPathDto, query: GetAdminRefundRecoveryQueryDto, headers: GetAdminRefundRecoveryHeadersDto},
   requestAdminRefundRecovery: {body: RequestAdminRefundRecoveryBodyDto, path: RequestAdminRefundRecoveryPathDto, query: RequestAdminRefundRecoveryQueryDto, headers: RequestAdminRefundRecoveryHeadersDto},
+  demoLogin: {body: DemoLoginBodyDto, path: DemoLoginPathDto, query: DemoLoginQueryDto, headers: DemoLoginHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},
