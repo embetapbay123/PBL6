@@ -1712,3 +1712,23 @@ workspaces retain table density. */
   font-weight:400;
   color:#8a7d6b
 }
+/* Keep the first merchandise row visible on a normal laptop viewport. */
+@media (min-width:768px) {
+  .landing-home .market-service-strip {display:none}
+  .landing-home .market-discovery {margin-bottom:22px}
+  .landing-home .discovery-main,.landing-home .discovery-secondary,.landing-home .discovery-secondary>div {min-height:224px}
+  .landing-home .discovery-main>img {min-height:224px}
+  .landing-home .discovery-copy {padding:18px 0 18px 26px}
+  .live-content .landing-home .discovery-copy h1 {font-size:30px;line-height:1.2;margin:9px 0 11px}
+  .landing-home .discovery-copy p {font-size:12px;line-height:1.7;margin:0 0 14px}
+  .landing-home .discovery-copy>a {font-size:11px;padding-bottom:5px}
+  .landing-home .discovery-secondary>div {padding:23px}
+  .live-content .landing-home .discovery-secondary h2 {font-size:24px}
+  .landing-home .discovery-categories {margin-bottom:23px}
+  .landing-home .section-heading {margin-bottom:12px}
+  .landing-home .discovery-category-grid>a {padding:10px;grid-template-columns:54px 1fr 16px;gap:12px}
+  .landing-home .discovery-category-grid img,.landing-home .category-placeholder {width:54px;height:54px}
+  .landing-home>.catalog-breadcrumb,.landing-home>.catalog-heading .market-eyebrow,.landing-home>.catalog-heading p {display:none}
+  .landing-home>.catalog-heading {padding-bottom:14px;margin-bottom:18px}
+  .live-content .landing-home>.catalog-heading h2 {font-size:23px;margin:0}
+}
