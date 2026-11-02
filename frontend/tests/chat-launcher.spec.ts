@@ -137,6 +137,78 @@ async function login(page: Page) {
   ).toBeVisible();
 }
 test.use({ viewport: { width: 1440, height: 900 } });
+
+test("AI waits beyond the ordinary API timeout for a valid model response", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await routes(page);
+  await login(page);
+  let waiting: Route | undefined;
+  await page.route("**/api/v1/chat/sessions/*/messages", (route) => {
+    waiting = route;
+  });
+  await page
+    .getByRole("button", { name: "Mở chat", exact: true })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("textbox", { name: "Câu hỏi", exact: true })
+    .fill("Tìm áo cotton");
+  await dialog
+    .getByRole("button", { name: "Gửi câu hỏi", exact: true })
+    .click();
+  await expect.poll(() => !!waiting).toBe(true);
+  await page.clock.fastForward(8000);
+  await expect(
+    dialog.getByRole("button", { name: "Đang trả lời…", exact: true }),
+  ).toBeVisible();
+  await waiting!.fulfill({
+    json: {
+      id: thread,
+      role: "ASSISTANT",
+      content: "Áo cotton phù hợp với nhu cầu của bạn.",
+      fallback: false,
+      fallback_reason: "MODEL_GENERATED",
+      product_cards: [],
+    },
+  });
+  await expect(dialog.getByRole("log")).toContainText("Áo cotton phù hợp");
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
+});
+
+test("an unresponsive AI turn remains bounded and keeps the question without automatic resend", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await routes(page);
+  await login(page);
+  let sends = 0;
+  await page.route("**/api/v1/chat/sessions/*/messages", () => {
+    sends++;
+  });
+  await page
+    .getByRole("button", { name: "Mở chat", exact: true })
+    .first()
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("textbox", { name: "Câu hỏi", exact: true })
+    .fill("Tìm áo cotton");
+  await dialog
+    .getByRole("button", { name: "Gửi câu hỏi", exact: true })
+    .click();
+  await expect.poll(() => sends).toBe(1);
+  await page.clock.fastForward(36000);
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Không kết nối được API",
+  );
+  await expect(
+    dialog.getByRole("textbox", { name: "Câu hỏi", exact: true }),
+  ).toHaveValue("Tìm áo cotton");
+  expect(sends).toBe(1);
+});
 test("chat launcher waits for restore then opens a stable authenticated dialog", async ({
   page,
   context,
@@ -185,12 +257,10 @@ test("failed restore enables Guest chat and shows the signed-out Store channel",
   ]);
   await page.goto("/");
   await expect.poll(() => !!s.restore()).toBe(true);
-  await s
-    .restore()!
-    .fulfill({
-      status: 401,
-      json: { code: "UNAUTHENTICATED", message: "Expired" },
-    });
+  await s.restore()!.fulfill({
+    status: 401,
+    json: { code: "UNAUTHENTICATED", message: "Expired" },
+  });
   const opener = page
     .getByRole("button", { name: "Mở chat", exact: true })
     .first();

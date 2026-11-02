@@ -111,7 +111,10 @@ export async function request<T>(path:string,options:RequestInit={},retry=true):
   options.signal?.addEventListener('abort',abort,{once:true});if(options.signal?.aborted)controller.abort();
   if(!authRequest)requests.add(controller);
   if(path==='/auth/refresh')cookieReads.add(controller);
-  const timer=setTimeout(abort,7000);
+  // Model generation can use the server's 30s provider deadline plus Catalog work.
+  // Keep ordinary API calls short; an AI turn must survive that bounded deadline.
+  const aiTurn=options.method==='POST'&&/^\/chat\/sessions\/[^/?]+\/messages(?:\?|$)/.test(path);
+  const timer=setTimeout(abort,aiTurn?35000:7000);
   let response:Response,data:any;
   try {
     response=await fetch(base+path,{...options,headers,credentials:'include',signal:controller.signal});
