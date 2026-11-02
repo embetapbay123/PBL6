@@ -19,11 +19,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
   String? _selectedCategory;
+  String _sort = 'title';
   int _page = 1;
 
   String get _catalogKey => jsonEncode({
         'q': _searchQuery,
         'category_id': _selectedCategory,
+        'sort': _sort,
         'page': _page,
       });
 
@@ -36,6 +38,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   void _onSearch(String val) {
     setState(() {
       _searchQuery = val.trim();
+      _page = 1;
+    });
+  }
+
+  void _onSortChanged(String sort) {
+    setState(() {
+      _sort = sort;
       _page = 1;
     });
   }
@@ -206,6 +215,40 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ),
                       ),
                   ],
+                ),
+              ),
+            ),
+
+            // Sort Filter Chips (Web alignment: title, price_asc, price_desc)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildSortChip(
+                        label: 'Tên sản phẩm',
+                        icon: Icons.sort_by_alpha,
+                        selected: _sort == 'title',
+                        onTap: () => _onSortChanged('title'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSortChip(
+                        label: 'Giá tăng dần',
+                        icon: Icons.arrow_upward_rounded,
+                        selected: _sort == 'price_asc',
+                        onTap: () => _onSortChanged('price_asc'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSortChip(
+                        label: 'Giá giảm dần',
+                        icon: Icons.arrow_downward_rounded,
+                        selected: _sort == 'price_desc',
+                        onTap: () => _onSortChanged('price_desc'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -934,6 +977,48 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSortChip({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary.withAlpha(20) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? AppColors.primary : Colors.grey.shade300,
+            width: selected ? 1.2 : 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: selected ? AppColors.primary : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                color: selected ? AppColors.primary : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

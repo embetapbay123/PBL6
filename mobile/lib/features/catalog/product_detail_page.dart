@@ -164,6 +164,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     }
 
     final product = _product!;
+    final status = product['status']?.toString() ?? 'ACTIVE';
     final title = product['title']?.toString() ?? 'Sản phẩm';
     final desc =
         product['description']?.toString() ?? 'Chưa có mô tả chi tiết.';
@@ -186,6 +187,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     final priceInt = int.tryParse(priceStr) ?? 100000;
     final originalPriceInt = (priceInt * 1.35).round();
     final sku = activeVariant?['sku']?.toString() ?? 'SKU-DEFAULT';
+    final cartCount = ref.watch(cartBadgeCountProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -242,28 +244,29 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 tooltip: 'Giỏ hàng',
                 onPressed: () => Navigator.pushNamed(context, '/cart'),
               ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                  child: const Text(
-                    '5',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.bold,
-                      height: 1,
+              if (cartCount > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                    child: Text(
+                      '$cartCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.bold,
+                        height: 1,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
@@ -278,6 +281,36 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             _buildHeroImageGallery(),
 
             const SizedBox(height: 16),
+
+            // Active Status Badge (Web alignment: 'ACTIVE' -> 'Đang bán')
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: status.toUpperCase() == 'ACTIVE'
+                    ? const Color(0xFFDCFCE7)
+                    : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: status.toUpperCase() == 'ACTIVE'
+                      ? const Color(0xFF86EFAC)
+                      : Colors.grey.shade300,
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                status.toUpperCase() == 'ACTIVE'
+                    ? 'Đang bán'
+                    : (status.isEmpty ? 'Đang bán' : status),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: status.toUpperCase() == 'ACTIVE'
+                      ? const Color(0xFF15803D)
+                      : Colors.grey.shade700,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
 
             // 2. Product Title & SKU
             Text(

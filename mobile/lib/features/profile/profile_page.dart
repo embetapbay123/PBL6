@@ -800,6 +800,13 @@ class ProfilePage extends ConsumerWidget {
             child: Column(
               children: [
                 _buildMenuTile(
+                  icon: Icons.storefront_outlined,
+                  title: 'Đăng ký mở gian hàng',
+                  subtitle: 'Trở thành nhà bán hàng trên sàn PBL6',
+                  onTap: () => Navigator.pushNamed(context, '/store-applications'),
+                ),
+                const Divider(height: 1, indent: 56, endIndent: 16),
+                _buildMenuTile(
                   icon: Icons.notifications_none_rounded,
                   title: 'Thông báo',
                   subtitle: 'Cài đặt nhận tin khuyến mãi & đơn hàng',

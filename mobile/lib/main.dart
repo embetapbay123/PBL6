@@ -21,6 +21,7 @@ import 'features/checkout/checkout_page.dart';
 import 'features/checkout/order_success_page.dart';
 import 'features/orders/order_list_page.dart';
 import 'features/orders/order_detail_page.dart';
+import 'features/customer/store_application_page.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
 
@@ -34,6 +35,7 @@ final catalogProductsProvider =
           .getProducts(
             q: params['q'] as String?,
             categoryId: params['category_id'] as String?,
+            sort: params['sort'] as String?,
             page: (params['page'] as int?) ?? 1,
           );
     });
@@ -216,6 +218,10 @@ class BootstrapApp extends StatelessWidget {
             final initialIndex = (args?['initialIndex'] as int?) ?? 0;
             return MaterialPageRoute(
               builder: (_) => OrderListPage(initialIndex: initialIndex),
+            );
+          case '/store-applications':
+            return MaterialPageRoute(
+              builder: (_) => const StoreApplicationPage(),
             );
           case '/order-detail':
             final args = settings.arguments as Map<String, dynamic>? ?? {};

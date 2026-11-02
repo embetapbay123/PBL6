@@ -337,13 +337,16 @@ class ApiClient {
     String? categoryId,
     int page = 1,
     int size = 20,
+    String? sort,
   }) async {
     final query = <String, dynamic>{
       'page': page,
       'size': size,
       if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+      if (categoryId != null && categoryId.isNotEmpty)
+        'category_id': categoryId,
+      if (sort != null && sort.isNotEmpty) 'sort': sort,
     };
-    if (categoryId != null) query['category_id'] = categoryId;
     final res = await get('/products', query: query);
     return Map<String, dynamic>.from(res as Map);
   }
@@ -741,5 +744,60 @@ class ApiClient {
     };
     final res = await post('/me/reviews', data: body);
     return (res is Map) ? Map<String, dynamic>.from(res) : {'status': 'success'};
+  }
+
+  // --- Payment Attempts (Web PaymentPanel sync) ---
+  Future<Map<String, dynamic>> createPaymentAttempt(
+    String orderId, {
+    required int expectedOrderVersion,
+  }) async {
+    final res = await post(
+      '/orders/$orderId/payment-attempts',
+      data: {'expected_order_version': expectedOrderVersion},
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // --- Chat Sessions Management (Web CustomerChatWidget sync) ---
+  Future<Map<String, dynamic>> listOwnChatSessions({
+    int page = 1,
+    int size = 20,
+    String? sessionId,
+    int? messagePage,
+    int? messageSize,
+  }) async {
+    final query = <String, dynamic>{
+      'page': page,
+      'size': size,
+    };
+    if (sessionId != null) query['session_id'] = sessionId;
+    if (messagePage != null) query['message_page'] = messagePage;
+    if (messageSize != null) query['message_size'] = messageSize;
+    final res = await get('/me/chat/sessions', query: query);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  // --- Store Applications (Web StoreApplicationPage sync) ---
+  Future<Map<String, dynamic>> submitStoreApplication({
+    required String proposedName,
+    required String contact,
+  }) async {
+    final body = {
+      'proposed_name': proposedName.trim(),
+      'contact': contact.trim(),
+    };
+    final res = await post('/me/store-applications', data: body);
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> listOwnStoreApplications({
+    int page = 1,
+    int size = 20,
+  }) async {
+    final res = await get(
+      '/me/store-applications',
+      query: {'page': page, 'size': size},
+    );
+    return Map<String, dynamic>.from(res as Map);
   }
 }

@@ -19,6 +19,7 @@ import 'package:pbl6_mobile/main.dart';
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
 import 'package:pbl6_mobile/features/checkout/checkout_page.dart';
 import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
+import 'package:pbl6_mobile/features/customer/store_application_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 
@@ -365,6 +366,40 @@ class MockApiClient extends ApiClient {
     required int expectedVersion,
     String? reason,
   }) async => {'status': 'CANCELLED'};
+
+  @override
+  Future<Map<String, dynamic>> createPaymentAttempt(
+    String orderId, {
+    required int expectedOrderVersion,
+  }) async => {'id': 'attempt-01', 'status': 'SUCCEEDED'};
+
+  @override
+  Future<Map<String, dynamic>> submitStoreApplication({
+    required String proposedName,
+    required String contact,
+  }) async => {
+    'id': 'app-01',
+    'proposed_name': proposedName,
+    'contact': contact,
+    'status': 'PENDING',
+  };
+
+  @override
+  Future<Map<String, dynamic>> listOwnStoreApplications({
+    int page = 1,
+    int size = 20,
+  }) async => {
+    'items': [
+      {
+        'id': 'app-01',
+        'proposed_name': 'TechZone Flagship',
+        'contact': 'contact@techzone.vn',
+        'status': 'PENDING',
+        'created_at': DateTime.now().toIso8601String(),
+      },
+    ],
+    'total': 1,
+  };
 }
 
 void main() {
@@ -704,6 +739,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Bàn phím cơ không dây Bluetooth'), findsWidgets);
+        expect(find.text('Đang bán'), findsOneWidget);
         expect(find.text('1200000 ₫'), findsOneWidget);
         expect(find.text('Mã SKU: KB-RED'), findsOneWidget);
         expect(find.text('KB-RED (1200000 ₫)'), findsOneWidget);
@@ -723,7 +759,7 @@ void main() {
         await tester.ensureVisible(find.byIcon(Icons.add));
         await tester.tap(find.byIcon(Icons.add));
         await tester.pumpAndSettle();
-        expect(find.text('2'), findsOneWidget);
+        expect(find.text('2'), findsWidgets);
       },
     );
 
@@ -1027,6 +1063,22 @@ void main() {
       expect(find.text('Chi tiết thanh toán'), findsOneWidget);
       expect(find.text('380.000 đ'), findsWidgets);
       expect(find.text('Hủy đơn hàng'), findsOneWidget);
+    });
+
+    testWidgets('StoreApplicationPage renders submission form and previous applications', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: StoreApplicationPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Đăng ký mở gian hàng'), findsWidgets);
+      expect(find.text('Hồ sơ của bạn'), findsOneWidget);
+      expect(find.text('Gửi hồ sơ đăng ký'), findsOneWidget);
     });
   });
 

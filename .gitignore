@@ -20,3 +20,6 @@ mobile/android/local.properties
 **/playwright-report/
 *.log
 ~$*
+.agents/
+skills-lock.json
+
