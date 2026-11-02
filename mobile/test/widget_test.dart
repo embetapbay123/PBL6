@@ -221,6 +221,54 @@ class MockApiClient extends ApiClient {
   };
 
   @override
+  Future<Map<String, dynamic>> suggestVouchers({
+    required List<String> cartItemIds,
+    required String addressId,
+    required Map<String, String> paymentMethods,
+    String? platformVoucherCode,
+    Map<String, String>? storeVouchers,
+  }) async => {
+    'items': [
+      {
+        'voucher': {
+          'id': 'vch-san-5k',
+          'code': 'DEMO-SAN-5K',
+          'scope': 'PLATFORM',
+          'discount_type': 'FIXED',
+          'discount_value': 5000,
+          'min_goods_vnd': 100000,
+          'ends_at': '2027-11-02T14:32:00.000Z',
+          'per_customer_limit': 50,
+          'status': 'ACTIVE',
+        },
+        'eligible': true,
+        'reason': 'Có thể áp dụng',
+        'estimated_discount_vnd': 5000,
+      },
+      {
+        'voucher': {
+          'id': 'vch-b-10k',
+          'code': 'DEMO-B-10K',
+          'scope': 'STORE',
+          'store_id': 'store-tech',
+          'store_name': 'Mây Xanh Living',
+          'discount_type': 'FIXED',
+          'discount_value': 10000,
+          'min_goods_vnd': 200000,
+          'ends_at': '2027-11-02T14:32:00.000Z',
+          'per_customer_limit': 10,
+          'status': 'ACTIVE',
+        },
+        'eligible': true,
+        'reason': 'Có thể áp dụng',
+        'estimated_discount_vnd': 10000,
+      },
+    ],
+    'evaluated_at': DateTime.now().toIso8601String(),
+    'truncated': false,
+  };
+
+  @override
   Future<Map<String, dynamic>> getProfile() async => {
     'id': 'user-01',
     'email': 'customer@example.com',
@@ -823,6 +871,19 @@ void main() {
         expect(find.text('PBL Tech Store'), findsOneWidget);
         expect(find.text('PBL Fashion Hub'), findsOneWidget);
         expect(find.text('Voucher toàn sàn PBL6'), findsOneWidget);
+        expect(find.text('DEMO-SAN-5K'), findsOneWidget);
+        expect(find.text('Chọn DEMO-SAN-5K'), findsOneWidget);
+        expect(find.text('DEMO-B-10K'), findsOneWidget);
+        expect(find.text('Chọn DEMO-B-10K'), findsOneWidget);
+        expect(find.text('Ưu đãi từ cửa hàng'), findsOneWidget);
+
+        // Scroll into view and tap to select DEMO-SAN-5K
+        await tester.ensureVisible(find.text('Chọn DEMO-SAN-5K'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Chọn DEMO-SAN-5K'));
+        await tester.pumpAndSettle();
+        expect(find.text('Bỏ chọn DEMO-SAN-5K'), findsOneWidget);
+
         expect(find.text('Chi tiết báo giá'), findsOneWidget);
         expect(find.text('1250000 ₫'), findsWidgets);
         expect(find.text('Đặt hàng'), findsOneWidget);

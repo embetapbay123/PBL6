@@ -677,6 +677,26 @@ class ApiClient {
     return (res is Map) ? Map<String, dynamic>.from(res) : {};
   }
 
+  Future<Map<String, dynamic>> suggestVouchers({
+    required List<String> cartItemIds,
+    required String addressId,
+    required Map<String, String> paymentMethods,
+    String? platformVoucherCode,
+    Map<String, String>? storeVouchers,
+  }) async {
+    final body = <String, dynamic>{
+      'cart_item_ids': cartItemIds,
+      'address_id': addressId,
+      'payment_methods': paymentMethods,
+      if (platformVoucherCode != null && platformVoucherCode.isNotEmpty)
+        'platform_voucher_code': platformVoucherCode,
+      if (storeVouchers != null && storeVouchers.isNotEmpty)
+        'store_vouchers': storeVouchers,
+    };
+    final res = await post('/vouchers/suggestions', data: body);
+    return (res is Map) ? Map<String, dynamic>.from(res) : {};
+  }
+
   // --- Order Management (MOB-04) ---
   Future<Map<String, dynamic>> listOwnOrders({
     int page = 1,

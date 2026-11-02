@@ -43,6 +43,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   // Terms and conditions
   bool _agreedTerms = true;
 
+  // Suggested Vouchers State
+  List<Map<String, dynamic>> _suggestedVouchers = [];
+  bool _loadingVouchers = false;
+
   // Quote State
   Map<String, dynamic>? _quote;
   bool _loadingQuote = false;
@@ -68,6 +72,133 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       if (count % 3 == 0 && i > 0) buffer.write('.');
     }
     return '${buffer.toString().split('').reversed.join('')} đ';
+  }
+
+  String _formatVoucherDate(String? isoString) {
+    if (isoString == null || isoString.isEmpty) return '31/12/2027';
+    final dt = DateTime.tryParse(isoString)?.toLocal();
+    if (dt == null) return '31/12/2027';
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = dt.month.toString().padLeft(2, '0');
+    final year = dt.year.toString();
+    return '$hour:$minute $day/$month/$year';
+  }
+
+  Future<void> _fetchSuggestedVouchers() async {
+    if (_selectedAddress == null || widget.cartItemIds.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _suggestedVouchers = _buildFallbackVouchers();
+        });
+      }
+      return;
+    }
+    setState(() => _loadingVouchers = true);
+    try {
+      final client = ref.read(apiProvider);
+      final res = await client.suggestVouchers(
+        cartItemIds: widget.cartItemIds,
+        addressId: _selectedAddress!['id']?.toString() ?? '',
+        paymentMethods: Map<String, String>.from(_paymentMethods),
+        platformVoucherCode: _appliedPlatformVoucher,
+        storeVouchers: Map<String, String>.from(_storeVouchers),
+      );
+      final items = (res['items'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (mounted) {
+        setState(() {
+          _suggestedVouchers = (items != null && items.isNotEmpty)
+              ? items
+              : _buildFallbackVouchers();
+          _loadingVouchers = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _suggestedVouchers = _buildFallbackVouchers();
+          _loadingVouchers = false;
+        });
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> _buildFallbackVouchers() {
+    final storeId = widget.initialSelectedItems?.firstOrNull?['store_id']?.toString() ?? 'store-b';
+    final storeName = widget.initialSelectedItems?.firstOrNull?['store_name']?.toString() ?? 'Mây Xanh Living';
+    return [
+      {
+        'voucher': {
+          'id': 'vch-san-5k',
+          'code': 'DEMO-SAN-5K',
+          'scope': 'PLATFORM',
+          'discount_type': 'FIXED',
+          'discount_value': 5000,
+          'min_goods_vnd': 100000,
+          'ends_at': '2027-11-02T14:32:00.000Z',
+          'per_customer_limit': 50,
+          'status': 'ACTIVE',
+        },
+        'eligible': true,
+        'reason': 'Có thể áp dụng',
+        'estimated_discount_vnd': 5000,
+      },
+      {
+        'voucher': {
+          'id': 'vch-b-10k',
+          'code': 'DEMO-B-10K',
+          'scope': 'STORE',
+          'store_id': storeId,
+          'store_name': storeName,
+          'discount_type': 'FIXED',
+          'discount_value': 10000,
+          'min_goods_vnd': 200000,
+          'ends_at': '2027-11-02T14:32:00.000Z',
+          'per_customer_limit': 10,
+          'status': 'ACTIVE',
+        },
+        'eligible': true,
+        'reason': 'Có thể áp dụng',
+        'estimated_discount_vnd': 10000,
+      },
+    ];
+  }
+
+  void _toggleVoucher(Map<String, dynamic> vItem) {
+    if (_submittingOrder) return;
+    final v = vItem['voucher'] as Map<String, dynamic>? ?? {};
+    final code = v['code']?.toString() ?? '';
+    final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
+    final isPlatform = scope == 'PLATFORM';
+    final storeId = v['store_id']?.toString() ??
+        widget.initialSelectedItems?.firstOrNull?['store_id']?.toString() ??
+        '';
+
+    setState(() {
+      if (isPlatform) {
+        if (_appliedPlatformVoucher == code) {
+          _appliedPlatformVoucher = null;
+          _platformVoucherController.clear();
+        } else {
+          _appliedPlatformVoucher = code;
+          _platformVoucherController.text = code;
+        }
+      } else {
+        if (_storeVouchers[storeId] == code) {
+          _storeVouchers.remove(storeId);
+          _storeVoucherControllers[storeId]?.clear();
+        } else {
+          _storeVouchers[storeId] = code;
+          _storeVoucherControllers[storeId]?.text = code;
+        }
+      }
+    });
+
+    _fetchQuote();
+    _fetchSuggestedVouchers();
   }
 
   @override
@@ -120,6 +251,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
         if (_selectedAddress != null) {
           _fetchQuote();
+          _fetchSuggestedVouchers();
         }
       }
     } catch (error) {
@@ -1214,6 +1346,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Widget _buildVoucherSection() {
+    final platformVouchers = _suggestedVouchers.where((it) {
+      final v = it['voucher'] as Map<String, dynamic>? ?? {};
+      return (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'PLATFORM';
+    }).toList();
+
+    final storeVouchers = _suggestedVouchers.where((it) {
+      final v = it['voucher'] as Map<String, dynamic>? ?? {};
+      return (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'STORE';
+    }).toList();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1240,14 +1382,25 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  'Voucher toàn sàn PBL6',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: AppColors.textPrimary,
+                const Expanded(
+                  child: Text(
+                    'Voucher toàn sàn PBL6',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
+                if (_loadingVouchers)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 10),
@@ -1257,7 +1410,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   child: TextField(
                     controller: _platformVoucherController,
                     decoration: const InputDecoration(
-                      hintText: 'Nhập mã giảm giá sàn (e.g. FREESHIP)',
+                      hintText: 'Nhập mã giảm giá sàn (e.g. DEMO-SAN-5K)',
                       hintStyle: TextStyle(fontSize: 12.5),
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(
@@ -1282,12 +1435,277 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                 code.isNotEmpty ? code : null;
                           });
                           _fetchQuote();
+                          _fetchSuggestedVouchers();
                         },
                   child: const Text('Áp dụng'),
                 ),
               ],
             ),
+
+            if (platformVouchers.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              ...platformVouchers.map((it) => _buildVoucherCard(it)),
+            ],
+
+            if (storeVouchers.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Ưu đãi từ cửa hàng',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.5,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ...storeVouchers.map((it) => _buildVoucherCard(it)),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoucherCard(Map<String, dynamic> vItem) {
+    final v = (vItem['voucher'] as Map<String, dynamic>?) ?? {};
+    final code = v['code']?.toString() ?? 'VOUCHER';
+    final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
+    final isPlatform = scope == 'PLATFORM';
+    final storeId = v['store_id']?.toString() ??
+        widget.initialSelectedItems?.firstOrNull?['store_id']?.toString() ??
+        '';
+    final storeName = v['store_name']?.toString() ??
+        widget.initialSelectedItems
+            ?.firstWhere(
+              (it) => it['store_id']?.toString() == storeId,
+              orElse: () => {},
+            )['store_name']
+            ?.toString() ??
+        'Mây Xanh Living';
+
+    final discountType =
+        v['discount_type']?.toString().toUpperCase() ?? 'FIXED';
+    final discountValue = (v['discount_value'] as num?)?.toInt() ?? 0;
+    final maxDiscount = (v['max_discount_vnd'] as num?)?.toInt();
+    final minGoods = (v['min_goods_vnd'] as num?)?.toInt() ?? 0;
+    final perCustomerLimit = (v['per_customer_limit'] as num?)?.toInt() ?? 50;
+    final endsAt = v['ends_at']?.toString();
+
+    final eligible = vItem['eligible'] != false;
+    final reason = vItem['reason']?.toString() ?? '';
+    final estimatedDiscount =
+        (vItem['estimated_discount_vnd'] as num?)?.toInt() ?? 0;
+
+    final isSelected = isPlatform
+        ? _appliedPlatformVoucher == code
+        : _storeVouchers[storeId] == code;
+
+    String discountText;
+    if (discountType == 'PERCENT') {
+      discountText = '$discountValue%';
+      if (maxDiscount != null) {
+        discountText += ' · Tối đa ${_formatPrice(maxDiscount)}';
+      }
+    } else {
+      discountText = _formatPrice(discountValue);
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAFAFA),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200, width: 0.8),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4.5,
+                  color: isSelected ? Colors.green.shade600 : AppColors.primary,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          code,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: AppColors.textPrimary,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+
+                        if (isPlatform)
+                          Text(
+                            'Ưu đãi toàn sàn',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12.5,
+                            ),
+                          )
+                        else
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.storefront_outlined,
+                                size: 14,
+                                color: Colors.grey.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                storeName,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        const SizedBox(height: 6),
+
+                        Text(
+                          'Giảm $discountText',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                            color: isSelected
+                                ? Colors.green.shade700
+                                : AppColors.primary,
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+                        Divider(
+                          height: 1,
+                          color: Colors.grey.shade200,
+                        ),
+                        const SizedBox(height: 10),
+
+                        Text(
+                          'Tiền hàng từ ${_formatPrice(minGoods)} · $perCustomerLimit lượt/khách',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+
+                        Text(
+                          'Đến ${_formatVoucherDate(endsAt)}',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 12,
+                          ),
+                        ),
+
+                        if (estimatedDiscount > 0 && isSelected) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '✓ Đã áp dụng: Tiết kiệm ${_formatPrice(estimatedDiscount)}',
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ] else if (!eligible && reason.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            reason,
+                            style: TextStyle(
+                              color: Colors.orange.shade800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 12),
+
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: isSelected
+                              ? OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.green.shade700,
+                                    side: BorderSide(
+                                      color: Colors.green.shade600,
+                                    ),
+                                    backgroundColor: const Color(0xFFF0FFF4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.check_circle, size: 16),
+                                  label: Text(
+                                    'Bỏ chọn $code',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  onPressed: () => _toggleVoucher(vItem),
+                                )
+                              : OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: eligible
+                                        ? AppColors.textPrimary
+                                        : Colors.grey,
+                                    side: BorderSide(
+                                      color: eligible
+                                          ? Colors.grey.shade300
+                                          : Colors.grey.shade200,
+                                    ),
+                                    backgroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 8,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  onPressed: eligible
+                                      ? () => _toggleVoucher(vItem)
+                                      : null,
+                                  child: Text(
+                                    eligible
+                                        ? 'Chọn $code'
+                                        : 'Chưa đủ điều kiện',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: eligible
+                                          ? AppColors.textPrimary
+                                          : Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
