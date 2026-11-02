@@ -235,7 +235,7 @@ export function StaffPage() {
       )}
       {notice && <p role="status">{notice}</p>}
       {tab === "invitations" && (
-        <form onSubmit={invite}>
+        <form className="staff-invite-form" onSubmit={invite}>
           <h3>Mời nhân viên</h3>
           <label>
             Email nhân viên{" "}

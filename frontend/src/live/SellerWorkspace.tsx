@@ -285,7 +285,7 @@ function StoreSettingsForm({
     });
   };
   return (
-    <form className="boot-card" onSubmit={submit}>
+    <form className="boot-card store-settings-form" onSubmit={submit}>
       <label>
         Tên gian hàng
         <input
