@@ -3,7 +3,7 @@ import { OwnedRepository } from '../../../shared/src/repository';
 import {searchPattern} from '../../../shared/src/search';
 import type {AttributeDefinitionRow} from '../catalog/catalog.validation';
 
-export type InventoryFilters={q?:string;product_id?:string;variant_id?:string;from?:string;to?:string};
+export type InventoryFilters={q?:string;product_id?:string;variant_id?:string;from?:string;to?:string;sort?:'NAME_ASC'|'AVAILABLE_ASC'|'AVAILABLE_DESC'};
 const inventoryJoins=' FROM inventory i LEFT JOIN product_variant v ON v.id=i.variant_id AND v.store_id=i.store_id LEFT JOIN product p ON p.id=v.product_id AND p.store_id=i.store_id';
 function inventoryPredicate(store:string,filters:InventoryFilters){
  const values:unknown[]=[store],conditions=['i.store_id=$1'];
@@ -131,12 +131,13 @@ export class InventoryRepository extends OwnedRepository {
 
   async pageInventory(storeId: string, page: number, size: number,filters:InventoryFilters={}): Promise<{ items: InventoryBalanceRow[]; total: number }> {
     const {values,where}=inventoryPredicate(storeId,filters);
+    const order = filters.sort === 'NAME_ASC' ? 'p.title ASC NULLS LAST, i.variant_id' : filters.sort === 'AVAILABLE_ASC' ? 'greatest(i.quantity-i.reserved_quantity,0) ASC, i.variant_id' : filters.sort === 'AVAILABLE_DESC' ? 'greatest(i.quantity-i.reserved_quantity,0) DESC, i.variant_id' : 'i.variant_id';
     const [count] = await this.manager.query('SELECT count(*)::int AS total'+inventoryJoins+where,values);
     const items = await this.manager.query(
       `SELECT i.variant_id, i.quantity, i.reserved_quantity,
               greatest(i.quantity-i.reserved_quantity,0) AS available_quantity, i.version,
               p.id AS product_id, p.title AS product_title, v.sku, v.variant_values_json AS variant_values
-         ${inventoryJoins}${where} ORDER BY i.variant_id LIMIT $${values.length+1} OFFSET $${values.length+2}`,
+         ${inventoryJoins}${where} ORDER BY ${order} LIMIT $${values.length+1} OFFSET $${values.length+2}`,
       [...values, size, (page - 1) * size]);
     return { items, total: count.total };
   }

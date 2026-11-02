@@ -809,6 +809,16 @@
     "path": "/me/notifications/read-all",
     "internal": false
   },
+  "markStoreConversationRead": {
+    "method": "POST",
+    "path": "/store/conversations/{id}/read",
+    "internal": false
+  },
+  "archiveStoreConversation": {
+    "method": "POST",
+    "path": "/store/conversations/{id}/archive",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",

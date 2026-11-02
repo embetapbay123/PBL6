@@ -5,6 +5,7 @@ import type {OperationOutputs} from '../../../shared/src/operations.generated';
 import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import type { EntityManager } from 'typeorm';
+import {searchPattern} from '../../../shared/src/search';
 
 type Side='CUSTOMER'|'STORE';
 type Context={user_id:string;access_token?:string;store_membership?:{store_id:string;role:string;status?:string;permissions?:string[]}};
@@ -46,21 +47,52 @@ export class MessagingService {
       return {id:row.id,...(store.name?{store_name:store.name}:{}),...(order?{order_context:{order_id:order.order_id,store_id:order.store_id,status:order.status,items:order.items}}:{})};
     });
   }
-  async list(context:Context,side:Side,page=1,size=20):Promise<OperationOutputs['listOwnConversations']> {
+  async list(context:Context,side:Side,page=1,size=20,q?:string,archived=false):Promise<OperationOutputs['listOwnConversations']> {
     const field=side==='CUSTOMER'?'customer_user_id':'store_id',owner=side==='CUSTOMER'?context.user_id:this.store(context);
-    const [count]=await this.source.manager.query(`SELECT count(*)::int AS total FROM store_conversation WHERE ${field}=$1`,[owner]);
+    const pattern=side==='STORE'?searchPattern(q):undefined;
+    const where=`c.${field}=$1 AND ($2::text IS NULL OR marketplace_search(concat_ws(' ',p.display_name,u.email)) LIKE $2) AND ($3::boolean IS NULL OR (c.store_archived_at IS NOT NULL)=$3)`;
+    const joins=' FROM store_conversation c JOIN store s ON s.id=c.store_id LEFT JOIN customer_profile p ON p.user_id=c.customer_user_id LEFT JOIN "user" u ON u.id=c.customer_user_id';
+    const args=[owner,pattern??null,side==='STORE'?archived:null];
+    const [count]=await this.source.manager.query('SELECT count(*)::int AS total'+joins+' WHERE '+where,args);
     const rows=await this.source.manager.query(`SELECT c.id,c.store_id,s.name AS store_name,coalesce(p.display_name,'Khách hàng') AS customer_name,c.updated_at,
-      (SELECT content FROM store_message WHERE conversation_id=c.id ORDER BY created_at DESC,id DESC LIMIT 1) AS last_message
-      FROM store_conversation c JOIN store s ON s.id=c.store_id LEFT JOIN customer_profile p ON p.user_id=c.customer_user_id
-      WHERE c.${field}=$1 ORDER BY c.updated_at DESC,c.id LIMIT $2 OFFSET $3`,[owner,size,(page-1)*size]);
-    return {items:rows.map((row:any)=>({id:row.id,store_id:row.store_id,store_name:row.store_name,customer_name:row.customer_name,updated_at:timestamp(row.updated_at),...(row.last_message===null?{}:{last_message:row.last_message})})),total:count.total,page,size};
+      (SELECT content FROM store_message WHERE conversation_id=c.id ORDER BY store_sequence DESC LIMIT 1) AS last_message,
+      (SELECT order_id FROM store_message WHERE conversation_id=c.id AND order_id IS NOT NULL ORDER BY store_sequence DESC LIMIT 1) AS last_order_id,
+      (SELECT left(substr(split_part(content,E'\\n',1),11),200) FROM store_message WHERE conversation_id=c.id AND sender_side='CUSTOMER' AND content LIKE 'Sản phẩm: %' ORDER BY store_sequence DESC LIMIT 1) AS last_product_mention,
+      c.store_archived_at,(SELECT count(*)::int FROM store_message m WHERE m.conversation_id=c.id AND m.sender_side='CUSTOMER' AND m.store_sequence>c.store_read_sequence) AS unread_count
+      ${joins} WHERE ${where} ORDER BY c.updated_at DESC,c.id LIMIT $4 OFFSET $5`,[...args,size,(page-1)*size]);
+    const unread=side==='STORE'?await this.source.manager.query(`SELECT coalesce(sum((SELECT count(*) FROM store_message m WHERE m.conversation_id=c.id AND m.sender_side='CUSTOMER' AND m.store_sequence>c.store_read_sequence)),0)::int AS total FROM store_conversation c WHERE c.store_id=$1 AND c.store_archived_at IS NULL`,[owner]):undefined;
+    return {items:rows.map((row:any)=>({id:row.id,store_id:row.store_id,store_name:row.store_name,customer_name:row.customer_name,updated_at:timestamp(row.updated_at),...(row.last_message===null?{}:{last_message:row.last_message}),...(row.last_order_id?{last_order_id:row.last_order_id}:{}),...(row.last_product_mention?{last_product_mention:row.last_product_mention}:{}),...(side==='STORE'?{unread_count:row.unread_count,archived:!!row.store_archived_at}:{})})),total:count.total,page,size,...(unread?{unread_total:unread[0].total}:{})};
+  }
+  private async storeState(manager:EntityManager,id:string,storeId:string){
+    const [row]=await manager.query(`SELECT c.id,c.store_archived_at,(SELECT count(*)::int FROM store_message m WHERE m.conversation_id=c.id AND m.sender_side='CUSTOMER' AND m.store_sequence>c.store_read_sequence) AS unread_count FROM store_conversation c WHERE c.id=$1 AND c.store_id=$2`,[id,storeId]);
+    if(!row)throw new ApiError(404,'NOT_FOUND','Không tìm thấy hội thoại của Store.');
+    return {id:row.id,archived:!!row.store_archived_at,unread_count:row.unread_count};
+  }
+  async markRead(id:string,messageId:string,context:Context){
+    const storeId=this.store(context);
+    return this.source.transaction(async manager=>{
+      const [thread]=await manager.query('SELECT id FROM store_conversation WHERE id=$1 AND store_id=$2 FOR UPDATE',[id,storeId]);
+      if(!thread)throw new ApiError(404,'NOT_FOUND','Không tìm thấy hội thoại của Store.');
+      const [seen]=await manager.query('SELECT store_sequence FROM store_message WHERE id=$1 AND conversation_id=$2',[messageId,id]);
+      if(!seen||seen.store_sequence==null)throw new ApiError(404,'NOT_FOUND','Không tìm thấy tin nhắn trong hội thoại.');
+      await manager.query('UPDATE store_conversation SET store_read_sequence=greatest(store_read_sequence,$2::bigint) WHERE id=$1',[id,seen.store_sequence]);
+      return this.storeState(manager,id,storeId);
+    });
+  }
+  async archive(id:string,archived:boolean,context:Context){
+    const storeId=this.store(context);
+    return this.source.transaction(async manager=>{
+      const rows=await manager.query('UPDATE store_conversation SET store_archived_at=CASE WHEN $3 THEN coalesce(store_archived_at,now()) ELSE NULL END WHERE id=$1 AND store_id=$2 RETURNING id',[id,storeId,archived]);
+      if(!rows.length)throw new ApiError(404,'NOT_FOUND','Không tìm thấy hội thoại của Store.');
+      return this.storeState(manager,id,storeId);
+    });
   }
   async history(id:string,context:Context,side:Side,page=1,size=20):Promise<OperationOutputs['listOwnConversationMessages']> {
     const [thread]=await this.source.manager.query(`SELECT c.id,c.customer_user_id,c.store_id,c.updated_at,s.name AS store_name,coalesce(p.display_name,'Khách hàng') AS customer_name
       FROM store_conversation c JOIN store s ON s.id=c.store_id LEFT JOIN customer_profile p ON p.user_id=c.customer_user_id WHERE c.id=$1`,[id]);
     this.authorize(thread,context,side);
     const [count]=await this.source.manager.query('SELECT count(*)::int AS total FROM store_message WHERE conversation_id=$1',[id]);
-    const rows=await this.source.manager.query('SELECT id,conversation_id,sender_side,content,created_at,order_id FROM store_message WHERE conversation_id=$1 ORDER BY created_at DESC,id DESC LIMIT $2 OFFSET $3',[id,size,(page-1)*size]);
+    const rows=await this.source.manager.query('SELECT id,conversation_id,sender_side,content,created_at,order_id FROM store_message WHERE conversation_id=$1 ORDER BY store_sequence DESC LIMIT $2 OFFSET $3',[id,size,(page-1)*size]);
     return {conversation_id:id,conversation:{id:thread.id,store_id:thread.store_id,store_name:thread.store_name,customer_name:thread.customer_name,updated_at:timestamp(thread.updated_at)},items:rows.map(message),total:count.total,page,size};
   }
   async send(id:string,input:{content:string;client_message_id:string;order_id?:string},context:Context,side:Side,correlation=''):Promise<OperationOutputs['sendOwnConversationMessage']> {

@@ -33,6 +33,7 @@ export function StaffPage() {
   const { confirm, dialog } = useConfirm();
   const [permissionEdit, setPermissionEdit] = useState<Staff>();
   const [tab, setTab] = useState<"staff" | "invitations">("staff");
+  const [inviteOpen,setInviteOpen]=useState(false);
   const [staffPage, setStaffPage] = useState(1),
     [invitePage, setInvitePage] = useState(1),
     [staffTotal, setStaffTotal] = useState(0),
@@ -235,12 +236,14 @@ export function StaffPage() {
         <ErrorView error={loadError} onRetry={() => void load()} />
       )}
       {notice && <p role="status">{notice}</p>}
-      {tab === "invitations" && (
-        <form className="staff-invite-form" onSubmit={invite}>
+      {tab === 'invitations' && <button type="button" aria-expanded={inviteOpen} aria-controls="staff-invite-form" disabled={locked} onClick={()=>setInviteOpen(value=>!value)}>{inviteOpen?'Thu gọn form mời':'Mời nhân viên mới'}</button>}
+      {tab === "invitations" && inviteOpen && (
+        <form id="staff-invite-form" className="staff-invite-form" onSubmit={invite}>
           <h3>Mời nhân viên</h3>
           <label>
             Email nhân viên{" "}
             <input
+              autoFocus
               disabled={locked}
               type="email"
               required
@@ -287,16 +290,17 @@ export function StaffPage() {
                 quyền Owner hoặc quản trị toàn sàn.
               </p>
               {staff.length === 0 ? (
-                <p>Không có nhân viên ở trang này.</p>
+                <div className="seller-empty-state"><strong>Chưa có nhân viên ở trang này</strong><p>Mời nhân viên để cùng xử lý công việc trong Store.</p><button type="button" onClick={() => setTab('invitations')}>Mở lời mời</button></div>
               ) : (
                 staff.map((member) => (
-                  <article key={member.id} className="boot-card">
-                    <strong>{member.email}</strong> ·{" "}
+                  <article key={member.id} className="boot-card seller-staff-card">
+                    <span className="seller-staff-avatar" aria-hidden="true">{member.email.slice(0,1).toUpperCase()}</span><strong>{member.email}</strong>{" "}
+                    <span className={'seller-status '+(member.status==='ACTIVE'?'is-active':'is-inactive')}>
                     {member.status === "ACTIVE"
                       ? "Đang hoạt động"
                       : member.status === "LOCKED"
                         ? "Đã khóa"
-                        : member.status}
+                        : member.status}</span>
                     <ul>
                       {member.permissions.map((code) => (
                         <li key={code}>
@@ -332,28 +336,28 @@ export function StaffPage() {
                   </article>
                 ))
               )}
-              <fieldset disabled={locked}>
-                <legend>Trang nhân viên</legend>
+              <nav aria-label="Trang nhân viên">
                 <Pagination
+                  disabled={locked}
                   page={staffPage}
                   size={20}
                   total={staffTotal}
                   onPage={setStaffPage}
                 />
-              </fieldset>
+              </nav>
             </>
           )}
           {tab === "invitations" && (
             <>
               <h3>Lời mời</h3>
               {invitations.length === 0 ? (
-                <p>Không có lời mời ở trang này.</p>
+                <div className="seller-empty-state"><strong>Chưa có lời mời ở trang này</strong><p>Chọn Mời nhân viên mới để nhập email và cấp quyền công việc.</p></div>
               ) : (
                 invitations.map((invitation) => (
-                  <article key={invitation.id}>
-                    {invitation.invited_email} ·{" "}
+                  <article key={invitation.id} className="seller-invitation-card">
+                    <strong>{invitation.invited_email}</strong>{" "}<span className={'seller-status '+(invitationStatus(invitation,now)==='PENDING'?'is-active':'is-inactive')}>
                     {invitationLabels[invitationStatus(invitation, now)] ??
-                      "Chưa rõ trạng thái"}{" "}
+                      "Chưa rõ trạng thái"}</span>{" "}
                     · hết hạn {invitationTime(invitation.expires_at)}
                     {invitationStatus(invitation, now) === "PENDING" && (
                       <button
@@ -366,15 +370,15 @@ export function StaffPage() {
                   </article>
                 ))
               )}
-              <fieldset disabled={locked}>
-                <legend>Trang lời mời</legend>
+              <nav aria-label="Trang lời mời">
                 <Pagination
+                  disabled={locked}
                   page={invitePage}
                   size={20}
                   total={inviteTotal}
                   onPage={setInvitePage}
                 />
-              </fieldset>
+              </nav>
             </>
           )}
         </>

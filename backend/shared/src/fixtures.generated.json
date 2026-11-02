@@ -447,7 +447,8 @@
         "city": "fixture-value"
       },
       "owner_email": "fixture-value",
-      "owner_display_name": "fixture-value"
+      "owner_display_name": "fixture-value",
+      "logo_url": "fixture-value"
     },
     "status": 200
   },
@@ -466,7 +467,8 @@
           "ward": "fixture-value",
           "district": "fixture-value",
           "city": "fixture-value"
-        }
+        },
+        "logo_url": "fixture-value"
       },
       "path": {},
       "query": {},
@@ -488,7 +490,8 @@
         "city": "fixture-value"
       },
       "owner_email": "fixture-value",
-      "owner_display_name": "fixture-value"
+      "owner_display_name": "fixture-value",
+      "logo_url": "fixture-value"
     },
     "status": 200
   },
@@ -931,7 +934,8 @@
         "size": 20,
         "q": "fixture-value",
         "product_id": "11111111-1111-4111-8111-111111111111",
-        "variant_id": "11111111-1111-4111-8111-111111111111"
+        "variant_id": "11111111-1111-4111-8111-111111111111",
+        "sort": "NAME_ASC"
       },
       "headers": {}
     },
@@ -2070,7 +2074,8 @@
         "city": "fixture-value"
       },
       "owner_email": "fixture-value",
-      "owner_display_name": "fixture-value"
+      "owner_display_name": "fixture-value",
+      "logo_url": "fixture-value"
     },
     "status": 200
   },
@@ -2794,7 +2799,8 @@
       "items": [],
       "total": 0,
       "page": 1,
-      "size": 1
+      "size": 1,
+      "unread_total": 0
     },
     "status": 200
   },
@@ -2828,7 +2834,9 @@
       "path": {},
       "query": {
         "page": 1,
-        "size": 20
+        "size": 20,
+        "q": "fixture-value",
+        "archived": false
       },
       "headers": {}
     },
@@ -2836,7 +2844,8 @@
       "items": [],
       "total": 0,
       "page": 1,
-      "size": 1
+      "size": 1,
+      "unread_total": 0
     },
     "status": 200
   },
@@ -2865,7 +2874,11 @@
         "store_name": "fixture-value",
         "customer_name": "fixture-value",
         "last_message": "fixture-value",
-        "updated_at": "2026-10-02T00:00:00Z"
+        "updated_at": "2026-10-02T00:00:00Z",
+        "unread_count": 0,
+        "archived": false,
+        "last_order_id": "11111111-1111-4111-8111-111111111111",
+        "last_product_mention": "fixture-value"
       }
     },
     "status": 200
@@ -2919,7 +2932,11 @@
         "store_name": "fixture-value",
         "customer_name": "fixture-value",
         "last_message": "fixture-value",
-        "updated_at": "2026-10-02T00:00:00Z"
+        "updated_at": "2026-10-02T00:00:00Z",
+        "unread_count": 0,
+        "archived": false,
+        "last_order_id": "11111111-1111-4111-8111-111111111111",
+        "last_product_mention": "fixture-value"
       }
     },
     "status": 200
@@ -3096,7 +3113,8 @@
       "query": {
         "page": 1,
         "size": 20,
-        "order_id": "11111111-1111-4111-8111-111111111111"
+        "order_id": "11111111-1111-4111-8111-111111111111",
+        "status": "REQUESTED"
       },
       "headers": {}
     },
@@ -3669,7 +3687,11 @@
       "items": [],
       "total": 0,
       "page": 1,
-      "size": 1
+      "size": 1,
+      "summary": {
+        "open": 0,
+        "awaiting_inspection": 0
+      }
     },
     "status": 200
   },
@@ -3688,7 +3710,11 @@
       "items": [],
       "total": 0,
       "page": 1,
-      "size": 1
+      "size": 1,
+      "summary": {
+        "open": 0,
+        "awaiting_inspection": 0
+      }
     },
     "status": 200
   },
@@ -4581,6 +4607,44 @@
     },
     "response": {
       "updated": 0
+    },
+    "status": 200
+  },
+  "markStoreConversationRead": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "message_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "archived": false,
+      "unread_count": 0
+    },
+    "status": 200
+  },
+  "archiveStoreConversation": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "archived": false
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "archived": false,
+      "unread_count": 0
     },
     "status": 200
   },

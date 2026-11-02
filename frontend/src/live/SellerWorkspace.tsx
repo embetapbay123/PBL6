@@ -2,6 +2,8 @@ import { Button as UiButton } from "../components/ui/Button";
 import { useUnsavedChanges } from "../components/useUnsavedChanges";
 import { AddressSuggestions } from "../components/AddressSuggestions";
 import { variantLabel } from "../components/variant-identity";
+import { useCurrentOrderImages } from "../components/useCurrentOrderImages";
+import { ProductImage } from "../components/ProductImage";
 import { FinancialReport } from "../features/reports/FinancialReport";
 import {
   InventoryReconciliation,
@@ -12,6 +14,7 @@ import { AuditActor, useAuditActorLabels } from "../features/admin/AuditActors";
 import { OrderQueue } from "../components/OrderQueue";
 import {
   OrderListFilters,
+  OrderStatusTabs,
   useOrderListFilters,
   paymentMethodLabel,
   paymentStatusLabel,
@@ -26,7 +29,7 @@ import {
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Package, ShoppingBag, Boxes, Store, ArrowRight } from "lucide-react";
+import { Package, ShoppingBag, Boxes, Store, ArrowRight, Pencil } from "lucide-react";
 import { callOperation } from "../api/operations";
 import { ApiError, isUncertainMutation } from "../api/client";
 import type {
@@ -70,6 +73,8 @@ export function SellerOverview() {
     queryFn: () =>
       callOperation("listStoreOrders", { query: { page: 1, size: 1 } }),
   });
+  const pendingOrders = useQuery({queryKey:['seller-overview','pending-orders'],enabled:access.can('order.store.read_status_cancel'),queryFn:()=>callOperation('listStoreOrders',{query:{page:1,size:1,status:'PENDING'}})});
+  const pendingReturns = useQuery({queryKey:['seller-overview','pending-returns'],enabled:access.can('order.store.read_status_cancel'),queryFn:()=>callOperation('listStoreReturnRequests',{query:{page:1,size:1,status:'REQUESTED'}})});
   const counts: Record<
     string,
     { data?: { total: number }; error: unknown; isPending: boolean }
@@ -113,8 +118,10 @@ export function SellerOverview() {
             Quản lý sản phẩm, tồn kho và xử lý các đơn hàng trong gian hàng của
             bạn.
           </p>
-          <StoreSetupGuide store={store.data} />
-          <StoreWorkGuide />
+          {(!store.data.return_address || !['recipient_name','phone','line1','ward','district','city'].every(key=>String(store.data.return_address?.[key as keyof typeof store.data.return_address] ?? '').trim()))&&<p role="status">Địa chỉ nhận trả chưa đầy đủ. Chủ Store cần hoàn thiện trước khi nhận đơn mới.</p>}
+          {access.can('order.store.read_status_cancel')&&<div className="seller-work-alerts"><Link to="/seller/orders?status=PENDING">Đơn chờ xác nhận: {pendingOrders.error?'Chưa tải được':pendingOrders.data?.total??'Đang tải…'}</Link><Link to="/seller/returns?status=REQUESTED">Yêu cầu đổi trả chờ duyệt: {pendingReturns.error?'Chưa tải được':pendingReturns.data?.total??'Đang tải…'}</Link></div>}
+          <details className="seller-guide"><summary>Hướng dẫn chuẩn bị gian hàng</summary><StoreSetupGuide store={store.data} /></details>
+          <details className="seller-guide"><summary>Quyền và hướng dẫn công việc</summary><StoreWorkGuide /></details>
           <div className="market-stats mt-6">
             {[
               ["/seller/products", "Sản phẩm", ShoppingBag],
@@ -155,7 +162,7 @@ export function SellerOverview() {
             <h2>Thông tin vận hành</h2>
             <p>
               Trạng thái:{" "}
-              <span className="market-badge">{store.data.status}</span>
+              <span className={'seller-status '+(store.data.status==='ACTIVE'?'is-active':'is-inactive')}>{store.data.status==='ACTIVE'?'Đang hoạt động':store.data.status==='LOCKED'?'Đã khóa':store.data.status}</span>
             </p>
             <p>
               Phí giao hàng:{" "}
@@ -241,9 +248,10 @@ function StoreSettingsForm({
   reload: () => void;
 }) {
   const cache = useQueryClient();
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<'all'|'name'|'shipping'|'address'|'logo'|null>(null);
   const [name, setName] = useState(store.name),
-    [shipping, setShipping] = useState(store.shipping_fee_vnd ?? 0);
+    [shipping, setShipping] = useState(store.shipping_fee_vnd ?? 0),
+    [logoUrl,setLogoUrl] = useState(store.logo_url ?? '');
   const [returnAddress, setReturnAddress] = useState(
     store.return_address ?? {
       recipient_name: "",
@@ -257,6 +265,7 @@ function StoreSettingsForm({
   const dirty =
     name !== store.name ||
     shipping !== (store.shipping_fee_vnd ?? 0) ||
+    logoUrl !== (store.logo_url ?? '') ||
     JSON.stringify(returnAddress) !==
       JSON.stringify(
         store.return_address ?? {
@@ -268,7 +277,7 @@ function StoreSettingsForm({
           city: "",
         },
       );
-  useUnsavedChanges(editing && (dirty || command.busy));
+  useUnsavedChanges(!!editing && (dirty || command.busy));
   const [stale, setStale] = useState(false);
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -277,9 +286,10 @@ function StoreSettingsForm({
       try {
         const updated = await callOperation("updateOwnStore", {
           body: {
-            name,
-            shipping_fee_vnd: shipping,
-            return_address: returnAddress,
+            ...(editing==='all'||editing==='name'?{name}:{}),
+            ...(editing==='all'||editing==='shipping'?{shipping_fee_vnd:shipping}:{}),
+            ...(editing==='logo'?{logo_url:logoUrl.trim()}:{}),
+            ...(editing==='all'||editing==='address'?{return_address: returnAddress}:{}),
             expected_version: store.version!,
           },
         });
@@ -287,7 +297,7 @@ function StoreSettingsForm({
           { queryKey: ["own-store"] },
           (previous) =>
             previous?.id === updated.id
-              ? { ...previous, ...updated }
+              ? { ...previous, ...updated, logo_url: updated.logo_url }
               : previous,
         );
         void cache.invalidateQueries({ queryKey: ["own-store"] });
@@ -308,18 +318,21 @@ function StoreSettingsForm({
         className="boot-card store-settings-form"
         aria-label="Thông tin gian hàng hiện tại"
       >
+        <div className="seller-store-identity">{store.logo_url ? <span className="seller-store-avatar"><ProductImage src={store.logo_url} name={store.name} alt={'Ảnh đại diện '+store.name}/></span> : <span className="seller-store-avatar" aria-hidden="true">{store.name.trim().charAt(0).toLocaleUpperCase('vi-VN') || 'S'}</span>}<div><strong>{store.name}</strong><p>Gian hàng của bạn</p><UiButton variant="ghost" size="sm" onClick={()=>setEditing('logo')}>Sửa ảnh đại diện</UiButton></div></div>
         <dl className="read-only-fields">
           <div>
             <dt>Tên gian hàng</dt>
             <dd>{store.name}</dd>
+            <UiButton variant="ghost" size="sm" onClick={()=>setEditing('name')}>Sửa tên gian hàng</UiButton>
           </div>
           <div>
             <dt>Trạng thái</dt>
-            <dd>{store.status === "ACTIVE" ? "Đang hoạt động" : "Đã khóa"}</dd>
+            <dd><span className={'seller-status '+(store.status==='ACTIVE'?'is-active':'is-inactive')}>{store.status === "ACTIVE" ? "Đang hoạt động" : store.status==='LOCKED'?"Đã khóa":store.status}</span></dd>
           </div>
           <div>
             <dt>Phí giao hàng</dt>
-            <dd>{formatMoney(store.shipping_fee_vnd ?? 0)}</dd>
+            <dd>{store.shipping_fee_vnd===undefined?'Chưa có dữ liệu':formatMoney(store.shipping_fee_vnd)}</dd>
+            <UiButton variant="ghost" size="sm" onClick={()=>setEditing('shipping')}>Sửa phí giao hàng</UiButton>
           </div>
           <div>
             <dt>Địa chỉ nhận hàng trả</dt>
@@ -344,16 +357,18 @@ function StoreSettingsForm({
                 "Chưa hoàn thiện. Cần bổ sung trước khi nhận đơn mới."
               )}
             </dd>
+            <UiButton variant="ghost" size="sm" onClick={()=>setEditing('address')}>Sửa địa chỉ nhận trả</UiButton>
           </div>
         </dl>
-        <button type="button" onClick={() => setEditing(true)}>
-          Chỉnh sửa gian hàng
-        </button>
+        <UiButton variant="secondary" type="button" onClick={() => setEditing('all')}><Pencil size={15} aria-hidden="true" /> Chỉnh sửa gian hàng</UiButton>
         {command.notice && <p role="status">{command.notice}</p>}
       </section>
     );
   return (
     <form className="boot-card store-settings-form" onSubmit={submit}>
+      <h2>{editing==='name'?'Sửa tên gian hàng':editing==='shipping'?'Sửa phí giao hàng':editing==='address'?'Sửa địa chỉ nhận hàng trả':editing==='logo'?'Sửa ảnh đại diện':'Chỉnh sửa gian hàng'}</h2>
+      {editing==='logo' && <label>Đường dẫn ảnh đại diện<input autoFocus type="url" maxLength={2048} placeholder="https://..." value={logoUrl} disabled={command.busy || stale || reading} onChange={event=>setLogoUrl(event.target.value)} /><small>Nhập đường dẫn ảnh HTTP(S); để trống để gỡ ảnh.</small></label>}
+      {(editing==='all'||editing==='name')&&
       <label>
         Tên gian hàng
         <input
@@ -365,9 +380,12 @@ function StoreSettingsForm({
           onChange={(e) => setName(e.target.value)}
         />
       </label>
+      }
+      {(editing==='all'||editing==='shipping')&&
       <label>
         Phí giao hàng (VND)
         <input
+          autoFocus={editing === 'shipping'}
           required
           min={0}
           max={Number.MAX_SAFE_INTEGER}
@@ -378,6 +396,8 @@ function StoreSettingsForm({
           onChange={(e) => setShipping(Number(e.target.value))}
         />
       </label>
+      }
+      {(editing==='all'||editing==='address')&&
       <fieldset disabled={command.busy || stale || reading}>
         <legend>Địa chỉ nhận hàng trả</legend>
         <p>
@@ -394,6 +414,7 @@ function StoreSettingsForm({
             {label}
             <input
               required
+              autoComplete={key === 'recipient_name' ? 'name' : key === 'phone' ? 'tel' : key === 'line1' ? 'street-address' : 'address-level2'}
               maxLength={key === "line1" ? 500 : key === "phone" ? 30 : 200}
               value={returnAddress[key as keyof typeof returnAddress]}
               onChange={(e) =>
@@ -413,7 +434,7 @@ function StoreSettingsForm({
           }
         />
       </fieldset>
-      <p>Trạng thái: {store.status}</p>
+      }
       <div className="ui-actions">
         <button
           disabled={
@@ -429,6 +450,7 @@ function StoreSettingsForm({
           onClick={() => {
             setName(store.name);
             setShipping(store.shipping_fee_vnd ?? 0);
+            setLogoUrl(store.logo_url ?? '');
             setReturnAddress(
               store.return_address ?? {
                 recipient_name: "",
@@ -439,7 +461,7 @@ function StoreSettingsForm({
                 city: "",
               },
             );
-            setEditing(false);
+            setEditing(null);
           }}
         >
           Hủy thay đổi
@@ -520,16 +542,19 @@ export function StoreInventory() {
     [adjustmentNotice, setAdjustmentNotice] = useState(""),
     [selected, setSelected] =
       useState<OperationOutputs["listStoreInventory"]["items"][number]>();
+  const sortValue = params.get('sort');
+  const sort = sortValue === 'NAME_ASC' || sortValue === 'AVAILABLE_ASC' || sortValue === 'AVAILABLE_DESC' ? sortValue : undefined;
   const inventory = useQuery({
-    queryKey: ["store-inventory", page, filters],
+    queryKey: ["store-inventory", page, filters, sort],
     queryFn: ({ signal }) =>
       callOperation(
         "listStoreInventory",
-        { query: { page, size: 20, ...filters } },
+        { query: { page, size: 20, ...filters, ...(sort ? {sort} : {}) } },
         { signal },
       ),
     enabled: access.can("inventory.store.read_adjust"),
   });
+  const inventoryImages = useCurrentOrderImages(inventory.data?.items ?? []);
   const movements = useQuery({
     queryKey: ["store-stock-movements", movementsPage, filters, historyPeriod],
     queryFn: ({ signal }) =>
@@ -678,6 +703,7 @@ export function StoreInventory() {
         <>
           {view === "inventory" && (
             <>
+              <label className="seller-inventory-sort">Sắp xếp theo <select value={sort ?? ''} onChange={event=>setParams(current=>{const next=new URLSearchParams(current);if(event.target.value)next.set('sort',event.target.value);else next.delete('sort');next.set('page','1');return next;})}><option value="">Mặc định</option><option value="NAME_ASC">Tên sản phẩm</option><option value="AVAILABLE_ASC">Có thể bán: ít đến nhiều</option><option value="AVAILABLE_DESC">Có thể bán: nhiều đến ít</option></select></label>
               <div className="boot-card market-table-scroll">
                 <table>
                   <thead>
@@ -692,13 +718,14 @@ export function StoreInventory() {
                   <tbody>
                     {inventory.data.items.map((item) => (
                       <tr key={item.variant_id}>
-                        <td>{variantName(item)}</td>
+                        <td><div className="seller-inventory-identity">{inventoryImages.get(item.variant_id) && <div className="order-item-current-image"><ProductImage src={inventoryImages.get(item.variant_id)} name={item.product_title ?? 'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/><small>Ảnh hiện tại</small></div>}<span>{variantName(item)}</span></div></td>
                         <td>{item.quantity}</td>
                         <td>{item.reserved_quantity}</td>
                         <td>
                           <span className="market-badge">
                             {item.available_quantity}
                           </span>
+                          {item.available_quantity < 5 && <span className="seller-low-stock"> · Còn ít (dưới 5)</span>}
                         </td>
                         <td>
                           <button
@@ -839,9 +866,7 @@ export function StoreInventory() {
                                   : m.delta_reserved}
                             </td>
                             <td>
-                              {m.quantity_before == null
-                                ? "Lịch sử cũ chưa có mốc đối chiếu"
-                                : `${m.quantity_before} / ${m.reserved_before} → ${m.quantity_after} / ${m.reserved_after}`}
+                              {m.quantity_before == null ? "Lịch sử cũ chưa có mốc đối chiếu" : <div className="stock-change"><span>Tồn: {m.quantity_before} → {m.quantity_after}</span><span>Đang giữ: {m.reserved_before} → {m.reserved_after}</span></div>}
                             </td>
                             <td>
                               {m.order_id ? `Đơn ${m.order_id}` : "Điều chỉnh"}
@@ -1025,6 +1050,7 @@ function StockAdjustment({
           Tồn thương mại: {item.quantity}; đang giữ: {item.reserved_quantity};
           khả dụng: {item.available_quantity}.
         </p>
+        <p className="text-muted">Tồn thương mại là số lượng hệ thống đang quản lý; đang giữ là hàng dành cho đơn chưa xử lý xong; khả dụng là phần còn có thể bán.</p>
         <p>
           Đơn đã consume có thể chưa bàn giao. Khi kiểm kê thực tế, hãy đối
           chiếu các đơn đó trước; không nhập số đếm vật lý vào ô thay đổi.
@@ -1174,6 +1200,7 @@ export function StoreOrders() {
       <p className="text-slate-500">
         Chỉ các đơn thuộc gian hàng đang hoạt động của bạn.
       </p>
+      <OrderStatusTabs filters={filters} />
       <OrderListFilters filters={filters} />
       {detailError != null && <ErrorView error={detailError} />}{" "}
       {data.error ? (
@@ -1273,7 +1300,7 @@ function StoreOrderActions({
   return (
     <Modal label="Xử lý đơn Store" onClose={close} busy={command.busy}>
       <h2>Xử lý đơn hàng</h2>
-      <p>{order.id}</p>
+      <p>Mã đơn: <strong>#{order.id.slice(-8).toUpperCase()}</strong> <small>({order.id})</small></p>
       <p>
         Trạng thái: <strong>{orderStatusLabel(order.status)}</strong> ·{" "}
         {paymentMethodLabel(order.payment_method)}
@@ -1294,8 +1321,7 @@ function StoreOrderActions({
           · {refundStatusLabel(order.refund_status)}
         </p>
       )}
-      <OrderPackingSheet order={order} />
-      <OrderTimeline order={order} />
+      <div className="seller-order-layout"><div className="seller-order-information"><OrderPackingSheet order={order} /><OrderTimeline order={order} /></div><div className="seller-order-commands">
       {command.error != null && <ErrorView error={command.error} />}{" "}
       {command.notice && <p role="status">{command.notice}</p>}
       {stale && (
@@ -1331,6 +1357,7 @@ function StoreOrderActions({
       )}
       {["AWAITING_PAYMENT", "PENDING", "CONFIRMED"].includes(order.status) && (
         <form
+          className="seller-order-cancel"
           onSubmit={(e) => {
             e.preventDefault();
             run("cancel");
@@ -1380,6 +1407,7 @@ function StoreOrderActions({
           Ghi nhận giao thất bại / theo dõi hoàn về
         </Link>
       )}
+      </div></div>
       <div className="ui-actions">
         <button onClick={reload} disabled={command.busy}>
           Đọc lại đơn

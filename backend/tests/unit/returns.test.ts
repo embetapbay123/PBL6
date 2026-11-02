@@ -7,6 +7,13 @@ const buyer={user_id:'buyer'},owner={user_id:'owner',store_membership:{store_id:
 const request=(over:Record<string,unknown>={})=>({id:'request',order_id:'order',customer_user_id:'buyer',store_id:'store',inventory_status:'APPLIED',fault_party:'STORE',fee_payer:'STORE',type:'EXCHANGE',reason:'Sai kích thước',status:'RECEIVED',version:3,payment_method:'COD',payable_vnd:'100000',created_at:new Date('2026-10-28T00:00:00Z'),updated_at:new Date('2026-10-28T00:00:00Z'),...over});
 function locked(before:any){mockQuery.mockResolvedValueOnce([{order_id:'order'}]).mockResolvedValueOnce([{id:'order'}]).mockResolvedValueOnce([{id:'request'}]).mockResolvedValueOnce([before]);}
 beforeEach(()=>{mockQuery.mockReset();(audit as jest.Mock).mockClear();});
+test('Store return status is applied to count and page inside the current Store',async()=>{
+  mockQuery.mockResolvedValueOnce([{total:1}]).mockResolvedValueOnce([request({status:'REQUESTED'})]);
+  const result=await new ReturnsService().list(owner,'STORE',{page:2,size:10,status:'REQUESTED'});
+  expect(result).toMatchObject({total:1,page:2,items:[{status:'REQUESTED'}]});
+  expect(mockQuery.mock.calls[0][1]).toEqual([null,'store',null,'REQUESTED']);
+  expect(mockQuery.mock.calls[1][1]).toEqual([null,'store',null,'REQUESTED',10,10]);
+});
 test('Store and Admin permissions are enforced before querying',async()=>{
   const service=new ReturnsService();
   await expect(service.list({user_id:'staff',store_membership:{store_id:'store',role:'SELLER',status:'ACTIVE',permissions:[]}},'STORE',{})).rejects.toMatchObject({status:403});

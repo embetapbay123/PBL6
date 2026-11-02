@@ -63,6 +63,7 @@ export function OrderHistoryPage() {
               ![
                 "AWAITING_PAYMENT",
                 "PENDING",
+                "CONFIRMED",
                 "PROCESSING",
                 "SHIPPED",
                 "COMPLETED",

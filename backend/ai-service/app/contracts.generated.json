@@ -1996,6 +1996,11 @@
             "owner_display_name": {
               "type": "string",
               "maxLength": 400
+            },
+            "logo_url": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Ảnh đại diện hiện có của gian hàng, nếu được cấu hình."
             }
           },
           "required": [
@@ -2077,6 +2082,11 @@
                 "maxLength": 200
               }
             }
+          },
+          "logo_url": {
+            "type": "string",
+            "maxLength": 2048,
+            "description": "URL ảnh HTTP(S); chuỗi rỗng xóa ảnh đại diện."
           }
         },
         "required": [
@@ -2188,6 +2198,11 @@
             "owner_display_name": {
               "type": "string",
               "maxLength": 400
+            },
+            "logo_url": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Ảnh đại diện hiện có của gian hàng, nếu được cấu hình."
             }
           },
           "required": [
@@ -5471,6 +5486,14 @@
           "variant_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "NAME_ASC",
+              "AVAILABLE_ASC",
+              "AVAILABLE_DESC"
+            ]
           }
         },
         "required": [],
@@ -12790,6 +12813,11 @@
                   "owner_display_name": {
                     "type": "string",
                     "maxLength": 400
+                  },
+                  "logo_url": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "description": "Ảnh đại diện hiện có của gian hàng, nếu được cấu hình."
                   }
                 },
                 "required": [
@@ -12960,6 +12988,11 @@
             "owner_display_name": {
               "type": "string",
               "maxLength": 400
+            },
+            "logo_url": {
+              "type": "string",
+              "maxLength": 2048,
+              "description": "Ảnh đại diện hiện có của gian hàng, nếu được cấu hình."
             }
           },
           "required": [
@@ -17086,6 +17119,24 @@
                   "updated_at": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "unread_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Unread customer messages in the shared Store inbox."
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  },
+                  "last_order_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Đơn gần nhất được gắn rõ ràng trong hội thoại; không suy đoán sản phẩm."
+                  },
+                  "last_product_mention": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Tên sản phẩm do khách tự gửi gần nhất, không phải dữ liệu catalog xác thực."
                   }
                 },
                 "required": [
@@ -17110,6 +17161,11 @@
             "size": {
               "type": "integer",
               "minimum": 1
+            },
+            "unread_total": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Unread customer messages across non-archived Store conversations."
             }
           },
           "required": [
@@ -17275,6 +17331,14 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "q": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "archived": {
+            "type": "boolean",
+            "default": false
           }
         },
         "required": [],
@@ -17323,6 +17387,24 @@
                   "updated_at": {
                     "type": "string",
                     "format": "date-time"
+                  },
+                  "unread_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Unread customer messages in the shared Store inbox."
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  },
+                  "last_order_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Đơn gần nhất được gắn rõ ràng trong hội thoại; không suy đoán sản phẩm."
+                  },
+                  "last_product_mention": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Tên sản phẩm do khách tự gửi gần nhất, không phải dữ liệu catalog xác thực."
                   }
                 },
                 "required": [
@@ -17347,6 +17429,11 @@
             "size": {
               "type": "integer",
               "minimum": 1
+            },
+            "unread_total": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Unread customer messages across non-archived Store conversations."
             }
           },
           "required": [
@@ -17496,6 +17583,24 @@
                 "updated_at": {
                   "type": "string",
                   "format": "date-time"
+                },
+                "unread_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Unread customer messages in the shared Store inbox."
+                },
+                "archived": {
+                  "type": "boolean"
+                },
+                "last_order_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Đơn gần nhất được gắn rõ ràng trong hội thoại; không suy đoán sản phẩm."
+                },
+                "last_product_mention": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "description": "Tên sản phẩm do khách tự gửi gần nhất, không phải dữ liệu catalog xác thực."
                 }
               },
               "required": [
@@ -17760,6 +17865,24 @@
                 "updated_at": {
                   "type": "string",
                   "format": "date-time"
+                },
+                "unread_count": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Unread customer messages in the shared Store inbox."
+                },
+                "archived": {
+                  "type": "boolean"
+                },
+                "last_order_id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Đơn gần nhất được gắn rõ ràng trong hội thoại; không suy đoán sản phẩm."
+                },
+                "last_product_mention": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "description": "Tên sản phẩm do khách tự gửi gần nhất, không phải dữ liệu catalog xác thực."
                 }
               },
               "required": [
@@ -19121,6 +19244,17 @@
           "order_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "REQUESTED",
+              "APPROVED",
+              "REJECTED",
+              "RECEIVED",
+              "EXCHANGE_SENT",
+              "COMPLETED"
+            ]
           }
         },
         "required": [],
@@ -23784,6 +23918,24 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100
+            },
+            "summary": {
+              "type": "object",
+              "description": "Tổng theo phạm vi lọc trước phân trang.",
+              "required": [
+                "open",
+                "awaiting_inspection"
+              ],
+              "properties": {
+                "open": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "awaiting_inspection": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
             }
           },
           "required": [
@@ -24038,6 +24190,24 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100
+            },
+            "summary": {
+              "type": "object",
+              "description": "Tổng theo phạm vi lọc trước phân trang.",
+              "required": [
+                "open",
+                "awaiting_inspection"
+              ],
+              "properties": {
+                "open": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "awaiting_inspection": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
             }
           },
           "required": [
@@ -29638,6 +29808,157 @@
               "minimum": 0
             }
           }
+        }
+      }
+    },
+    "markStoreConversationRead": {
+      "method": "POST",
+      "route": "/store/conversations/{id}/read",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "archived": {
+              "type": "boolean"
+            },
+            "unread_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "id",
+            "archived",
+            "unread_count"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "archiveStoreConversation": {
+      "method": "POST",
+      "route": "/store/conversations/{id}/archive",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "archived": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "archived"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "archived": {
+              "type": "boolean"
+            },
+            "unread_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "id",
+            "archived",
+            "unread_count"
+          ],
+          "additionalProperties": false
         }
       }
     },

@@ -337,7 +337,7 @@ export function ProductDetail() {
                 prefix="Gian hàng: "
                 className="ui-button ui-button-secondary"
               />
-              <ContactStoreButton storeId={product.store_id} />
+              <ContactStoreButton storeId={product.store_id} product={product.id ? {id:product.id,title:product.title} : undefined} />
             </div>
           )}
           {product.review_summary && (

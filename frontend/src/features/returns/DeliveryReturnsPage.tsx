@@ -24,6 +24,7 @@ import { useCommand, useStoreAccess } from "../../live/useLiveData";
 import { CodRefundForm } from "./CodRefundForm";
 import { ContactStoreButton } from "../customer/ContactStoreButton";
 import { InspectionSummary } from "../../components/InspectionSummary";
+import {useCurrentOrderImages} from '../../components/useCurrentOrderImages';
 type Case = OperationOutputs["getOwnDeliveryReturn"];
 type Line = OperationInputs["inspectDeliveryReturn"]["body"]["lines"][number];
 type Command = { operation_id: string };
@@ -150,6 +151,7 @@ export function DeliveryCaseView({
   children?: ReactNode;
   scope?: "CUSTOMER" | "STORE" | "ADMIN";
 }) {
+  const images=useCurrentOrderImages(record.items);
   return (
     <article className="boot-card">
       <h2>
@@ -173,6 +175,7 @@ export function DeliveryCaseView({
         ))}
       </ol>
       <p>Lý do: {record.reason}</p>
+      <div className="delivery-case-items">{record.items.map(item=><OrderItemIdentity key={item.order_item_id} item={item} currentImage={images.get(item.variant_id)}/>)}</div>
       <p>
         Hàng:{" "}
         {record.inventory_status === "APPLIED"
@@ -208,9 +211,10 @@ export function DeliveryCaseView({
           {record.last_error === "MONEY_SETTLEMENT_PENDING"
             ? "Tồn đã được xác nhận; đang chờ giải quyết tiền trước khi đóng."
             : "Chưa thể hoàn tất đối chiếu. Hồ sơ vẫn mở; cần đọc lại hoặc liên hệ hỗ trợ."}{" "}
-          Mã đối chiếu: {record.id} / {record.last_error}
+          Mã hồ sơ: {record.id}
         </p>
       )}
+      {record.last_error && scope === 'ADMIN' && <details><summary>Thông tin hỗ trợ kỹ thuật</summary><code>{record.last_error}</code></details>}
       <AfterSaleHistory
         orderId={record.order_id}
         scope={scope}
@@ -321,10 +325,12 @@ export function DeliveryReturnsPage({ admin = false }: { admin?: boolean }) {
   return (
     <section>
       <h1>Giao thất bại và hoàn về</h1>
+      <div className="seller-refresh-bar"><button onClick={()=>{setPolling(true);void refresh();}} disabled={data.isFetching}>Làm mới hồ sơ</button></div>
       <p>
         Nhận và kiểm hàng thực tế, đối chiếu tồn / tiền rồi mới đóng hồ sơ.
         Không dùng hủy đơn thông thường để hoàn lại toàn bộ tồn.
       </p>
+      {data.data?.summary && <div className="delivery-return-summary" aria-label={orderId ? 'Tổng hồ sơ của đơn' : 'Tổng hồ sơ trong phạm vi hiện tại'}><div><strong>{data.data.summary.open}</strong><span>Hồ sơ chưa đóng</span></div><div><strong>{data.data.summary.awaiting_inspection}</strong><span>Chờ nhận và kiểm hàng</span></div></div>}
       {data.error ? (
         <ErrorView error={data.error} onRetry={() => void data.refetch()} />
       ) : data.isPending ? (
@@ -421,15 +427,6 @@ export function DeliveryReturnsPage({ admin = false }: { admin?: boolean }) {
           )}
         </>
       )}
-      <button
-        onClick={() => {
-          setPolling(true);
-          void refresh();
-        }}
-        disabled={data.isFetching}
-      >
-        Làm mới hồ sơ
-      </button>
       {!polling && (
         <p>
           Tạm dừng cập nhật tự động. Bấm Làm mới hồ sơ để xem tiến trình mới
@@ -656,7 +653,7 @@ function Inspection({
           >
             <legend>Mục {index + 1}</legend>
             <OrderItemIdentity item={{ ...item, id: item.order_item_id }} />
-            {Object.entries({
+            <div className="inspection-quantities">{Object.entries({
               received_quantity: "Thực nhận",
               resellable_quantity: "Đủ điều kiện bán lại",
               damaged_quantity: "Hỏng / không bán lại",
@@ -692,7 +689,7 @@ function Inspection({
                   }
                 />
               </label>
-            ))}
+            ))}</div>
           </fieldset>
         ))}
         <label>

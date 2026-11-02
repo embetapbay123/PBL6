@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Req, UseGuards, HttpCode } from '@nestjs/common';
 import { AuthGuard, Roles } from '../../../shared/src/auth';
 import { MessagingService } from './messaging.service';
 
@@ -10,7 +10,11 @@ export class MessagingController {
   @Get('me/conversations') @Roles('CUSTOMER')
   ownList(@Req() request:any){const {page,size}=request.contract.query;return this.service.list(request.auth,'CUSTOMER',page,size);}
   @Get('store/conversations') @Roles('STORE_OWNER','SELLER')
-  storeList(@Req() request:any){const {page,size}=request.contract.query;return this.service.list(request.auth,'STORE',page,size);}
+  storeList(@Req() request:any){const {page,size,q,archived}=request.contract.query;return this.service.list(request.auth,'STORE',page,size,q,archived);}
+  @Post('store/conversations/:id/read') @HttpCode(200) @Roles('STORE_OWNER','SELLER')
+  read(@Param('id') id:string,@Req() request:any){return this.service.markRead(id,request.contract.body.message_id,request.auth);}
+  @Post('store/conversations/:id/archive') @HttpCode(200) @Roles('STORE_OWNER','SELLER')
+  archive(@Param('id') id:string,@Req() request:any){return this.service.archive(id,request.contract.body.archived,request.auth);}
   @Get('me/conversations/:id/messages') @Roles('CUSTOMER')
   ownHistory(@Param('id') id:string,@Req() request:any){const {page,size}=request.contract.query;return this.service.history(id,request.auth,'CUSTOMER',page,size);}
   @Get('store/conversations/:id/messages') @Roles('STORE_OWNER','SELLER')

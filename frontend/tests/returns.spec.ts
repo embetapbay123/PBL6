@@ -3,6 +3,12 @@ import {readFileSync} from 'node:fs';
 const fixtures=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
 const order='64000000-0000-4000-8000-000000000001',id='64000000-0000-4000-8000-000000000002';
 const request={inventory_status:'APPLIED',exchange_status:'NOT_STARTED',fault_party:'STORE',fee_payer:'STORE',items:[],id,order_id:order,type:'EXCHANGE',reason:'Sai kích thước',status:'REQUESTED',version:0,payment_method:'COD',amount_vnd:100000,created_at:'2026-10-28T00:00:00Z',updated_at:'2026-10-28T00:00:00Z'};
+test('Seller status filter requests the complete Store feed and survives reload',async({page})=>{
+ const reads:string[]=[];page.on('request',r=>{if(new URL(r.url()).pathname==='/api/v1/store/returns')reads.push(r.url());});
+ await setup(page,{seller:true});await page.getByRole('navigation',{name:'Lọc trạng thái đổi trả'}).getByRole('button',{name:'Chờ duyệt'}).click();
+ await expect(page).toHaveURL(/status=REQUESTED/);await expect.poll(()=>reads.some(url=>new URL(url).searchParams.get('status')==='REQUESTED')).toBe(true);
+ await page.reload();await expect(page.getByRole('navigation',{name:'Lọc trạng thái đổi trả'}).getByRole('button',{name:'Chờ duyệt'})).toHaveAttribute('aria-pressed','true');
+});
 async function setup(page:Page,{seller=false,initial=request,conflict=false,failList=false}:{seller?:boolean;initial?:typeof request;conflict?:boolean;failList?:boolean}={}){
   let row={...initial},conflicted=false;const writes:unknown[]=[];
   await page.route('**/api/v1/**',route=>{

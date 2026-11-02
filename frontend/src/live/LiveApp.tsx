@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { AuthProvider, useAuth } from "../api/auth-context";
 import { api, sessionScope } from "../api/client";
-import { dataMode } from "../api/operations";
+import { dataMode, callOperation } from "../api/operations";
 import { customerRoutes } from "../features/customer/routes";
 import { sellerRoutes } from "../features/seller/routes";
 import { adminRoutes } from "../features/admin/routes";
@@ -46,6 +46,7 @@ import { AuthPage } from "../features/customer/auth/AuthPage";
 import { ToastProvider } from "../components/ToastProvider";
 import { ChatProvider } from "../chat/ChatProvider";
 import { ChatCenter } from "../chat/ChatCenter";
+import { SellerChatLauncher } from "../chat/SellerChatLauncher";
 import { ErrorView, Loading } from "../bootstrap/components";
 import "../bootstrap/bootstrap.css";
 import "./commerce.css";
@@ -310,6 +311,7 @@ function Market() {
     location.pathname === "/profile";
   const can = (code: string) =>
     owner || !!membership?.permissions?.includes(code);
+  const unreadMessages=useQuery({queryKey:['store-unread',session?.context?.user_id,membership?.store_id],enabled:portal==='seller'&&membership?.status==='ACTIVE'&&!!membership.store_id&&can('order.store.read_status_cancel'),queryFn:()=>callOperation('listStoreConversations',{query:{page:1,size:1}}),refetchInterval:15000,refetchIntervalInBackground:false,retry:false});
   return (
     <div
       className={
@@ -368,13 +370,14 @@ function Market() {
               .map(([to, label, Icon]) => (
                 <NavLink
                   key={to}
-                  aria-label={label}
+                  aria-label={to==='/seller/messages'&&unreadMessages.data?.unread_total?`${label} · ${unreadMessages.data.unread_total} tin chưa đọc`:label}
                   title={label}
                   end={to === "/seller"}
                   to={to}
                 >
                   <Icon size={17} />
                   <span>{label}</span>
+                  {to==='/seller/messages'&&!!unreadMessages.data?.unread_total&&<span aria-hidden="true" className="chat-unread-badge">{unreadMessages.data.unread_total>99?'99+':unreadMessages.data.unread_total}</span>}
                 </NavLink>
               ))}
           </aside>
@@ -473,6 +476,7 @@ function Market() {
         </main>
       </div>
       <ChatCenter />
+      {portal === 'seller' && membership?.status === 'ACTIVE' && membership.store_id && can('order.store.read_status_cancel') && !location.pathname.startsWith('/seller/messages') && <SellerChatLauncher key={`${session?.context?.user_id}:${membership.store_id}`} unread={unreadMessages.data?.unread_total}/>}
       <footer className="border-t border-slate-200 bg-white mt-16">
         <div className="market-width py-8 flex flex-wrap justify-between gap-4">
           <div>

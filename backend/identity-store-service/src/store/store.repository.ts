@@ -17,6 +17,7 @@ interface StoreApplicationRow {
 }
 
 interface StoreUpdateRow {
+  logo_url?: string | null;
   return_address?: Record<string,string> | null;
   id: string;
   name: string;
@@ -181,7 +182,7 @@ export class StoreRepository {
 
   async getOwnStore(userId: string) {
     const [row] = await this.source.query(
-      `SELECT s.id, owner.user_id AS owner_user_id, s.name, s.status, s.shipping_fee_vnd, s.version, s.return_address
+      `SELECT s.id, owner.user_id AS owner_user_id, s.name, s.status, s.shipping_fee_vnd, s.version, s.return_address, s.logo_url
        FROM store s
        JOIN store_membership m ON m.store_id=s.id AND m.user_id=$1 AND m.status='ACTIVE'
        JOIN store_membership owner ON owner.store_id=s.id AND owner.role='OWNER' AND owner.status='ACTIVE'
@@ -198,6 +199,7 @@ export class StoreRepository {
       owner_user_id: row.owner_user_id,
       name: row.name,
       status: row.status,
+      ...(row.logo_url ? {logo_url:row.logo_url} : {}),
       ...(row.return_address ? {return_address:row.return_address} : {}),
       shipping_fee_vnd: Number(row.shipping_fee_vnd),
       version: row.version,
@@ -206,7 +208,7 @@ export class StoreRepository {
 
   async updateOwnStore(
     userId: string,
-    input: { name?: string; description?: string; shipping_fee_vnd?: number; return_address?: Record<string,string>; expected_version: number },
+    input: { name?: string; description?: string; shipping_fee_vnd?: number; return_address?: Record<string,string>; logo_url?: string; expected_version: number },
     correlationId: string
   ) {
     return this.source.transaction(async manager => {
@@ -228,12 +230,18 @@ export class StoreRepository {
       const description = input.description !== undefined ? input.description : store.description;
       const shippingFee = input.shipping_fee_vnd !== undefined ? input.shipping_fee_vnd : store.shipping_fee_vnd;
       const returnAddress=input.return_address ?? store.return_address;
+      let logoUrl=store.logo_url;
+      if(input.logo_url !== undefined){
+        const value=input.logo_url.trim();
+        if(value){try{const url=new URL(value);if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error('invalid');}catch{throw new ApiError(422,'STORE_LOGO_INVALID','Địa chỉ ảnh phải là URL HTTP hoặc HTTPS hợp lệ.');}}
+        logoUrl=value || null;
+      }
       if(input.return_address && ['recipient_name','phone','line1','ward','district','city'].some(key=>!input.return_address![key]?.trim()))throw new ApiError(422,'RETURN_ADDRESS_REQUIRED','Cần đầy đủ thông tin địa chỉ nhận trả.');
       const newVersion = store.version + 1;
 
       const updated = returnedRow<StoreUpdateRow>(await manager.query(
-        `UPDATE store SET name=$1, description=$2, shipping_fee_vnd=$3, version=$4,return_address=$6 WHERE id=$5 RETURNING *`,
-        [name, description, shippingFee, newVersion, store.id, returnAddress ?? null]
+        `UPDATE store SET name=$1, description=$2, shipping_fee_vnd=$3, version=$4,return_address=$6,logo_url=$7 WHERE id=$5 RETURNING *`,
+        [name, description, shippingFee, newVersion, store.id, returnAddress ?? null, logoUrl]
       ));
       if (!updated) throw new Error('Store update returned no row');
 
@@ -249,7 +257,7 @@ export class StoreRepository {
           shipping_fee_vnd: Number(store.shipping_fee_vnd), status: store.status, version: store.version },
         { id: updated.id, name: updated.name, description: updated.description,
           ...(updated.return_address ? {return_address:updated.return_address} : {}),
-        shipping_fee_vnd: Number(updated.shipping_fee_vnd), status: updated.status, version: updated.version, return_address_changed:JSON.stringify(store.return_address ?? null)!==JSON.stringify(updated.return_address ?? null) }
+        shipping_fee_vnd: Number(updated.shipping_fee_vnd), status: updated.status, version: updated.version, logo_changed:store.logo_url!==updated.logo_url, return_address_changed:JSON.stringify(store.return_address ?? null)!==JSON.stringify(updated.return_address ?? null) }
       );
 
       return {
@@ -257,6 +265,7 @@ export class StoreRepository {
         owner_user_id: userId,
         name: updated.name,
         status: updated.status,
+        ...(updated.logo_url ? {logo_url:updated.logo_url} : {}),
         ...(updated.return_address ? {return_address:updated.return_address} : {}),
         shipping_fee_vnd: Number(updated.shipping_fee_vnd),
         version: updated.version,

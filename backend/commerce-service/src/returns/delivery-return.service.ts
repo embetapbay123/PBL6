@@ -37,9 +37,9 @@ export class DeliveryReturnService {
   if(admin){if(!auth?.roles?.includes('ADMIN')||!auth.role_permissions?.includes('platform.admin'))throw new ApiError(403,'FORBIDDEN','Cần quyền quản trị hiện hành.');}
   else store=this.scope(auth);
   const page=query.page??1,size=query.size??20;
-  const [count]=await this.source.query('SELECT count(*)::int AS total FROM delivery_return_case c JOIN "order" o ON o.id=c.order_id WHERE ($1::uuid IS NULL OR o.store_id=$1) AND ($2::uuid IS NULL OR o.id=$2)',[store,query.order_id??null]);
+  const [count]=await this.source.query(`SELECT count(*)::int AS total, count(*) FILTER (WHERE c.status <> 'CLOSED')::int AS open, count(*) FILTER (WHERE c.status = 'OPEN')::int AS awaiting_inspection FROM delivery_return_case c JOIN "order" o ON o.id=c.order_id WHERE ($1::uuid IS NULL OR o.store_id=$1) AND ($2::uuid IS NULL OR o.id=$2)`,[store,query.order_id??null]);
   const rows=await this.source.query('SELECT c.id FROM delivery_return_case c JOIN "order" o ON o.id=c.order_id WHERE ($1::uuid IS NULL OR o.store_id=$1) AND ($2::uuid IS NULL OR o.id=$2) ORDER BY c.updated_at DESC,c.id LIMIT $3 OFFSET $4',[store,query.order_id??null,size,(page-1)*size]);
-  return {page,size,total:count.total,items:await Promise.all(rows.map((row:any)=>this.view(this.source.manager,row.id)))};
+  return {page,size,total:count.total,summary:{open:count.open,awaiting_inspection:count.awaiting_inspection},items:await Promise.all(rows.map((row:any)=>this.view(this.source.manager,row.id)))};
  }
  async own(orderId:string,auth:any) {
   if(!auth?.user_id)throw new ApiError(401,'UNAUTHENTICATED','Vui lòng đăng nhập.');

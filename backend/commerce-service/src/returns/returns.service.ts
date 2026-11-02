@@ -32,12 +32,12 @@ export class ReturnsService {
     const allowed=this.scope(auth,scope);
     if(!row || (allowed.customer&&row.customer_user_id!==allowed.customer) || (allowed.store&&row.store_id!==allowed.store))throw new ApiError(404,'NOT_FOUND','Không tìm thấy yêu cầu thuộc phạm vi của bạn.');
   }
-  async list(auth:any,scope:Scope,query:{page?:number;size?:number;order_id?:string}){
+  async list(auth:any,scope:Scope,query:{page?:number;size?:number;order_id?:string;status?:string}){
     const allowed=this.scope(auth,scope),page=query.page ?? 1,size=query.size ?? 20;
-    const args=[allowed.customer,allowed.store,query.order_id ?? null];
-    const where=' WHERE ($1::uuid IS NULL OR o.customer_user_id=$1) AND ($2::uuid IS NULL OR o.store_id=$2) AND ($3::uuid IS NULL OR o.id=$3)';
+    const args=[allowed.customer,allowed.store,query.order_id ?? null,scope==='STORE'?query.status ?? null:null];
+    const where=' WHERE ($1::uuid IS NULL OR o.customer_user_id=$1) AND ($2::uuid IS NULL OR o.store_id=$2) AND ($3::uuid IS NULL OR o.id=$3) AND ($4::text IS NULL OR r.status::text=$4)';
     const [count]=await this.db.manager.query('SELECT count(*)::int AS total FROM order_return_request r JOIN "order" o ON o.id=r.order_id'+where,args);
-    const rows=await this.db.manager.query(projection+where+' ORDER BY r.updated_at DESC,r.id LIMIT $4 OFFSET $5',[...args,size,(page-1)*size]);
+    const rows=await this.db.manager.query(projection+where+' ORDER BY r.updated_at DESC,r.id LIMIT $5 OFFSET $6',[...args,size,(page-1)*size]);
     return {items:rows.map((row:any)=>({...map(row),...(scope==='ADMIN'?{admin_context:{store_id:row.store_id,customer_user_id:row.customer_user_id,order_created_at:new Date(row.order_created_at).toISOString(),order_status:row.order_status,...(row.payment_status?{payment_status:row.payment_status}:{}),...(row.collected_vnd==null?{}:{collected_vnd:moneyNumber(row.collected_vnd)}),...(row.refunded_vnd==null?{}:{refunded_vnd:moneyNumber(row.refunded_vnd)})}}:{})})),page,size,total:count.total};
   }
   async create(orderId:string,input:{type:'REFUND'|'EXCHANGE';reason:string;expected_order_version:number},auth:any,trace:string){

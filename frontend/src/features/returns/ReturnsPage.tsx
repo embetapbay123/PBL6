@@ -1,4 +1,4 @@
-import {Link} from "react-router-dom";
+import {Link,useSearchParams} from "react-router-dom";
 import { ReturnActions } from "./ReturnActions";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import { ReturnRequestView, type ReturnRequest } from "./ReturnRequestView";
 import { useAdminParties } from "../admin/AdminParties";
 import { AdminReturnContext } from "./AdminReturnContext";
 import { CustomerSubNav } from "../customer/CustomerSubNav";
+import type {OperationInputs} from '../../api/operations.generated';
 type Scope = "CUSTOMER" | "STORE" | "ADMIN";
 export function ReturnsPage({ scope }: { scope: Scope }) {
   const { session } = useAuth(),
@@ -32,6 +33,10 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
           (member.role === "OWNER" ||
             !!member.permissions?.includes("order.store.read_status_cancel"));
   const [polling, setPolling] = useState(true);
+  const [params,setParams]=useSearchParams();
+  const statuses=['REQUESTED','APPROVED','REJECTED','RECEIVED','EXCHANGE_SENT','COMPLETED'] as const;
+  const statusFilter:NonNullable<OperationInputs['listStoreReturnRequests']['query']['status']>|''=scope==='STORE'?statuses.find(status=>status===params.get('status'))??'':'';
+  useEffect(()=>{setPage(1)},[statusFilter]);
   useEffect(() => {
     if (!polling) return;
     const timer = setTimeout(() => setPolling(false), 60000);
@@ -47,7 +52,7 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
       )
         ? 3000
         : false,
-    queryKey: ["return-requests", scope, page],
+    queryKey: ["return-requests", scope, page, statusFilter],
     enabled: allowed,
     refetchOnWindowFocus: false,
     queryFn: () =>
@@ -55,11 +60,16 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
         ? callOperation("listOwnReturnRequests", { query: { page, size: 20 } })
         : scope === "STORE"
           ? callOperation("listStoreReturnRequests", {
-              query: { page, size: 20 },
+              query: { page, size: 20, ...(statusFilter?{status:statusFilter}:{}) },
             })
           : callOperation("listAdminReturnRequests", {
               query: { page, size: 20 },
             }),
+  });
+  const waiting = useQuery({
+    queryKey: ['return-requests', 'STORE', 'waiting-count'],
+    enabled: allowed && scope === 'STORE',
+    queryFn: () => callOperation('listStoreReturnRequests', {query: {page: 1, size: 1, status: 'REQUESTED'}}),
   });
   const parties = useAdminParties(
     query.data?.items.map((r) => r.admin_context?.store_id) ?? [],
@@ -102,6 +112,9 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
           ? "Yêu cầu đổi trả của tôi"
           : "Quản lý yêu cầu đổi trả"}
       </h1>
+      <div className="seller-refresh-bar"><button type="button" disabled={query.isFetching || waiting.isFetching} onClick={() => { setPolling(true); void query.refetch(); if(scope==='STORE')void waiting.refetch(); }}>Làm mới yêu cầu</button></div>
+      {scope === 'STORE' && <p role="status">Chờ xét duyệt: {waiting.isLoading ? 'đang tải' : waiting.error ? 'không tải được' : waiting.data?.total ?? '—'}</p>}
+      {scope === "STORE" && <nav className="order-status-tabs" aria-label="Lọc trạng thái đổi trả">{([['','Tất cả'],['REQUESTED','Chờ duyệt'],['APPROVED','Đã duyệt'],['RECEIVED','Đã nhận hàng'],['EXCHANGE_SENT','Đã gửi hàng đổi'],['COMPLETED','Hoàn tất'],['REJECTED','Đã từ chối']] as const).map(([value,label])=><button key={value} type="button" aria-pressed={statusFilter===value} onClick={()=>{setPage(1);setParams(current=>{const next=new URLSearchParams(current);value?next.set('status',value):next.delete('status');return next;});}}>{label}</button>)}</nav>}
       {query.isLoading && <Loading />}
       {query.error && (
         <ErrorView error={query.error} onRetry={() => void query.refetch()} />
@@ -178,15 +191,6 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
           />
         </>
       )}
-      <button
-        disabled={query.isFetching}
-        onClick={() => {
-          setPolling(true);
-          void query.refetch();
-        }}
-      >
-        Làm mới yêu cầu
-      </button>
       {polling && (
         <p className="form-hint">
           Yêu cầu đang chờ xử lý được tự cập nhật trong tối đa 60 giây. Có thể

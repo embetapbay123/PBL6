@@ -1,6 +1,6 @@
-import { FormEvent, useLayoutEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../api/auth-context";
 import { ApiError } from "../api/client";
 import { callOperation } from "../api/operations";
@@ -45,7 +45,13 @@ export function MessagesWorkspace({
         (member.role === "OWNER" ||
           !!member.permissions?.includes("order.store.read_status_cancel"));
   const [listPage, setListPage] = useState(1),
+    [searchDraft,setSearchDraft]=useState(''),[search,setSearch]=useState(''),
+    [compactArchived,setCompactArchived]=useState(false),[archiveBusy,setArchiveBusy]=useState(false),[archiveBlocked,setArchiveBlocked]=useState(false),[archiveError,setArchiveError]=useState<unknown>(),[readError,setReadError]=useState<unknown>(),[readRetry,setReadRetry]=useState(0),[visible,setVisible]=useState(()=>document.visibilityState==='visible'),
     [messagePages, setMessagePages] = useState<Record<string, number>>({});
+  const cache=useQueryClient(),navigate=useNavigate(),marked=useRef('');
+  const [urlParams,setUrlParams]=useSearchParams();
+  const showArchived=scope==='STORE' && (compact ? compactArchived : urlParams.get('archived')==='true');
+  useEffect(()=>{const update=()=>setVisible(document.visibilityState==='visible');document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update);},[]);
   const conversationKey = scope + ":" + id,
     messagePage = messagePages[conversationKey] ?? 1;
   const setMessagePage = (page: number) =>
@@ -56,7 +62,7 @@ export function MessagesWorkspace({
   const setDraft = (draft: string) => chat.patch(scope + ":" + id, { draft });
   const base = scope === "CUSTOMER" ? "/customer/messages" : "/seller/messages";
   const threads = useQuery({
-    queryKey: ["conversations", scope, listPage],
+    queryKey: ["conversations", scope, listPage, search, showArchived],
     enabled: allowed && active,
     refetchInterval: active ? 10000 : false,
     queryFn: () =>
@@ -65,7 +71,7 @@ export function MessagesWorkspace({
             query: { page: listPage, size: 20 },
           })
         : callOperation("listStoreConversations", {
-            query: { page: listPage, size: 20 },
+            query: { page: listPage, size: 20, ...(search?{q:search}:{}),...(showArchived?{archived:true}:{}) },
           }),
   });
   const messages = useQuery({
@@ -113,6 +119,14 @@ export function MessagesWorkspace({
     } else if (position.current?.latest !== latest) setNewMessages(true);
     position.current = { key: historyKey, latest };
   }, [historyKey, messages.data]);
+  useEffect(()=>{
+    const newest=messages.data?.items[0]?.id;
+    if(scope!=='STORE'||!id||!active||!visible||messagePage!==1||!newest||messages.error||!following.current||threads.data?.unread_total===undefined)return;
+    const key=id+':'+newest+':'+readRetry;if(marked.current===key)return;marked.current=key;let alive=true;
+    callOperation('markStoreConversationRead',{path:{id},body:{message_id:newest}}).then(()=>{if(!alive)return;setReadError(undefined);void cache.invalidateQueries({queryKey:['conversations','STORE']});void cache.invalidateQueries({queryKey:['store-unread']});}).catch(error=>{if(alive)setReadError(error);});
+    return()=>{alive=false;};
+  },[scope,id,active,visible,messagePage,messages.data,messages.error,threads.data?.unread_total,readRetry,newMessages,cache]);
+  useEffect(()=>{setArchiveError(undefined);setArchiveBlocked(false);setReadError(undefined);},[id]);
   function followLatest() {
     const element = log.current;
     if (element) {
@@ -155,6 +169,12 @@ export function MessagesWorkspace({
       ? selected.store_name
       : selected.customer_name
     : (rememberedName ?? "Hội thoại");
+  const selectedThread=threads.data?.items.find(thread=>thread.id===id);
+  async function archiveThread(){
+    if(!id||!selectedThread||archiveBusy||archiveBlocked)return;setArchiveBusy(true);setArchiveError(undefined);
+    try{await callOperation('archiveStoreConversation',{path:{id},body:{archived:!selectedThread.archived}});await Promise.all([cache.invalidateQueries({queryKey:['conversations','STORE']}),cache.invalidateQueries({queryKey:['store-unread']})]);onSelect?onSelect(''):navigate(base);}
+    catch(error){setArchiveError(error);setArchiveBlocked(true);}finally{setArchiveBusy(false);}
+  }
   return (
     <section
       className={
@@ -182,6 +202,8 @@ export function MessagesWorkspace({
             <h2>Hội thoại</h2>
             <span>{threads.data?.total ?? "—"}</span>
           </div>
+          {scope==='STORE'&&<form className="chat-contact-search" onSubmit={event=>{event.preventDefault();setListPage(1);setSearch(searchDraft.trim());}}><label htmlFor="chat-customer-search">Tìm khách hàng</label><div><input id="chat-customer-search" type="search" maxLength={200} value={searchDraft} onChange={event=>setSearchDraft(event.target.value)} placeholder="Tên hoặc email khách"/><button type="submit">Tìm</button></div></form>}
+          {scope==='STORE'&&threads.data?.unread_total!==undefined&&<button type="button" className="chat-archive-toggle" aria-pressed={showArchived} onClick={()=>{setListPage(1);if(compact){setCompactArchived(value=>!value);onSelect?.('');return;}const next=new URLSearchParams(urlParams);if(showArchived)next.delete('archived');else next.set('archived','true');setUrlParams(next);}}>{showArchived?'Xem hội thoại đang hoạt động':'Xem hội thoại đã lưu trữ'}</button>}
           <div className="chat-thread-list">
             {threads.isLoading && <Loading />}
             {threads.error && (
@@ -194,11 +216,11 @@ export function MessagesWorkspace({
               (!threads.data.items.length ? (
                 <div className="chat-sidebar-empty">
                   <MessageSquare size={24} />
-                  <p>Chưa có hội thoại.</p>
-                  <small>
+                  <p>{search?'Không tìm thấy khách hàng phù hợp.':'Chưa có hội thoại.'}</p>
+                  {scope === "CUSTOMER" && <small>
                     Mở sản phẩm hoặc gian hàng rồi chọn Nhắn tin gian hàng để
                     bắt đầu.
-                  </small>
+                  </small>}
                   {scope === "CUSTOMER" && (
                     <Link to="/" onClick={() => chat.closeChat()}>
                       Khám phá sản phẩm →
@@ -223,7 +245,7 @@ export function MessagesWorkspace({
                             setMessagePage(1);
                           }
                         }}
-                        to={base + "/" + thread.id}
+                        to={base + "/" + thread.id + (showArchived ? "?archived=true" : "")}
                         aria-current={thread.id === id ? "page" : undefined}
                       >
                         <ChatAvatar name={title} />
@@ -246,6 +268,9 @@ export function MessagesWorkspace({
                           <span className="chat-contact-preview">
                             {thread.last_message ?? "Bắt đầu cuộc trò chuyện"}
                           </span>
+                          {scope==='STORE' && thread.last_product_mention && <small className="chat-order-reference">Khách nhắc sản phẩm: {thread.last_product_mention}</small>}
+                          {thread.last_order_id && <small className="chat-order-reference">Đơn được nhắc tới: #{thread.last_order_id.slice(-8).toUpperCase()}</small>}
+                          {scope==='STORE'&&!!thread.unread_count&&<span className="chat-unread-badge" aria-label={thread.unread_count+' tin nhắn chưa đọc'}>{thread.unread_count>99?'99+':thread.unread_count}</span>}
                         </span>
                       </Link>
                     );
@@ -302,7 +327,11 @@ export function MessagesWorkspace({
                       : "Hỗ trợ khách hàng"}
                   </p>
                 </div>
+                {scope==='STORE'&&selectedThread?.archived!==undefined&&<button type="button" disabled={archiveBusy||archiveBlocked} onClick={()=>void archiveThread()}>{archiveBusy?'Đang cập nhật…':selectedThread.archived?'Mở lại hội thoại':'Lưu trữ hội thoại'}</button>}
               </header>
+              {archiveError!=null&&<ErrorView error={archiveError}/>}
+              {archiveBlocked&&<button type="button" disabled={archiveBusy} onClick={()=>{setArchiveBusy(true);void threads.refetch().then(result=>{if(result.error)throw result.error;setArchiveBlocked(false);setArchiveError(undefined);}).catch(setArchiveError).finally(()=>setArchiveBusy(false));}}>Đọc lại hội thoại trước khi tiếp tục</button>}
+              {readError!=null&&<div role="status">Chưa cập nhật trạng thái đã đọc. <button type="button" onClick={()=>setReadRetry(value=>value+1)}>Thử lại</button></div>}
               {messages.isLoading && <Loading />}
               {messages.error && (
                 <ErrorView

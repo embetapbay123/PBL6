@@ -15,6 +15,7 @@ async function model(page:Page,{seller=false,lostAck=false,wrongContext=false,ge
   if(path==='/me/orders/'+order.id||path==='/store/orders/'+order.id)return route.fulfill({json:order});
   if(path==='/store/orders'||path==='/me/orders')return route.fulfill({json:{items:[order],total:1,page:1,size:20}});
   if(path==='/stores/'+id(2))return route.fulfill({json:{id:id(2),name:'Store đúng đơn',shipping_fee_vnd:20000}});
+  if(path==='/products/'+id(5))return route.fulfill({json:{...f.getProduct.response,id:id(5),store_id:id(2),title:'Áo thun quà tặng',status:'ACTIVE'}});
   if(path==='/products'||path==='/stores/'+id(2)+'/products')return route.fulfill({json:{items:[],total:0,page:1,size:20}});
   if(path==='/me/conversations'&&req.method()==='POST'){const body=req.postDataJSON();starts.push(body);return route.fulfill({status:201,json:{id:id(7),store_name:'Store đúng đơn',...(body.order_id?{order_context:{order_id:wrongContext?id(99):body.order_id,store_id:id(2),status:'COMPLETED',items:[{title:'Áo đặt trước đây',quantity:2}]}}:{})}});}
   if(path==='/me/conversations'||path==='/store/conversations')return route.fulfill({json:{items:[{id:id(7),store_id:id(2),store_name:'Store đúng đơn',customer_name:'Khách đúng đơn',updated_at:'2026-10-31T00:00:00Z'}],total:1,page:1,size:20}});
@@ -29,6 +30,25 @@ async function model(page:Page,{seller=false,lostAck=false,wrongContext=false,ge
  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('fixture@example.test');await page.getByLabel('Mật khẩu',{exact:true}).fill('Fixture-password-123');await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập',exact:true})).toBeVisible();return {sends,starts,messages,order};
 }
 async function fromOrder(page:Page){await page.goto('/customer/orders/'+id(1));await page.getByRole('button',{name:'Hỏi Store về đơn này',exact:true}).click();return page.getByRole('dialog',{name:'Trung tâm chat',exact:true});}
+test('asking about a product prepares an editable draft and sends nothing until the customer confirms',async({page})=>{
+ const m=await model(page);await page.goto('/products/'+id(5));await page.getByRole('button',{name:'Nhắn tin gian hàng',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Trung tâm chat'}),draft=dialog.getByRole('textbox',{name:'Nội dung tin nhắn'});
+ await expect(draft).toHaveValue(new RegExp('Sản phẩm: Áo thun quà tặng.*'+id(5),'s'));expect(m.sends).toHaveLength(0);
+ await draft.fill((await draft.inputValue())+'Còn size M không?');await dialog.getByRole('button',{name:'Gửi tin nhắn',exact:true}).click();
+ await expect.poll(()=>m.sends.length).toBe(1);expect(m.sends[0].content).toContain('Sản phẩm: Áo thun quà tặng');expect(m.sends[0].content).toContain('Còn size M không?');
+});
+test('asking about a product preserves an existing unrelated draft',async({page})=>{
+ const m=await model(page);await page.goto('/stores/'+id(2));await page.getByRole('button',{name:'Nhắn tin gian hàng',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Trung tâm chat'});await dialog.getByRole('textbox',{name:'Nội dung tin nhắn'}).fill('Bản nháp đang viết');await dialog.getByRole('button',{name:'Đóng chat'}).click();
+ await page.evaluate(path=>{history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'));},'/products/'+id(5));await expect(page.getByRole('heading',{name:'Áo thun quà tặng',exact:true})).toBeVisible();await page.getByRole('button',{name:'Nhắn tin gian hàng',exact:true}).click();
+ await expect(dialog.getByRole('textbox',{name:'Nội dung tin nhắn'})).toHaveValue('Bản nháp đang viết');await expect(dialog.getByRole('status')).toContainText('Bản nháp trước được giữ nguyên');expect(m.sends).toHaveLength(0);
+});
+
+test('Seller searches all conversations through the scoped API',async({page})=>{
+ const reads:string[]=[];page.on('request',r=>{if(new URL(r.url()).pathname==='/api/v1/store/conversations')reads.push(r.url());});
+ await model(page,{seller:true});await page.goto('/seller/messages');await page.getByLabel('Tìm khách hàng',{exact:true}).fill('Nguyễn An');await page.getByRole('button',{name:'Tìm',exact:true}).click();
+ await expect.poll(()=>reads.some(url=>new URL(url).searchParams.get('q')==='Nguyễn An'&&new URL(url).searchParams.get('page')==='1')).toBe(true);
+});
 
 test('delivery-return contact opens the exact Store and order without losing the unfinished case',async({page})=>{
  const m=await model(page,{deliveryFailure:true});await page.goto('/customer/orders/'+m.order.id);

@@ -464,6 +464,7 @@ for (const role of ["CUSTOMER", "SELLER", "ADMIN"] as const) {
         .getByRole("banner")
         .getByRole("link", { name: "Trang chủ PBL6", exact: true })
         .click();
+      await expect(page).toHaveURL(/\/$/);
       await page.goBack();
       await expect(page.locator(".boot-pagination")).toContainText(
         "Trang 2 · 41 kết quả",

@@ -46,6 +46,26 @@ describe('Store application repository rules', () => {
 
   beforeEach(() => transaction.mockReset());
 
+  test('returns an existing Store logo to an authorized member', async () => {
+    (database.query as jest.Mock).mockResolvedValueOnce([{id:'store-1',owner_user_id:'owner',name:'Shop',status:'ACTIVE',shipping_fee_vnd:'0',version:1,logo_url:'https://example.test/logo.png'}]);
+    const result=await new StoreRepository().getOwnStore('user-a');
+    expect(result.logo_url).toBe('https://example.test/logo.png');
+    expect(database.query).toHaveBeenLastCalledWith(expect.stringContaining('s.logo_url'),['user-a']);
+  });
+  test('updates a logo with version control and rejects unsafe URLs', async () => {
+    const original={id:'store-1',name:'Shop',description:null,shipping_fee_vnd:'0',status:'ACTIVE',version:3,logo_url:null};
+    const manager={query:jest.fn().mockResolvedValueOnce([original]).mockResolvedValueOnce([{...original,version:4,logo_url:'https://example.test/logo.png'}])};
+    transaction.mockImplementation(async (callback:any)=>callback(manager));
+    const result=await new StoreRepository().updateOwnStore('user-a',{expected_version:3,logo_url:'https://example.test/logo.png'},'corr');
+    expect(result.logo_url).toBe('https://example.test/logo.png');expect(manager.query.mock.calls[1][1][6]).toBe('https://example.test/logo.png');
+    manager.query.mockReset().mockResolvedValueOnce([original]);
+    await expect(new StoreRepository().updateOwnStore('user-a',{expected_version:3,logo_url:'javascript:alert(1)'},'corr')).rejects.toMatchObject({status:422});
+    expect(manager.query).toHaveBeenCalledTimes(1);
+    manager.query.mockReset().mockResolvedValueOnce([{...original,logo_url:'https://example.test/old.png'}]).mockResolvedValueOnce([{...original,version:4,logo_url:null}]);
+    const removed=await new StoreRepository().updateOwnStore('user-a',{expected_version:3,logo_url:''},'corr');
+    expect(removed).not.toHaveProperty('logo_url');expect(manager.query.mock.calls[1][1][6]).toBeNull();
+  });
+
   test('rejects a second pending application', async () => {
     const manager = { query: jest.fn().mockResolvedValueOnce([{ id: 'user-a' }]).mockResolvedValueOnce([{ id: 'existing' }]) };
     transaction.mockImplementation(async (callback: (value: typeof manager) => unknown) => callback(manager));

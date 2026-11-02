@@ -265,6 +265,8 @@ export class UpdateOwnStoreBodyDto {
   "expected_version"!: number;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": false, "required": ["recipient_name", "phone", "line1", "ward", "district", "city"], "properties": {"recipient_name": {"type": "string", "minLength": 1, "maxLength": 200}, "phone": {"type": "string", "minLength": 1, "maxLength": 30}, "line1": {"type": "string", "minLength": 1, "maxLength": 500}, "ward": {"type": "string", "minLength": 1, "maxLength": 200}, "district": {"type": "string", "minLength": 1, "maxLength": 200}, "city": {"type": "string", "minLength": 1, "maxLength": 200}}},false),defaultMessage:()=> 'Invalid contract field'}})
   "return_address"?: {"recipient_name": string; "phone": string; "line1": string; "ward": string; "district": string; "city": string};
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 2048, "description": "URL ảnh HTTP(S); chuỗi rỗng xóa ảnh đại diện."},false),defaultMessage:()=> 'Invalid contract field'}})
+  "logo_url"?: string;
 }
 export class UpdateOwnStorePathDto {
 }
@@ -578,6 +580,9 @@ export class ListStoreInventoryQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "variant_id"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["NAME_ASC", "AVAILABLE_ASC", "AVAILABLE_DESC"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["NAME_ASC", "AVAILABLE_ASC", "AVAILABLE_DESC"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort"?: "NAME_ASC" | "AVAILABLE_ASC" | "AVAILABLE_DESC";
 }
 export class ListStoreInventoryHeadersDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -1785,6 +1790,12 @@ export class ListStoreConversationsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 200}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "q"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "boolean", "default": false}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean", "default": false},false),defaultMessage:()=> 'Invalid contract field'}})
+  "archived": boolean = false;
 }
 export class ListStoreConversationsHeadersDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -1926,6 +1937,9 @@ export class ListStoreReturnRequestsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "order_id"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["REQUESTED", "APPROVED", "REJECTED", "RECEIVED", "EXCHANGE_SENT", "COMPLETED"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["REQUESTED", "APPROVED", "REJECTED", "RECEIVED", "EXCHANGE_SENT", "COMPLETED"]},false),defaultMessage:()=> 'Invalid contract field'}})
+  "status"?: "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "EXCHANGE_SENT" | "COMPLETED";
 }
 export class ListStoreReturnRequestsHeadersDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -2785,6 +2799,38 @@ export class MarkAllNotificationsReadQueryDto {
 }
 export class MarkAllNotificationsReadHeadersDto {
 }
+export class MarkStoreConversationReadBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "message_id"!: string;
+}
+export class MarkStoreConversationReadPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class MarkStoreConversationReadQueryDto {
+}
+export class MarkStoreConversationReadHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class ArchiveStoreConversationBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "archived"!: boolean;
+}
+export class ArchiveStoreConversationPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class ArchiveStoreConversationQueryDto {
+}
+export class ArchiveStoreConversationHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3192,6 +3238,8 @@ export const runtimeDtos = {
   demoLogin: {body: DemoLoginBodyDto, path: DemoLoginPathDto, query: DemoLoginQueryDto, headers: DemoLoginHeadersDto},
   listAvailableVouchers: {body: undefined, path: ListAvailableVouchersPathDto, query: ListAvailableVouchersQueryDto, headers: ListAvailableVouchersHeadersDto},
   markAllNotificationsRead: {body: undefined, path: MarkAllNotificationsReadPathDto, query: MarkAllNotificationsReadQueryDto, headers: MarkAllNotificationsReadHeadersDto},
+  markStoreConversationRead: {body: MarkStoreConversationReadBodyDto, path: MarkStoreConversationReadPathDto, query: MarkStoreConversationReadQueryDto, headers: MarkStoreConversationReadHeadersDto},
+  archiveStoreConversation: {body: ArchiveStoreConversationBodyDto, path: ArchiveStoreConversationPathDto, query: ArchiveStoreConversationQueryDto, headers: ArchiveStoreConversationHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

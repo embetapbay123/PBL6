@@ -110,6 +110,8 @@ export function OrderStatusTabs({
         ["", "Tất cả"],
         ["AWAITING_PAYMENT", "Chờ thanh toán"],
         ["PENDING", "Chờ xác nhận"],
+        ["CONFIRMED", "Đã xác nhận"],
+        ["CONFIRMED", "Đã xác nhận"],
         ["PROCESSING", "Chuẩn bị hàng"],
         ["SHIPPED", "Đang giao"],
         ["COMPLETED", "Hoàn tất"],
@@ -218,11 +220,13 @@ export function OrderListIdentity({
   recipient = false,
   store = false,
   compact = false,
+  currentImages,
 }: {
   order: OperationOutputs["getOwnOrder"];
   recipient?: boolean;
   store?: boolean;
   compact?: boolean;
+  currentImages?: Map<string,string>;
 }) {
   const address = record(order.address_snapshot);
   return (
@@ -240,7 +244,7 @@ export function OrderListIdentity({
       )}
       {store && <OrderStoreLabel id={order.store_id} />}
       {order.items?.length ? (
-        <ul className={compact ? "order-card-items" : undefined}>
+        <ul className={compact || currentImages ? "order-card-items" : undefined}>
           {order.items.slice(0, compact ? 2 : 3).map((item, index) => {
             const snapshot = record(item.product_snapshot),
               values = variantLabel(record(snapshot.variant_values), ""),
@@ -250,7 +254,7 @@ export function OrderListIdentity({
                   : "Mục đơn cũ chưa lưu tên";
             return (
               <li key={typeof item.id === "string" ? item.id : index}>
-                {compact && (
+                {(compact || currentImages) && (
                   <span className="order-card-image">
                     {typeof snapshot.image_url === "string" &&
                     /^https?:\/\//.test(snapshot.image_url) ? (
@@ -259,6 +263,8 @@ export function OrderListIdentity({
                         name={title}
                         alt={title}
                       />
+                    ) : typeof item.product_id==='string' && currentImages?.has(item.product_id) ? (
+                      <ProductImage src={currentImages.get(item.product_id)} name={title} alt="Ảnh sản phẩm hiện tại" title="Ảnh sản phẩm hiện tại, có thể khác khi đặt" />
                     ) : (
                       <Package
                         size={22}
@@ -269,6 +275,7 @@ export function OrderListIdentity({
                 )}
                 <span>
                   <strong>{title}</strong>
+                  {currentImages && typeof item.product_id==='string' && currentImages.has(item.product_id) && typeof snapshot.image_url!=='string' && <small className="order-current-image-note">Ảnh hiện tại của sản phẩm</small>}
                   <span>
                     {" "}
                     ·{" "}

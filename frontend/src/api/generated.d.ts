@@ -2915,6 +2915,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/store/conversations/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Đánh dấu tin nhắn đã xem
+         * @description Đánh dấu tin nhắn đã xem trong phạm vi Store hiện hành.
+         */
+        post: operations["markStoreConversationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/conversations/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lưu trữ hoặc mở lại hội thoại
+         * @description Lưu trữ hoặc mở lại hội thoại trong phạm vi Store hiện hành.
+         */
+        post: operations["archiveStoreConversation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3422,6 +3462,8 @@ export interface components {
             return_address?: components["schemas"]["ReturnAddress"];
             owner_email?: string;
             owner_display_name?: string;
+            /** @description Ảnh đại diện hiện có của gian hàng, nếu được cấu hình. */
+            logo_url?: string;
         };
         StoreUpdate: {
             name?: string;
@@ -3430,6 +3472,8 @@ export interface components {
             shipping_fee_vnd?: number;
             expected_version: number;
             return_address?: components["schemas"]["ReturnAddress"];
+            /** @description URL ảnh HTTP(S); chuỗi rỗng xóa ảnh đại diện. */
+            logo_url?: string;
         };
         ProductImageRequest: {
             /** Format: uri */
@@ -3970,6 +4014,16 @@ export interface components {
             last_message?: string;
             /** Format: date-time */
             updated_at: string;
+            /** @description Unread customer messages in the shared Store inbox. */
+            unread_count?: number;
+            archived?: boolean;
+            /**
+             * Format: uuid
+             * @description Đơn gần nhất được gắn rõ ràng trong hội thoại; không suy đoán sản phẩm.
+             */
+            last_order_id?: string;
+            /** @description Tên sản phẩm do khách tự gửi gần nhất, không phải dữ liệu catalog xác thực. */
+            last_product_mention?: string;
         };
         StoreMessage: {
             /** Format: uuid */
@@ -3989,6 +4043,8 @@ export interface components {
             total: number;
             page: number;
             size: number;
+            /** @description Unread customer messages across non-archived Store conversations. */
+            unread_total?: number;
         };
         PageStoreMessages: {
             items: components["schemas"]["StoreMessage"][];
@@ -4415,6 +4471,11 @@ export interface components {
             total: number;
             page: number;
             size: number;
+            /** @description Tổng theo phạm vi lọc trước phân trang. */
+            summary?: {
+                open: number;
+                awaiting_inspection: number;
+            };
         };
         IntegrationPaymentCallback: {
             provider_event_id: string;
@@ -4728,6 +4789,19 @@ export interface components {
         DemoLoginRequest: {
             /** @enum {string} */
             account: "customerA" | "customerB" | "ownerA" | "ownerB" | "staffA" | "staffB" | "admin";
+        };
+        StoreConversationReadInput: {
+            /** Format: uuid */
+            message_id: string;
+        };
+        StoreConversationArchiveInput: {
+            archived: boolean;
+        };
+        StoreConversationMutationResult: {
+            /** Format: uuid */
+            id: string;
+            archived: boolean;
+            unread_count: number;
         };
     };
     responses: never;
@@ -8436,6 +8510,8 @@ export interface operations {
                 product_id?: string;
                 /** @description Lọc trước count/page trong Store hiện hành; không cấp quyền sửa sản phẩm. */
                 variant_id?: string;
+                /** @description Sắp xếp toàn bộ kết quả trong Store trước phân trang. */
+                sort?: "NAME_ASC" | "AVAILABLE_ASC" | "AVAILABLE_DESC";
             };
             header?: {
                 /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
@@ -15342,6 +15418,10 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Search customer name or email within the current Store. */
+                q?: string;
+                /** @description Show archived Store conversations instead of active conversations. */
+                archived?: boolean;
             };
             header?: {
                 /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
@@ -16220,6 +16300,7 @@ export interface operations {
                 page?: number;
                 size?: number;
                 order_id?: string;
+                status?: "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "EXCHANGE_SENT" | "COMPLETED";
             };
             header?: {
                 /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
@@ -20384,6 +20465,208 @@ export interface operations {
                     "application/json": {
                         updated: number;
                     };
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    markStoreConversationRead: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreConversationReadInput"];
+            };
+        };
+        responses: {
+            /** @description Trạng thái hội thoại sau thao tác */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreConversationMutationResult"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    archiveStoreConversation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Expected active Store of the caller, an assertion only, never a Store selector or permission grant. Web sends its current Store on own-Store requests. A mismatch returns409 STORE_CONTEXT_CHANGED before the handler; read current context and reopen work, never automatically replay a mutation. Legacy clients omitting it retain current-active-Store semantics. */
+                "X-Store-Context"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreConversationArchiveInput"];
+            };
+        };
+        responses: {
+            /** @description Trạng thái hội thoại sau thao tác */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreConversationMutationResult"];
                 };
             };
             /** @description Malformed request */

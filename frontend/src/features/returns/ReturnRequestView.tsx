@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import type { OperationOutputs } from "../../api/operations.generated";
 import { ProgressSteps } from "../../components/ui/ProgressSteps";
+import {useCurrentOrderImages} from '../../components/useCurrentOrderImages';
 export type ReturnRequest =
   OperationOutputs["listOwnReturnRequests"]["items"][number];
 export const returnStatus: Record<string, string> = {
@@ -30,6 +31,7 @@ export function ReturnRequestView({
   showOrderLink?: boolean;
   scope?: "CUSTOMER" | "STORE" | "ADMIN";
 }) {
+  const images=useCurrentOrderImages(request.items??[]);
   return (
     <article className="boot-card">
       <div className="market-return-heading">
@@ -40,7 +42,7 @@ export function ReturnRequestView({
           {returnStatus[request.status] ?? request.status}
         </span>
       </div>
-      <ProgressSteps
+      {request.status === 'REJECTED' ? <p role="status">Yêu cầu đã bị từ chối; không còn bước xử lý tiếp theo trong yêu cầu này.</p> : scope === 'STORE' ? <p className="seller-return-next" role="status"><strong>Tiếp theo: </strong>{request.status === 'REQUESTED' ? 'Xét duyệt yêu cầu của khách.' : request.status === 'APPROVED' ? 'Hướng dẫn gửi trả và kiểm hàng khi nhận được.' : request.status === 'RECEIVED' ? (request.type === 'EXCHANGE' ? 'Đối chiếu hàng và xử lý gửi hàng đổi.' : 'Đối chiếu hàng và xử lý hoàn tiền.') : request.status === 'EXCHANGE_SENT' ? 'Chờ khách xác nhận đã nhận hàng đổi.' : 'Yêu cầu đã hoàn tất.'}</p> : <ProgressSteps
         label="Tiến trình xử lý đổi trả"
         steps={[
           "Gửi yêu cầu",
@@ -58,11 +60,9 @@ export function ReturnRequestView({
                 ? 3
                 : request.status === "APPROVED"
                   ? 2
-                  : request.status === "REJECTED"
-                    ? 1
-                    : 1
+                  : 1
         }
-      />
+      />}
       {context}
       <details className="return-policy-details">
         <summary>Chính sách và địa chỉ nhận trả đã chốt</summary>
@@ -79,6 +79,7 @@ export function ReturnRequestView({
         <OrderItemIdentity
           key={item.order_item_id}
           item={{ ...item, id: item.order_item_id }}
+          currentImage={images.get(item.variant_id)}
         />
       ))}
       {request.exchange_dispatch && (
@@ -112,8 +113,7 @@ export function ReturnRequestView({
             phân loại ban đầu để suy hàng đổi.
           </p>
         )}
-      <p>Lý do: {request.reason}</p>
-      <p>Giá trị đơn: {request.amount_vnd.toLocaleString("vi-VN")} ₫</p>
+      <dl className="return-request-facts"><div><dt>Lý do</dt><dd>{request.reason}</dd></div><div><dt>Giá trị đơn</dt><dd>{request.amount_vnd.toLocaleString("vi-VN")} ₫</dd></div></dl>
       {request.return_instructions && (
         <p>
           <strong>Hướng dẫn gửi trả:</strong> {request.return_instructions}
@@ -170,9 +170,10 @@ export function ReturnRequestView({
                 request.last_error === "EXCHANGE_DISPATCH_PAUSED"
               ? "Có thể làm mới để đọc kết quả đối chiếu."
               : "Chưa xác định kết quả kho; đọc lại hoặc liên hệ hỗ trợ."}{" "}
-          Mã đối chiếu: {request.id} / {request.last_error}
+          Mã yêu cầu: {request.id}
         </p>
       )}
+      {request.last_error && scope === 'ADMIN' && <details><summary>Thông tin hỗ trợ kỹ thuật</summary><code>{request.last_error}</code></details>}
       {request.conversion_status === "PROPOSED" && (
         <p role="status">
           Store đề nghị hoàn đủ tiền, đang chờ khách xác nhận:{" "}

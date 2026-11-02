@@ -3,7 +3,7 @@ import {readFileSync} from 'node:fs';
 const fixtures=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
 const id=(n:number)=>'88000000-0000-4000-8000-'+String(n).padStart(12,'0');
 async function model(page:Page,role:'CUSTOMER'|'OWNER'|'SELLER'='CUSTOMER'){
- const s={role,permissions:role==='SELLER'?['product.store.read_write']:[] as string[],apps:[] as any[],posts:[] as any[],reads:0,failReads:false,failStoreReads:false,failContext:false,lost:false,hold:false,pending:undefined as Route|undefined,store:{id:id(2),name:'Gian hàng cần thiết lập',status:'ACTIVE',shipping_fee_vnd:0,version:0,return_address:undefined as any}};
+ const s={role,permissions:role==='SELLER'?['product.store.read_write']:[] as string[],apps:[] as any[],posts:[] as any[],reads:0,failReads:false,failStoreReads:false,failContext:false,lost:false,hold:false,pending:undefined as Route|undefined,store:{id:id(2),name:'Gian hàng cần thiết lập',status:'ACTIVE',shipping_fee_vnd:0,version:0,return_address:undefined as any,logo_url:undefined as string|undefined}};
  const auth=()=>({...fixtures.login.response,context:{user_id:id(1),roles:['CUSTOMER',...(s.role==='CUSTOMER'?[]:[s.role==='OWNER'?'STORE_OWNER':'SELLER'])],role_permissions:[],token_version:0,...(s.role==='CUSTOMER'?{}:{store_membership:{store_id:id(2),role:s.role,status:'ACTIVE',permissions:s.permissions}})}});
  await page.route('**/api/v1/**',async r=>{const q=r.request(),path=new URL(q.url()).pathname.replace('/api/v1','');
   if(path==='/auth/login'||path==='/auth/refresh')return r.fulfill({json:auth(),headers:{'set-cookie':'pbl6_csrf=fixture; Path=/; SameSite=Strict'}});
@@ -18,6 +18,29 @@ async function model(page:Page,role:'CUSTOMER'|'OWNER'|'SELLER'='CUSTOMER'){
  });await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('onboarding@example.test');await page.getByLabel('Mật khẩu',{exact:true}).fill('Fixture-password-123');await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập',exact:true})).toBeVisible();return s;
 }
 const app=(status='PENDING')=>({id:id(3),proposed_name:'Gian hàng đề nghị',contact:'onboarding@example.test',status,version:0});
+
+test('Owner edits the Store name independently without overwriting shipping or return address',async({page})=>{
+ const s=await model(page,'OWNER');await page.goto('/seller/settings');
+ await page.getByRole('button',{name:'Sửa tên gian hàng'}).click();
+ await page.getByLabel('Tên gian hàng',{exact:true}).fill('Tên Store mới');
+ await page.getByRole('button',{name:'Lưu thông tin',exact:true}).click();
+ await expect.poll(()=>s.posts.length).toBe(1);
+ expect(s.posts[0]).toEqual({name:'Tên Store mới',expected_version:0});
+ await expect(page.locator('.seller-store-identity').getByText('Tên Store mới',{exact:true})).toBeVisible();
+});
+test('Store settings uses the existing Store logo when available',async({page})=>{
+ const s=await model(page,'OWNER');s.store.logo_url='https://example.test/store-logo.png';
+ await page.route('https://example.test/store-logo.png',route=>route.fulfill({status:200,contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"/>'}));
+ await page.goto('/seller/settings');await expect(page.getByRole('img',{name:'Ảnh đại diện Gian hàng cần thiết lập'})).toHaveAttribute('src',s.store.logo_url);
+});
+test('Owner can change the Store logo URL without changing other settings',async({page})=>{
+ const s=await model(page,'OWNER');await page.goto('/seller/settings');
+ await page.getByRole('button',{name:'Sửa ảnh đại diện'}).click();
+ await page.getByLabel('Đường dẫn ảnh đại diện').fill('https://example.test/logo.png');
+ await page.getByRole('button',{name:'Lưu thông tin',exact:true}).click();
+ await expect.poll(()=>s.posts.length).toBe(1);
+ expect(s.posts[0]).toEqual({logo_url:'https://example.test/logo.png',expected_version:0});
+});
 
 test('S04 approval while page is open has a read-only refresh and explicit current-rights entry',async({page})=>{
  const s=await model(page);s.apps=[app()];await page.goto('/customer/store-applications');await expect(page.getByRole('article')).toContainText('Chờ duyệt');s.apps[0].status='APPROVED';s.role='OWNER';await page.getByRole('button',{name:'Đọc lại trạng thái hồ sơ',exact:true}).click();await expect(page.getByRole('article')).toContainText('Đã duyệt');await page.getByRole('button',{name:'Cập nhật quyền và vào Store',exact:true}).click();await expect(page).toHaveURL(/\/seller$/);await expect(page.getByRole('heading',{name:s.store.name,exact:true})).toBeVisible();expect(s.posts).toEqual([]);

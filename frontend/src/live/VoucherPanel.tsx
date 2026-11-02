@@ -287,26 +287,17 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                           <p>Tối đa {formatMoney(v.max_discount_vnd)}</p>
                         )}
                     </td>
-                    <td>
-                      Đơn từ {formatMoney(v.min_goods_vnd ?? 0)}
-                      <p>
-                        {v.usage_limit} lượt · {v.per_customer_limit}/khách
-                        {v.usage_summary && (
-                          <span>
-                            {" "}
-                            · Còn {v.usage_summary.remaining_count} lượt (đã
-                            dùng {v.usage_summary.redeemed_count}, đang giữ{" "}
-                            {v.usage_summary.reserved_count})
-                          </span>
-                        )}
-                      </p>
+                    <td className="voucher-conditions">
+                      <strong>Đơn từ {formatMoney(v.min_goods_vnd ?? 0)}</strong>
+                      <span>{v.usage_limit} lượt · {v.per_customer_limit}/khách</span>
+                      {v.usage_summary && <small>Còn {v.usage_summary.remaining_count} · đã dùng {v.usage_summary.redeemed_count} · đang giữ {v.usage_summary.reserved_count}</small>}
                     </td>
                     <td>
                       {new Date(v.starts_at).toLocaleString("vi-VN")}
                       <p>đến {new Date(v.ends_at).toLocaleString("vi-VN")}</p>
                     </td>
                     <td>
-                      <span className="market-badge">{v.status ?? "—"}</span>
+                      <span className={'seller-status '+(v.status==='ACTIVE'?'is-active':'is-inactive')}>{v.status==='ACTIVE'?'Đang hoạt động':v.status==='STOPPED'?'Đã dừng':'Chưa rõ trạng thái'}</span>
                     </td>
                     <td>
                       <div className="ui-actions">
@@ -534,6 +525,12 @@ function CreateVoucher({
         sau hủy / hoàn; lượt giữ chưa tạo đơn được nhả.
       </p>
       <aside className="voucher-preview">
+        <div className="seller-voucher-card" aria-label="Xem trước voucher">
+          <span>{scope === 'STORE' ? 'Ưu đãi từ gian hàng' : 'Ưu đãi từ sàn'}</span>
+          <strong>{type === 'PERCENT' ? `${value || 0}%` : formatMoney(value || 0)}</strong>
+          <span>Mã: {code.trim() || 'Chưa nhập mã'}</span>
+          <small>Đơn từ {formatMoney(minimum || 0)}{type === 'PERCENT' && capped ? ` · Giảm tối đa ${formatMoney(cap || 0)}` : ''}</small>
+        </div>
         <h3>Thử mức giảm</h3>
         <label>
           Tiền hàng ví dụ (VND)

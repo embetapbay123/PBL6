@@ -51,6 +51,15 @@ suite('inspected delivery returns across isolated M1 and M2 schemas',()=>{
  const settle=(row:any)=>service.settle(row.id,{operation_id:randomUUID(),expected_version:row.version},owner,'delivery-test');
  const quantity=async(f:any)=>(await m1.query('SELECT quantity FROM inventory WHERE variant_id=$1',[f.variant]))[0].quantity;
  const runner=()=>new DeliveryReturnRunner(m2,async(_op,body)=>inventory.restockReceived(body));
+ test('summary counts all matching cases before pagination and remains Store scoped',async()=>{
+  const first=await fixture(),second=await fixture();await open(first);await open(second);
+  const page=await service.list(owner,{page:1,size:1});
+  expect(page.total).toBeGreaterThanOrEqual(2);expect(page.items).toHaveLength(1);
+  expect(page.summary.open).toBeGreaterThanOrEqual(2);expect(page.summary.awaiting_inspection).toBeGreaterThanOrEqual(2);
+  const single=await service.list(owner,{order_id:first.order});expect(single.summary).toEqual({open:1,awaiting_inspection:1});
+  const foreign={...owner,store_membership:{...owner.store_membership,store_id:randomUUID()}};
+  expect((await service.list(foreign,{})).summary).toEqual({open:0,awaiting_inspection:0});
+ });
  test('uncollected COD closes after receipt, restores only sellable units and never fabricates cash/refund',async()=>{
   const f=await fixture(),row=await received(f);await settle(row);await runner().process(row.id);const result=await service.own(f.order,{user_id:user});
   expect(result).toMatchObject({status:'CLOSED',inventory_status:'APPLIED',money_settled:true,payment_status:'CANCELLED'});expect(schemaErrors(result,contracts.operations.getOwnDeliveryReturn.responses['200'])).toEqual([]);expect(await quantity(f)).toBe(9);

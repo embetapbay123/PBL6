@@ -2,6 +2,8 @@ import type { OperationOutputs } from "../api/operations.generated";
 import { variantLabel } from "./variant-identity";
 import { orderNextStep } from "./order-actions";
 import { PrintPackingSlip } from "./PrintPackingSlip";
+import {useCurrentOrderImages} from './useCurrentOrderImages';
+import {ProductImage} from './ProductImage';
 type Order = OperationOutputs["getOwnOrder"];
 export function OrderNextStep({
   order,
@@ -64,15 +66,19 @@ function collectionInstruction(order: Order) {
 export function OrderItemIdentity({
   item,
   snapshotKind = "PURCHASE",
+  currentImage,
 }: {
   item: Record<string, unknown>;
   snapshotKind?: "PURCHASE" | "EXCHANGE";
+  currentImage?:string;
 }) {
   const snapshot = record(item.product_snapshot),
     values = variantLabel(record(snapshot.variant_values), "");
   const variant = values || text(snapshot.variant_title);
   return (
-    <>
+    <div className="order-item-identity">
+      {currentImage&&<div className="order-item-current-image"><ProductImage src={currentImage} name={text(snapshot.title)??'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/><small>Ảnh hiện tại</small></div>}
+      <div>
       <p>
         <strong>
           {text(snapshot.title) ?? "Mục đơn cũ chưa có tên snapshot"}
@@ -106,7 +112,8 @@ export function OrderItemIdentity({
       {typeof item.line_total_vnd === "number" && (
         <p>Thành tiền: {money(item.line_total_vnd)}</p>
       )}
-    </>
+      </div>
+    </div>
   );
 }
 export function OrderDeliveryAddress({ order }: { order: Order }) {
@@ -137,6 +144,7 @@ export function OrderDeliveryAddress({ order }: { order: Order }) {
   );
 }
 export function OrderPackingSheet({ order }: { order: Order }) {
+  const images=useCurrentOrderImages(order.items??[]);
   return (
     <section aria-label="Thông tin lấy hàng và giao hàng">
       <PrintPackingSlip order={order} />
@@ -148,7 +156,7 @@ export function OrderPackingSheet({ order }: { order: Order }) {
             className="boot-card"
             key={typeof item.id === "string" ? item.id : index}
           >
-            <OrderItemIdentity item={item} />
+            <OrderItemIdentity item={item} currentImage={images.get(String(item.variant_id??item.product_id))} />
           </article>
         ))
       ) : (

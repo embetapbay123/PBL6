@@ -60,18 +60,20 @@ export function Pagination({
   size,
   total,
   onPage,
+  disabled = false,
 }: {
   page: number;
   size: number;
   total: number;
   onPage: (p: number) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="boot-pagination">
       <Button
         variant="secondary"
         size="sm"
-        disabled={page <= 1}
+          disabled={disabled || page <= 1}
         onClick={() => onPage(page - 1)}
       >
         Trang trước
@@ -82,7 +84,7 @@ export function Pagination({
       <Button
         variant="secondary"
         size="sm"
-        disabled={page * size >= total}
+          disabled={disabled || page * size >= total}
         onClick={() => onPage(page + 1)}
       >
         Trang sau
