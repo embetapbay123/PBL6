@@ -1,3 +1,4 @@
+import { useUnsavedChanges } from "../components/useUnsavedChanges";
 import { AddressSuggestions } from "../components/AddressSuggestions";
 import { variantLabel } from "../components/variant-identity";
 import { FinancialReport } from "../features/reports/FinancialReport";
@@ -239,6 +240,7 @@ function StoreSettingsForm({
   reload: () => void;
 }) {
   const cache = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(store.name),
     [shipping, setShipping] = useState(store.shipping_fee_vnd ?? 0);
   const [returnAddress, setReturnAddress] = useState(
@@ -251,6 +253,21 @@ function StoreSettingsForm({
       city: "",
     },
   );
+  const dirty =
+    name !== store.name ||
+    shipping !== (store.shipping_fee_vnd ?? 0) ||
+    JSON.stringify(returnAddress) !==
+      JSON.stringify(
+        store.return_address ?? {
+          recipient_name: "",
+          phone: "",
+          line1: "",
+          ward: "",
+          district: "",
+          city: "",
+        },
+      );
+  useUnsavedChanges(editing && (dirty || command.busy));
   const [stale, setStale] = useState(false);
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -284,11 +301,62 @@ function StoreSettingsForm({
       }
     });
   };
+  if (!editing)
+    return (
+      <section
+        className="boot-card store-settings-form"
+        aria-label="Thông tin gian hàng hiện tại"
+      >
+        <dl className="read-only-fields">
+          <div>
+            <dt>Tên gian hàng</dt>
+            <dd>{store.name}</dd>
+          </div>
+          <div>
+            <dt>Trạng thái</dt>
+            <dd>{store.status === "ACTIVE" ? "Đang hoạt động" : "Đã khóa"}</dd>
+          </div>
+          <div>
+            <dt>Phí giao hàng</dt>
+            <dd>{formatMoney(store.shipping_fee_vnd ?? 0)}</dd>
+          </div>
+          <div>
+            <dt>Địa chỉ nhận hàng trả</dt>
+            <dd>
+              {store.return_address ? (
+                <>
+                  <strong>
+                    {store.return_address.recipient_name} ·{" "}
+                    {store.return_address.phone}
+                  </strong>
+                  <br />
+                  {[
+                    store.return_address.line1,
+                    store.return_address.ward,
+                    store.return_address.district,
+                    store.return_address.city,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                </>
+              ) : (
+                "Chưa hoàn thiện. Cần bổ sung trước khi nhận đơn mới."
+              )}
+            </dd>
+          </div>
+        </dl>
+        <button type="button" onClick={() => setEditing(true)}>
+          Chỉnh sửa gian hàng
+        </button>
+        {command.notice && <p role="status">{command.notice}</p>}
+      </section>
+    );
   return (
     <form className="boot-card store-settings-form" onSubmit={submit}>
       <label>
         Tên gian hàng
         <input
+          autoFocus
           required
           disabled={command.busy || stale || reading}
           maxLength={200}
@@ -351,6 +419,28 @@ function StoreSettingsForm({
         }
       >
         Lưu thông tin
+      </button>
+      <button
+        type="button"
+        className="ui-button ui-button-secondary"
+        disabled={command.busy || stale || reading}
+        onClick={() => {
+          setName(store.name);
+          setShipping(store.shipping_fee_vnd ?? 0);
+          setReturnAddress(
+            store.return_address ?? {
+              recipient_name: "",
+              phone: "",
+              line1: "",
+              ward: "",
+              district: "",
+              city: "",
+            },
+          );
+          setEditing(false);
+        }}
+      >
+        Hủy thay đổi
       </button>
       {command.error != null && (
         <ErrorView

@@ -25,7 +25,17 @@ export function VoucherPicker({
   });
   return (
     <Modal label="Chọn mã ưu đãi" onClose={onClose}>
-      <h2>Chọn mã ưu đãi</h2>
+      <header className="modal-section-header">
+        <h2>Chọn mã ưu đãi</h2>
+        <button
+          type="button"
+          className="ui-button ui-button-secondary"
+          onClick={onClose}
+          aria-label="Đóng danh sách ưu đãi"
+        >
+          Đóng
+        </button>
+      </header>
       <p>
         Mã đang mở của sàn và các cửa hàng trong đơn. Điều kiện và lượt còn lại
         được kiểm tra lại khi áp dụng và đặt hàng.
@@ -66,7 +76,16 @@ export function VoucherPicker({
                   Tiền hàng từ {money(v.min_goods_vnd ?? 0)} ·{" "}
                   {v.per_customer_limit} lượt/khách
                 </p>
-                <p>Đến {new Date(v.ends_at).toLocaleString("vi-VN")}</p>
+                <p>
+                  Đến{" "}
+                  {new Date(v.ends_at).toLocaleString("vi-VN", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  })}
+                </p>
                 <button
                   className="ui-button ui-button-secondary"
                   onClick={() => {
@@ -92,9 +111,6 @@ export function VoucherPicker({
           )}
         </>
       )}
-      <button type="button" onClick={onClose}>
-        Đóng danh sách ưu đãi
-      </button>
     </Modal>
   );
 }

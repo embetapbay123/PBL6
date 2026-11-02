@@ -1,3 +1,4 @@
+import { SourceNavigation } from "../../components/SourceNavigation";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -251,17 +252,10 @@ export function StoreAuditPage() {
         liệu nhạy cảm; hồ sơ cũ thiếu liên kết cần Admin đối chiếu bằng mã truy
         vết. Tên tài khoản là nhãn hiện tại, ID giữ để truy lại người thao tác.
       </p>
-      <label>
-        Khu vực nhật ký
-        <select
-          value={source}
-          onChange={(e) => patch("source", e.target.value)}
-        >
-          <option value="catalog">Sản phẩm và kho</option>
-          <option value="commerce">Đơn hàng và thanh toán</option>
-          <option value="identity">Store và nhân viên</option>
-        </select>
-      </label>
+      <SourceNavigation
+        value={source}
+        onChange={(value) => setParams({ source: value })}
+      />
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -56,6 +56,7 @@ export const AddressPage: React.FC = () => {
   const [params] = useSearchParams();
   const returnTo =
     params.get("returnTo") === "/checkout" ? "/checkout" : undefined;
+  const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const form = useRef<HTMLFormElement>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -98,6 +99,14 @@ export const AddressPage: React.FC = () => {
     dirty || uncertain || adding || busyId !== null,
   );
 
+  useEffect(() => {
+    if (!editorOpen) return;
+    const frame = requestAnimationFrame(() => {
+      form.current?.scrollIntoView({ block: "nearest" });
+      form.current?.querySelector("input")?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editorOpen, editing]);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -200,6 +209,7 @@ export const AddressPage: React.FC = () => {
       setAdding(false);
       // chỉ xóa form khi server nhận thành công
       if (ok) {
+        setEditorOpen(false);
         setEditing(null);
         setNewName("");
         setNewPhone("");
@@ -212,6 +222,7 @@ export const AddressPage: React.FC = () => {
   };
   const editAddress = (addr: Address) => {
     if (locked || flight.current) return;
+    setEditorOpen(true);
     setEditing(addr.id);
     setNewName(addr.source.recipient_name);
     setNewPhone(addr.source.phone);
@@ -224,6 +235,7 @@ export const AddressPage: React.FC = () => {
     form.current?.querySelector("input")?.focus();
   };
   const cancelEdit = () => {
+    setEditorOpen(false);
     setEditing(null);
     setNewName("");
     setNewPhone("");
@@ -369,107 +381,125 @@ export const AddressPage: React.FC = () => {
         </section>
       )}
 
-      {/* Form thêm địa chỉ mới */}
-      <form
-        ref={form}
-        onSubmit={handleAddAddress}
-        className="bg-white shadow rounded-lg p-6 mb-8 space-y-4"
-      >
-        <fieldset disabled={locked} className="space-y-4">
-          <h2 className="text-lg font-semibold mb-2">
-            {editing ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="addr-name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Tên người nhận
-              </label>
-              <input
-                id="addr-name"
-                type="text"
-                maxLength={200}
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="w-full border rounded-md p-2"
-                placeholder="Nguyễn Văn A"
-                required
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="addr-phone"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Số điện thoại
-              </label>
-              <input
-                id="addr-phone"
-                type="tel"
-                autoComplete="tel"
-                maxLength={20}
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full border rounded-md p-2"
-                placeholder="090XXXXXXX"
-                required
-              />
-            </div>
-          </div>
-          <div>
-            <label
-              htmlFor="addr-line1"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Số nhà, tên đường
-            </label>
-            <input
-              id="addr-line1"
-              type="text"
-              maxLength={200}
-              value={newLine1}
-              onChange={(e) => setNewLine1(e.target.value)}
-              className="w-full border rounded-md p-2"
-              placeholder="123 Đường ABC"
-              required
-            />
-          </div>
-          <AddressSuggestions
-            city={newCity}
-            ward={newWard}
-            onCity={setNewCity}
-            onWard={setNewWard}
-          />
-          <label>
-            Quận/huyện (theo địa chỉ được cung cấp)
-            <input
-              required
-              maxLength={200}
-              value={newDistrict}
-              onChange={(e) => setNewDistrict(e.target.value)}
-            />
-          </label>
-          <p className="form-hint">
-            Giữ thông tin quận/huyện của địa chỉ giao nhận khi có; hệ thống hiện
-            vẫn sử dụng trường này.
-          </p>
-          <button
-            type="submit"
-            disabled={adding}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+      {!editorOpen && (
+        <button
+          type="button"
+          onClick={() => {
+            cancelEdit();
+            setEditorOpen(true);
+          }}
+        >
+          Thêm địa chỉ
+        </button>
+      )}
+      {editorOpen && (
+        <>
+          {/* Form thêm địa chỉ mới */}
+          <form
+            ref={form}
+            onSubmit={handleAddAddress}
+            className="bg-white shadow rounded-lg p-6 mb-8 space-y-4"
           >
-            {adding ? "Đang lưu..." : editing ? "Lưu địa chỉ" : "Thêm địa chỉ"}
-          </button>
-          {editing && (
-            <button type="button" disabled={adding} onClick={cancelEdit}>
-              Hủy sửa địa chỉ
-            </button>
-          )}
-        </fieldset>
-      </form>
-
+            <fieldset disabled={locked} className="space-y-4">
+              <h2 className="text-lg font-semibold mb-2">
+                {editing ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="addr-name"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Tên người nhận
+                  </label>
+                  <input
+                    id="addr-name"
+                    type="text"
+                    maxLength={200}
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full border rounded-md p-2"
+                    placeholder="Nguyễn Văn A"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="addr-phone"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Số điện thoại
+                  </label>
+                  <input
+                    id="addr-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    maxLength={20}
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    className="w-full border rounded-md p-2"
+                    placeholder="090XXXXXXX"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="addr-line1"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Số nhà, tên đường
+                </label>
+                <input
+                  id="addr-line1"
+                  type="text"
+                  maxLength={200}
+                  value={newLine1}
+                  onChange={(e) => setNewLine1(e.target.value)}
+                  className="w-full border rounded-md p-2"
+                  placeholder="123 Đường ABC"
+                  required
+                />
+              </div>
+              <AddressSuggestions
+                city={newCity}
+                ward={newWard}
+                onCity={setNewCity}
+                onWard={setNewWard}
+              />
+              <label>
+                Quận/huyện (theo địa chỉ được cung cấp)
+                <input
+                  required
+                  maxLength={200}
+                  value={newDistrict}
+                  onChange={(e) => setNewDistrict(e.target.value)}
+                />
+              </label>
+              <p className="form-hint">
+                Giữ thông tin quận/huyện của địa chỉ giao nhận khi có; hệ thống
+                hiện vẫn sử dụng trường này.
+              </p>
+              <button
+                type="submit"
+                disabled={adding}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {adding
+                  ? "Đang lưu..."
+                  : editing
+                    ? "Lưu địa chỉ"
+                    : "Thêm địa chỉ"}
+              </button>
+              {editorOpen && (
+                <button type="button" disabled={adding} onClick={cancelEdit}>
+                  {editing ? "Hủy sửa địa chỉ" : "Hủy thêm địa chỉ"}
+                </button>
+              )}
+            </fieldset>
+          </form>
+        </>
+      )}
       {/* Danh sách địa chỉ */}
       <div className="space-y-4">
         {addresses.length === 0 && (

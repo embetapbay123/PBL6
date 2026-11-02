@@ -30,6 +30,7 @@ const describeError = (error: unknown): string => {
 
 export const ProfilePage: React.FC = () => {
   const cache = useQueryClient();
+  const [editing, setEditing] = useState(false);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
@@ -138,6 +139,7 @@ export const ProfilePage: React.FC = () => {
     try {
       await fetchProfile();
       if (mounted.current) {
+        setEditing(false);
         setIsSaved(true);
         savedTimer.current = window.setTimeout(() => setIsSaved(false), 3000);
       }
@@ -205,77 +207,111 @@ export const ProfilePage: React.FC = () => {
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow rounded-lg p-6 space-y-4"
-      >
-        <fieldset disabled={saving} className="space-y-4">
-          <div>
-            <label
-              htmlFor="profile-display-name"
-              className="block text-sm font-medium text-gray-700 mb-1"
+      {!editing ? (
+        <section
+          className="boot-card account-read-view"
+          aria-label="Thông tin cá nhân hiện tại"
+        >
+          <dl className="read-only-fields">
+            <div>
+              <dt>Tên hiển thị</dt>
+              <dd>{original?.displayName || "Chưa có tên hiển thị"}</dd>
+            </div>
+            <div>
+              <dt>Email đăng nhập</dt>
+              <dd>{email}</dd>
+            </div>
+            <div>
+              <dt>Số điện thoại</dt>
+              <dd>{original?.phone || "Chưa bổ sung"}</dd>
+            </div>
+          </dl>
+          <div className="ui-actions">
+            <button
+              type="button"
+              onClick={() => {
+                setSaveError(null);
+                setEditing(true);
+              }}
             >
-              Tên hiển thị
-            </label>
-            <input
-              id="profile-display-name"
-              type="text"
-              maxLength={200}
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
-              required
-            />
+              Chỉnh sửa thông tin
+            </button>
+            <Link to="/change-password">Đổi mật khẩu</Link>
           </div>
+        </section>
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white shadow rounded-lg p-6 space-y-4"
+        >
+          <fieldset disabled={saving} className="space-y-4">
+            <div>
+              <label
+                htmlFor="profile-display-name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Tên hiển thị
+              </label>
+              <input
+                autoFocus
+                id="profile-display-name"
+                type="text"
+                maxLength={200}
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              />
+            </div>
 
-          <div>
-            <label
-              htmlFor="profile-email"
-              className="block text-sm font-medium text-gray-700 mb-1"
+            <p>
+              Email đăng nhập: <strong>{email}</strong>
+            </p>
+            <p id="profile-email-hint">
+              Email đăng nhập không thể thay đổi tại đây.
+            </p>
+            <Link to="/change-password">Đổi mật khẩu</Link>
+            <div>
+              <label
+                htmlFor="profile-phone"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Số điện thoại
+              </label>
+              <input
+                id="profile-phone"
+                type="tel"
+                autoComplete="tel"
+                maxLength={20}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Email
-            </label>
-            <input
-              id="profile-email"
-              type="email"
-              aria-describedby="profile-email-hint"
-              value={email}
-              disabled
-              className="w-full border rounded-md p-2 bg-gray-100 cursor-not-allowed"
-            />
-          </div>
-
-          <p id="profile-email-hint">
-            Email đăng nhập không thể thay đổi tại đây.
-          </p>
-          <Link to="/change-password">Đổi mật khẩu</Link>
-          <div>
-            <label
-              htmlFor="profile-phone"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
+            </button>
+            <button
+              type="button"
+              className="ui-button ui-button-secondary"
+              disabled={saving}
+              onClick={() => {
+                setDisplayName(original?.displayName ?? "");
+                setPhone(original?.phone ?? "");
+                setSaveError(null);
+                setEditing(false);
+              }}
             >
-              Số điện thoại
-            </label>
-            <input
-              id="profile-phone"
-              type="tel"
-              autoComplete="tel"
-              maxLength={20}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border rounded-md p-2 focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {saving ? "Đang lưu..." : "Lưu thay đổi"}
-          </button>
-        </fieldset>
-      </form>
+              Hủy thay đổi
+            </button>
+          </fieldset>
+        </form>
+      )}
     </div>
   );
 };

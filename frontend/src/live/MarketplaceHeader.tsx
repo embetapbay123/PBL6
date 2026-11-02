@@ -104,6 +104,14 @@ export function MarketplaceHeader() {
       callOperation("listCartItems", { query: { page: 1, size: 1 } }),
     staleTime: 30000,
   });
+  const notifications = useQuery({
+    queryKey: ["notifications", "header"],
+    enabled: customer,
+    staleTime: 15000,
+    refetchInterval: 30000,
+    queryFn: () =>
+      callOperation("listNotifications", { query: { page: 1, size: 1 } }),
+  });
   useEffect(() => {
     setMenu(false);
     setMobile(false);
@@ -201,9 +209,20 @@ export function MarketplaceHeader() {
                 <Link
                   className="header-icon"
                   to="/customer/notifications"
-                  aria-label="Thông báo"
+                  aria-label={
+                    notifications.data?.unread
+                      ? "Thông báo, " + notifications.data.unread + " chưa đọc"
+                      : "Thông báo"
+                  }
                 >
                   <Bell size={22} />
+                  {!!notifications.data?.unread && (
+                    <b className="header-notification-badge" aria-hidden="true">
+                      {notifications.data.unread > 99
+                        ? "99+"
+                        : notifications.data.unread}
+                    </b>
+                  )}
                 </Link>
                 <Link
                   className="header-icon header-cart"
@@ -266,17 +285,14 @@ export function MarketplaceHeader() {
                     </>
                   ) : (
                     <>
-                      <Link to="/profile">Hồ sơ</Link>
+                      <Link to="/profile">Tài khoản của tôi</Link>
                       {customer && (
                         <>
                           <Link to="/customer/orders">Đơn hàng</Link>
                           <Link to="/customer/favorites">Yêu thích</Link>
                           <Link to="/customer/addresses">Sổ địa chỉ</Link>
-                          <Link to="/customer/invitations">Lời mời Store</Link>
-                          <Link to="/customer/settings">Cài đặt</Link>
                         </>
                       )}
-                      <Link to="/change-password">Đổi mật khẩu</Link>
                     </>
                   )}
                   {merchant && <Link to="/seller">Store Portal</Link>}
