@@ -45,7 +45,7 @@ function publishLogoutNotice(failed: boolean) {
 }
 export function MarketplaceHeader() {
   const chat = useChat();
-  const { session, logout } = useAuth(),
+  const { session, logout, restoring } = useAuth(),
     location = useLocation(),
     navigate = useNavigate(),
     [menu, setMenu] = useState(false),
@@ -238,13 +238,16 @@ export function MarketplaceHeader() {
                   <button
                     className="header-icon market-header-chat"
                     data-chat-opener
+                    disabled={restoring}
                     type="button"
                     aria-label={
                       chat.ui.status === "minimized"
                         ? "Khôi phục chat"
                         : "Mở chat"
                     }
-                    title="Chat"
+                    title={
+                      restoring ? "Đang khôi phục phiên đăng nhập…" : "Chat"
+                    }
                     aria-controls="chat-center-dialog"
                     aria-expanded={chat.ui.status === "open"}
                     onClick={() => chat.openChat()}
@@ -385,6 +388,7 @@ export function MarketplaceHeader() {
             <button
               type="button"
               data-chat-opener
+              disabled={restoring}
               aria-label={
                 chat.ui.status === "minimized" ? "Khôi phục chat" : "Mở chat"
               }
