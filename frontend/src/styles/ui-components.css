@@ -411,6 +411,7 @@
 }
 .order-detail-main,
 .order-detail-sidebar {
+  align-self: start;
   min-width: 0;
 }
 .order-detail-sidebar {
@@ -824,6 +825,9 @@
   color: var(--ui-muted);
 }
 @media (min-width: 1024px) {
+  .financial-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .market-native-dialog:has(.variant-matrix) {
     width: min(920px, calc(100vw - 64px));
   }

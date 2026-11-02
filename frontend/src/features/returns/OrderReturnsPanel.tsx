@@ -115,7 +115,7 @@ function Panel({ order }: { order: OperationOutputs["getOwnOrder"] }) {
           <ProgressSteps
             label="Chuẩn bị yêu cầu"
             steps={[
-              "Đọc phạm vi",
+              "Phạm vi toàn đơn",
               "Chọn phương án và lý do",
               "Gửi để cửa hàng xem xét",
             ]}

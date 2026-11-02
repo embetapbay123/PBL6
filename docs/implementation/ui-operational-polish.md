@@ -64,3 +64,5 @@ Các khả năng còn lại cần đợt mở rộng contract riêng nếu muố
 | TypeScript | PASS sau các thay đổi hành vi |
 
 Các lần chạy trước và lỗi đã sửa được giữ trong thư mục artifact riêng; kết quả phát hành lấy từ các lượt cuối ở bảng trên. Playwright fixture không được mô tả là provider/DB thật. Kiểm tra demo sau deploy chỉ đăng nhập, đọc dữ liệu và mở/hủy form; không phát sinh mutation nghiệp vụ.
+
+Build production frontend đạt. Kiểm tra demo Customer/Owner/Admin đạt, không có page error hoặc mutation nghiệp vụ (`public-report.json`). Xem ảnh thật rồi chỉnh KPI thành 3×2, sidebar đơn không kéo giãn theo cột timeline, và đổi nhãn bước đổi trả để không giả rằng khách đã đọc chính sách. Hai ca liên quan đã chạy lại đạt tại `visual-final/`; không cộng hai lượt chạy lại vào 47 ca nghiệm thu ở trên.
