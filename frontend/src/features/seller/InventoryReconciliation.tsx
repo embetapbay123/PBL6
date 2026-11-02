@@ -71,7 +71,7 @@ export function InventoryReconciliation({ variantId }: { variantId?: string }) {
   return (
     <section
       id="stock-reconciliation"
-      className="boot-card mt-8"
+      className="boot-card mt-4"
       aria-label="Đối chiếu kho theo kỳ"
     >
       <h2>Đối chiếu tồn thương mại theo kỳ</h2>
@@ -84,6 +84,7 @@ export function InventoryReconciliation({ variantId }: { variantId?: string }) {
       ) : (
         <>
           <form
+            className="stock-period-filter"
             onSubmit={(event) => {
               event.preventDefault();
               if (!inventoryPeriod(fromDraft, toDraft)) {

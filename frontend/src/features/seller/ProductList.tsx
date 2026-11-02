@@ -275,11 +275,22 @@ export function SellerProductList() {
                           className="ui-button ui-button-secondary"
                           state={{ returnTo }}
                           to={"/seller/products/" + product.id + "/edit"}
+                          style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 11px", fontSize: "12.5px", textDecoration: "none" }}
                         >
-                          <SquarePen size={13} />
-                          Sửa sản phẩm
+                          <SquarePen size={14} />
+                          Sửa
                         </Link>
-                        <UiButton variant="ghost" size="sm" type="button" aria-label={'Chi tiết '+product.title} onClick={()=>setInspect(product)}><Eye size={14}/>Xem</UiButton>
+                        <UiButton
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          aria-label={"Chi tiết " + product.title}
+                          onClick={() => setInspect(product)}
+                          style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 10px", fontSize: "12.5px" }}
+                        >
+                          <Eye size={14} />
+                          Chi tiết
+                        </UiButton>
                         <ActionMenu label={"Thao tác " + product.title}>
                           <UiButton
                             variant="secondary"
@@ -336,37 +347,71 @@ export function SellerProductList() {
           onClose={() => setInspect(undefined)}
         >
           <div className="seller-product-inspect">
-          <h2>{inspect.title}</h2>
-          <details className="product-description"><summary>Mô tả sản phẩm</summary><p>{inspect.description || "Chưa có mô tả."}</p></details>
-          <p><span className="market-badge">{inspect.status==='ACTIVE'?'Đang bán':inspect.status==='DRAFT'?'Bản nháp':'Dừng bán'}</span> · {inspect.moderation_status==='HIDDEN'?'Đang bị ẩn':'Được hiển thị'}</p>
-          {inspect.moderation_status==='HIDDEN'?<ProductModerationNotice product={inspect}/>:<details><summary>Lịch sử kiểm duyệt</summary><ProductModerationNotice product={inspect}/></details>}
-          <div className="market-moderation-images">
-            {inspect.images?.map((image) => (
-              <img key={image.id} src={image.image_url} alt={inspect.title} />
-            ))}
-          </div>
-          <h3>Biến thể</h3>
-          <div className="market-table-scroll"><table><thead><tr><th>Phân loại</th><th>SKU</th><th>Giá bán</th><th>Trạng thái</th></tr></thead><tbody>
-            {inspect.variants?.map((variant) => (
-              <tr key={variant.id}><td>{variantLabel(variant.variant_values,'Tiêu chuẩn')}</td><td>{variant.sku}</td><td>{variant.price_vnd.toLocaleString('vi-VN')} ₫</td><td>{variant.status==='ACTIVE'?'Đang bán':'Dừng bán'}</td></tr>
-            ))}
-          </tbody></table></div>
-          <div className="ui-actions">
-            <UiButton
-              variant="secondary"
-              type="submit"
-              onClick={() => setInspect(undefined)}
-            >
-              Đóng
-            </UiButton>
-            <Link
-              className="ui-button ui-button-primary"
-              state={{ returnTo }}
-              to={"/seller/products/" + inspect.id + "/edit"}
-            >
-              Chỉnh sửa sản phẩm
-            </Link>
-          </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h2 style={{ margin: '0 0 6px', fontSize: '20px' }}>{inspect.title}</h2>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span className="market-badge">{inspect.status==='ACTIVE'?'Đang bán':inspect.status==='DRAFT'?'Bản nháp':'Dừng bán'}</span>
+                  <span style={{ fontSize: '13px', color: inspect.moderation_status==='HIDDEN' ? '#b91c1c' : '#15803d' }}>
+                    {inspect.moderation_status==='HIDDEN' ? '● Đang bị ẩn' : '● Được hiển thị'}
+                  </span>
+                </div>
+              </div>
+              <Link
+                className="ui-button ui-button-primary"
+                state={{ returnTo }}
+                to={"/seller/products/" + inspect.id + "/edit"}
+                style={{ textDecoration: 'none', padding: '7px 14px', fontSize: '13px' }}
+              >
+                Chỉnh sửa sản phẩm
+              </Link>
+            </div>
+            {inspect.images && inspect.images.length > 0 && (
+              <div className="market-moderation-images" style={{ margin: '8px 0', padding: '6px 0' }}>
+                {inspect.images.map((image) => (
+                  <img key={image.id} src={image.image_url} alt={inspect.title} style={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                ))}
+              </div>
+            )}
+            <details className="product-description" open>
+              <summary>Mô tả sản phẩm</summary>
+              <p>{inspect.description || "Chưa có mô tả."}</p>
+            </details>
+            {inspect.moderation_status==='HIDDEN'?<ProductModerationNotice product={inspect}/>:<details><summary>Lịch sử kiểm duyệt</summary><ProductModerationNotice product={inspect}/></details>}
+            <h3 style={{ margin: '14px 0 6px', fontSize: '15px' }}>Biến thể ({inspect.variants?.length ?? 0})</h3>
+            <div className="market-table-scroll" style={{ maxHeight: '220px' }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Phân loại</th>
+                    <th>SKU</th>
+                    <th>Giá bán</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inspect.variants?.map((variant) => (
+                    <tr key={variant.id}>
+                      <td><strong>{variantLabel(variant.variant_values,'Tiêu chuẩn')}</strong></td>
+                      <td><code>{variant.sku || '—'}</code></td>
+                      <td style={{ fontWeight: 650 }}>{variant.price_vnd.toLocaleString('vi-VN')} ₫</td>
+                      <td>
+                        <span className="market-badge">{variant.status==='ACTIVE'?'Đang bán':'Dừng bán'}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="ui-actions" style={{ marginTop: '14px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
+              <UiButton
+                variant="secondary"
+                type="submit"
+                onClick={() => setInspect(undefined)}
+              >
+                Đóng
+              </UiButton>
+            </div>
           </div>
         </Modal>
       )}

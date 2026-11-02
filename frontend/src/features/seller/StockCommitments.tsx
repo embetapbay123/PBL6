@@ -46,7 +46,7 @@ export function StockCommitments({
       });
   }, [query.data, query.isFetching, query.error, page]);
   return (
-    <section className="boot-card mt-8" aria-label="Hàng đã trừ chưa bàn giao">
+    <section className="boot-card mt-4" aria-label="Hàng đã trừ chưa bàn giao">
       <h2>Hàng đã trừ nhưng chưa bàn giao</h2>
       <Alert level="info">
         Kiểm tra phần hàng đã trừ trước khi kiểm kê. Không tự cộng/trừ lượng này

@@ -312,48 +312,95 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
               báo cáo trước khi đối chiếu.
             </p>
             <nav className="order-status-tabs" aria-label="Nội dung báo cáo">{[['summary','Tổng hợp'],['cash','Thu / hoàn theo kỳ'],['entries','Giao dịch'],['gaps','Khoản chưa rõ ngày']].map(([value,label])=><button type="button" key={value} aria-pressed={reportView===value} onClick={()=>setReportView(value)}>{label}</button>)}</nav>
-            <div hidden={reportView!=='summary'}><div className="market-table-scroll financial-summary-table"><table><thead><tr><th>Chỉ tiêu trong kỳ</th><th>Giá trị</th></tr></thead><tbody>
-              {Object.entries(countLabels).map(([key, label]) => (
-                <tr key={key}>
-                  <th scope="row">{label}</th>
-                  <td>
-                    {key === "order_count"
-                      ? query.data!.order_count
-                      : money(query.data![key as keyof typeof countLabels])}
-                  </td>
-                </tr>
-              ))}
-            </tbody></table></div>
-            <Button
-              variant="secondary"
-              disabled={query.isFetching || reading}
-              onClick={() =>
-                downloadReportCsv({
-                  scope:
-                    scope === "STORE"
-                      ? (context!.store_membership!.store_id ??
-                        "Store hiện hành")
-                      : store || "Toàn sàn",
-                  from,
-                  to,
-                  summary: Object.fromEntries(
-                    Object.entries(countLabels).map(([key, label]) => [
-                      label,
-                      query.data![key as keyof typeof countLabels],
-                    ]),
-                  ),
-                  rows: query.data!.cash_series,
-                })
-              }
-            >
-              <Download size={16} aria-hidden="true" />
-              Xuất tổng hợp CSV
-            </Button>
-            <p className="form-hint">
-              CSV gồm tổng hợp và chuỗi thu/hoàn của phạm vi, kỳ đang xem; không
-              phải bản xuất toàn bộ giao dịch. Đối chiếu từng khoản ở danh sách
-              bên dưới.
-            </p>
+            <div hidden={reportView!=='summary'}>
+              <div className="financial-kpi-grid">
+                <div className="financial-kpi-card">
+                  <dt>Doanh thu hàng hoàn tất</dt>
+                  <dd>{money(query.data.completed_goods_revenue_vnd)}</dd>
+                </div>
+                <div className="financial-kpi-card is-collected">
+                  <dt>Tiền xác nhận thu</dt>
+                  <dd>{money(query.data.collected_vnd)}</dd>
+                </div>
+                <div className="financial-kpi-card is-refunded">
+                  <dt>Tiền xác nhận hoàn</dt>
+                  <dd>{money(query.data.refunded_vnd)}</dd>
+                </div>
+                <div className="financial-kpi-card">
+                  <dt>Số đơn tạo trong kỳ</dt>
+                  <dd>{query.data.order_count.toLocaleString('vi-VN')} đơn</dd>
+                </div>
+              </div>
+              <div className="market-table-scroll financial-summary-table" role="region" aria-label="Bảng tổng hợp chỉ tiêu tài chính">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col" style={{ width: '45%' }}>Chỉ tiêu trong kỳ</th>
+                      <th scope="col" style={{ width: '25%' }}>Phân loại</th>
+                      <th scope="col" style={{ width: '30%', textAlign: 'right' }}>Giá trị</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(countLabels).map(([key, label]) => {
+                      const isMoney = key !== 'order_count';
+                      const isCollect = key === 'collected_vnd';
+                      const isRefund = key === 'refunded_vnd';
+                      const isRev = key === 'completed_goods_revenue_vnd' || key === 'order_value_vnd';
+                      const category = isRefund ? 'Chi trả / Hoàn tiền' : isCollect ? 'Dòng tiền vào' : isRev ? 'Doanh số bán' : key === 'shipping_fee_vnd' ? 'Vận chuyển' : 'Số lượng';
+                      const badgeClass = isRefund ? 'money-kind is-refund' : isCollect ? 'money-kind is-collection' : 'market-badge';
+                      return (
+                        <tr key={key}>
+                          <th scope="row">
+                            <strong style={{ display: 'block', fontSize: '13.5px' }}>{label}</strong>
+                          </th>
+                          <td>
+                            <span className={badgeClass}>{category}</span>
+                          </td>
+                          <td style={{
+                            color: isCollect ? '#15803d' : isRefund ? '#b91c1c' : '#0f172a',
+                            fontWeight: 700,
+                            textAlign: 'right'
+                          }}>
+                            {!isMoney
+                              ? query.data!.order_count.toLocaleString('vi-VN')
+                              : (isCollect ? '+ ' : isRefund ? '- ' : '') + money(query.data![key as keyof typeof countLabels])}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '16px' }}>
+                <Button
+                  variant="secondary"
+                  disabled={query.isFetching || reading}
+                  onClick={() =>
+                    downloadReportCsv({
+                      scope:
+                        scope === "STORE"
+                          ? (context!.store_membership!.store_id ??
+                            "Store hiện hành")
+                          : store || "Toàn sàn",
+                      from,
+                      to,
+                      summary: Object.fromEntries(
+                        Object.entries(countLabels).map(([key, label]) => [
+                          label,
+                          query.data![key as keyof typeof countLabels],
+                        ]),
+                      ),
+                      rows: query.data!.cash_series,
+                    })
+                  }
+                >
+                  <Download size={16} aria-hidden="true" />
+                  Xuất tổng hợp CSV
+                </Button>
+                <p className="form-hint" style={{ margin: 0 }}>
+                  Bản xuất CSV gồm tổng hợp và chuỗi thu/hoàn của kỳ đang xem.
+                </p>
+              </div>
             </div><div hidden={reportView!=='cash'}>{!!query.data.cash_series?.length && (
               <details className="report-chart-disclosure"><summary>Xem biểu đồ thu / hoàn</summary><CashChart rows={query.data.cash_series} /></details>
             )}

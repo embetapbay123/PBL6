@@ -87,12 +87,12 @@ export function SellerOverview() {
   return (
     <section className="seller-overview">
       <SellerSubNav />
-      <div className="seller-products-toolbar">
+      <div className="seller-overview-header">
         <div>
           <h1>{store.data?.name ?? "Gian hàng của bạn"}</h1>
-          <p>Tổng quan hoạt động gian hàng</p>
+          <p>Trung tâm điều hành và tổng quan hoạt động gian hàng</p>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {access.can("product.store.read_write") && (
             <Link
               className="ui-button ui-button-primary"
@@ -115,11 +115,9 @@ export function SellerOverview() {
       {store.isPending && <Loading />}
       {store.data && !store.error && (
         <>
-          {(!store.data.return_address || !['recipient_name','phone','line1','ward','district','city'].every(key=>String(store.data.return_address?.[key as keyof typeof store.data.return_address] ?? '').trim()))&&<p role="status">Địa chỉ nhận trả chưa đầy đủ. Chủ Store cần hoàn thiện trước khi nhận đơn mới.</p>}
-          {access.can('order.store.read_status_cancel')&&<div className="seller-work-alerts"><Link to="/seller/orders?status=PENDING">Đơn chờ xác nhận: {pendingOrders.error?'Chưa tải được':pendingOrders.data?.total??'Đang tải…'}</Link><Link to="/seller/returns?status=REQUESTED">Yêu cầu đổi trả chờ duyệt: {pendingReturns.error?'Chưa tải được':pendingReturns.data?.total??'Đang tải…'}</Link></div>}
-          <div className="seller-overview-guides"><details className="seller-guide"><summary>Thiết lập & điều kiện nhận đơn</summary><StoreSetupGuide store={store.data} /></details>
-          <details className="seller-guide"><summary>Quyền & hướng dẫn công việc</summary><StoreWorkGuide /></details></div>
-          <div className="market-stats mt-6">
+          {(!store.data.return_address || !['recipient_name','phone','line1','ward','district','city'].every(key=>String(store.data.return_address?.[key as keyof typeof store.data.return_address] ?? '').trim()))&&<div className="seller-alert-card" role="status" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#991b1b' }}><span>⚠️ Địa chỉ nhận trả chưa đầy đủ. Chủ Store cần hoàn thiện trước khi nhận đơn mới.</span>{access.owner&&<Link to="/seller/settings" style={{ color: '#b91c1c', textDecoration: 'underline' }}>Bổ sung ngay →</Link>}</div>}
+          {access.can('order.store.read_status_cancel')&&<div className="seller-work-alerts"><Link to="/seller/orders?status=PENDING"><span>Đơn chờ xác nhận:</span> <span className="seller-alert-badge">{pendingOrders.error?'Chưa tải được':pendingOrders.data?.total??'Đang tải…'}</span></Link><Link to="/seller/returns?status=REQUESTED"><span>Yêu cầu đổi trả chờ duyệt:</span> <span className="seller-alert-badge">{pendingReturns.error?'Chưa tải được':pendingReturns.data?.total??'Đang tải…'}</span></Link></div>}
+          <div className="market-stats">
             {[
               ["/seller/products", "Sản phẩm", ShoppingBag],
               ["/seller/inventory", "Tồn kho", Boxes],
@@ -136,8 +134,10 @@ export function SellerOverview() {
                 const Symbol = Icon as typeof Store;
                 return (
                   <Link className="seller-overview-tile" key={String(href)} to={String(href)}>
-                    <Symbol className="text-emerald-600" size={25} />
-                    <h3>{String(label)}</h3>
+                    <div className="seller-tile-top">
+                      <h3>{String(label)}</h3>
+                      <div className="seller-tile-icon"><Symbol size={22} /></div>
+                    </div>
                     <p className="overview-count">
                       {counts[String(href)].error
                         ? "Chưa tải được"
@@ -153,7 +153,7 @@ export function SellerOverview() {
                 );
               })}
           </div>
-          <div className="boot-card seller-operating-info">
+          <div className="seller-operating-info">
             <h2>Thông tin vận hành</h2>
             <p>
               Trạng thái:{" "}
@@ -161,14 +161,16 @@ export function SellerOverview() {
             </p>
             <p>
               Phí giao hàng:{" "}
-              {store.data.shipping_fee_vnd !== undefined
+              <strong>{store.data.shipping_fee_vnd !== undefined
                 ? formatMoney(store.data.shipping_fee_vnd)
-                : "Chưa được cung cấp"}
+                : "Chưa được cung cấp"}</strong>
             </p>
             {access.owner && (
-              <Link to="/seller/settings">Cập nhật gian hàng</Link>
+              <Link to="/seller/settings" className="ui-button ui-button-secondary" style={{ padding: '6px 12px', fontSize: '12.5px', textDecoration: 'none' }}>Cập nhật gian hàng</Link>
             )}
           </div>
+          <div className="seller-overview-guides"><details className="seller-guide"><summary>Thiết lập & điều kiện nhận đơn</summary><StoreSetupGuide store={store.data} /></details>
+          <details className="seller-guide"><summary>Quyền & hướng dẫn công việc</summary><StoreWorkGuide /></details></div>
         </>
       )}
     </section>
@@ -707,26 +709,48 @@ export function StoreInventory() {
                   <thead>
                     <tr>
                       <SortHeader label="Sản phẩm / SKU" value={sort} ascending="NAME_ASC" descending="NAME_DESC" onChange={value=>setInventoryFilter('sort',value)}/>
-                      <th>Tồn thương mại</th>
-                      <th>Đang giữ</th>
+                      <th style={{ width: '15%' }}>Tồn thương mại</th>
+                      <th style={{ width: '15%' }}>Đang giữ</th>
                       <SortHeader label="Có thể bán" value={sort} ascending="AVAILABLE_ASC" descending="AVAILABLE_DESC" onChange={value=>setInventoryFilter('sort',value)}/>
-                      <th></th>
+                      <th style={{ width: '22%', textAlign: 'right' }}>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
                     {inventory.data.items.map((item) => (
                       <tr key={item.variant_id}>
-                        <td><div className="seller-inventory-identity">{inventoryImages.get(item.variant_id) && <div className="order-item-current-image"><ProductImage src={inventoryImages.get(item.variant_id)} name={item.product_title ?? 'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/><small>Ảnh hiện tại</small></div>}<span>{variantName(item)}{item.product_id&&<span className="inventory-item-links"><Link to={'/products/'+item.product_id}>Xem sản phẩm</Link>{access.can('product.store.read_write')&&<Link to={'/seller/products/'+item.product_id+'/edit'}>Chỉnh sửa</Link>}</span>}</span></div></td>
-                        <td>{item.quantity}</td>
-                        <td>{item.reserved_quantity}</td>
                         <td>
-                          <span className="market-badge">
+                          <div className="seller-inventory-identity">
+                            {inventoryImages.get(item.variant_id) && (
+                              <div className="order-item-current-image">
+                                <ProductImage src={inventoryImages.get(item.variant_id)} name={item.product_title ?? 'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/>
+                                <small>Ảnh hiện tại</small>
+                              </div>
+                            )}
+                            <div>
+                              <strong style={{ display: 'block', fontSize: '13.5px', color: '#0f172a' }}>{variantName(item)}</strong>
+                              {item.product_id && (
+                                <div className="inventory-item-links">
+                                  <Link to={'/products/'+item.product_id}>Xem sản phẩm</Link>
+                                  {access.can('product.store.read_write') && (
+                                    <Link to={'/seller/products/'+item.product_id+'/edit'}>Chỉnh sửa</Link>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '14px', fontWeight: 600 }}>{item.quantity}</td>
+                        <td style={{ fontSize: '14px', color: '#64748b' }}>{item.reserved_quantity}</td>
+                        <td>
+                          <span className={'market-badge ' + (item.available_quantity === 0 ? 'is-danger' : item.available_quantity < 5 ? 'is-warning' : 'is-success')} style={{ fontWeight: 700, fontSize: '13px' }}>
                             {item.available_quantity}
                           </span>
                           {item.available_quantity === 0 ? <span className="seller-low-stock"> · Hết hàng</span> : item.available_quantity < 5 && <span className="seller-low-stock"> · Còn ít (dưới 5)</span>}
                         </td>
-                        <td className="inventory-row-actions">
+                        <td className="inventory-row-actions" style={{ textAlign: 'right' }}>
                           <button
+                            className="ui-button ui-button-secondary"
+                            style={{ padding: '5px 12px', fontSize: '12.5px', marginRight: '6px' }}
                             disabled={
                               !item.product_title || inventory.isFetching
                             }
@@ -776,7 +800,7 @@ export function StoreInventory() {
           )}
           {view === "commitments" && <StockCommitments filters={filters} />}
           {view === "history" && (
-            <div id="stock-history" className="boot-card mt-8">
+            <div id="stock-history" className="boot-card mt-4">
               <h2>Lịch sử biến động kho</h2>
               <form key={(params.get("stock_from")??"")+":"+(params.get("stock_to")??"")} className="stock-period-filter" onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget),from=String(data.get('from')??''),to=String(data.get('to')??'');const end=event.currentTarget.elements.namedItem('to') as HTMLInputElement;end.setCustomValidity(!inventoryPeriod(from,to)?'Chọn kỳ hợp lệ: ngày kết thúc không trước ngày bắt đầu, tối đa 366 ngày.':'');if(!event.currentTarget.reportValidity())return;setParams(current=>{const next=new URLSearchParams(current);next.set('stock_from',from);next.set('stock_to',to);next.set('history_page','1');return next;});}}><label>Từ ngày<input name="from" type="date" required defaultValue={params.get('stock_from')??''}/></label><label>Đến hết ngày<input name="to" type="date" required defaultValue={params.get('stock_to')??''} onChange={event=>event.target.setCustomValidity('')}/></label><button type="submit">Lọc lịch sử</button><button type="button" onClick={()=>setParams(current=>{const next=new URLSearchParams(current);next.delete('stock_from');next.delete('stock_to');next.set('history_page','1');return next;})}>Bỏ lọc ngày</button></form>
               {filters.variant_id &&

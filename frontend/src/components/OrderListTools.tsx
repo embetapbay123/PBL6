@@ -155,7 +155,7 @@ export function OrderListFilters({
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <button>Tìm trong toàn bộ đơn</button>
+        <button className="ui-button ui-button-primary">Tìm trong toàn bộ đơn</button>
       </form>
       <div className="seller-product-filters">
         <label>
@@ -204,7 +204,7 @@ export function OrderListFilters({
             ))}
           </select>
         </label>
-        <button type="button" onClick={filters.reset}>
+        <button type="button" className="ui-button ui-button-secondary" onClick={filters.reset}>
           Bỏ bộ lọc đơn
         </button>
       </div>
