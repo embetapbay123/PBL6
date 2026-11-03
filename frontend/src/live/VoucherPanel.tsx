@@ -195,18 +195,22 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
       </button>
       {showForm && (
         <Modal
-          variant="drawer"
+          variant="dialog"
           label={editing ? "Sửa voucher" : "Tạo voucher mới"}
           busy={controlsLocked}
           onClose={() => void closeForm()}
         >
-          <button
-            type="button"
-            disabled={controlsLocked}
-            onClick={() => void closeForm()}
-          >
-            Đóng và quay lại danh sách
-          </button>
+          <div className="voucher-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ margin: 0, fontSize: 18 }}>{editing ? "Sửa voucher" : "Tạo voucher mới"}</h2>
+            <button
+              type="button"
+              className="ui-button ui-button-secondary"
+              disabled={controlsLocked}
+              onClick={() => void closeForm()}
+            >
+              Đóng và quay lại danh sách
+            </button>
+          </div>
           <CreateVoucher
             key={editing?.id ?? "create"}
             scope={scope}
@@ -300,14 +304,18 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                       <span className={'seller-status '+(v.status==='ACTIVE'?'is-active':'is-inactive')}>{v.status==='ACTIVE'?'Đang hoạt động':v.status==='STOPPED'?'Đã dừng':'Chưa rõ trạng thái'}</span>
                     </td>
                     <td>
-                      <div className="ui-actions">
+                      <div className="voucher-table-actions">
                         <button
+                          type="button"
+                          className="voucher-action-btn"
                           disabled={controlsLocked || !v.id}
                           onClick={() => showUsage(v)}
                         >
                           Xem lượt dùng
                         </button>
                         <button
+                          type="button"
+                          className="voucher-action-btn"
                           disabled={controlsLocked || !v.id || !!statusReview}
                           onClick={async () => {
                             if (showForm && editing?.id === v.id) return;
@@ -320,37 +328,41 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                         >
                           Sửa voucher
                         </button>
+                        {v.status === "STOPPED" && (
+                          <button
+                            type="button"
+                            className="voucher-action-btn voucher-btn-activate"
+                            disabled={
+                              controlsLocked ||
+                              list.isFetching ||
+                              !v.id ||
+                              v.version === undefined ||
+                              statusReview?.id === v.id ||
+                              (showForm && editing?.id === v.id)
+                            }
+                            onClick={() => changeStatus(v, "ACTIVE")}
+                          >
+                            Mở lại voucher
+                          </button>
+                        )}
+                        {v.status === "ACTIVE" && (
+                          <button
+                            type="button"
+                            className="voucher-action-btn voucher-btn-stop"
+                            disabled={
+                              controlsLocked ||
+                              list.isFetching ||
+                              !v.id ||
+                              v.version === undefined ||
+                              statusReview?.id === v.id ||
+                              (showForm && editing?.id === v.id)
+                            }
+                            onClick={() => changeStatus(v, "STOPPED")}
+                          >
+                            Dừng voucher
+                          </button>
+                        )}
                       </div>
-                      {v.status === "STOPPED" && (
-                        <button
-                          disabled={
-                            controlsLocked ||
-                            list.isFetching ||
-                            !v.id ||
-                            v.version === undefined ||
-                            statusReview?.id === v.id ||
-                            (showForm && editing?.id === v.id)
-                          }
-                          onClick={() => changeStatus(v, "ACTIVE")}
-                        >
-                          Mở lại voucher
-                        </button>
-                      )}
-                      {v.status === "ACTIVE" && (
-                        <button
-                          disabled={
-                            controlsLocked ||
-                            list.isFetching ||
-                            !v.id ||
-                            v.version === undefined ||
-                            statusReview?.id === v.id ||
-                            (showForm && editing?.id === v.id)
-                          }
-                          onClick={() => changeStatus(v, "STOPPED")}
-                        >
-                          Dừng voucher
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -518,48 +530,49 @@ function CreateVoucher({
     });
   };
   return (
-    <form className="boot-card" onSubmit={submit}>
-      <h2>{initial ? "Sửa ưu đãi " + initial.code : "Tạo ưu đãi"}</h2>
-      <p>
+    <form className="boot-card voucher-modal-form" onSubmit={submit}>
+      <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: '13px' }}>
         Đơn đã chốt giữ nguyên snapshot ưu đãi. Lượt đã dùng không được phục hồi
         sau hủy / hoàn; lượt giữ chưa tạo đơn được nhả.
       </p>
-      <aside className="voucher-preview">
-        <div className="seller-voucher-card" aria-label="Xem trước voucher">
-          <span>{scope === 'STORE' ? 'Ưu đãi từ gian hàng' : 'Ưu đãi từ sàn'}</span>
-          <strong>{type === 'PERCENT' ? `${value || 0}%` : formatMoney(value || 0)}</strong>
-          <span>Mã: {code.trim() || 'Chưa nhập mã'}</span>
-          <small>Đơn từ {formatMoney(minimum || 0)}{type === 'PERCENT' && capped ? ` · Giảm tối đa ${formatMoney(cap || 0)}` : ''}</small>
-        </div>
-        <h3>Thử mức giảm</h3>
-        <label>
-          Tiền hàng ví dụ (VND)
-          <input
-            type="number"
-            min={0}
-            max={1000000000}
-            step={1}
-            value={exampleGoods}
-            onChange={(e) => setExampleGoods(Number(e.target.value))}
-          />
-        </label>
-        <p role="status">
-          {!previewValid
-            ? "Nhập số nguyên từ 0 đến 1 tỷ đồng để xem ví dụ."
-            : exampleGoods < minimum
-              ? "Ví dụ này chưa đạt tiền hàng tối thiểu."
-              : "Ước tính giảm " +
-                formatMoney(estimatedDiscount) +
-                "; tiền hàng còn " +
-                formatMoney(exampleGoods - estimatedDiscount) +
-                "."}
-        </p>
-        <small>
-          Chỉ minh họa riêng mã này; chưa gồm phí giao hàng, mã khác, thời hạn
-          và hạn mức. Tổng thực tế do checkout kiểm tra.
-        </small>
-      </aside>
-      <fieldset disabled={command.busy || blocked} className="market-form-grid">
+      <div className="voucher-modal-body-layout">
+        <aside className="voucher-preview">
+          <div className="seller-voucher-card" aria-label="Xem trước voucher">
+            <span>{scope === 'STORE' ? 'Ưu đãi từ gian hàng' : 'Ưu đãi từ sàn'}</span>
+            <strong>{type === 'PERCENT' ? `${value || 0}%` : formatMoney(value || 0)}</strong>
+            <span>Mã: {code.trim() || 'Chưa nhập mã'}</span>
+            <small>Đơn từ {formatMoney(minimum || 0)}{type === 'PERCENT' && capped ? ` · Giảm tối đa ${formatMoney(cap || 0)}` : ''}</small>
+          </div>
+          <h3>Thử mức giảm</h3>
+          <label>
+            Tiền hàng ví dụ (VND)
+            <input
+              type="number"
+              min={0}
+              max={1000000000}
+              step={1}
+              value={exampleGoods}
+              onChange={(e) => setExampleGoods(Number(e.target.value))}
+            />
+          </label>
+          <p role="status">
+            {!previewValid
+              ? "Nhập số nguyên từ 0 đến 1 tỷ đồng để xem ví dụ."
+              : exampleGoods < minimum
+                ? "Ví dụ này chưa đạt tiền hàng tối thiểu."
+                : "Ước tính giảm " +
+                  formatMoney(estimatedDiscount) +
+                  "; tiền hàng còn " +
+                  formatMoney(exampleGoods - estimatedDiscount) +
+                  "."}
+          </p>
+          <small>
+            Chỉ minh họa riêng mã này; chưa gồm phí giao hàng, mã khác, thời hạn
+            và hạn mức. Tổng thực tế do checkout kiểm tra.
+          </small>
+        </aside>
+        <div className="voucher-fields-container">
+          <fieldset disabled={command.busy || blocked} className="market-form-grid">
         <label>
           Mã voucher
           <input
@@ -678,12 +691,17 @@ function CreateVoucher({
           />
         </label>
       </fieldset>
+      </div>
+      </div>
       {command.error != null && <ErrorView error={command.error} />}
-      <button
-        disabled={command.busy || blocked || end <= start || !code.trim()}
-      >
-        {initial ? "Lưu voucher" : "Tạo voucher"}
-      </button>
+      <div className="voucher-form-submit-row" style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <button
+          className="ui-button ui-button-primary"
+          disabled={command.busy || blocked || end <= start || !code.trim()}
+        >
+          {initial ? "Lưu voucher" : "Tạo voucher"}
+        </button>
+      </div>
       {blocked && initial && (
         <button
           type="button"
