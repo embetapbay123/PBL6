@@ -502,13 +502,65 @@
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
   border-top: 1px solid var(--ui-line);
   padding-top: 12px;
 }
-.live-content .address-card-actions button {
-  font-size: 12px;
-  min-height: 32px;
-  padding: 6px 10px;
+.live-content .address-card-actions :is(button, a).addr-btn {
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  min-height: 32px !important;
+  padding: 5px 12px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-secondary {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-secondary:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-danger {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fca5a5 !important;
+  box-shadow: 0 1px 2px rgba(185, 28, 28, 0.04) !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-danger:hover:not(:disabled) {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #ef4444 !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-default {
+  background: #f0f9ff !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+  box-shadow: 0 1px 2px rgba(3, 105, 161, 0.04) !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-default:hover:not(:disabled) {
+  background: #e0f2fe !important;
+  color: #0284c7 !important;
+  border-color: #7dd3fc !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn-primary {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--accent) !important;
+}
+.live-content .address-card-actions :is(button, a).addr-btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
 }
 .market-notifications {
   display: grid;

@@ -535,12 +535,14 @@ export const AddressPage: React.FC = () => {
                   <Link
                     to={returnTo}
                     state={checkoutAddressState(userId, addr.id)}
+                    className="addr-btn addr-btn-primary"
                   >
                     Giao đến địa chỉ này
                   </Link>
                 )}
                 <button
                   type="button"
+                  className="addr-btn addr-btn-secondary"
                   disabled={locked}
                   onClick={() => editAddress(addr)}
                 >
@@ -551,7 +553,7 @@ export const AddressPage: React.FC = () => {
                     type="button"
                     onClick={() => void handleSetDefault(addr.id)}
                     disabled={locked}
-                    className="text-indigo-600 hover:underline text-right disabled:opacity-50"
+                    className="addr-btn addr-btn-default"
                   >
                     {busy ? "Đang xử lý..." : "Thiết lập mặc định"}
                   </button>
@@ -560,7 +562,7 @@ export const AddressPage: React.FC = () => {
                   type="button"
                   onClick={() => void handleDelete(addr.id)}
                   disabled={locked}
-                  className="text-red-600 hover:underline text-right disabled:opacity-50"
+                  className="addr-btn addr-btn-danger"
                 >
                   Xóa
                 </button>
