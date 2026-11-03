@@ -734,6 +734,15 @@ class ApiClient {
         : {'status': 'CANCELLED'};
   }
 
+  Future<Map<String, dynamic>?> getOrderRefund(String id) async {
+    try {
+      final res = await get('/orders/$id/refund');
+      return (res is Map) ? Map<String, dynamic>.from(res) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>> createReview({
     required String productId,
     required String orderItemId,

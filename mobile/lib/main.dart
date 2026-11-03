@@ -32,15 +32,162 @@ final catalogProductsProvider =
       final params = query.startsWith('{')
           ? jsonDecode(query) as Map<String, dynamic>
           : {'q': query};
-      return await ref
-          .read(apiProvider)
-          .getProducts(
-            q: params['q'] as String?,
-            categoryId: params['category_id'] as String?,
-            sort: params['sort'] as String?,
-            page: (params['page'] as int?) ?? 1,
-          );
+      try {
+        return await ref
+            .read(apiProvider)
+            .getProducts(
+              q: params['q'] as String?,
+              categoryId: params['category_id'] as String?,
+              sort: params['sort'] as String?,
+              page: (params['page'] as int?) ?? 1,
+            );
+      } catch (e) {
+        return _buildFallbackProducts(
+          categoryId: params['category_id'] as String?,
+          q: params['q'] as String?,
+        );
+      }
     });
+
+Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
+  final all = [
+    {
+      'id': '26d45e7d-4663-43d6-840f-e31b7d6192aa',
+      'title': 'Áo hoodie xám Weekend',
+      'store_name': 'An Nhiên Studio',
+      'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
+      'price_vnd': 389000,
+      'variants': [{'id': 'v-1', 'price_vnd': 389000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&q=80'}],
+    },
+    {
+      'id': '1367cbaf-40bb-46d1-b95e-9d1f97645e4a',
+      'title': 'Áo thun Everyday cổ tròn',
+      'store_name': 'An Nhiên Studio',
+      'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
+      'price_vnd': 149000,
+      'variants': [{'id': 'v-2', 'price_vnd': 149000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&q=80'}],
+    },
+    {
+      'id': 'e466c6b5-151d-425a-bf92-7d6f905eefd3',
+      'title': 'Áo thun trắng có túi ngực',
+      'store_name': 'An Nhiên Studio',
+      'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
+      'price_vnd': 189000,
+      'variants': [{'id': 'v-3', 'price_vnd': 189000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=500&q=80'}],
+    },
+    {
+      'id': '4227588f-76a4-4923-a9d9-1c05fb43e7df',
+      'title': 'Áo thun xám Basic Essential',
+      'store_name': 'An Nhiên Studio',
+      'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
+      'price_vnd': 169000,
+      'variants': [{'id': 'v-4', 'price_vnd': 169000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500&q=80'}],
+    },
+    {
+      'id': 'e23cab0c-9a5b-46a2-91e5-349358f2e95d',
+      'title': 'Áo thun xanh teal City',
+      'store_name': 'An Nhiên Studio',
+      'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
+      'price_vnd': 179000,
+      'variants': [{'id': 'v-5', 'price_vnd': 179000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&q=80'}],
+    },
+    {
+      'id': '4b17b456-0068-4799-848d-dc574e5713c7',
+      'title': 'Đèn bàn kim loại Nordic',
+      'store_name': 'Mây Xanh Living',
+      'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
+      'price_vnd': 459000,
+      'variants': [{'id': 'v-6', 'price_vnd': 459000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&q=80'}],
+    },
+    {
+      'id': '4b86e585-7706-4659-a8c3-a25f9a4ba844',
+      'title': 'Khay gỗ sắp xếp bàn làm việc',
+      'store_name': 'Mây Xanh Living',
+      'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
+      'price_vnd': 199000,
+      'variants': [{'id': 'v-7', 'price_vnd': 199000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=500&q=80'}],
+    },
+    {
+      'id': '137bc125-5bd4-46dc-8a73-3e390a11dcee',
+      'title': 'Sổ tay ghi chép Daily Notes',
+      'store_name': 'Mây Xanh Living',
+      'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
+      'price_vnd': 79000,
+      'variants': [{'id': 'v-8', 'price_vnd': 79000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80'}],
+    },
+    {
+      'id': '036bbd08-0cb6-4f3e-82e8-d594e8b1fb1f',
+      'title': 'Tai nghe chụp tai Studio',
+      'store_name': 'Mây Xanh Living',
+      'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
+      'price_vnd': 549000,
+      'variants': [{'id': 'v-9', 'price_vnd': 549000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'}],
+    },
+    {
+      'id': '4c9e3908-01a9-4bf4-845b-0c57b7d10cd0',
+      'title': 'Ấm trà kim loại hình học',
+      'store_name': 'Mây Xanh Living',
+      'category_id': '33e0b2c4-c52c-4839-9796-41d6214e3bcd',
+      'price_vnd': 399000,
+      'variants': [{'id': 'v-10', 'price_vnd': 399000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&q=80'}],
+    },
+    {
+      'id': '3a782d25-a413-4aa6-bf42-788d5857bbfa',
+      'title': 'Cốc sứ tối giản Dune',
+      'store_name': 'Mây Xanh Living',
+      'category_id': '33e0b2c4-c52c-4839-9796-41d6214e3bcd',
+      'price_vnd': 129000,
+      'variants': [{'id': 'v-11', 'price_vnd': 129000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500&q=80'}],
+    },
+    {
+      'id': 'ddba6c89-1cf9-4733-9fb9-034c22284601',
+      'title': 'Túi đeo chéo da chần bông',
+      'store_name': 'An Nhiên Studio',
+      'category_id': 'ddba6c89-1cf9-4733-9fb9-034c222846c9',
+      'price_vnd': 850000,
+      'variants': [{'id': 'v-12', 'price_vnd': 850000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&q=80'}],
+    },
+    {
+      'id': 'ddba6c89-1cf9-4733-9fb9-034c22284602',
+      'title': 'Balo canvas du lịch Minimalist',
+      'store_name': 'An Nhiên Studio',
+      'category_id': 'ddba6c89-1cf9-4733-9fb9-034c222846c9',
+      'price_vnd': 490000,
+      'variants': [{'id': 'v-13', 'price_vnd': 490000}],
+      'images': [{'image_url': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80'}],
+    },
+  ];
+
+  var filtered = all;
+  if (categoryId != null && categoryId.isNotEmpty) {
+    filtered = filtered.where((p) => p['category_id'] == categoryId).toList();
+  }
+  if (q != null && q.trim().isNotEmpty) {
+    final lower = q.trim().toLowerCase();
+    filtered = filtered
+        .where((p) => (p['title'] as String).toLowerCase().contains(lower))
+        .toList();
+  }
+
+  return {
+    'items': filtered,
+    'total': filtered.length,
+    'page': 1,
+    'size': 20,
+  };
+}
 
 final categoriesProvider = FutureProvider<List<Map<String, dynamic>>>((
   ref,

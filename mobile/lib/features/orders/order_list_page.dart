@@ -485,6 +485,36 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                         ),
                       ),
                     ),
+                    if (order['refund_status'] != null && order['refund_status'].toString().isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: order['refund_status'] == 'SUCCEEDED'
+                              ? Colors.green.shade50
+                              : Colors.purple.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: order['refund_status'] == 'SUCCEEDED'
+                                ? Colors.green.shade200
+                                : Colors.purple.shade200,
+                          ),
+                        ),
+                        child: Text(
+                          order['refund_status'] == 'SUCCEEDED' ? 'Đã hoàn tiền' : 'Hoàn tiền',
+                          style: TextStyle(
+                            color: order['refund_status'] == 'SUCCEEDED'
+                                ? Colors.green.shade700
+                                : Colors.purple.shade700,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const Divider(height: 18, color: Color(0xFFF1F3F5)),

@@ -43,6 +43,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     try {
       final client = ref.read(apiProvider);
       final res = await client.getOwnOrder(widget.orderId);
+      if (res['status'] == 'CANCELLED' && res['refund_status'] == null) {
+        final refund = await client.getOrderRefund(widget.orderId);
+        if (refund != null && refund['status'] != null) {
+          res['refund_status'] = refund['status'];
+          if (refund['amount_vnd'] != null) {
+            res['refunded_vnd'] = refund['amount_vnd'];
+          }
+        }
+      }
       if (mounted) {
         setState(() {
           _order = res;
@@ -233,6 +242,14 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                           _buildPaymentInfoCard(),
 
                           const SizedBox(height: 14),
+
+                          // Refund Information Card (if cancelled with refund or has refund_status)
+                          if (_order!['refund_status'] != null ||
+                              (_order!['status'] == 'CANCELLED' && _order!['payment_method'] == 'SANDBOX') ||
+                              (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0)) ...[
+                            _buildRefundInfoCard(),
+                            const SizedBox(height: 14),
+                          ],
 
                           // 5. Billing Summary Card
                           _buildBillingSummaryCard(),
@@ -830,6 +847,109 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRefundInfoCard() {
+    final refundStatus = _order!['refund_status']?.toString() ?? 'REQUESTED';
+    final refundedVnd = (_order!['refunded_vnd'] as num?)?.toInt() ??
+        ((_order!['amounts'] as Map?)?['payable_vnd'] as num?)?.toInt() ??
+        0;
+    final isSuccess = refundStatus == 'SUCCEEDED';
+    final isProcessing = refundStatus == 'PROCESSING' || refundStatus == 'REQUESTED';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isSuccess ? const Color(0xFFF0FDF4) : const Color(0xFFFAF5FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSuccess ? const Color(0xFFBBF7D0) : const Color(0xFFE9D5FF),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isSuccess ? Icons.check_circle_outline : Icons.restore,
+                  color: isSuccess ? const Color(0xFF16A34A) : const Color(0xFF9333EA),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Thông tin hoàn tiền',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14.5,
+                    color: isSuccess ? const Color(0xFF15803D) : const Color(0xFF7E22CE),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isSuccess ? const Color(0xFFDCFCE7) : const Color(0xFFF3E8FF),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isSuccess ? const Color(0xFF86EFAC) : const Color(0xFFD8B4FE),
+                    ),
+                  ),
+                  child: Text(
+                    isSuccess ? 'ĐÃ HOÀN TIỀN' : (isProcessing ? 'ĐANG XỬ LÝ' : refundStatus),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isSuccess ? const Color(0xFF16A34A) : const Color(0xFF9333EA),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Số tiền hoàn:',
+                  style: TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
+                ),
+                Text(
+                  _formatPrice(refundedVnd),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: isSuccess ? const Color(0xFF16A34A) : const Color(0xFF7E22CE),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isSuccess
+                  ? 'Tiền hoàn đã được chuyển về tài khoản thanh toán của bạn.'
+                  : (refundStatus == 'REQUESTED'
+                      ? 'Chưa xác nhận hoàn tiền. Trạng thái yêu cầu: REQUESTED. Hệ thống đang tiến hành xử lý hoàn tiền tự động.'
+                      : 'Yêu cầu hoàn tiền đang được cổng thanh toán đối soát.'),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6B7280),
+                height: 1.35,
+              ),
+            ),
           ],
         ),
       ),

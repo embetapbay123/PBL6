@@ -18,6 +18,7 @@ class CatalogPage extends ConsumerStatefulWidget {
 
 class _CatalogPageState extends ConsumerState<CatalogPage> {
   late final TextEditingController _searchController;
+  late final ScrollController _scrollController;
   String _searchQuery = '';
   String? _selectedCategory;
   String _sort = 'title';
@@ -28,6 +29,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     super.initState();
     _searchQuery = widget.initialSearch ?? '';
     _searchController = TextEditingController(text: _searchQuery);
+    _scrollController = ScrollController();
   }
 
   String get _catalogKey => jsonEncode({
@@ -40,6 +42,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -59,6 +62,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
   void _selectCategory(String? categoryId) {
     setState(() {
+      _searchController.clear();
+      _searchQuery = '';
       if (_selectedCategory == categoryId) {
         _selectedCategory = null;
       } else {
@@ -114,6 +119,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ref.invalidate(recommendationProvider);
         },
         child: CustomScrollView(
+          controller: _scrollController,
           slivers: [
             // Top Bar & Navbar & Search Bar
             SliverToBoxAdapter(
@@ -124,7 +130,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                child: _buildHeroBanner(context),
+                child: _buildHeroBanner(context, categoriesAsync),
               ),
             ),
 
@@ -141,23 +147,56 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Đang lọc theo danh mục',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFBF2ED),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFF3D2C4)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.filter_list_rounded, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Đang xem danh mục: ${categoriesAsync.asData?.value.firstWhere((c) => c['id']?.toString() == _selectedCategory, orElse: () => <String, dynamic>{})['name']?.toString() ?? (_selectedCategory == '3aeb8256-3d88-46be-8321-89bb43aaf300' ? 'Thời trang' : (_selectedCategory == 'cd314f70-d4f7-4b34-bb05-33df23027833' ? 'Góc làm việc' : (_selectedCategory == '33e0b2c4-c52c-4839-9796-41d6214e3bcd' ? 'Nhà cửa & đời sống' : 'Túi & phụ kiện')))}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ActionChip(
-                        avatar: const Icon(Icons.close, size: 14),
-                        label: const Text('Xóa lọc'),
-                        onPressed: () => _selectCategory(null),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
+                        InkWell(
+                          onTap: () => _selectCategory(null),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.close, size: 12, color: Color(0xFF64748B)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Bỏ lọc',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -502,114 +541,119 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   /// Warm Beige Hero Banner matching Web Screenshot
-  Widget _buildHeroBanner(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F2EC),
+  Widget _buildHeroBanner(
+    BuildContext context,
+    AsyncValue<List<Map<String, dynamic>>> categoriesAsync,
+  ) {
+    return Material(
+      color: const Color(0xFFF7F2EC),
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _onCategoryCardTapped('Thời trang', categoriesAsync),
         borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'TỪ NHỮNG ĐIỀU GIẢN ĐƠN',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF8C7E72),
-                    letterSpacing: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Chọn món bạn thích.\nThêm vui mỗi ngày.',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1F2937),
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Trang phục dễ mặc, góc nhà dễ thương và những món đồ dùng thật hữu ích.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF5C5248),
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: () => _onCategoryCardTapped('Thời trang'),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Khám phá thời trang',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 15,
-                        color: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 110,
-              height: 135,
-              child: Image.network(
-                'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500&q=80',
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, err, stack) => Container(
-                  color: const Color(0xFFEFE8DE),
-                  child: const Center(
-                    child: Icon(
-                      Icons.checkroom_rounded,
-                      size: 38,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                loadingBuilder: (ctx, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    color: const Color(0xFFEFE8DE),
-                    child: const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primary,
-                        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'TỪ NHỮNG ĐIỀU GIẢN ĐƠN',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF8C7E72),
+                        letterSpacing: 1.1,
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Chọn món bạn thích.\nThêm vui mỗi ngày.',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1F2937),
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Trang phục dễ mặc, góc nhà dễ thương và những món đồ dùng thật hữu ích.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF5C5248),
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'Khám phá thời trang',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 15,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 110,
+                  height: 135,
+                  child: Image.network(
+                    'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500&q=80',
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => Container(
+                      color: const Color(0xFFEFE8DE),
+                      child: const Center(
+                        child: Icon(
+                          Icons.checkroom_rounded,
+                          size: 38,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    loadingBuilder: (ctx, child, progress) {
+                      if (progress == null) return child;
+                      return Container(
+                        color: const Color(0xFFEFE8DE),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -732,8 +776,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final imageUrl = item['image'] as String;
     final icon = item['icon'] as IconData;
 
+    final isSelected = (_selectedCategory == '3aeb8256-3d88-46be-8321-89bb43aaf300' && title == 'Thời trang') ||
+        (_selectedCategory == 'cd314f70-d4f7-4b34-bb05-33df23027833' && title == 'Góc làm việc') ||
+        (_selectedCategory == '33e0b2c4-c52c-4839-9796-41d6214e3bcd' && title == 'Nhà cửa & đời sống') ||
+        (_selectedCategory == 'ddba6c89-1cf9-4733-9fb9-034c222846c9' && title == 'Túi & phụ kiện');
+
     return Material(
-      color: Colors.white,
+      color: isSelected ? const Color(0xFFFBF2ED) : Colors.white,
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -742,7 +791,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : const Color(0xFFE5E7EB),
+              width: isSelected ? 2 : 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -783,10 +835,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1F2937),
+                    color: isSelected ? AppColors.primary : const Color(0xFF1F2937),
                   ),
                 ),
               ),
@@ -801,6 +853,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     String title, [
     AsyncValue<List<Map<String, dynamic>>>? categoriesAsync,
   ]) {
+    _searchController.clear();
+    _searchQuery = '';
+
     final list = categoriesAsync?.asData?.value ?? [];
     final query = title.toLowerCase();
     Map<String, dynamic>? match;
@@ -809,9 +864,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       if (cName.contains(query) ||
           (query.contains('thời trang') && cName.contains('thời trang')) ||
           (query.contains('làm việc') &&
-              (cName.contains('điện tử') || cName.contains('laptop') || cName.contains('tech'))) ||
+              (cName.contains('làm việc') || cName.contains('điện tử') || cName.contains('laptop') || cName.contains('tech'))) ||
           (query.contains('nhà cửa') &&
-              (cName.contains('gia dụng') || cName.contains('đời sống') || cName.contains('nhà'))) ||
+              (cName.contains('nhà cửa') || cName.contains('gia dụng') || cName.contains('đời sống') || cName.contains('nhà'))) ||
           (query.contains('phụ kiện') &&
               (cName.contains('phụ kiện') || cName.contains('túi')))) {
         match = c;
@@ -819,8 +874,30 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       }
     }
 
-    if (match != null && match['id'] != null) {
-      _selectCategory(match['id'].toString());
+    String? categoryId = match?['id']?.toString();
+    if (categoryId == null) {
+      if (query.contains('thời trang')) {
+        categoryId = '3aeb8256-3d88-46be-8321-89bb43aaf300';
+      } else if (query.contains('làm việc')) {
+        categoryId = 'cd314f70-d4f7-4b34-bb05-33df23027833';
+      } else if (query.contains('nhà cửa')) {
+        categoryId = '33e0b2c4-c52c-4839-9796-41d6214e3bcd';
+      } else if (query.contains('phụ kiện')) {
+        categoryId = 'ddba6c89-1cf9-4733-9fb9-034c222846c9';
+      }
+    }
+
+    if (categoryId != null) {
+      _selectCategory(categoryId);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            500,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
     } else {
       _searchController.text = title;
       _onSearch(title);
