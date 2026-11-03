@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../catalog/catalog_page.dart';
 import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
 import '../chat/chat_ai_modal.dart';
@@ -20,6 +21,23 @@ class _CartPageState extends ConsumerState<CartPage> {
   String? _activeStoreId;
   bool _isEditing = false;
   bool _busy = false;
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _handleSearch(String query) {
+    final text = query.trim();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CatalogPage(initialSearch: text),
+      ),
+    );
+  }
 
   String _formatPrice(int price) {
     final s = price.toString();
@@ -31,6 +49,76 @@ class _CartPageState extends ConsumerState<CartPage> {
       if (count % 3 == 0 && i > 0) buffer.write('.');
     }
     return '${buffer.toString().split('').reversed.join('')} đ';
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: const Color(0xFFD1D5DB),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 14),
+            child: Icon(
+              Icons.search,
+              color: Color(0xFF6B7280),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              textInputAction: TextInputAction.search,
+              onSubmitted: _handleSearch,
+              decoration: const InputDecoration(
+                hintText: 'Bạn đang tìm sản phẩm gì?',
+                hintStyle: TextStyle(
+                  color: Color(0xFF6B7280),
+                  fontSize: 13.5,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(4),
+            child: Material(
+              color: const Color(0xFFBA3416),
+              borderRadius: BorderRadius.circular(8),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => _handleSearch(_searchController.text),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 9,
+                  ),
+                  child: Text(
+                    'Tìm kiếm',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -206,6 +294,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
                   children: [
+                    _buildSearchBar(),
                     Padding(
                       padding: const EdgeInsets.all(32.0),
                       child: Column(
@@ -317,44 +406,8 @@ class _CartPageState extends ConsumerState<CartPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Alert Banner (Single Vendor Policy)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0F0),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: const Color(0xFFFFD6D6),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.info_outline,
-                          color: Color(0xFFE53935),
-                          size: 18,
-                        ),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Mỗi lần thanh toán chỉ áp dụng cho sản phẩm của một cửa hàng.',
-                            style: TextStyle(
-                              color: Color(0xFFD32F2F),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Top Search Bar (matches web marketplace header)
+                  _buildSearchBar(),
 
                   // Store Groups List
                   ListView.builder(

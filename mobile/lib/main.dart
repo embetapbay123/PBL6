@@ -159,9 +159,11 @@ class BootstrapApp extends StatelessWidget {
 
         switch (settings.name) {
           case '/':
-            return MaterialPageRoute(builder: (_) => const CatalogPage());
           case '/products':
-            return MaterialPageRoute(builder: (_) => const CatalogPage());
+            final initialSearch = settings.arguments as String?;
+            return MaterialPageRoute(
+              builder: (_) => CatalogPage(initialSearch: initialSearch),
+            );
           case '/product-detail':
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(

@@ -8,18 +8,27 @@ import '../shared/app_bottom_nav.dart';
 import 'product_detail_page.dart';
 
 class CatalogPage extends ConsumerStatefulWidget {
-  const CatalogPage({super.key});
+  const CatalogPage({super.key, this.initialSearch});
+
+  final String? initialSearch;
 
   @override
   ConsumerState<CatalogPage> createState() => _CatalogPageState();
 }
 
 class _CatalogPageState extends ConsumerState<CatalogPage> {
-  final _searchController = TextEditingController();
+  late final TextEditingController _searchController;
   String _searchQuery = '';
   String? _selectedCategory;
   String _sort = 'title';
   int _page = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchQuery = widget.initialSearch ?? '';
+    _searchController = TextEditingController(text: _searchQuery);
+  }
 
   String get _catalogKey => jsonEncode({
         'q': _searchQuery,
