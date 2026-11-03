@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../main.dart';
-import '../chat/chat_ai_modal.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
   const EditProfilePage({super.key, this.initialProfile});
@@ -327,7 +326,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   } else if (label == 'Đơn hàng') {
                     Navigator.pushNamed(context, '/orders');
                   } else if (label == 'Tin nhắn') {
-                    ChatAiModal.show(context);
+                    Navigator.pushReplacementNamed(context, '/store-messages');
                   } else if (label == 'Yêu thích') {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Danh sách sản phẩm yêu thích')),

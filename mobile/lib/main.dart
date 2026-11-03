@@ -11,6 +11,7 @@ import 'features/auth/forgot_password_page.dart';
 import 'features/auth/change_password_page.dart';
 import 'features/profile/profile_page.dart';
 import 'features/profile/edit_profile_page.dart';
+import 'features/profile/store_messages_page.dart';
 import 'features/address/address_list_page.dart';
 import 'features/address/address_form_page.dart';
 
@@ -216,6 +217,10 @@ class BootstrapApp extends StatelessWidget {
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
               builder: (_) => EditProfilePage(initialProfile: args),
+            );
+          case '/store-messages':
+            return MaterialPageRoute(
+              builder: (_) => const StoreMessagesPage(),
             );
           case '/addresses':
             return MaterialPageRoute(builder: (_) => const AddressListPage());

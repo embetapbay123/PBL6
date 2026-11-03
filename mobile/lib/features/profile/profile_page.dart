@@ -759,6 +759,14 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const Divider(height: 1, indent: 56, endIndent: 16),
                 _buildMenuTile(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  title: 'Tin nhắn với gian hàng',
+                  subtitle: 'Trao đổi về sản phẩm, đơn hàng và hỗ trợ sau mua',
+                  badgeCount: 1,
+                  onTap: () => Navigator.pushNamed(context, '/store-messages'),
+                ),
+                const Divider(height: 1, indent: 56, endIndent: 16),
+                _buildMenuTile(
                   icon: Icons.location_on_outlined,
                   title: 'Địa chỉ nhận hàng',
                   subtitle: 'Sổ địa chỉ nhận hàng',
@@ -852,6 +860,7 @@ class ProfilePage extends ConsumerWidget {
     required IconData icon,
     required String title,
     String? subtitle,
+    int? badgeCount,
     required VoidCallback onTap,
   }) {
     return Material(
@@ -892,10 +901,34 @@ class ProfilePage extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               )
             : null,
-        trailing: const Icon(
-          Icons.chevron_right,
-          size: 20,
-          color: AppColors.textMuted,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (badgeCount != null && badgeCount > 0) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  '$badgeCount',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
+            const Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: AppColors.textMuted,
+            ),
+          ],
         ),
         onTap: onTap,
       ),

@@ -28,15 +28,25 @@ class ChatCenterPage extends StatelessWidget {
 
 /// Modal Bottom Sheet wrapper for Chat Center
 class ChatAiModal extends StatelessWidget {
-  const ChatAiModal({super.key, this.initialPrompt, this.productContext});
+  const ChatAiModal({
+    super.key,
+    this.initialPrompt,
+    this.productContext,
+    this.initialTab = 0,
+    this.initialStoreName,
+  });
 
   final String? initialPrompt;
   final Map<String, dynamic>? productContext;
+  final int initialTab;
+  final String? initialStoreName;
 
   static void show(
     BuildContext context, {
     String? initialPrompt,
     Map<String, dynamic>? productContext,
+    int initialTab = 0,
+    String? initialStoreName,
   }) {
     showModalBottomSheet(
       context: context,
@@ -45,6 +55,8 @@ class ChatAiModal extends StatelessWidget {
       builder: (_) => ChatAiModal(
         initialPrompt: initialPrompt,
         productContext: productContext,
+        initialTab: initialTab,
+        initialStoreName: initialStoreName,
       ),
     );
   }
@@ -62,6 +74,8 @@ class ChatAiModal extends StatelessWidget {
         isPage: false,
         initialPrompt: initialPrompt,
         productContext: productContext,
+        initialTab: initialTab,
+        initialStoreName: initialStoreName,
         onClose: () => Navigator.of(context).pop(),
       ),
     );
@@ -76,12 +90,16 @@ class ChatCenterView extends ConsumerStatefulWidget {
     required this.onClose,
     this.initialPrompt,
     this.productContext,
+    this.initialTab = 0,
+    this.initialStoreName,
   });
 
   final bool isPage;
   final VoidCallback onClose;
   final String? initialPrompt;
   final Map<String, dynamic>? productContext;
+  final int initialTab;
+  final String? initialStoreName;
 
   @override
   ConsumerState<ChatCenterView> createState() => _ChatCenterViewState();
@@ -104,6 +122,16 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
   @override
   void initState() {
     super.initState();
+    _activeTab = widget.initialTab;
+    _selectedStoreName = widget.initialStoreName;
+    if (_selectedStoreName != null) {
+      _messages.add({
+        'isUser': false,
+        'senderName': _selectedStoreName,
+        'text': 'DEMO-CHAT-1793644239974 — Gian hàng demo đã nhận và trả lời. Bạn đang quan tâm đến sản phẩm nào của shop?',
+      });
+    }
+
     _controller.addListener(() {
       if (mounted) setState(() {});
     });

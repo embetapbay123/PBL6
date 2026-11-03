@@ -14,6 +14,7 @@ import 'package:pbl6_mobile/features/catalog/consent_dialog.dart';
 import 'package:pbl6_mobile/features/catalog/product_detail_page.dart';
 import 'package:pbl6_mobile/features/profile/edit_profile_page.dart';
 import 'package:pbl6_mobile/features/profile/profile_page.dart';
+import 'package:pbl6_mobile/features/profile/store_messages_page.dart';
 import 'package:pbl6_mobile/main.dart';
 
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
@@ -555,8 +556,24 @@ void main() {
       expect(find.text('Nguyễn Văn A'), findsOneWidget);
       expect(find.text('user@example.com'), findsOneWidget);
       expect(find.text('CUSTOMER'), findsOneWidget);
+      expect(find.text('Tin nhắn với gian hàng', skipOffstage: false), findsOneWidget);
       expect(find.text('Sổ địa chỉ nhận hàng', skipOffstage: false), findsOneWidget);
       expect(find.text('Đổi mật khẩu', skipOffstage: false), findsOneWidget);
+    });
+
+    testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: StoreMessagesPage(),
+          ),
+        ),
+      );
+
+      expect(find.text('Tin nhắn với gian hàng'), findsWidgets);
+      expect(find.text('Trao đổi về sản phẩm, đơn hàng và hỗ trợ sau mua.'), findsOneWidget);
+      expect(find.text('An Nhiên Studio'), findsOneWidget);
+      expect(find.text('Mây Xanh Living'), findsOneWidget);
     });
 
     testWidgets('EditProfilePage pre-fills initial values', (tester) async {
