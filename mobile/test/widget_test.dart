@@ -73,6 +73,22 @@ class MockApiClient extends ApiClient {
   };
 
   @override
+  Future<Map<String, dynamic>> createChatSession({String? firstMessage}) async => {
+    'id': 'sess-mock-1',
+    'anonymous_key': 'key-mock-1',
+  };
+
+  @override
+  Future<Map<String, dynamic>> sendChatMessage(
+    String sessionId,
+    String content, {
+    String? chatKey,
+  }) async => {
+    'content': 'Đây là phản hồi từ AI hỗ trợ mua sắm.',
+    'product_cards': [],
+  };
+
+  @override
   Future<Map<String, dynamic>> addToCart({
     required String variantId,
     required String productId,

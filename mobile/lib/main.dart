@@ -22,6 +22,7 @@ import 'features/checkout/order_success_page.dart';
 import 'features/orders/order_list_page.dart';
 import 'features/orders/order_detail_page.dart';
 import 'features/customer/store_application_page.dart';
+import 'features/chat/chat_ai_modal.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
 
@@ -242,7 +243,7 @@ class BootstrapApp extends StatelessWidget {
             );
           case '/chat':
             return MaterialPageRoute(
-              builder: (_) => const PendingPage('Chat AI'),
+              builder: (_) => const ChatCenterPage(),
             );
           default:
             return MaterialPageRoute(builder: (_) => const CatalogPage());
