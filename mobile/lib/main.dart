@@ -149,6 +149,13 @@ class BootstrapApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       initialRoute: '/',
       onGenerateRoute: (settings) {
+        final uri = Uri.tryParse(settings.name ?? '');
+        if (uri != null && uri.pathSegments.length == 2 && uri.pathSegments[0] == 'products') {
+          return MaterialPageRoute(
+            builder: (_) => ProductDetailPage(productId: uri.pathSegments[1]),
+          );
+        }
+
         switch (settings.name) {
           case '/':
             return MaterialPageRoute(builder: (_) => const CatalogPage());

@@ -65,6 +65,14 @@ class MockApiClient extends ApiClient {
   }) async => [];
 
   @override
+  Future<Map<String, dynamic>> getStore(String storeId) async => {
+    'id': storeId,
+    'name': 'PBL Tech Store',
+    'description': 'Cửa hàng công nghệ chính hãng',
+    'shipping_fee_vnd': 30000,
+  };
+
+  @override
   Future<Map<String, dynamic>> addToCart({
     required String variantId,
     required String productId,

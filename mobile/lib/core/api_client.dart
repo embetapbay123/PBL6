@@ -466,7 +466,12 @@ class ApiClient {
     return Map<String, dynamic>.from(res as Map);
   }
 
-  // --- Store Products (M1) ---
+  // --- Store Endpoints (M1) ---
+  Future<Map<String, dynamic>> getStore(String storeId) async {
+    final res = await get('/stores/$storeId');
+    return Map<String, dynamic>.from(res as Map);
+  }
+
   Future<Map<String, dynamic>> getStoreProducts(
     String storeId, {
     int page = 1,
