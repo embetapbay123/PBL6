@@ -33,6 +33,7 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
           (member.role === "OWNER" ||
             !!member.permissions?.includes("order.store.read_status_cancel"));
   const [polling, setPolling] = useState(true);
+  const [selectedReturnId, setSelectedReturnId] = useState<string | null>(null);
   const [params,setParams]=useSearchParams();
   const statuses=['REQUESTED','APPROVED','REJECTED','RECEIVED','EXCHANGE_SENT','COMPLETED'] as const;
   const statusFilter:NonNullable<OperationInputs['listStoreReturnRequests']['query']['status']>|''=scope==='STORE'?statuses.find(status=>status===params.get('status'))??'':'';
@@ -142,47 +143,187 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
               )}
             </Empty>
           )}
-          {query.data.items.map((request) => (
-            <ReturnRequestView
-              key={request.id}
-              request={request}
-              scope={scope}
-              showOrderLink={scope === "CUSTOMER"}
-              context={
-                scope === "ADMIN" ? (
-                  <AdminReturnContext request={request} parties={parties} />
-                ) : undefined
-              }
-            >
-              {scope === "CUSTOMER" &&
-                request.type === "EXCHANGE" &&
-                request.status === "EXCHANGE_SENT" && (
-                  <button
-                    disabled={!!busy}
-                    onClick={() => void confirm(request)}
-                  >
-                    Xác nhận đã nhận hàng đổi
-                  </button>
-                )}
-              {(scope !== "ADMIN" ||
-                (!!request.admin_context &&
-                  parties.stores.has(request.admin_context.store_id) &&
-                  parties.users.has(request.admin_context.customer_user_id) &&
-                  !parties.isFetching)) && (
-                <ReturnActions
-                  key={request.id}
-                  request={request}
-                  scope={scope}
-                  refresh={async () => {
-                    await cache.invalidateQueries(
-                      { queryKey: ["return-requests"] },
-                      { throwOnError: true },
+          {scope === "STORE" && query.data.items.length > 0 && (
+            <div className="market-table-scroll seller-returns-summary-table" style={{ margin: "14px 0 20px" }}>
+              <table role="table" aria-label="Bảng tóm tắt yêu cầu đổi trả">
+                <thead>
+                  <tr>
+                    <th>Mã yêu cầu</th>
+                    <th>Mã đơn hàng</th>
+                    <th>Loại</th>
+                    <th>Lý do</th>
+                    <th>Giá trị</th>
+                    <th>Trạng thái</th>
+                    <th style={{ textAlign: "right" }}>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {query.data.items.map((r) => {
+                    const activeId = selectedReturnId ?? params.get("return_id") ?? query.data!.items[0]?.id;
+                    const isSelected = r.id === activeId;
+                    const labelMap: Record<string, string> = {
+                      REQUESTED: "Chờ duyệt",
+                      APPROVED: "Đã duyệt",
+                      REJECTED: "Đã từ chối",
+                      RECEIVED: "Đã nhận hàng",
+                      EXCHANGE_SENT: "Hàng đổi đã gửi",
+                      COMPLETED: "Hoàn tất",
+                    };
+                    return (
+                      <tr
+                        key={r.id}
+                        style={{
+                          background: isSelected ? "#fff7ed" : undefined,
+                        }}
+                      >
+                        <td>
+                          <strong style={{ color: "#0f172a" }}>#{r.id.slice(0, 8)}</strong>
+                          <small style={{ display: "block", color: "#64748b", fontSize: "11px" }}>
+                            {new Date(r.created_at).toLocaleDateString("vi-VN")}
+                          </small>
+                        </td>
+                        <td>
+                          <code style={{ fontSize: "12px", color: "#334155" }}>{r.order_id.slice(0, 8)}…</code>
+                        </td>
+                        <td>
+                          <span className={`market-badge ${r.type === "EXCHANGE" ? "is-info" : "is-warning"}`}>
+                            {r.type === "EXCHANGE" ? "Đổi hàng" : "Hoàn tiền"}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 500, color: "#0f172a" }}>{r.reason}</span>
+                        </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <strong style={{ color: "#0f172a" }}>{r.amount_vnd.toLocaleString("vi-VN")} ₫</strong>
+                        </td>
+                        <td>
+                          <span className="market-badge">
+                            {labelMap[r.status] ?? r.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          <button
+                            type="button"
+                            className="audit-sub-btn"
+                            style={{
+                              padding: "4px 12px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              background: isSelected ? "#ea580c" : "#ffffff",
+                              color: isSelected ? "#ffffff" : "#0f172a",
+                              border: isSelected ? "1px solid #ea580c" : "1px solid #94a3b8",
+                            }}
+                            onClick={() => {
+                              setSelectedReturnId(r.id);
+                              const el = document.getElementById("seller-return-detail-card");
+                              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                          >
+                            {isSelected ? "✓ Đang xem" : "🔍 Xem chi tiết"}
+                          </button>
+                        </td>
+                      </tr>
                     );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {scope === "STORE" ? (
+            (() => {
+              const activeId = selectedReturnId ?? params.get("return_id") ?? query.data.items[0]?.id;
+              const activeRequest = query.data.items.find((r) => r.id === activeId) ?? query.data.items[0];
+              if (!activeRequest) return null;
+              return (
+                <div
+                  id="seller-return-detail-card"
+                  className="seller-return-detail-section"
+                  style={{
+                    border: "1px solid #fed7aa",
+                    borderRadius: 12,
+                    background: "#ffffff",
+                    padding: 20,
+                    boxShadow: "0 4px 14px rgba(234, 88, 12, 0.07)",
+                    marginBottom: 20,
                   }}
-                />
-              )}
-            </ReturnRequestView>
-          ))}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #fed7aa", paddingBottom: 12, marginBottom: 16 }}>
+                    <div>
+                      <span style={{ fontSize: "11.5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#c2410c" }}>
+                        Hồ sơ chi tiết & Xử lý yêu cầu
+                      </span>
+                      <h2 style={{ margin: "4px 0 2px", fontSize: "18px", color: "#0f172a" }}>
+                        {activeRequest.type === "EXCHANGE" ? "Đổi hàng" : "Hoàn tiền"} #{activeRequest.id}
+                      </h2>
+                      <small style={{ color: "#64748b" }}>Đơn hàng liên quan: <code>{activeRequest.order_id}</code></small>
+                    </div>
+                  </div>
+                  <ReturnRequestView
+                    key={activeRequest.id}
+                    request={activeRequest}
+                    scope={scope}
+                    showOrderLink={false}
+                  >
+                    <ReturnActions
+                      key={activeRequest.id}
+                      request={activeRequest}
+                      scope={scope}
+                      refresh={async () => {
+                        await cache.invalidateQueries(
+                          { queryKey: ["return-requests"] },
+                          { throwOnError: true },
+                        );
+                      }}
+                    />
+                  </ReturnRequestView>
+                </div>
+              );
+            })()
+          ) : (
+            query.data.items.map((request) => (
+              <ReturnRequestView
+                key={request.id}
+                request={request}
+                scope={scope}
+                showOrderLink={scope === "CUSTOMER"}
+                context={
+                  scope === "ADMIN" ? (
+                    <AdminReturnContext request={request} parties={parties} />
+                  ) : undefined
+                }
+              >
+                {scope === "CUSTOMER" &&
+                  request.type === "EXCHANGE" &&
+                  request.status === "EXCHANGE_SENT" && (
+                    <button
+                      disabled={!!busy}
+                      onClick={() => void confirm(request)}
+                    >
+                      Xác nhận đã nhận hàng đổi
+                    </button>
+                  )}
+                {(scope !== "ADMIN" ||
+                  (!!request.admin_context &&
+                    parties.stores.has(request.admin_context.store_id) &&
+                    parties.users.has(request.admin_context.customer_user_id) &&
+                    !parties.isFetching)) && (
+                  <ReturnActions
+                    key={request.id}
+                    request={request}
+                    scope={scope}
+                    refresh={async () => {
+                      await cache.invalidateQueries(
+                        { queryKey: ["return-requests"] },
+                        { throwOnError: true },
+                      );
+                    }}
+                  />
+                )}
+              </ReturnRequestView>
+            ))
+          )}
           <Pagination
             page={page}
             size={query.data.size}

@@ -720,6 +720,65 @@
   flex-shrink: 0;
 }
 
+/* === Store Audit Action Buttons & Badges === */
+.seller-workspace .audit-sub-btn,
+.store-audit-table .audit-sub-btn,
+.store-audit-card .audit-sub-btn,
+.seller-returns-summary-table .audit-sub-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #94a3b8 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  text-decoration: none !important;
+}
+.seller-workspace .audit-sub-btn:hover,
+.store-audit-table .audit-sub-btn:hover,
+.store-audit-card .audit-sub-btn:hover,
+.seller-returns-summary-table .audit-sub-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0284c7 !important;
+  border-color: #0284c7 !important;
+}
+
+/* === Seller Returns Summary Table & Detail Pane === */
+.seller-returns-summary-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.seller-returns-summary-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 10px 14px;
+}
+.seller-returns-summary-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.seller-returns-summary-table tbody tr:hover {
+  background: #f8fafc;
+}
+.seller-return-detail-section {
+  border: 1px solid #fed7aa;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 20px;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.07);
+  margin-top: 18px;
+}
+
 /* === Responsive tweaks === */
 @media (max-width: 1024px) {
   .seller-workspace .seller-overview .market-stats {

@@ -421,7 +421,7 @@ export function StoreAuditPage() {
                               <button
                                 type="button"
                                 className="audit-sub-btn"
-                                style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                style={{ alignSelf: 'flex-start', fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: 6, background: '#ffffff', color: '#0f172a', border: '1px solid #94a3b8', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
                                 onClick={() =>
                                   patch("actor_user_id", entry.actor_user_id!)
                                 }
@@ -444,7 +444,7 @@ export function StoreAuditPage() {
                             <button
                               type="button"
                               className="audit-sub-btn"
-                              style={{ fontSize: '12px', padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                              style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: 6, background: '#ffffff', color: '#0f172a', border: '1px solid #94a3b8', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
                               onClick={() => patch("action", entry.action)}
                             >
                               Chỉ xem hành động này
@@ -460,7 +460,7 @@ export function StoreAuditPage() {
                           className="audit-change-details"
                           style={{ maxWidth: 360, overflowWrap: "anywhere", background: '#f8fafc', padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}
                         >
-                          <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#0284c7' }}>Xem thay đổi</summary>
+                          <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#0369a1', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, padding: '4px 10px', display: 'inline-block' }}>🔍 Xem thay đổi</summary>
                           <small style={{ display: 'block', color: '#64748b', margin: '4px 0', fontSize: '11px' }}>
                             Mã vết đầy đủ: <code>{entry.request_id}</code>
                           </small>
@@ -503,7 +503,7 @@ export function StoreAuditPage() {
                       error={actors.error}
                     />
                   </p>
-                  <button onClick={() => patch("action", entry.action)}>
+                  <button type="button" className="audit-sub-btn" onClick={() => patch("action", entry.action)}>
                     Chỉ xem hành động này
                   </button>
                   <p>
@@ -515,6 +515,8 @@ export function StoreAuditPage() {
                   </p>
                   {entry.actor_kind === "ACCOUNT" && entry.actor_user_id && (
                     <button
+                      type="button"
+                      className="audit-sub-btn"
                       onClick={() =>
                         patch("actor_user_id", entry.actor_user_id!)
                       }
