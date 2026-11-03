@@ -22,6 +22,7 @@ export const sellerRoutes:RouteObject[]=[
   {path:'/seller/messages/:id?',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><MessagesPage scope="STORE"/></ProtectedRoute>},
   {path:'/seller/delivery-returns',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><DeliveryReturnsPage/></ProtectedRoute>},
   {path:'/seller/returns',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><ReturnsPage scope="STORE"/></ProtectedRoute>},
+  {path:'/seller/returns/:id',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><ReturnsPage scope="STORE"/></ProtectedRoute>},
   {path:'/seller/reports',element:<ProtectedRoute roles={['STORE_OWNER']}><StoreReports/></ProtectedRoute>},
   {path:'/seller/vouchers',element:<ProtectedRoute roles={['STORE_OWNER']}><VoucherPanel scope="STORE"/></ProtectedRoute>},
   {path:'/seller/products',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><SellerProductList/></ProtectedRoute>},
