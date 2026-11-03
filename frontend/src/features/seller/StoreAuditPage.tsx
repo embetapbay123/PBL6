@@ -252,11 +252,37 @@ export function StoreAuditPage() {
         liệu nhạy cảm; hồ sơ cũ thiếu liên kết cần Admin đối chiếu bằng mã truy
         vết. Tên tài khoản là nhãn hiện tại, ID giữ để truy lại người thao tác.
       </p>
-      <SourceNavigation
-        value={source}
-        onChange={(value) => setParams({ source: value })}
-      />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', margin: '8px 0 12px' }}>
+        <SourceNavigation
+          value={source}
+          onChange={(value) => setParams({ source: value })}
+        />
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: '#475569' }}>
+          Khu vực nhật ký
+          <select
+            value={source}
+            onChange={(e) => patch("source", e.target.value)}
+            style={{ height: 36, borderRadius: 6, border: '1px solid #cbd5e1', padding: '0 10px', background: '#fff', fontSize: '13px', color: '#0f172a' }}
+          >
+            <option value="catalog">Sản phẩm và kho</option>
+            <option value="commerce">Đơn hàng và thanh toán</option>
+            <option value="identity">Store và nhân viên</option>
+          </select>
+        </label>
+      </div>
       <form
+        className="order-filter-panel audit-filter-panel"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto',
+          gap: '10px',
+          alignItems: 'end',
+          padding: '12px 14px',
+          background: '#ffffff',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
+          margin: '10px 0 14px',
+        }}
         onSubmit={(e) => {
           e.preventDefault();
           setParams((current) => {
@@ -278,51 +304,60 @@ export function StoreAuditPage() {
           });
         }}
       >
-        <label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           Hành động
-          <select value={action} onChange={(e) => setAction(e.target.value)}>
-            <option value="">Tất cả hành động</option>
-            {action && !actions[action] && (
-              <option value={action}>{action}</option>
-            )}
+          <input
+            list="audit-action-options"
+            maxLength={200}
+            placeholder="Ví dụ: UPDATE, ADJUST"
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            style={{ height: 38, borderRadius: 6, border: '1px solid #cbd5e1', padding: '0 10px', background: '#fff' }}
+          />
+          <datalist id="audit-action-options">
             {Object.entries(actions).map(([code, label]) => (
               <option key={code} value={code}>
-                {label}
+                {label} ({code})
               </option>
             ))}
-          </select>
+          </datalist>
         </label>
-        <label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           Loại đối tượng
           <input
             maxLength={200}
-            placeholder="Ví dụ: Product"
+            placeholder="Ví dụ: Product, Order"
             value={target}
             onChange={(e) => setTarget(e.target.value)}
+            style={{ height: 38, borderRadius: 6, border: '1px solid #cbd5e1', padding: '0 10px', background: '#fff' }}
           />
         </label>
-        <label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           Từ ngày (giờ Việt Nam)
           <input
             type="date"
             max={toDate || undefined}
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
+            style={{ height: 38, borderRadius: 6, border: '1px solid #cbd5e1', padding: '0 10px', background: '#fff' }}
           />
         </label>
-        <label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '13px', fontWeight: 600, color: '#475569' }}>
           Đến hết ngày (giờ Việt Nam)
           <input
             type="date"
             min={fromDate || undefined}
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
+            style={{ height: 38, borderRadius: 6, border: '1px solid #cbd5e1', padding: '0 10px', background: '#fff' }}
           />
         </label>
-        <button>Áp dụng bộ lọc</button>{" "}
-        <button type="button" onClick={() => setParams({ source })}>
-          Bỏ bộ lọc
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button style={{ height: 38, padding: '0 14px', borderRadius: 6, background: '#ea580c', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Áp dụng bộ lọc</button>
+          <button type="button" onClick={() => setParams({ source })} style={{ height: 38, padding: '0 12px', borderRadius: 6, background: '#fff', color: '#475569', border: '1px solid #cbd5e1', fontWeight: 500, cursor: 'pointer' }}>
+            Bỏ bộ lọc
+          </button>
+        </div>
       </form>
       {params.get("actor_user_id") && (
         <p>
@@ -364,53 +399,71 @@ export function StoreAuditPage() {
                   {query.data?.items.map((entry) => (
                     <tr key={entry.id}>
                       <td>
-                        <time dateTime={entry.created_at}>
+                        <time dateTime={entry.created_at} style={{ fontWeight: 600, color: '#0f172a' }}>
                           {new Date(entry.created_at).toLocaleString("vi-VN", {
                             timeZone: "Asia/Ho_Chi_Minh",
                           })}
                         </time>
-                        <br />
-                        <small>{entry.request_id}</small>
-                      </td>
-                      <td>
-                        <EntryActor
-                          entry={entry}
-                          labels={actors.labels}
-                          loading={actors.isFetching}
-                          error={actors.error}
-                        />
-                        {entry.actor_kind === "ACCOUNT" &&
-                          entry.actor_user_id && (
-                            <button
-                              onClick={() =>
-                                patch("actor_user_id", entry.actor_user_id!)
-                              }
-                            >
-                              Xem nhật ký của người này
-                            </button>
-                          )}
-                      </td>
-                      <td>
-                        {actions[entry.action] ?? entry.action}
-                        <br />
-                        <small>{entry.action}</small>
-                        <br />
-                        {entry.target_label}
-                        <br />
-                        <button onClick={() => patch("action", entry.action)}>
-                          Chỉ xem hành động này
-                        </button>
-                        <br />
-                        <small>
-                          {entry.target_type} · {entry.target_id}
+                        <small style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginTop: 2 }} title={entry.request_id}>
+                          Mã vết: {entry.request_id.slice(0, 8)}…
                         </small>
-                        <EntryDestination entry={entry} />
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <EntryActor
+                            entry={entry}
+                            labels={actors.labels}
+                            loading={actors.isFetching}
+                            error={actors.error}
+                          />
+                          {entry.actor_kind === "ACCOUNT" &&
+                            entry.actor_user_id && (
+                              <button
+                                type="button"
+                                className="audit-sub-btn"
+                                style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                                onClick={() =>
+                                  patch("actor_user_id", entry.actor_user_id!)
+                                }
+                              >
+                                Xem nhật ký của người này
+                              </button>
+                            )}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <div>
+                            <span className="market-badge" style={{ marginRight: 6, display: 'inline-block' }}>
+                              {actions[entry.action] ?? entry.action}
+                            </span>
+                            <strong style={{ color: '#0f172a' }}>{entry.target_label}</strong>
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginTop: 2 }}>
+                            <EntryDestination entry={entry} />
+                            <button
+                              type="button"
+                              className="audit-sub-btn"
+                              style={{ fontSize: '12px', padding: '2px 8px', borderRadius: 4, background: '#f1f5f9', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                              onClick={() => patch("action", entry.action)}
+                            >
+                              Chỉ xem hành động này
+                            </button>
+                          </div>
+                          <small style={{ color: '#64748b', fontSize: '11.5px', marginTop: 2 }}>
+                            {entry.target_type} · {entry.target_id}
+                          </small>
+                        </div>
                       </td>
                       <td>
                         <details
-                          style={{ maxWidth: 360, overflowWrap: "anywhere" }}
+                          className="audit-change-details"
+                          style={{ maxWidth: 360, overflowWrap: "anywhere", background: '#f8fafc', padding: '6px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}
                         >
-                          <summary>Xem thay đổi</summary>
+                          <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#0284c7' }}>Xem thay đổi</summary>
+                          <small style={{ display: 'block', color: '#64748b', margin: '4px 0', fontSize: '11px' }}>
+                            Mã vết đầy đủ: <code>{entry.request_id}</code>
+                          </small>
                           <Changes title="Trước" value={entry.before} />
                           <Changes title="Sau" value={entry.after} />
                         </details>

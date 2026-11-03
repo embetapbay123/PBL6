@@ -18,7 +18,7 @@
 
 /* === Clean, bounded Table Scroll containers === */
 .seller-workspace .market-table-scroll {
-  max-height: min(440px, 52vh);
+  max-height: min(680px, 72vh);
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--sw-border);
@@ -122,18 +122,18 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin: 14px 0;
-  padding: 4px;
+  margin: 8px 0 12px;
+  padding: 3px;
   background: #f1f5f9;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 .seller-workspace .order-status-tabs button,
 .seller-workspace .workspace-sections > a,
 .seller-workspace .workspace-sections > button {
-  padding: 7px 14px;
+  padding: 6px 12px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   color: #475569;
   font-size: 13px;
@@ -163,18 +163,18 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  margin-bottom: 14px;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
   border: 1px solid var(--sw-border);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 .seller-workspace .order-filter-panel {
   display: grid;
   grid-template-columns: minmax(280px, 1.2fr) minmax(420px, 2fr);
-  gap: 16px;
+  gap: 12px;
 }
 .seller-workspace .order-filter-panel form,
 .seller-workspace .order-filter-panel .seller-product-filters {
@@ -668,6 +668,56 @@
 }
 .return-items-table td {
   color: #334155;
+}
+
+/* === Seller Staff & Invitations Tables === */
+.seller-staff-table,
+.seller-invitations-table,
+.store-audit-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.seller-staff-table th,
+.seller-staff-table td,
+.seller-invitations-table th,
+.seller-invitations-table td,
+.store-audit-table th,
+.store-audit-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+.seller-staff-table th,
+.seller-invitations-table th,
+.store-audit-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid #e2e8f0;
+}
+.seller-staff-table tr:hover,
+.seller-invitations-table tr:hover,
+.store-audit-table tbody tr:hover {
+  background: #f8fafc;
+}
+.seller-staff-table td strong,
+.seller-invitations-table td strong {
+  color: #0f172a;
+}
+.seller-staff-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ea580c;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
 }
 
 /* === Responsive tweaks === */

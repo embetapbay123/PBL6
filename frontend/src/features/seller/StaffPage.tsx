@@ -292,49 +292,79 @@ export function StaffPage() {
               {staff.length === 0 ? (
                 <div className="seller-empty-state"><strong>Chưa có nhân viên ở trang này</strong><p>Mời nhân viên để cùng xử lý công việc trong Store.</p><button type="button" onClick={() => setTab('invitations')}>Mở lời mời</button></div>
               ) : (
-                staff.map((member) => (
-                  <article key={member.id} className="boot-card seller-staff-card">
-                    <span className="seller-staff-avatar" aria-hidden="true">{member.email.slice(0,1).toUpperCase()}</span><strong>{member.email}</strong>{" "}
-                    <span className={'seller-status '+(member.status==='ACTIVE'?'is-active':'is-inactive')}>
-                    {member.status === "ACTIVE"
-                      ? "Đang hoạt động"
-                      : member.status === "LOCKED"
-                        ? "Đã khóa"
-                        : member.status}</span>
-                    <ul>
-                      {member.permissions.map((code) => (
-                        <li key={code}>
-                          {sellerPermissions.find(([p]) => p === code)?.[1] ??
-                            "Quyền khác do hệ thống quản lý"}
-                        </li>
+                <div className="market-table-scroll seller-staff-table-scroll">
+                  <table className="seller-staff-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '28%' }}>Nhân viên</th>
+                        <th style={{ width: '16%' }}>Trạng thái</th>
+                        <th>Quyền hạn</th>
+                        <th style={{ width: '22%', textAlign: 'right' }}>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {staff.map((member) => (
+                        <tr key={member.id} role="article" className="seller-staff-row">
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span className="seller-staff-avatar" aria-hidden="true">{member.email.slice(0,1).toUpperCase()}</span>
+                              <div>
+                                <strong>{member.email}</strong>
+                                <br />
+                                <small style={{ color: '#94a3b8', fontSize: '11px' }}>ID: {member.id.slice(0, 8)}…</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={'seller-status '+(member.status==='ACTIVE'?'is-active':'is-inactive')}>
+                              {member.status === "ACTIVE"
+                                ? "Đang hoạt động"
+                                : member.status === "LOCKED"
+                                  ? "Đã khóa"
+                                  : member.status}
+                            </span>
+                          </td>
+                          <td>
+                            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#475569' }}>
+                              {member.permissions.map((code) => (
+                                <li key={code}>
+                                  {sellerPermissions.find(([p]) => p === code)?.[1] ??
+                                    "Quyền khác do hệ thống quản lý"}
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div className="ui-actions" style={{ justifyContent: 'flex-end', gap: '6px' }}>
+                              <button
+                                disabled={locked || member.status !== "ACTIVE"}
+                                onClick={() => {
+                                  setError(undefined);
+                                  setPermissionEdit(member);
+                                }}
+                              >
+                                Sửa quyền
+                              </button>
+                              <button
+                                disabled={locked}
+                                onClick={() =>
+                                  update(member, {
+                                    status:
+                                      member.status === "ACTIVE" ? "LOCKED" : "ACTIVE",
+                                  })
+                                }
+                              >
+                                {member.status === "ACTIVE"
+                                  ? "Khóa nhân viên"
+                                  : "Mở khóa"}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       ))}
-                    </ul>
-                    <div className="ui-actions">
-                      <button
-                        disabled={locked || member.status !== "ACTIVE"}
-                        onClick={() => {
-                          setError(undefined);
-                          setPermissionEdit(member);
-                        }}
-                      >
-                        Sửa quyền
-                      </button>
-                      <button
-                        disabled={locked}
-                        onClick={() =>
-                          update(member, {
-                            status:
-                              member.status === "ACTIVE" ? "LOCKED" : "ACTIVE",
-                          })
-                        }
-                      >
-                        {member.status === "ACTIVE"
-                          ? "Khóa nhân viên"
-                          : "Mở khóa"}
-                      </button>
-                    </div>
-                  </article>
-                ))
+                    </tbody>
+                  </table>
+                </div>
               )}
               <nav aria-label="Trang nhân viên">
                 <Pagination
@@ -353,22 +383,55 @@ export function StaffPage() {
               {invitations.length === 0 ? (
                 <div className="seller-empty-state"><strong>Chưa có lời mời ở trang này</strong><p>Chọn Mời nhân viên mới để nhập email và cấp quyền công việc.</p></div>
               ) : (
-                invitations.map((invitation) => (
-                  <article key={invitation.id} className="seller-invitation-card">
-                    <strong>{invitation.invited_email}</strong>{" "}<span className={'seller-status '+(invitationStatus(invitation,now)==='PENDING'?'is-active':'is-inactive')}>
-                    {invitationLabels[invitationStatus(invitation, now)] ??
-                      "Chưa rõ trạng thái"}</span>{" "}
-                    · hết hạn {invitationTime(invitation.expires_at)}
-                    {invitationStatus(invitation, now) === "PENDING" && (
-                      <button
-                        disabled={locked}
-                        onClick={() => revoke(invitation)}
-                      >
-                        Thu hồi
-                      </button>
-                    )}
-                  </article>
-                ))
+                <div className="market-table-scroll seller-staff-table-scroll">
+                  <table className="seller-invitations-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '30%' }}>Email nhận lời mời</th>
+                        <th style={{ width: '18%' }}>Trạng thái</th>
+                        <th style={{ width: '22%' }}>Thời hạn</th>
+                        <th>Quyền dự kiến</th>
+                        <th style={{ width: '14%', textAlign: 'right' }}>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invitations.map((invitation) => (
+                        <tr key={invitation.id} role="article" className="seller-invitation-row">
+                          <td>
+                            <strong>{invitation.invited_email}</strong>
+                          </td>
+                          <td>
+                            <span className={'seller-status '+(invitationStatus(invitation,now)==='PENDING'?'is-active':'is-inactive')}>
+                              {invitationLabels[invitationStatus(invitation, now)] ?? "Chưa rõ trạng thái"}
+                            </span>
+                          </td>
+                          <td>
+                            <small style={{ color: '#64748b' }}>hết hạn {invitationTime(invitation.expires_at)}</small>
+                          </td>
+                          <td>
+                            <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: '#475569' }}>
+                              {invitation.permissions.map((code) => (
+                                <li key={code}>
+                                  {sellerPermissions.find(([p]) => p === code)?.[1] ?? code}
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            {invitationStatus(invitation, now) === "PENDING" && (
+                              <button
+                                disabled={locked}
+                                onClick={() => revoke(invitation)}
+                              >
+                                Thu hồi
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
               <nav aria-label="Trang lời mời">
                 <Pagination
