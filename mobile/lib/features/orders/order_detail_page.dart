@@ -30,23 +30,25 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   void initState() {
     super.initState();
     _order = widget.initialOrder;
-    if (_order == null) {
-      _fetchOrder();
-    }
+    _fetchOrder();
   }
 
   Future<void> _fetchOrder() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (_order == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final client = ref.read(apiProvider);
       final res = await client.getOwnOrder(widget.orderId);
-      if (res['status'] == 'CANCELLED' && res['refund_status'] == null) {
+      if (res['status'] == 'CANCELLED' || res['refund_status'] != null) {
         final refund = await client.getOrderRefund(widget.orderId);
-        if (refund != null && refund['status'] != null) {
-          res['refund_status'] = refund['status'];
+        if (refund != null) {
+          if (refund['status'] != null) {
+            res['refund_status'] = refund['status'];
+          }
           if (refund['amount_vnd'] != null) {
             res['refunded_vnd'] = refund['amount_vnd'];
           }
@@ -62,7 +64,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = errorMessage(e);
+          if (_order == null) {
+            _error = errorMessage(e);
+          }
         });
       }
     }
@@ -212,58 +216,62 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 )
               : _order == null
                   ? const Center(child: Text('Không tìm thấy thông tin đơn hàng.'))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 1. Status & Timeline Header
-                          _buildStatusHeaderCard(),
+                  : RefreshIndicator(
+                      onRefresh: _fetchOrder,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1. Status & Timeline Header
+                            _buildStatusHeaderCard(),
 
-                          // Sandbox Payment Banner (if waiting for payment)
-                          _buildSandboxPaymentBanner(),
+                            // Sandbox Payment Banner (if waiting for payment)
+                            _buildSandboxPaymentBanner(),
 
-                          // Shipment Details Card (if shipped / tracked)
-                          _buildShipmentCard(),
+                            // Shipment Details Card (if shipped / tracked)
+                            _buildShipmentCard(),
 
-                          const SizedBox(height: 14),
-
-                          // 2. Shipping Address Card
-                          _buildAddressCard(),
-
-                          const SizedBox(height: 14),
-
-                          // 3. Store & Products Card
-                          _buildStoreProductsCard(),
-
-                          const SizedBox(height: 14),
-
-                          // 4. Payment Information Card
-                          _buildPaymentInfoCard(),
-
-                          const SizedBox(height: 14),
-
-                          // Refund Information Card (if cancelled with refund or has refund_status)
-                          if (_order!['refund_status'] != null ||
-                              (_order!['status'] == 'CANCELLED' && _order!['payment_method'] == 'SANDBOX') ||
-                              (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0)) ...[
-                            _buildRefundInfoCard(),
                             const SizedBox(height: 14),
+
+                            // 2. Shipping Address Card
+                            _buildAddressCard(),
+
+                            const SizedBox(height: 14),
+
+                            // 3. Store & Products Card
+                            _buildStoreProductsCard(),
+
+                            const SizedBox(height: 14),
+
+                            // 4. Payment Information Card
+                            _buildPaymentInfoCard(),
+
+                            const SizedBox(height: 14),
+
+                            // Refund Information Card (if cancelled with refund or has refund_status)
+                            if (_order!['refund_status'] != null ||
+                                (_order!['status'] == 'CANCELLED' && _order!['payment_method'] == 'SANDBOX') ||
+                                (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0)) ...[
+                              _buildRefundInfoCard(),
+                              const SizedBox(height: 14),
+                            ],
+
+                            // 5. Billing Summary Card
+                            _buildBillingSummaryCard(),
+
+                            const SizedBox(height: 14),
+
+                            // Status History Card
+                            _buildStatusHistoryCard(),
+
+                            // 6. Order Metadata Card
+                            _buildOrderMetadataCard(),
+
+                            const SizedBox(height: 32),
                           ],
-
-                          // 5. Billing Summary Card
-                          _buildBillingSummaryCard(),
-
-                          const SizedBox(height: 14),
-
-                          // Status History Card
-                          _buildStatusHistoryCard(),
-
-                          // 6. Order Metadata Card
-                          _buildOrderMetadataCard(),
-
-                          const SizedBox(height: 32),
-                        ],
+                        ),
                       ),
                     ),
     );

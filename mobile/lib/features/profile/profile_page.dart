@@ -77,6 +77,8 @@ class ProfilePage extends ConsumerWidget {
           if (index == 4) return;
           if (index == 0) {
             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          } else if (index == 1) {
+            Navigator.pushNamed(context, '/customer/favorites');
           } else if (index == 2) {
             Navigator.pushNamed(context, '/cart');
           } else if (index == 3) {
@@ -632,8 +634,8 @@ class ProfilePage extends ConsumerWidget {
               child: _buildActivityCard(
                 context,
                 icon: Icons.favorite_border_rounded,
-                title: 'Dành cho bạn',
-                onTap: () => Navigator.pushNamed(context, '/products'),
+                title: 'Đã lưu',
+                onTap: () => Navigator.pushNamed(context, '/customer/favorites'),
               ),
             ),
             const SizedBox(width: 12),

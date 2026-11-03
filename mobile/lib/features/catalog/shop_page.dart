@@ -127,6 +127,8 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
         onTap: (index) {
           if (index == 0) {
             Navigator.popUntil(context, (route) => route.isFirst);
+          } else if (index == 1) {
+            Navigator.pushNamed(context, '/customer/favorites');
           } else if (index == 2) {
             Navigator.pushNamed(context, '/cart');
           } else if (index == 3) {

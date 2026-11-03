@@ -18,7 +18,6 @@ class CartPage extends ConsumerStatefulWidget {
 
 class _CartPageState extends ConsumerState<CartPage> {
   final Set<String> _selectedItemIds = {};
-  String? _activeStoreId;
   bool _isEditing = false;
   bool _busy = false;
   final _searchController = TextEditingController();
@@ -223,6 +222,8 @@ class _CartPageState extends ConsumerState<CartPage> {
                       '/',
                       (route) => false,
                     );
+                  } else if (index == 1) {
+                    Navigator.pushNamed(context, '/customer/favorites');
                   } else if (index == 3) {
                     ChatAiModal.show(context);
                   } else if (index == 4) {
@@ -239,6 +240,8 @@ class _CartPageState extends ConsumerState<CartPage> {
             if (index == 2) return;
             if (index == 0) {
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            } else if (index == 1) {
+              Navigator.pushNamed(context, '/customer/favorites');
             } else if (index == 3) {
               ChatAiModal.show(context);
             } else if (index == 4) {
@@ -386,19 +389,6 @@ class _CartPageState extends ConsumerState<CartPage> {
               .toSet();
           _selectedItemIds.retainAll(validAvailableItemIds);
 
-          // If current activeStoreId has no selected items left, reset activeStoreId
-          if (_activeStoreId != null) {
-            final activeStoreItemIds = (storeGroups[_activeStoreId] ?? [])
-                .map((e) => e['id']?.toString() ?? '')
-                .toSet();
-            final hasSelectedInActive = _selectedItemIds.any(
-              (id) => activeStoreItemIds.contains(id),
-            );
-            if (!hasSelectedInActive) {
-              _activeStoreId = null;
-            }
-          }
-
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(cartItemsProvider),
             child: SingleChildScrollView(
@@ -432,13 +422,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                       final isStoreFullySelected =
                           storeItemIds.isNotEmpty &&
                           _selectedItemIds.containsAll(storeItemIds);
-
-                      final isOtherStoreActive =
-                          _activeStoreId != null && _activeStoreId != storeId;
-
-                      final activeStoreName = _activeStoreId != null
-                          ? (storeNames[_activeStoreId] ?? 'cửa hàng khác')
-                          : '';
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 14),
@@ -479,9 +462,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                                           : (checked) {
                                               setState(() {
                                                 if (checked == true) {
-                                                  // Select this store, switch active store
-                                                  _activeStoreId = storeId;
-                                                  _selectedItemIds.clear();
                                                   _selectedItemIds.addAll(
                                                     storeItemIds,
                                                   );
@@ -489,10 +469,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                   _selectedItemIds.removeAll(
                                                     storeItemIds,
                                                   );
-                                                  if (_activeStoreId ==
-                                                      storeId) {
-                                                    _activeStoreId = null;
-                                                  }
                                                 }
                                               });
                                             },
@@ -587,14 +563,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                                             : (checked) {
                                                 setState(() {
                                                   if (checked == true) {
-                                                    // If another store was active, clear it
-                                                    if (_activeStoreId !=
-                                                        null &&
-                                                        _activeStoreId !=
-                                                            storeId) {
-                                                      _selectedItemIds.clear();
-                                                    }
-                                                    _activeStoreId = storeId;
                                                     _selectedItemIds.add(
                                                       itemId,
                                                     );
@@ -602,14 +570,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                     _selectedItemIds.remove(
                                                       itemId,
                                                     );
-                                                    final remainingInStore =
-                                                        storeItemIds.intersection(
-                                                          _selectedItemIds,
-                                                        );
-                                                    if (remainingInStore
-                                                        .isEmpty) {
-                                                      _activeStoreId = null;
-                                                    }
                                                   }
                                                 });
                                               },
@@ -882,51 +842,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                                   ),
                                 );
                               }),
-
-                              // Single store notice when another store is active
-                              if (isOtherStoreActive) ...[
-                                const SizedBox(height: 8),
-                                InkWell(
-                                  onTap: () {
-                                    setState(() {
-                                      _activeStoreId = storeId;
-                                      _selectedItemIds.clear();
-                                      _selectedItemIds.addAll(storeItemIds);
-                                    });
-                                  },
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade100,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.info_outline,
-                                          size: 15,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            'Bỏ chọn $activeStoreName để chọn cửa hàng này',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade700,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
                             ],
                           ),
                         ),
@@ -955,24 +870,13 @@ class _CartPageState extends ConsumerState<CartPage> {
   }
 
   Widget _buildBottomCheckoutBar(List<Map<String, dynamic>> items) {
-    // If active store is selected, select all items of active store; else all available items
     final allAvailableItemIds = items
         .where(_available)
         .map((e) => e['id']?.toString() ?? '')
         .where((id) => id.isNotEmpty)
         .toSet();
 
-    final targetStoreItems = _activeStoreId != null
-        ? items.where((e) => e['store_id']?.toString() == _activeStoreId).toList()
-        : items;
-
-    final targetItemIds = _activeStoreId != null
-        ? targetStoreItems
-            .where(_available)
-            .map((e) => e['id']?.toString() ?? '')
-            .where((id) => id.isNotEmpty)
-            .toSet()
-        : allAvailableItemIds;
+    final targetItemIds = allAvailableItemIds;
 
     final isAllSelected =
         targetItemIds.isNotEmpty && _selectedItemIds.containsAll(targetItemIds);
@@ -1016,7 +920,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                       setState(() {
                         if (isAllSelected) {
                           _selectedItemIds.removeAll(targetItemIds);
-                          _activeStoreId = null;
                         } else {
                           _selectedItemIds.addAll(targetItemIds);
                         }
@@ -1039,7 +942,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 _selectedItemIds.addAll(targetItemIds);
                               } else {
                                 _selectedItemIds.removeAll(targetItemIds);
-                                _activeStoreId = null;
                               }
                             });
                           },
@@ -1525,7 +1427,6 @@ class _CartPageState extends ConsumerState<CartPage> {
         await client.removeCartItem(id);
       }
       _selectedItemIds.clear();
-      _activeStoreId = null;
       _isEditing = false;
       ref.invalidate(cartItemsProvider);
       if (mounted) {

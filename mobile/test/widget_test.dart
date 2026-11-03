@@ -21,6 +21,7 @@ import 'package:pbl6_mobile/features/cart/cart_page.dart';
 import 'package:pbl6_mobile/features/checkout/checkout_page.dart';
 import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
 import 'package:pbl6_mobile/features/customer/store_application_page.dart';
+import 'package:pbl6_mobile/features/customer/favorites_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 
@@ -1119,6 +1120,38 @@ void main() {
       expect(find.text('Đăng ký mở gian hàng'), findsWidgets);
       expect(find.text('Hồ sơ của bạn'), findsOneWidget);
       expect(find.text('Gửi hồ sơ đăng ký'), findsOneWidget);
+    });
+
+    testWidgets('FavoritesPage renders favorite products matching web design and handles removal', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(home: FavoritesPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tiếp tục khám phá'), findsOneWidget);
+      expect(find.text('Sản phẩm yêu thích'), findsOneWidget);
+      expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+      expect(find.text('Từ 389.000 đ'), findsOneWidget);
+      expect(find.text('An Nhiên Studio'), findsOneWidget);
+      expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
+      expect(find.text('349.000 đ'), findsOneWidget);
+      expect(find.text('Mây Xanh Living'), findsOneWidget);
+      expect(find.text('Bỏ yêu thích'), findsNWidgets(2));
+      expect(find.text('Thêm vào giỏ'), findsNWidgets(2));
+      expect(find.text('Trang 1 · 2 kết quả'), findsOneWidget);
+
+      // Scroll and Tap "Bỏ yêu thích" on first product
+      await tester.ensureVisible(find.text('Bỏ yêu thích').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bỏ yêu thích').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Áo hoodie xám Weekend'), findsNothing);
+      expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
+      expect(find.text('Trang 1 · 1 kết quả'), findsOneWidget);
     });
   });
 

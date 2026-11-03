@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
+import '../customer/favorites_page.dart';
 import 'shop_page.dart';
 
 class ProductDetailPage extends ConsumerStatefulWidget {
@@ -257,17 +258,28 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           ),
           IconButton(
             icon: Icon(
-              _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: _isFavorite ? AppColors.primary : const Color(0xFF374151),
+              ref.watch(favoritesProvider).any((f) => f.id == widget.productId)
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_border_rounded,
+              color: ref.watch(favoritesProvider).any((f) => f.id == widget.productId)
+                  ? const Color(0xFFC2410C)
+                  : const Color(0xFF374151),
               size: 22,
             ),
             tooltip: 'Yêu thích',
             onPressed: () {
-              setState(() => _isFavorite = !_isFavorite);
+              final isFav = ref
+                  .read(favoritesProvider)
+                  .any((f) => f.id == widget.productId);
+              if (_product != null) {
+                ref.read(favoritesProvider.notifier).toggleFavorite(_product!);
+              } else {
+                ref.read(favoritesProvider.notifier).toggleFavorite({'id': widget.productId});
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    _isFavorite
+                    !isFav
                         ? 'Đã thêm vào danh sách yêu thích!'
                         : 'Đã xóa khỏi danh sách yêu thích.',
                   ),

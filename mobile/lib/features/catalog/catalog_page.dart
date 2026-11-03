@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
+import '../customer/favorites_page.dart';
 import '../shared/app_bottom_nav.dart';
 import 'product_detail_page.dart';
 
@@ -91,13 +92,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               // Already on home / catalog
               break;
             case 1:
-              // Đã lưu (Saved products)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Danh sách sản phẩm đã lưu'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+              Navigator.pushNamed(context, '/customer/favorites');
               break;
             case 2:
               Navigator.pushNamed(context, '/cart');
@@ -1215,27 +1210,47 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
+                        return GestureDetector(
+                          onTap: () {
+                            ref.read(favoritesProvider.notifier).toggleFavorite(product);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isFav
+                                      ? 'Đã xóa khỏi danh sách yêu thích.'
+                                      : 'Đã thêm vào danh sách yêu thích!',
+                                ),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 15,
+                                color: isFav ? const Color(0xFFC2410C) : AppColors.textSecondary,
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.favorite_border_rounded,
-                          size: 15,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ],
