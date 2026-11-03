@@ -113,25 +113,95 @@ export function ReturnRequestView({
             phân loại ban đầu để suy hàng đổi.
           </p>
         )}
-      <dl className="return-request-facts"><div><dt>Lý do</dt><dd>{request.reason}</dd></div><div><dt>Giá trị đơn</dt><dd>{request.amount_vnd.toLocaleString("vi-VN")} ₫</dd></div></dl>
-      {request.return_instructions && (
-        <p>
-          <strong>Hướng dẫn gửi trả:</strong> {request.return_instructions}
-        </p>
-      )}
-      {request.fault_party && (
-        <p>
-          {request.fault_party === "DISPUTED"
-            ? "Đang chờ Admin kết luận trách nhiệm và phí."
-            : request.fee_payer === "STORE"
-              ? "Store chịu phí đổi/trả."
-              : "Khách chịu phí đổi/trả do đổi ý / chọn sai."}{" "}
-          Khoản hoàn đủ tiền gồm phí giao ban đầu, không trừ phí gửi trả.
-        </p>
-      )}
-      {request.inspection_note && (
-        <p>Kết quả kiểm: {request.inspection_note}</p>
-      )}
+      <div className="market-table-scroll return-details-table" style={{ margin: '14px 0' }}>
+        <table>
+          <tbody>
+            <tr>
+              <th scope="row" style={{ width: '32%', background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Lý do yêu cầu</th>
+              <td><strong>{request.reason}</strong></td>
+            </tr>
+            <tr>
+              <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Giá trị đơn</th>
+              <td><strong style={{ color: '#0f172a', fontSize: '14px' }}>{request.amount_vnd.toLocaleString("vi-VN")} ₫</strong></td>
+            </tr>
+            {request.fault_party && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Trách nhiệm & Phí</th>
+                <td>
+                  <span className="market-badge" style={{ marginRight: '6px' }}>
+                    {request.fault_party === "DISPUTED"
+                      ? "Chờ Admin kết luận"
+                      : request.fee_payer === "STORE"
+                        ? "Store chịu phí"
+                        : "Khách chịu phí"}
+                  </span>
+                  <small style={{ color: '#64748b' }}>
+                    {request.fee_payer === "STORE"
+                      ? "Store chịu toàn bộ chi phí đổi/trả."
+                      : "Khách chịu phí đổi/trả do đổi ý hoặc chọn sai."}
+                  </small>
+                </td>
+              </tr>
+            )}
+            {request.return_instructions && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Hướng dẫn gửi trả</th>
+                <td>{request.return_instructions}</td>
+              </tr>
+            )}
+            {request.inspection_note && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Kết quả kiểm hàng</th>
+                <td>{request.inspection_note}</td>
+              </tr>
+            )}
+            {request.inventory_status && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Trạng thái kho</th>
+                <td>
+                  <span className="market-badge">
+                    {request.inventory_status === "APPLIED"
+                      ? "Đã cộng tồn theo kiểm hàng"
+                      : request.inventory_status === "LEGACY_RECONCILED"
+                        ? "Đã đối chiếu đơn cũ"
+                        : request.inventory_status === "PENDING"
+                          ? "Đang đối chiếu kho"
+                          : "Chưa xác nhận kiểm kho"}
+                  </span>
+                </td>
+              </tr>
+            )}
+            {request.type === "REFUND" && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Trạng thái hoàn tiền</th>
+                <td>
+                  {request.amount_vnd === 0 ? (
+                    <span className="market-badge">Đơn 0đ không có khoản đã thu cần hoàn. Hoàn tất kiểm hàng và đối chiếu kho; không ghi giao dịch hoàn tiền giả.</span>
+                  ) : request.refund_status === "SUCCEEDED" ? (
+                    <span className="market-badge is-success">Đã xác nhận hoàn tiền.</span>
+                  ) : request.refund_status ? (
+                    <span className="market-badge">{"Kết quả hoàn tiền: " + refundStatusLabel(request.refund_status)}</span>
+                  ) : (
+                    <span className="market-badge">Chưa có xác nhận hoàn tiền.</span>
+                  )}
+                </td>
+              </tr>
+            )}
+            {request.decision_note && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Phản hồi xử lý</th>
+                <td>{request.decision_note}</td>
+              </tr>
+            )}
+            {request.replacement_reference && (
+              <tr>
+                <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Mã giao hàng đổi</th>
+                <td><code>{request.replacement_reference}</code></td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       <InspectionSummary
         lines={request.inspection ?? []}
         items={request.items ?? []}
@@ -141,18 +211,6 @@ export function ReturnRequestView({
         <p role="status">
           Đã lưu biên bản thực nhận. Chờ nhận / kiểm đủ trước khi đối chiếu tồn
           và tiền.
-        </p>
-      )}
-      {request.inventory_status && (
-        <p>
-          Kho:{" "}
-          {request.inventory_status === "APPLIED"
-            ? "Đã xác nhận lượng bán lại theo kiểm hàng"
-            : request.inventory_status === "LEGACY_RECONCILED"
-              ? "Đã đối chiếu đơn cũ, không tự cộng tồn"
-              : request.inventory_status === "PENDING"
-                ? "Đang đối chiếu biên bản với kho"
-                : "Chưa xác nhận kiểm hàng và kho"}
         </p>
       )}
       {request.exchange_status === "PENDING" && (
@@ -178,25 +236,6 @@ export function ReturnRequestView({
         <p role="status">
           Store đề nghị hoàn đủ tiền, đang chờ khách xác nhận:{" "}
           {request.conversion_note}
-        </p>
-      )}
-      {request.decision_note && <p>Phản hồi: {request.decision_note}</p>}
-      {request.replacement_reference && (
-        <p>Mã giao hàng đổi: {request.replacement_reference}</p>
-      )}
-      {request.type === "REFUND" && request.amount_vnd === 0 && (
-        <p role="status">
-          Đơn 0đ không có khoản đã thu cần hoàn. Hoàn tất kiểm hàng và đối chiếu
-          kho; không ghi giao dịch hoàn tiền giả.
-        </p>
-      )}
-      {request.type === "REFUND" && request.amount_vnd > 0 && (
-        <p role="status">
-          {request.refund_status === "SUCCEEDED"
-            ? "Đã xác nhận hoàn tiền."
-            : request.refund_status
-              ? "Kết quả hoàn tiền: " + refundStatusLabel(request.refund_status)
-              : "Chưa có xác nhận hoàn tiền."}
         </p>
       )}
       {request.type === "REFUND" &&

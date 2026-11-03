@@ -114,7 +114,7 @@ export function ReturnsPage({ scope }: { scope: Scope }) {
       </h1>
       <div className="seller-refresh-bar"><button type="button" disabled={query.isFetching || waiting.isFetching} onClick={() => { setPolling(true); void query.refetch(); if(scope==='STORE')void waiting.refetch(); }}>Làm mới yêu cầu</button></div>
       {scope === 'STORE' && <p role="status">Chờ xét duyệt: {waiting.isLoading ? 'đang tải' : waiting.error ? 'không tải được' : waiting.data?.total ?? '—'}</p>}
-      {scope === "STORE" && <nav className="order-status-tabs" aria-label="Lọc trạng thái đổi trả">{([['','Tất cả'],['REQUESTED','Chờ duyệt'],['APPROVED','Đã duyệt'],['RECEIVED','Đã nhận hàng'],['EXCHANGE_SENT','Đã gửi hàng đổi'],['COMPLETED','Hoàn tất'],['REJECTED','Đã từ chối']] as const).map(([value,label])=><button key={value} type="button" aria-pressed={statusFilter===value} onClick={()=>{setPage(1);setParams(current=>{const next=new URLSearchParams(current);value?next.set('status',value):next.delete('status');return next;});}}>{label}</button>)}</nav>}
+      {scope === "STORE" && <nav className="order-status-tabs" aria-label="Lọc trạng thái đổi trả">{([['','Tất cả'],['REQUESTED','Chờ duyệt'],['APPROVED','Đã duyệt'],['RECEIVED','Đã nhận hàng'],['EXCHANGE_SENT','Hàng đổi đã gửi'],['COMPLETED','Hoàn tất'],['REJECTED','Đã từ chối']] as const).map(([value,label])=><button key={value} type="button" aria-pressed={statusFilter===value} onClick={()=>{setPage(1);setParams(current=>{const next=new URLSearchParams(current);value?next.set('status',value):next.delete('status');return next;});}}>{label}</button>)}</nav>}
       {query.isLoading && <Loading />}
       {query.error && (
         <ErrorView error={query.error} onRetry={() => void query.refetch()} />
