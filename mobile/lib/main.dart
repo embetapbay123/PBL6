@@ -23,6 +23,7 @@ import 'features/checkout/order_success_page.dart';
 import 'features/orders/order_list_page.dart';
 import 'features/orders/order_detail_page.dart';
 import 'features/customer/store_application_page.dart';
+import 'features/customer/customer_settings_page.dart';
 import 'features/chat/chat_ai_modal.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
@@ -385,6 +386,13 @@ class BootstrapApp extends StatelessWidget {
           case '/store-applications':
             return MaterialPageRoute(
               builder: (_) => const StoreApplicationPage(),
+            );
+          case '/customer/settings':
+          case '/settings':
+            final args = settings.arguments as Map<String, dynamic>?;
+            final tab = args?['tab'] as SettingsTab? ?? SettingsTab.privacy;
+            return MaterialPageRoute(
+              builder: (_) => CustomerSettingsPage(initialTab: tab),
             );
           case '/order-detail':
             final args = settings.arguments as Map<String, dynamic>? ?? {};

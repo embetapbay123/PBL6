@@ -814,4 +814,20 @@ class ApiClient {
     );
     return Map<String, dynamic>.from(res as Map);
   }
+
+  Future<Map<String, dynamic>> listOwnInvitations({
+    int page = 1,
+    int size = 20,
+  }) async {
+    final res = await get(
+      '/me/invitations',
+      query: {'page': page, 'size': size},
+    );
+    return Map<String, dynamic>.from(res as Map);
+  }
+
+  Future<Map<String, dynamic>> acceptInvitation(String id) async {
+    final res = await post('/me/invitations/$id/accept');
+    return Map<String, dynamic>.from(res as Map);
+  }
 }

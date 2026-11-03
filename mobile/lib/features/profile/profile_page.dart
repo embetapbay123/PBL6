@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
+import '../customer/customer_settings_page.dart';
 import '../orders/order_list_page.dart';
 import '../shared/app_bottom_nav.dart';
 
@@ -64,8 +65,8 @@ class ProfilePage extends ConsumerWidget {
               color: AppColors.textPrimary,
               size: 24,
             ),
-            tooltip: 'Cài đặt máy chủ API',
-            onPressed: () => _showServerConfigDialog(context, ref),
+            tooltip: 'Trung tâm Cài đặt',
+            onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
           ),
         ],
       ),
@@ -179,7 +180,7 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // 5. Section "Hỗ trợ và cài đặt"
-                _buildSupportSettingsSection(context),
+                _buildSupportSettingsSection(context, ref),
                 const SizedBox(height: 20),
 
                 // 6. Nút Đăng xuất
@@ -788,7 +789,7 @@ class ProfilePage extends ConsumerWidget {
   }
 
   /// 5. Khối "Hỗ trợ và cài đặt"
-  Widget _buildSupportSettingsSection(BuildContext context) {
+  Widget _buildSupportSettingsSection(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -810,6 +811,14 @@ class ProfilePage extends ConsumerWidget {
             child: Column(
               children: [
                 _buildMenuTile(
+                  icon: Icons.tune_rounded,
+                  title: 'Trung tâm Khách hàng & Cài đặt',
+                  subtitle: 'Quyền riêng tư, bảo mật, thông báo và bán hàng',
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/customer/settings'),
+                ),
+                const Divider(height: 1, indent: 56, endIndent: 16),
+                _buildMenuTile(
                   icon: Icons.storefront_outlined,
                   title: 'Đăng ký mở gian hàng',
                   subtitle: 'Trở thành nhà bán hàng trên sàn PBL6',
@@ -820,11 +829,29 @@ class ProfilePage extends ConsumerWidget {
                   icon: Icons.notifications_none_rounded,
                   title: 'Thông báo',
                   subtitle: 'Cài đặt nhận tin khuyến mãi & đơn hàng',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Cài đặt thông báo đang được cập nhật.')),
-                    );
-                  },
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/customer/settings',
+                    arguments: {'tab': SettingsTab.notifications},
+                  ),
+                ),
+                const Divider(height: 1, indent: 56, endIndent: 16),
+                _buildMenuTile(
+                  icon: Icons.description_outlined,
+                  title: 'Điều khoản và quyền riêng tư',
+                  subtitle: 'Chính sách bảo mật & quyền cá nhân hóa AI',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/customer/settings',
+                    arguments: {'tab': SettingsTab.privacy},
+                  ),
+                ),
+                const Divider(height: 1, indent: 56, endIndent: 16),
+                _buildMenuTile(
+                  icon: Icons.dns_outlined,
+                  title: 'Cấu hình máy chủ API',
+                  subtitle: 'Đổi địa chỉ kết nối backend (Live / Local)',
+                  onTap: () => _showServerConfigDialog(context, ref),
                 ),
                 const Divider(height: 1, indent: 56, endIndent: 16),
                 _buildMenuTile(
@@ -834,17 +861,6 @@ class ProfilePage extends ConsumerWidget {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Trung tâm trợ giúp CSKH 24/7.')),
-                    );
-                  },
-                ),
-                const Divider(height: 1, indent: 56, endIndent: 16),
-                _buildMenuTile(
-                  icon: Icons.description_outlined,
-                  title: 'Điều khoản và quyền riêng tư',
-                  subtitle: 'Chính sách bảo mật & quy định sử dụng',
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Điều khoản sử dụng nền tảng PBL6.')),
                     );
                   },
                 ),
