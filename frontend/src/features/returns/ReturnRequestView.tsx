@@ -183,15 +183,15 @@ export function ReturnRequestView({
                     <tr>
                       <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Trạng thái hoàn tiền</th>
                       <td>
-                        {request.amount_vnd === 0 ? (
-                          <span className="market-badge">Đơn 0đ không có khoản đã thu cần hoàn. Hoàn tất kiểm hàng và đối chiếu kho; không ghi giao dịch hoàn tiền giả.</span>
-                        ) : request.refund_status === "SUCCEEDED" ? (
-                          <span className="market-badge is-success">Đã xác nhận hoàn tiền.</span>
-                        ) : request.refund_status ? (
-                          <span className="market-badge">{"Kết quả hoàn tiền: " + refundStatusLabel(request.refund_status)}</span>
-                        ) : (
-                          <span className="market-badge">Chưa có xác nhận hoàn tiền.</span>
-                        )}
+                        <span className="market-badge">
+                          {request.amount_vnd === 0
+                            ? "Miễn hoàn tiền (đơn 0đ)"
+                            : request.refund_status === "SUCCEEDED"
+                              ? "Hoàn tất qua cổng thanh toán"
+                              : request.refund_status
+                                ? refundStatusLabel(request.refund_status)
+                                : "Đang chờ đối soát"}
+                        </span>
                       </td>
                     </tr>
                   )}
