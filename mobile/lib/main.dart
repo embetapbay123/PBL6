@@ -211,6 +211,7 @@ class BootstrapApp extends StatelessWidget {
             );
           case '/profile':
             return MaterialPageRoute(builder: (_) => const ProfilePage());
+          case '/customer/profile':
           case '/edit-profile':
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
