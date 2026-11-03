@@ -290,7 +290,7 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
                     <td className="voucher-conditions">
                       <strong>Đơn từ {formatMoney(v.min_goods_vnd ?? 0)}</strong>
                       <span>{v.usage_limit} lượt · {v.per_customer_limit}/khách</span>
-                      {v.usage_summary && <small>Còn {v.usage_summary.remaining_count} · đã dùng {v.usage_summary.redeemed_count} · đang giữ {v.usage_summary.reserved_count}</small>}
+                      {v.usage_summary && <small>Còn {v.usage_summary.remaining_count} lượt · đã dùng {v.usage_summary.redeemed_count} · đang giữ {v.usage_summary.reserved_count}</small>}
                     </td>
                     <td>
                       {new Date(v.starts_at).toLocaleString("vi-VN")}

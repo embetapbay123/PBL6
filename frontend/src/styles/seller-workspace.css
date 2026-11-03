@@ -18,7 +18,7 @@
 
 /* === Clean, bounded Table Scroll containers === */
 .seller-workspace .market-table-scroll {
-  max-height: min(680px, 72vh);
+  max-height: min(520px, 72vh);
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--sw-border);
