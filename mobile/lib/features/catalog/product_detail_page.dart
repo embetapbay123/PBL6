@@ -92,8 +92,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   Future<void> _addToCart({bool navigateToCart = false}) async {
     final variants = (_product?['variants'] as List?) ?? [];
     if (variants.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sản phẩm chưa có phiên bản để mua.')),
+      AppNoticeDialog.show(
+        context,
+        message: 'Sản phẩm chưa có phiên bản để mua.',
       );
       return;
     }
@@ -104,6 +105,16 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         selectedVariant['id']?.toString() ??
         selectedVariant['sku']?.toString() ??
         '';
+    final stock = (selectedVariant['available_quantity'] as num?)?.toInt() ??
+        (selectedVariant['stock'] as num?)?.toInt() ??
+        (selectedVariant['inventory_quantity'] as num?)?.toInt();
+    if (stock != null && stock > 0 && _quantity > stock) {
+      AppNoticeDialog.show(
+        context,
+        message: 'Chỉ còn lại ' + stock.toString() + ' sản phẩm cho mặt hàng này',
+      );
+      return;
+    }
 
     setState(() => _addingToCart = true);
     try {
@@ -114,16 +125,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         quantity: _quantity,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã thêm $_quantity sản phẩm vào giỏ hàng!'),
-            backgroundColor: const Color(0xFF15803D),
-            action: SnackBarAction(
-              label: 'Xem giỏ',
-              textColor: Colors.white,
-              onPressed: () => Navigator.pushNamed(context, '/cart'),
-            ),
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã thêm ' + _quantity.toString() + ' sản phẩm vào giỏ hàng!',
         );
         if (navigateToCart) {
           Navigator.pushNamed(context, '/cart');
@@ -131,8 +135,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage(e)), backgroundColor: AppColors.primary),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     } finally {
@@ -248,11 +253,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             icon: const Icon(Icons.share_outlined, size: 22, color: Color(0xFF374151)),
             tooltip: 'Chia sẻ',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Đã sao chép liên kết sản phẩm vào bộ nhớ tạm!'),
-                  duration: Duration(seconds: 1),
-                ),
+              AppNoticeDialog.show(
+                context,
+                message: 'Đã sao chép liên kết sản phẩm vào bộ nhớ tạm!',
               );
             },
           ),
@@ -276,15 +279,11 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               } else {
                 ref.read(favoritesProvider.notifier).toggleFavorite({'id': widget.productId});
               }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    !isFav
-                        ? 'Đã thêm vào danh sách yêu thích!'
-                        : 'Đã xóa khỏi danh sách yêu thích.',
-                  ),
-                  duration: const Duration(seconds: 1),
-                ),
+              AppNoticeDialog.show(
+                context,
+                message: !isFav
+                    ? 'Đã thêm vào danh sách yêu thích!'
+                    : 'Đã xóa khỏi danh sách yêu thích.',
               );
             },
           ),
@@ -705,9 +704,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Variant & Quantity Card
   Widget _buildVariantAndQuantityCard(List variants) {
-    final availableQuantity = variants.isNotEmpty && _selectedVariantIndex < variants.length
-        ? (variants[_selectedVariantIndex] as Map<String, dynamic>)['available_quantity']
+    final currentVariant = variants.isNotEmpty && _selectedVariantIndex < variants.length
+        ? (variants[_selectedVariantIndex] as Map<String, dynamic>)
         : null;
+    final availableQuantity = (currentVariant?['available_quantity'] as num?)?.toInt() ??
+        (currentVariant?['stock'] as num?)?.toInt() ??
+        (currentVariant?['inventory_quantity'] as num?)?.toInt();
 
     return Container(
       decoration: BoxDecoration(
@@ -846,7 +848,16 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                         ),
                         // Plus button
                         InkWell(
-                          onTap: () => setState(() => _quantity++),
+                          onTap: () {
+                            if (availableQuantity != null && availableQuantity > 0 && _quantity >= availableQuantity) {
+                              AppNoticeDialog.show(
+                                context,
+                                message: 'Chỉ còn lại ' + availableQuantity.toString() + ' sản phẩm cho mặt hàng này',
+                              );
+                              return;
+                            }
+                            setState(() => _quantity++);
+                          },
                           borderRadius: BorderRadius.circular(16),
                           child: Container(
                             width: 30,

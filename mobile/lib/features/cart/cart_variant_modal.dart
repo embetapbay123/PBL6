@@ -261,42 +261,23 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
     if (_selectedVariant == null) return;
     final stock = _getStock(_selectedVariant);
     if (stock <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Phân loại này hiện đã hết hàng, vui lòng chọn phân loại khác.'),
-          backgroundColor: Colors.red,
-        ),
+      AppNoticeDialog.show(
+        context,
+        message: 'Phân loại này hiện đã hết hàng, vui lòng chọn phân loại khác.',
       );
       return;
     }
 
     if (_quantity > stock) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Số lượng vượt quá tồn kho khả dụng ($stock sản phẩm).'),
-          backgroundColor: Colors.red,
-        ),
+      AppNoticeDialog.show(
+        context,
+        message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
       );
       return;
     }
 
-    setState(() => _isSubmitting = true);
-    try {
-      await widget.onConfirm(_selectedVariant!, _quantity);
-      if (mounted) {
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    Navigator.pop(context);
+    widget.onConfirm(_selectedVariant!, _quantity);
   }
 
   @override
@@ -624,8 +605,17 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                           ),
                                         ),
                                         InkWell(
-                                          onTap: (_quantity < stock && stock > 0 && !_isSubmitting)
-                                              ? () => setState(() => _quantity++)
+                                          onTap: (stock > 0 && !_isSubmitting)
+                                              ? () {
+                                                  if (_quantity >= stock) {
+                                                    AppNoticeDialog.show(
+                                                      context,
+                                                      message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
+                                                    );
+                                                  } else {
+                                                    setState(() => _quantity++);
+                                                  }
+                                                }
                                               : null,
                                           child: SizedBox(
                                             width: 32,

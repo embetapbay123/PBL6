@@ -803,11 +803,21 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                             onTap: _busy ||
                                                                     !available
                                                                 ? null
-                                                                : () =>
-                                                                      _updateQuantity(
-                                                                        itemId,
-                                                                        qty + 1,
-                                                                      ),
+                                                                : () {
+                                                                    final stock = (item['stock'] as num?)?.toInt() ??
+                                                                        (item['available_quantity'] as num?)?.toInt();
+                                                                    if (stock != null && stock > 0 && qty >= stock) {
+                                                                      AppNoticeDialog.show(
+                                                                        context,
+                                                                        message: 'Chỉ còn lại ' + stock.toString() + ' sản phẩm cho mặt hàng này',
+                                                                      );
+                                                                      return;
+                                                                    }
+                                                                    _updateQuantity(
+                                                                      itemId,
+                                                                      qty + 1,
+                                                                    );
+                                                                  },
                                                             child: Padding(
                                                               padding:
                                                                   const EdgeInsets.symmetric(
@@ -1269,16 +1279,11 @@ class _CartPageState extends ConsumerState<CartPage> {
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
                           ref.read(favoritesProvider.notifier).toggleFavorite(product);
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                isFav
-                                    ? 'Đã xóa khỏi danh sách yêu thích.'
-                                    : 'Đã thêm vào danh sách yêu thích!',
-                              ),
-                              duration: const Duration(seconds: 1),
-                            ),
+                          AppNoticeDialog.show(
+                            context,
+                            message: isFav
+                                ? 'Đã xóa khỏi danh sách yêu thích.'
+                                : 'Đã thêm vào danh sách yêu thích!',
                           );
                         },
                         child: Container(
@@ -1392,8 +1397,9 @@ class _CartPageState extends ConsumerState<CartPage> {
       ref.invalidate(cartItemsProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     } finally {
@@ -1430,17 +1436,16 @@ class _CartPageState extends ConsumerState<CartPage> {
       _selectedItemIds.remove(itemId);
       ref.invalidate(cartItemsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã xóa sản phẩm khỏi giỏ hàng.'),
-            backgroundColor: Colors.green,
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã xóa sản phẩm khỏi giỏ hàng.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     } finally {
@@ -1494,21 +1499,16 @@ class _CartPageState extends ConsumerState<CartPage> {
       ref.invalidate(cartItemsProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã cập nhật phân loại sản phẩm!'),
-            backgroundColor: Color(0xFF15803D),
-            duration: Duration(seconds: 2),
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã cập nhật phân loại sản phẩm!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     } finally {
@@ -1552,17 +1552,16 @@ class _CartPageState extends ConsumerState<CartPage> {
       _isEditing = false;
       ref.invalidate(cartItemsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã xóa các sản phẩm được chọn khỏi giỏ hàng.'),
-            backgroundColor: Colors.green,
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã xóa các sản phẩm được chọn khỏi giỏ hàng.',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     } finally {

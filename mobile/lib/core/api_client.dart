@@ -557,6 +557,13 @@ class ApiClient {
           item['variant_text'] = variantText;
           item['store_name'] = storeName;
           item['unit_price_vnd'] = price;
+          final stock = (variant['stock'] as num?)?.toInt() ??
+              (variant['inventory_quantity'] as num?)?.toInt() ??
+              (variant['available_quantity'] as num?)?.toInt() ??
+              (product['stock'] as num?)?.toInt();
+          if (stock != null) {
+            item['stock'] = stock;
+          }
           item['catalog_available'] = true;
         } catch (_) {
           item['catalog_available'] = false;

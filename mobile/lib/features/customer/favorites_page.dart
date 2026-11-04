@@ -151,26 +151,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
       ref.invalidate(cartBadgeCountProvider);
       ref.invalidate(cartItemsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã thêm "${item.title}" vào giỏ hàng!'),
-            backgroundColor: const Color(0xFF15803D),
-            duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: 'Xem giỏ',
-              textColor: Colors.white,
-              onPressed: () => Navigator.pushNamed(context, '/cart'),
-            ),
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã thêm "${item.title}" vào giỏ hàng!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     } finally {
@@ -182,11 +172,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
 
   void _handleRemoveFavorite(FavoriteProductItem item) {
     ref.read(favoritesProvider.notifier).removeFavorite(item.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã bỏ yêu thích "${item.title}".'),
-        duration: const Duration(seconds: 2),
-      ),
+    AppNoticeDialog.show(
+      context,
+      message: 'Đã bỏ yêu thích "${item.title}".',
     );
   }
 

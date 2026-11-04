@@ -359,11 +359,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Chương trình Bán hàng cùng PBL6 đang mở đăng ký!'),
-                          duration: Duration(seconds: 2),
-                        ),
+                      AppNoticeDialog.show(
+                        context,
+                        message: 'Chương trình Bán hàng cùng PBL6 đang mở đăng ký!',
                       );
                     },
                     child: const Text(
@@ -1002,10 +1000,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 title: const Text('Bán hàng cùng PBL6', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tính năng đăng ký bán hàng cùng PBL6 đang hoạt động!'),
-                    ),
+                  AppNoticeDialog.show(
+                    context,
+                    message: 'Tính năng đăng ký bán hàng cùng PBL6 đang hoạt động!',
                   );
                 },
               ),
@@ -1252,16 +1249,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
                             ref.read(favoritesProvider.notifier).toggleFavorite(product);
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isFav
-                                      ? 'Đã xóa khỏi danh sách yêu thích.'
-                                      : 'Đã thêm vào danh sách yêu thích!',
-                                ),
-                                duration: const Duration(seconds: 1),
-                              ),
+                            AppNoticeDialog.show(
+                              context,
+                              message: isFav
+                                  ? 'Đã xóa khỏi danh sách yêu thích.'
+                                  : 'Đã thêm vào danh sách yêu thích!',
                             );
                           },
                           child: Container(
@@ -1447,11 +1439,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
               return InkWell(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Đang mở sản phẩm "$title"...'),
-                      duration: const Duration(seconds: 1),
-                    ),
+                  AppNoticeDialog.show(
+                    context,
+                    message: 'Đang mở sản phẩm "$title"...',
                   );
                 },
                 borderRadius: BorderRadius.circular(10),
@@ -1569,24 +1559,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       await client.addToCart(variantId: variantId, productId: productId, quantity: 1);
       ref.invalidate(cartItemsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã thêm "${product['title']}" vào giỏ hàng!'),
-            backgroundColor: const Color(0xFF15803D),
-            duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: 'Xem giỏ',
-              textColor: Colors.white,
-              onPressed: () => Navigator.pushNamed(context, '/cart'),
-            ),
-          ),
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã thêm "${product['title']}" vào giỏ hàng!',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
         );
       }
     }
@@ -2187,12 +2169,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () {
                                     ref.read(favoritesProvider.notifier).toggleFavorite(product);
-                                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(isFav ? 'Đã xóa khỏi yêu thích.' : 'Đã lưu vào yêu thích!'),
-                                        duration: const Duration(seconds: 1),
-                                      ),
+                                    AppNoticeDialog.show(
+                                      context,
+                                      message: isFav ? 'Đã xóa khỏi yêu thích.' : 'Đã lưu vào yêu thích!',
                                     );
                                   },
                                   child: Container(

@@ -791,16 +791,11 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
                         behavior: HitTestBehavior.opaque,
                         onTap: () {
                           ref.read(favoritesProvider.notifier).toggleFavorite(item);
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                isFav
-                                    ? 'Đã xóa khỏi danh sách yêu thích.'
-                                    : 'Đã thêm vào danh sách yêu thích!',
-                              ),
-                              duration: const Duration(seconds: 1),
-                            ),
+                          AppNoticeDialog.show(
+                            context,
+                            message: isFav
+                                ? 'Đã xóa khỏi danh sách yêu thích.'
+                                : 'Đã thêm vào danh sách yêu thích!',
                           );
                         },
                         child: Container(

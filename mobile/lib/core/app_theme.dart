@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+export 'app_notice_dialog.dart';
 
 class AppColors {
   // Brand Terracotta / Brick Red matching Web PBL6 Market screenshot
