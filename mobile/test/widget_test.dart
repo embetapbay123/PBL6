@@ -1,3 +1,4 @@
+import 'package:pbl6_mobile/features/chat/chat_ai_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +27,32 @@ import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 
 class MockApiClient extends ApiClient {
+  @override
+  Future<Map<String, dynamic>> listOwnChatSessions({
+    int page = 1,
+    int size = 20,
+    String? sessionId,
+    int? messagePage,
+    int? messageSize,
+  }) async => {
+    'items': [
+      {
+        'id': 'sess-e35f',
+        'created_at': '2026-11-04T08:09:00Z',
+        'messages': {
+          'items': [
+            {'role': 'USER', 'content': 'Tư vấn mua sắm'},
+            {'role': 'ASSISTANT', 'content': 'Chào bạn, mình có thể giúp gì cho bạn?'},
+          ],
+          'total': 2,
+        },
+      },
+    ],
+    'total': 1,
+    'page': 1,
+    'size': 20,
+  };
+
   @override
   Future<Map<String, dynamic>> getPersonalizationConsent() async => {
     'status': 'GRANTED',
@@ -1360,6 +1387,54 @@ void main() {
       expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
       expect(find.text('Trang 1 · 1 kết quả'), findsOneWidget);
     });
+  });
+
+  group('Chat Center Screen Tests', () {
+    testWidgets(
+      'ChatCenterView renders +, - buttons, no expand or close buttons, removes Enter hint, and toggles history view',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              apiProvider.overrideWithValue(MockApiClient()),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: ChatCenterView(
+                  isPage: true,
+                  onClose: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify Header buttons: only + and -
+        expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.remove_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.close_fullscreen_rounded), findsNothing);
+        expect(find.byIcon(Icons.open_in_full_rounded), findsNothing);
+        expect(find.byIcon(Icons.close_rounded), findsNothing);
+
+        // Verify "Enter để gửi..." is removed
+        expect(find.textContaining('Enter để gửi'), findsNothing);
+        expect(find.text('0/2000'), findsOneWidget);
+
+        // Verify clicking Trợ lý AI toggles history view (Image 2)
+        await tester.tap(find.text('Trợ lý AI'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Lịch sử của bạn'), findsOneWidget);
+        expect(find.text('Phiên mới'), findsWidgets);
+
+        // Clicking "+ Phiên mới" starts new chat session
+        await tester.tap(find.text('Phiên mới').last);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Bạn đang tìm\nsản phẩm gì?'), findsOneWidget);
+      },
+    );
   });
 
   group('ApiClient Unit Tests', () {

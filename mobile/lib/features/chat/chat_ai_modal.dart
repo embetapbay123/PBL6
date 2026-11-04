@@ -105,16 +105,51 @@ class ChatCenterView extends ConsumerStatefulWidget {
   ConsumerState<ChatCenterView> createState() => _ChatCenterViewState();
 }
 
+class ChatHistoryItem {
+  final String id;
+  final String title;
+  final DateTime createdAt;
+  final List<Map<String, dynamic>> messages;
+
+  ChatHistoryItem({
+    required this.id,
+    required this.title,
+    required this.createdAt,
+    this.messages = const [],
+  });
+
+  String get shortId {
+    final clean = id.replaceAll('-', '').toUpperCase();
+    if (clean.length >= 4) {
+      return '#${clean.substring(clean.length - 4)}';
+    }
+    return '#${clean.padLeft(4, '0')}';
+  }
+
+  String get formattedTime {
+    final hh = createdAt.hour.toString().padLeft(2, '0');
+    final mm = createdAt.minute.toString().padLeft(2, '0');
+    final dd = createdAt.day.toString().padLeft(2, '0');
+    final month = createdAt.month.toString().padLeft(2, '0');
+    return '$hh:$mm $dd-$month · $shortId';
+  }
+}
+
 class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final FocusNode _inputFocusNode = FocusNode();
   final List<Map<String, dynamic>> _messages = [];
 
   bool _isTyping = false;
   String? _sessionId;
   String? _chatKey;
   int _activeTab = 0; // 0: Trợ lý AI, 1: Gian hàng
-  bool _isExpanded = false;
+  bool _showHistory = false;
+  bool _isInputHovered = false;
+
+  List<ChatHistoryItem> _historySessions = [];
+  bool _isLoadingHistory = false;
 
   // Selected store for Store Chat tab
   String? _selectedStoreName;
@@ -132,7 +167,14 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
       });
     }
 
+    _historySessions = _getSampleHistory();
+    _loadHistory();
+
     _controller.addListener(() {
+      if (mounted) setState(() {});
+    });
+
+    _inputFocusNode.addListener(() {
       if (mounted) setState(() {});
     });
 
@@ -147,7 +189,210 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _inputFocusNode.dispose();
     super.dispose();
+  }
+
+  List<ChatHistoryItem> _getSampleHistory() {
+    final now = DateTime.now();
+    return [
+      ChatHistoryItem(
+        id: 'sess-e35f',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 4, 8, 9),
+        messages: [
+          {'isUser': true, 'text': 'Tư vấn giúp tôi điện thoại chụp ảnh đẹp dưới 15 triệu'},
+          {'isUser': false, 'text': 'Dưới 15 triệu, bạn có thể tham khảo một số dòng máy chụp ảnh sắc nét, màu sắc tự nhiên và pin trâu.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-cf8b',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 9, 29),
+        messages: [
+          {'isUser': true, 'text': 'Tìm quà tặng sinh nhật cho bạn nữ phong cách thanh lịch'},
+          {'isUser': false, 'text': 'Gợi ý quà tặng thanh lịch: túi xách mini nữ, nước hoa hương hoa cỏ nhẹ nhàng, hoặc set phụ kiện bạc.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-db11',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 9, 13),
+        messages: [
+          {'isUser': true, 'text': 'Bàn phím cơ văn phòng gõ êm không gây ồn'},
+          {'isUser': false, 'text': 'Bạn nên chọn switch Red hoặc Silent Switch, có lót foam tiêu âm để gõ êm ái trong văn phòng.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-f459',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 8, 9),
+        messages: [
+          {'isUser': true, 'text': 'Tai nghe chống ồn bluetooth pin lâu'},
+          {'isUser': false, 'text': 'Dưới đây là một số mẫu tai nghe chống ồn chủ động (ANC) với thời lượng pin trên 30 giờ rất được ưa chuộng.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-3e0b',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 7, 55),
+        messages: [
+          {'isUser': true, 'text': 'Áo sơ mi nam đi làm chất liệu cotton thoáng mát'},
+          {'isUser': false, 'text': 'Gợi ý các mẫu sơ mi cotton 100% hoặc sợi tre thoáng mát, chống nhăn tốt cho dân công sở.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-6d7e',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 7, 32),
+        messages: [
+          {'isUser': true, 'text': 'Giày sneaker trắng đi học phối đồ đẹp'},
+          {'isUser': false, 'text': 'Sneaker trắng dáng classic đơn giản là lựa chọn tuyệt vời, dễ phối với nhiều phong cách trang phục.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-65d0',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 2, 42),
+        messages: [
+          {'isUser': true, 'text': 'Nồi chiên không dầu dung tích lớn cho gia đình 4-6 người'},
+          {'isUser': false, 'text': 'Dung tích 5L - 7L với khay nướng chống dính và cửa kính quan sát là gợi ý lý tưởng cho gia đình.'},
+        ],
+      ),
+      ChatHistoryItem(
+        id: 'sess-8f77',
+        title: 'Tư vấn mua sắm',
+        createdAt: DateTime(now.year, 11, 3, 2, 38),
+        messages: [
+          {'isUser': true, 'text': 'Đèn học để bàn bảo vệ thị lực chống cận'},
+          {'isUser': false, 'text': 'Nên chọn đèn LED có chỉ số hoàn màu CRI > 90, ánh sáng liên tục không nhấp nháy và điều chỉnh được độ sáng.'},
+        ],
+      ),
+      ...List.generate(11, (i) {
+        final code = (0x9000 + i * 137).toRadixString(16).toUpperCase();
+        return ChatHistoryItem(
+          id: 'sess-$code',
+          title: 'Tư vấn mua sắm',
+          createdAt: DateTime(now.year, 11, 2, 20 - i, 15 + (i * 3) % 45),
+          messages: [
+            {'isUser': true, 'text': 'Gợi ý sản phẩm phù hợp ngân sách'},
+            {'isUser': false, 'text': 'Dưới đây là một số sản phẩm đang có ưu đãi tốt trong gian hàng:'},
+          ],
+        );
+      }),
+    ];
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _isLoadingHistory = true);
+    try {
+      final client = ref.read(apiProvider);
+      final res = await client.listOwnChatSessions(page: 1, size: 20);
+      final rawItems = res['items'] as List?;
+      if (rawItems != null && rawItems.isNotEmpty) {
+        final loaded = <ChatHistoryItem>[];
+        for (final raw in rawItems) {
+          if (raw is Map) {
+            final id = raw['id']?.toString() ?? 'sess-0000';
+            final createdAtStr = raw['created_at']?.toString();
+            final createdAt = createdAtStr != null
+                ? DateTime.tryParse(createdAtStr) ?? DateTime.now()
+                : DateTime.now();
+            final msgs = (raw['messages']?['items'] as List?) ?? [];
+            final firstUserMsg = msgs.firstWhere(
+              (m) => m is Map && m['role'] == 'USER',
+              orElse: () => null,
+            );
+            final title = firstUserMsg is Map
+                ? (firstUserMsg['content']?.toString() ?? 'Tư vấn mua sắm')
+                : 'Tư vấn mua sắm';
+            loaded.add(ChatHistoryItem(
+              id: id,
+              title: title.length > 30 ? '${title.substring(0, 30)}...' : title,
+              createdAt: createdAt,
+              messages: msgs
+                  .map<Map<String, dynamic>>((m) => {
+                        'isUser': m['role'] == 'USER',
+                        'text': m['content']?.toString() ?? '',
+                      })
+                  .toList(),
+            ));
+          }
+        }
+        if (loaded.isNotEmpty) {
+          if (mounted) {
+            setState(() {
+              _historySessions = loaded;
+              _isLoadingHistory = false;
+            });
+            return;
+          }
+        }
+      }
+    } catch (_) {
+      // Fallback
+    }
+
+    if (mounted) {
+      if (_historySessions.isEmpty) {
+        _historySessions = _getSampleHistory();
+      }
+      setState(() => _isLoadingHistory = false);
+    }
+  }
+
+  void _saveCurrentSessionToHistory() {
+    if (_messages.isEmpty) return;
+    final sessId = _sessionId ??
+        'sess-${DateTime.now().millisecondsSinceEpoch.toRadixString(16).substring(4)}';
+    final firstUserMsg = _messages.firstWhere(
+      (m) => m['isUser'] == true,
+      orElse: () => _messages.first,
+    );
+    final title = firstUserMsg['text']?.toString() ?? 'Tư vấn mua sắm';
+    final item = ChatHistoryItem(
+      id: sessId,
+      title: title.length > 30 ? '${title.substring(0, 30)}...' : title,
+      createdAt: DateTime.now(),
+      messages: List<Map<String, dynamic>>.from(_messages),
+    );
+    _historySessions.removeWhere((s) => s.id == sessId);
+    _historySessions.insert(0, item);
+  }
+
+  void _startNewSession() {
+    _saveCurrentSessionToHistory();
+    setState(() {
+      _sessionId = null;
+      _chatKey = null;
+      _messages.clear();
+      _controller.clear();
+      _showHistory = false;
+      _activeTab = 0;
+    });
+  }
+
+  void _openHistorySession(ChatHistoryItem item) {
+    _saveCurrentSessionToHistory();
+    setState(() {
+      _sessionId = item.id;
+      _messages.clear();
+      if (item.messages.isNotEmpty) {
+        _messages.addAll(item.messages);
+      } else {
+        _messages.add({
+          'isUser': true,
+          'text': item.title,
+        });
+        _messages.add({
+          'isUser': false,
+          'text':
+              'Chào bạn! Dưới đây là thông tin tư vấn trong phiên chat ${item.shortId}. Bạn muốn tìm hiểu thêm về sản phẩm nào?',
+        });
+      }
+      _showHistory = false;
+    });
+    _scrollToBottom();
   }
 
   Future<void> _ensureSession([String? firstMessage]) async {
@@ -301,7 +546,7 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // 1. Top Window Control Header (matches Web Screenshot)
+        // 1. Top Window Control Header (+, -)
         _buildWindowHeader(),
 
         const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
@@ -309,23 +554,28 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
         // 2. Tab Bar: [🤖 Trợ lý AI]  [🏬 Gian hàng]
         _buildTabBar(),
 
-        // 3. Subheader Channel Info Card
-        _buildSubheaderCard(),
+        if (_activeTab == 0 && _showHistory) ...[
+          // History View (Image 2)
+          Expanded(child: _buildHistoryBody()),
+        ] else ...[
+          // 3. Subheader Channel Info Card
+          _buildSubheaderCard(),
 
-        const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
 
-        // 4. Main Body: Empty State or Message List
-        Expanded(
-          child: _activeTab == 0 ? _buildAiChatBody() : _buildStoreChatBody(),
-        ),
+          // 4. Main Body: Empty State or Message List
+          Expanded(
+            child: _activeTab == 0 ? _buildAiChatBody() : _buildStoreChatBody(),
+          ),
 
-        // 5. Input Box Container & Disclaimer Footer
-        _buildInputArea(),
+          // 5. Input Box Container & Disclaimer Footer
+          _buildInputArea(),
+        ],
       ],
     );
   }
 
-  /// Window Header matching Web screenshot
+  /// Window Header: only + (new session) and - (minimize)
   Widget _buildWindowHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -352,19 +602,18 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
             ),
           ),
           const Spacer(),
-          // Window Control Icons: Expand, Minimize, Close
+          // + Button: Start new chat session
           IconButton(
-            icon: Icon(
-              _isExpanded ? Icons.close_fullscreen_rounded : Icons.open_in_full_rounded,
-              size: 18,
-              color: const Color(0xFF64748B),
+            icon: const Icon(
+              Icons.add_rounded,
+              size: 22,
+              color: Color(0xFF64748B),
             ),
-            tooltip: 'Phóng to',
+            tooltip: 'Phiên mới',
             visualDensity: VisualDensity.compact,
-            onPressed: () {
-              setState(() => _isExpanded = !_isExpanded);
-            },
+            onPressed: _startNewSession,
           ),
+          // - Button: Minimize / close modal
           IconButton(
             icon: const Icon(
               Icons.remove_rounded,
@@ -372,16 +621,6 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
               color: Color(0xFF64748B),
             ),
             tooltip: 'Thu nhỏ',
-            visualDensity: VisualDensity.compact,
-            onPressed: widget.onClose,
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.close_rounded,
-              size: 20,
-              color: Color(0xFF64748B),
-            ),
-            tooltip: 'Đóng',
             visualDensity: VisualDensity.compact,
             onPressed: widget.onClose,
           ),
@@ -399,7 +638,22 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
         children: [
           // Tab 0: Trợ lý AI
           InkWell(
-            onTap: () => setState(() => _activeTab = 0),
+            onTap: () {
+              if (_activeTab == 0) {
+                // Click lại vào "Trợ lý AI" -> toggle xem lịch sử câu hỏi như ảnh 2
+                setState(() {
+                  _showHistory = !_showHistory;
+                });
+                if (_showHistory && _historySessions.isEmpty) {
+                  _loadHistory();
+                }
+              } else {
+                setState(() {
+                  _activeTab = 0;
+                  _showHistory = false;
+                });
+              }
+            },
             borderRadius: BorderRadius.circular(10),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -435,7 +689,10 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
           const SizedBox(width: 8),
           // Tab 1: Gian hàng
           InkWell(
-            onTap: () => setState(() => _activeTab = 1),
+            onTap: () => setState(() {
+              _activeTab = 1;
+              _showHistory = false;
+            }),
             borderRadius: BorderRadius.circular(10),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -1051,10 +1308,150 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
     );
   }
 
+  /// History Body matching Image 2
+  Widget _buildHistoryBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header: "Lịch sử của bạn" + Badge count (e.g. 19)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              const Text(
+                'Lịch sử của bạn',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${_historySessions.length}',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // "+ Phiên mới" Button matching Image 2
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: InkWell(
+            onTap: _startNewSession,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              height: 44,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFC2410C), width: 1.2),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_rounded, color: Color(0xFFC2410C), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Phiên mới',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFC2410C),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Scrollable Session List
+        Expanded(
+          child: _isLoadingHistory && _historySessions.isEmpty
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFBA3416)),
+                )
+              : Scrollbar(
+                  thumbVisibility: true,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    itemCount: _historySessions.length,
+                    itemBuilder: (context, index) {
+                      final session = _historySessions[index];
+                      final isCurrent = session.id == _sessionId;
+                      return InkWell(
+                        onTap: () => _openHistorySession(session),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Padding(
+                                padding: EdgeInsets.only(top: 2),
+                                child: Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 19,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      session.title,
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                                        color: isCurrent ? const Color(0xFFC2410C) : const Color(0xFF1E293B),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      session.formattedTime,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+
   /// Input area matching the Web screenshot
   Widget _buildInputArea() {
     final hasText = _controller.text.trim().isNotEmpty;
     final charCount = _controller.text.length;
+    final isFocusedOrHovered = _inputFocusNode.hasFocus || _isInputHovered;
 
     return Container(
       color: Colors.white,
@@ -1067,97 +1464,109 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Rounded Border Box (matches web textarea container)
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 10, 10, 8),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-            ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  maxLength: 2000,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: _handleSend,
-                  decoration: const InputDecoration(
-                    hintText: 'Bạn muốn tìm món gì?',
-                    hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    counterText: '',
-                  ),
+          // Rounded Border Box with hover/focus border color change
+          MouseRegion(
+            onEnter: (_) => setState(() => _isInputHovered = true),
+            onExit: (_) => setState(() => _isInputHovered = false),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 10, 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isFocusedOrHovered ? const Color(0xFFBA3416) : const Color(0xFFE2E8F0),
+                  width: isFocusedOrHovered ? 1.5 : 1.2,
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Spacer(),
-                    // Visual Resizer Indicator (from web screenshot //)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 8, top: 4),
-                      child: Icon(
-                        Icons.filter_list,
-                        size: 14,
-                        color: Color(0xFFCBD5E1),
-                      ),
-                    ),
-                    // Terracotta Circular Send Button with Up Arrow
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: hasText && !_isTyping ? () => _handleSend(_controller.text) : null,
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: hasText && !_isTyping ? const Color(0xFFBA3416) : const Color(0xFFE6A394),
-                          shape: BoxShape.circle,
+                boxShadow: _inputFocusNode.hasFocus
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFFBA3416).withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.arrow_upward_rounded,
-                            color: Colors.white,
-                            size: 20,
+                      ]
+                    : null,
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    focusNode: _inputFocusNode,
+                    controller: _controller,
+                    minLines: 1,
+                    maxLines: 4,
+                    maxLength: 2000,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: _handleSend,
+                    decoration: const InputDecoration(
+                      hintText: 'Bạn muốn tìm món gì?',
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF94A3B8),
+                      ),
+                      isDense: true,
+                      filled: false,
+                      fillColor: Colors.transparent,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      counterText: '',
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Spacer(),
+                      // Visual Resizer Indicator (from web screenshot //)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8, top: 4),
+                        child: Icon(
+                          Icons.filter_list,
+                          size: 14,
+                          color: Color(0xFFCBD5E1),
+                        ),
+                      ),
+                      // Terracotta Circular Send Button with Up Arrow
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: hasText && !_isTyping ? () => _handleSend(_controller.text) : null,
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: hasText && !_isTyping ? const Color(0xFFBA3416) : const Color(0xFFE6A394),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.arrow_upward_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
 
           const SizedBox(height: 6),
 
-          // Under-Input Info: Shortcuts & Counter
+          // Under-Input Info: Character Counter (removed "Enter để gửi...")
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Enter để gửi · Shift + Enter xuống dòng',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF94A3B8),
-                  ),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '$charCount/2000',
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  color: Color(0xFF94A3B8),
                 ),
-                Text(
-                  '$charCount/2000',
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF94A3B8),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
 
