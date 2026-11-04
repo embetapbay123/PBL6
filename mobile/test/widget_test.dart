@@ -45,8 +45,8 @@ class MockApiClient extends ApiClient {
     'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
     'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
     'variants': [
-      {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000'},
-      {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000'},
+      {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000', 'available_quantity': 25},
+      {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000', 'available_quantity': 10},
     ],
   };
 
@@ -96,6 +96,13 @@ class MockApiClient extends ApiClient {
     required String productId,
     int quantity = 1,
   }) async => {'status': 'success'};
+
+  @override
+  Future<Map<String, dynamic>> addCartItem({
+    required String variantId,
+    required String productId,
+    int quantity = 1,
+  }) async => addToCart(variantId: variantId, productId: productId, quantity: quantity);
 
   @override
   Future<Map<String, dynamic>> getCartItems({
@@ -945,6 +952,78 @@ void main() {
 
         expect(find.text('Mua hàng (2)'), findsOneWidget);
         expect(find.text('1250000 ₫'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Tapping variant pill opens CartVariantModal, updates price & stock on variant change, and confirms',
+      (tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            cartItemsProvider.overrideWith(
+              (ref) async => {
+                'items': [
+                  {
+                    'id': 'ci-01',
+                    'store_id': 'store-tech',
+                    'store_name': 'PBL Tech Store',
+                    'product_id': 'prod-01',
+                    'variant_id': 'v-red',
+                    'title': 'Chuột Gaming không dây',
+                    'sku': 'KB-RED',
+                    'variant_text': 'Phiên bản Đỏ',
+                    'unit_price_vnd': 1200000,
+                    'quantity': 1,
+                  },
+                ],
+                'total': 1,
+              },
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CartPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Phiên bản Đỏ'), findsOneWidget);
+
+        // Tap on variant pill to open bottom sheet
+        await tester.tap(find.text('Phiên bản Đỏ'));
+        await tester.pumpAndSettle();
+
+        // Bottom sheet header displays price and stock
+        expect(find.text('Kho: 25'), findsOneWidget);
+        expect(find.text('1.200.000 ₫'), findsOneWidget);
+        expect(find.text('KB-BLUE'), findsOneWidget);
+        expect(find.text('Xác nhận'), findsOneWidget);
+
+        // Select KB-BLUE variant
+        await tester.tap(find.text('KB-BLUE'));
+        await tester.pumpAndSettle();
+
+        // Price updates to 1.250.000 ₫ and stock updates to 10
+        expect(find.text('1.250.000 ₫'), findsOneWidget);
+        expect(find.text('Kho: 10'), findsOneWidget);
+
+        // Tap increment button
+        await tester.tap(find.byIcon(Icons.add).last);
+        await tester.pumpAndSettle();
+
+        // Quantity becomes 2
+        expect(find.text('2'), findsWidgets);
+
+        // Confirm variant change
+        await tester.tap(find.text('Xác nhận'));
+        await tester.pumpAndSettle();
+
+        // Verify bottom sheet closed and success snackbar displayed
+        expect(find.text('Đã cập nhật phân loại sản phẩm!'), findsOneWidget);
       },
     );
 

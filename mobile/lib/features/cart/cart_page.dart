@@ -9,6 +9,7 @@ import '../chat/chat_ai_modal.dart';
 import '../checkout/checkout_page.dart';
 import '../customer/favorites_page.dart';
 import '../shared/app_bottom_nav.dart';
+import 'cart_variant_modal.dart';
 
 class CartPage extends ConsumerStatefulWidget {
   const CartPage({super.key});
@@ -19,6 +20,7 @@ class CartPage extends ConsumerStatefulWidget {
 
 class _CartPageState extends ConsumerState<CartPage> {
   final Set<String> _selectedItemIds = {};
+  String? _pendingSelectVariantId;
   bool _isEditing = false;
   bool _busy = false;
   final _searchController = TextEditingController();
@@ -390,6 +392,17 @@ class _CartPageState extends ConsumerState<CartPage> {
               .toSet();
           _selectedItemIds.retainAll(validAvailableItemIds);
 
+          // Restore selection for newly swapped variant item if applicable
+          if (_pendingSelectVariantId != null) {
+            for (final it in items) {
+              if (it['variant_id'] == _pendingSelectVariantId && _available(it)) {
+                _selectedItemIds.add(it['id']?.toString() ?? '');
+                break;
+              }
+            }
+            _pendingSelectVariantId = null;
+          }
+
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(cartItemsProvider),
             child: SingleChildScrollView(
@@ -663,41 +676,44 @@ class _CartPageState extends ConsumerState<CartPage> {
                                               ),
                                             ),
                                             const SizedBox(height: 4),
-                                            // Variant dropdown pill
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 3,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey.shade100,
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Flexible(
-                                                    child: Text(
-                                                      variantText,
-                                                      style: TextStyle(
-                                                        color: Colors
-                                                            .grey.shade700,
-                                                        fontSize: 11,
+                                            // Variant dropdown pill (clickable modal selector matching Image 1 & 2)
+                                            InkWell(
+                                              onTap: _busy
+                                                  ? null
+                                                  : () => _openVariantSelector(item),
+                                              borderRadius: BorderRadius.circular(6),
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8,
+                                                  vertical: 3.5,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF3F4F6),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        variantText,
+                                                        style: const TextStyle(
+                                                          color: Color(0xFF4B5563),
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow.ellipsis,
                                                       ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Icon(
-                                                    Icons.keyboard_arrow_down,
-                                                    size: 14,
-                                                    color: Colors.grey.shade600,
-                                                  ),
-                                                ],
+                                                    const SizedBox(width: 4),
+                                                    const Icon(
+                                                      Icons.keyboard_arrow_down,
+                                                      size: 14,
+                                                      color: Color(0xFF6B7280),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
@@ -1425,6 +1441,74 @@ class _CartPageState extends ConsumerState<CartPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage(e)), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _openVariantSelector(Map<String, dynamic> item) {
+    CartVariantModal.show(
+      context: context,
+      cartItem: item,
+      onConfirm: (selectedVariant, quantity) => _handleConfirmVariantChange(
+        cartItem: item,
+        newVariant: selectedVariant,
+        newQuantity: quantity,
+      ),
+    );
+  }
+
+  Future<void> _handleConfirmVariantChange({
+    required Map<String, dynamic> cartItem,
+    required Map<String, dynamic> newVariant,
+    required int newQuantity,
+  }) async {
+    final oldVariantId = cartItem['variant_id']?.toString() ?? '';
+    final newVariantId = newVariant['id']?.toString() ?? '';
+    final oldCartItemId = cartItem['id']?.toString() ?? '';
+    final productId = cartItem['product_id']?.toString() ?? '';
+
+    setState(() => _busy = true);
+    try {
+      final client = ref.read(apiProvider);
+      if (oldVariantId == newVariantId) {
+        if (newQuantity != cartItem['quantity']) {
+          await client.updateCartItem(oldCartItemId, quantity: newQuantity);
+        }
+      } else {
+        await client.addToCart(
+          variantId: newVariantId,
+          productId: productId,
+          quantity: newQuantity,
+        );
+        await client.removeCartItem(oldCartItemId);
+
+        if (_selectedItemIds.contains(oldCartItemId)) {
+          _selectedItemIds.remove(oldCartItemId);
+          _pendingSelectVariantId = newVariantId;
+        }
+      }
+
+      ref.invalidate(cartItemsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã cập nhật phân loại sản phẩm!'),
+            backgroundColor: Color(0xFF15803D),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
