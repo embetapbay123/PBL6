@@ -825,6 +825,69 @@ void main() {
     });
 
     testWidgets(
+      'Searching from top search bar transitions to dedicated search results view matching web design',
+      (tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {
+                'items': [
+                  {
+                    'id': 'prod-01',
+                    'title': 'Áo hoodie xám Weekend',
+                    'price_vnd': 389000,
+                    'category_id': 'cat-1',
+                    'store_name': 'An Nhiên Studio',
+                    'variants': [
+                      {'id': 'v-1', 'price_vnd': 389000},
+                      {'id': 'v-2', 'price_vnd': 399000},
+                    ],
+                  },
+                ],
+                'total': 1,
+              },
+            ),
+            categoriesProvider.overrideWith((ref) async => [
+              {'id': 'cat-1', 'name': 'Thời trang'},
+            ]),
+            recommendationProvider.overrideWith((ref) async => {'product_ids': []}),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Initially in home mode
+        expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
+
+        // Enter search query "hoodie" and tap Tìm kiếm
+        await tester.enterText(find.byType(TextField).first, 'hoodie');
+        await tester.tap(find.text('Tìm kiếm'));
+        await tester.pumpAndSettle();
+
+        // Now in dedicated search results mode matching web
+        expect(find.text('KHÁM PHÁ CÙNG PBL6'), findsOneWidget);
+        expect(find.text('Trang chủ'), findsOneWidget);
+        expect(find.text('Bộ lọc'), findsOneWidget);
+        expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+        expect(find.text('Thêm vào giỏ'), findsOneWidget);
+        expect(find.text('Xóa bộ lọc'), findsOneWidget);
+
+        // Tap "Xóa bộ lọc" returns to home mode
+        await tester.tap(find.text('Xóa bộ lọc'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'ProductDetailPage renders full details, variant chips and quantity selection',
       (tester) async {
         final mockProduct = {
