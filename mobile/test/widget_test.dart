@@ -718,6 +718,71 @@ void main() {
       },
     );
 
+    testWidgets('Tapping favorite heart icon on product card toggles favorite and does not navigate', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          catalogProductsProvider.overrideWith(
+            (ref, query) async => {
+              'items': [
+                {
+                  'id': 'test-card-01',
+                  'title': 'Sổ tay ghi chép Daily Notes',
+                  'price_vnd': 79000,
+                  'category_id': 'cat-1',
+                  'store_name': 'TechZone Store',
+                  'variants': [{'id': 'v-1', 'price_vnd': 79000}],
+                  'images': [{'image_url': 'https://example.com/img.png'}],
+                },
+              ],
+              'total': 1,
+            },
+          ),
+          categoriesProvider.overrideWith((ref) async => []),
+          recommendationProvider.overrideWith((ref) async => {'product_ids': []}),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CatalogPage()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Sổ tay ghi chép Daily Notes'), findsOneWidget);
+
+      final cardHeartFinder = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byIcon(Icons.favorite_border_rounded),
+      );
+      expect(cardHeartFinder, findsOneWidget);
+
+      // Tap on the heart icon
+      await tester.tap(cardHeartFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verified: Toggled to filled heart inside the card
+      final filledHeartFinder = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byIcon(Icons.favorite_rounded),
+      );
+      expect(filledHeartFinder, findsOneWidget);
+
+      // Verified: Did not navigate to ProductDetailPage
+      expect(find.text('Mã SKU:'), findsNothing);
+      expect(find.text('Mua ngay'), findsNothing);
+      expect(find.text('PBL6 Market'), findsOneWidget);
+    });
+
     testWidgets('CatalogPage displays empty state when no products found', (
       tester,
     ) async {

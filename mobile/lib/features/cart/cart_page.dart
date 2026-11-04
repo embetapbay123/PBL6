@@ -7,6 +7,7 @@ import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
 import '../chat/chat_ai_modal.dart';
 import '../checkout/checkout_page.dart';
+import '../customer/favorites_page.dart';
 import '../shared/app_bottom_nav.dart';
 
 class CartPage extends ConsumerStatefulWidget {
@@ -1243,19 +1244,56 @@ class _CartPageState extends ConsumerState<CartPage> {
                 ),
                 // Favorite Heart
                 Positioned(
-                  top: 6,
-                  right: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(200),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.favorite_border,
-                      size: 16,
-                      color: Colors.grey,
-                    ),
+                  top: 2,
+                  right: 2,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final isFav = ref.watch(favoritesProvider).any((f) => f.id == pId);
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          ref.read(favoritesProvider.notifier).toggleFavorite(product);
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                isFav
+                                    ? 'Đã xóa khỏi danh sách yêu thích.'
+                                    : 'Đã thêm vào danh sách yêu thích!',
+                              ),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: isFav ? const Color(0xFFFEF2F2) : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

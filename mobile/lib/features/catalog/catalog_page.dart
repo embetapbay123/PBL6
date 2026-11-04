@@ -1208,14 +1208,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   ),
                   // Favorite Heart Button Top-Right
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 2,
+                    right: 2,
                     child: Consumer(
                       builder: (context, ref, _) {
                         final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
                         return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
                           onTap: () {
                             ref.read(favoritesProvider.notifier).toggleFavorite(product);
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -1228,24 +1230,29 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             );
                           },
                           child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 1),
+                            width: 44,
+                            height: 44,
+                            alignment: Alignment.center,
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: isFav ? const Color(0xFFFEF2F2) : Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black12,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                  size: 17,
+                                  color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
                                 ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Icon(
-                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                size: 15,
-                                color: isFav ? const Color(0xFFC2410C) : AppColors.textSecondary,
                               ),
                             ),
                           ),
@@ -1393,7 +1400,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 130,
+          height: 132,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: recentItems.length,
@@ -1421,7 +1428,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        height: 65,
+                        height: 56,
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: const Color(0xFFF3F4F6),

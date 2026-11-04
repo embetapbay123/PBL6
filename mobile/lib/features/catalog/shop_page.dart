@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
+import '../customer/favorites_page.dart';
 import '../shared/app_bottom_nav.dart';
 import 'product_detail_page.dart';
 
@@ -781,15 +782,56 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.favorite_border, size: 16, color: Colors.grey),
+                  top: 2,
+                  right: 2,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          ref.read(favoritesProvider.notifier).toggleFavorite(item);
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                isFav
+                                    ? 'Đã xóa khỏi danh sách yêu thích.'
+                                    : 'Đã thêm vào danh sách yêu thích!',
+                              ),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: isFav ? const Color(0xFFFEF2F2) : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 17,
+                                color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
