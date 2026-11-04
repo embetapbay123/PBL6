@@ -463,6 +463,15 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
     _scrollToBottom();
   }
 
+  void _selectPrompt(String promptText) {
+    _controller.text = promptText;
+    _controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: _controller.text.length),
+    );
+    _inputFocusNode.requestFocus();
+    setState(() {});
+  }
+
   Future<void> _ensureSession([String? firstMessage]) async {
     if (_sessionId != null) return;
     try {
@@ -951,13 +960,13 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                     _buildPromptActionCard(
                       icon: Icons.card_giftcard_outlined,
                       label: 'Tìm quà tặng',
-                      onTap: () => _handleSend('Tìm quà tặng'),
+                      onTap: () => _selectPrompt('Tìm quà tặng '),
                     ),
                     const SizedBox(height: 10),
                     _buildPromptActionCard(
                       icon: Icons.account_balance_wallet_outlined,
                       label: 'Chọn theo ngân sách',
-                      onTap: () => _handleSend('Chọn theo ngân sách'),
+                      onTap: () => _selectPrompt('Chọn theo ngân sách '),
                     ),
                   ],
                 ),

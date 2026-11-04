@@ -1419,6 +1419,53 @@ void main() {
 
   group('Chat Center Screen Tests', () {
     testWidgets(
+      'Tapping suggestion prompt "Tìm quà tặng" populates text into TextField without immediately sending',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              apiProvider.overrideWithValue(MockApiClient()),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: ChatCenterView(
+                  isPage: true,
+                  onClose: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Ensure visible and tap on suggestion prompt "Tìm quà tặng"
+        await tester.ensureVisible(find.text('Tìm quà tặng'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Tìm quà tặng'));
+        await tester.pumpAndSettle();
+
+        // Verify textfield now contains "Tìm quà tặng " and message was NOT immediately sent
+        final tfFinder = find.byType(TextField);
+        expect(tfFinder, findsOneWidget);
+        final tfWidget = tester.widget<TextField>(tfFinder);
+        expect(tfWidget.controller?.text, 'Tìm quà tặng ');
+
+        // Verify welcome screen is still showing (not navigated away or auto-sent)
+        expect(find.text('Bạn đang tìm\nsản phẩm gì?'), findsOneWidget);
+
+        // User enters full query
+        await tester.enterText(tfFinder, 'Tìm quà tặng sinh nhật bạn gái');
+        await tester.pumpAndSettle();
+
+        // User clicks send arrow button
+        await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
+        await tester.pumpAndSettle();
+
+        // Verify message was now sent
+        expect(find.text('Tìm quà tặng sinh nhật bạn gái'), findsOneWidget);
+      },
+    );
+    testWidgets(
       'ChatCenterView Gian hàng tab renders conversation list matching Image 1 without Image 2 subheader card',
       (tester) async {
         await tester.pumpWidget(
