@@ -135,6 +135,30 @@ class ChatHistoryItem {
   }
 }
 
+class StoreConversationItem {
+  final String id;
+  final String name;
+  final String initials;
+  final String category;
+  final String rating;
+  final String shipping;
+  final String lastMessage;
+  final String time;
+  final String status;
+
+  const StoreConversationItem({
+    required this.id,
+    required this.name,
+    required this.initials,
+    required this.category,
+    required this.rating,
+    required this.shipping,
+    required this.lastMessage,
+    required this.time,
+    this.status = 'Đang trực tuyến',
+  });
+}
+
 class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -150,6 +174,50 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
 
   List<ChatHistoryItem> _historySessions = [];
   bool _isLoadingHistory = false;
+
+  // Store conversations list matching Image 1
+  final List<StoreConversationItem> _storeConversations = const [
+    StoreConversationItem(
+      id: 'store-an-nhien',
+      name: 'An Nhiên Studio',
+      initials: 'AN',
+      category: 'Gốm sứ & Thủ công',
+      rating: '5.0 ★',
+      shipping: 'Đồng giá 25.000 đ',
+      lastMessage: 'DEMO-CHAT-1793644239974 — Gian hàng demo đã nhận và trả lời. Bạn đang quan tâm đến sản phẩm nào của shop?',
+      time: '01:30 03-11',
+    ),
+    StoreConversationItem(
+      id: 'store-may-xanh',
+      name: 'Mây Xanh Living',
+      initials: 'MX',
+      category: 'Nhà cửa & Đời sống',
+      rating: '4.9 ★',
+      shipping: 'Đồng giá 30.000 đ',
+      lastMessage: 'Dạ bên em còn sẵn mẫu này đủ các màu ạ!',
+      time: '14:20 02-11',
+    ),
+    StoreConversationItem(
+      id: 'store-techzone',
+      name: 'TechZone Store',
+      initials: 'TZ',
+      category: 'Thiết bị & Phụ kiện',
+      rating: '4.8 ★',
+      shipping: 'Miễn phí từ 500k',
+      lastMessage: 'Sản phẩm được bảo hành chính hãng 12 tháng bạn nhé.',
+      time: '09:15 01-11',
+    ),
+    StoreConversationItem(
+      id: 'store-everyday',
+      name: 'Everyday Living',
+      initials: 'EL',
+      category: 'Gia dụng gia đình',
+      rating: '4.9 ★',
+      shipping: 'Đồng giá 30.000 đ',
+      lastMessage: 'Cảm ơn bạn đã nhắn tin cho gian hàng!',
+      time: '18:45 30-10',
+    ),
+  ];
 
   // Selected store for Store Chat tab
   String? _selectedStoreName;
@@ -555,17 +623,27 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
         _buildTabBar(),
 
         if (_activeTab == 0 && _showHistory) ...[
-          // History View (Image 2)
+          // AI History View (Image 2)
           Expanded(child: _buildHistoryBody()),
+        ] else if (_activeTab == 1 && _selectedStoreName == null) ...[
+          // Store Conversations List matching Image 1 (NO Image 2 subheader card!)
+          Expanded(child: _buildStoreConversationsList()),
         ] else ...[
-          // 3. Subheader Channel Info Card
-          _buildSubheaderCard(),
+          // 3. Subheader Channel Info Card (Only for AI tab - Image 2 subheader removed for Store tab)
+          if (_activeTab == 0) ...[
+            _buildSubheaderCard(),
+            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          ],
 
-          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          // Active Store chat header with back button
+          if (_activeTab == 1 && _selectedStoreName != null) ...[
+            _buildActiveStoreHeader(),
+            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          ],
 
           // 4. Main Body: Empty State or Message List
           Expanded(
-            child: _activeTab == 0 ? _buildAiChatBody() : _buildStoreChatBody(),
+            child: _activeTab == 0 ? _buildAiChatBody() : _buildStoreChatMessagesBody(),
           ),
 
           // 5. Input Box Container & Disclaimer Footer
@@ -914,78 +992,196 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
     );
   }
 
-  /// Store Chat Body
-  Widget _buildStoreChatBody() {
-    if (_selectedStoreName == null) {
-      final sampleStores = [
-        {
-          'name': 'Mây Xanh Living',
-          'category': 'Nhà cửa & Đời sống',
-          'shipping': 'Đồng giá 30.000 đ',
-          'rating': '4.9 ★',
-          'status': 'Đang trực tuyến',
-        },
-        {
-          'name': 'TechZone Store',
-          'category': 'Thiết bị & Phụ kiện',
-          'shipping': 'Miễn phí từ 500k',
-          'rating': '4.8 ★',
-          'status': 'Trả lời trong vài phút',
-        },
-        {
-          'name': 'Everyday Living',
-          'category': 'Gia dụng gia đình',
-          'shipping': 'Đồng giá 30.000 đ',
-          'rating': '4.9 ★',
-          'status': 'Đang trực tuyến',
-        },
-      ];
+  /// Active Store Chat Header with Back Button
+  Widget _buildActiveStoreHeader() {
+    final store = _storeConversations.firstWhere(
+      (s) => s.name == _selectedStoreName,
+      orElse: () => StoreConversationItem(
+        id: 'store-custom',
+        name: _selectedStoreName ?? 'Gian hàng',
+        initials: _selectedStoreName != null && _selectedStoreName!.isNotEmpty
+            ? _selectedStoreName!.substring(0, 1).toUpperCase()
+            : 'GH',
+        category: 'Gian hàng đối tác',
+        rating: '5.0 ★',
+        shipping: 'Đồng giá ship',
+        lastMessage: '',
+        time: '',
+      ),
+    );
 
-      return ListView(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(16),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      color: Colors.white,
+      child: Row(
         children: [
-          const Text(
-            'Chọn gian hàng để trò chuyện trực tiếp:',
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+          IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, size: 20, color: Color(0xFF334155)),
+            tooltip: 'Quay lại hội thoại',
+            visualDensity: VisualDensity.compact,
+            onPressed: () => setState(() => _selectedStoreName = null),
           ),
-          const SizedBox(height: 12),
-          ...sampleStores.map((store) {
-            return Card(
-              elevation: 0,
-              margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFECE6),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(
+                store.initials,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A627A),
+                ),
               ),
-              child: InkWell(
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        store.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified, color: Color(0xFFBA3416), size: 14),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      store.status,
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '· ${store.rating}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => setState(() => _selectedStoreName = null),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Đổi shop', style: TextStyle(fontSize: 12, color: Color(0xFFBA3416), fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Store Conversations List matching Image 1 (Hội thoại + badge count)
+  Widget _buildStoreConversationsList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header: "Hội thoại" + Badge pill matching Image 1
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+          child: Row(
+            children: [
+              const Text(
+                'Hội thoại',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFECE6),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${_storeConversations.length}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF475569),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Conversation items list matching Image 1
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            itemCount: _storeConversations.length,
+            itemBuilder: (context, index) {
+              final store = _storeConversations[index];
+              return InkWell(
                 onTap: () {
                   setState(() {
-                    _selectedStoreName = store['name'];
+                    _selectedStoreName = store.name;
                     _messages.clear();
                     _messages.add({
                       'isUser': false,
-                      'senderName': store['name'],
-                      'text':
-                          'Xin chào! Cảm ơn bạn đã quan tâm đến ${store['name']}. Chúng mình có thể hỗ trợ gì cho bạn hôm nay?',
+                      'senderName': store.name,
+                      'text': store.lastMessage,
                     });
                   });
                 },
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Square rounded avatar with initials (AN, MX, etc.) matching Image 1
                       Container(
-                        width: 44,
-                        height: 44,
+                        width: 46,
+                        height: 46,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFBF2ED),
+                          color: const Color(0xFFEFECE6),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFF3D5C5)),
                         ),
-                        child: const Center(
-                          child: Icon(Icons.storefront_outlined, color: Color(0xFFBA3416), size: 22),
+                        child: Center(
+                          child: Text(
+                            store.initials,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF4A627A),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -993,40 +1189,120 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Row 1: Store name & Rating badge
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    store.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14.5,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF3C7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    store.rating,
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFD97706),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            // Row 2: Timestamp & Category
                             Row(
                               children: [
                                 Text(
-                                  store['name']!,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  store.time,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                  ),
                                 ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.verified, color: Color(0xFFBA3416), size: 14),
+                                const Text(
+                                  ' · ',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFFCBD5E1),
+                                  ),
+                                ),
+                                Flexible(
+                                  child: Text(
+                                    store.category,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${store['category']} · ${store['rating']}',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              store['shipping']!,
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w500),
+                            const SizedBox(height: 4),
+                            // Row 3: Last Message snippet & Shipping / promo badge
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    store.lastMessage,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFECFDF5),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: const Color(0xFFA7F3D0), width: 0.8),
+                                  ),
+                                  child: Text(
+                                    store.shipping,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF047857),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: Color(0xFF94A3B8)),
                     ],
                   ),
                 ),
-              ),
-            );
-          }),
-        ],
-      );
-    }
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
+  /// Store Chat Messages Body
+  Widget _buildStoreChatMessagesBody() {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

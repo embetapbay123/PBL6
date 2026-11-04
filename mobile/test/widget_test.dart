@@ -1391,6 +1391,61 @@ void main() {
 
   group('Chat Center Screen Tests', () {
     testWidgets(
+      'ChatCenterView Gian hàng tab renders conversation list matching Image 1 without Image 2 subheader card',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              apiProvider.overrideWithValue(MockApiClient()),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: ChatCenterView(
+                  isPage: true,
+                  onClose: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Switch to Gian hàng tab
+        await tester.tap(find.text('Gian hàng'));
+        await tester.pumpAndSettle();
+
+        // Verify "Hỗ trợ từ Gian hàng" subheader card (Image 2) is removed
+        expect(find.text('Hỗ trợ từ Gian hàng'), findsNothing);
+        expect(find.text('Trao đổi và nhận tư vấn trực tiếp từ người bán'), findsNothing);
+
+        // Verify "Hội thoại" header & count badge
+        expect(find.text('Hội thoại'), findsOneWidget);
+
+        // Verify store details are preserved: name, category, rating, shipping, initials, timestamp
+        expect(find.text('An Nhiên Studio'), findsOneWidget);
+        expect(find.text('AN'), findsOneWidget);
+        expect(find.text('01:30 03-11'), findsOneWidget);
+        expect(find.text('5.0 ★'), findsOneWidget);
+        expect(find.text('Gốm sứ & Thủ công'), findsOneWidget);
+        expect(find.text('Đồng giá 25.000 đ'), findsOneWidget);
+
+        // Tapping on store opens active store chat
+        await tester.tap(find.text('An Nhiên Studio'));
+        await tester.pumpAndSettle();
+
+        // Verify store chat header with back button and "Đổi shop"
+        expect(find.text('Đổi shop'), findsOneWidget);
+        expect(find.text('Đang trực tuyến'), findsOneWidget);
+
+        // Tapping back button returns to conversation list
+        await tester.tap(find.text('Đổi shop'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Hội thoại'), findsOneWidget);
+        expect(find.text('An Nhiên Studio'), findsOneWidget);
+      },
+    );
+    testWidgets(
       'ChatCenterView renders +, - buttons, no expand or close buttons, removes Enter hint, and toggles history view',
       (tester) async {
         await tester.pumpWidget(
