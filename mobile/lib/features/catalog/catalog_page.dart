@@ -22,6 +22,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   late final ScrollController _scrollController;
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchHovered = false;
   String _searchQuery = '';
   String? _selectedCategory;
   String _sort = 'title';
@@ -37,6 +39,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     _searchQuery = widget.initialSearch ?? '';
     _searchController = TextEditingController(text: _searchQuery);
     _scrollController = ScrollController();
+    _searchFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   String get _catalogKey => jsonEncode({
@@ -48,6 +53,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
   @override
   void dispose() {
+    _searchFocusNode.dispose();
     _searchController.dispose();
     _scrollController.dispose();
     _minPriceController.dispose();
@@ -497,39 +503,66 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         Container(
           color: Colors.white,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFD1D5DB), width: 1.2),
-            ),
-            child: Row(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 12),
-                  child: Icon(
-                    Icons.search,
-                    color: Color(0xFF9CA3AF),
-                    size: 20,
-                  ),
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _isSearchHovered = true),
+            onExit: (_) => setState(() => _isSearchHovered = false),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: (_searchFocusNode.hasFocus || _isSearchHovered)
+                      ? AppColors.primary
+                      : const Color(0xFFD1D5DB),
+                  width: (_searchFocusNode.hasFocus || _isSearchHovered) ? 1.5 : 1.2,
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onSubmitted: _onSearch,
-                    decoration: const InputDecoration(
-                      hintText: 'Bạn đang tìm sản phẩm gì?',
-                      hintStyle: TextStyle(
-                        color: Color(0xFF9CA3AF),
-                        fontSize: 13.5,
-                      ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                boxShadow: _searchFocusNode.hasFocus
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.08),
+                          blurRadius: 6,
+                          offset: const Offset(0, 1),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: Icon(
+                      Icons.search,
+                      color: (_searchFocusNode.hasFocus || _isSearchHovered)
+                          ? AppColors.primary
+                          : const Color(0xFF9CA3AF),
+                      size: 20,
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      focusNode: _searchFocusNode,
+                      controller: _searchController,
+                      onSubmitted: _onSearch,
+                      decoration: const InputDecoration(
+                        hintText: 'Bạn đang tìm sản phẩm gì?',
+                        hintStyle: TextStyle(
+                          color: Color(0xFF9CA3AF),
+                          fontSize: 13.5,
+                        ),
+                        filled: false,
+                        fillColor: Colors.transparent,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
                 if (_searchController.text.isNotEmpty)
                   IconButton(
                     icon: const Icon(Icons.clear, size: 16, color: Color(0xFF9CA3AF)),
@@ -562,6 +595,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ],

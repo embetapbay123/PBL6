@@ -24,9 +24,20 @@ class _CartPageState extends ConsumerState<CartPage> {
   bool _isEditing = false;
   bool _busy = false;
   final _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
+    _searchFocusNode.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -54,45 +65,67 @@ class _CartPageState extends ConsumerState<CartPage> {
   }
 
   Widget _buildSearchBar() {
+    final isFocusedOrHovered = _searchFocusNode.hasFocus || _isSearchHovered;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: const Color(0xFFD1D5DB),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(left: 14),
-            child: Icon(
-              Icons.search,
-              color: Color(0xFF6B7280),
-              size: 20,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isSearchHovered = true),
+        onExit: (_) => setState(() => _isSearchHovered = false),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isFocusedOrHovered ? const Color(0xFFBA3416) : const Color(0xFFD1D5DB),
+              width: isFocusedOrHovered ? 1.5 : 1.2,
             ),
+            boxShadow: _searchFocusNode.hasFocus
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFFBA3416).withValues(alpha: 0.08),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: _handleSearch,
-              decoration: const InputDecoration(
-                hintText: 'Bạn đang tìm sản phẩm gì?',
-                hintStyle: TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 13.5,
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 14),
+                child: Icon(
+                  Icons.search,
+                  color: isFocusedOrHovered ? const Color(0xFFBA3416) : const Color(0xFF6B7280),
+                  size: 20,
                 ),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.symmetric(vertical: 10),
               ),
-            ),
-          ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextField(
+                  focusNode: _searchFocusNode,
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: _handleSearch,
+                  decoration: const InputDecoration(
+                    hintText: 'Bạn đang tìm sản phẩm gì?',
+                    hintStyle: TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 13.5,
+                    ),
+                    filled: false,
+                    fillColor: Colors.transparent,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
           Padding(
             padding: const EdgeInsets.all(4),
             child: Material(
@@ -120,7 +153,9 @@ class _CartPageState extends ConsumerState<CartPage> {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 
   @override

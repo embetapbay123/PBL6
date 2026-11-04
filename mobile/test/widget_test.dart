@@ -698,6 +698,34 @@ void main() {
 
   group('MOB-02 Catalog & Product Detail Screen Tests', () {
     testWidgets(
+      'CatalogPage search bar focuses outer border without inner capsule border',
+      (tester) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              apiProvider.overrideWithValue(MockApiClient()),
+              categoriesProvider.overrideWith((ref) async => []),
+            ],
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final searchField = find.widgetWithText(TextField, 'Bạn đang tìm sản phẩm gì?');
+        expect(searchField, findsOneWidget);
+
+        // Tap into search field to focus
+        await tester.tap(searchField);
+        await tester.pumpAndSettle();
+
+        // Verify TextField decoration has no inner borders
+        final tfWidget = tester.widget<TextField>(searchField);
+        expect(tfWidget.decoration?.focusedBorder, InputBorder.none);
+        expect(tfWidget.decoration?.border, InputBorder.none);
+        expect(tfWidget.decoration?.filled, isFalse);
+      },
+    );
+    testWidgets(
       'CatalogPage renders product list, AI recommendations banner, and categories',
       (tester) async {
         final container = ProviderContainer(
