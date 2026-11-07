@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../../core/app_notice_dialog.dart';
+import '../cart/cart_page.dart';
 import '../catalog/shop_page.dart';
 import 'order_detail_page.dart';
+import 'order_refund_page.dart';
 
 final customerOrdersProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).listOwnOrders();
@@ -367,7 +370,6 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
 
   Widget _buildOrderCard(Map<String, dynamic> order) {
     final orderId = order['id']?.toString() ?? '';
-    final shortOrderId = orderId.length > 8 ? orderId.substring(0, 8) : orderId;
     final storeId = order['store_id']?.toString() ?? '';
     final shortStoreId = storeId.length > 8 ? storeId.substring(0, 8) : storeId;
     final storeName = order['store_name']?.toString() ?? 'Cửa hàng $shortStoreId';
@@ -379,6 +381,11 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         .toList();
     final isCancellable = status.toUpperCase() == 'CREATED' ||
         status.toUpperCase() == 'PENDING';
+    final totalProductQty = items.fold<int>(
+      0,
+      (sum, it) => sum + ((it['quantity'] as num?)?.toInt() ?? 1),
+    );
+    final productCount = totalProductQty > 0 ? totalProductQty : items.length;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -442,76 +449,34 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                           );
                         }
                       },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              storeName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: AppColors.textPrimary,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.chevron_right,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                        ],
+                      child: Text(
+                        storeName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _statusBgColor(status),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _statusDisplay(status),
-                        style: TextStyle(
-                          color: _statusTextColor(status),
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      _statusDisplay(status),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     if (order['refund_status'] != null && order['refund_status'].toString().isNotEmpty) ...[
                       const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: order['refund_status'] == 'SUCCEEDED'
-                              ? Colors.green.shade50
-                              : Colors.purple.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: order['refund_status'] == 'SUCCEEDED'
-                                ? Colors.green.shade200
-                                : Colors.purple.shade200,
-                          ),
-                        ),
-                        child: Text(
-                          order['refund_status'] == 'SUCCEEDED' ? 'Đã hoàn tiền' : 'Hoàn tiền',
-                          style: TextStyle(
-                            color: order['refund_status'] == 'SUCCEEDED'
-                                ? Colors.green.shade700
-                                : Colors.purple.shade700,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        order['refund_status'] == 'SUCCEEDED' ? '(Đã hoàn tiền)' : '(Hoàn tiền)',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -589,18 +554,22 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
-                                  'Phân loại: $sku',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Phân loại: $sku',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
                                     Text(
                                       'x$qty',
                                       style: TextStyle(
@@ -608,6 +577,12 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                                         color: Colors.grey.shade700,
                                       ),
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
                                     Text(
                                       _formatPrice(price),
                                       style: const TextStyle(
@@ -643,37 +618,22 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
 
                 // Total and Action Buttons
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Text(
-                      'Mã đơn: #$shortOrderId',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: Colors.grey.shade600,
+                      'Thành tiền ($productCount sản phẩm): ',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                    Row(
-                      children: [
-                        Text(
-                          '${items.length} món • ',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const Text(
-                          'Thành tiền: ',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        Text(
-                          _formatPrice(payableTotal),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      _formatPrice(payableTotal),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -683,11 +643,12 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (isCancellable) ...[
+                    if (status.toUpperCase() == 'COMPLETED') ...[
                       OutlinedButton(
+                        key: const ValueKey('refund_button'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red, width: 0.8),
+                          foregroundColor: const Color(0xFF1F2937),
+                          side: const BorderSide(color: Color(0xFF1F2937), width: 1.0),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 8,
@@ -696,44 +657,100 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: () => _showCancelOrderDialog(order),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OrderRefundPage(order: order),
+                            ),
+                          );
+                        },
                         child: const Text(
-                          'Hủy đơn',
-                          style: TextStyle(fontSize: 12.5),
+                          'Trả hàng/Hoàn tiền',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
-                    ],
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                      OutlinedButton(
+                        key: const ValueKey('reorder_button'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.primary, width: 1.2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        onPressed: () => _handleReorder(order),
+                        child: const Text(
+                          'Mua lại',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => OrderDetailPage(
-                              orderId: orderId,
-                              initialOrder: order,
+                    ] else ...[
+                      if (isCancellable) ...[
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red, width: 0.8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                        );
-                      },
-                      child: const Text(
-                        'Chi tiết',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold,
+                          onPressed: () => _showCancelOrderDialog(order),
+                          child: const Text(
+                            'Hủy đơn',
+                            style: TextStyle(fontSize: 12.5),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => OrderDetailPage(
+                                orderId: orderId,
+                                initialOrder: order,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Chi tiết',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -937,6 +954,78 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
       return direct.toString().trim();
     }
     return 'Sản phẩm';
+  }
+
+  Future<void> _handleReorder(Map<String, dynamic> order) async {
+    final rawItems = (order['items'] as List?) ?? [];
+    final items = rawItems
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    if (items.isEmpty) {
+      AppNoticeDialog.show(
+        context,
+        message: 'Đơn hàng không có sản phẩm để mua lại.',
+        buttonText: 'Đóng',
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+    );
+
+    final client = ref.read(apiProvider);
+    final reorderedVariantIds = <String>{};
+
+    for (final it in items) {
+      final variantId = (it['variant_id'] ?? it['product_variant_id'])?.toString() ?? '';
+      final productId = (it['product_id'])?.toString() ?? '';
+      final qty = (it['quantity'] as num?)?.toInt() ?? 1;
+
+      if (variantId.isNotEmpty && productId.isNotEmpty) {
+        try {
+          await client.addToCart(
+            variantId: variantId,
+            productId: productId,
+            quantity: qty,
+          );
+          reorderedVariantIds.add(variantId);
+        } catch (_) {}
+      } else if (productId.isNotEmpty) {
+        try {
+          await client.addToCart(
+            variantId: variantId,
+            productId: productId,
+            quantity: qty,
+          );
+        } catch (_) {}
+        reorderedVariantIds.add(productId);
+      }
+    }
+
+    ref.invalidate(cartItemsProvider);
+    ref.invalidate(cartBadgeCountProvider);
+
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CartPage(
+          initialSelectedVariantIds: reorderedVariantIds,
+        ),
+      ),
+    );
   }
 
   String _extractItemSku(Map<String, dynamic> it) {

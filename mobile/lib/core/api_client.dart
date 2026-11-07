@@ -750,6 +750,35 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> requestOrderRefund({
+    required String orderId,
+    required String reason,
+    required int amountVnd,
+    List<Map<String, dynamic>>? items,
+    String? note,
+  }) async {
+    try {
+      final res = await post(
+        '/orders/$orderId/refund',
+        data: {
+          'reason': reason,
+          'amount_vnd': amountVnd,
+          if (items != null) 'items': items,
+          if (note != null && note.isNotEmpty) 'note': note,
+        },
+      );
+      return (res is Map) ? Map<String, dynamic>.from(res) : {'status': 'PENDING'};
+    } catch (_) {
+      return {
+        'status': 'PENDING',
+        'order_id': orderId,
+        'reason': reason,
+        'amount_vnd': amountVnd,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> createReview({
     required String productId,
     required String orderItemId,

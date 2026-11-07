@@ -24,6 +24,7 @@ import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
 import 'package:pbl6_mobile/features/customer/store_application_page.dart';
 import 'package:pbl6_mobile/features/customer/favorites_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
+import 'package:pbl6_mobile/features/orders/order_refund_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 
 class MockApiClient extends ApiClient {
@@ -426,6 +427,23 @@ class MockApiClient extends ApiClient {
     required int expectedVersion,
     String? reason,
   }) async => {'status': 'CANCELLED'};
+
+  @override
+  Future<Map<String, dynamic>?> getOrderRefund(String id) async => null;
+
+  @override
+  Future<Map<String, dynamic>> requestOrderRefund({
+    required String orderId,
+    required String reason,
+    required int amountVnd,
+    List<Map<String, dynamic>>? items,
+    String? note,
+  }) async => {
+    'status': 'PENDING',
+    'order_id': orderId,
+    'reason': reason,
+    'amount_vnd': amountVnd,
+  };
 
   @override
   Future<Map<String, dynamic>> createPaymentAttempt(
@@ -1345,6 +1363,105 @@ void main() {
 
       expect(find.text('Chưa có đơn hàng nào'), findsOneWidget);
       expect(find.text('Tiếp tục mua sắm'), findsOneWidget);
+    });
+
+    testWidgets('OrderListPage verifies updated order card UI: no chevron, orange status, Phân loại & qty inline, Thành tiền with product count', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(home: OrderListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Store name without chevron icon next to it
+      expect(find.text('PBL Tech Store'), findsOneWidget);
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
+
+      // 2. No "Mã đơn: #" displayed
+      expect(find.textContaining('Mã đơn:'), findsNothing);
+
+      // 3. Status text is displayed in orange (AppColors.primary)
+      final statusWidgets = tester.widgetList<Text>(find.text('Chờ xác nhận')).toList();
+      // The order card status is styled with color and font size 14
+      final cardStatus = statusWidgets.firstWhere((w) => w.style?.fontSize == 14);
+      expect(cardStatus.style?.color, const Color(0xFFBA3416)); // AppColors.primary
+      expect(cardStatus.style?.fontSize, 14);
+
+      // 4. Inline Phân loại and qty
+      expect(find.text('Phân loại: MOUSE-RGB'), findsOneWidget);
+      expect(find.text('x1'), findsWidgets);
+
+      // 5. Total text: "Thành tiền (1 sản phẩm): "
+      expect(find.textContaining('Thành tiền (1 sản phẩm):'), findsWidgets);
+
+      // 6. Completed order displays "Trả hàng/Hoàn tiền" (black) and "Mua lại" (orange)
+      expect(find.text('Trả hàng/Hoàn tiền'), findsOneWidget);
+      expect(find.text('Mua lại'), findsOneWidget);
+
+      final refundBtn = tester.widget<OutlinedButton>(find.byKey(const ValueKey('refund_button')));
+      final reorderBtn = tester.widget<OutlinedButton>(find.byKey(const ValueKey('reorder_button')));
+
+      // Refund button has black text/border
+      final refundStyle = refundBtn.style;
+      expect(refundStyle?.foregroundColor?.resolve({}), const Color(0xFF1F2937));
+
+      // Reorder button has orange text/border
+      final reorderStyle = reorderBtn.style;
+      expect(reorderStyle?.foregroundColor?.resolve({}), const Color(0xFFBA3416));
+    });
+
+    testWidgets('OrderListPage tapping "Trả hàng/Hoàn tiền" opens OrderRefundPage and submitting works', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(home: OrderListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll to and Tap "Trả hàng/Hoàn tiền"
+      await tester.ensureVisible(find.byKey(const ValueKey('refund_button')));
+      await tester.tap(find.byKey(const ValueKey('refund_button')));
+      await tester.pumpAndSettle();
+
+      // Verify on OrderRefundPage
+      expect(find.text('Trả hàng / Hoàn tiền'), findsWidgets);
+      expect(find.text('Chọn sản phẩm hoàn trả'), findsOneWidget);
+      expect(find.text('Lý do Trả hàng / Hoàn tiền'), findsOneWidget);
+      expect(find.text('Thông tin hoàn tiền'), findsOneWidget);
+      expect(find.text('Gửi yêu cầu'), findsOneWidget);
+
+      // Scroll and Tap "Gửi yêu cầu"
+      await tester.ensureVisible(find.text('Gửi yêu cầu'));
+      await tester.tap(find.text('Gửi yêu cầu'));
+      await tester.pumpAndSettle();
+
+      // Verify notice dialog shown
+      expect(find.textContaining('Yêu cầu trả hàng/hoàn tiền của bạn đã được gửi thành công'), findsOneWidget);
+      expect(find.text('Đã hiểu'), findsOneWidget);
+
+      // Dismiss dialog
+      await tester.tap(find.text('Đã hiểu'));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('OrderListPage tapping "Mua lại" adds to cart and opens CartPage with selected items', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(home: OrderListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Scroll to and Tap "Mua lại"
+      await tester.ensureVisible(find.byKey(const ValueKey('reorder_button')));
+      await tester.tap(find.byKey(const ValueKey('reorder_button')));
+      await tester.pumpAndSettle();
+
+      // Verify navigated to CartPage
+      expect(find.textContaining('Giỏ hàng'), findsWidgets);
     });
 
     testWidgets('OrderDetailPage renders order details, items and billing', (tester) async {

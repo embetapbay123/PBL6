@@ -323,7 +323,12 @@ class BootstrapApp extends StatelessWidget {
               ),
             );
           case '/cart':
-            return MaterialPageRoute(builder: (_) => const CartPage());
+            final args = settings.arguments as Map<String, dynamic>?;
+            final initialVariantIds = (args?['initialSelectedVariantIds'] as Set<String>?) ??
+                (args?['initialSelectedVariantIds'] as List?)?.map((e) => e.toString()).toSet();
+            return MaterialPageRoute(
+              builder: (_) => CartPage(initialSelectedVariantIds: initialVariantIds),
+            );
           case '/checkout':
             final args = settings.arguments as Map<String, dynamic>?;
             final itemIds =

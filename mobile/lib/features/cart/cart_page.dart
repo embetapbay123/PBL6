@@ -12,7 +12,8 @@ import '../shared/app_bottom_nav.dart';
 import 'cart_variant_modal.dart';
 
 class CartPage extends ConsumerStatefulWidget {
-  const CartPage({super.key});
+  final Set<String>? initialSelectedVariantIds;
+  const CartPage({super.key, this.initialSelectedVariantIds});
 
   @override
   ConsumerState<CartPage> createState() => _CartPageState();
@@ -21,6 +22,8 @@ class CartPage extends ConsumerStatefulWidget {
 class _CartPageState extends ConsumerState<CartPage> {
   final Set<String> _selectedItemIds = {};
   String? _pendingSelectVariantId;
+  Set<String> _pendingVariantIds = {};
+  bool _clearSelectionOnPending = false;
   bool _isEditing = false;
   bool _busy = false;
   final _searchController = TextEditingController();
@@ -30,6 +33,10 @@ class _CartPageState extends ConsumerState<CartPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialSelectedVariantIds != null && widget.initialSelectedVariantIds!.isNotEmpty) {
+      _pendingVariantIds = Set<String>.from(widget.initialSelectedVariantIds!);
+      _clearSelectionOnPending = true;
+    }
     _searchFocusNode.addListener(() {
       if (mounted) setState(() {});
     });
@@ -436,6 +443,28 @@ class _CartPageState extends ConsumerState<CartPage> {
               }
             }
             _pendingSelectVariantId = null;
+          }
+
+          if (_pendingVariantIds.isNotEmpty) {
+            if (_clearSelectionOnPending) {
+              _selectedItemIds.clear();
+              _clearSelectionOnPending = false;
+            }
+            bool foundAny = false;
+            for (final it in items) {
+              final vId = (it['variant_id'] ?? it['product_variant_id'])?.toString();
+              final pId = it['product_id']?.toString();
+              if ((_pendingVariantIds.contains(vId) || _pendingVariantIds.contains(pId)) && _available(it)) {
+                final itemId = it['id']?.toString() ?? '';
+                if (itemId.isNotEmpty) {
+                  _selectedItemIds.add(itemId);
+                  foundAny = true;
+                }
+              }
+            }
+            if (foundAny || items.isNotEmpty) {
+              _pendingVariantIds.clear();
+            }
           }
 
           return RefreshIndicator(
