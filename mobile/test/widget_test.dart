@@ -2746,6 +2746,34 @@ void main() {
       // Products of other categories are filtered out
       expect(find.text('Tai nghe không dây Bluetooth chống ồn, pin lâu'), findsNothing);
     });
+
+    testWidgets('StorePage promo banner Mua ngay scrolls down to Sản phẩm nổi bật', (tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: StorePage(
+              shopName: 'TechZone Official',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('ƯU ĐÃI RIÊNG TẠI SHOP'), findsOneWidget);
+      expect(find.text('Mua ngay'), findsOneWidget);
+
+      await tester.tap(find.text('Mua ngay'));
+      await tester.pumpAndSettle();
+
+      // Ensure "Sản phẩm nổi bật" is in view
+      expect(find.text('Sản phẩm nổi bật'), findsOneWidget);
+    });
   });
 
   group('RecentlyViewedPage Tests', () {

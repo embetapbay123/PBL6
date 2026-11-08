@@ -34,6 +34,19 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   final Set<String> _savedVouchers = {};
   String? _selectedCategory;
   String _productSort = 'popular';
+  final GlobalKey _featuredProductsKey = GlobalKey();
+
+  void _scrollToFeaturedProducts() {
+    final targetContext = _featuredProductsKey.currentContext;
+    if (targetContext != null) {
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.0,
+      );
+    }
+  }
 
   final List<Map<String, dynamic>> _featuredProductsFallback = [
     {
@@ -613,51 +626,54 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       const SizedBox(height: 12),
 
       // Shop Promo Banner
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: AppColors.aiBannerGradient,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'ƯU ĐÃI RIÊNG TẠI SHOP',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Giảm đến 40%',
-                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+      GestureDetector(
+        onTap: _scrollToFeaturedProducts,
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: AppColors.aiBannerGradient,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'ƯU ĐÃI RIÊNG TẠI SHOP',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
                     ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Mua ngay',
-                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                        Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
-                      ],
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Giảm đến 40%',
+                      style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Mua ngay',
+                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                          Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 64),
-          ],
+              const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 64),
+            ],
+          ),
         ),
       ),
 
@@ -719,6 +735,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
 
       // Featured Products Section
       Padding(
+        key: _featuredProductsKey,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
