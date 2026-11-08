@@ -2003,71 +2003,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ],
             ),
           ),
-
-          // 4. Active Filter Chips Row
-          if (_selectedCategory != null || _searchQuery.isNotEmpty || _minPrice != null || _maxPrice != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (_selectedCategory != null)
-                    _buildActiveTag(
-                      label: _getCategoryName(_selectedCategory, categoriesAsync),
-                      onRemove: () => _selectCategory(null),
-                    ),
-                  if (_searchQuery.isNotEmpty)
-                    _buildActiveTag(
-                      label: '"$_searchQuery"',
-                      onRemove: () {
-                        _searchController.clear();
-                        _onSearch('');
-                      },
-                    ),
-                  if (_minPrice != null || _maxPrice != null)
-                    _buildActiveTag(
-                      label: '${_formatShortPrice(_minPrice ?? 0)} - ${_formatShortPrice(_maxPrice ?? 10000000)}',
-                      onRemove: () {
-                        setState(() {
-                          _minPrice = null;
-                          _maxPrice = null;
-                          _minPriceController.clear();
-                          _maxPriceController.clear();
-                        });
-                      },
-                    ),
-                  // Nút Xóa bộ lọc
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _searchController.clear();
-                        _searchQuery = '';
-                        _selectedCategory = null;
-                        _minPrice = null;
-                        _maxPrice = null;
-                        _minPriceController.clear();
-                        _maxPriceController.clear();
-                        _forceSearchMode = false;
-                        _page = 1;
-                      });
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                      child: Text(
-                        'Xóa bộ lọc',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFDC2626),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -2638,39 +2573,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Active filter chip tag
-  Widget _buildActiveTag({
-    required String label,
-    required VoidCallback onRemove,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBF2ED),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFF3D2C4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: onRemove,
-            child: const Icon(Icons.close, size: 14, color: AppColors.primary),
-          ),
-        ],
       ),
     );
   }

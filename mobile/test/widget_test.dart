@@ -1071,10 +1071,11 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Xóa bộ lọc'), findsOneWidget);
+        // Verify active filter tag row and "Xóa bộ lọc" are removed
+        expect(find.text('Xóa bộ lọc'), findsNothing);
 
-        // Tap "Xóa bộ lọc" returns to home mode
-        await tester.tap(find.text('Xóa bộ lọc'));
+        // Tap "PBL6 Market" returns to home mode
+        await tester.tap(find.text('PBL6 Market'));
         await tester.pumpAndSettle();
 
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
