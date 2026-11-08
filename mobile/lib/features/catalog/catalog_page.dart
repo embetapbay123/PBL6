@@ -1717,12 +1717,30 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final title = product['title']?.toString() ?? 'Sản phẩm';
     final storeName = product['store_name']?.toString() ?? 'TechZone Store';
     final variants = product['variants'] as List?;
-    final priceStr = variants != null && variants.isNotEmpty
-        ? variants[0]['price_vnd']?.toString() ?? '100000'
-        : '100000';
+    int? lowestPrice;
+    if (variants != null && variants.isNotEmpty) {
+      for (final v in variants) {
+        if (v is Map) {
+          final p = v['price_vnd'];
+          int? pInt;
+          if (p is num) pInt = p.toInt();
+          if (p is String) pInt = int.tryParse(p);
+          if (pInt != null && pInt > 0) {
+            if (lowestPrice == null || pInt < lowestPrice) {
+              lowestPrice = pInt;
+            }
+          }
+        }
+      }
+    }
+    if (lowestPrice == null) {
+      final p = product['price_vnd'] ?? product['min_price_vnd'];
+      if (p is num) lowestPrice = p.toInt();
+      if (p is String) lowestPrice = int.tryParse(p);
+      lowestPrice ??= 100000;
+    }
 
-    final priceInt = int.tryParse(priceStr) ?? 100000;
-    final originalPriceInt = (priceInt * 1.25).round();
+    final originalPriceInt = (lowestPrice * 1.25).round();
 
     final images = product['images'] as List?;
     final imageUrl = (images != null && images.isNotEmpty)
@@ -1854,46 +1872,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Store Link
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.storefront_outlined,
-                              size: 11,
-                              color: AppColors.textMuted,
-                            ),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                '$storeName ›',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        // Title
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            height: 1.25,
-                          ),
-                        ),
-                      ],
+                    // Title
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        height: 1.25,
+                      ),
                     ),
 
                     Column(
@@ -1905,7 +1894,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text(
-                              '$priceStr ₫',
+                              '$lowestPrice ₫',
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,
@@ -1995,6 +1984,30 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             onPressed: () => _quickAddToCart(product),
                           ),
                         ),
+                        const SizedBox(height: 4),
+                        // Dưới cùng là tên store
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.storefront_outlined,
+                              size: 11,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                '$storeName ›',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
@@ -2007,7 +2020,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  /// Section "Đã xem gần đây" matching Image 1
   Widget _buildRecentlyViewedSection(AsyncValue<Map<String, dynamic>> productsAsync) {
     final recentItems = [
       {
@@ -2574,24 +2586,42 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   ) {
     final id = product['id']?.toString() ?? '';
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final storeName = product['store_name']?.toString() ?? 'An Nhiên Studio';
-    final categoryId = product['category_id']?.toString();
-    final categoryName = _getCategoryName(categoryId, categoriesAsync);
+    final storeName = product['store_name']?.toString() ??
+        (product['store'] is Map ? product['store']['name']?.toString() : null) ??
+        'An Nhiên Studio';
 
     final variants = (product['variants'] as List?) ?? [];
-    final priceStr = variants.isNotEmpty
-        ? variants[0]['price_vnd']?.toString() ?? '100000'
-        : (product['price_vnd']?.toString() ?? '100000');
-    final priceInt = int.tryParse(priceStr) ?? 100000;
+    int? lowestPrice;
+    if (variants.isNotEmpty) {
+      for (final v in variants) {
+        if (v is Map) {
+          final p = v['price_vnd'];
+          int? pInt;
+          if (p is num) pInt = p.toInt();
+          if (p is String) pInt = int.tryParse(p);
+          if (pInt != null && pInt > 0) {
+            if (lowestPrice == null || pInt < lowestPrice) {
+              lowestPrice = pInt;
+            }
+          }
+        }
+      }
+    }
+    if (lowestPrice == null) {
+      final p = product['price_vnd'] ?? product['min_price_vnd'];
+      if (p is num) lowestPrice = p.toInt();
+      if (p is String) lowestPrice = int.tryParse(p);
+      lowestPrice ??= 100000;
+    }
 
     final images = product['images'] as List?;
     final imageUrl = (images != null && images.isNotEmpty)
         ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
         : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
 
-    final variantCountText = variants.length > 1
-        ? '${variants.length} lựa chọn'
-        : 'Phiên bản chuẩn';
+    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'] ?? 4.8;
+    final ratingStr = (ratingNum is num) ? ratingNum.toStringAsFixed(1) : '4.8';
+    final salesCount = _getProductMonthlySales(product);
 
     return GestureDetector(
       onTap: () {
@@ -2619,7 +2649,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Thumbnail Image
+            // 1. Thumbnail Image with Favorite Button on Top-Right
             SizedBox(
               height: 155,
               width: double.infinity,
@@ -2640,6 +2670,50 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 36),
                           ),
                   ),
+                  // Button yêu thích ở góc trên cùng bên phải trên ảnh sản phẩm
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            ref.read(favoritesProvider.notifier).toggleFavorite(product);
+                            AppNoticeDialog.show(
+                              context,
+                              message: isFav
+                                  ? 'Đã xóa khỏi danh sách yêu thích.'
+                                  : 'Đã thêm vào danh sách yêu thích!',
+                            );
+                          },
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -2655,19 +2729,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Category Tag
-                        Text(
-                          categoryName.isNotEmpty ? categoryName : 'Thời trang',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF6B7280),
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 3),
-                        // Product Title
+                        // Tên sản phẩm
                         Text(
                           title,
                           style: const TextStyle(
@@ -2679,24 +2741,39 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 6),
-                        // Price
+                        const SizedBox(height: 5),
+                        // Giá tiền (của phân loại rẻ nhất, bỏ chữ "từ" đi)
                         Text(
-                          'Từ ${_formatPrice(priceInt)}',
+                          _formatPrice(lowestPrice),
                           style: const TextStyle(
                             color: Color(0xFFBA3416),
                             fontWeight: FontWeight.bold,
                             fontSize: 14.5,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        // Variant count
-                        Text(
-                          variantCountText,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            color: Color(0xFF6B7280),
-                          ),
+                        const SizedBox(height: 3),
+                        // Số lượt bán và số sao
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                            const SizedBox(width: 2),
+                            Text(
+                              ratingStr,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '• Đã bán ${_formatSalesCount(salesCount)}',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -2704,95 +2781,58 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Action buttons row: [🛒 Thêm vào giỏ] and [♡]
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                style: ButtonStyle(
-                                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                      return AppColors.primary;
-                                    }
-                                    return Colors.white;
-                                  }),
-                                  foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                      return Colors.white;
-                                    }
-                                    return const Color(0xFF374151);
-                                  }),
-                                  iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                      return Colors.white;
-                                    }
-                                    return const Color(0xFF374151);
-                                  }),
-                                  side: WidgetStateProperty.resolveWith<BorderSide>((states) {
-                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                      return const BorderSide(color: AppColors.primary);
-                                    }
-                                    return const BorderSide(color: Color(0xFFD1D5DB));
-                                  }),
-                                  padding: const WidgetStatePropertyAll(
-                                    EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                                  ),
-                                  minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
-                                  shape: WidgetStatePropertyAll(
-                                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                                label: const Text(
-                                  'Thêm vào giỏ',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                onPressed: () => _quickAddToCart(product),
+                        // Button thêm vào giỏ
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return AppColors.primary;
+                                }
+                                return Colors.white;
+                              }),
+                              foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return Colors.white;
+                                }
+                                return const Color(0xFF374151);
+                              }),
+                              iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return Colors.white;
+                                }
+                                return const Color(0xFF374151);
+                              }),
+                              side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return const BorderSide(color: AppColors.primary);
+                                }
+                                return const BorderSide(color: Color(0xFFD1D5DB));
+                              }),
+                              padding: const WidgetStatePropertyAll(
+                                EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                              ),
+                              minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+                              shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Consumer(
-                              builder: (context, ref, _) {
-                                final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
-                                return GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () {
-                                    ref.read(favoritesProvider.notifier).toggleFavorite(product);
-                                    AppNoticeDialog.show(
-                                      context,
-                                      message: isFav ? 'Đã xóa khỏi yêu thích.' : 'Đã lưu vào yêu thích!',
-                                    );
-                                  },
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: const Color(0xFFE5E7EB),
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                        size: 16,
-                                        color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
+                            icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                            label: const Text(
+                              'Thêm vào giỏ',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                            onPressed: () => _quickAddToCart(product),
+                          ),
                         ),
                         const SizedBox(height: 6),
-                        // Store footer
+                        // Dưới cùng là tên store
                         Row(
                           children: [
                             const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
@@ -2831,19 +2871,42 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   ) {
     final id = product['id']?.toString() ?? '';
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final categoryId = product['category_id']?.toString();
-    final categoryName = _getCategoryName(categoryId, categoriesAsync);
+    final storeName = product['store_name']?.toString() ??
+        (product['store'] is Map ? product['store']['name']?.toString() : null) ??
+        'An Nhiên Studio';
 
     final variants = (product['variants'] as List?) ?? [];
-    final priceStr = variants.isNotEmpty
-        ? variants[0]['price_vnd']?.toString() ?? '100000'
-        : (product['price_vnd']?.toString() ?? '100000');
-    final priceInt = int.tryParse(priceStr) ?? 100000;
+    int? lowestPrice;
+    if (variants.isNotEmpty) {
+      for (final v in variants) {
+        if (v is Map) {
+          final p = v['price_vnd'];
+          int? pInt;
+          if (p is num) pInt = p.toInt();
+          if (p is String) pInt = int.tryParse(p);
+          if (pInt != null && pInt > 0) {
+            if (lowestPrice == null || pInt < lowestPrice) {
+              lowestPrice = pInt;
+            }
+          }
+        }
+      }
+    }
+    if (lowestPrice == null) {
+      final p = product['price_vnd'] ?? product['min_price_vnd'];
+      if (p is num) lowestPrice = p.toInt();
+      if (p is String) lowestPrice = int.tryParse(p);
+      lowestPrice ??= 100000;
+    }
 
     final images = product['images'] as List?;
     final imageUrl = (images != null && images.isNotEmpty)
         ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
         : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
+
+    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'] ?? 4.8;
+    final ratingStr = (ratingNum is num) ? ratingNum.toStringAsFixed(1) : '4.8';
+    final salesCount = _getProductMonthlySales(product);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2867,16 +2930,66 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left Image
+              // Left Image with Favorite Heart Button on Top-Right
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Container(
+                child: SizedBox(
                   width: 90,
                   height: 90,
-                  color: const Color(0xFFF9FAFB),
-                  child: imageUrl != null && imageUrl.isNotEmpty
-                      ? Image.network(imageUrl, fit: BoxFit.cover)
-                      : const Center(child: Icon(Icons.shopping_bag_outlined, color: Colors.grey)),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        color: const Color(0xFFF9FAFB),
+                        child: imageUrl != null && imageUrl.isNotEmpty
+                            ? Image.network(imageUrl, fit: BoxFit.cover)
+                            : const Center(child: Icon(Icons.shopping_bag_outlined, color: Colors.grey)),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: Consumer(
+                          builder: (context, ref, _) {
+                            final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
+                            return GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                ref.read(favoritesProvider.notifier).toggleFavorite(product);
+                                AppNoticeDialog.show(
+                                  context,
+                                  message: isFav
+                                      ? 'Đã xóa khỏi danh sách yêu thích.'
+                                      : 'Đã thêm vào danh sách yêu thích!',
+                                );
+                              },
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                    size: 13,
+                                    color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -2885,11 +2998,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      categoryName.isNotEmpty ? categoryName : 'Thời trang',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
-                    ),
-                    const SizedBox(height: 2),
+                    // Tên sản phẩm
                     Text(
                       title,
                       style: const TextStyle(
@@ -2900,14 +3009,39 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
+                    // Giá tiền (của phân loại rẻ nhất, bỏ chữ "từ" đi)
                     Text(
-                      'Từ ${_formatPrice(priceInt)}',
+                      _formatPrice(lowestPrice),
                       style: const TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFFBA3416),
                       ),
+                    ),
+                    const SizedBox(height: 3),
+                    // Số sao và số lượt bán
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                        const SizedBox(width: 2),
+                        Text(
+                          ratingStr,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '• Đã bán ${_formatSalesCount(salesCount)}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -2953,19 +3087,24 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           ),
                           onPressed: () => _quickAddToCart(product),
                         ),
-                        const SizedBox(width: 8),
-                        Consumer(
-                          builder: (context, ref, _) {
-                            final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
-                            return IconButton(
-                              icon: Icon(
-                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                size: 18,
-                                color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                        const Spacer(),
+                        // Dưới cùng / bên phải là tên store
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
+                            const SizedBox(width: 3),
+                            Text(
+                              storeName,
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: Color(0xFF6B7280),
+                                fontWeight: FontWeight.w500,
                               ),
-                              onPressed: () => ref.read(favoritesProvider.notifier).toggleFavorite(product),
-                            );
-                          },
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -2979,7 +3118,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  /// Empty state when no products match filters
   Widget _buildEmptyDedicatedResults() {
     return Padding(
       padding: const EdgeInsets.all(32.0),
