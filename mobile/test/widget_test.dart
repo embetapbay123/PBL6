@@ -1078,6 +1078,16 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
+
+        // Search again and verify clicking 'PBL6 Market' brand logo routes back to Explore
+        await tester.enterText(find.byType(TextField).first, 'hoodie');
+        await tester.tap(find.text('Tìm kiếm'));
+        await tester.pumpAndSettle();
+        expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+
+        await tester.tap(find.text('PBL6 Market'));
+        await tester.pumpAndSettle();
+        expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
       },
     );
 

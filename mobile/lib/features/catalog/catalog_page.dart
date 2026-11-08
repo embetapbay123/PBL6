@@ -92,6 +92,30 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     });
   }
 
+  void _resetToExplore() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _selectedCategory = null;
+      _forceSearchMode = false;
+      _minPrice = null;
+      _maxPrice = null;
+      _minPriceController.clear();
+      _maxPriceController.clear();
+      _page = 1;
+    });
+    if (Navigator.canPop(context)) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+    }
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(catalogProductsProvider(_catalogKey));
@@ -112,7 +136,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         onTap: (index) {
           switch (index) {
             case 0:
-              // Already on home / catalog
+              _resetToExplore();
               break;
             case 1:
               Navigator.pushNamed(context, '/customer/favorites');
@@ -351,15 +375,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Row(
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'PBL6 Market · Bản trải nghiệm với dữ liệu mẫu',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
+                  Expanded(
+                    child: InkWell(
+                      onTap: _resetToExplore,
+                      child: const Text(
+                        'PBL6 Market · Bản trải nghiệm với dữ liệu mẫu',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
@@ -398,33 +425,43 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              // Terracotta P6 Badge
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'P6',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 17,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'PBL6 Market',
-                style: TextStyle(
-                  color: Color(0xFF1F2937),
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                  letterSpacing: -0.3,
+              // Clickable PBL6 Market logo & brand title -> route to Explore page
+              InkWell(
+                onTap: _resetToExplore,
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Terracotta P6 Badge
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Text(
+                        'P6',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'PBL6 Market',
+                      style: TextStyle(
+                        color: Color(0xFF1F2937),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 18,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const Spacer(),
@@ -971,9 +1008,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 title: const Text('Trang chủ / Khám phá', style: TextStyle(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _selectCategory(null);
-                  _searchController.clear();
-                  _onSearch('');
+                  _resetToExplore();
                 },
               ),
               ListTile(
@@ -1675,19 +1710,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             child: Row(
               children: [
                 InkWell(
-                  onTap: () {
-                    setState(() {
-                      _searchController.clear();
-                      _searchQuery = '';
-                      _selectedCategory = null;
-                      _forceSearchMode = false;
-                      _minPrice = null;
-                      _maxPrice = null;
-                      _minPriceController.clear();
-                      _maxPriceController.clear();
-                      _page = 1;
-                    });
-                  },
+                  onTap: _resetToExplore,
                   child: const Text(
                     'Trang chủ',
                     style: TextStyle(
