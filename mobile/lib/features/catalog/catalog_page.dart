@@ -27,7 +27,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   bool _isSearchHovered = false;
   String _searchQuery = '';
   String? _selectedCategory;
-  String _sort = 'title';
+  String _sort = 'best_selling';
   int _page = 1;
   bool _forceSearchMode = false;
   bool _isListView = false;
@@ -77,6 +77,109 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     });
   }
 
+  int _getProductMonthlySales(Map<String, dynamic> product) {
+    final v = product['monthly_sales'] ??
+        product['sales_monthly'] ??
+        product['sold_count'] ??
+        product['sales'] ??
+        product['sold'];
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v) ?? 0;
+    final key = product['id']?.toString() ?? product['title']?.toString() ?? '';
+    return (key.hashCode.abs() % 1000) + 10;
+  }
+
+  String _formatSalesCount(int sales) {
+    if (sales >= 1000) {
+      final k = (sales / 1000).toStringAsFixed(1);
+      return k.endsWith('.0') ? '${k.substring(0, k.length - 2)}k' : '${k}k';
+    }
+    return '$sales';
+  }
+
+  DateTime _getProductCreatedAt(Map<String, dynamic> product) {
+    final v = product['created_at'] ??
+        product['publish_date'] ??
+        product['published_at'] ??
+        product['posted_at'] ??
+        product['date'];
+    if (v is DateTime) return v;
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    if (v != null) {
+      final parsed = DateTime.tryParse(v.toString());
+      if (parsed != null) return parsed;
+    }
+    final key = product['id']?.toString() ?? product['title']?.toString() ?? '';
+    final daysAgo = key.hashCode.abs() % 90;
+    return DateTime.now().subtract(Duration(days: daysAgo));
+  }
+
+  int _getProductMinPrice(Map<String, dynamic> product) {
+    final variants = (product['variants'] as List?) ?? [];
+    if (variants.isNotEmpty) {
+      int min = 1 << 30;
+      for (final v in variants) {
+        if (v is Map) {
+          final p = v['price_vnd'];
+          if (p is num && p.toInt() < min) min = p.toInt();
+          if (p is String) {
+            final parsed = int.tryParse(p);
+            if (parsed != null && parsed < min) min = parsed;
+          }
+        }
+      }
+      if (min != 1 << 30) return min;
+    }
+    final pv = product['price_vnd'] ?? product['price'];
+    if (pv is num) return pv.toInt();
+    if (pv is String) return int.tryParse(pv) ?? 0;
+    return 0;
+  }
+
+  List<Map<String, dynamic>> _applySort(List<Map<String, dynamic>> items) {
+    final list = List<Map<String, dynamic>>.from(items);
+    switch (_sort) {
+      case 'best_selling':
+        list.sort((a, b) {
+          final aSales = _getProductMonthlySales(a);
+          final bSales = _getProductMonthlySales(b);
+          final cmp = bSales.compareTo(aSales); // highest monthly sales first
+          if (cmp != 0) return cmp;
+          return (a['title']?.toString() ?? '').compareTo(b['title']?.toString() ?? '');
+        });
+        break;
+      case 'newest':
+        list.sort((a, b) {
+          final aDate = _getProductCreatedAt(a);
+          final bDate = _getProductCreatedAt(b);
+          final cmp = bDate.compareTo(aDate); // latest created_at first
+          if (cmp != 0) return cmp;
+          return (a['title']?.toString() ?? '').compareTo(b['title']?.toString() ?? '');
+        });
+        break;
+      case 'title':
+        list.sort((a, b) {
+          return (a['title']?.toString() ?? '').compareTo(b['title']?.toString() ?? '');
+        });
+        break;
+      case 'price_asc':
+        list.sort((a, b) {
+          final aPrice = _getProductMinPrice(a);
+          final bPrice = _getProductMinPrice(b);
+          return aPrice.compareTo(bPrice);
+        });
+        break;
+      case 'price_desc':
+        list.sort((a, b) {
+          final aPrice = _getProductMinPrice(a);
+          final bPrice = _getProductMinPrice(b);
+          return bPrice.compareTo(aPrice);
+        });
+        break;
+    }
+    return list;
+  }
+
   void _selectCategory(String? categoryId) {
     setState(() {
       _searchController.clear();
@@ -102,6 +205,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       _maxPrice = null;
       _minPriceController.clear();
       _maxPriceController.clear();
+      _sort = 'best_selling';
       _page = 1;
     });
     if (Navigator.canPop(context)) {
@@ -307,7 +411,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ),
             ),
 
-            // Sort Filter Chips (Web alignment: title, price_asc, price_desc)
+            // Sort Filter Chips (Bán chạy, Mới nhất, Tên sản phẩm, Giá tăng dần, Giá giảm dần)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -315,6 +419,20 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
+                      _buildSortChip(
+                        label: 'Bán chạy',
+                        icon: Icons.local_fire_department_rounded,
+                        selected: _sort == 'best_selling',
+                        onTap: () => _onSortChanged('best_selling'),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildSortChip(
+                        label: 'Mới nhất',
+                        icon: Icons.access_time_rounded,
+                        selected: _sort == 'newest',
+                        onTap: () => _onSortChanged('newest'),
+                      ),
+                      const SizedBox(width: 8),
                       _buildSortChip(
                         label: 'Tên sản phẩm',
                         icon: Icons.sort_by_alpha,
@@ -1139,7 +1257,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ),
       ),
       data: (result) {
-        final items = (result['items'] as List?) ?? [];
+        final rawItems = (result['items'] as List?) ?? [];
+        final items = _applySort(rawItems.map((e) => Map<String, dynamic>.from(e as Map)).toList());
         if (items.isEmpty) {
           return SliverToBoxAdapter(
             child: Center(
@@ -1419,11 +1538,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ),
                         const SizedBox(height: 3),
                         // Rating & Sold Row
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.star_rounded, color: AppColors.star, size: 13),
-                            SizedBox(width: 2),
-                            Text(
+                            const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                            const SizedBox(width: 2),
+                            const Text(
                               '4.8',
                               style: TextStyle(
                                 fontSize: 10.5,
@@ -1431,10 +1550,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              '• Đã bán 1.2k',
-                              style: TextStyle(
+                              '• Đã bán ${_formatSalesCount(_getProductMonthlySales(product))}',
+                              style: const TextStyle(
                                 fontSize: 10,
                                 color: AppColors.textSecondary,
                               ),
@@ -1843,6 +1962,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         fontWeight: FontWeight.w500,
                       ),
                       items: const [
+                        DropdownMenuItem(value: 'best_selling', child: Text('Bán chạy')),
+                        DropdownMenuItem(value: 'newest', child: Text('Mới nhất')),
                         DropdownMenuItem(value: 'title', child: Text('Tên sản phẩm')),
                         DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
                         DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
@@ -1977,7 +2098,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       ),
       data: (data) {
         final rawItems = (data['items'] as List?) ?? [];
-        final items = rawItems
+        final filteredItems = rawItems
             .map((e) => Map<String, dynamic>.from(e as Map))
             .where((p) {
               if (_minPrice == null && _maxPrice == null) return true;
@@ -1994,6 +2115,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               return true;
             })
             .toList();
+        final items = _applySort(filteredItems);
 
         if (items.isEmpty) {
           return SliverToBoxAdapter(

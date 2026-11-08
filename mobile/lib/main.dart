@@ -35,12 +35,18 @@ final catalogProductsProvider =
           ? jsonDecode(query) as Map<String, dynamic>
           : {'q': query};
       try {
+        final sortParam = params['sort'] as String?;
+        final backendSort = (sortParam == 'title' ||
+                sortParam == 'price_asc' ||
+                sortParam == 'price_desc')
+            ? sortParam
+            : null;
         return await ref
             .read(apiProvider)
             .getProducts(
               q: params['q'] as String?,
               categoryId: params['category_id'] as String?,
-              sort: params['sort'] as String?,
+              sort: backendSort,
               page: (params['page'] as int?) ?? 1,
             );
       } catch (e) {
@@ -59,6 +65,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
       'price_vnd': 389000,
+      'monthly_sales': 1200,
+      'created_at': '2026-10-15T08:00:00Z',
       'variants': [{'id': 'v-1', 'price_vnd': 389000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&q=80'}],
     },
@@ -68,6 +76,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
       'price_vnd': 149000,
+      'monthly_sales': 2500,
+      'created_at': '2026-09-10T10:00:00Z',
       'variants': [{'id': 'v-2', 'price_vnd': 149000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&q=80'}],
     },
@@ -77,6 +87,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
       'price_vnd': 189000,
+      'monthly_sales': 850,
+      'created_at': '2026-10-25T14:30:00Z',
       'variants': [{'id': 'v-3', 'price_vnd': 189000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=500&q=80'}],
     },
@@ -86,6 +98,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
       'price_vnd': 169000,
+      'monthly_sales': 620,
+      'created_at': '2026-11-02T16:00:00Z',
       'variants': [{'id': 'v-4', 'price_vnd': 169000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500&q=80'}],
     },
@@ -95,6 +109,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
       'price_vnd': 179000,
+      'monthly_sales': 410,
+      'created_at': '2026-11-05T09:00:00Z',
       'variants': [{'id': 'v-5', 'price_vnd': 179000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&q=80'}],
     },
@@ -104,6 +120,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'Mây Xanh Living',
       'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
       'price_vnd': 459000,
+      'monthly_sales': 980,
+      'created_at': '2026-09-22T11:00:00Z',
       'variants': [{'id': 'v-6', 'price_vnd': 459000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&q=80'}],
     },
@@ -113,6 +131,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'Mây Xanh Living',
       'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
       'price_vnd': 199000,
+      'monthly_sales': 340,
+      'created_at': '2026-10-18T13:00:00Z',
       'variants': [{'id': 'v-7', 'price_vnd': 199000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=500&q=80'}],
     },
@@ -122,6 +142,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'Mây Xanh Living',
       'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
       'price_vnd': 79000,
+      'monthly_sales': 1950,
+      'created_at': '2026-08-15T08:00:00Z',
       'variants': [{'id': 'v-8', 'price_vnd': 79000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500&q=80'}],
     },
@@ -131,6 +153,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'Mây Xanh Living',
       'category_id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
       'price_vnd': 549000,
+      'monthly_sales': 780,
+      'created_at': '2026-10-08T07:00:00Z',
       'variants': [{'id': 'v-9', 'price_vnd': 549000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'}],
     },
@@ -140,6 +164,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'Mây Xanh Living',
       'category_id': '33e0b2c4-c52c-4839-9796-41d6214e3bcd',
       'price_vnd': 399000,
+      'monthly_sales': 290,
+      'created_at': '2026-10-12T15:00:00Z',
       'variants': [{'id': 'v-10', 'price_vnd': 399000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=500&q=80'}],
     },
@@ -149,6 +175,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'Mây Xanh Living',
       'category_id': '33e0b2c4-c52c-4839-9796-41d6214e3bcd',
       'price_vnd': 129000,
+      'monthly_sales': 1100,
+      'created_at': '2026-09-08T14:00:00Z',
       'variants': [{'id': 'v-11', 'price_vnd': 129000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500&q=80'}],
     },
@@ -158,6 +186,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': 'ddba6c89-1cf9-4733-9fb9-034c222846c9',
       'price_vnd': 850000,
+      'monthly_sales': 520,
+      'created_at': '2026-10-28T10:00:00Z',
       'variants': [{'id': 'v-12', 'price_vnd': 850000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=500&q=80'}],
     },
@@ -167,6 +197,8 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
       'store_name': 'An Nhiên Studio',
       'category_id': 'ddba6c89-1cf9-4733-9fb9-034c222846c9',
       'price_vnd': 490000,
+      'monthly_sales': 670,
+      'created_at': '2026-11-06T12:00:00Z',
       'variants': [{'id': 'v-13', 'price_vnd': 490000}],
       'images': [{'image_url': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80'}],
     },

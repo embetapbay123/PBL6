@@ -1092,6 +1092,119 @@ void main() {
     );
 
     testWidgets(
+      'CatalogPage defaults to Bán chạy sort and provides Mới nhất, Bán chạy, Tên sản phẩm, Giá tăng/giảm',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {
+                'items': [
+                  {
+                    'id': 'prod-01',
+                    'title': 'Sản phẩm B (Vừa)',
+                    'price_vnd': 200000,
+                    'monthly_sales': 500,
+                    'created_at': '2026-10-01T00:00:00Z',
+                    'category_id': 'cat-1',
+                  },
+                  {
+                    'id': 'prod-02',
+                    'title': 'Sản phẩm A (Bán chạy nhất)',
+                    'price_vnd': 300000,
+                    'monthly_sales': 1500,
+                    'created_at': '2026-09-01T00:00:00Z',
+                    'category_id': 'cat-1',
+                  },
+                  {
+                    'id': 'prod-03',
+                    'title': 'Sản phẩm C (Mới nhất)',
+                    'price_vnd': 100000,
+                    'monthly_sales': 100,
+                    'created_at': '2026-11-01T00:00:00Z',
+                    'category_id': 'cat-1',
+                  },
+                ],
+                'total': 3,
+              },
+            ),
+            categoriesProvider.overrideWith((ref) async => [
+              {'id': 'cat-1', 'name': 'Thời trang'},
+            ]),
+            recommendationProvider.overrideWith((ref) async => {'product_ids': []}),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Verify sort chips in explore mode contain 'Bán chạy' and 'Mới nhất'
+        expect(find.text('Bán chạy'), findsOneWidget);
+        expect(find.text('Mới nhất'), findsOneWidget);
+
+        // By default 'Bán chạy' (highest monthly sales) is first
+        final titlesBefore = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
+            .toList();
+        expect(titlesBefore.first, 'Sản phẩm A (Bán chạy nhất)');
+
+        // Switch to Mới nhất chip
+        await tester.tap(find.text('Mới nhất'));
+        await tester.pumpAndSettle();
+
+        final titlesNewest = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
+            .toList();
+        expect(titlesNewest.first, 'Sản phẩm C (Mới nhất)');
+
+        // 2. Transition to search / category view to test Dropdown
+        await tester.enterText(find.byType(TextField).first, 'Sản phẩm');
+        await tester.tap(find.text('Tìm kiếm'));
+        await tester.pumpAndSettle();
+
+        // The Dropdown should exist and display current sort
+        final dropdownFinder = find.byType(DropdownButton<String>);
+        expect(dropdownFinder, findsOneWidget);
+
+        // Tap dropdown to open menu
+        await tester.tap(dropdownFinder);
+        await tester.pumpAndSettle();
+
+        // Check options inside popup
+        expect(find.text('Bán chạy').last, findsOneWidget);
+        expect(find.text('Mới nhất').last, findsOneWidget);
+        expect(find.text('Tên sản phẩm'), findsWidgets);
+        expect(find.text('Giá tăng dần'), findsWidgets);
+        expect(find.text('Giá giảm dần'), findsWidgets);
+
+        // Tap 'Giá tăng dần'
+        await tester.tap(find.text('Giá tăng dần').last);
+        await tester.pumpAndSettle();
+
+        final titlesPriceAsc = tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
+            .toList();
+        expect(titlesPriceAsc.first, 'Sản phẩm C (Mới nhất)'); // 100k
+      },
+    );
+
+    testWidgets(
       'ProductDetailPage renders full details, variant chips and quantity selection',
       (tester) async {
         final mockProduct = {
