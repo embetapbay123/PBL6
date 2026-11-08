@@ -19,6 +19,7 @@ class ProfileHeaderBanner extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -28,8 +29,11 @@ class ProfileHeaderBanner extends ConsumerWidget {
             Color(0xFFFF5722),
           ],
         ),
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(24),
+        ),
       ),
-      padding: EdgeInsets.fromLTRB(16, topPadding + 8, 8, 14),
+      padding: EdgeInsets.fromLTRB(16, topPadding + 8, 8, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
