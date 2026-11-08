@@ -41,23 +41,33 @@ final catalogProductsProvider =
                 sortParam == 'price_desc')
             ? sortParam
             : null;
+        final page = (params['page'] as int?) ?? 1;
+        final size = (params['size'] as int?) ?? 20;
         return await ref
             .read(apiProvider)
             .getProducts(
               q: params['q'] as String?,
               categoryId: params['category_id'] as String?,
               sort: backendSort,
-              page: (params['page'] as int?) ?? 1,
+              page: page,
+              size: size,
             );
       } catch (e) {
         return _buildFallbackProducts(
           categoryId: params['category_id'] as String?,
           q: params['q'] as String?,
+          page: (params['page'] as int?) ?? 1,
+          size: (params['size'] as int?) ?? 20,
         );
       }
     });
 
-Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
+Map<String, dynamic> _buildFallbackProducts({
+  String? categoryId,
+  String? q,
+  int page = 1,
+  int size = 20,
+}) {
   final all = [
     {
       'id': '26d45e7d-4663-43d6-840f-e31b7d6192aa',
@@ -215,11 +225,16 @@ Map<String, dynamic> _buildFallbackProducts({String? categoryId, String? q}) {
         .toList();
   }
 
+  final start = (page - 1) * size;
+  final pagedItems = start >= filtered.length
+      ? <Map<String, dynamic>>[]
+      : filtered.skip(start).take(size).toList();
+
   return {
-    'items': filtered,
+    'items': pagedItems,
     'total': filtered.length,
-    'page': 1,
-    'size': 20,
+    'page': page,
+    'size': size,
   };
 }
 

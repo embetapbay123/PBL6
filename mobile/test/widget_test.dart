@@ -30,6 +30,7 @@ import 'package:pbl6_mobile/features/customer/favorites_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_refund_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
+import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
 
 class MockApiClient extends ApiClient {
   @override
@@ -2092,5 +2093,69 @@ void main() {
         expect(res, isEmpty);
       },
     );
+  });
+
+  group('RecommendationsSection Tests', () {
+    testWidgets('RecommendationsSection renders 10 products, no "Xem tất cả", and cards match design', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final tenProducts = List.generate(10, (i) => {
+        'id': 'rec-prod-$i',
+        'title': 'Sản phẩm gợi ý $i',
+        'price_vnd': 349000,
+        'monthly_sales': 1200,
+        'rating': '4.9',
+        'variants': [
+          {'id': 'v-$i', 'price_vnd': 349000},
+        ],
+      });
+
+      final container = ProviderContainer(
+        overrides: [
+          catalogProductsProvider.overrideWith((ref, query) async {
+            return {
+              'items': tenProducts,
+              'total': 15,
+              'page': 1,
+              'size': 10,
+            };
+          }),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: RecommendationsSection(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      // Check header title exists
+      expect(find.text('Có thể bạn cũng thích'), findsOneWidget);
+      // Check "Xem tất cả" is NOT present
+      expect(find.text('Xem tất cả'), findsNothing);
+      expect(find.text('Xem tất cả >'), findsNothing);
+      expect(find.text('Xem tất cả ›'), findsNothing);
+
+      // Check product items
+      expect(find.text('Sản phẩm gợi ý 0'), findsOneWidget);
+      expect(find.text('Sản phẩm gợi ý 9'), findsOneWidget);
+      // Check discount badge
+      expect(find.text('-25%'), findsNWidgets(10));
+      // Check price formatted
+      expect(find.text('349.000 đ'), findsNWidgets(10));
+      // Check sales
+      expect(find.text('Đã bán 1,2K'), findsNWidgets(10));
+    });
   });
 }
