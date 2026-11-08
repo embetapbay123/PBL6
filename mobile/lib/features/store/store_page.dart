@@ -230,7 +230,110 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       ),
     ];
 
-    final displayProducts = storeProducts.isNotEmpty ? storeProducts : _featuredProductsFallback;
+    // Find products belonging to this store from catalog if API storeProducts is empty
+    final catalogAsync = ref.watch(catalogProductsProvider(''));
+    final catalogProducts = (catalogAsync.value?['items'] as List?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .where((p) {
+              final sId = p['store_id']?.toString();
+              final sName = p['store_name']?.toString() ??
+                  (p['store'] is Map ? p['store']['name']?.toString() : null);
+              if (widget.shopId.isNotEmpty && sId == widget.shopId) return true;
+              if (widget.shopName.isNotEmpty &&
+                  sName != null &&
+                  sName.toLowerCase() == widget.shopName.toLowerCase()) {
+                return true;
+              }
+              return false;
+            }).toList() ??
+        [];
+
+    final displayProducts = storeProducts.isNotEmpty
+        ? storeProducts
+        : (catalogProducts.isNotEmpty ? catalogProducts : _featuredProductsFallback);
+
+    // Calculate real stats from actual store products
+    final actualProductCount = displayProducts.length;
+    final formattedProductCount = (profile.productCount != '0' && profile.productCount.isNotEmpty)
+        ? profile.productCount
+        : (actualProductCount >= 1000
+            ? '${(actualProductCount / 1000).toStringAsFixed(1).replaceAll('.', ',')}K'
+            : actualProductCount.toString());
+
+    double sumRatings = 0.0;
+    int ratedCount = 0;
+    int totalReviews = 0;
+    DateTime? earliestProductCreated;
+
+    for (final p in displayProducts) {
+      final r = p['rating'] ?? p['avg_rating'] ?? p['rating_average'];
+      if (r is num && r > 0) {
+        sumRatings += r.toDouble();
+        ratedCount++;
+      }
+      final rev = p['reviews_count'] ?? p['review_count'] ?? p['rating_count'];
+      if (rev is num && rev > 0) {
+        totalReviews += rev.toInt();
+      }
+      if (p['created_at'] != null) {
+        try {
+          final dt = DateTime.parse(p['created_at'].toString());
+          if (earliestProductCreated == null || dt.isBefore(earliestProductCreated)) {
+            earliestProductCreated = dt;
+          }
+        } catch (_) {}
+      }
+    }
+
+    final double storeRating = profile.rating > 0
+        ? profile.rating
+        : (ratedCount > 0 ? (sumRatings / ratedCount) : 0.0);
+
+    final String reviewCountStr = (profile.reviewCount != '0' && profile.reviewCount.isNotEmpty)
+        ? profile.reviewCount
+        : (totalReviews > 0
+            ? (totalReviews >= 1000
+                ? '${(totalReviews / 1000).toStringAsFixed(1).replaceAll('.', ',')}K'
+                : totalReviews.toString())
+            : (storeRating > 0 ? storeRating.toStringAsFixed(1) : '0'));
+
+    String activeDurationStr = (profile.activeDuration != '0' && profile.activeDuration.isNotEmpty)
+        ? profile.activeDuration
+        : '';
+    if (activeDurationStr.isEmpty) {
+      if (earliestProductCreated != null) {
+        final diffDays = DateTime.now().difference(earliestProductCreated).inDays;
+        final years = (diffDays / 365).floor();
+        if (years >= 1) {
+          activeDurationStr = '$years năm';
+        } else {
+          final months = (diffDays / 30).floor();
+          activeDurationStr = '${months > 0 ? months : 1} tháng';
+        }
+      } else {
+        activeDurationStr = '0';
+      }
+    }
+
+    String storeSlogan = profile.slogan;
+    if (storeSlogan.isEmpty) {
+      final sName = widget.shopName.toLowerCase();
+      if (sName.contains('mây xanh')) {
+        storeSlogan = 'Đồ dùng cho góc nhà và bàn làm việc. Mây Xanh Living mang tới không gian sống xanh, tối giản và tiện ích.';
+      } else if (sName.contains('an nhiên')) {
+        storeSlogan = 'Thời trang thiết kế trẻ trung, chất liệu organic thoáng mát.';
+      } else if (sName.contains('techzone')) {
+        storeSlogan = 'Công nghệ chính hãng';
+      }
+    }
+
+    final effectiveProfile = profile.copyWith(
+      productCount: formattedProductCount,
+      reviewCount: reviewCountStr,
+      activeDuration: activeDurationStr,
+      rating: storeRating,
+      slogan: storeSlogan,
+    );
 
     // Dynamically extract categories present in the store's products
     final storeCategories = <String>[];
@@ -272,7 +375,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
               ),
               title: innerBoxIsScrolled
                   ? Text(
-                      profile.name,
+                      effectiveProfile.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -335,7 +438,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   ),
                   padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 12),
                   child: StoreHeaderView(
-                    profile: profile,
+                    profile: effectiveProfile,
                     isFollowing: _isFollowing,
                     onToggleFollow: () {
                       setState(() => _isFollowing = !_isFollowing);
@@ -368,7 +471,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
             ),
             if (_tabController.index == 0)
               ..._buildHomeTab(
-                profile,
+                effectiveProfile,
                 displayProducts,
                 storeVouchers,
                 storeProductsAsync.isLoading,

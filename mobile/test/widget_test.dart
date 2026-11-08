@@ -2585,9 +2585,10 @@ void main() {
       expect(find.widgetWithText(OutlinedButton, 'Chat'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, '+ Theo dõi'), findsNothing);
 
-      // Stats row
-      expect(find.text('1,2K'), findsOneWidget);
-      expect(find.text('2 năm'), findsOneWidget);
+      // Stats row with real data (6 products, 4.8 real rating, 0 duration when no backend date)
+      expect(find.text('6'), findsOneWidget);
+      expect(find.text('4.8'), findsWidgets);
+      expect(find.text('0'), findsOneWidget);
       expect(find.text('Hoạt động'), findsOneWidget);
 
       // Tab bar directly below (no "Đánh giá" tab)
