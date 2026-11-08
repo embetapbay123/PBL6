@@ -2655,8 +2655,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Label is "Đã xem" (not "Đã xem gần đây")
+      // Label is "Đã xem" (not "Đã xem gần đây"), "Đã lưu" is present
       expect(find.text('Đã xem'), findsOneWidget);
+      expect(find.text('Đã lưu'), findsOneWidget);
+      // Removed items
+      expect(find.text('Lịch sử tìm kiếm'), findsNothing);
+      expect(find.text('Lịch sử Chat AI'), findsNothing);
 
       // Tap on "Đã xem"
       await tester.tap(find.text('Đã xem'));

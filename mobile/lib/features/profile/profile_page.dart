@@ -392,35 +392,9 @@ class ProfilePage extends ConsumerWidget {
             Expanded(
               child: _buildActivityCard(
                 context,
-                icon: Icons.search_rounded,
-                title: 'Lịch sử tìm kiếm',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Lịch sử tìm kiếm gần đây.')),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActivityCard(
-                context,
                 icon: Icons.favorite_border_rounded,
                 title: 'Đã lưu',
                 onTap: () => Navigator.pushNamed(context, '/customer/favorites'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActivityCard(
-                context,
-                icon: Icons.auto_awesome_rounded,
-                title: 'Lịch sử Chat AI',
-                onTap: () => Navigator.pushNamed(context, '/chat'),
               ),
             ),
           ],
