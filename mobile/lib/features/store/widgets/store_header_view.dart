@@ -6,13 +6,13 @@ import '../store_model.dart';
 class StoreHeaderView extends StatelessWidget {
   final StoreProfile profile;
   final bool isFollowing;
-  final VoidCallback onToggleFollow;
+  final VoidCallback? onToggleFollow;
 
   const StoreHeaderView({
     super.key,
     required this.profile,
-    required this.isFollowing,
-    required this.onToggleFollow,
+    this.isFollowing = false,
+    this.onToggleFollow,
   });
 
   @override
@@ -85,17 +85,7 @@ class StoreHeaderView extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    profile.slogan,
-                    style: TextStyle(
-                      color: Colors.white.withAlpha(220),
-                      fontSize: 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(
@@ -105,22 +95,11 @@ class StoreHeaderView extends StatelessWidget {
                       ),
                       const SizedBox(width: 2),
                       Text(
-                        '${profile.rating.toStringAsFixed(1)} ',
+                        profile.rating.toStringAsFixed(1),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                           color: Colors.white,
-                        ),
-                      ),
-                      Flexible(
-                        child: Text(
-                          '| ${profile.formattedFollowers}',
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(210),
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -137,63 +116,33 @@ class StoreHeaderView extends StatelessWidget {
                 ],
               ),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => ChatAiModal.show(
-                    context,
-                    initialPrompt: 'Tư vấn các sản phẩm của ${profile.name}',
-                  ),
-                  icon: const Icon(
-                    Icons.chat_bubble_outline,
-                    size: 13,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Chat',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    minimumSize: Size.zero,
-                    visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
+            OutlinedButton.icon(
+              onPressed: () => ChatAiModal.show(
+                context,
+                initialPrompt: 'Tư vấn các sản phẩm của ${profile.name}',
+              ),
+              icon: const Icon(
+                Icons.chat_bubble_outline,
+                size: 13,
+                color: Colors.white,
+              ),
+              label: const Text(
+                'Chat',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 6),
-                FilledButton(
-                  onPressed: onToggleFollow,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: isFollowing
-                        ? Colors.white.withAlpha(200)
-                        : Colors.white,
-                    foregroundColor: isFollowing
-                        ? Colors.black87
-                        : const Color(0xFFEE4D2D),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    minimumSize: Size.zero,
-                    visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                  child: Text(
-                    isFollowing ? 'Đang theo dõi' : '+ Theo dõi',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.white),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                minimumSize: Size.zero,
+                visualDensity: VisualDensity.compact,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
-              ],
+              ),
             ),
           ],
         ),

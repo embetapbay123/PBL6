@@ -2577,29 +2577,24 @@ void main() {
       // Store info exists in top header
       expect(find.text('TechZone Official'), findsWidgets);
       expect(find.text('Công nghệ chính hãng'), findsOneWidget);
-      expect(find.text('4.9 '), findsWidgets);
-      expect(find.text('| 12,5K người theo dõi'), findsOneWidget);
+      expect(find.text('4.9'), findsWidgets);
+      expect(find.text('| 12,5K người theo dõi'), findsNothing);
       expect(find.text('98% phản hồi tích cực'), findsOneWidget);
 
-      // Action buttons
+      // Action buttons: Chat button present, follow button removed
       expect(find.widgetWithText(OutlinedButton, 'Chat'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, '+ Theo dõi'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, '+ Theo dõi'), findsNothing);
 
       // Stats row
       expect(find.text('1,2K'), findsOneWidget);
       expect(find.text('2 năm'), findsOneWidget);
       expect(find.text('Hoạt động'), findsOneWidget);
 
-      // Tab bar directly below
+      // Tab bar directly below (no "Đánh giá" tab)
       expect(find.widgetWithText(Tab, 'Trang chủ'), findsOneWidget);
       expect(find.widgetWithText(Tab, 'Sản phẩm'), findsOneWidget);
       expect(find.widgetWithText(Tab, 'Danh mục'), findsOneWidget);
-      expect(find.widgetWithText(Tab, 'Đánh giá'), findsOneWidget);
-
-      // Toggle follow
-      await tester.tap(find.widgetWithText(FilledButton, '+ Theo dõi'));
-      await tester.pump();
-      expect(find.widgetWithText(FilledButton, 'Đang theo dõi'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Đánh giá'), findsNothing);
     });
 
     testWidgets('StorePage category circles are scrollable without "Xem thêm", tapping switches to Sản phẩm tab filtered by category', (tester) async {

@@ -111,7 +111,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {});
@@ -361,12 +361,12 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   Tab(text: 'Trang chủ'),
                   Tab(text: 'Sản phẩm'),
                   Tab(text: 'Danh mục'),
-                  Tab(text: 'Đánh giá'),
                 ],
               ),
             ),
             if (_tabController.index == 0)
               ..._buildHomeTab(
+                profile,
                 displayProducts,
                 storeVouchers,
                 storeProductsAsync.isLoading,
@@ -377,13 +377,11 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                 displayProducts,
                 storeCategories,
               )
-            else if (_tabController.index == 2)
+            else
               ..._buildCategoriesTab(
                 displayProducts,
                 storeCategories,
-              )
-            else
-              ..._buildReviewsTab(),
+              ),
           ],
         ),
       ),
@@ -465,12 +463,48 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   }
 
   List<Widget> _buildHomeTab(
+    StoreProfile profile,
     List<Map<String, dynamic>> displayProducts,
     List<StoreVoucherItem> storeVouchers,
     bool isLoading,
     List<String> categories,
   ) {
     return [
+      if (profile.slogan.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.storefront_outlined,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    profile.slogan,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF4B5563),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       const SizedBox(height: 12),
 
       // Shop Promo Banner
@@ -898,52 +932,6 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
     ];
   }
 
-  List<Widget> _buildReviewsTab() {
-    return [
-      Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Column(
-              children: [
-                const Text(
-                  '4.9',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-                Row(
-                  children: List.generate(
-                    5,
-                    (i) => const Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text('4.9/5 (1.2K đánh giá)', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-              ],
-            ),
-            const SizedBox(width: 24),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('98% đánh giá hài lòng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  SizedBox(height: 4),
-                  Text('Thời gian phản hồi chat: trong vài phút', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                  SizedBox(height: 2),
-                  Text('Tỉ lệ hủy đơn: < 1%', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 24),
-    ];
-  }
 
   Widget _buildCategoryCircle(IconData icon, String label, {VoidCallback? onTap}) {
     return InkWell(
