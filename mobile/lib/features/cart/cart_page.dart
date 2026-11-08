@@ -1567,7 +1567,7 @@ class _SwipeableCartItemState extends State<_SwipeableCartItem>
                 child: SizedBox(
                   width: _actionWidth,
                   child: Material(
-                    color: const Color(0xFFEE4D2D),
+                    color: AppColors.primary,
                     child: InkWell(
                       onTap: widget.isBusy
                           ? null
