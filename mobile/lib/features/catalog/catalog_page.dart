@@ -639,20 +639,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Hamburger Menu Icon
-              InkWell(
-                onTap: () => _showNavigationMenu(context),
-                borderRadius: BorderRadius.circular(20),
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Icon(
-                    Icons.menu_rounded,
-                    size: 24,
-                    color: Color(0xFF374151),
-                  ),
-                ),
-              ),
+
             ],
           ),
           ),
@@ -1553,85 +1540,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       _searchController.text = title;
       _onSearch(title);
     }
-  }
-
-  void _showNavigationMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.home_outlined, color: AppColors.primary),
-                title: const Text('Trang chủ / Khám phá', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _resetToExplore();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.shopping_bag_outlined, color: AppColors.primary),
-                title: const Text('Giỏ hàng', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.pushNamed(context, '/cart');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.auto_awesome, color: AppColors.primary),
-                title: const Text('Trợ lý AI Mua sắm', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  ChatAiModal.show(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.receipt_long_outlined, color: AppColors.primary),
-                title: const Text('Đơn mua của tôi', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.pushNamed(context, '/orders');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.person_outline, color: AppColors.primary),
-                title: const Text('Tài khoản & Cài đặt', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  Navigator.pushNamed(context, '/profile');
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.storefront_outlined, color: AppColors.primary),
-                title: const Text('Bán hàng cùng PBL6', style: TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  AppNoticeDialog.show(
-                    context,
-                    message: 'Tính năng đăng ký bán hàng cùng PBL6 đang hoạt động!',
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildSortChip({

@@ -1095,7 +1095,7 @@ void main() {
         expect(find.text('PBL6 Market'), findsOneWidget);
         expect(find.byTooltip('Thông báo'), findsOneWidget);
         expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
-        expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.menu_rounded), findsNothing);
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
         expect(find.text('Bạn đang tìm gì?', skipOffstage: false), findsOneWidget);
         expect(find.text('Xem tất cả'), findsNothing);
