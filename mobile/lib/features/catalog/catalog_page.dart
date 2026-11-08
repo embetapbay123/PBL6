@@ -1833,39 +1833,27 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
                 const SizedBox(width: 8),
 
-                // Toggle Grid/List mode
-                Container(
-                  height: 33,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+                // Toggle Grid/List mode (single button toggling between grid and list)
+                Tooltip(
+                  message: _isListView ? 'Chuyển sang dạng lưới' : 'Chuyển sang dạng danh sách',
+                  child: InkWell(
+                    onTap: () => setState(() => _isListView = !_isListView),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.grid_view_rounded,
-                          size: 15,
-                          color: !_isListView ? AppColors.primary : const Color(0xFF9CA3AF),
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 30),
-                        onPressed: () => setState(() => _isListView = false),
+                    child: Container(
+                      width: 33,
+                      height: 33,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
                       ),
-                      Container(width: 1, height: 16, color: const Color(0xFFE5E7EB)),
-                      IconButton(
-                        icon: Icon(
-                          Icons.view_agenda_outlined,
-                          size: 15,
-                          color: _isListView ? AppColors.primary : const Color(0xFF9CA3AF),
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 30),
-                        onPressed: () => setState(() => _isListView = true),
+                      alignment: Alignment.center,
+                      child: Icon(
+                        _isListView ? Icons.view_agenda_outlined : Icons.grid_view_rounded,
+                        size: 16,
+                        color: AppColors.primary,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
