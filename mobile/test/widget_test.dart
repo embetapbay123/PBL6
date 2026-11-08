@@ -1769,6 +1769,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Đơn hàng của tôi'), findsOneWidget);
+      final backBtn = find.ancestor(of: find.byIcon(Icons.arrow_back_ios_new), matching: find.byType(IconButton));
+      final searchBtn = find.ancestor(of: find.byIcon(Icons.search), matching: find.byType(IconButton));
+      final backRight = tester.getTopRight(backBtn).dx;
+      final searchLeft = tester.getTopLeft(searchBtn).dx;
+      final titleCenter = tester.getCenter(find.text('Đơn hàng của tôi')).dx;
+      final expectedCenter = (backRight + searchLeft) / 2;
+      // Verify title is centered between back button and search button
+      expect((titleCenter - expectedCenter).abs(), lessThan(3.0));
       expect(find.widgetWithText(Tab, 'Tất cả'), findsOneWidget);
       expect(find.widgetWithText(Tab, 'Chờ xác nhận'), findsOneWidget);
       expect(find.widgetWithText(Tab, 'Đang xử lý'), findsOneWidget);

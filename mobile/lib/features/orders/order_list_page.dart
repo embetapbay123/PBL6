@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
-import '../../core/app_notice_dialog.dart';
 import '../cart/cart_page.dart';
 import '../catalog/shop_page.dart';
 import 'order_detail_page.dart';
@@ -112,45 +111,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     }
   }
 
-  Color _statusTextColor(String status) {
-    final upper = status.toUpperCase();
-    switch (upper) {
-      case 'CREATED':
-      case 'PENDING':
-        return const Color(0xFFEA580C); // Warm Orange
-      case 'CONFIRMED':
-      case 'PROCESSING':
-        return const Color(0xFF2563EB); // Blue
-      case 'SHIPPED':
-        return const Color(0xFF7C3AED); // Purple
-      case 'COMPLETED':
-        return const Color(0xFF059669); // Emerald Green
-      case 'CANCELLED':
-        return const Color(0xFFDC2626); // Crimson Red
-      default:
-        return AppColors.textPrimary;
-    }
-  }
 
-  Color _statusBgColor(String status) {
-    final upper = status.toUpperCase();
-    switch (upper) {
-      case 'CREATED':
-      case 'PENDING':
-        return const Color(0xFFFFF7ED);
-      case 'CONFIRMED':
-      case 'PROCESSING':
-        return const Color(0xFFEFF6FF);
-      case 'SHIPPED':
-        return const Color(0xFFF5F3FF);
-      case 'COMPLETED':
-        return const Color(0xFFECFDF5);
-      case 'CANCELLED':
-        return const Color(0xFFFEF2F2);
-      default:
-        return Colors.grey.shade100;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +122,8 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: 0,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new,
@@ -180,30 +142,35 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
           },
         ),
         title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.textPrimary,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Tìm theo tên, shop, SKU...',
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade400,
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
                   ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm theo tên, shop, SKU...',
+                    hintStyle: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade400,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
                 ),
               )
-            : const Text(
-                'Đơn hàng của tôi',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+            : const Center(
+                child: Text(
+                  'Đơn hàng của tôi',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
         actions: [
