@@ -36,6 +36,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     {'label': 'Đang giao', 'key': 'SHIPPED'},
     {'label': 'Hoàn thành', 'key': 'COMPLETED'},
     {'label': 'Đã hủy', 'key': 'CANCELLED'},
+    {'label': 'Trả hàng/Hoàn tiền', 'key': 'RETURN_REFUND'},
   ];
 
   @override
@@ -71,21 +72,33 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     return '${buffer.toString().split('').reversed.join('')} đ';
   }
 
-  bool _matchesStatus(String orderStatus, String filterKey) {
-    final upper = orderStatus.toUpperCase();
+  bool _matchesOrder(Map<String, dynamic> order, String filterKey) {
+    final status = (order['status']?.toString() ?? '').toUpperCase();
+    final refundStatus = (order['refund_status']?.toString() ?? '').toUpperCase();
+    final hasRefund = (refundStatus.isNotEmpty && refundStatus != 'NONE') ||
+        (order['refunded_vnd'] != null && (order['refunded_vnd'] as num) > 0) ||
+        status == 'REFUNDED' ||
+        status == 'RETURNED' ||
+        status == 'RETURN_REQUESTED' ||
+        status == 'REFUND_REQUESTED' ||
+        order['refund'] != null ||
+        order['is_refund'] == true;
+
     switch (filterKey) {
       case 'ALL':
         return true;
       case 'PENDING':
-        return upper == 'PENDING' || upper == 'CREATED';
+        return status == 'PENDING' || status == 'CREATED';
       case 'PROCESSING':
-        return upper == 'PROCESSING' || upper == 'CONFIRMED';
+        return status == 'PROCESSING' || status == 'CONFIRMED';
       case 'SHIPPED':
-        return upper == 'SHIPPED';
+        return status == 'SHIPPED';
       case 'COMPLETED':
-        return upper == 'COMPLETED';
+        return status == 'COMPLETED';
       case 'CANCELLED':
-        return upper == 'CANCELLED';
+        return status == 'CANCELLED';
+      case 'RETURN_REFUND':
+        return hasRefund;
       default:
         return true;
     }
@@ -106,8 +119,34 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         return 'Hoàn thành';
       case 'CANCELLED':
         return 'Đã hủy';
+      case 'RETURN_REQUESTED':
+      case 'REFUND_REQUESTED':
+        return 'Yêu cầu trả hàng';
+      case 'RETURNED':
+        return 'Đã trả hàng';
+      case 'REFUNDED':
+        return 'Đã hoàn tiền';
       default:
         return status;
+    }
+  }
+
+  String _refundStatusBadgeText(String refundStatus) {
+    final upper = refundStatus.toUpperCase();
+    switch (upper) {
+      case 'SUCCEEDED':
+      case 'COMPLETED':
+        return '(Đã hoàn tiền)';
+      case 'PROCESSING':
+        return '(Đang xử lý)';
+      case 'REQUESTED':
+      case 'PENDING':
+        return '(Yêu cầu hoàn tiền)';
+      case 'FAILED':
+      case 'REJECTED':
+        return '(Hoàn tiền thất bại)';
+      default:
+        return '()';
     }
   }
 
@@ -276,7 +315,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
             children: _tabs.map((tab) {
               final tabKey = tab['key']!;
               var filteredOrders = allOrders
-                  .where((o) => _matchesStatus(o['status']?.toString() ?? '', tabKey))
+                  .where((o) => _matchesOrder(o, tabKey))
                   .toList();
 
               if (_searchQuery.isNotEmpty) {
@@ -488,10 +527,12 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (order['refund_status'] != null && order['refund_status'].toString().isNotEmpty) ...[
+                    if (order['refund_status'] != null &&
+                        order['refund_status'].toString().isNotEmpty &&
+                        order['refund_status'].toString().toUpperCase() != 'NONE') ...[
                       const SizedBox(width: 6),
                       Text(
-                        order['refund_status'] == 'SUCCEEDED' ? '(Đã hoàn tiền)' : '(Hoàn tiền)',
+                        _refundStatusBadgeText(order['refund_status'].toString()),
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontSize: 13,

@@ -387,8 +387,8 @@ class MockApiClient extends ApiClient {
   Future<Map<String, dynamic>> listOwnOrders({
     int page = 1,
     int size = 50,
-  }) async => {
-    'items': [
+  }) async {
+    final items = [
       {
         'id': 'order-test-01',
         'purchase_group_id': 'pg-01',
@@ -431,11 +431,21 @@ class MockApiClient extends ApiClient {
           },
         ],
       },
-    ],
-    'total': 2,
-    'page': 1,
-    'size': 50,
-  };
+    ];
+    for (final it in items) {
+      final id = it['id']?.toString();
+      if (id != null && _mockRefunds.containsKey(id)) {
+        it['refund_status'] = _mockRefunds[id]!['status'];
+        it['refunded_vnd'] = _mockRefunds[id]!['amount_vnd'];
+      }
+    }
+    return {
+      'items': items,
+      'total': items.length,
+      'page': page,
+      'size': size,
+    };
+  }
 
   @override
   Future<Map<String, dynamic>> getOwnOrder(String id) async => {
@@ -473,8 +483,10 @@ class MockApiClient extends ApiClient {
     String? reason,
   }) async => {'status': 'CANCELLED'};
 
+  static final Map<String, Map<String, dynamic>> _mockRefunds = {};
+
   @override
-  Future<Map<String, dynamic>?> getOrderRefund(String id) async => null;
+  Future<Map<String, dynamic>?> getOrderRefund(String id) async => _mockRefunds[id];
 
   @override
   Future<Map<String, dynamic>> requestOrderRefund({
@@ -483,12 +495,15 @@ class MockApiClient extends ApiClient {
     required int amountVnd,
     List<Map<String, dynamic>>? items,
     String? note,
-  }) async => {
-    'status': 'PENDING',
-    'order_id': orderId,
-    'reason': reason,
-    'amount_vnd': amountVnd,
-  };
+  }) async {
+    _mockRefunds[orderId] = {
+      'status': 'PENDING',
+      'order_id': orderId,
+      'reason': reason,
+      'amount_vnd': amountVnd,
+    };
+    return _mockRefunds[orderId]!;
+  }
 
   @override
   Future<Map<String, dynamic>> createPaymentAttempt(
@@ -2053,6 +2068,7 @@ void main() {
       expect(find.widgetWithText(Tab, 'Đang giao'), findsOneWidget);
       expect(find.widgetWithText(Tab, 'Hoàn thành'), findsOneWidget);
       expect(find.widgetWithText(Tab, 'Đã hủy'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Trả hàng/Hoàn tiền'), findsOneWidget);
 
       expect(find.text('PBL Tech Store'), findsOneWidget);
       expect(find.text('Chuột Gaming không dây'), findsOneWidget);
@@ -2132,8 +2148,8 @@ void main() {
       expect(find.textContaining('Thành tiền (1 sản phẩm):'), findsWidgets);
 
       // 6. Completed order displays "Trả hàng/Hoàn tiền" (black) and "Mua lại" (orange)
-      expect(find.text('Trả hàng/Hoàn tiền'), findsOneWidget);
-      expect(find.text('Mua lại'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Trả hàng/Hoàn tiền'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Mua lại'), findsOneWidget);
 
       final refundBtn = tester.widget<OutlinedButton>(find.byKey(const ValueKey('refund_button')));
       final reorderBtn = tester.widget<OutlinedButton>(find.byKey(const ValueKey('reorder_button')));
@@ -2145,6 +2161,28 @@ void main() {
       // Reorder button has orange text/border
       final reorderStyle = reorderBtn.style;
       expect(reorderStyle?.foregroundColor?.resolve({}), const Color(0xFFBA3416));
+    });
+
+    testWidgets('OrderListPage renders Trả hàng/Hoàn tiền tab and filters refund orders', (tester) async {
+      final mock = MockApiClient();
+      await mock.requestOrderRefund(
+        orderId: 'order-test-02',
+        reason: 'Sản phẩm lỗi',
+        amountVnd: 450000,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(mock)],
+          child: const MaterialApp(home: OrderListPage(initialIndex: 6)),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(Tab, 'Trả hàng/Hoàn tiền'), findsOneWidget);
+      expect(find.text('PBL Fashion Hub'), findsOneWidget);
+      expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+      expect(find.textContaining('Yêu cầu hoàn tiền'), findsOneWidget);
     });
 
     testWidgets('OrderListPage tapping "Trả hàng/Hoàn tiền" opens OrderRefundPage and submitting works', (tester) async {
