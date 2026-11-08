@@ -450,30 +450,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           color: AppColors.textSecondary,
                           fontSize: 12,
                         ),
-                      )
-                    else
-                      InkWell(
-                        onTap: () {
-                          // View all or reset
-                          if (_selectedCategory != null) {
-                            _selectCategory(null);
-                          }
-                        },
-                        child: const Text(
-                          'Xem tất cả ›',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                       ),
                   ],
                 ),
               ),
             ),
 
-            // Sort Filter Chips (Bán chạy, Mới nhất, Tên sản phẩm, Giá tăng dần, Giá giảm dần)
+            // Sort Filter Chips (Bán chạy, Mới nhất, Giá tăng dần, Giá giảm dần - No Icons, No Tên sản phẩm)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -483,28 +466,24 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     children: [
                       _buildSortChip(
                         label: 'Bán chạy',
-                        icon: Icons.local_fire_department_rounded,
                         selected: _sort == 'best_selling',
                         onTap: () => _onSortChanged('best_selling'),
                       ),
                       const SizedBox(width: 8),
                       _buildSortChip(
                         label: 'Mới nhất',
-                        icon: Icons.access_time_rounded,
                         selected: _sort == 'newest',
                         onTap: () => _onSortChanged('newest'),
                       ),
                       const SizedBox(width: 8),
                       _buildSortChip(
                         label: 'Giá tăng dần',
-                        icon: Icons.arrow_upward_rounded,
                         selected: _sort == 'price_asc',
                         onTap: () => _onSortChanged('price_asc'),
                       ),
                       const SizedBox(width: 8),
                       _buildSortChip(
                         label: 'Giá giảm dần',
-                        icon: Icons.arrow_downward_rounded,
                         selected: _sort == 'price_desc',
                         onTap: () => _onSortChanged('price_desc'),
                       ),
@@ -1587,7 +1566,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
   Widget _buildSortChip({
     required String label,
-    required IconData icon,
+    IconData? icon,
     required bool selected,
     required VoidCallback onTap,
   }) {
@@ -1595,7 +1574,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: selected ? AppColors.primary.withAlpha(20) : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -1607,16 +1586,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 14,
-              color: selected ? AppColors.primary : Colors.grey.shade600,
-            ),
-            const SizedBox(width: 5),
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? AppColors.primary : Colors.grey.shade600,
+              ),
+              const SizedBox(width: 5),
+            ],
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: selected ? FontWeight.bold : FontWeight.w500,
                 color: selected ? AppColors.primary : AppColors.textPrimary,
               ),
