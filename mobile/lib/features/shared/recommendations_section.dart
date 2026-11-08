@@ -225,7 +225,7 @@ class _RecommendationsSectionState
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.53,
+                      childAspectRatio: 0.56,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -441,8 +441,9 @@ class _RecommendationsSectionState
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(12),
                   ),
-                  child: Container(
-                    height: 140,
+                  child: AspectRatio(
+                    aspectRatio: 1.0,
+                    child: Container(
                     width: double.infinity,
                     color: Colors.grey.shade100,
                     child: imageUrl != null && imageUrl.isNotEmpty
@@ -462,7 +463,8 @@ class _RecommendationsSectionState
                               Icons.shopping_bag_outlined,
                               color: Colors.grey,
                               size: 36,
-                            ),
+                          ),
+                    ),
                           ),
                   ),
                 ),
@@ -548,65 +550,59 @@ class _RecommendationsSectionState
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        height: 1.25,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatPrice(priceInt),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatPrice(originalPriceInt),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10.5,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
                       children: [
+                        const Icon(Icons.star, size: 12, color: Colors.amber),
+                        const SizedBox(width: 3),
                         Text(
-                          title,
+                          rating.toString(),
                           style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            height: 1.25,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _formatPrice(priceInt),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _formatPrice(originalPriceInt),
-                          style: TextStyle(
-                            color: Colors.grey.shade400,
                             fontSize: 11,
-                            decoration: TextDecoration.lineThrough,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.star, size: 12, color: Colors.amber),
-                            const SizedBox(width: 3),
-                            Text(
-                              rating.toString(),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Đã bán ${_formatSales(sales)}',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 6),
+                        Text(
+                          'Đã bán ${_formatSales(sales)}',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: Colors.grey.shade500,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const Spacer(),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(

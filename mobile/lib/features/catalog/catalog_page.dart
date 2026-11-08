@@ -2579,7 +2579,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.53,
+              childAspectRatio: 0.56,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildDedicatedProductGridCard(
@@ -2667,9 +2667,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Thumbnail Image with Favorite Button on Top-Right
-            SizedBox(
-              height: 155,
-              width: double.infinity,
+            AspectRatio(
+              aspectRatio: 1.0,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -2741,7 +2740,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2794,7 +2792,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ),
                       ],
                     ),
-
+                    const Spacer(),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
