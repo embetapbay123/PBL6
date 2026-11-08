@@ -572,7 +572,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                           children: [
                             // Store Header Row
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                               child: InkWell(
                                 onTap: () => _navigateToShop(storeId),
                                 borderRadius: BorderRadius.circular(8),
@@ -644,10 +644,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 ),
                               ),
                             ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 14),
-                              child: Divider(height: 20, color: Color(0xFFF1F3F5)),
-                            ),
+                            const Divider(height: 1, color: Color(0xFFF1F3F5)),
 
                               // Store Items List (Swipeable full row)
                               ...storeItems.asMap().entries.map((entry) {
@@ -655,6 +652,25 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 final item = entry.value;
                                 final available = _available(item);
                                 final itemId = item['id']?.toString() ?? '';
+                                final isLast = index == storeItems.length - 1;
+                                final isOnlyOne = storeItems.length == 1;
+
+                                final actionBorderRadius = isOnlyOne
+                                    ? const BorderRadius.only(
+                                        topLeft: Radius.circular(12),
+                                        bottomLeft: Radius.circular(12),
+                                        bottomRight: Radius.circular(16),
+                                      )
+                                    : (isLast
+                                        ? const BorderRadius.only(
+                                            topLeft: Radius.circular(12),
+                                            bottomLeft: Radius.circular(12),
+                                            bottomRight: Radius.circular(16),
+                                          )
+                                        : const BorderRadius.horizontal(
+                                            left: Radius.circular(12),
+                                          ));
+
                                 final title =
                                     item['title']?.toString() ??
                                     item['product_title']?.toString() ??
@@ -688,6 +704,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                     _SwipeableCartItem(
                                       key: ValueKey(itemId),
                                       isBusy: _busy,
+                                      borderRadius: actionBorderRadius,
                                       onDelete: () =>
                                           _removeItem(itemId, title),
                                       child: Padding(
@@ -985,7 +1002,6 @@ class _CartPageState extends ConsumerState<CartPage> {
                               ],
                             );
                           }),
-                            const SizedBox(height: 6),
                           ],
                         ),
                       );
@@ -1493,12 +1509,14 @@ class _SwipeableCartItem extends StatefulWidget {
   final Widget child;
   final VoidCallback onDelete;
   final bool isBusy;
+  final BorderRadius? borderRadius;
 
   const _SwipeableCartItem({
     super.key,
     required this.child,
     required this.onDelete,
     this.isBusy = false,
+    this.borderRadius,
   });
 
   @override
@@ -1567,10 +1585,20 @@ class _SwipeableCartItemState extends State<_SwipeableCartItem>
             Positioned.fill(
               child: Align(
                 alignment: Alignment.centerRight,
-                child: SizedBox(
+                child: Container(
                   width: _actionWidth,
-                  child: Material(
+                  height: double.infinity,
+                  decoration: BoxDecoration(
                     color: AppColors.primary,
+                    borderRadius: widget.borderRadius ??
+                        const BorderRadius.horizontal(
+                          left: Radius.circular(12),
+                          right: Radius.circular(16),
+                        ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Material(
+                    color: Colors.transparent,
                     child: InkWell(
                       onTap: widget.isBusy
                           ? null
@@ -1603,7 +1631,10 @@ class _SwipeableCartItemState extends State<_SwipeableCartItem>
                 onHorizontalDragEnd: _handleDragEnd,
                 onTap: isOpen ? _close : null,
                 child: Container(
-                  color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: widget.borderRadius,
+                  ),
                   child: widget.child,
                 ),
               ),
