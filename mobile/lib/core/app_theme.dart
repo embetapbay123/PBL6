@@ -312,6 +312,11 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
+      tabBarTheme: TabBarThemeData(
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        splashFactory: NoSplash.splashFactory,
+        dividerColor: Colors.transparent,
+      ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,

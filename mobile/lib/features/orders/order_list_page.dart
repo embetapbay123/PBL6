@@ -247,6 +247,9 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
             child: TabBar(
               controller: _tabController,
               isScrollable: true,
+              overlayColor: WidgetStateProperty.all(Colors.transparent),
+              splashFactory: NoSplash.splashFactory,
+              dividerColor: Colors.transparent,
               labelColor: AppColors.primary,
               unselectedLabelColor: AppColors.textSecondary,
               labelStyle: const TextStyle(
