@@ -1,3 +1,4 @@
+import 'recently_viewed_provider.dart';
 import 'shop_page.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -2057,32 +2058,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   Widget _buildRecentlyViewedSection(AsyncValue<Map<String, dynamic>> productsAsync) {
-    final recentItems = [
-      {
-        'id': 'recent-sony-anc',
-        'title': 'Tai nghe Sony ANC',
-        'price': '6.490.000',
-        'imageUrl': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
-      },
-      {
-        'id': 'recent-dareu-ek87',
-        'title': 'Bàn phím DareU EK87',
-        'price': '450.000',
-        'imageUrl': 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
-      },
-      {
-        'id': 'recent-logitech-master3s',
-        'title': 'Chuột Logitech Master 3S',
-        'price': '1.990.000',
-        'imageUrl': 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&q=80',
-      },
-      {
-        'id': 'recent-gan-65w',
-        'title': 'Củ sạc GaN 65W',
-        'price': '690.000',
-        'imageUrl': 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=500&q=80',
-      },
-    ];
+    final recentItems = ref.watch(recentlyViewedProvider);
+    if (recentItems.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2104,15 +2081,20 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             separatorBuilder: (_, index) => const SizedBox(width: 10),
             itemBuilder: (context, idx) {
               final prod = recentItems[idx];
-              final title = prod['title']!;
-              final price = prod['price']!;
-              final imageUrl = prod['imageUrl']!;
+              final title = prod.title;
+              final price = prod.priceDisplay;
+              final imageUrl = prod.imageUrl;
 
               return InkWell(
                 onTap: () {
-                  AppNoticeDialog.show(
+                  Navigator.push(
                     context,
-                    message: 'Đang mở sản phẩm "$title"...',
+                    MaterialPageRoute(
+                      builder: (_) => ProductDetailPage(
+                        productId: prod.id,
+                        initialProduct: prod.rawProduct,
+                      ),
+                    ),
                   );
                 },
                 borderRadius: BorderRadius.circular(10),
@@ -2129,17 +2111,25 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           height: 56,
                           width: double.infinity,
                           color: const Color(0xFFF3F4F6),
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => const Center(
-                              child: Icon(
-                                Icons.shopping_bag_outlined,
-                                size: 24,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
+                          child: (imageUrl.isNotEmpty && imageUrl.startsWith('http'))
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(
+                                    child: Icon(
+                                      Icons.shopping_bag_outlined,
+                                      size: 24,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                              : const Center(
+                                  child: Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 24,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 5),
@@ -2158,7 +2148,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                          fontSize: 11.5,
                         ),
                       ),
                     ],

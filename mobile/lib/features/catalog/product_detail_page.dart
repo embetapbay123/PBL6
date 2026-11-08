@@ -1,3 +1,4 @@
+import 'recently_viewed_provider.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,18 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   void initState() {
     super.initState();
     _product = widget.initialProduct;
+    _recordRecentlyViewed();
     _loadAll();
+  }
+
+  void _recordRecentlyViewed() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final p = _product;
+      if (p != null && p['id'] != null) {
+        ref.read(recentlyViewedProvider.notifier).addProduct(p);
+      }
+    });
   }
 
   @override
@@ -59,6 +71,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         _pageController.jumpToPage(0);
       }
       _product = widget.initialProduct;
+      _recordRecentlyViewed();
       _loadAll();
     }
   }
@@ -98,6 +111,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           _relatedProducts = results[2] as List<Map<String, dynamic>>;
           _loading = false;
         });
+        ref.read(recentlyViewedProvider.notifier).addProduct(product);
       }
     } catch (e) {
       if (mounted) {

@@ -1,3 +1,4 @@
+import 'package:pbl6_mobile/features/catalog/recently_viewed_provider.dart';
 import 'package:pbl6_mobile/features/chat/chat_ai_modal.dart';
 import 'package:pbl6_mobile/features/shared/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
@@ -1256,6 +1257,51 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
         expect(find.byIcon(Icons.arrow_back), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'Recently viewed section dynamically renders products viewed on ProductDetailPage',
+      (tester) async {
+        final mockProduct = {
+          'id': 'recent-test-01',
+          'title': 'Bàn phím cơ DareU EK87 Pro',
+          'price_vnd': 450000,
+          'image_url': 'https://example.com/keyboard.jpg',
+          'variants': [
+            {'id': 'v-1', 'price_vnd': 450000},
+          ],
+        };
+
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {'items': [], 'total': 0},
+            ),
+            categoriesProvider.overrideWith((ref) async => []),
+            recommendationProvider.overrideWith((ref) async => {'product_ids': []}),
+          ],
+        );
+
+        // 1. Initially no products viewed -> "Đã xem gần đây" is hidden
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Đã xem gần đây'), findsNothing);
+
+        // 2. User opens ProductDetailPage for mockProduct -> recorded in recentlyViewedProvider
+        container.read(recentlyViewedProvider.notifier).addProduct(mockProduct);
+        await tester.pumpAndSettle();
+
+        // 3. Now "Đã xem gần đây" is visible with the viewed product
+        expect(find.text('Đã xem gần đây', skipOffstage: false), findsOneWidget);
+        expect(find.text('Bàn phím cơ DareU EK87 Pro', skipOffstage: false), findsOneWidget);
+        expect(find.text('450.000 ₫', skipOffstage: false), findsOneWidget);
       },
     );
 
