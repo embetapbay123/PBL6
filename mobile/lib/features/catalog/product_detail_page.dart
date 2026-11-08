@@ -479,10 +479,21 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 ),
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF1F0),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(10),
+                      right: Radius.circular(10),
+                    ),
+                    border: Border.all(color: Colors.white, width: 1.2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withAlpha(8),
+                        blurRadius: 2,
+                        offset: const Offset(0, 0.5),
+                      ),
+                    ],
                   ),
                   child: const Text(
                     'Giá Sau Voucher',
