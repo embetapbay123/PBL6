@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../cart/cart_variant_modal.dart';
 import '../chat/chat_ai_modal.dart';
 import '../customer/favorites_page.dart';
 import 'shop_page.dart';
@@ -1392,6 +1393,85 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     );
   }
 
+  Future<void> _quickAddToCartRelated(Map<String, dynamic> item) async {
+    final variants = (item['variants'] as List?) ?? [];
+    final productId = item['id']?.toString() ?? '';
+
+    if (variants.length > 1) {
+      final images = item['images'] as List?;
+      final imageUrl = (images != null && images.isNotEmpty)
+          ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
+          : (item['image_url']?.toString() ?? item['thumbnail']?.toString());
+
+      await CartVariantModal.show(
+        context: context,
+        cartItem: {
+          'product_id': productId,
+          'variant_id': (variants.first as Map)['id']?.toString() ?? '',
+          'quantity': 1,
+          'image_url': imageUrl,
+        },
+        initialProduct: item,
+        onConfirm: (selectedVariant, quantity) async {
+          final selVariantId = selectedVariant['id']?.toString() ?? '';
+          if (selVariantId.isEmpty) return;
+          try {
+            final client = ref.read(apiProvider);
+            await client.addToCart(
+              variantId: selVariantId,
+              productId: productId,
+              quantity: quantity,
+            );
+            ref.invalidate(cartItemsProvider);
+            ref.invalidate(cartBadgeCountProvider);
+            if (mounted) {
+              AppNoticeDialog.show(
+                context,
+                message: 'Đã thêm "${item['title'] ?? 'sản phẩm'}" vào giỏ hàng!',
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              AppNoticeDialog.show(
+                context,
+                message: errorMessage(e),
+              );
+            }
+          }
+        },
+      );
+      return;
+    }
+
+    final variantId = variants.isNotEmpty
+        ? (variants.first as Map)['id']?.toString() ?? ''
+        : 'v-1';
+
+    try {
+      final client = ref.read(apiProvider);
+      await client.addToCart(
+        variantId: variantId,
+        productId: productId,
+        quantity: 1,
+      );
+      ref.invalidate(cartItemsProvider);
+      ref.invalidate(cartBadgeCountProvider);
+      if (mounted) {
+        AppNoticeDialog.show(
+          context,
+          message: 'Đã thêm "${item['title'] ?? 'sản phẩm'}" vào giỏ hàng!',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNoticeDialog.show(
+          context,
+          message: errorMessage(e),
+        );
+      }
+    }
+  }
+
   /// Related Products Section
   Widget _buildRelatedProductsSection() {
     if (_relatedProducts.isEmpty) return const SizedBox.shrink();
@@ -1427,7 +1507,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             crossAxisCount: 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
-            childAspectRatio: 0.72,
+            childAspectRatio: 0.58,
           ),
           itemCount: displayItems.length,
           itemBuilder: (context, idx) {
@@ -1489,30 +1569,93 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                       ),
                     ),
                     Expanded(
-                      flex: 4,
+                      flex: 5,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              pTitle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F2937),
-                                height: 1.25,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  pTitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1F2937),
+                                    height: 1.25,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '$pPriceStr ₫',
+                                  style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '$pPriceStr ₫',
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      WidgetStateProperty.resolveWith<Color?>(
+                                          (states) {
+                                    if (states.contains(WidgetState.hovered) ||
+                                        states.contains(WidgetState.pressed)) {
+                                      return AppColors.primary;
+                                    }
+                                    return Colors.white;
+                                  }),
+                                  foregroundColor:
+                                      WidgetStateProperty.resolveWith<Color?>(
+                                          (states) {
+                                    if (states.contains(WidgetState.hovered) ||
+                                        states.contains(WidgetState.pressed)) {
+                                      return Colors.white;
+                                    }
+                                    return AppColors.primary;
+                                  }),
+                                  iconColor:
+                                      WidgetStateProperty.resolveWith<Color?>(
+                                          (states) {
+                                    if (states.contains(WidgetState.hovered) ||
+                                        states.contains(WidgetState.pressed)) {
+                                      return Colors.white;
+                                    }
+                                    return AppColors.primary;
+                                  }),
+                                  side: const WidgetStatePropertyAll(
+                                    BorderSide(color: AppColors.primary, width: 0.8),
+                                  ),
+                                  padding: const WidgetStatePropertyAll(
+                                    EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                  ),
+                                  minimumSize:
+                                      const WidgetStatePropertyAll(Size(0, 28)),
+                                  shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6)),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.shopping_cart_outlined, size: 12),
+                                label: const Text(
+                                  'Thêm vào giỏ',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                onPressed: () => _quickAddToCartRelated(item),
                               ),
                             ),
                           ],
