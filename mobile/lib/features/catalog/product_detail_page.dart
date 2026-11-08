@@ -233,7 +233,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     final revAvg = (revSummary?['average'] as num?)?.toDouble() ?? 5.0;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,

@@ -207,7 +207,7 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
     final totalRefund = _calculateTotalRefund();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Trả hàng / Hoàn tiền',

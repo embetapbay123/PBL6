@@ -202,7 +202,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     final cartCount = ref.watch(cartBadgeCountProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: AppColors.background,
       bottomNavigationBar: AppBottomNav(
         currentIndex: 1,
         cartCount: cartCount,

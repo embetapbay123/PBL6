@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_notice_dialog.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../chat/chat_ai_modal.dart';
 
 enum SettingsTab {
   privacy,
@@ -11,11 +13,11 @@ enum SettingsTab {
 }
 
 class CustomerSettingsPage extends ConsumerStatefulWidget {
-  final SettingsTab initialTab;
+  final SettingsTab? initialTab;
 
   const CustomerSettingsPage({
     super.key,
-    this.initialTab = SettingsTab.privacy,
+    this.initialTab,
   });
 
   @override
@@ -24,7 +26,7 @@ class CustomerSettingsPage extends ConsumerStatefulWidget {
 }
 
 class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
-  late SettingsTab _selectedTab;
+  SettingsTab? _activeSubTab;
 
   // Quyền riêng tư (Consent state)
   bool _consentLoading = true;
@@ -46,7 +48,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
   @override
   void initState() {
     super.initState();
-    _selectedTab = widget.initialTab;
+    _activeSubTab = widget.initialTab;
     _loadConsent();
   }
 
@@ -71,7 +73,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
         setState(() {
           _consentError = errorMessage(e);
           _consentLoading = false;
-          // Fallback to GRANTED version 1 so UI still reflects proper state
           _granted = true;
           _consentVersion = 1;
         });
@@ -98,43 +99,36 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
       if (mounted) {
         setState(() {
           _granted = targetStatus == 'GRANTED';
-          _consentVersion =
-              (res['version'] as num?)?.toInt() ?? (_consentVersion + 1);
-          _consentNotice = 'Đã lưu quyền cá nhân hóa qua API.';
+          _consentVersion = (res['version'] as num?)?.toInt() ?? (_consentVersion + 1);
+          _consentBusy = false;
+          _consentNotice = _granted
+              ? 'Đã bật quyền cá nhân hóa thành công.'
+              : 'Đã thu hồi quyền cá nhân hóa thành công.';
         });
         ref.invalidate(recommendationProvider);
       }
     } catch (e) {
       if (mounted) {
-        // Fallback local state toggle if API connection is unavailable
         setState(() {
-          _granted = targetStatus == 'GRANTED';
-          _consentVersion++;
-          _consentNotice = 'Đã cập nhật trạng thái quyền cá nhân hóa.';
+          _consentError = errorMessage(e);
+          _consentBusy = false;
         });
         ref.invalidate(recommendationProvider);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _consentBusy = false);
       }
     }
   }
 
   Future<void> _loadInvitations() async {
-    setState(() {
-      _invitationsLoading = true;
-    });
+    setState(() => _invitationsLoading = true);
     try {
       final client = ref.read(apiProvider);
       final res = await client.listOwnInvitations();
-      final items = (res['items'] as List?)
-              ?.map((e) => Map<String, dynamic>.from(e as Map))
-              .toList() ??
-          [];
       if (mounted) {
         setState(() {
-          _invitations = items;
+          _invitations = (res['items'] as List?)
+                  ?.map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList() ??
+              [];
           _invitationsLoading = false;
         });
       }
@@ -148,22 +142,354 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
     }
   }
 
+  Future<void> _respondInvitation(String id, bool accept) async {
+    try {
+      final client = ref.read(apiProvider);
+      if (accept) { await client.acceptInvitation(id); }
+      if (mounted) {
+        AppNoticeDialog.show(
+          context,
+          message: accept
+              ? 'Đã chấp nhận lời mời tham gia gian hàng!'
+              : 'Đã từ chối lời mời.',
+        );
+        _loadInvitations();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNoticeDialog.show(
+          context,
+          message: 'Lỗi khi phản hồi lời mời: ${errorMessage(e)}',
+        );
+      }
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await ref.read(apiProvider).logout();
+      ref.invalidate(profileProvider);
+      ref.invalidate(addressListProvider);
+      ref.invalidate(cartItemsProvider);
+      ref.invalidate(recommendationProvider);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã đăng xuất thành công.')),
+        );
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_activeSubTab != null) {
+      return _buildSubTabScreen();
+    }
+    return _buildMainSettingsScreen();
+  }
+
+  Widget _buildMainSettingsScreen() {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Color(0xFFEE4D2D),
+            size: 24,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Cài đặt & Quyền riêng tư',
+          'Thiết lập tài khoản',
           style: TextStyle(
-            color: AppColors.textPrimary,
+            color: Color(0xFF1F2937),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: Color(0xFFEE4D2D),
+                  size: 24,
+                ),
+                Positioned(
+                  right: -6,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEE4D2D),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: const Text(
+                      '37',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            tooltip: 'Tin nhắn',
+            onPressed: () => ChatAiModal.show(context),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Section 1: Tài khoản của tôi
+          _buildSectionHeader('Tài khoản của tôi'),
+          _buildSectionContainer([
+            _buildSettingRow(
+              title: 'Tài khoản & Bảo mật',
+              onTap: () => setState(() => _activeSubTab = SettingsTab.security),
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Địa Chỉ',
+              onTap: () => Navigator.pushNamed(context, '/customer/addresses'),
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Tài khoản / Thẻ ngân hàng',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Tính năng liên kết Tài khoản / Thẻ ngân hàng đang phát triển.',
+                );
+              },
+            ),
+          ]),
+
+          // Section 2: Cài đặt
+          _buildSectionHeader('Cài đặt'),
+          _buildSectionContainer([
+            _buildSettingRow(
+              title: 'Cài đặt Chat',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Cài đặt chat và trả lời tự động đang được cập nhật.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Cài đặt đơn hàng',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Cài đặt đơn hàng đang được cập nhật.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Cài đặt Thông báo',
+              onTap: () => setState(() => _activeSubTab = SettingsTab.notifications),
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Cài đặt riêng tư',
+              onTap: () => setState(() => _activeSubTab = SettingsTab.privacy),
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Người dùng đã bị chặn',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Danh sách người dùng đã bị chặn đang trống.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Ngôn ngữ / Language / ភាសា',
+              subtitle: 'Tiếng Việt',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Hệ thống hiện tại đang sử dụng Tiếng Việt (Mặc định).',
+                );
+              },
+            ),
+          ]),
+
+          // Section 3: Hỗ trợ
+          _buildSectionHeader('Hỗ trợ'),
+          _buildSectionContainer([
+            _buildSettingRow(
+              title: 'Trung tâm hỗ trợ',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Tổng đài hỗ trợ 24/7 của PBL6: 1900 1234.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Tiêu chuẩn cộng đồng',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Quy định và tiêu chuẩn cộng đồng PBL6 Marketplace.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Điều khoản Shopee',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Điều khoản dịch vụ và chính sách bảo mật PBL6 Marketplace.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Hài lòng với Shopee? Hãy đánh giá ngay!',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Cảm ơn bạn đã đồng hành cùng PBL6 Marketplace!',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Giới thiệu',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'PBL6 Marketplace v1.0.0 · Phát triển bởi nhóm dự án PBL6.',
+                );
+              },
+            ),
+            _buildDivider(),
+            _buildSettingRow(
+              title: 'Yêu cầu hủy tài khoản',
+              onTap: () {
+                AppNoticeDialog.show(
+                  context,
+                  message: 'Để yêu cầu hủy tài khoản, vui lòng liên hệ admin@pbl6.market.',
+                );
+              },
+            ),
+          ]),
+
+          // Bottom Logout Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                onPressed: () => _handleLogout(context),
+                child: const Text(
+                  'Chuyển tài khoản / Đăng xuất',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubTabScreen() {
+    String tabTitle = 'Cài đặt';
+    switch (_activeSubTab!) {
+      case SettingsTab.privacy:
+        tabTitle = 'Cài đặt riêng tư';
+        break;
+      case SettingsTab.security:
+        tabTitle = 'Tài khoản & Bảo mật';
+        break;
+      case SettingsTab.notifications:
+        tabTitle = 'Cài đặt Thông báo';
+        break;
+      case SettingsTab.merchant:
+        tabTitle = 'Lời mời gian hàng';
+        break;
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Color(0xFFEE4D2D),
+            size: 24,
+          ),
+          onPressed: () {
+            if (widget.initialTab != null && Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              setState(() => _activeSubTab = null);
+            }
+          },
+        ),
+        title: Text(
+          tabTitle,
+          style: const TextStyle(
+            color: Color(0xFF1F2937),
             fontSize: 17,
             fontWeight: FontWeight.bold,
           ),
@@ -172,34 +498,8 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           children: [
-            // Page Title and Subtitle matching Web
-            const Text(
-              'Trung tâm Khách hàng & Cài đặt',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.4,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Quản lý quyền riêng tư, sự đồng ý và các tiện ích tài khoản.',
-              style: TextStyle(
-                fontSize: 13.5,
-                color: Color(0xFF64748B),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Horizontal Tab Selector Bar
-            _buildTabSelector(),
-            const SizedBox(height: 20),
-
-            // Active Tab Content Card
             _buildActiveTabContent(),
           ],
         ),
@@ -207,99 +507,79 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
     );
   }
 
-  Widget _buildTabSelector() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: [
-          _buildTabPill(
-            tab: SettingsTab.privacy,
-            label: 'Quyền riêng tư',
-            icon: Icons.verified_user_outlined,
-          ),
-          const SizedBox(width: 8),
-          _buildTabPill(
-            tab: SettingsTab.security,
-            label: 'Bảo mật',
-            icon: Icons.lock_outline_rounded,
-          ),
-          const SizedBox(width: 8),
-          _buildTabPill(
-            tab: SettingsTab.notifications,
-            label: 'Thông báo',
-            icon: Icons.notifications_none_rounded,
-          ),
-          const SizedBox(width: 8),
-          _buildTabPill(
-            tab: SettingsTab.merchant,
-            label: 'Bán hàng',
-            icon: Icons.storefront_outlined,
-          ),
-        ],
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 12.5,
+          color: Color(0xFF6B7280),
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
 
-  Widget _buildTabPill({
-    required SettingsTab tab,
-    required String label,
-    required IconData icon,
-  }) {
-    final isSelected = _selectedTab == tab;
+  Widget _buildSectionContainer(List<Widget> children) {
+    return Container(
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
 
+  Widget _buildDivider() {
+    return const Divider(
+      height: 1,
+      thickness: 0.8,
+      color: Color(0xFFF3F4F6),
+      indent: 16,
+    );
+  }
+
+  Widget _buildSettingRow({
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
-      onTap: () {
-        setState(() => _selectedTab = tab);
-        if (tab == SettingsTab.merchant) {
-          _loadInvitations();
-        }
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFF5F3) : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primary.withAlpha(200)
-                : const Color(0xFFE2E8F0),
-            width: isSelected ? 1.4 : 1.0,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withAlpha(25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(8),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  )
-                ],
-        ),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? AppColors.primary : const Color(0xFF64748B),
-            ),
-            const SizedBox(width: 7),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? AppColors.primary : const Color(0xFF334155),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      color: Color(0xFF1F2937),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  ],
+                ],
               ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Color(0xFFD1D5DB),
             ),
           ],
         ),
@@ -308,7 +588,8 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
   }
 
   Widget _buildActiveTabContent() {
-    switch (_selectedTab) {
+    if (_activeSubTab == null) return const SizedBox.shrink();
+    switch (_activeSubTab!) {
       case SettingsTab.privacy:
         return _buildPrivacyTab();
       case SettingsTab.security:
@@ -342,7 +623,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title: Quyền cá nhân hóa AI
               const Text(
                 'Quyền cá nhân hóa AI',
                 style: TextStyle(
@@ -352,8 +632,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // Subtitle: Bạn có thể cấp hoặc thu hồi quyền...
               const Text(
                 'Bạn có thể cấp hoặc thu hồi quyền sử dụng hành vi để cá nhân hóa gợi ý.',
                 style: TextStyle(
@@ -386,7 +664,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                   ),
                 )
               else ...[
-                // Status text: Trạng thái hiện tại: GRANTED · phiên bản 1
                 Row(
                   children: [
                     const Text(
@@ -417,7 +694,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                 ),
                 const SizedBox(height: 18),
 
-                // Button: Thu hồi (Revoke) / Cấp quyền (Grant)
                 SizedBox(
                   height: 42,
                   child: FilledButton(
@@ -501,7 +777,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
         ),
         const SizedBox(height: 16),
 
-        // Thẻ thông tin giải thích thêm về AI
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -698,7 +973,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Kênh Người Bán & Gian Hàng',
+                'Đăng ký trở thành Người bán',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -707,7 +982,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Mở rộng kinh doanh và bán hàng trên sàn đa gian hàng PBL6.',
+                'Mở gian hàng kinh doanh, tiếp cận hàng triệu khách hàng tiềm năng trên PBL6.',
                 style: TextStyle(
                   fontSize: 13.5,
                   color: Color(0xFF64748B),
@@ -715,87 +990,124 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              _buildActionItem(
-                icon: Icons.add_business_rounded,
-                title: 'Đăng ký mở gian hàng mới',
-                subtitle: 'Nộp hồ sơ và thông tin liên hệ để mở shop',
-                buttonLabel: 'Mở gian hàng',
-                onTap: () =>
-                    Navigator.pushNamed(context, '/store-applications'),
+              SizedBox(
+                height: 44,
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/customer/store-application'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  icon: const Icon(Icons.storefront_outlined, size: 20),
+                  label: const Text(
+                    'Đăng ký mở Store ngay',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
-              const Divider(height: 32, color: Color(0xFFE2E8F0)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(6),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Lời mời làm nhân viên Store',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Các lời mời phân quyền quản lý từ chủ shop',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    'Lời mời tham gia Gian hàng',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, size: 20),
+                    icon: const Icon(Icons.refresh, size: 20),
                     onPressed: _loadInvitations,
+                    tooltip: 'Tải lại danh sách',
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 6),
+              const Text(
+                'Các cửa hàng đã mời bạn tham gia đội ngũ quản lý.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16),
+
               if (_invitationsLoading)
                 const Center(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   ),
                 )
               else if (_invitations.isEmpty)
                 Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Hiện không có lời mời nào dành cho bạn.',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.mail_outline_rounded,
+                          size: 44, color: Color(0xFF94A3B8)),
+                      SizedBox(height: 10),
+                      Text(
+                        'Không có lời mời nào.',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               else
-                ..._invitations.map((inv) {
-                  final storeName = inv['store_name'] ?? 'Gian hàng';
-                  final status = inv['status'] ?? 'PENDING';
-                  final invId = inv['id']?.toString() ?? '';
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _invitations.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 24, color: Color(0xFFE2E8F0)),
+                  itemBuilder: (context, idx) {
+                    final inv = _invitations[idx];
+                    final invId = inv['id']?.toString() ?? '';
+                    final storeName = inv['store_name']?.toString() ?? 'Gian hàng';
+                    final role = inv['role']?.toString() ?? 'STAFF';
+
+                    return Row(
                       children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.store_rounded,
+                              color: AppColors.primary, size: 22),
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -804,58 +1116,36 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                                 storeName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontSize: 14.5,
                                 ),
                               ),
+                              const SizedBox(height: 2),
                               Text(
-                                'Trạng thái: $status',
+                                'Vai trò mời: $role',
                                 style: const TextStyle(
-                                  fontSize: 12,
                                   color: Color(0xFF64748B),
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        if (status == 'PENDING' && invId.isNotEmpty)
-                          FilledButton(
-                            onPressed: () async {
-                              try {
-                                await ref
-                                    .read(apiProvider)
-                                    .acceptInvitation(invId);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Đã chấp nhận lời mời tham gia gian hàng!'),
-                                    ),
-                                  );
-                                  _loadInvitations();
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(errorMessage(e)),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                            ),
-                            child: const Text('Chấp nhận',
-                                style: TextStyle(fontSize: 12)),
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.check_circle_rounded,
+                              color: Color(0xFF16A34A), size: 26),
+                          tooltip: 'Chấp nhận',
+                          onPressed: () => _respondInvitation(invId, true),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.cancel_rounded,
+                              color: Color(0xFFDC2626), size: 26),
+                          tooltip: 'Từ chối',
+                          onPressed: () => _respondInvitation(invId, false),
+                        ),
                       ],
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
             ],
           ),
         ),
@@ -873,13 +1163,14 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
     return Row(
       children: [
         Container(
-          width: 40,
-          height: 40,
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF0F0),
+            color: const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
+          child: Icon(icon, color: AppColors.primary, size: 22),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -889,39 +1180,33 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
               Text(
                 title,
                 style: const TextStyle(
+                  fontWeight: FontWeight.bold,
                   fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
                   color: Color(0xFF0F172A),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF64748B),
-                ),
+                style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         OutlinedButton(
           onPressed: onTap,
           style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF0F172A),
             side: const BorderSide(color: Color(0xFFCBD5E1)),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           ),
           child: Text(
             buttonLabel,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF334155),
-            ),
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
           ),
         ),
       ],
@@ -935,8 +1220,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
               Icon(Icons.dns_outlined, color: AppColors.primary),
@@ -987,14 +1271,19 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                   ActionChip(
                     label: const Text('Máy ảo Android (10.0.2.2)',
                         style: TextStyle(fontSize: 10)),
-                    onPressed: () =>
-                        controller.text = 'http://10.0.2.2:8080/api/v1',
+                    onPressed: () => controller.text = 'http://10.0.2.2:8080/api/v1',
                   ),
                   ActionChip(
                     label: const Text('Windows / Desktop (127.0.0.1)',
                         style: TextStyle(fontSize: 10)),
                     onPressed: () =>
                         controller.text = 'http://127.0.0.1:8080/api/v1',
+                  ),
+                  ActionChip(
+                    label: const Text('Localhost (localhost:8080)',
+                        style: TextStyle(fontSize: 10)),
+                    onPressed: () =>
+                        controller.text = 'http://localhost:8080/api/v1',
                   ),
                 ],
               ),
@@ -1016,8 +1305,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                   if (ctx.mounted) {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Đã cập nhật máy chủ API: $newUrl')),
+                      SnackBar(content: Text('Đã cập nhật máy chủ API: $newUrl')),
                     );
                   }
                 }
