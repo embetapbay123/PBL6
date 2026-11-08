@@ -180,7 +180,6 @@ class ProfilePage extends ConsumerWidget {
     final followersCount = profile['followers_count'] ?? 1;
     final tier = profile['membership_tier']?.toString() ??
         (roles.isNotEmpty ? roles.first : 'Kim Cương');
-    final savedVnd = profile['saved_amount_vnd'] ?? 58338145;
 
     return Container(
       width: double.infinity,
@@ -366,53 +365,10 @@ class ProfilePage extends ConsumerWidget {
             ],
           ),
 
-          const SizedBox(height: 12),
 
-          // Savings / VIP Banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(25),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.stars_rounded,
-                  size: 15,
-                  color: Color(0xFFFFD700),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Với PBL6 VIP, bạn đã tiết kiệm: ${_formatVnd(savedVnd)}',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
-  }
-
-  String _formatVnd(num amount) {
-    final str = amount.toInt().toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(str[i]);
-    }
-    return '${buffer.toString()}đ';
   }
 
   /// 2. Khối "Đơn hàng của tôi"
