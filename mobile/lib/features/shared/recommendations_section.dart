@@ -225,7 +225,7 @@ class _RecommendationsSectionState
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.56,
+                      childAspectRatio: 0.51,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -563,22 +563,34 @@ class _RecommendationsSectionState
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      _formatPrice(priceInt),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatPrice(originalPriceInt),
-                      style: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 10.5,
-                        decoration: TextDecoration.lineThrough,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          _formatPrice(priceInt),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                        if (originalPriceInt > priceInt) ...[
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              _formatPrice(originalPriceInt),
+                              style: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 10.5,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 3),
                     Row(
@@ -588,7 +600,7 @@ class _RecommendationsSectionState
                         Text(
                           rating.toString(),
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

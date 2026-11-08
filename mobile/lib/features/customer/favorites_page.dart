@@ -6,7 +6,6 @@ import '../cart/cart_variant_modal.dart';
 import '../catalog/product_detail_page.dart';
 import '../chat/chat_ai_modal.dart';
 import '../shared/app_bottom_nav.dart';
-import '../store/store_page.dart';
 
 class FavoriteProductItem {
   final String id;
@@ -548,7 +547,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
-                      childAspectRatio: 0.54,
+                      childAspectRatio: 0.51,
                     ),
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) =>
@@ -981,17 +980,20 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
-                            return AppColors.primary;
+                            return const Color(0xFF374151);
                           }),
                           iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
-                            return AppColors.primary;
+                            return const Color(0xFF374151);
                           }),
-                          side: const WidgetStatePropertyAll(
-                            BorderSide(color: AppColors.primary, width: 0.8),
-                          ),
+                          side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                              return const BorderSide(color: AppColors.primary);
+                            }
+                            return const BorderSide(color: Color(0xFFD1D5DB));
+                          }),
                           padding: const WidgetStatePropertyAll(
                             EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                           ),
@@ -1013,24 +1015,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                         onPressed: () => _quickAddToCart(item),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // Dưới cùng là tên store (Clickable)
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (storeName.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ShopPage(
-                                shopId: item.storeId,
-                                shopName: storeName,
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Row(
+                    if (storeName.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
                         children: [
                           const Icon(
                             Icons.storefront_outlined,
@@ -1052,7 +1039,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                           ),
                         ],
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

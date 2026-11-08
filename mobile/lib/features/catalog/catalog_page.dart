@@ -1,5 +1,4 @@
 import 'recently_viewed_provider.dart';
-import 'shop_page.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1692,7 +1691,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.54,
+            childAspectRatio: 0.51,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -1710,7 +1709,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   Widget _buildProductCard(BuildContext context, Map<String, dynamic> product) {
     final id = product['id']?.toString() ?? '';
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final storeName = product['store_name']?.toString() ?? 'TechZone Store';
     final variants = product['variants'] as List?;
     int? lowestPrice;
     if (variants != null && variants.isNotEmpty) {
@@ -1900,12 +1898,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '$originalPriceInt ₫',
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 10,
-                            decoration: TextDecoration.lineThrough,
+                        Flexible(
+                          child: Text(
+                            '$originalPriceInt ₫',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -1950,17 +1952,20 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
-                            return AppColors.primary;
+                            return const Color(0xFF374151);
                           }),
                           iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
-                            return AppColors.primary;
+                            return const Color(0xFF374151);
                           }),
-                          side: const WidgetStatePropertyAll(
-                            BorderSide(color: AppColors.primary, width: 0.8),
-                          ),
+                          side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                              return const BorderSide(color: AppColors.primary);
+                            }
+                            return const BorderSide(color: Color(0xFFD1D5DB));
+                          }),
                           padding: const WidgetStatePropertyAll(
                             EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                           ),
@@ -1980,46 +1985,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         onPressed: () => _quickAddToCart(product),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Dưới cùng là tên store (Clickable)
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
-                        if (storeName.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ShopPage(
-                                shopId: product['store_id']?.toString() ?? '',
-                                shopName: storeName,
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.storefront_outlined,
-                            size: 11,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 3),
-                          Expanded(
-                            child: Text(
-                              '$storeName ›',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
@@ -2587,9 +2552,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   ) {
     final id = product['id']?.toString() ?? '';
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final storeName = product['store_name']?.toString() ??
-        (product['store'] is Map ? product['store']['name']?.toString() : null) ??
-        'An Nhiên Studio';
 
     final variants = (product['variants'] as List?) ?? [];
     int? lowestPrice;
@@ -2834,42 +2796,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             onPressed: () => _quickAddToCart(product),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        // Dưới cùng là tên store (Clickable)
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            if (storeName.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ShopPage(
-                                    shopId: product['store_id']?.toString() ?? '',
-                                    shopName: storeName,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: Row(
-                            children: [
-                              const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  storeName,
-                                  style: const TextStyle(
-                                    fontSize: 10.5,
-                                    color: Color(0xFF6B7280),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -2890,9 +2816,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   ) {
     final id = product['id']?.toString() ?? '';
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final storeName = product['store_name']?.toString() ??
-        (product['store'] is Map ? product['store']['name']?.toString() : null) ??
-        'An Nhiên Studio';
 
     final variants = (product['variants'] as List?) ?? [];
     int? lowestPrice;
@@ -3109,41 +3032,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             style: TextStyle(fontSize: 11),
                           ),
                           onPressed: () => _quickAddToCart(product),
-                        ),
-                        const Spacer(),
-                        // Dưới cùng / bên phải là tên store (Clickable)
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            if (storeName.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ShopPage(
-                                    shopId: product['store_id']?.toString() ?? '',
-                                    shopName: storeName,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
-                              const SizedBox(width: 3),
-                              Text(
-                                storeName,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  color: Color(0xFF6B7280),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),

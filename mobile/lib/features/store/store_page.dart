@@ -766,7 +766,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.56,
+                  childAspectRatio: 0.51,
                 ),
                 itemBuilder: (context, index) {
                   final item = displayProducts[index];
@@ -895,7 +895,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.56,
+                  childAspectRatio: 0.51,
                 ),
                 itemBuilder: (context, index) {
                   final item = sorted[index];
@@ -1316,17 +1316,20 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
-                            return AppColors.primary;
+                            return const Color(0xFF374151);
                           }),
                           iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
-                            return AppColors.primary;
+                            return const Color(0xFF374151);
                           }),
-                          side: const WidgetStatePropertyAll(
-                            BorderSide(color: AppColors.primary, width: 0.8),
-                          ),
+                          side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                              return const BorderSide(color: AppColors.primary);
+                            }
+                            return const BorderSide(color: Color(0xFFD1D5DB));
+                          }),
                           padding: const WidgetStatePropertyAll(
                             EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                           ),
