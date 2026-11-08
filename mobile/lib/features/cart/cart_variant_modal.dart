@@ -417,7 +417,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                               style: const TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFFDC2626),
+                                color: AppColors.primary,
                                 letterSpacing: -0.2,
                               ),
                             ),
@@ -440,7 +440,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                           stock > 0 ? 'Kho: $stock' : 'Hết hàng',
                           style: TextStyle(
                             fontSize: 13,
-                            color: stock > 0 ? const Color(0xFF6B7280) : const Color(0xFFDC2626),
+                            color: stock > 0 ? const Color(0xFF6B7280) : AppColors.primary,
                             fontWeight: stock > 0 ? FontWeight.normal : FontWeight.w600,
                           ),
                         ),
@@ -660,7 +660,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                   child: Text(
                                     'Sản phẩm trong phân loại này hiện đã hết hàng.',
                                     style: TextStyle(
-                                      color: Color(0xFFDC2626),
+                                      color: AppColors.primary,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -682,7 +682,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: stock <= 0
                         ? const Color(0xFFD1D5DB)
-                        : const Color(0xFFEA580C), // Matching red-orange from Image 2
+                        : AppColors.primary,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -730,10 +730,10 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFFF5F5) : const Color(0xFFF3F4F6),
+          color: isSelected ? AppColors.primaryLight : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: isSelected ? const Color(0xFFDC2626) : Colors.transparent,
+            color: isSelected ? AppColors.primary : Colors.transparent,
             width: 1.2,
           ),
         ),
@@ -742,7 +742,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? const Color(0xFFDC2626) : const Color(0xFF374151),
+            color: isSelected ? AppColors.primary : const Color(0xFF374151),
           ),
         ),
       ),
