@@ -346,7 +346,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
 
             // Top Header matching Image 2
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
+              padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -358,8 +358,8 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
-                            width: 88,
-                            height: 88,
+                            width: 108,
+                            height: 108,
                             decoration: BoxDecoration(
                               color: const Color(0xFFF3F4F6),
                               border: Border.all(color: const Color(0xFFE5E7EB)),
@@ -370,27 +370,27 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                     imageUrl,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => const Center(
-                                      child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 28),
+                                      child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 32),
                                     ),
                                   )
                                 : const Center(
-                                    child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 28),
+                                    child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 32),
                                   ),
                           ),
                         ),
                         // Zoom icon overlay in top right of thumbnail
                         Positioned(
-                          top: 4,
-                          right: 4,
+                          top: 5,
+                          right: 5,
                           child: Container(
-                            padding: const EdgeInsets.all(2.5),
+                            padding: const EdgeInsets.all(3),
                             decoration: BoxDecoration(
                               color: Colors.black.withOpacity(0.4),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
                               Icons.open_in_full_rounded,
-                              size: 11,
+                              size: 12,
                               color: Colors.white,
                             ),
                           ),
@@ -415,7 +415,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                             Text(
                               _formatPrice(activePrice),
                               style: const TextStyle(
-                                fontSize: 19,
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primary,
                                 letterSpacing: -0.2,
@@ -426,7 +426,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                               Text(
                                 _formatPrice(originalPrice),
                                 style: const TextStyle(
-                                  fontSize: 12.5,
+                                  fontSize: 13,
                                   color: Color(0xFF9CA3AF),
                                   decoration: TextDecoration.lineThrough,
                                 ),
@@ -482,7 +482,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                           ),
                         )
                       : SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -494,7 +494,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                   final currentVal = _selectedAttributes[attrName];
 
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
+                                    padding: const EdgeInsets.only(bottom: 8),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
@@ -506,10 +506,10 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                             color: Color(0xFF1F2937),
                                           ),
                                         ),
-                                        const SizedBox(height: 10),
+                                        const SizedBox(height: 6),
                                         Wrap(
-                                          spacing: 10,
-                                          runSpacing: 10,
+                                          spacing: 8,
+                                          runSpacing: 8,
                                           children: options.map((opt) {
                                             final isSelected = currentVal == opt;
                                             return _buildOptionChip(
@@ -519,7 +519,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                             );
                                           }).toList(),
                                         ),
-                                        const SizedBox(height: 14),
+                                        const SizedBox(height: 8),
                                         const Divider(height: 1, color: Color(0xFFF3F4F6)),
                                       ],
                                     ),
@@ -528,7 +528,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                               else if (_variants.isNotEmpty)
                                 // Flat variant list fallback
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.only(bottom: 8),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
@@ -540,10 +540,10 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                           color: Color(0xFF1F2937),
                                         ),
                                       ),
-                                      const SizedBox(height: 10),
+                                      const SizedBox(height: 6),
                                       Wrap(
-                                        spacing: 10,
-                                        runSpacing: 10,
+                                        spacing: 8,
+                                        runSpacing: 8,
                                         children: _variants.map((v) {
                                           final isSelected = _selectedVariant?['id'] == v['id'];
                                           final label = v['sku']?.toString() ??
@@ -563,11 +563,13 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                 ),
 
                               // Quantity Stepper Section matching Image 2
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Số lượng',
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 2),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Số lượng',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -653,6 +655,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                   ),
                                 ],
                               ),
+                            ),
 
                               if (stock <= 0)
                                 const Padding(
@@ -674,7 +677,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
 
             // Bottom "Xác nhận" Button matching Image 2
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               child: SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -728,7 +731,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
       borderRadius: BorderRadius.circular(6),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryLight : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(6),
