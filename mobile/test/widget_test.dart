@@ -1562,6 +1562,64 @@ void main() {
       expect(find.text('Khám phá'), findsNothing);
     });
 
+    testWidgets('CartPage tapping Sửa switches bottom bar to Lưu vào Đã thích and Xóa buttons', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          cartItemsProvider.overrideWith(
+            (ref) async => {
+              'items': [
+                {
+                  'id': 'ci-01',
+                  'store_id': 'store-tech',
+                  'store_name': 'PBL Tech Store',
+                  'product_id': 'prod-01',
+                  'title': 'Chuột Gaming không dây',
+                  'sku': 'MOUSE-RGB',
+                  'unit_price_vnd': 350000,
+                  'quantity': 1,
+                },
+              ],
+              'total': 1,
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CartPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Before edit mode: "Mua hàng (0)" is visible
+      expect(find.text('Mua hàng (0)'), findsOneWidget);
+      expect(find.text('Lưu vào Đã thích'), findsNothing);
+
+      // Tap "Sửa"
+      await tester.tap(find.text('Sửa'));
+      await tester.pumpAndSettle();
+
+      // In edit mode: "Mua hàng (0)" is replaced by "Lưu vào Đã thích" and "Xóa"
+      expect(find.text('Mua hàng (0)'), findsNothing);
+      expect(find.text('Lưu vào Đã thích'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Xóa'), findsOneWidget);
+
+      // Select item
+      await tester.tap(find.text('Chọn tất cả (1)'));
+      await tester.pumpAndSettle();
+
+      // Tap "Lưu vào Đã thích"
+      await tester.tap(find.text('Lưu vào Đã thích'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Đã lưu 1 sản phẩm vào Đã thích!'), findsOneWidget);
+      await tester.tap(find.text('Đồng ý'));
+      await tester.pumpAndSettle();
+    });
+
     testWidgets(
       'CheckoutPage renders addresses, multi-store items, vouchers, and quote breakdown',
       (tester) async {

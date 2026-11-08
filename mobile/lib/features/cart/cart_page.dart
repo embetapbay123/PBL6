@@ -6,6 +6,7 @@ import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
 import '../chat/chat_ai_modal.dart';
 import '../checkout/checkout_page.dart';
+import '../customer/favorites_page.dart';
 import '../shared/recommendations_section.dart';
 import 'cart_variant_modal.dart';
 
@@ -1192,20 +1193,62 @@ class _CartPageState extends ConsumerState<CartPage> {
                 ),
               ),
             ] else ...[
-              FilledButton.icon(
+              OutlinedButton(
+                onPressed: _selectedItemIds.isEmpty || _busy
+                    ? null
+                    : () => _saveSelectedToFavorites(items),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1F2937),
+                  disabledForegroundColor: Colors.grey.shade400,
+                  side: BorderSide(
+                    color: _selectedItemIds.isEmpty || _busy
+                        ? Colors.grey.shade300
+                        : Colors.grey.shade400,
+                    width: 1,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                ),
+                child: const Text(
+                  'Lưu vào Đã thích',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
                 onPressed: _selectedItemIds.isEmpty || _busy
                     ? null
                     : _removeSelectedItems,
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: Text('Xóa (${_selectedItemIds.length})'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  disabledForegroundColor: Colors.grey.shade400,
+                  side: BorderSide(
+                    color: _selectedItemIds.isEmpty || _busy
+                        ? Colors.grey.shade300
+                        : AppColors.primary,
+                    width: 1.2,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                ),
+                child: const Text(
+                  'Xóa',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -1348,6 +1391,41 @@ class _CartPageState extends ConsumerState<CartPage> {
       }
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _saveSelectedToFavorites(List<Map<String, dynamic>> items) async {
+    if (_selectedItemIds.isEmpty) return;
+    final selectedItems = items
+        .where((e) => _selectedItemIds.contains(e['id']?.toString()))
+        .toList();
+    if (selectedItems.isEmpty) return;
+
+    final favNotifier = ref.read(favoritesProvider.notifier);
+    int count = 0;
+    for (final item in selectedItems) {
+      final prodId = (item['product_id'] ?? item['id'])?.toString() ?? '';
+      if (prodId.isNotEmpty && !favNotifier.isFavorite(prodId)) {
+        favNotifier.toggleFavorite({
+          'id': prodId,
+          'title': item['title'] ?? item['product_title'] ?? 'Sản phẩm',
+          'store_id': item['store_id']?.toString() ?? '',
+          'store_name': item['store_name']?.toString() ?? '',
+          'price_vnd': item['unit_price_vnd'] ?? item['price_vnd'] ?? 0,
+          'image_url': item['image_url'] ?? '',
+          'variant_id': item['variant_id']?.toString() ?? '',
+        });
+        count++;
+      }
+    }
+
+    if (mounted) {
+      AppNoticeDialog.show(
+        context,
+        message: count > 0
+            ? 'Đã lưu $count sản phẩm vào Đã thích!'
+            : 'Sản phẩm đã có trong danh sách Đã thích.',
+      );
     }
   }
 
