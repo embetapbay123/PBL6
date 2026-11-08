@@ -123,30 +123,29 @@ class StoreHeaderView extends StatelessWidget {
               ),
               icon: const Icon(
                 Icons.chat_bubble_outline,
-                size: 13,
+                size: 16,
                 color: Colors.white,
               ),
               label: const Text(
                 'Chat',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 13,
                   color: Colors.white,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                minimumSize: Size.zero,
-                visualDensity: VisualDensity.compact,
+                side: const BorderSide(color: Colors.white, width: 1.2),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                minimumSize: const Size(0, 34),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         // Stats Row on translucent dark container matching Image
         Container(
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),

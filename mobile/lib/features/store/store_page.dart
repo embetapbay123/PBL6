@@ -378,7 +378,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
           final topPadding = MediaQuery.of(context).padding.top;
           return [
             SliverAppBar(
-              expandedHeight: 215 + topPadding,
+              expandedHeight: 188 + topPadding,
               pinned: true,
               backgroundColor: const Color(0xFFEE4D2D),
               foregroundColor: Colors.white,
@@ -449,7 +449,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       ],
                     ),
                   ),
-                  padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 12),
+                  padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 8),
                   child: StoreHeaderView(
                     profile: effectiveProfile,
                     isFollowing: _isFollowing,
