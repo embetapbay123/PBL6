@@ -1743,22 +1743,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             color: Color(0xFF374151),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$totalCount kết quả',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF4B5563),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
