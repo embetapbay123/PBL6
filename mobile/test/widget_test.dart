@@ -1374,6 +1374,26 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // Verify refresh button is removed and replaced by search and chat buttons
+      expect(find.byIcon(Icons.refresh), findsNothing);
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+
+      // Verify tapping search button enables search mode and filters orders
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'Chuột');
+      await tester.pumpAndSettle();
+      expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+      expect(find.text('Áo hoodie Unisex'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+
       // 1. Store name without chevron icon next to it
       expect(find.text('PBL Tech Store'), findsOneWidget);
       expect(find.byIcon(Icons.chevron_right), findsNothing);

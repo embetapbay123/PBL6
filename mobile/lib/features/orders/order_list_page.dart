@@ -8,6 +8,7 @@ import '../cart/cart_page.dart';
 import '../catalog/shop_page.dart';
 import 'order_detail_page.dart';
 import 'order_refund_page.dart';
+import '../chat/chat_ai_modal.dart';
 
 final customerOrdersProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).listOwnOrders();
@@ -27,6 +28,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _isSearching = false;
 
   final List<Map<String, String>> _tabs = const [
     {'label': 'Tất cả', 'key': 'ALL'},
@@ -166,21 +168,71 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
             size: 18,
             color: AppColors.textPrimary,
           ),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_isSearching) {
+              setState(() {
+                _isSearching = false;
+                _searchController.clear();
+              });
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
-        title: const Text(
-          'Đơn hàng của tôi',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Tìm theo tên, shop, SKU...',
+                  hintStyle: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade400,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                ),
+              )
+            : const Text(
+                'Đơn hàng của tôi',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
         actions: [
+          if (_isSearching)
+            IconButton(
+              icon: const Icon(Icons.close, color: AppColors.textPrimary),
+              tooltip: 'Đóng tìm kiếm',
+              onPressed: () {
+                setState(() {
+                  _isSearching = false;
+                  _searchController.clear();
+                });
+              },
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.search, color: AppColors.textPrimary),
+              tooltip: 'Tìm kiếm',
+              onPressed: () {
+                setState(() => _isSearching = true);
+              },
+            ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: AppColors.textPrimary),
-            tooltip: 'Làm mới',
-            onPressed: () => ref.invalidate(customerOrdersProvider),
+            icon: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.textPrimary,
+            ),
+            tooltip: 'Trung tâm chat',
+            onPressed: () => ChatAiModal.show(context),
           ),
         ],
         bottom: PreferredSize(
