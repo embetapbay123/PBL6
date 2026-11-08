@@ -2468,5 +2468,43 @@ void main() {
       await tester.pump();
       expect(find.widgetWithText(FilledButton, 'Đang theo dõi'), findsOneWidget);
     });
+
+    testWidgets('StorePage category circles are scrollable without "Xem thêm", tapping switches to Sản phẩm tab filtered by category', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: StorePage(
+              shopName: 'TechZone Official',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // No "Xem thêm" button
+      expect(find.text('Xem thêm'), findsNothing);
+
+      // Categories exist from products
+      expect(find.text('Điện thoại'), findsOneWidget);
+      expect(find.text('Tai nghe'), findsOneWidget);
+
+      // Tapping category switches to "Sản phẩm" tab
+      await tester.tap(find.text('Điện thoại'));
+      await tester.pumpAndSettle();
+
+      // In "Sản phẩm" tab, toolbar has sort options and filtered category
+      expect(find.text('Phổ biến'), findsOneWidget);
+      expect(find.text('Mới nhất'), findsOneWidget);
+      expect(find.text('Bán chạy'), findsOneWidget);
+      expect(find.text('Điện thoại thông minh màn hình AMOLED 128GB'), findsOneWidget);
+      // Products of other categories are filtered out
+      expect(find.text('Tai nghe không dây Bluetooth chống ồn, pin lâu'), findsNothing);
+    });
   });
 }

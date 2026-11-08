@@ -30,6 +30,8 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   late TabController _tabController;
   bool _isFollowing = false;
   final Set<String> _savedVouchers = {};
+  String? _selectedCategory;
+  String _productSort = 'popular';
 
   final List<Map<String, dynamic>> _featuredProductsFallback = [
     {
@@ -42,6 +44,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       'sold': '1,2K',
       'icon': Icons.phone_android_rounded,
       'color': Colors.indigo,
+      'category': 'Điện thoại',
     },
     {
       'id': 'prod-earbuds-01',
@@ -53,6 +56,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       'sold': '2,1K',
       'icon': Icons.headphones_rounded,
       'color': Colors.grey,
+      'category': 'Tai nghe',
     },
     {
       'id': 'prod-watch-01',
@@ -64,6 +68,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       'sold': '842',
       'icon': Icons.watch_rounded,
       'color': Colors.blueGrey,
+      'category': 'Đồng hồ',
     },
     {
       'id': 'prod-powerbank-01',
@@ -75,6 +80,31 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       'sold': '1,5K',
       'icon': Icons.battery_charging_full_rounded,
       'color': Colors.amber,
+      'category': 'Phụ kiện',
+    },
+    {
+      'id': 'prod-laptop-01',
+      'title': 'Laptop Pro 14 inch mỏng nhẹ hiệu năng cao',
+      'discount': '-15%',
+      'price_vnd': 18990000,
+      'original_price_vnd': 21990000,
+      'rating': 4.9,
+      'sold': '520',
+      'icon': Icons.laptop_mac_rounded,
+      'color': Colors.blue,
+      'category': 'Laptop',
+    },
+    {
+      'id': 'prod-camera-01',
+      'title': 'Camera an ninh Wifi góc siêu rộng 2K',
+      'discount': '-28%',
+      'price_vnd': 490000,
+      'original_price_vnd': 690000,
+      'rating': 4.8,
+      'sold': '930',
+      'icon': Icons.videocam_rounded,
+      'color': Colors.deepOrange,
+      'category': 'Camera',
     },
   ];
 
@@ -82,6 +112,11 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -100,6 +135,67 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
       if (count % 3 == 0 && i > 0) buffer.write('.');
     }
     return '${buffer.toString().split('').reversed.join('')} đ';
+  }
+
+  String _extractCategory(Map<String, dynamic> item) {
+    if (item['category'] != null) {
+      if (item['category'] is String && item['category'].toString().isNotEmpty) {
+        return item['category'].toString();
+      }
+      if (item['category'] is Map && item['category']['name'] != null) {
+        return item['category']['name'].toString();
+      }
+    }
+    if (item['category_name'] != null && item['category_name'].toString().isNotEmpty) {
+      return item['category_name'].toString();
+    }
+    final title = (item['title'] ?? item['name'] ?? '').toString().toLowerCase();
+    if (title.contains('điện thoại') || title.contains('phone')) return 'Điện thoại';
+    if (title.contains('tai nghe') || title.contains('earbuds') || title.contains('headphone')) return 'Tai nghe';
+    if (title.contains('đồng hồ') || title.contains('watch')) return 'Đồng hồ';
+    if (title.contains('sạc') || title.contains('cáp') || title.contains('phụ kiện') || title.contains('pin')) return 'Phụ kiện';
+    if (title.contains('laptop') || title.contains('máy tính')) return 'Laptop';
+    if (title.contains('camera')) return 'Camera';
+    if (title.contains('áo') || title.contains('quần') || title.contains('thời trang')) return 'Thời trang';
+    if (title.contains('sổ') || title.contains('bút') || title.contains('văn phòng')) return 'Văn phòng phẩm';
+    if (title.contains('mèo') || title.contains('chó') || title.contains('thú cưng') || title.contains('pet')) return 'Thú cưng';
+    return 'Khác';
+  }
+
+  IconData _getCategoryIcon(String category) {
+    final lower = category.toLowerCase();
+    if (lower.contains('thoại') || lower.contains('phone')) return Icons.phone_iphone_rounded;
+    if (lower.contains('tai nghe') || lower.contains('headphone') || lower.contains('earbud')) return Icons.headphones_rounded;
+    if (lower.contains('đồng hồ') || lower.contains('watch')) return Icons.watch_rounded;
+    if (lower.contains('phụ kiện') || lower.contains('cáp') || lower.contains('sạc') || lower.contains('pin')) return Icons.cable_rounded;
+    if (lower.contains('laptop') || lower.contains('máy tính')) return Icons.laptop_mac_rounded;
+    if (lower.contains('camera') || lower.contains('máy ảnh')) return Icons.videocam_rounded;
+    if (lower.contains('thời trang') || lower.contains('áo') || lower.contains('quần')) return Icons.checkroom_rounded;
+    if (lower.contains('sổ') || lower.contains('văn phòng') || lower.contains('bút')) return Icons.menu_book_rounded;
+    if (lower.contains('thú cưng') || lower.contains('chó') || lower.contains('mèo') || lower.contains('pet')) return Icons.pets_rounded;
+    return Icons.category_outlined;
+  }
+
+  int _extractPrice(Map<String, dynamic> item) {
+    if (item['price_vnd'] != null) {
+      return int.tryParse(item['price_vnd'].toString()) ?? 0;
+    }
+    if (item['variants'] is List && (item['variants'] as List).isNotEmpty) {
+      final first = (item['variants'] as List).first;
+      if (first is Map && first['price_vnd'] != null) {
+        return int.tryParse(first['price_vnd'].toString()) ?? 0;
+      }
+    }
+    return 0;
+  }
+
+  int _extractSold(Map<String, dynamic> item) {
+    final raw = item['sold']?.toString() ?? '0';
+    if (raw.endsWith('K') || raw.endsWith('k')) {
+      final numPart = double.tryParse(raw.replaceAll(RegExp(r'[kK,]'), '.')) ?? 0;
+      return (numPart * 1000).toInt();
+    }
+    return int.tryParse(raw) ?? 0;
   }
 
   @override
@@ -133,6 +229,15 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
     ];
 
     final displayProducts = storeProducts.isNotEmpty ? storeProducts : _featuredProductsFallback;
+
+    // Dynamically extract categories present in the store's products
+    final storeCategories = <String>[];
+    for (final p in displayProducts) {
+      final cat = _extractCategory(p);
+      if (cat.isNotEmpty && !storeCategories.contains(cat)) {
+        storeCategories.add(cat);
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -247,6 +352,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
               color: Colors.white,
               child: TabBar(
                 controller: _tabController,
+                onTap: (index) => setState(() {}),
                 indicatorColor: AppColors.primary,
                 labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.textSecondary,
@@ -259,158 +365,25 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                 ],
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // Shop Promo Banner
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: AppColors.aiBannerGradient,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'ƯU ĐÃI RIÊNG TẠI SHOP',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Giảm đến 40%',
-                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Mua ngay',
-                                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
-                              ),
-                              Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 64),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Shop Vouchers Section (loaded from server)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.confirmation_num_outlined, color: AppColors.primary, size: 18),
-                  SizedBox(width: 6),
-                  Text(
-                    'Mã giảm giá của Shop',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                ],
-              ),
-            ),
-
-            // Voucher Cards Horizontal List
-            SizedBox(
-              height: 96,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: storeVouchers.map((v) => _buildVoucherCard(v)).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Shop Category Circles
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildCategoryCircle(Icons.phone_iphone_rounded, 'Điện thoại'),
-                  _buildCategoryCircle(Icons.headphones_rounded, 'Tai nghe'),
-                  _buildCategoryCircle(Icons.watch_rounded, 'Đồng hồ'),
-                  _buildCategoryCircle(Icons.cable_rounded, 'Phụ kiện'),
-                  _buildCategoryCircle(Icons.more_horiz_rounded, 'Xem thêm'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Featured Products Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  const Icon(Icons.local_fire_department, color: AppColors.primary, size: 20),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Sản phẩm nổi bật',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Xem tất cả', style: TextStyle(color: AppColors.primary, fontSize: 12)),
-                        Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Products Grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: storeProductsAsync.isLoading
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      ),
-                    )
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: displayProducts.length,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.65,
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = displayProducts[index];
-                        return _buildProductCard(item);
-                      },
-                    ),
-            ),
-
-            const SizedBox(height: 24),
+            if (_tabController.index == 0)
+              ..._buildHomeTab(
+                displayProducts,
+                storeVouchers,
+                storeProductsAsync.isLoading,
+                storeCategories,
+              )
+            else if (_tabController.index == 1)
+              ..._buildProductsTab(
+                displayProducts,
+                storeCategories,
+              )
+            else if (_tabController.index == 2)
+              ..._buildCategoriesTab(
+                displayProducts,
+                storeCategories,
+              )
+            else
+              ..._buildReviewsTab(),
           ],
         ),
       ),
@@ -491,24 +464,519 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
     );
   }
 
-  Widget _buildCategoryCircle(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            shape: BoxShape.circle,
+  List<Widget> _buildHomeTab(
+    List<Map<String, dynamic>> displayProducts,
+    List<StoreVoucherItem> storeVouchers,
+    bool isLoading,
+    List<String> categories,
+  ) {
+    return [
+      const SizedBox(height: 12),
+
+      // Shop Promo Banner
+      Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: AppColors.aiBannerGradient,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ƯU ĐÃI RIÊNG TẠI SHOP',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Giảm đến 40%',
+                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Mua ngay',
+                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                        Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 64),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 16),
+
+      // Shop Vouchers Section (loaded from server)
+      const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Icon(Icons.confirmation_num_outlined, color: AppColors.primary, size: 18),
+            SizedBox(width: 6),
+            Text(
+              'Mã giảm giá của Shop',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          ],
+        ),
+      ),
+
+      // Voucher Cards Horizontal List
+      SizedBox(
+        height: 96,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          children: storeVouchers.map((v) => _buildVoucherCard(v)).toList(),
+        ),
+      ),
+
+      const SizedBox(height: 16),
+
+      // Shop Category Circles (scrollable horizontally, only categories of products in store, no "Xem thêm")
+      if (categories.isNotEmpty)
+        SizedBox(
+          height: 84,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: categories.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final cat = categories[index];
+              return _buildCategoryCircle(
+                _getCategoryIcon(cat),
+                cat,
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = cat;
+                    _tabController.animateTo(1);
+                  });
+                },
+              );
+            },
           ),
-          child: Icon(icon, color: Colors.grey.shade800, size: 24),
         ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+
+      const SizedBox(height: 20),
+
+      // Featured Products Section
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            const Icon(Icons.local_fire_department, color: AppColors.primary, size: 20),
+            const SizedBox(width: 6),
+            const Text(
+              'Sản phẩm nổi bật',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _selectedCategory = null;
+                  _tabController.animateTo(1);
+                });
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Xem tất cả', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                  Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
+
+      // Products Grid
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: isLoading
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              )
+            : GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: displayProducts.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.65,
+                ),
+                itemBuilder: (context, index) {
+                  final item = displayProducts[index];
+                  return _buildProductCard(item);
+                },
+              ),
+      ),
+
+      const SizedBox(height: 24),
+    ];
+  }
+
+  List<Widget> _buildProductsTab(
+    List<Map<String, dynamic>> allProducts,
+    List<String> categories,
+  ) {
+    // Filter by selected category if any
+    var filtered = allProducts;
+    if (_selectedCategory != null && _selectedCategory!.isNotEmpty) {
+      filtered = allProducts
+          .where((p) => _extractCategory(p).toLowerCase() == _selectedCategory!.toLowerCase())
+          .toList();
+    }
+
+    // Sort products
+    final sorted = List<Map<String, dynamic>>.from(filtered);
+    if (_productSort == 'best_selling') {
+      sorted.sort((a, b) => _extractSold(b).compareTo(_extractSold(a)));
+    } else if (_productSort == 'price_asc') {
+      sorted.sort((a, b) => _extractPrice(a).compareTo(_extractPrice(b)));
+    } else if (_productSort == 'price_desc') {
+      sorted.sort((a, b) => _extractPrice(b).compareTo(_extractPrice(a)));
+    }
+
+    return [
+      // Sort Toolbar (matching Image 2: Phổ biến | Mới nhất | Bán chạy | Giá ⇅)
+      Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade200),
+          ),
+        ),
+        child: Row(
+          children: [
+            _buildSortTab('Phổ biến', 'popular'),
+            _buildSortTab('Mới nhất', 'latest'),
+            _buildSortTab('Bán chạy', 'best_selling'),
+            _buildSortTab(
+              _productSort == 'price_asc'
+                  ? 'Giá ↑'
+                  : (_productSort == 'price_desc' ? 'Giá ↓' : 'Giá ⇅'),
+              'price',
+            ),
+          ],
+        ),
+      ),
+
+      // Categories filter chips bar
+      if (categories.isNotEmpty)
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _buildCategoryFilterChip(
+                  label: 'Tất cả (${allProducts.length})',
+                  isSelected: _selectedCategory == null,
+                  onTap: () => setState(() => _selectedCategory = null),
+                ),
+                const SizedBox(width: 8),
+                ...categories.map((cat) {
+                  final count = allProducts
+                      .where((p) => _extractCategory(p).toLowerCase() == cat.toLowerCase())
+                      .length;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: _buildCategoryFilterChip(
+                      label: '$cat ($count)',
+                      isSelected: _selectedCategory?.toLowerCase() == cat.toLowerCase(),
+                      onTap: () => setState(() {
+                        if (_selectedCategory?.toLowerCase() == cat.toLowerCase()) {
+                          _selectedCategory = null;
+                        } else {
+                          _selectedCategory = cat;
+                        }
+                      }),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
+
+      const SizedBox(height: 12),
+
+      // Products Grid
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: sorted.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Không có sản phẩm nào thuộc danh mục này',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: sorted.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.65,
+                ),
+                itemBuilder: (context, index) {
+                  final item = sorted[index];
+                  return _buildProductCard(item);
+                },
+              ),
+      ),
+
+      const SizedBox(height: 24),
+    ];
+  }
+
+  Widget _buildSortTab(String title, String key) {
+    final bool isSelected;
+    if (key == 'price') {
+      isSelected = _productSort == 'price_asc' || _productSort == 'price_desc';
+    } else {
+      isSelected = _productSort == key;
+    }
+
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            if (key == 'price') {
+              if (_productSort == 'price_asc') {
+                _productSort = 'price_desc';
+              } else {
+                _productSort = 'price_asc';
+              }
+            } else {
+              _productSort = key;
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withAlpha(20) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey.shade300,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppColors.primary : AppColors.textPrimary,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCategoriesTab(
+    List<Map<String, dynamic>> allProducts,
+    List<String> categories,
+  ) {
+    return [
+      const SizedBox(height: 12),
+      ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: categories.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final cat = categories[index];
+          final count = allProducts
+              .where((p) => _extractCategory(p).toLowerCase() == cat.toLowerCase())
+              .length;
+          return ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            leading: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(_getCategoryIcon(cat), color: AppColors.primary),
+            ),
+            title: Text(
+              cat,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+            subtitle: Text(
+              '$count sản phẩm',
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+            onTap: () {
+              setState(() {
+                _selectedCategory = cat;
+                _tabController.animateTo(1);
+              });
+            },
+          );
+        },
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  List<Widget> _buildReviewsTab() {
+    return [
+      Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Column(
+              children: [
+                const Text(
+                  '4.9',
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary),
+                ),
+                Row(
+                  children: List.generate(
+                    5,
+                    (i) => const Icon(Icons.star, color: Color(0xFFFFD700), size: 16),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text('4.9/5 (1.2K đánh giá)', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+              ],
+            ),
+            const SizedBox(width: 24),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('98% đánh giá hài lòng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  SizedBox(height: 4),
+                  Text('Thời gian phản hồi chat: trong vài phút', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  SizedBox(height: 2),
+                  Text('Tỉ lệ hủy đơn: < 1%', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
+  Widget _buildCategoryCircle(IconData icon, String label, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.grey.shade800, size: 24),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: 64,
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
