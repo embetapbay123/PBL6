@@ -2380,10 +2380,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       ),
                     ),
                     Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           '$totalCount',
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -2394,6 +2395,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         const SizedBox(height: 2),
                         const Text(
                           'sản phẩm',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 10.5,
                             color: Color(0xFF6B7280),
