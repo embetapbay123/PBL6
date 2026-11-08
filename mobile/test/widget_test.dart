@@ -803,9 +803,17 @@ void main() {
         ),
       );
 
-      expect(find.text('Chỉnh sửa hồ sơ'), findsOneWidget);
+      expect(find.text('Sửa hồ sơ'), findsOneWidget);
       expect(find.text('Trần Thị B'), findsOneWidget);
-      expect(find.text('0912345678'), findsOneWidget);
+      expect(find.text('*********78'), findsOneWidget);
+      expect(find.text('Tên'), findsOneWidget);
+      expect(find.text('Tiểu sử'), findsOneWidget);
+      expect(find.text('Giới tính'), findsOneWidget);
+      expect(find.text('Ngày sinh'), findsOneWidget);
+      expect(find.text('Thông tin cá nhân'), findsOneWidget);
+      expect(find.text('Số điện thoại'), findsOneWidget);
+      expect(find.text('Email'), findsOneWidget);
+      expect(find.text('Tài khoản liên kết'), findsOneWidget);
     });
 
     testWidgets('AddressListPage displays empty and list states', (

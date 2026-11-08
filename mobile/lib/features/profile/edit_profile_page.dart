@@ -1,4 +1,3 @@
-import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../main.dart';
@@ -13,20 +12,67 @@ class EditProfilePage extends ConsumerStatefulWidget {
 
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   late String _displayName;
-  late String _email;
+  late String _bio;
+  late String _gender;
+  late String _birthDate;
   late String _phone;
+  late String _email;
+  late String _avatarUrl;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
     final profile = widget.initialProfile;
-    _displayName = profile?['display_name']?.toString() ?? '[DEMO] Nguyễn Minh An';
-    _email = profile?['email']?.toString() ?? 'customer.a@pbl6.test';
-    _phone = profile?['phone']?.toString() ?? '';
+    _displayName = profile?['display_name']?.toString() ??
+        profile?['name']?.toString() ??
+        'kophai?mincong';
+    _email = profile?['email']?.toString() ?? 'nminhcong24@gmail.com';
+    _phone = profile?['phone']?.toString() ??
+        profile?['phone_number']?.toString() ??
+        '0901234582';
+    _bio = profile?['bio']?.toString() ?? '';
+    _gender = profile?['gender']?.toString() ?? '';
+    _birthDate = profile?['birth_date']?.toString() ??
+        profile?['birthday']?.toString() ??
+        '';
+    _avatarUrl = profile?['avatar_url']?.toString() ??
+        profile?['avatar']?.toString() ??
+        '';
   }
 
-  Future<void> _updateProfile({String? newName, String? newPhone}) async {
+  String _maskPhone(String phone) {
+    final cleaned = phone.trim();
+    if (cleaned.isEmpty) return 'Thiết lập ngay';
+    if (cleaned.length <= 2) return cleaned;
+    final suffix = cleaned.substring(cleaned.length - 2);
+    return '*********$suffix';
+  }
+
+  String _maskEmail(String email) {
+    final trimmed = email.trim();
+    if (trimmed.isEmpty) return 'Thiết lập ngay';
+    final parts = trimmed.split('@');
+    if (parts.length != 2) return trimmed;
+    final user = parts[0];
+    final domain = parts[1];
+    if (user.length <= 2) {
+      final first = user[0];
+      return '$first*@$domain';
+    }
+    final firstChar = user[0];
+    final lastChar = user[user.length - 1];
+    return '$firstChar***********$lastChar@$domain';
+  }
+
+  Future<void> _updateProfile({
+    String? newName,
+    String? newPhone,
+    String? newBio,
+    String? newGender,
+    String? newBirthDate,
+    String? newAvatarUrl,
+  }) async {
     setState(() => _busy = true);
     try {
       final client = ref.read(apiProvider);
@@ -36,11 +82,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       await client.updateProfile(
         displayName: updatedName.isNotEmpty ? updatedName : null,
         phone: updatedPhone.isNotEmpty ? updatedPhone : null,
+        avatarUrl: newAvatarUrl ?? (_avatarUrl.isNotEmpty ? _avatarUrl : null),
       );
 
       setState(() {
         if (newName != null) _displayName = updatedName;
         if (newPhone != null) _phone = updatedPhone;
+        if (newBio != null) _bio = newBio.trim();
+        if (newGender != null) _gender = newGender;
+        if (newBirthDate != null) _birthDate = newBirthDate;
+        if (newAvatarUrl != null) _avatarUrl = newAvatarUrl;
       });
 
       ref.invalidate(profileProvider);
@@ -72,14 +123,18 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Thay đổi tên hiển thị', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Thay đổi tên hiển thị',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: nameCtrl,
           autofocus: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Tên hiển thị',
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
         actions: [
@@ -88,7 +143,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFBA3416)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEE4D2D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final newName = nameCtrl.text.trim();
               if (newName.isNotEmpty) {
@@ -103,21 +161,24 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
-  void _showChangePhoneDialog() {
-    final phoneCtrl = TextEditingController(text: _phone);
+  void _showChangeBioDialog() {
+    final bioCtrl = TextEditingController(text: _bio);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Thay đổi số điện thoại', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Thiết lập tiểu sử',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
         content: TextField(
-          controller: phoneCtrl,
-          keyboardType: TextInputType.phone,
+          controller: bioCtrl,
+          maxLines: 3,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Số điện thoại',
-            hintText: 'Ví dụ: 0901234567',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: 'Thêm vài dòng giới thiệu về bản thân...',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
         actions: [
@@ -126,7 +187,212 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFBA3416)),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEE4D2D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _updateProfile(newBio: bioCtrl.text.trim());
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGenderSelectionSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text(
+                  'Chọn giới tính',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFFF1F3F5)),
+              ...['Nam', 'Nữ', 'Khác'].map((g) {
+                final isSelected = _gender == g;
+                return ListTile(
+                  title: Text(
+                    g,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? const Color(0xFFEE4D2D) : const Color(0xFF1F2937),
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check, color: Color(0xFFEE4D2D))
+                      : null,
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _updateProfile(newGender: g);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectBirthDate() async {
+    final now = DateTime.now();
+    DateTime initial = DateTime(2000, 1, 1);
+    if (_birthDate.isNotEmpty) {
+      final parts = _birthDate.split('/');
+      if (parts.length == 3) {
+        final d = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final y = int.tryParse(parts[2]);
+        if (d != null && m != null && y != null) {
+          initial = DateTime(y, m, d);
+        }
+      }
+    }
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1920),
+      lastDate: now,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFEE4D2D),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF1F2937),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final dayStr = picked.day.toString().padLeft(2, '0');
+      final monthStr = picked.month.toString().padLeft(2, '0');
+      final formatted = '$dayStr/$monthStr/${picked.year}';
+      _updateProfile(newBirthDate: formatted);
+    }
+  }
+
+  void _showPersonalInfoNotice() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0ED),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.shield_outlined,
+                      color: Color(0xFFEE4D2D),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Thông tin cá nhân',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Thông tin cá nhân của bạn được mã hóa và bảo mật nghiêm ngặt theo tiêu chuẩn an toàn. Một số dữ liệu giúp chúng tôi cá nhân hóa trải nghiệm gợi ý mua sắm và bảo vệ tài khoản khi cần xác minh danh tính.',
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: Color(0xFF4B5563),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFEE4D2D),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Đã hiểu', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showChangePhoneDialog() {
+    final phoneCtrl = TextEditingController(text: _phone);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Thay đổi số điện thoại',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
+        content: TextField(
+          controller: phoneCtrl,
+          keyboardType: TextInputType.phone,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'Số điện thoại',
+            hintText: 'Ví dụ: 0901234567',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEE4D2D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             onPressed: () {
               final newPhone = phoneCtrl.text.trim();
               Navigator.pop(ctx);
@@ -139,76 +405,177 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
-  void _showFullEditSheet() {
-    final nameCtrl = TextEditingController(text: _displayName);
-    final phoneCtrl = TextEditingController(text: _phone);
+  void _showEmailInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Email đăng nhập',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _email,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Email đăng nhập được sử dụng để xác thực tài khoản và nhận thông báo bảo mật. Vui lòng liên hệ hỗ trợ nếu bạn cần thay đổi email.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEE4D2D),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
 
+  void _showConnectedAccountsSheet() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Tài khoản liên kết',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.g_mobiledata_rounded, size: 36, color: Colors.red),
+                title: const Text('Google', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Đã liên kết với tài khoản'),
+                trailing: const Icon(Icons.check_circle, color: Colors.green),
+              ),
+              const Divider(height: 1, color: Color(0xFFF1F3F5)),
+              ListTile(
+                leading: const Icon(Icons.facebook, size: 30, color: Color(0xFF1877F2)),
+                title: const Text('Facebook', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Chưa liên kết'),
+                trailing: TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Tính năng liên kết Facebook đang phát triển.')),
+                    );
+                  },
+                  child: const Text('Liên kết', style: TextStyle(color: Color(0xFFEE4D2D))),
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Chỉnh sửa thông tin cá nhân',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Tên hiển thị *',
-                border: OutlineInputBorder(),
+      ),
+    );
+  }
+
+  void _pickOrChangeAvatar() {
+    final urlCtrl = TextEditingController(text: _avatarUrl);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ảnh đại diện',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Số điện thoại',
-                hintText: 'Ví dụ: 0901234567',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFBA3416),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              onPressed: () {
-                final newName = nameCtrl.text.trim();
-                final newPhone = phoneCtrl.text.trim();
-                if (newName.isNotEmpty) {
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFFEE4D2D)),
+                title: const Text('Chụp ảnh mới'),
+                onTap: () {
                   Navigator.pop(ctx);
-                  _updateProfile(newName: newName, newPhone: newPhone);
-                }
-              },
-              child: const Text('Lưu thay đổi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-            ),
-          ],
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đang mở máy ảnh...')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined, color: Color(0xFFEE4D2D)),
+                title: const Text('Chọn ảnh từ thư viện'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Đang mở thư viện ảnh...')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.link, color: Color(0xFFEE4D2D)),
+                title: const Text('Nhập URL ảnh đại diện'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  showDialog(
+                    context: context,
+                    builder: (dCtx) => AlertDialog(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Text('URL ảnh đại diện', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      content: TextField(
+                        controller: urlCtrl,
+                        decoration: InputDecoration(
+                          hintText: 'https://...',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(dCtx),
+                          child: const Text('Hủy'),
+                        ),
+                        FilledButton(
+                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEE4D2D)),
+                          onPressed: () {
+                            final val = urlCtrl.text.trim();
+                            Navigator.pop(dCtx);
+                            if (val.isNotEmpty) {
+                              _updateProfile(newAvatarUrl: val);
+                            }
+                          },
+                          child: const Text('Lưu'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -216,341 +583,309 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // If initialProfile was not passed, sync with profileProvider if loaded
     if (widget.initialProfile == null) {
       final profileDataAsync = ref.watch(profileProvider);
       profileDataAsync.whenData((data) {
-        final dName = data['display_name']?.toString();
+        final dName = data['display_name']?.toString() ?? data['name']?.toString();
         final eml = data['email']?.toString();
-        final phn = data['phone']?.toString();
-        if (dName != null && dName.isNotEmpty && _displayName == '[DEMO] Nguyễn Minh An') {
+        final phn = data['phone']?.toString() ?? data['phone_number']?.toString();
+        final bioVal = data['bio']?.toString();
+        final gdr = data['gender']?.toString();
+        final bDate = data['birth_date']?.toString() ?? data['birthday']?.toString();
+        final avt = data['avatar_url']?.toString() ?? data['avatar']?.toString();
+
+        if (dName != null && dName.isNotEmpty && _displayName == 'kophai?mincong') {
           _displayName = dName;
         }
-        if (eml != null && eml.isNotEmpty && _email == 'customer.a@pbl6.test') {
+        if (eml != null && eml.isNotEmpty && _email == 'nminhcong24@gmail.com') {
           _email = eml;
         }
         if (phn != null && _phone.isEmpty) {
           _phone = phn;
         }
+        if (bioVal != null && _bio.isEmpty) {
+          _bio = bioVal;
+        }
+        if (gdr != null && _gender.isEmpty) {
+          _gender = gdr;
+        }
+        if (bDate != null && _birthDate.isEmpty) {
+          _birthDate = bDate;
+        }
+        if (avt != null && _avatarUrl.isEmpty) {
+          _avatarUrl = avt;
+        }
       });
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF0F172A)),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Color(0xFFEE4D2D),
+            size: 24,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Chỉnh sửa hồ sơ',
+          'Sửa hồ sơ',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
+            color: Color(0xFF1F2937),
           ),
         ),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Horizontal Sub-Navigation Tabs matching Web Screenshot
-            _buildSubNavTabs(context),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 2. Large Page Heading "Thông tin cá nhân"
-                  const Text(
-                    'Thông tin cá nhân',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.3,
+            if (_busy)
+              const LinearProgressIndicator(
+                color: Color(0xFFEE4D2D),
+                backgroundColor: Color(0xFFFFF0ED),
+                minHeight: 2,
+              ),
+            // 1. Avatar Section Card
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(top: 12, left: 16, right: 16, bottom: 6),
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: _pickOrChangeAvatar,
+                      child: Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF0ED),
+                          shape: BoxShape.circle,
+                          image: _avatarUrl.isNotEmpty
+                              ? DecorationImage(
+                                  image: NetworkImage(_avatarUrl),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: _avatarUrl.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                size: 50,
+                                color: Color(0xFFEE4D2D),
+                              )
+                            : null,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: _pickOrChangeAvatar,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            size: 16,
+                            color: Color(0xFF4B5563),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Sửa',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              color: Color(0xFF4B5563),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-                  // 3. Information Card matching Web Screenshot
-                  _buildProfileCard(context),
+            // 2. Card 1: Basic Info (Tên, Tiểu sử)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  _buildProfileRow(
+                    title: 'Tên',
+                    value: _displayName.isNotEmpty ? _displayName : 'Thiết lập ngay',
+                    valueColor: _displayName.isNotEmpty
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFF9CA3AF),
+                    onTap: _showChangeNameDialog,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
+                  const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
+                  _buildProfileRow(
+                    title: 'Tiểu sử',
+                    value: _bio.isNotEmpty ? _bio : 'Thiết lập ngay',
+                    valueColor: _bio.isNotEmpty
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFF9CA3AF),
+                    onTap: _showChangeBioDialog,
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                  ),
                 ],
               ),
             ),
+
+            // 3. Card 2: Personal Info (Giới tính, Ngày sinh, Thông tin cá nhân)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  _buildProfileRow(
+                    title: 'Giới tính',
+                    showHelpIcon: true,
+                    value: _gender.isNotEmpty ? _gender : 'Thiết lập ngay',
+                    valueColor: _gender.isNotEmpty
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFFEE4D2D),
+                    onTap: _showGenderSelectionSheet,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
+                  const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
+                  _buildProfileRow(
+                    title: 'Ngày sinh',
+                    showHelpIcon: true,
+                    value: _birthDate.isNotEmpty ? _birthDate : 'Thiết lập ngay',
+                    valueColor: _birthDate.isNotEmpty
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFFEE4D2D),
+                    onTap: _selectBirthDate,
+                  ),
+                  const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
+                  _buildProfileRow(
+                    title: 'Thông tin cá nhân',
+                    showHelpIcon: true,
+                    value: '',
+                    onTap: _showPersonalInfoNotice,
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                  ),
+                ],
+              ),
+            ),
+
+            // 4. Card 3: Contact Info & Linked Accounts (Số điện thoại, Email, Tài khoản liên kết)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  _buildProfileRow(
+                    title: 'Số điện thoại',
+                    value: _maskPhone(_phone),
+                    valueColor: const Color(0xFF1F2937),
+                    onTap: _showChangePhoneDialog,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
+                  const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
+                  _buildProfileRow(
+                    title: 'Email',
+                    value: _maskEmail(_email),
+                    valueColor: const Color(0xFF1F2937),
+                    onTap: _showEmailInfoDialog,
+                  ),
+                  const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
+                  _buildProfileRow(
+                    title: 'Tài khoản liên kết',
+                    value: '',
+                    onTap: _showConnectedAccountsSheet,
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  /// Horizontal Sub-Navigation Tabs matching Web
-  Widget _buildSubNavTabs(BuildContext context) {
-    final tabs = [
-      {'label': 'Tổng quan', 'active': false},
-      {'label': 'Thông tin cá nhân', 'active': true},
-      {'label': 'Đơn hàng', 'active': false},
-      {'label': 'Yêu thích', 'active': false},
-      {'label': 'Đánh giá của tôi', 'active': false},
-      {'label': 'Tin nhắn', 'active': false},
-      {'label': 'Thông báo', 'active': false},
-    ];
-
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
-        ),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          children: tabs.map((tab) {
-            final isActive = tab['active'] as bool;
-            final label = tab['label'] as String;
-
-            return Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () {
-                  if (label == 'Tổng quan') {
-                    Navigator.pop(context);
-                  } else if (label == 'Đơn hàng') {
-                    Navigator.pushNamed(context, '/orders');
-                  } else if (label == 'Tin nhắn') {
-                    Navigator.pushReplacementNamed(context, '/store-messages');
-                  } else if (label == 'Yêu thích') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Danh sách sản phẩm yêu thích')),
-                    );
-                  } else if (label == 'Đánh giá của tôi') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đánh giá của tôi')),
-                    );
-                  } else if (label == 'Thông báo') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Không có thông báo mới.')),
-                    );
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFFFBF2ED) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                      color: isActive ? const Color(0xFFBA3416) : const Color(0xFF475569),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  /// Profile Card matching Web Screenshot
-  Widget _buildProfileCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Tên hiển thị
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildProfileRow({
+    required String title,
+    required String value,
+    bool showHelpIcon = false,
+    Color? valueColor,
+    required VoidCallback onTap,
+    BorderRadius? borderRadius,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: borderRadius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tên hiển thị',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _displayName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              InkWell(
-                onTap: _showChangeNameDialog,
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Text(
-                    'Thay đổi tên',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const Divider(height: 28, thickness: 1, color: Color(0xFFF1F5F9)),
-
-          // Row 2: Email đăng nhập
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Email đăng nhập',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 6),
               Text(
-                _email,
+                title,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
+                  fontSize: 14.5,
+                  color: Color(0xFF1F2937),
+                  fontWeight: FontWeight.w400,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Email đăng nhập được giữ cố định.',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  color: Color(0xFF94A3B8),
+              if (showHelpIcon) ...[
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.help_outline,
+                  size: 15,
+                  color: Color(0xFF9CA3AF),
                 ),
-              ),
-            ],
-          ),
-
-          const Divider(height: 28, thickness: 1, color: Color(0xFFF1F5F9)),
-
-          // Row 3: Số điện thoại
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Số điện thoại',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _phone.isNotEmpty ? _phone : 'Chưa bổ sung',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: _phone.isNotEmpty ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              InkWell(
-                onTap: _showChangePhoneDialog,
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              ],
+              const Spacer(),
+              if (value.isNotEmpty)
+                Flexible(
                   child: Text(
-                    'Thay đổi số điện thoại',
+                    value,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                      fontSize: 14,
+                      color: valueColor ?? const Color(0xFF1F2937),
+                      fontWeight: FontWeight.w400,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: Color(0xFF9CA3AF),
               ),
             ],
           ),
-
-          const Divider(height: 32, thickness: 1, color: Color(0xFFF1F5F9)),
-
-          // Row 4: Action Buttons (Chỉnh sửa thông tin + Đổi mật khẩu)
-          Row(
-            children: [
-              FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFBA3416),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                ),
-                onPressed: _busy ? null : _showFullEditSheet,
-                child: _busy
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text(
-                        'Chỉnh sửa thông tin',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-              const SizedBox(width: 14),
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                onPressed: () => Navigator.pushNamed(context, '/change-password'),
-                child: const Text(
-                  'Đổi mật khẩu',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
