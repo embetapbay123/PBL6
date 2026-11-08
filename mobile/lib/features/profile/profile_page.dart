@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_notice_dialog.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
@@ -15,61 +16,7 @@ class ProfilePage extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Tài khoản',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.textPrimary,
-                  size: 24,
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            tooltip: 'Thông báo',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Không có thông báo mới.')),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.settings_outlined,
-              color: AppColors.textPrimary,
-              size: 24,
-            ),
-            tooltip: 'Trung tâm Cài đặt',
-            onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
-          ),
-        ],
-      ),
+      backgroundColor: const Color(0xFFF6F6F6),
       bottomNavigationBar: AppBottomNav(
         currentIndex: 4,
         cartCount: 0,
@@ -155,10 +102,10 @@ class ProfilePage extends ConsumerWidget {
               await ref.read(profileProvider.future);
             },
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: EdgeInsets.zero,
               children: [
-                // 1. User Header Banner Card (Red Gradient)
-                _buildUserHeaderCard(
+                // 1. Top Orange Header Banner (matching Shopee profile header)
+                _buildTopHeaderBanner(
                   context,
                   ref,
                   profile: profile,
@@ -167,6 +114,12 @@ class ProfilePage extends ConsumerWidget {
                   phone: phone,
                   roles: roles,
                 ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 const SizedBox(height: 16),
 
                 // 2. Section "Đơn hàng của tôi"
@@ -200,7 +153,10 @@ class ProfilePage extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
@@ -209,8 +165,8 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  /// 1. Thẻ thông tin cá nhân nền gradient đỏ
-  Widget _buildUserHeaderCard(
+  /// 1. Top Header Banner nền cam gradient Shopee
+  Widget _buildTopHeaderBanner(
     BuildContext context,
     WidgetRef ref, {
     required Map<String, dynamic> profile,
@@ -219,163 +175,246 @@ class ProfilePage extends ConsumerWidget {
     String? phone,
     required List<String> roles,
   }) {
-    final displayPhone = AppUtils.maskPhone(phone);
+    final topPadding = MediaQuery.of(context).padding.top;
+    final username = profile['username']?.toString() ??
+        (displayName.isNotEmpty ? displayName : 'Khách hàng');
+    final followingCount = profile['following_stores_count'] ?? profile['following_count'] ?? 513;
+    final followersCount = profile['followers_count'] ?? 1;
+    final tier = profile['membership_tier']?.toString() ??
+        (roles.isNotEmpty ? roles.first : 'Kim Cương');
+    final savedVnd = profile['saved_amount_vnd'] ?? 58338145;
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: AppColors.redGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withAlpha(70),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFEE4D2D), // Shopee orange
+            Color(0xFFFF5722),
+          ],
+        ),
       ),
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.fromLTRB(16, topPadding + 8, 8, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Avatar tròn nền trắng
-              Container(
-                width: 68,
-                height: 68,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    Icons.person,
-                    size: 42,
-                    color: Colors.grey.shade400,
+              InkWell(
+                onTap: () async {
+                  final changed = await Navigator.pushNamed(
+                    context,
+                    '/edit-profile',
+                    arguments: profile,
+                  );
+                  if (changed == true) {
+                    ref.invalidate(profileProvider);
+                    ref.invalidate(addressListProvider);
+                    ref.invalidate(cartItemsProvider);
+                    ref.invalidate(recommendationProvider);
+                  }
+                },
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withAlpha(220), width: 2),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.person,
+                      size: 32,
+                      color: Colors.grey.shade400,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(width: 14),
-              // Thông tin tên & số điện thoại
+              const SizedBox(width: 12),
+
+              // Username + Badge + Following counts
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            username,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // Badge (Kim Cương > / Thành viên >)
+                        InkWell(
+                          onTap: () {
+                            AppNoticeDialog.show(
+                              context,
+                              message: 'Hạng thành viên của bạn: $tier',
+                              buttonText: 'Đã hiểu',
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B).withAlpha(150),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  tier,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 2),
+                                const Icon(
+                                  Icons.chevron_right,
+                                  size: 13,
+                                  color: Colors.white70,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      displayPhone.isNotEmpty && displayPhone != 'Chưa cập nhật SĐT'
-                          ? displayPhone
-                          : (email.isNotEmpty ? email : 'Chưa cập nhật SĐT'),
-                      style: TextStyle(
-                        color: Colors.white.withAlpha(220),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    if (email.isNotEmpty && displayPhone != email) ...[
+                    if (email.isNotEmpty && email != username) ...[
                       const SizedBox(height: 2),
                       Text(
                         email,
                         style: TextStyle(
-                          color: Colors.white.withAlpha(180),
-                          fontSize: 12,
+                          color: Colors.white.withAlpha(200),
+                          fontSize: 11.5,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                  ],
-                ),
-              ),
-              // Nút "Chỉnh sửa hồ sơ" dạng pill viền trắng
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () async {
-                    final changed = await Navigator.pushNamed(
-                      context,
-                      '/edit-profile',
-                      arguments: profile,
-                    );
-                    if (changed == true) {
-                      ref.invalidate(profileProvider);
-                      ref.invalidate(addressListProvider);
-                      ref.invalidate(cartItemsProvider);
-                      ref.invalidate(recommendationProvider);
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withAlpha(220), width: 1.2),
-                      color: Colors.white.withAlpha(25),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: Colors.white,
-                          size: 14,
-                        ),
-                        SizedBox(width: 4),
                         Text(
-                          'Chỉnh sửa hồ sơ',
-                          style: TextStyle(
+                          '$followingCount Đang theo dõi',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '$followersCount Người theo dõi',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
+              ),
+
+              // Action buttons on the right: Setting & Notification
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(
+                      Icons.settings_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    tooltip: 'Cài đặt',
+                    onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                    tooltip: 'Thông báo',
+                    onPressed: () {
+                      AppNoticeDialog.show(
+                        context,
+                        message: 'Không có thông báo mới.',
+                        buttonText: 'Đã hiểu',
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-          if (roles.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              children: roles.map((role) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(40),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withAlpha(70), width: 0.8),
-                  ),
-                  child: Text(
-                    role,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                );
-              }).toList(),
+
+          const SizedBox(height: 12),
+
+          // Savings / VIP Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(25),
+              borderRadius: BorderRadius.circular(8),
             ),
-          ],
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.stars_rounded,
+                  size: 15,
+                  color: Color(0xFFFFD700),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Với PBL6 VIP, bạn đã tiết kiệm: ${_formatVnd(savedVnd)}',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  String _formatVnd(num amount) {
+    final str = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(str[i]);
+    }
+    return '${buffer.toString()}đ';
   }
 
   /// 2. Khối "Đơn hàng của tôi"

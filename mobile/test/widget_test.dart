@@ -605,8 +605,12 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.widgetWithText(AppBar, 'Tài khoản'), findsOneWidget);
+      expect(find.text('Tài khoản'), findsNothing);
       expect(find.text('Nguyễn Văn A'), findsOneWidget);
+      expect(find.textContaining('Đang theo dõi'), findsOneWidget);
+      expect(find.textContaining('Người theo dõi'), findsOneWidget);
+      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       expect(find.text('user@example.com'), findsOneWidget);
       expect(find.text('CUSTOMER'), findsOneWidget);
       expect(find.text('Tin nhắn với gian hàng', skipOffstage: false), findsOneWidget);
