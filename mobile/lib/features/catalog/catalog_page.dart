@@ -145,8 +145,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         product['sold'];
     if (v is num) return v.toInt();
     if (v is String) return int.tryParse(v) ?? 0;
-    final key = product['id']?.toString() ?? product['title']?.toString() ?? '';
-    return (key.hashCode.abs() % 1000) + 10;
+    return 0;
   }
 
   String _formatSalesCount(int sales) {
@@ -2620,8 +2619,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
         : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
 
-    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'] ?? 4.8;
-    final ratingStr = (ratingNum is num) ? ratingNum.toStringAsFixed(1) : '4.8';
+    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'];
+    final ratingStr = (ratingNum is num)
+        ? (ratingNum > 0 ? ratingNum.toStringAsFixed(1) : '0')
+        : (ratingNum is String && double.tryParse(ratingNum) != null
+            ? (double.parse(ratingNum) > 0 ? double.parse(ratingNum).toStringAsFixed(1) : '0')
+            : '0');
     final salesCount = _getProductMonthlySales(product);
 
     return GestureDetector(
@@ -2919,8 +2922,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
         : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
 
-    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'] ?? 4.8;
-    final ratingStr = (ratingNum is num) ? ratingNum.toStringAsFixed(1) : '4.8';
+    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'];
+    final ratingStr = (ratingNum is num)
+        ? (ratingNum > 0 ? ratingNum.toStringAsFixed(1) : '0')
+        : (ratingNum is String && double.tryParse(ratingNum) != null
+            ? (double.parse(ratingNum) > 0 ? double.parse(ratingNum).toStringAsFixed(1) : '0')
+            : '0');
     final salesCount = _getProductMonthlySales(product);
 
     return Container(

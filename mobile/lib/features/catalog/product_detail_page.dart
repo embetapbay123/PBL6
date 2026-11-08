@@ -188,14 +188,16 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         product['monthly_sales'] ??
         product['sales_monthly'] ??
         product['sales'] ??
-        product['sold'];
+        product['sold'] ??
+        product['sold_quantity'] ??
+        product['total_sold'];
     if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 72;
-    final key = product['id']?.toString() ?? product['title']?.toString() ?? '';
-    return (key.hashCode.abs() % 500) + 20;
+    if (v is String) return int.tryParse(v) ?? 0;
+    return 0;
   }
 
   String _formatSales(int count) {
+    if (count <= 0) return '0';
     if (count >= 1000) {
       final k = (count / 1000).toStringAsFixed(1);
       return k.endsWith('.0') ? '${k.substring(0, k.length - 2)}k' : '${k}k';
@@ -356,8 +358,27 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     final cartCount = ref.watch(cartBadgeCountProvider);
 
     final revSummary = product['review_summary'] as Map?;
-    final revCount = (revSummary?['count'] as num?)?.toInt() ?? _reviews.length;
-    final revAvg = (revSummary?['average'] as num?)?.toDouble() ?? 5.0;
+    final rawRating = product['rating'] ??
+        product['average_rating'] ??
+        product['avg_rating'] ??
+        product['rating_average'] ??
+        product['stars'] ??
+        product['score'] ??
+        revSummary?['average'] ??
+        revSummary?['avg'];
+
+    double revAvg = 0.0;
+    if (rawRating is num) {
+      revAvg = rawRating.toDouble();
+    } else if (rawRating is String) {
+      revAvg = double.tryParse(rawRating) ?? 0.0;
+    } else if (_reviews.isNotEmpty) {
+      final totalStars = _reviews.fold<double>(
+        0.0,
+        (sum, r) => sum + ((r['rating'] as num?)?.toDouble() ?? 5.0),
+      );
+      revAvg = totalStars / _reviews.length;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -513,7 +534,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                     const Icon(Icons.star_rounded, color: AppColors.star, size: 16),
                     const SizedBox(width: 2),
                     Text(
-                      revCount > 0 ? revAvg.toStringAsFixed(1) : '4.8',
+                      revAvg > 0 ? revAvg.toStringAsFixed(1) : '0',
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.bold,

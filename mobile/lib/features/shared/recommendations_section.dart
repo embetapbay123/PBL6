@@ -403,8 +403,8 @@ class _RecommendationsSectionState
     }
 
     final originalPriceInt = (priceInt * 1.3).round();
-    final sales = product['monthly_sales'] ?? 1200;
-    final rating = product['rating'] ?? '4.9';
+    final sales = product['monthly_sales'] ?? product['sold_count'] ?? product['sales'] ?? 0;
+    final rating = product['rating'] ?? product['average_rating'] ?? 0;
 
     return InkWell(
       onTap: () {
