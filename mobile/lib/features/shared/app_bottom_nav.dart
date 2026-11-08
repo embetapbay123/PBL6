@@ -47,25 +47,19 @@ class AppBottomNav extends ConsumerWidget {
               ),
               _buildNavItem(
                 index: 1,
-                icon: Icons.favorite_rounded,
-                unselectedIcon: Icons.favorite_border_rounded,
-                label: 'Đã lưu',
-              ),
-              _buildNavItem(
-                index: 2,
                 icon: Icons.shopping_cart_rounded,
                 unselectedIcon: Icons.shopping_cart_outlined,
                 label: 'Giỏ hàng',
                 badgeCount: effectiveCartCount,
               ),
               _buildNavItem(
-                index: 3,
+                index: 2,
                 icon: Icons.chat_bubble_rounded,
                 unselectedIcon: Icons.chat_bubble_outline_rounded,
                 label: 'Chat',
               ),
               _buildNavItem(
-                index: 4,
+                index: 3,
                 icon: Icons.person_rounded,
                 unselectedIcon: Icons.person_outline_rounded,
                 label: 'Cá nhân',

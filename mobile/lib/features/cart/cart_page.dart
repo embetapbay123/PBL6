@@ -258,20 +258,18 @@ class _CartPageState extends ConsumerState<CartPage> {
             children: [
               if (items.isNotEmpty) _buildBottomCheckoutBar(items),
               AppBottomNav(
-                currentIndex: 2,
+                currentIndex: 1,
                 onTap: (index) {
-                  if (index == 2) return;
+                  if (index == 1) return;
                   if (index == 0) {
                     Navigator.pushNamedAndRemoveUntil(
                       context,
                       '/',
                       (route) => false,
                     );
-                  } else if (index == 1) {
-                    Navigator.pushNamed(context, '/customer/favorites');
-                  } else if (index == 3) {
+                  } else if (index == 2) {
                     ChatAiModal.show(context);
-                  } else if (index == 4) {
+                  } else if (index == 3) {
                     Navigator.pushNamed(context, '/profile');
                   }
                 },
@@ -280,16 +278,14 @@ class _CartPageState extends ConsumerState<CartPage> {
           );
         },
         orElse: () => AppBottomNav(
-          currentIndex: 2,
+          currentIndex: 1,
           onTap: (index) {
-            if (index == 2) return;
+            if (index == 1) return;
             if (index == 0) {
               Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            } else if (index == 1) {
-              Navigator.pushNamed(context, '/customer/favorites');
-            } else if (index == 3) {
+            } else if (index == 2) {
               ChatAiModal.show(context);
-            } else if (index == 4) {
+            } else if (index == 3) {
               Navigator.pushNamed(context, '/profile');
             }
           },

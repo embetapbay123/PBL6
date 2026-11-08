@@ -204,17 +204,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       bottomNavigationBar: AppBottomNav(
-        currentIndex: 1,
+        currentIndex: -1,
         cartCount: cartCount,
         onTap: (index) {
-          if (index == 1) return;
           if (index == 0) {
             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-          } else if (index == 2) {
+          } else if (index == 1) {
             Navigator.pushNamed(context, '/cart');
-          } else if (index == 3) {
+          } else if (index == 2) {
             ChatAiModal.show(context);
-          } else if (index == 4) {
+          } else if (index == 3) {
             Navigator.pushNamed(context, '/profile');
           }
         },

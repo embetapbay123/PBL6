@@ -1,4 +1,5 @@
 import 'package:pbl6_mobile/features/chat/chat_ai_modal.dart';
+import 'package:pbl6_mobile/features/shared/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -1204,6 +1205,32 @@ void main() {
         expect(titlesPriceAsc.first, 'Sản phẩm C (Mới nhất)'); // 100k
       },
     );
+
+    testWidgets('AppBottomNav renders 4 tabs without Đã lưu button', (tester) async {
+      int tappedIndex = -1;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            bottomNavigationBar: AppBottomNav(
+              currentIndex: 0,
+              cartCount: 2,
+              onTap: (index) => tappedIndex = index,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Khám phá'), findsOneWidget);
+      expect(find.text('Giỏ hàng'), findsOneWidget);
+      expect(find.text('Chat'), findsOneWidget);
+      expect(find.text('Cá nhân'), findsOneWidget);
+      expect(find.text('Đã lưu'), findsNothing);
+
+      // Verify tap on Giỏ hàng triggers index 1
+      await tester.tap(find.text('Giỏ hàng'));
+      expect(tappedIndex, 1);
+    });
 
     testWidgets(
       'ProductDetailPage renders full details, variant chips and quantity selection',

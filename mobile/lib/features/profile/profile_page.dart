@@ -20,17 +20,15 @@ class ProfilePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
       bottomNavigationBar: AppBottomNav(
-        currentIndex: 4,
+        currentIndex: 3,
         cartCount: 0,
         onTap: (index) {
-          if (index == 4) return;
+          if (index == 3) return;
           if (index == 0) {
             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
           } else if (index == 1) {
-            Navigator.pushNamed(context, '/customer/favorites');
-          } else if (index == 2) {
             Navigator.pushNamed(context, '/cart');
-          } else if (index == 3) {
+          } else if (index == 2) {
             ChatAiModal.show(context);
           }
         },

@@ -243,15 +243,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               _resetToExplore();
               break;
             case 1:
-              Navigator.pushNamed(context, '/customer/favorites');
-              break;
-            case 2:
               Navigator.pushNamed(context, '/cart');
               break;
-            case 3:
+            case 2:
               ChatAiModal.show(context);
               break;
-            case 4:
+            case 3:
               Navigator.pushNamed(context, '/profile');
               break;
           }
