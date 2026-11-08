@@ -1389,8 +1389,9 @@ void main() {
         expect(find.text('Bàn phím cơ không dây Bluetooth'), findsWidgets);
         expect(find.text('Đang bán'), findsNothing);
         expect(find.text('Tất cả sản phẩm'), findsNothing);
+        expect(find.textContaining('Mã SKU'), findsNothing);
         expect(find.text('1200000 ₫'), findsOneWidget);
-        expect(find.text('Mã SKU: KB-RED'), findsOneWidget);
+        expect(find.textContaining('Đã bán'), findsWidgets);
         expect(find.text('KB-RED (1200000 ₫)'), findsOneWidget);
         expect(find.text('KB-BLUE (1250000 ₫)'), findsOneWidget);
         expect(find.text('Thêm vào giỏ'), findsOneWidget);
@@ -1401,7 +1402,6 @@ void main() {
         await tester.tap(find.text('KB-BLUE (1250000 ₫)'));
         await tester.pumpAndSettle();
         expect(find.text('1250000 ₫'), findsOneWidget);
-        expect(find.text('Mã SKU: KB-BLUE'), findsOneWidget);
 
         // Increase quantity
         expect(find.text('1'), findsOneWidget);
