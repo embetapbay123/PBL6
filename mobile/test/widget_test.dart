@@ -2224,6 +2224,8 @@ void main() {
       expect(find.text('349.000 đ'), findsNWidgets(10));
       // Check sales
       expect(find.text('Đã bán 1,2K'), findsNWidgets(10));
+      // Check 'Thêm vào giỏ' button on cards
+      expect(find.widgetWithText(OutlinedButton, 'Thêm vào giỏ'), findsNWidgets(10));
     });
   });
 }
