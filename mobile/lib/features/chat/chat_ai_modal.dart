@@ -13,7 +13,7 @@ class ChatCenterPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF6F6F6),
       body: SafeArea(
         child: ChatCenterView(
           isPage: true,
@@ -66,7 +66,7 @@ class ChatAiModal extends StatelessWidget {
     return Container(
       height: MediaQuery.of(context).size.height * 0.92,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFFF6F6F6),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       clipBehavior: Clip.antiAlias,
@@ -621,44 +621,47 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 1. Top Window Control Header (+, -)
-        _buildWindowHeader(),
+    return Container(
+      color: const Color(0xFFF6F6F6),
+      child: Column(
+        children: [
+          // 1. Top Window Control Header (+, -)
+          _buildWindowHeader(),
 
-        const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
 
-        // 2. Tab Bar: [🤖 Trợ lý AI]  [🏬 Gian hàng]
-        _buildTabBar(),
+          // 2. Tab Bar: [🤖 Trợ lý AI]  [🏬 Gian hàng]
+          _buildTabBar(),
 
-        if (_activeTab == 0 && _showHistory) ...[
-          // AI History View (Image 2)
-          Expanded(child: _buildHistoryBody()),
-        ] else if (_activeTab == 1 && _selectedStoreName == null) ...[
-          // Store Conversations List matching Image 1 (NO Image 2 subheader card!)
-          Expanded(child: _buildStoreConversationsList()),
-        ] else ...[
-          // 3. Subheader Channel Info Card (Only for AI tab - Image 2 subheader removed for Store tab)
-          if (_activeTab == 0) ...[
-            _buildSubheaderCard(),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          if (_activeTab == 0 && _showHistory) ...[
+            // AI History View (Image 2)
+            Expanded(child: _buildHistoryBody()),
+          ] else if (_activeTab == 1 && _selectedStoreName == null) ...[
+            // Store Conversations List matching Image 1 (NO Image 2 subheader card!)
+            Expanded(child: _buildStoreConversationsList()),
+          ] else ...[
+            // 3. Subheader Channel Info Card (Only for AI tab - Image 2 subheader removed for Store tab)
+            if (_activeTab == 0) ...[
+              _buildSubheaderCard(),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+            ],
+
+            // Active Store chat header with back button
+            if (_activeTab == 1 && _selectedStoreName != null) ...[
+              _buildActiveStoreHeader(),
+              const Divider(height: 1, thickness: 1, color: Color(0xFFE2E8F0)),
+            ],
+
+            // 4. Main Body: Empty State or Message List
+            Expanded(
+              child: _activeTab == 0 ? _buildAiChatBody() : _buildStoreChatMessagesBody(),
+            ),
+
+            // 5. Input Box Container & Disclaimer Footer
+            _buildInputArea(),
           ],
-
-          // Active Store chat header with back button
-          if (_activeTab == 1 && _selectedStoreName != null) ...[
-            _buildActiveStoreHeader(),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
-          ],
-
-          // 4. Main Body: Empty State or Message List
-          Expanded(
-            child: _activeTab == 0 ? _buildAiChatBody() : _buildStoreChatMessagesBody(),
-          ),
-
-          // 5. Input Box Container & Disclaimer Footer
-          _buildInputArea(),
         ],
-      ],
+      ),
     );
   }
 
@@ -890,67 +893,88 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
     if (_messages.isEmpty && widget.productContext == null) {
       return SingleChildScrollView(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 8),
-              // Centered Shopping Bag Squircle Badge
+              // White Card wrapping Welcome Intro content
               Container(
-                width: 64,
-                height: 64,
+                width: double.infinity,
+                constraints: const BoxConstraints(maxWidth: 380),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFAF5EE),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE8DFD3), width: 1.5),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.shopping_bag_outlined,
-                    color: Color(0xFF9A6A38),
-                    size: 28,
-                  ),
+                child: Column(
+                  children: [
+                    // Centered Shopping Bag Squircle Badge
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFAF5EE),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFE8DFD3), width: 1.5),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.shopping_bag_outlined,
+                          color: Color(0xFF9A6A38),
+                          size: 28,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Uppercase Subtitle
+                    const Text(
+                      'TRỢ LÝ PBL6',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.8,
+                        color: Color(0xFF8C7E74),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Main Bold Heading
+                    const Text(
+                      'Bạn đang tìm\nsản phẩm gì?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Description
+                    const Text(
+                      'Kể một chút về món bạn cần.\nMình sẽ giúp bạn tìm trong gian hàng.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Uppercase Subtitle
-              const Text(
-                'TRỢ LÝ PBL6',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.8,
-                  color: Color(0xFF8C7E74),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Main Bold Heading
-              const Text(
-                'Bạn đang tìm\nsản phẩm gì?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                  height: 1.25,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Description
-              const Text(
-                'Kể một chút về món bạn cần.\nMình sẽ giúp bạn tìm trong gian hàng.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 28),
 
               // Quick Action Prompts (matches Web Cards)
               ConstrainedBox(
@@ -1156,22 +1180,36 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
             itemCount: _storeConversations.length,
             itemBuilder: (context, index) {
               final store = _storeConversations[index];
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedStoreName = store.name;
-                    _messages.clear();
-                    _messages.add({
-                      'isUser': false,
-                      'senderName': store.name,
-                      'text': store.lastMessage,
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(4),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedStoreName = store.name;
+                      _messages.clear();
+                      _messages.add({
+                        'isUser': false,
+                        'senderName': store.name,
+                        'text': store.lastMessage,
+                      });
                     });
-                  });
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                  child: Row(
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Square rounded avatar with initials (AN, MX, etc.) matching Image 1
@@ -1302,6 +1340,7 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                     ],
                   ),
                 ),
+              ),
               );
             },
           ),
@@ -1377,9 +1416,16 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(4),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -1444,7 +1490,7 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                     maxWidth: MediaQuery.of(context).size.width * 0.76,
                   ),
                   decoration: BoxDecoration(
-                    color: isUser ? const Color(0xFFBA3416) : const Color(0xFFF8FAFC),
+                    color: isUser ? const Color(0xFFBA3416) : Colors.white,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -1452,6 +1498,15 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                       bottomRight: Radius.circular(isUser ? 4 : 16),
                     ),
                     border: isUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: isUser
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(4),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                   ),
                   child: Text(
                     text,
@@ -1570,9 +1625,16 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(4),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
@@ -1678,12 +1740,29 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                     itemBuilder: (context, index) {
                       final session = _historySessions[index];
                       final isCurrent = session.id == _sessionId;
-                      return InkWell(
-                        onTap: () => _openHistorySession(session),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                          child: Row(
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isCurrent ? const Color(0xFFC2410C) : const Color(0xFFE2E8F0),
+                            width: isCurrent ? 1.2 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(4),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: InkWell(
+                          onTap: () => _openHistorySession(session),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                            child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Padding(
@@ -1723,6 +1802,7 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
                             ],
                           ),
                         ),
+                      ),
                       );
                     },
                   ),
@@ -1739,7 +1819,12 @@ class _ChatCenterViewState extends ConsumerState<ChatCenterView> {
     final isFocusedOrHovered = _inputFocusNode.hasFocus || _isInputHovered;
 
     return Container(
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+        ),
+      ),
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
