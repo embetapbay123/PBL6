@@ -41,14 +41,14 @@ class ChatAiModal extends StatelessWidget {
   final int initialTab;
   final String? initialStoreName;
 
-  static void show(
+  static Future<void> show(
     BuildContext context, {
     String? initialPrompt,
     Map<String, dynamic>? productContext,
     int initialTab = 0,
     String? initialStoreName,
   }) {
-    showModalBottomSheet(
+    return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,

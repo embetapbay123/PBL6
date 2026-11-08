@@ -1,6 +1,7 @@
 import 'package:pbl6_mobile/features/catalog/recently_viewed_provider.dart';
 import 'package:pbl6_mobile/features/chat/chat_ai_modal.dart';
 import 'package:pbl6_mobile/features/shared/app_bottom_nav.dart';
+import 'package:pbl6_mobile/features/shared/chat_badge_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -19,7 +20,6 @@ import 'package:pbl6_mobile/features/catalog/product_detail_page.dart';
 import 'package:pbl6_mobile/features/profile/edit_profile_page.dart';
 import 'package:pbl6_mobile/features/profile/profile_page.dart';
 import 'package:pbl6_mobile/features/profile/store_messages_page.dart';
-import 'package:pbl6_mobile/features/profile/profile_provider.dart';
 import 'package:pbl6_mobile/main.dart';
 
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
@@ -761,7 +761,8 @@ void main() {
 
       expect(find.text('Cài đặt'), findsWidgets);
       expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
-      expect(find.text('37'), findsOneWidget);
+      expect(find.text('37'), findsNothing);
+      expect(find.descendant(of: find.byType(ChatBadgeButton), matching: find.text('1')), findsOneWidget);
       expect(find.text('Tài khoản của tôi'), findsOneWidget);
       expect(find.text('Tài khoản & Bảo mật'), findsOneWidget);
       expect(find.text('Địa Chỉ'), findsOneWidget);
@@ -812,8 +813,11 @@ void main() {
 
     testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
+        ProviderScope(
+          overrides: [
+            storeUnreadMessagesCountProvider.overrideWith((ref) async => 0),
+          ],
+          child: const MaterialApp(
             home: StoreMessagesPage(),
           ),
         ),
@@ -1497,12 +1501,17 @@ void main() {
     testWidgets('AppBottomNav renders 4 tabs without Đã lưu button', (tester) async {
       int tappedIndex = -1;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            bottomNavigationBar: AppBottomNav(
-              currentIndex: 0,
-              cartCount: 2,
-              onTap: (index) => tappedIndex = index,
+        ProviderScope(
+          overrides: [
+            chatBadgeCountProvider.overrideWithValue(5),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              bottomNavigationBar: AppBottomNav(
+                currentIndex: 0,
+                cartCount: 2,
+                onTap: (index) => tappedIndex = index,
+              ),
             ),
           ),
         ),
@@ -1512,7 +1521,8 @@ void main() {
       expect(find.text('Khám phá'), findsOneWidget);
       expect(find.text('Giỏ hàng'), findsOneWidget);
       expect(find.text('Chat'), findsOneWidget);
-      expect(find.text('37'), findsOneWidget);
+      expect(find.text('37'), findsNothing);
+      expect(find.text('5'), findsOneWidget);
       expect(find.text('Cá nhân'), findsOneWidget);
       expect(find.text('Đã lưu'), findsNothing);
 
@@ -1567,7 +1577,7 @@ void main() {
         expect(find.text('1250000 ₫'), findsOneWidget);
 
         // Increase quantity
-        expect(find.text('1'), findsOneWidget);
+        expect(find.text('1'), findsWidgets);
         await tester.ensureVisible(find.byIcon(Icons.add));
         await tester.tap(find.byIcon(Icons.add));
         await tester.pumpAndSettle();
@@ -1688,7 +1698,8 @@ void main() {
         // Verify Chat button is present next to Sửa in AppBar
         expect(find.byTooltip('Chat'), findsOneWidget);
         expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
-      expect(find.text('37'), findsOneWidget);
+        expect(find.text('37'), findsNothing);
+        expect(find.descendant(of: find.byType(ChatBadgeButton), matching: find.text('1')), findsOneWidget);
 
         // Verify bottom navigation bar (AppBottomNav) is removed from CartPage
         expect(find.text('Khám phá'), findsNothing);
@@ -2150,7 +2161,8 @@ void main() {
       expect(find.byIcon(Icons.refresh), findsNothing);
       expect(find.byIcon(Icons.search), findsOneWidget);
       expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
-      expect(find.text('37'), findsOneWidget);
+      expect(find.text('37'), findsNothing);
+      expect(find.descendant(of: find.byType(ChatBadgeButton), matching: find.text('1')), findsOneWidget);
 
       // Verify page background is light grey
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);

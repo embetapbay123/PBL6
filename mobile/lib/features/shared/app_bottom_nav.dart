@@ -31,7 +31,7 @@ class AppBottomNav extends ConsumerWidget {
     try {
       return ref.watch(chatBadgeCountProvider);
     } catch (_) {
-      return 37;
+      return 0;
     }
   }
 

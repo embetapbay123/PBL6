@@ -295,7 +295,18 @@ final cartBadgeCountProvider = Provider<int>((ref) {
   );
 });
 
-final chatBadgeCountProvider = StateProvider<int>((ref) => 37);
+final storeUnreadMessagesCountProvider = FutureProvider<int>((ref) async {
+  final client = ref.read(apiProvider);
+  return await client.getStoreUnreadMessagesCount();
+});
+
+final chatBadgeCountProvider = Provider<int>((ref) {
+  final unreadAsync = ref.watch(storeUnreadMessagesCountProvider);
+  return unreadAsync.maybeWhen(
+    data: (count) => count,
+    orElse: () => 0,
+  );
+});
 
 final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).getProfile();

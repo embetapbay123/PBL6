@@ -20,17 +20,27 @@ class ChatBadgeButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    int unread = 37;
+    int unread = 0;
     try {
       unread = ref.watch(chatBadgeCountProvider);
     } catch (_) {
-      unread = 37;
+      unread = 0;
     }
     final iconColor = color ?? AppColors.primary;
 
     return IconButton(
       tooltip: tooltip,
-      onPressed: onPressed ?? () => ChatAiModal.show(context),
+      onPressed: () {
+        if (onPressed != null) {
+          onPressed!();
+        } else {
+          ChatAiModal.show(context).then((_) {
+            try {
+              ref.invalidate(storeUnreadMessagesCountProvider);
+            } catch (_) {}
+          });
+        }
+      },
       icon: Stack(
         clipBehavior: Clip.none,
         children: [
