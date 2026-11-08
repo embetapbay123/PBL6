@@ -2178,48 +2178,77 @@ void main() {
     });
 
     testWidgets('FavoritesPage renders favorite products matching modern design and handles removal', (tester) async {
+      const sampleFavorite = FavoriteProductItem(
+        id: 'fav-item-1',
+        title: 'Áo thun xám Basic Essential',
+        storeId: 'store-1',
+        storeName: 'An Nhiên Studio',
+        priceVnd: 169000,
+        priceDisplay: '169.000 đ',
+        optionLabel: '4 lựa chọn',
+        imageUrl: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&q=80',
+        variantId: 'v-1',
+        categoryName: 'Thời trang',
+        discountPercent: 25,
+        soldCount: '1.2k đã bán',
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          favoritesProvider.overrideWith((ref) => FavoritesNotifier([sampleFavorite])),
+        ],
+      );
+
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+        UncontrolledProviderScope(
+          container: container,
           child: const MaterialApp(home: FavoritesPage()),
         ),
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Lượt Thích'), findsOneWidget);
-      expect(find.text('Chỉnh sửa'), findsOneWidget);
+      expect(find.text('Đã lưu'), findsOneWidget);
+      expect(find.text('Lượt Thích'), findsNothing);
+      expect(find.text('Chỉnh sửa'), findsNothing);
       expect(find.text('Tất Cả'), findsOneWidget);
       expect(find.text('Trạng thái'), findsOneWidget);
       expect(find.text('Giảm giá'), findsOneWidget);
       expect(find.text('Ngành hàng'), findsOneWidget);
-      expect(find.text('Mall'), findsWidgets);
-      expect(find.text('Tìm sản p...'), findsWidgets);
-      expect(find.byIcon(Icons.more_horiz), findsWidgets);
-      expect(find.byIcon(Icons.shopping_cart_outlined), findsWidgets);
 
-      // Verify product info from sample
-      expect(find.textContaining('CHÉERYEP OFFICIAL'), findsOneWidget);
-      expect(find.text('85.455 đ'), findsOneWidget);
-      expect(find.text('-37%'), findsOneWidget);
-      expect(find.text('8k+ đã bán'), findsOneWidget);
+      // Verify product info matching catalog design
+      expect(find.text('Áo thun xám Basic Essential'), findsOneWidget);
+      expect(find.text('169000 ₫'), findsOneWidget);
+      expect(find.text('-25%'), findsOneWidget);
+      expect(find.textContaining('1.2k đã bán'), findsOneWidget);
+      expect(find.text('Thêm vào giỏ'), findsOneWidget);
+      expect(find.textContaining('An Nhiên Studio'), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_rounded), findsOneWidget);
 
-      // Test removal via options menu
-      await tester.ensureVisible(find.byTooltip('Bỏ yêu thích').first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Bỏ yêu thích').first);
+      // Test search with no matching product -> shows 'Không tìm thấy sản phẩm' and no heart icon
+      await tester.tap(find.byIcon(Icons.search));
       await tester.pumpAndSettle();
 
-      expect(find.text('Bỏ yêu thích'), findsOneWidget);
-      await tester.tap(find.text('Bỏ yêu thích'));
+      await tester.enterText(find.byType(TextField), 'từ khóa không tồn tại');
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('CHÉERYEP OFFICIAL'), findsNothing);
+      expect(find.text('Không tìm thấy sản phẩm'), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsNothing);
+      expect(find.byIcon(Icons.favorite_rounded), findsNothing);
 
-      // Test Edit Mode
-      await tester.tap(find.text('Chỉnh sửa'));
+      // Clear search
+      await tester.tap(find.text('Xóa tìm kiếm'));
       await tester.pumpAndSettle();
-      expect(find.text('Xong'), findsOneWidget);
-      expect(find.textContaining('Chọn tất cả'), findsOneWidget);
+
+      expect(find.text('Áo thun xám Basic Essential'), findsOneWidget);
+
+      // Test removal via heart icon tap
+      await tester.tap(find.byIcon(Icons.favorite_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Áo thun xám Basic Essential'), findsNothing);
+      expect(find.text('Chưa có sản phẩm yêu thích'), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsOneWidget);
     });
   });
 
