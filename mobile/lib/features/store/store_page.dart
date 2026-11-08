@@ -314,26 +314,15 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
             const SizedBox(height: 16),
 
             // Shop Vouchers Section (loaded from server)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  const Icon(Icons.confirmation_num_outlined, color: AppColors.primary, size: 18),
-                  const SizedBox(width: 6),
-                  const Text(
+                  Icon(Icons.confirmation_num_outlined, color: AppColors.primary, size: 18),
+                  SizedBox(width: 6),
+                  Text(
                     'Mã giảm giá của Shop',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Xem tất cả', style: TextStyle(color: AppColors.primary, fontSize: 12)),
-                        Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
-                      ],
-                    ),
                   ),
                 ],
               ),
