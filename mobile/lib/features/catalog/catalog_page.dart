@@ -959,7 +959,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _buildSearchTagsSection(),
+                    _buildSearchTagsSection(allProducts),
                     const SizedBox(height: 12),
                     const Text(
                       'Gợi ý tìm kiếm',
@@ -982,72 +982,47 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  Widget _buildSearchTagsSection() {
-    final tags = _searchHistory.isNotEmpty
-        ? _searchHistory
-        : const [
-            'Mì Tôm Hảo Hảo',
-            'Nến',
-            'hạt mèo charm',
-            'Charm hạt',
-            'reflex 15kg',
-            'Bún',
-            'Muối',
-            'Mì',
-          ];
+  Widget _buildSearchTagsSection(List<Map<String, dynamic>> products) {
+    final tags = products
+        .map((p) => (p['title'] ?? p['name'])?.toString().trim() ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet()
+        .take(10)
+        .toList();
+
+    if (tags.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: tags.map((tag) {
-                return InkWell(
-                  onTap: () {
-                    _searchController.text = tag;
-                    _onSearch(tag);
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      tag,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: Color(0xFF374151),
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: IconButton(
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                size: 20,
-                color: Color(0xFF9CA3AF),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: tags.map((tag) {
+          return InkWell(
+            onTap: () {
+              _searchController.text = tag;
+              _onSearch(tag);
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(16),
               ),
-              tooltip: 'Xóa lịch sử',
-              onPressed: () {
-                setState(() {
-                  _searchHistory.clear();
-                });
-              },
+              child: Text(
+                tag,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFF374151),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
             ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }

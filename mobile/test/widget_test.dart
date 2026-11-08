@@ -933,14 +933,13 @@ void main() {
 
         // Verify Search Suggestions screen (Image 2) is now displayed
         expect(find.text('Gợi ý tìm kiếm'), findsOneWidget);
-        expect(find.text('Mì Tôm Hảo Hảo'), findsOneWidget);
-        expect(find.text('Nến'), findsOneWidget);
-        expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+        expect(find.text('Mì Tôm Hảo Hảo'), findsNothing);
+        expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
         expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
 
-        // For new user (empty cart, no prior search), best sellers are suggested
-        expect(find.text('Dây Sạc Baseus iPhone'), findsOneWidget);
-        expect(find.text('Pate Snappy Tom 400g'), findsOneWidget);
+        // Product names from the app are shown as tags and in suggestions
+        expect(find.text('Pate Snappy Tom 400g'), findsWidgets);
+        expect(find.text('Dây Sạc Baseus iPhone'), findsWidgets);
 
         // Tap back arrow to return to catalog
         await tester.tap(find.byIcon(Icons.arrow_back));
