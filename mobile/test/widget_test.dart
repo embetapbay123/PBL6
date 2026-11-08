@@ -31,6 +31,7 @@ import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
 import 'package:pbl6_mobile/features/catalog/shop_page.dart';
+import 'package:pbl6_mobile/features/banner/hero_banner_carousel.dart';
 
 class MockApiClient extends ApiClient {
   @override
@@ -879,6 +880,31 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Gợi ý tìm kiếm'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'HeroBannerCarousel in lib/features/banner renders both fashion and home banners with swipeable carousel',
+      (tester) async {
+        await tester.pumpWidget(
+          const MaterialApp(
+            home: Scaffold(
+              body: HeroBannerCarousel(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Initially Banner 1 is visible
+        expect(find.text('TỪ NHỮNG ĐIỀU GIẢN ĐƠN'), findsOneWidget);
+        expect(find.text('Khám phá thời trang'), findsOneWidget);
+
+        // Swipe left to Banner 2 ("Nhà là nơi bạn muốn về.")
+        await tester.drag(find.byType(PageView), const Offset(-500, 0));
+        await tester.pumpAndSettle();
+
+        expect(find.text('CHĂM CHÚT GÓC NHỎ'), findsOneWidget);
+        expect(find.text('Xem đồ dùng cho nhà'), findsOneWidget);
       },
     );
     testWidgets(

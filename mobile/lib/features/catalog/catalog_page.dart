@@ -7,6 +7,7 @@ import '../chat/chat_ai_modal.dart';
 import '../customer/favorites_page.dart';
 import '../cart/cart_variant_modal.dart';
 import '../shared/app_bottom_nav.dart';
+import '../banner/hero_banner_carousel.dart';
 import 'product_detail_page.dart';
 
 class CatalogPage extends ConsumerStatefulWidget {
@@ -1247,121 +1248,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  /// Warm Beige Hero Banner matching Web Screenshot
+  /// Hero Banner Carousel (Thời trang, Góc làm việc: Nhà là nơi bạn muốn về)
   Widget _buildHeroBanner(
     BuildContext context,
     AsyncValue<List<Map<String, dynamic>>> categoriesAsync,
   ) {
-    return Material(
-      color: const Color(0xFFF7F2EC),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _onCategoryCardTapped('Thời trang', categoriesAsync),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'TỪ NHỮNG ĐIỀU GIẢN ĐƠN',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF8C7E72),
-                        letterSpacing: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Chọn món bạn thích.\nThêm vui mỗi ngày.',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1F2937),
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Trang phục dễ mặc, góc nhà dễ thương và những món đồ dùng thật hữu ích.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF5C5248),
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Text(
-                          'Khám phá thời trang',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 15,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 110,
-                  height: 135,
-                  child: Image.network(
-                    'https://images.unsplash.com/photo-1523381294911-8d3cead13475?w=500&q=80',
-                    fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => Container(
-                      color: const Color(0xFFEFE8DE),
-                      child: const Center(
-                        child: Icon(
-                          Icons.checkroom_rounded,
-                          size: 38,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    loadingBuilder: (ctx, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: const Color(0xFFEFE8DE),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return HeroBannerCarousel(
+      onCategoryTapped: (categoryName) {
+        _onCategoryCardTapped(categoryName, categoriesAsync);
+      },
     );
   }
 
