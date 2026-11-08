@@ -139,27 +139,41 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
       ),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
+          final topPadding = MediaQuery.of(context).padding.top;
           return [
             SliverAppBar(
-              expandedHeight: 250,
+              expandedHeight: 215 + topPadding,
               pinned: true,
-              backgroundColor: AppColors.primary,
+              backgroundColor: const Color(0xFFEE4D2D),
               foregroundColor: Colors.white,
-              title: innerBoxIsScrolled ? Text(widget.shopName) : null,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: innerBoxIsScrolled
+                  ? Text(
+                      widget.shopName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    )
+                  : null,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.search),
+                  icon: const Icon(Icons.search, color: Colors.white),
                   onPressed: () {},
                 ),
                 IconButton(
-                  icon: const Icon(Icons.share_outlined),
+                  icon: const Icon(Icons.share_outlined, color: Colors.white),
                   onPressed: () {},
                 ),
                 Stack(
                   alignment: Alignment.center,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.shopping_cart_outlined),
+                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
                       onPressed: () => Navigator.pushNamed(context, '/cart'),
                     ),
                     Positioned(
@@ -167,7 +181,7 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
@@ -176,7 +190,7 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
                           child: Text(
                             '5',
                             style: TextStyle(
-                              color: AppColors.primary,
+                              color: Color(0xFFEE4D2D),
                               fontSize: 9,
                               fontWeight: FontWeight.bold,
                             ),
@@ -188,43 +202,201 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Container(
-                      decoration: const BoxDecoration(
-                        gradient: AppColors.saleBannerGradient,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 20, top: 75, right: 120),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Công nghệ\nkiến tạo cuộc sống tốt đẹp hơn',
-                              style: TextStyle(
-                                color: Colors.white.withAlpha(230),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                height: 1.3,
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFEE4D2D),
+                        Color(0xFFFF5722),
+                      ],
+                    ),
+                  ),
+                  padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Store Info Row: Avatar, Name/Details, Action Buttons
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 54,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withAlpha(220),
+                                width: 2,
                               ),
                             ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.storefront_rounded,
+                                color: Color(0xFFEE4D2D),
+                                size: 30,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        widget.shopName,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.verified,
+                                      color: Colors.white,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Công nghệ chính hãng',
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(220),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      color: Color(0xFFFFD700),
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    const Text(
+                                      '4.9 ',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Text(
+                                      '| 12,5K người theo dõi',
+                                      style: TextStyle(
+                                        color: Colors.white.withAlpha(210),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '98% phản hồi tích cực',
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha(235),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () => ChatAiModal.show(
+                                  context,
+                                  initialPrompt: 'Tư vấn các sản phẩm của ${widget.shopName}',
+                                ),
+                                icon: const Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 13,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  'Chat',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Colors.white),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                  minimumSize: Size.zero,
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              FilledButton(
+                                onPressed: () {
+                                  setState(() => _isFollowing = !_isFollowing);
+                                },
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: _isFollowing
+                                      ? Colors.white.withAlpha(200)
+                                      : Colors.white,
+                                  foregroundColor: _isFollowing
+                                      ? Colors.black87
+                                      : const Color(0xFFEE4D2D),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                  minimumSize: Size.zero,
+                                  visualDensity: VisualDensity.compact,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                child: Text(
+                                  _isFollowing ? 'Đang theo dõi' : '+ Theo dõi',
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Stats Row on translucent dark pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(25),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem('1,2K', 'Sản phẩm', isLight: true),
+                            _buildDivider(isLight: true),
+                            _buildStatItem('4.9', 'Đánh giá', isLight: true),
+                            _buildDivider(isLight: true),
+                            _buildStatItem('2 năm', 'Hoạt động', isLight: true),
                           ],
                         ),
                       ),
-                    ),
-                    Positioned(
-                      right: 16,
-                      top: 60,
-                      child: Row(
-                        children: [
-                          Icon(Icons.laptop_chromebook, size: 48, color: Colors.white.withAlpha(180)),
-                          const SizedBox(width: 8),
-                          Icon(Icons.headphones, size: 42, color: Colors.white.withAlpha(180)),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -233,128 +405,6 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
         body: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Floating Shop Profile Card
-            Transform.translate(
-              offset: const Offset(0, -24),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        // Avatar
-                        Container(
-                          width: 54,
-                          height: 54,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryLight,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.storefront_rounded, color: AppColors.primary, size: 30),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    widget.shopName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.verified, color: AppColors.primary, size: 16),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Công nghệ chính hãng',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star, color: AppColors.star, size: 14),
-                                  const Text(' 4.9 ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                  Text(
-                                    '| 12,5K người theo dõi',
-                                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                '98% phản hồi tích cực',
-                                style: TextStyle(color: AppColors.green, fontSize: 11, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          children: [
-                            OutlinedButton.icon(
-                              onPressed: () => ChatAiModal.show(context, initialPrompt: 'Tư vấn các sản phẩm của ${widget.shopName}'),
-                              icon: const Icon(Icons.chat_bubble_outline, size: 14),
-                              label: const Text('Chat', style: TextStyle(fontSize: 12)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                minimumSize: Size.zero,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            FilledButton(
-                              onPressed: () {
-                                setState(() => _isFollowing = !_isFollowing);
-                              },
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _isFollowing ? Colors.grey.shade200 : AppColors.primary,
-                                foregroundColor: _isFollowing ? Colors.black87 : Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                minimumSize: Size.zero,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              child: Text(
-                                _isFollowing ? 'Đang theo dõi' : 'Theo dõi',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    // Stats Row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildStatItem('1,2K', 'Sản phẩm'),
-                        _buildDivider(),
-                        _buildStatItem('4.9', 'Đánh giá'),
-                        _buildDivider(),
-                        _buildStatItem('2 năm', 'Hoạt động'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
             // Tab Bar
             Container(
               color: Colors.white,
@@ -454,7 +504,7 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
 
             // Voucher Cards Horizontal List
             SizedBox(
-              height: 88,
+              height: 96,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -563,18 +613,35 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildStatItem(String val, String label) {
+  Widget _buildStatItem(String val, String label, {bool isLight = false}) {
     return Column(
       children: [
-        Text(val, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        Text(
+          val,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: isLight ? Colors.white : AppColors.textPrimary,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(
+            color: isLight ? Colors.white70 : AppColors.textSecondary,
+            fontSize: 12,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildDivider() {
-    return Container(height: 24, width: 1, color: Colors.grey.shade200);
+  Widget _buildDivider({bool isLight = false}) {
+    return Container(
+      height: 20,
+      width: 1,
+      color: isLight ? Colors.white24 : Colors.grey.shade200,
+    );
   }
 
   Widget _buildVoucherCard({
@@ -609,19 +676,26 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppColors.primary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   condition,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   expiry,
-                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                  style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

@@ -31,6 +31,7 @@ import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_refund_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
+import 'package:pbl6_mobile/features/catalog/shop_page.dart';
 
 class MockApiClient extends ApiClient {
   @override
@@ -2234,6 +2235,57 @@ void main() {
       expect(find.text('Đã bán 1,2K'), findsNWidgets(10));
       // Check 'Thêm vào giỏ' button on cards
       expect(find.widgetWithText(OutlinedButton, 'Thêm vào giỏ'), findsNWidgets(10));
+    });
+  });
+
+  group('ShopPage Tests', () {
+    testWidgets('ShopPage renders store info at top with orange background, no empty slogan banner', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: ShopPage(
+              shopName: 'TechZone Official',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Slogan is removed (no empty beige banner)
+      expect(find.text('Công nghệ\nkiến tạo cuộc sống tốt đẹp hơn'), findsNothing);
+
+      // Store info exists in top header
+      expect(find.text('TechZone Official'), findsWidgets);
+      expect(find.text('Công nghệ chính hãng'), findsOneWidget);
+      expect(find.text('4.9 '), findsWidgets);
+      expect(find.text('| 12,5K người theo dõi'), findsOneWidget);
+      expect(find.text('98% phản hồi tích cực'), findsOneWidget);
+
+      // Action buttons
+      expect(find.widgetWithText(OutlinedButton, 'Chat'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, '+ Theo dõi'), findsOneWidget);
+
+      // Stats row
+      expect(find.text('1,2K'), findsOneWidget);
+      expect(find.text('2 năm'), findsOneWidget);
+      expect(find.text('Hoạt động'), findsOneWidget);
+
+      // Tab bar directly below
+      expect(find.widgetWithText(Tab, 'Trang chủ'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Sản phẩm'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Danh mục'), findsOneWidget);
+      expect(find.widgetWithText(Tab, 'Đánh giá'), findsOneWidget);
+
+      // Toggle follow
+      await tester.tap(find.widgetWithText(FilledButton, '+ Theo dõi'));
+      await tester.pump();
+      expect(find.widgetWithText(FilledButton, 'Đang theo dõi'), findsOneWidget);
     });
   });
 }
