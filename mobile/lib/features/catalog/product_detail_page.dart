@@ -975,6 +975,23 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     final finalStoreName = _storeData?['name']?.toString() ?? storeName;
     final shippingFee = _storeData?['shipping_fee_vnd'];
     final feeStr = shippingFee != null ? '$shippingFee ₫' : '30.000 ₫';
+    final storeLogo = _storeData?['logo_url']?.toString() ??
+        _storeData?['avatar_url']?.toString() ??
+        (_product?['store'] is Map
+            ? (_product!['store']['logo_url']?.toString() ?? _product!['store']['avatar_url']?.toString())
+            : null);
+
+    void openShop() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ShopPage(
+            shopId: storeId,
+            shopName: finalStoreName,
+          ),
+        ),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -988,86 +1005,96 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         children: [
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary.withAlpha(50), width: 1),
-                ),
-                child: const Center(
-                  child: Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
+              // Store Avatar / Logo (Clickable)
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: openShop,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primary.withAlpha(50), width: 1),
+                  ),
+                  child: ClipOval(
+                    child: storeLogo != null && storeLogo.isNotEmpty
+                        ? Image.network(
+                            storeLogo,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(Icons.storefront_rounded, color: AppColors.primary, size: 24),
+                          ),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
+              // Store Name & Info (Clickable)
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            finalStoreName,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1F2937),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.verified_rounded,
-                          color: AppColors.primary,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Store Xác Thực',
-                            style: TextStyle(
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF059669),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: openShop,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              finalStoreName,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1F2937),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.star_rounded, color: AppColors.star, size: 14),
-                        const Text(
-                          ' 4.9',
-                          style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 5),
+                          const Icon(
+                            Icons.verified_rounded,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Store Xác Thực',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF059669),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.star_rounded, color: AppColors.star, size: 14),
+                          const Text(
+                            ' 4.9',
+                            style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ShopPage(
-                        shopId: storeId,
-                        shopName: finalStoreName,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: openShop,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary, width: 1),

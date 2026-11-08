@@ -1,3 +1,4 @@
+import 'shop_page.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1985,28 +1986,44 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        // Dưới cùng là tên store
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.storefront_outlined,
-                              size: 11,
-                              color: AppColors.textMuted,
-                            ),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                '$storeName ›',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
+                        // Dưới cùng là tên store (Clickable)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            if (storeName.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ShopPage(
+                                    shopId: product['store_id']?.toString() ?? '',
+                                    shopName: storeName,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.storefront_outlined,
+                                size: 11,
+                                color: AppColors.textMuted,
+                              ),
+                              const SizedBox(width: 3),
+                              Expanded(
+                                child: Text(
+                                  '$storeName ›',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -2832,24 +2849,40 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        // Dưới cùng là tên store
-                        Row(
-                          children: [
-                            const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                storeName,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  color: Color(0xFF6B7280),
-                                  fontWeight: FontWeight.w500,
+                        // Dưới cùng là tên store (Clickable)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            if (storeName.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ShopPage(
+                                    shopId: product['store_id']?.toString() ?? '',
+                                    shopName: storeName,
+                                  ),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              );
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  storeName,
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    color: Color(0xFF6B7280),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -3088,23 +3121,39 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           onPressed: () => _quickAddToCart(product),
                         ),
                         const Spacer(),
-                        // Dưới cùng / bên phải là tên store
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
-                            const SizedBox(width: 3),
-                            Text(
-                              storeName,
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: Color(0xFF6B7280),
-                                fontWeight: FontWeight.w500,
+                        // Dưới cùng / bên phải là tên store (Clickable)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            if (storeName.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ShopPage(
+                                    shopId: product['store_id']?.toString() ?? '',
+                                    shopName: storeName,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.storefront_outlined, size: 12, color: Color(0xFF6B7280)),
+                              const SizedBox(width: 3),
+                              Text(
+                                storeName,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  color: Color(0xFF6B7280),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
