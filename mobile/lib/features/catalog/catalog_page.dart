@@ -387,7 +387,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Đang xem danh mục: ${categoriesAsync.asData?.value.firstWhere((c) => c['id']?.toString() == _selectedCategory, orElse: () => <String, dynamic>{})['name']?.toString() ?? (_selectedCategory == '3aeb8256-3d88-46be-8321-89bb43aaf300' ? 'Thời trang' : (_selectedCategory == 'cd314f70-d4f7-4b34-bb05-33df23027833' ? 'Góc làm việc' : (_selectedCategory == '33e0b2c4-c52c-4839-9796-41d6214e3bcd' ? 'Nhà cửa & đời sống' : 'Túi & phụ kiện')))}',
+                            'Đang xem danh mục: ${_getCategoryName(_selectedCategory, categoriesAsync)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -1233,111 +1233,181 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  /// "Bạn đang tìm gì?" Section matching Web Screenshot (4 visual category cards)
+  String _getCategoryImage(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('thoại') || lower.contains('phone')) return 'https://images.unsplash.com/photo-1511707171634-5f897ff02560?w=400&q=80';
+    if (lower.contains('tai nghe') || lower.contains('âm thanh')) return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80';
+    if (lower.contains('đồng hồ') || lower.contains('trang sức')) return 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80';
+    if (lower.contains('sách') || lower.contains('văn phòng')) return 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80';
+    if (lower.contains('làm việc') || lower.contains('bàn')) return 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&q=80';
+    if (lower.contains('nhà cửa') || lower.contains('đời sống')) return 'https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=400&q=80';
+    if (lower.contains('thời trang') || lower.contains('quần') || lower.contains('áo')) return 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80';
+    if (lower.contains('túi') || lower.contains('phụ kiện')) return 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80';
+    if (lower.contains('bếp') || lower.contains('gia dụng')) return 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&q=80';
+    return 'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=400&q=80';
+  }
+
+  IconData _getCategoryIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('thoại') || lower.contains('phone')) return Icons.phone_iphone_rounded;
+    if (lower.contains('tai nghe') || lower.contains('âm thanh')) return Icons.headphones_rounded;
+    if (lower.contains('đồng hồ') || lower.contains('trang sức')) return Icons.watch_rounded;
+    if (lower.contains('sách') || lower.contains('văn phòng')) return Icons.menu_book_rounded;
+    if (lower.contains('làm việc') || lower.contains('laptop') || lower.contains('máy tính')) return Icons.computer_rounded;
+    if (lower.contains('nhà cửa') || lower.contains('đời sống')) return Icons.chair_outlined;
+    if (lower.contains('thời trang') || lower.contains('áo') || lower.contains('quần')) return Icons.checkroom_rounded;
+    if (lower.contains('túi') || lower.contains('phụ kiện')) return Icons.shopping_bag_outlined;
+    if (lower.contains('bếp') || lower.contains('gia dụng')) return Icons.kitchen_rounded;
+    return Icons.category_rounded;
+  }
+
+  /// "Bạn đang tìm gì?" Section matching Web Screenshot (Visual category cards scrollable horizontally in 2 rows)
   Widget _buildWhatAreYouLookingFor(AsyncValue<List<Map<String, dynamic>>> categoriesAsync) {
-    final categories = [
+    final defaultVisualCategories = <Map<String, dynamic>>[
       {
+        'id': 'cd314f70-d4f7-4b34-bb05-33df23027833',
         'title': 'Góc làm việc',
         'image': 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=400&q=80',
         'icon': Icons.computer_rounded,
       },
       {
+        'id': '33e0b2c4-c52c-4839-9796-41d6214e3bcd',
         'title': 'Nhà cửa & đời sống',
         'image': 'https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=400&q=80',
         'icon': Icons.chair_outlined,
       },
       {
+        'id': '3aeb8256-3d88-46be-8321-89bb43aaf300',
         'title': 'Thời trang',
         'image': 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80',
         'icon': Icons.checkroom_rounded,
       },
       {
+        'id': 'ddba6c89-1cf9-4733-9fb9-034c222846c9',
         'title': 'Túi & phụ kiện',
         'image': 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80',
         'icon': Icons.shopping_bag_outlined,
       },
+      {
+        'id': 'cat-books',
+        'title': 'Sách & Văn phòng phẩm',
+        'image': 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
+        'icon': Icons.menu_book_rounded,
+      },
+      {
+        'id': 'cat-tech',
+        'title': 'Điện tử & Thiết bị số',
+        'image': 'https://images.unsplash.com/photo-1511707171634-5f897ff02560?w=400&q=80',
+        'icon': Icons.phone_iphone_rounded,
+      },
+      {
+        'id': 'cat-audio',
+        'title': 'Âm thanh & Tai nghe',
+        'image': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80',
+        'icon': Icons.headphones_rounded,
+      },
+      {
+        'id': 'cat-watches',
+        'title': 'Đồng hồ & Trang sức',
+        'image': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80',
+        'icon': Icons.watch_rounded,
+      },
+      {
+        'id': 'cat-kitchen',
+        'title': 'Đồ gia dụng & Bếp',
+        'image': 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=400&q=80',
+        'icon': Icons.kitchen_rounded,
+      },
+      {
+        'id': 'cat-beauty',
+        'title': 'Làm đẹp & Sức khỏe',
+        'image': 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80',
+        'icon': Icons.spa_rounded,
+      },
     ];
+
+    final serverCategories = categoriesAsync.asData?.value ?? [];
+    final categories = List<Map<String, dynamic>>.from(defaultVisualCategories);
+    for (final sCat in serverCategories) {
+      final name = sCat['name']?.toString() ?? '';
+      final id = sCat['id']?.toString() ?? '';
+      if (name.isEmpty) continue;
+      final matchIdx = categories.indexWhere((c) =>
+          c['title'].toString().toLowerCase() == name.toLowerCase() ||
+          c['id'] == id);
+      if (matchIdx != -1) {
+        categories[matchIdx]['id'] = id;
+      } else {
+        categories.add({
+          'id': id,
+          'title': name,
+          'image': _getCategoryImage(name),
+          'icon': _getCategoryIcon(name),
+        });
+      }
+    }
+
+    final row0 = <Map<String, dynamic>>[];
+    final row1 = <Map<String, dynamic>>[];
+    for (int i = 0; i < categories.length; i++) {
+      if (i == 0 || i == 1) {
+        row0.add(categories[i]);
+      } else if (i == 2 || i == 3) {
+        row1.add(categories[i]);
+      } else if (row0.length <= row1.length) {
+        row0.add(categories[i]);
+      } else {
+        row1.add(categories[i]);
+      }
+    }
+    final columnCount = row0.length > row1.length ? row0.length : row1.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Header
-        Row(
-          children: [
-            const Text(
-              'Bạn đang tìm gì?',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1F2937),
-              ),
-            ),
-            const Spacer(),
-            InkWell(
-              onTap: () {
-                _selectCategory(null);
-                _searchController.clear();
-                _onSearch('');
-              },
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Xem tất cả',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  SizedBox(width: 3),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 14,
-                    color: AppColors.primary,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        // Section Header without "Xem tất cả"
+        const Text(
+          'Bạn đang tìm gì?',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF1F2937),
+          ),
         ),
         const SizedBox(height: 12),
 
-        // 4 Category Cards in 2x2 Layout
-        Row(
-          children: [
-            Expanded(
-              child: _buildCategoryCard(
-                categories[0],
-                categoriesAsync,
+        // 2-row horizontally scrolling category cards
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = constraints.maxWidth > 500
+                ? 170.0
+                : ((constraints.maxWidth - 12) / 2).clamp(150.0, 240.0);
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (int c = 0; c < columnCount; c++) ...[
+                    if (c > 0) const SizedBox(width: 12),
+                    SizedBox(
+                      width: cardWidth,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildCategoryCard(row0[c], categoriesAsync),
+                          if (c < row1.length) ...[
+                            const SizedBox(height: 12),
+                            _buildCategoryCard(row1[c], categoriesAsync),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildCategoryCard(
-                categories[1],
-                categoriesAsync,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildCategoryCard(
-                categories[2],
-                categoriesAsync,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildCategoryCard(
-                categories[3],
-                categoriesAsync,
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ],
     );
@@ -1350,8 +1420,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final title = item['title'] as String;
     final imageUrl = item['image'] as String;
     final icon = item['icon'] as IconData;
+    final id = item['id']?.toString();
 
-    final isSelected = (_selectedCategory == '3aeb8256-3d88-46be-8321-89bb43aaf300' && title == 'Thời trang') ||
+    final isSelected = (_selectedCategory != null && _selectedCategory == id) ||
+        (_selectedCategory == '3aeb8256-3d88-46be-8321-89bb43aaf300' && title == 'Thời trang') ||
         (_selectedCategory == 'cd314f70-d4f7-4b34-bb05-33df23027833' && title == 'Góc làm việc') ||
         (_selectedCategory == '33e0b2c4-c52c-4839-9796-41d6214e3bcd' && title == 'Nhà cửa & đời sống') ||
         (_selectedCategory == 'ddba6c89-1cf9-4733-9fb9-034c222846c9' && title == 'Túi & phụ kiện');
@@ -1361,7 +1433,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       borderRadius: BorderRadius.circular(12),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _onCategoryCardTapped(title, categoriesAsync),
+        onTap: () => _onCategoryCardTapped(title, categoriesAsync, id),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
@@ -1427,38 +1499,42 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   void _onCategoryCardTapped(
     String title, [
     AsyncValue<List<Map<String, dynamic>>>? categoriesAsync,
+    String? explicitCategoryId,
   ]) {
     _searchController.clear();
     _searchQuery = '';
 
-    final list = categoriesAsync?.asData?.value ?? [];
-    final query = title.toLowerCase();
-    Map<String, dynamic>? match;
-    for (final c in list) {
-      final cName = (c['name']?.toString() ?? '').toLowerCase();
-      if (cName.contains(query) ||
-          (query.contains('thời trang') && cName.contains('thời trang')) ||
-          (query.contains('làm việc') &&
-              (cName.contains('làm việc') || cName.contains('điện tử') || cName.contains('laptop') || cName.contains('tech'))) ||
-          (query.contains('nhà cửa') &&
-              (cName.contains('nhà cửa') || cName.contains('gia dụng') || cName.contains('đời sống') || cName.contains('nhà'))) ||
-          (query.contains('phụ kiện') &&
-              (cName.contains('phụ kiện') || cName.contains('túi')))) {
-        match = c;
-        break;
+    String? categoryId = explicitCategoryId;
+    if (categoryId == null || categoryId.isEmpty) {
+      final list = categoriesAsync?.asData?.value ?? [];
+      final query = title.toLowerCase();
+      Map<String, dynamic>? match;
+      for (final c in list) {
+        final cName = (c['name']?.toString() ?? '').toLowerCase();
+        if (cName.contains(query) ||
+            (query.contains('thời trang') && cName.contains('thời trang')) ||
+            (query.contains('làm việc') &&
+                (cName.contains('làm việc') || cName.contains('điện tử') || cName.contains('laptop') || cName.contains('tech'))) ||
+            (query.contains('nhà cửa') &&
+                (cName.contains('nhà cửa') || cName.contains('gia dụng') || cName.contains('đời sống') || cName.contains('nhà'))) ||
+            (query.contains('phụ kiện') &&
+                (cName.contains('phụ kiện') || cName.contains('túi')))) {
+          match = c;
+          break;
+        }
       }
-    }
 
-    String? categoryId = match?['id']?.toString();
-    if (categoryId == null) {
-      if (query.contains('thời trang')) {
-        categoryId = '3aeb8256-3d88-46be-8321-89bb43aaf300';
-      } else if (query.contains('làm việc')) {
-        categoryId = 'cd314f70-d4f7-4b34-bb05-33df23027833';
-      } else if (query.contains('nhà cửa')) {
-        categoryId = '33e0b2c4-c52c-4839-9796-41d6214e3bcd';
-      } else if (query.contains('phụ kiện')) {
-        categoryId = 'ddba6c89-1cf9-4733-9fb9-034c222846c9';
+      categoryId = match?['id']?.toString();
+      if (categoryId == null) {
+        if (query.contains('thời trang')) {
+          categoryId = '3aeb8256-3d88-46be-8321-89bb43aaf300';
+        } else if (query.contains('làm việc')) {
+          categoryId = 'cd314f70-d4f7-4b34-bb05-33df23027833';
+        } else if (query.contains('nhà cửa')) {
+          categoryId = '33e0b2c4-c52c-4839-9796-41d6214e3bcd';
+        } else if (query.contains('phụ kiện')) {
+          categoryId = 'ddba6c89-1cf9-4733-9fb9-034c222846c9';
+        }
       }
     }
 
@@ -2128,7 +2204,14 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     if (categoryId == '3aeb8256-3d88-46be-8321-89bb43aaf300') return 'Thời trang';
     if (categoryId == 'cd314f70-d4f7-4b34-bb05-33df23027833') return 'Góc làm việc';
     if (categoryId == '33e0b2c4-c52c-4839-9796-41d6214e3bcd') return 'Nhà cửa & đời sống';
-    return 'Túi & phụ kiện';
+    if (categoryId == 'ddba6c89-1cf9-4733-9fb9-034c222846c9') return 'Túi & phụ kiện';
+    if (categoryId == 'cat-books') return 'Sách & Văn phòng phẩm';
+    if (categoryId == 'cat-tech') return 'Điện tử & Thiết bị số';
+    if (categoryId == 'cat-audio') return 'Âm thanh & Tai nghe';
+    if (categoryId == 'cat-watches') return 'Đồng hồ & Trang sức';
+    if (categoryId == 'cat-kitchen') return 'Đồ gia dụng & Bếp';
+    if (categoryId == 'cat-beauty') return 'Làm đẹp & Sức khỏe';
+    return 'Danh mục';
   }
 
   Future<void> _quickAddToCart(Map<String, dynamic> product) async {

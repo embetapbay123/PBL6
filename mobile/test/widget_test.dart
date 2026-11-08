@@ -1097,8 +1097,23 @@ void main() {
         expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
         expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
+        expect(find.text('Bạn đang tìm gì?', skipOffstage: false), findsOneWidget);
+        expect(find.text('Xem tất cả'), findsNothing);
         expect(find.text('Thời trang', skipOffstage: false), findsWidgets);
         expect(find.text('Góc làm việc', skipOffstage: false), findsOneWidget);
+        expect(find.text('Nhà cửa & đời sống', skipOffstage: false), findsOneWidget);
+        expect(find.text('Túi & phụ kiện', skipOffstage: false), findsOneWidget);
+
+        // Verify scrolling horizontally reveals more categories until end
+        final horizontalScroll = find.ancestor(
+          of: find.text('Góc làm việc'),
+          matching: find.byType(SingleChildScrollView),
+        );
+        expect(horizontalScroll, findsOneWidget);
+        await tester.drag(horizontalScroll, const Offset(-400, 0), warnIfMissed: false);
+        await tester.pumpAndSettle();
+        expect(find.text('Sách & Văn phòng phẩm', skipOffstage: false), findsOneWidget);
+
         expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
         expect(find.text('250000 ₫', skipOffstage: false), findsOneWidget);
       },
