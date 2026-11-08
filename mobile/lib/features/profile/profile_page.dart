@@ -7,13 +7,16 @@ import '../customer/customer_settings_page.dart';
 import '../orders/order_list_page.dart';
 import '../shared/app_bottom_nav.dart';
 import '../shared/recommendations_section.dart';
+import 'profile_model.dart';
+import 'profile_provider.dart';
+import 'widgets/profile_header_banner.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(profileProvider);
+    final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
@@ -65,7 +68,10 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
-                  onPressed: () => ref.invalidate(profileProvider),
+                  onPressed: () {
+                    ref.invalidate(profileProvider);
+                    ref.invalidate(userProfileProvider);
+                  },
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -84,34 +90,24 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
         ),
-        data: (profile) {
-          final email = profile['email']?.toString() ?? '';
-          final displayName = profile['display_name']?.toString() ?? 'Khách hàng';
-          final phone = profile['phone']?.toString();
-          final roles = (profile['roles'] as List?)
-                  ?.map((e) => e.toString())
-                  .toList() ??
-              ['CUSTOMER'];
+        data: (UserProfile userProfile) {
+          final profile = userProfile.toMap();
+          final displayName = userProfile.displayName;
+          final phone = userProfile.phone;
 
           return RefreshIndicator(
             color: AppColors.primary,
             onRefresh: () async {
               ref.invalidate(profileProvider);
-              await ref.read(profileProvider.future);
+              ref.invalidate(userProfileProvider);
+              ref.invalidate(userSocialStatsProvider);
+              await ref.read(userProfileProvider.future);
             },
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 // 1. Top Orange Header Banner (matching Shopee profile header)
-                _buildTopHeaderBanner(
-                  context,
-                  ref,
-                  profile: profile,
-                  displayName: displayName,
-                  email: email,
-                  phone: phone,
-                  roles: roles,
-                ),
+                ProfileHeaderBanner(profile: userProfile),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -163,215 +159,6 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  /// 1. Top Header Banner nền cam gradient Shopee
-  Widget _buildTopHeaderBanner(
-    BuildContext context,
-    WidgetRef ref, {
-    required Map<String, dynamic> profile,
-    required String displayName,
-    required String email,
-    String? phone,
-    required List<String> roles,
-  }) {
-    final topPadding = MediaQuery.of(context).padding.top;
-    final username = profile['username']?.toString() ??
-        (displayName.isNotEmpty ? displayName : 'Khách hàng');
-    final followingCount = profile['following_stores_count'] ?? profile['following_count'] ?? 513;
-    final followersCount = profile['followers_count'] ?? 1;
-    final tier = profile['membership_tier']?.toString() ??
-        (roles.isNotEmpty ? roles.first : 'Kim Cương');
-
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFEE4D2D), // Shopee orange
-            Color(0xFFFF5722),
-          ],
-        ),
-      ),
-      padding: EdgeInsets.fromLTRB(16, topPadding + 8, 8, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Avatar tròn nền trắng
-              InkWell(
-                onTap: () async {
-                  final changed = await Navigator.pushNamed(
-                    context,
-                    '/edit-profile',
-                    arguments: profile,
-                  );
-                  if (changed == true) {
-                    ref.invalidate(profileProvider);
-                    ref.invalidate(addressListProvider);
-                    ref.invalidate(cartItemsProvider);
-                    ref.invalidate(recommendationProvider);
-                  }
-                },
-                child: Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withAlpha(220), width: 2),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.person,
-                      size: 32,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Username + Badge + Following counts
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            username,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        // Badge (Kim Cương > / Thành viên >)
-                        InkWell(
-                          onTap: () {
-                            AppNoticeDialog.show(
-                              context,
-                              message: 'Hạng thành viên của bạn: $tier',
-                              buttonText: 'Đã hiểu',
-                            );
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B).withAlpha(150),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  tier,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 2),
-                                const Icon(
-                                  Icons.chevron_right,
-                                  size: 13,
-                                  color: Colors.white70,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (email.isNotEmpty && email != username) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        email,
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(200),
-                          fontSize: 11.5,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          '$followingCount Đang theo dõi',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '$followersCount Người theo dõi',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Action buttons on the right: Setting & Notification
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    tooltip: 'Cài đặt',
-                    onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                    tooltip: 'Thông báo',
-                    onPressed: () {
-                      AppNoticeDialog.show(
-                        context,
-                        message: 'Không có thông báo mới.',
-                        buttonText: 'Đã hiểu',
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-
-        ],
-      ),
-    );
-  }
-
-  /// 2. Khối "Đơn hàng của tôi"
   Widget _buildMyOrdersSection(BuildContext context, WidgetRef ref) {
     final ordersAsync = ref.watch(customerOrdersProvider);
     int? pendingCount;

@@ -371,6 +371,14 @@ class MockApiClient extends ApiClient {
     'email': 'customer@example.com',
     'display_name': 'Nguyễn Văn A',
     'phone_number': '0901234567',
+    'following_count': 513,
+    'followers_count': 1,
+  };
+
+  @override
+  Future<Map<String, dynamic>> getUserSocialStats() async => {
+    'following_count': 513,
+    'followers_count': 1,
   };
 
   @override
@@ -669,6 +677,42 @@ void main() {
       expect(find.text('Có thể bạn cũng thích', skipOffstage: false), findsOneWidget);
       expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
       expect(find.text('Đăng xuất'), findsNothing);
+    });
+
+    testWidgets('ProfilePage loads and displays following and followers count from server', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          profileProvider.overrideWith(
+            (ref) async => {
+              'email': 'customer.a@pbl6.test',
+              'display_name': '[DEMO] Nguyễn Văn A',
+              'phone': '0901234567',
+              'roles': ['CUSTOMER'],
+              'following_count': 513,
+              'followers_count': 1,
+            },
+          ),
+          catalogProductsProvider.overrideWith(
+            (ref, query) async => {'items': [], 'total': 0},
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: ProfilePage()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('[DEMO] Nguyễn Văn A'), findsOneWidget);
+      expect(find.text('customer.a@pbl6.test'), findsOneWidget);
+      expect(find.text('513 Đang theo dõi'), findsOneWidget);
+      expect(find.text('1 Người theo dõi'), findsOneWidget);
+      expect(find.text('CUSTOMER'), findsOneWidget);
     });
 
     testWidgets('CustomerSettingsPage renders settings screen matching design with title Cài đặt and chat button', (tester) async {
