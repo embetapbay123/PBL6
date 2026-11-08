@@ -5,17 +5,20 @@ import '../../main.dart';
 
 class CartVariantModal extends ConsumerStatefulWidget {
   final Map<String, dynamic> cartItem;
+  final Map<String, dynamic>? initialProduct;
   final Future<void> Function(Map<String, dynamic> selectedVariant, int quantity) onConfirm;
 
   const CartVariantModal({
     super.key,
     required this.cartItem,
+    this.initialProduct,
     required this.onConfirm,
   });
 
   static Future<void> show({
     required BuildContext context,
     required Map<String, dynamic> cartItem,
+    Map<String, dynamic>? initialProduct,
     required Future<void> Function(Map<String, dynamic> selectedVariant, int quantity) onConfirm,
   }) {
     return showModalBottomSheet(
@@ -24,6 +27,7 @@ class CartVariantModal extends ConsumerStatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (ctx) => CartVariantModal(
         cartItem: cartItem,
+        initialProduct: initialProduct,
         onConfirm: onConfirm,
       ),
     );
@@ -51,16 +55,81 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
     super.initState();
     _quantity = (widget.cartItem['quantity'] as num?)?.toInt() ?? 1;
     if (_quantity < 1) _quantity = 1;
+    if (widget.initialProduct != null) {
+      _applyProduct(widget.initialProduct!);
+      _isLoading = false;
+    }
     _fetchProductDetails();
+  }
+
+  void _applyProduct(Map<String, dynamic> prod) {
+    final rawVariants = (prod['variants'] as List?) ?? [];
+    final variants = rawVariants
+        .map((v) => Map<String, dynamic>.from(v as Map))
+        .toList();
+
+    final currentVariantId = widget.cartItem['variant_id']?.toString() ?? '';
+    Map<String, dynamic>? activeVariant;
+
+    if (variants.isNotEmpty) {
+      activeVariant = variants.firstWhere(
+        (v) => v['id']?.toString() == currentVariantId,
+        orElse: () => variants.first,
+      );
+    }
+
+    // Build attribute options groups
+    final Map<String, Set<String>> attrMap = {};
+    for (final v in variants) {
+      final vv = v['variant_values'] as Map?;
+      if (vv != null && vv.isNotEmpty) {
+        for (final entry in vv.entries) {
+          final key = entry.key.toString();
+          final val = entry.value.toString();
+          attrMap.putIfAbsent(key, () => <String>{}).add(val);
+        }
+      }
+    }
+
+    final Map<String, List<String>> attributeOptions = {};
+    for (final entry in attrMap.entries) {
+      attributeOptions[entry.key] = entry.value.toList();
+    }
+
+    // Initialize selected attributes from active variant
+    final Map<String, String> initialSelectedAttributes = {};
+    if (activeVariant != null) {
+      final vv = activeVariant['variant_values'] as Map?;
+      if (vv != null && vv.isNotEmpty) {
+        for (final entry in vv.entries) {
+          initialSelectedAttributes[entry.key.toString()] = entry.value.toString();
+        }
+      }
+    }
+
+    final stock = _getStock(activeVariant);
+    if (_quantity > stock && stock > 0) {
+      _quantity = stock;
+    }
+
+    _product = prod;
+    _variants = variants;
+    _selectedVariant = activeVariant;
+    _attributeOptions.clear();
+    _attributeOptions.addAll(attributeOptions);
+    _selectedAttributes.clear();
+    _selectedAttributes.addAll(initialSelectedAttributes);
   }
 
   Future<void> _fetchProductDetails() async {
     final productId = widget.cartItem['product_id']?.toString();
     if (productId == null || productId.isEmpty) {
-      setState(() {
-        _isLoading = false;
-        _error = 'Không tìm thấy thông tin sản phẩm.';
-      });
+      if (_product == null) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Không tìm thấy thông tin sản phẩm.';
+        });
+      }
       return;
     }
 
@@ -69,69 +138,19 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
       final prod = await client.getProduct(productId);
       if (!mounted) return;
 
-      final rawVariants = (prod['variants'] as List?) ?? [];
-      final variants = rawVariants
-          .map((v) => Map<String, dynamic>.from(v as Map))
-          .toList();
-
-      final currentVariantId = widget.cartItem['variant_id']?.toString() ?? '';
-      Map<String, dynamic>? activeVariant;
-
-      if (variants.isNotEmpty) {
-        activeVariant = variants.firstWhere(
-          (v) => v['id']?.toString() == currentVariantId,
-          orElse: () => variants.first,
-        );
-      }
-
-      // Build attribute options groups
-      final Map<String, Set<String>> attrMap = {};
-      for (final v in variants) {
-        final vv = v['variant_values'] as Map?;
-        if (vv != null && vv.isNotEmpty) {
-          for (final entry in vv.entries) {
-            final key = entry.key.toString();
-            final val = entry.value.toString();
-            attrMap.putIfAbsent(key, () => <String>{}).add(val);
-          }
-        }
-      }
-
-      final Map<String, List<String>> attributeOptions = {};
-      for (final entry in attrMap.entries) {
-        attributeOptions[entry.key] = entry.value.toList();
-      }
-
-      // Initialize selected attributes from active variant
-      final Map<String, String> initialSelectedAttributes = {};
-      if (activeVariant != null) {
-        final vv = activeVariant['variant_values'] as Map?;
-        if (vv != null && vv.isNotEmpty) {
-          for (final entry in vv.entries) {
-            initialSelectedAttributes[entry.key.toString()] = entry.value.toString();
-          }
-        }
-      }
-
-      final stock = _getStock(activeVariant);
-      if (_quantity > stock && stock > 0) {
-        _quantity = stock;
-      }
-
       setState(() {
-        _product = prod;
-        _variants = variants;
-        _selectedVariant = activeVariant;
-        _attributeOptions.addAll(attributeOptions);
-        _selectedAttributes.addAll(initialSelectedAttributes);
+        _applyProduct(prod);
         _isLoading = false;
+        _error = null;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _error = errorMessage(e);
-      });
+      if (_product == null) {
+        setState(() {
+          _isLoading = false;
+          _error = errorMessage(e);
+        });
+      }
     }
   }
 

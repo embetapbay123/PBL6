@@ -5,6 +5,7 @@ import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
 import '../customer/favorites_page.dart';
+import '../cart/cart_variant_modal.dart';
 import '../shared/app_bottom_nav.dart';
 import 'product_detail_page.dart';
 
@@ -1551,10 +1552,58 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
   Future<void> _quickAddToCart(Map<String, dynamic> product) async {
     final variants = (product['variants'] as List?) ?? [];
+    final productId = product['id']?.toString() ?? '';
+
+    // If product has multiple variants (> 1), show variant selection modal first
+    if (variants.length > 1) {
+      final images = product['images'] as List?;
+      final imageUrl = (images != null && images.isNotEmpty)
+          ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
+          : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
+
+      await CartVariantModal.show(
+        context: context,
+        cartItem: {
+          'product_id': productId,
+          'variant_id': (variants.first as Map)['id']?.toString() ?? '',
+          'quantity': 1,
+          'image_url': imageUrl,
+        },
+        initialProduct: product,
+        onConfirm: (selectedVariant, quantity) async {
+          final selVariantId = selectedVariant['id']?.toString() ?? '';
+          if (selVariantId.isEmpty) return;
+          try {
+            final client = ref.read(apiProvider);
+            await client.addToCart(
+              variantId: selVariantId,
+              productId: productId,
+              quantity: quantity,
+            );
+            ref.invalidate(cartItemsProvider);
+            ref.invalidate(cartBadgeCountProvider);
+            if (mounted) {
+              AppNoticeDialog.show(
+                context,
+                message: 'Đã thêm "${product['title']}" vào giỏ hàng!',
+              );
+            }
+          } catch (e) {
+            if (mounted) {
+              AppNoticeDialog.show(
+                context,
+                message: errorMessage(e),
+              );
+            }
+          }
+        },
+      );
+      return;
+    }
+
     final variantId = variants.isNotEmpty
         ? (variants.first as Map)['id']?.toString() ?? ''
         : '';
-    final productId = product['id']?.toString() ?? '';
 
     if (variantId.isEmpty || productId.isEmpty) {
       Navigator.push(
@@ -1570,6 +1619,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       final client = ref.read(apiProvider);
       await client.addToCart(variantId: variantId, productId: productId, quantity: 1);
       ref.invalidate(cartItemsProvider);
+      ref.invalidate(cartBadgeCountProvider);
       if (mounted) {
         AppNoticeDialog.show(
           context,

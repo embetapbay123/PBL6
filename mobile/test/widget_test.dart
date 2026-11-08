@@ -20,6 +20,7 @@ import 'package:pbl6_mobile/features/profile/store_messages_page.dart';
 import 'package:pbl6_mobile/main.dart';
 
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
+import 'package:pbl6_mobile/features/cart/cart_variant_modal.dart';
 import 'package:pbl6_mobile/features/checkout/checkout_page.dart';
 import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
 import 'package:pbl6_mobile/features/customer/customer_settings_page.dart';
@@ -976,6 +977,11 @@ void main() {
     testWidgets(
       'Searching from top search bar transitions to dedicated search results view matching web design',
       (tester) async {
+        tester.view.physicalSize = const Size(800, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
         final container = ProviderContainer(
           overrides: [
             apiProvider.overrideWithValue(MockApiClient()),
@@ -1050,6 +1056,21 @@ void main() {
           outlinedBtn.style?.foregroundColor?.resolve({}),
           const Color(0xFF374151),
         );
+
+        // Tap "Thêm vào giỏ" on multi-variant product opens CartVariantModal (Image 2)
+        await tester.tap(addToCartBtnFinder);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(CartVariantModal), findsOneWidget);
+        expect(find.text('Xác nhận'), findsOneWidget);
+        expect(find.text('Số lượng'), findsOneWidget);
+
+        // Close variant modal via modal close button
+        await tester.tap(
+          find.descendant(of: find.byType(CartVariantModal), matching: find.byIcon(Icons.close)),
+        );
+        await tester.pumpAndSettle();
+
         expect(find.text('Xóa bộ lọc'), findsOneWidget);
 
         // Tap "Xóa bộ lọc" returns to home mode
