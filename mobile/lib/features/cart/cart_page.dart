@@ -968,8 +968,9 @@ class _CartPageState extends ConsumerState<CartPage> {
     final isAllSelected =
         targetItemIds.isNotEmpty && _selectedItemIds.containsAll(targetItemIds);
 
-    // Calculate subtotal
+    // Calculate subtotal and selected total quantity
     int selectedSubtotal = 0;
+    int selectedTotalQuantity = 0;
     for (final item in items) {
       final id = item['id']?.toString() ?? '';
       if (_selectedItemIds.contains(id)) {
@@ -979,6 +980,7 @@ class _CartPageState extends ConsumerState<CartPage> {
             0;
         final qty = (item['quantity'] as num?)?.toInt() ?? 1;
         selectedSubtotal += price * qty;
+        selectedTotalQuantity += qty;
       }
     }
 
@@ -1113,7 +1115,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                   ),
                 ),
                 child: Text(
-                  'Mua hàng (${_selectedItemIds.length})',
+                  'Mua hàng ($selectedTotalQuantity)',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,

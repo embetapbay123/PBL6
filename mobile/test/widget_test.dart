@@ -1358,7 +1358,7 @@ void main() {
         await tester.tap(find.text('Chọn tất cả sản phẩm'));
         await tester.pumpAndSettle();
 
-        expect(find.text('Mua hàng (2)'), findsOneWidget);
+        expect(find.text('Mua hàng (3)'), findsOneWidget);
         expect(find.text('1250000 ₫'), findsOneWidget);
       },
     );
