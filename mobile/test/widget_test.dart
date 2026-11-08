@@ -898,7 +898,8 @@ void main() {
       await tester.pump();
 
       expect(find.text('Lê Văn C'), findsOneWidget);
-      expect(find.text('(0987654321)'), findsOneWidget);
+      expect(find.text('0987654321'), findsOneWidget);
+      expect(find.byIcon(Icons.refresh), findsNothing);
       expect(find.text('Mặc định'), findsOneWidget);
     });
 

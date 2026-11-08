@@ -13,12 +13,6 @@ class AddressListPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sổ địa chỉ nhận hàng'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(addressListProvider),
-          ),
-        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
@@ -103,8 +97,11 @@ class AddressListPage extends ConsumerWidget {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16.0),
+          return RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async => ref.invalidate(addressListProvider),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16.0),
             itemCount: addresses.length,
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
@@ -150,14 +147,16 @@ class AddressListPage extends ConsumerWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '($phone)',
-                            style: TextStyle(
-                              color: Colors.grey.shade700,
-                              fontSize: 14,
+                          if (phone.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              phone,
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
+                          ],
                           const Spacer(),
                           if (isDefault)
                             Container(
@@ -300,6 +299,7 @@ class AddressListPage extends ConsumerWidget {
                 ),
               );
             },
+            ),
           );
         },
       ),
