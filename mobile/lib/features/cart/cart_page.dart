@@ -499,6 +499,7 @@ class _CartPageState extends ConsumerState<CartPage> {
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 14),
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
@@ -514,13 +515,13 @@ class _CartPageState extends ConsumerState<CartPage> {
                             ),
                           ],
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Store Header Row
-                              InkWell(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Store Header Row
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                              child: InkWell(
                                 onTap: () => _navigateToShop(storeId),
                                 borderRadius: BorderRadius.circular(8),
                                 child: Row(
@@ -590,10 +591,16 @@ class _CartPageState extends ConsumerState<CartPage> {
                                   ],
                                 ),
                               ),
-                              const Divider(height: 20, color: Color(0xFFF1F3F5)),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 14),
+                              child: Divider(height: 20, color: Color(0xFFF1F3F5)),
+                            ),
 
-                              // Store Items List
-                              ...storeItems.map((item) {
+                              // Store Items List (Swipeable full row)
+                              ...storeItems.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final item = entry.value;
                                 final available = _available(item);
                                 final itemId = item['id']?.toString() ?? '';
                                 final title =
@@ -616,11 +623,27 @@ class _CartPageState extends ConsumerState<CartPage> {
                                 final imageUrl =
                                     item['image_url']?.toString();
 
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8.0,
-                                  ),
-                                  child: Row(
+                                return Column(
+                                  children: [
+                                    if (index > 0)
+                                      const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 14),
+                                        child: Divider(
+                                            height: 1,
+                                            color: Color(0xFFF3F4F6)),
+                                      ),
+                                    _SwipeableCartItem(
+                                      key: ValueKey(itemId),
+                                      isBusy: _busy,
+                                      onDelete: () =>
+                                          _removeItem(itemId, title),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14.0,
+                                          vertical: 10.0,
+                                        ),
+                                        child: Row(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
@@ -869,7 +892,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                                     if (stock != null && stock > 0 && qty >= stock) {
                                                                       AppNoticeDialog.show(
                                                                         context,
-                                                                        message: 'Chỉ còn lại ' + stock.toString() + ' sản phẩm cho mặt hàng này',
+                                                                        message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
                                                                       );
                                                                       return;
                                                                     }
@@ -896,41 +919,22 @@ class _CartPageState extends ConsumerState<CartPage> {
                                                         ],
                                                       ),
                                                     ),
-                                                    const SizedBox(width: 8),
-                                                    IconButton(
-                                                      icon: Icon(
-                                                        Icons.delete_outline,
-                                                        size: 20,
-                                                        color: Colors
-                                                            .grey.shade500,
-                                                      ),
-                                                      padding: EdgeInsets.zero,
-                                                      constraints:
-                                                          const BoxConstraints(
-                                                            minWidth: 28,
-                                                            minHeight: 28,
-                                                          ),
-                                                      tooltip: 'Xóa',
-                                                      onPressed: _busy
-                                                          ? null
-                                                          : () => _removeItem(
-                                                              itemId,
-                                                              title,
-                                                            ),
-                                                    ),
                                                   ],
                                                 ),
                                               ],
                                             ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                );
-                              }),
-                            ],
-                          ),
+                                ),
+                              ],
+                            );
+                          }),
+                            const SizedBox(height: 6),
+                          ],
                         ),
                       );
                     },
@@ -1629,5 +1633,131 @@ class _CartPageState extends ConsumerState<CartPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+}
+
+class _SwipeableCartItem extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onDelete;
+  final bool isBusy;
+
+  const _SwipeableCartItem({
+    super.key,
+    required this.child,
+    required this.onDelete,
+    this.isBusy = false,
+  });
+
+  @override
+  State<_SwipeableCartItem> createState() => _SwipeableCartItemState();
+}
+
+class _SwipeableCartItemState extends State<_SwipeableCartItem>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  static const double _actionWidth = 80.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _open() {
+    _controller.animateTo(1.0, curve: Curves.easeOut);
+  }
+
+  void _close() {
+    _controller.animateTo(0.0, curve: Curves.easeOut);
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (widget.isBusy) return;
+    final delta = details.primaryDelta ?? 0.0;
+    final newValue =
+        (_controller.value - (delta / _actionWidth)).clamp(0.0, 1.0);
+    setState(() {
+      _controller.value = newValue;
+    });
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (widget.isBusy) return;
+    final velocity = details.primaryVelocity ?? 0.0;
+    if (velocity < -200 || _controller.value > 0.4) {
+      _open();
+    } else {
+      _close();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final offset = -_controller.value * _actionWidth;
+        final isOpen = _controller.value > 0.05;
+
+        return Stack(
+          children: [
+            // Background Delete Action (Red box with "Xóa" text matching design)
+            Positioned.fill(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: _actionWidth,
+                  child: Material(
+                    color: const Color(0xFFEE4D2D),
+                    child: InkWell(
+                      onTap: widget.isBusy
+                          ? null
+                          : () {
+                              _close();
+                              widget.onDelete();
+                            },
+                      child: const Center(
+                        child: Text(
+                          'Xóa',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Foreground Content
+            Transform.translate(
+              offset: Offset(offset, 0),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onHorizontalDragUpdate: _handleDragUpdate,
+                onHorizontalDragEnd: _handleDragEnd,
+                onTap: isOpen ? _close : null,
+                child: Container(
+                  color: Colors.white,
+                  child: widget.child,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

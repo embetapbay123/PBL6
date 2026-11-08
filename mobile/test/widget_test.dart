@@ -1360,6 +1360,27 @@ void main() {
 
         expect(find.text('Mua hàng (3)'), findsOneWidget);
         expect(find.text('1250000 ₫'), findsOneWidget);
+
+        // Verify inline delete button is removed from row
+        expect(find.byIcon(Icons.delete_outline), findsNothing);
+
+        // Swiping cart item from right to left reveals red Xóa button
+        await tester.drag(find.text('Chuột Gaming không dây'), const Offset(-120, 0));
+        await tester.pumpAndSettle();
+        expect(find.text('Xóa'), findsNWidgets(2));
+
+        // Tapping Xóa opens confirmation dialog
+        await tester.tap(find.text('Xóa').first);
+        await tester.pumpAndSettle();
+        expect(find.text('Xác nhận xóa'), findsOneWidget);
+        expect(find.text('Bạn có chắc muốn xóa "Chuột Gaming không dây" khỏi giỏ hàng?'), findsOneWidget);
+
+        // Confirm deletion
+        await tester.tap(find.widgetWithText(FilledButton, 'Xóa'));
+        await tester.pumpAndSettle();
+        expect(find.text('Đã xóa sản phẩm khỏi giỏ hàng.'), findsOneWidget);
+        await tester.tap(find.text('Đồng ý'));
+        await tester.pumpAndSettle();
       },
     );
 
