@@ -683,19 +683,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       _searchFocusNode.requestFocus();
                     },
                     child: Container(
+                height: 40,
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: (_searchFocusNode.hasFocus || _isSearchHovered)
-                        ? AppColors.primary
+                        ? const Color(0xFFEE4D2D)
                         : const Color(0xFFD1D5DB),
                     width: (_searchFocusNode.hasFocus || _isSearchHovered) ? 1.5 : 1.2,
                   ),
                   boxShadow: _searchFocusNode.hasFocus
                       ? [
                           BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.08),
+                            color: const Color(0xFFEE4D2D).withValues(alpha: 0.08),
                             blurRadius: 6,
                             offset: const Offset(0, 1),
                           ),
@@ -703,78 +705,84 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       : null,
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(left: 12),
-                      child: Icon(
-                        Icons.search,
-                        color: (_searchFocusNode.hasFocus || _isSearchHovered)
-                            ? AppColors.primary
-                            : const Color(0xFF9CA3AF),
-                        size: 20,
+                      child: Center(
+                        child: Icon(
+                          Icons.search,
+                          color: (_searchFocusNode.hasFocus || _isSearchHovered)
+                              ? const Color(0xFFEE4D2D)
+                              : const Color(0xFF9CA3AF),
+                          size: 20,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: TextField(
-                        focusNode: _searchFocusNode,
-                        controller: _searchController,
-                        onTap: () {
-                          setState(() => _isSearchSuggesting = true);
-                        },
-                        onSubmitted: _onSearch,
-                      decoration: const InputDecoration(
-                        hintText: 'Bạn đang tìm sản phẩm gì?',
-                        hintStyle: TextStyle(
-                          color: Color(0xFF9CA3AF),
-                          fontSize: 13.5,
-                        ),
-                        filled: false,
-                        fillColor: Colors.transparent,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 10),
-                      ),
-                    ),
-                  ),
-                if (_searchController.text.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.clear, size: 16, color: Color(0xFF9CA3AF)),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearch('');
-                    },
-                  ),
-                const SizedBox(width: 4),
-                Material(
-                  color: AppColors.primary,
-                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(6.8)),
-                  child: InkWell(
-                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(6.8)),
-                    onTap: () => _onSearch(_searchController.text),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Text(
-                        'Tìm kiếm',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                      child: Center(
+                        child: TextField(
+                          focusNode: _searchFocusNode,
+                          controller: _searchController,
+                          onTap: () {
+                            setState(() => _isSearchSuggesting = true);
+                          },
+                          onSubmitted: _onSearch,
+                          decoration: const InputDecoration(
+                            hintText: 'Bạn đang tìm sản phẩm gì?',
+                            hintStyle: TextStyle(
+                              color: Color(0xFF9CA3AF),
+                              fontSize: 13.5,
+                            ),
+                            filled: false,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            focusedErrorBorder: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    if (_searchController.text.isNotEmpty)
+                      Center(
+                        child: IconButton(
+                          icon: const Icon(Icons.clear, size: 16, color: Color(0xFF9CA3AF)),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            _searchController.clear();
+                            _onSearch('');
+                          },
+                        ),
+                      ),
+                    Material(
+                      color: const Color(0xFFEE4D2D),
+                      child: InkWell(
+                        onTap: () => _onSearch(_searchController.text),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Center(
+                            child: Text(
+                              'Tìm kiếm',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
           ),
           ),
               ),
@@ -835,7 +843,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     IconButton(
                       icon: const Icon(
                         Icons.arrow_back,
-                        color: AppColors.primary,
+                        color: Color(0xFFEE4D2D),
                         size: 24,
                       ),
                       onPressed: () {
@@ -847,86 +855,94 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     ),
                     Expanded(
                       child: Container(
+                        height: 40,
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: AppColors.primary,
+                            color: const Color(0xFFEE4D2D),
                             width: 1.5,
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.only(left: 10),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Icon(
-                              Icons.camera_alt_outlined,
-                              size: 20,
-                              color: Color(0xFF888888),
+                            const Center(
+                              child: Icon(
+                                Icons.camera_alt_outlined,
+                                size: 20,
+                                color: Color(0xFF888888),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: TextField(
-                                focusNode: _searchFocusNode,
-                                controller: _searchController,
-                                autofocus: true,
-                                textInputAction: TextInputAction.search,
-                                onSubmitted: _onSearch,
-                                decoration: const InputDecoration(
-                                  hintText: 'Bạn đang tìm sản phẩm gì?',
-                                  hintStyle: TextStyle(
-                                    color: Color(0xFF9CA3AF),
-                                    fontSize: 13.5,
+                              child: Center(
+                                child: TextField(
+                                  focusNode: _searchFocusNode,
+                                  controller: _searchController,
+                                  autofocus: true,
+                                  textInputAction: TextInputAction.search,
+                                  onSubmitted: _onSearch,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Bạn đang tìm sản phẩm gì?',
+                                    hintStyle: TextStyle(
+                                      color: Color(0xFF9CA3AF),
+                                      fontSize: 13.5,
+                                    ),
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    errorBorder: InputBorder.none,
+                                    focusedErrorBorder: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
                                   ),
-                                  filled: false,
-                                  fillColor: Colors.transparent,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  errorBorder: InputBorder.none,
-                                  focusedErrorBorder: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
                                 ),
                               ),
                             ),
                             if (_searchController.text.isNotEmpty)
-                              IconButton(
-                                icon: const Icon(Icons.clear, size: 16, color: Color(0xFF9CA3AF)),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {});
-                                },
+                              Center(
+                                child: IconButton(
+                                  icon: const Icon(Icons.clear, size: 16, color: Color(0xFF9CA3AF)),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {});
+                                  },
+                                ),
                               ),
-                            const SizedBox(width: 4),
                             Material(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(6),
+                              color: const Color(0xFFEE4D2D),
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(6),
                                 onTap: () => _onSearch(_searchController.text),
                                 child: const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.search,
-                                        size: 16,
-                                        color: Colors.white,
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Tìm kiếm',
-                                        style: TextStyle(
+                                  padding: EdgeInsets.symmetric(horizontal: 14),
+                                  child: Center(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.search,
+                                          size: 16,
                                           color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12.5,
                                         ),
-                                      ),
-                                    ],
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Tìm kiếm',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
