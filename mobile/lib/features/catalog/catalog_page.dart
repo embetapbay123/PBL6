@@ -2086,10 +2086,30 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   /// Section "Đã xem gần đây" matching Image 1
   Widget _buildRecentlyViewedSection(AsyncValue<Map<String, dynamic>> productsAsync) {
     final recentItems = [
-      {'title': 'Tai nghe Sony ANC', 'price': '6.490.000'},
-      {'title': 'Bàn phím DareU EK87', 'price': '450.000'},
-      {'title': 'Chuột Logitech Master 3S', 'price': '1.990.000'},
-      {'title': 'Củ sạc GaN 65W', 'price': '690.000'},
+      {
+        'id': 'recent-sony-anc',
+        'title': 'Tai nghe Sony ANC',
+        'price': '6.490.000',
+        'imageUrl': 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
+      },
+      {
+        'id': 'recent-dareu-ek87',
+        'title': 'Bàn phím DareU EK87',
+        'price': '450.000',
+        'imageUrl': 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
+      },
+      {
+        'id': 'recent-logitech-master3s',
+        'title': 'Chuột Logitech Master 3S',
+        'price': '1.990.000',
+        'imageUrl': 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&q=80',
+      },
+      {
+        'id': 'recent-gan-65w',
+        'title': 'Củ sạc GaN 65W',
+        'price': '690.000',
+        'imageUrl': 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=500&q=80',
+      },
     ];
 
     return Column(
@@ -2114,6 +2134,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               final prod = recentItems[idx];
               final title = prod['title']!;
               final price = prod['price']!;
+              final imageUrl = prod['imageUrl']!;
 
               return InkWell(
                 onTap: () {
@@ -2130,18 +2151,22 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        height: 56,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          height: 56,
+                          width: double.infinity,
                           color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.shopping_bag_outlined,
-                            size: 24,
-                            color: Colors.grey,
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const Center(
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 24,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ),
                         ),
                       ),
