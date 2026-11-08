@@ -2687,7 +2687,7 @@ void main() {
 
       // Store info exists in top header
       expect(find.text('TechZone Official'), findsWidgets);
-      expect(find.text('Công nghệ chính hãng'), findsOneWidget);
+      expect(find.text('Công nghệ chính hãng'), findsNothing);
       expect(find.text('4.9'), findsWidgets);
       expect(find.text('| 12,5K người theo dõi'), findsNothing);
       expect(find.text('98% phản hồi tích cực'), findsOneWidget);

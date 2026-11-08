@@ -484,7 +484,6 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
             ),
             if (_tabController.index == 0)
               ..._buildHomeTab(
-                effectiveProfile,
                 displayProducts,
                 storeVouchers,
                 storeProductsAsync.isLoading,
@@ -581,48 +580,12 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   }
 
   List<Widget> _buildHomeTab(
-    StoreProfile profile,
     List<Map<String, dynamic>> displayProducts,
     List<StoreVoucherItem> storeVouchers,
     bool isLoading,
     List<String> categories,
   ) {
     return [
-      if (profile.slogan.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.storefront_outlined,
-                  size: 16,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    profile.slogan,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF4B5563),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       const SizedBox(height: 12),
 
       // Shop Promo Banner
