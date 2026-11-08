@@ -749,6 +749,13 @@ void main() {
       expect(find.text('Cài đặt riêng tư'), findsOneWidget);
       expect(find.text('Hỗ trợ', skipOffstage: false), findsOneWidget);
       expect(find.text('Chuyển tài khoản / Đăng xuất', skipOffstage: false), findsOneWidget);
+
+      // Verify removed items are not present
+      expect(find.text('Tài khoản / Thẻ ngân hàng'), findsNothing);
+      expect(find.text('Người dùng đã bị chặn'), findsNothing);
+      expect(find.text('Ngôn ngữ / Language / ភាសា'), findsNothing);
+      expect(find.text('Điều khoản Shopee'), findsNothing);
+      expect(find.text('Hài lòng với Shopee? Hãy đánh giá ngay!'), findsNothing);
     });
 
     testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {

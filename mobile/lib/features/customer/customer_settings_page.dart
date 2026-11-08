@@ -218,7 +218,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back,
-            color: Color(0xFFEE4D2D),
+            color: AppColors.primary,
             size: 24,
           ),
           onPressed: () => Navigator.pop(context),
@@ -252,16 +252,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
             _buildSettingRow(
               title: 'Địa Chỉ',
               onTap: () => Navigator.pushNamed(context, '/customer/addresses'),
-            ),
-            _buildDivider(),
-            _buildSettingRow(
-              title: 'Tài khoản / Thẻ ngân hàng',
-              onTap: () {
-                AppNoticeDialog.show(
-                  context,
-                  message: 'Tính năng liên kết Tài khoản / Thẻ ngân hàng đang phát triển.',
-                );
-              },
             ),
           ]),
 
@@ -297,27 +287,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
               title: 'Cài đặt riêng tư',
               onTap: () => setState(() => _activeSubTab = SettingsTab.privacy),
             ),
-            _buildDivider(),
-            _buildSettingRow(
-              title: 'Người dùng đã bị chặn',
-              onTap: () {
-                AppNoticeDialog.show(
-                  context,
-                  message: 'Danh sách người dùng đã bị chặn đang trống.',
-                );
-              },
-            ),
-            _buildDivider(),
-            _buildSettingRow(
-              title: 'Ngôn ngữ / Language / ភាសា',
-              subtitle: 'Tiếng Việt',
-              onTap: () {
-                AppNoticeDialog.show(
-                  context,
-                  message: 'Hệ thống hiện tại đang sử dụng Tiếng Việt (Mặc định).',
-                );
-              },
-            ),
           ]),
 
           // Section 3: Hỗ trợ
@@ -339,26 +308,6 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
                 AppNoticeDialog.show(
                   context,
                   message: 'Quy định và tiêu chuẩn cộng đồng PBL6 Marketplace.',
-                );
-              },
-            ),
-            _buildDivider(),
-            _buildSettingRow(
-              title: 'Điều khoản Shopee',
-              onTap: () {
-                AppNoticeDialog.show(
-                  context,
-                  message: 'Điều khoản dịch vụ và chính sách bảo mật PBL6 Marketplace.',
-                );
-              },
-            ),
-            _buildDivider(),
-            _buildSettingRow(
-              title: 'Hài lòng với Shopee? Hãy đánh giá ngay!',
-              onTap: () {
-                AppNoticeDialog.show(
-                  context,
-                  message: 'Cảm ơn bạn đã đồng hành cùng PBL6 Marketplace!',
                 );
               },
             ),
@@ -442,7 +391,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back,
-            color: Color(0xFFEE4D2D),
+            color: AppColors.primary,
             size: 24,
           ),
           onPressed: () {

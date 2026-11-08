@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_theme.dart';
 
 class AppNoticeDialog extends StatelessWidget {
   final String message;
@@ -72,8 +73,8 @@ class AppNoticeDialog extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 buttonText,
-                style: const TextStyle(
-                  color: Color(0xFFEE4D2D), // Brand red/orange matching Image 2
+                style: TextStyle(
+                  color: AppColors.primary,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
