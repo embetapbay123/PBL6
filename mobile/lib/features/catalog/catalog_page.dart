@@ -2541,7 +2541,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.56,
+              childAspectRatio: 0.50,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildDedicatedProductGridCard(
@@ -2788,10 +2788,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                 }
                                 return const BorderSide(color: Color(0xFFD1D5DB));
                               }),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
                               padding: const WidgetStatePropertyAll(
                                 EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                               ),
-                              minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+                              minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
                               shape: WidgetStatePropertyAll(
                                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
