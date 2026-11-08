@@ -19,6 +19,7 @@ import 'package:pbl6_mobile/features/catalog/product_detail_page.dart';
 import 'package:pbl6_mobile/features/profile/edit_profile_page.dart';
 import 'package:pbl6_mobile/features/profile/profile_page.dart';
 import 'package:pbl6_mobile/features/profile/store_messages_page.dart';
+import 'package:pbl6_mobile/features/profile/profile_provider.dart';
 import 'package:pbl6_mobile/main.dart';
 
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
@@ -382,6 +383,9 @@ class MockApiClient extends ApiClient {
     'following_count': 513,
     'followers_count': 1,
   };
+
+  @override
+  Future<int> getStoreUnreadMessagesCount() async => 1;
 
   @override
   Future<Map<String, dynamic>> listOwnOrders({
@@ -772,6 +776,38 @@ void main() {
       expect(find.text('Ngôn ngữ / Language / ភាសា'), findsNothing);
       expect(find.text('Điều khoản Shopee'), findsNothing);
       expect(find.text('Hài lòng với Shopee? Hãy đánh giá ngay!'), findsNothing);
+    });
+
+    testWidgets('ProfilePage displays unread store messages count beside Tin nhắn với gian hàng', (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+          storeUnreadMessagesCountProvider.overrideWith((ref) async => 3),
+          profileProvider.overrideWith(
+            (ref) async => {
+              'email': 'customer@example.com',
+              'display_name': 'Nguyễn Văn A',
+              'phone': '0901234567',
+              'roles': ['CUSTOMER'],
+            },
+          ),
+          catalogProductsProvider.overrideWith(
+            (ref, query) async => {'items': [], 'total': 0},
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: ProfilePage()),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Tin nhắn với gian hàng', skipOffstage: false), findsOneWidget);
+      expect(find.text('3', skipOffstage: false), findsWidgets);
     });
 
     testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {

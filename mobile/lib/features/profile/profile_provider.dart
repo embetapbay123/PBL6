@@ -8,6 +8,12 @@ final userSocialStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async
   return await client.getUserSocialStats();
 });
 
+/// Provider for unread store messages count
+final storeUnreadMessagesCountProvider = FutureProvider<int>((ref) async {
+  final client = ref.read(apiProvider);
+  return await client.getStoreUnreadMessagesCount();
+});
+
 /// Dedicated Profile Provider that fetches full profile data and social stats from server
 final userProfileProvider = FutureProvider<UserProfile>((ref) async {
   final profileMap = await ref.watch(profileProvider.future);

@@ -244,21 +244,21 @@ class ProfilePage extends ConsumerWidget {
                     initialIndex: 1,
                     icon: Icons.receipt_long_outlined,
                     label: 'Chờ xác nhận',
-                    badgeCount: pendingCount ?? 2,
+                    badgeCount: pendingCount ?? 0,
                   ),
                   _buildOrderStatusItem(
                     context,
                     initialIndex: 2,
                     icon: Icons.inventory_2_outlined,
                     label: 'Đang xử lý',
-                    badgeCount: processingCount ?? 1,
+                    badgeCount: processingCount ?? 0,
                   ),
                   _buildOrderStatusItem(
                     context,
                     initialIndex: 3,
                     icon: Icons.local_shipping_outlined,
                     label: 'Đang giao',
-                    badgeCount: shippedCount ?? 1,
+                    badgeCount: shippedCount ?? 0,
                   ),
                   _buildOrderStatusItem(
                     context,
@@ -515,8 +515,14 @@ class ProfilePage extends ConsumerWidget {
                   icon: Icons.chat_bubble_outline_rounded,
                   title: 'Tin nhắn với gian hàng',
                   subtitle: 'Trao đổi về sản phẩm, đơn hàng và hỗ trợ sau mua',
-                  badgeCount: 1,
-                  onTap: () => Navigator.pushNamed(context, '/store-messages'),
+                  badgeCount: ref.watch(storeUnreadMessagesCountProvider).value ??
+                      ((profile['unread_messages_count'] as num?)?.toInt() ??
+                          (profile['unread_count'] as num?)?.toInt() ??
+                          0),
+                  onTap: () async {
+                    await Navigator.pushNamed(context, '/store-messages');
+                    ref.invalidate(storeUnreadMessagesCountProvider);
+                  },
                 ),
                 const Divider(height: 1, indent: 56, endIndent: 16),
                 _buildMenuTile(

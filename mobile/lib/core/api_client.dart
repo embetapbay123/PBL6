@@ -300,6 +300,34 @@ class ApiClient {
     }
   }
 
+  Future<int> getStoreUnreadMessagesCount() async {
+    try {
+      final res = await get('/me/messages/unread-count');
+      if (res is Map) {
+        final count = res['unread_count'] ?? res['count'];
+        if (count is num) return count.toInt();
+      }
+    } catch (_) {}
+    try {
+      final res = await get('/me/chat/sessions');
+      if (res is Map) {
+        if (res['unread_count'] is num) {
+          return (res['unread_count'] as num).toInt();
+        }
+        if (res['items'] is List) {
+          int count = 0;
+          for (final it in res['items']) {
+            if (it is Map && (it['unread'] == true || (it['unread_count'] as num? ?? 0) > 0)) {
+              count += ((it['unread_count'] as num?)?.toInt() ?? 1);
+            }
+          }
+          return count;
+        }
+      }
+    } catch (_) {}
+    return 0;
+  }
+
   Future<Map<String, dynamic>> updateProfile({
     String? displayName,
     String? phone,

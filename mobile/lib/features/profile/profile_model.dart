@@ -8,6 +8,7 @@ class UserProfile {
   final String tier;
   final int followingCount;
   final int followersCount;
+  final int unreadMessagesCount;
   final String? emailVerifiedAt;
 
   const UserProfile({
@@ -20,6 +21,7 @@ class UserProfile {
     this.tier = 'CUSTOMER',
     this.followingCount = 513,
     this.followersCount = 1,
+    this.unreadMessagesCount = 0,
     this.emailVerifiedAt,
   });
 
@@ -72,6 +74,16 @@ class UserProfile {
     if (rawFollowers is num) followers = rawFollowers.toInt();
     if (rawFollowers is String) followers = int.tryParse(rawFollowers) ?? 1;
 
+    // Unread messages count
+    int unreadMessages = 0;
+    final rawUnread = stats?['unread_messages_count'] ??
+        stats?['unread_count'] ??
+        json['unread_messages_count'] ??
+        json['unread_chat_count'] ??
+        json['unread_count'];
+    if (rawUnread is num) unreadMessages = rawUnread.toInt();
+    if (rawUnread is String) unreadMessages = int.tryParse(rawUnread) ?? 0;
+
     return UserProfile(
       userId: userId,
       email: email,
@@ -82,6 +94,7 @@ class UserProfile {
       tier: tier,
       followingCount: following,
       followersCount: followers,
+      unreadMessagesCount: unreadMessages,
       emailVerifiedAt: json['email_verified_at']?.toString(),
     );
   }
