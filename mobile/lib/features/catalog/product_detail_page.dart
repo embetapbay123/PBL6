@@ -1523,6 +1523,18 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     );
   }
 
+  String _formatPrice(int price) {
+    final s = price.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i > 0) buffer.write('.');
+    }
+    return '${buffer.toString().split('').reversed.join('')} đ';
+  }
+
   Future<void> _quickAddToCartRelated(Map<String, dynamic> item) async {
     final variants = (item['variants'] as List?) ?? [];
     final productId = item['id']?.toString() ?? '';
@@ -1635,9 +1647,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.58,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.51,
           ),
           itemCount: displayItems.length,
           itemBuilder: (context, idx) {
@@ -1647,11 +1659,46 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             final pImages = item['images'] as List?;
             final pImageUrl = (pImages != null && pImages.isNotEmpty)
                 ? (pImages[0] is Map ? pImages[0]['image_url']?.toString() : pImages[0]?.toString())
-                : null;
+                : (item['image_url']?.toString() ?? item['thumbnail']?.toString());
             final pVariants = item['variants'] as List?;
-            final pPriceStr = (pVariants != null && pVariants.isNotEmpty)
-                ? pVariants[0]['price_vnd']?.toString() ?? '100000'
-                : '100000';
+            int? pPriceInt;
+            if (pVariants != null && pVariants.isNotEmpty) {
+              for (final v in pVariants) {
+                if (v is Map) {
+                  final p = v['price_vnd'];
+                  int? pNum;
+                  if (p is num) pNum = p.toInt();
+                  if (p is String) pNum = int.tryParse(p);
+                  if (pNum != null && pNum > 0) {
+                    if (pPriceInt == null || pNum < pPriceInt) {
+                      pPriceInt = pNum;
+                    }
+                  }
+                }
+              }
+            }
+            if (pPriceInt == null) {
+              final p = item['price_vnd'] ?? item['min_price_vnd'];
+              if (p is num) pPriceInt = p.toInt();
+              if (p is String) pPriceInt = int.tryParse(p);
+              pPriceInt ??= 100000;
+            }
+
+            final pOriginalPriceInt = (pPriceInt * 1.25).round();
+
+            // Rating
+            final rawRating = item['rating'] ?? item['rating_average'] ?? item['avg_rating'];
+            final pRatingStr = (rawRating is num && rawRating > 0)
+                ? rawRating.toStringAsFixed(1)
+                : (rawRating is String && (double.tryParse(rawRating) ?? 0) > 0
+                    ? double.parse(rawRating).toStringAsFixed(1)
+                    : '4.8');
+
+            // Sales
+            final rawSold = item['sold'] ?? item['sold_count'] ?? item['monthly_sales'];
+            final pSoldStr = (rawSold != null && rawSold.toString().isNotEmpty)
+                ? rawSold.toString()
+                : '100+';
 
             return InkWell(
               onTap: () {
@@ -1670,112 +1717,220 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                  border: Border.all(color: const Color(0xFFF3F4F6), width: 1),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
-                clipBehavior: Clip.antiAlias,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      flex: 5,
-                      child: Container(
-                        color: const Color(0xFFF9FAFB),
-                        width: double.infinity,
-                        child: (pImageUrl != null && pImageUrl.isNotEmpty && pImageUrl.startsWith('http'))
-                            ? Image.network(
-                                pImageUrl,
-                                fit: BoxFit.contain,
-                                errorBuilder: (ctx, err, stack) => const Icon(
-                                  Icons.image_outlined,
-                                  size: 32,
-                                  color: Color(0xFFCBD5E1),
+                    // Image Stack with Discount Badge and Favorite Heart Button
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      child: AspectRatio(
+                        aspectRatio: 1.0,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Container(
+                              color: Colors.grey.shade100,
+                              child: (pImageUrl != null && pImageUrl.isNotEmpty && pImageUrl.startsWith('http'))
+                                  ? Image.network(
+                                      pImageUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (ctx, err, stack) => const Center(
+                                        child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 36),
+                                      ),
+                                    )
+                                  : const Center(
+                                      child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 36),
+                                    ),
+                            ),
+                            // Discount Badge (-25%)
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                              )
-                            : const Icon(
-                                Icons.image_outlined,
-                                size: 32,
-                                color: Color(0xFFCBD5E1),
+                                child: const Text(
+                                  '-25%',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
+                            ),
+                            // Favorite Heart Button
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Consumer(
+                                builder: (context, ref, _) {
+                                  final isFav = ref.watch(favoritesProvider).any((f) => f.id == pId);
+                                  return GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      ref.read(favoritesProvider.notifier).toggleFavorite(item);
+                                      AppNoticeDialog.show(
+                                        context,
+                                        message: isFav
+                                            ? 'Đã xóa khỏi danh sách yêu thích.'
+                                            : 'Đã thêm vào danh sách yêu thích!',
+                                      );
+                                    },
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: const BoxDecoration(
+                                        color: Colors.white,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black12,
+                                            blurRadius: 4,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                          size: 16,
+                                          color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
+                    // Product Details
                     Expanded(
-                      flex: 5,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Text(
+                              pTitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                                height: 1.25,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // Price Row
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
                               children: [
                                 Text(
-                                  pTitle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF1F2937),
-                                    height: 1.25,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '$pPriceStr ₫',
+                                  _formatPrice(pPriceInt),
                                   style: const TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 13,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                                if (pOriginalPriceInt > pPriceInt) ...[
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      _formatPrice(pOriginalPriceInt),
+                                      style: TextStyle(
+                                        color: Colors.grey.shade400,
+                                        fontSize: 10.5,
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            // Rating & Sold Row
+                            Row(
+                              children: [
+                                const Icon(Icons.star_rounded, size: 13, color: AppColors.star),
+                                const SizedBox(width: 2),
+                                Text(
+                                  pRatingStr,
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '• Đã bán $pSoldStr',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.grey.shade500,
                                   ),
                                 ),
                               ],
                             ),
+                            const Spacer(),
+                            // "Thêm vào giỏ" Button with orange hover state
                             SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
                                 style: ButtonStyle(
-                                  backgroundColor:
-                                      WidgetStateProperty.resolveWith<Color?>(
-                                          (states) {
-                                    if (states.contains(WidgetState.hovered) ||
-                                        states.contains(WidgetState.pressed)) {
+                                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                                       return AppColors.primary;
                                     }
                                     return Colors.white;
                                   }),
-                                  foregroundColor:
-                                      WidgetStateProperty.resolveWith<Color?>(
-                                          (states) {
-                                    if (states.contains(WidgetState.hovered) ||
-                                        states.contains(WidgetState.pressed)) {
+                                  foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                                       return Colors.white;
                                     }
-                                    return AppColors.primary;
+                                    return const Color(0xFF374151);
                                   }),
-                                  iconColor:
-                                      WidgetStateProperty.resolveWith<Color?>(
-                                          (states) {
-                                    if (states.contains(WidgetState.hovered) ||
-                                        states.contains(WidgetState.pressed)) {
+                                  iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                                       return Colors.white;
                                     }
-                                    return AppColors.primary;
+                                    return const Color(0xFF374151);
                                   }),
-                                  side: const WidgetStatePropertyAll(
-                                    BorderSide(color: AppColors.primary, width: 0.8),
-                                  ),
+                                  side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                      return const BorderSide(color: AppColors.primary);
+                                    }
+                                    return const BorderSide(color: Color(0xFFD1D5DB));
+                                  }),
                                   padding: const WidgetStatePropertyAll(
                                     EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                                   ),
-                                  minimumSize:
-                                      const WidgetStatePropertyAll(Size(0, 28)),
+                                  minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
                                   shape: WidgetStatePropertyAll(
-                                    RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(6)),
+                                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                   ),
                                 ),
-                                icon: const Icon(Icons.shopping_cart_outlined, size: 12),
+                                icon: const Icon(Icons.shopping_cart_outlined, size: 13),
                                 label: const Text(
                                   'Thêm vào giỏ',
                                   style: TextStyle(
