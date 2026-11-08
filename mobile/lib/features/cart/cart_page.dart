@@ -1055,7 +1055,7 @@ class _CartPageState extends ConsumerState<CartPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200, width: 0.8)),
@@ -1090,6 +1090,8 @@ class _CartPageState extends ConsumerState<CartPage> {
                   Checkbox(
                     value: isAllSelected,
                     activeColor: AppColors.primary,
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -1105,11 +1107,12 @@ class _CartPageState extends ConsumerState<CartPage> {
                             });
                           },
                   ),
+                  const SizedBox(width: 4),
                   Text(
                     'Chọn tất cả (${targetItemIds.length})',
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      fontSize: 13.5,
+                      fontSize: 13,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -1129,14 +1132,14 @@ class _CartPageState extends ConsumerState<CartPage> {
                   const Text(
                     'Tổng cộng',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       color: AppColors.textSecondary,
                     ),
                   ),
                   Text(
                     _formatPrice(selectedSubtotal),
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
@@ -1151,7 +1154,7 @@ class _CartPageState extends ConsumerState<CartPage> {
                   ),
                 ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               FilledButton(
                 onPressed: _selectedItemIds.isEmpty || _busy
                     ? null
@@ -1177,18 +1180,18 @@ class _CartPageState extends ConsumerState<CartPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+                    horizontal: 14,
+                    vertical: 10,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: Text(
                   'Mua hàng ($selectedTotalQuantity)',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 13.5,
                   ),
                 ),
               ),
