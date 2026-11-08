@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../core/product_utils.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
 import '../customer/favorites_page.dart';
@@ -803,7 +804,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final pData = productsAsync.value;
     if (pData != null && pData['items'] is List) {
       for (final item in (pData['items'] as List)) {
-        if (item is Map<String, dynamic>) {
+        if (item is Map<String, dynamic> && !isProductOutOfStock(item)) {
           allProducts.add(item);
         }
       }
@@ -811,7 +812,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     if (allProducts.isEmpty) {
       final fallback = buildFallbackProducts()['items'] as List;
       for (final item in fallback) {
-        if (item is Map<String, dynamic>) {
+        if (item is Map<String, dynamic> && !isProductOutOfStock(item)) {
           allProducts.add(item);
         }
       }
@@ -1639,7 +1640,11 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       ),
       data: (result) {
         final rawItems = (result['items'] as List?) ?? [];
-        final items = _applySort(rawItems.map((e) => Map<String, dynamic>.from(e as Map)).toList());
+        final inStockItems = rawItems
+            .where((e) => e is Map && !isProductOutOfStock(e))
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        final items = _applySort(inStockItems);
         if (items.isEmpty) {
           return SliverToBoxAdapter(
             child: Center(
@@ -2490,6 +2495,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         final filteredItems = rawItems
             .map((e) => Map<String, dynamic>.from(e as Map))
             .where((p) {
+              if (isProductOutOfStock(p)) return false;
               if (_minPrice == null && _maxPrice == null) return true;
               final variants = (p['variants'] as List?) ?? [];
               int pPrice = 0;

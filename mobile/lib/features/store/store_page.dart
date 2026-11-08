@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
+import '../../core/product_utils.dart';
 import '../../main.dart';
 import '../cart/cart_variant_modal.dart';
 import '../catalog/product_detail_page.dart';
@@ -738,25 +739,45 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   child: CircularProgressIndicator(color: AppColors.primary),
                 ),
               )
-            : GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: displayProducts.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.51,
-                ),
-                itemBuilder: (context, index) {
-                  final item = displayProducts[index];
-                  return _buildProductCard(item);
+            : Builder(
+                builder: (context) {
+                  final homeProducts = _sortProductsWithOutOfStockAtBottom(displayProducts);
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: homeProducts.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.51,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = homeProducts[index];
+                      return _buildProductCard(item);
+                    },
+                  );
                 },
               ),
       ),
 
       const SizedBox(height: 24),
     ];
+  }
+
+  List<Map<String, dynamic>> _sortProductsWithOutOfStockAtBottom(
+    List<Map<String, dynamic>> products,
+  ) {
+    final inStock = <Map<String, dynamic>>[];
+    final outOfStock = <Map<String, dynamic>>[];
+    for (final p in products) {
+      if (isProductOutOfStock(p)) {
+        outOfStock.add(p);
+      } else {
+        inStock.add(p);
+      }
+    }
+    return [...inStock, ...outOfStock];
   }
 
   List<Widget> _buildProductsTab(
@@ -771,15 +792,23 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
           .toList();
     }
 
-    // Sort products
+    // Sort products with in-stock first and out-of-stock at bottom
     final sorted = List<Map<String, dynamic>>.from(filtered);
-    if (_productSort == 'best_selling') {
-      sorted.sort((a, b) => _extractSold(b).compareTo(_extractSold(a)));
-    } else if (_productSort == 'price_asc') {
-      sorted.sort((a, b) => _extractPrice(a).compareTo(_extractPrice(b)));
-    } else if (_productSort == 'price_desc') {
-      sorted.sort((a, b) => _extractPrice(b).compareTo(_extractPrice(a)));
-    }
+    sorted.sort((a, b) {
+      final aOos = isProductOutOfStock(a);
+      final bOos = isProductOutOfStock(b);
+      if (aOos != bOos) {
+        return aOos ? 1 : -1;
+      }
+      if (_productSort == 'best_selling') {
+        return _extractSold(b).compareTo(_extractSold(a));
+      } else if (_productSort == 'price_asc') {
+        return _extractPrice(a).compareTo(_extractPrice(b));
+      } else if (_productSort == 'price_desc') {
+        return _extractPrice(b).compareTo(_extractPrice(a));
+      }
+      return 0;
+    });
 
     return [
       // Sort Toolbar (matching Image 2: Phổ biến | Mới nhất | Bán chạy | Giá ⇅)
@@ -1087,6 +1116,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
 
     final rating = item['rating']?.toString() ?? '4.8';
     final sold = item['sold']?.toString() ?? '100+';
+    final isOutOfStock = isProductOutOfStock(item);
 
     return GestureDetector(
       onTap: () {
@@ -1210,6 +1240,27 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       },
                     ),
                   ),
+                  if (isOutOfStock)
+                    Center(
+                      child: Container(
+                        width: 58,
+                        height: 58,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xCC262626),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Đã hết',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1287,24 +1338,28 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       child: OutlinedButton.icon(
                         style: ButtonStyle(
                           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                            if (isOutOfStock) return const Color(0xFFF3F4F6);
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return AppColors.primary;
                             }
                             return Colors.white;
                           }),
                           foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                            if (isOutOfStock) return const Color(0xFF9CA3AF);
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
                             return const Color(0xFF374151);
                           }),
                           iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                            if (isOutOfStock) return const Color(0xFF9CA3AF);
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return Colors.white;
                             }
                             return const Color(0xFF374151);
                           }),
                           side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                            if (isOutOfStock) return const BorderSide(color: Color(0xFFE5E7EB));
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return const BorderSide(color: AppColors.primary);
                             }
@@ -1319,16 +1374,16 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                           ),
                         ),
                         icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                        label: const Text(
-                          'Thêm vào giỏ',
-                          style: TextStyle(
+                        label: Text(
+                          isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ',
+                          style: const TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        onPressed: () => _quickAddToCart(item),
+                        onPressed: isOutOfStock ? null : () => _quickAddToCart(item),
                       ),
                     ),
                   ],

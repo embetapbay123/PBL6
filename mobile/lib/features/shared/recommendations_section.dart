@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_theme.dart';
+import '../../core/product_utils.dart';
 import '../../main.dart';
 import '../catalog/product_detail_page.dart';
 import '../customer/favorites_page.dart';
@@ -93,6 +94,7 @@ class _RecommendationsSectionState
       final res = await ref.read(catalogProductsProvider(queryStr).future);
       final items = (res['items'] as List?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
+              .where((p) => !isProductOutOfStock(p))
               .toList() ??
           [];
       final total = (res['total'] as int?) ??
@@ -192,6 +194,7 @@ class _RecommendationsSectionState
             data: (data) {
               final initialItems = (data['items'] as List?)
                       ?.map((e) => Map<String, dynamic>.from(e as Map))
+                      .where((p) => !isProductOutOfStock(p))
                       .toList() ??
                   [];
               final total = (data['total'] as int?) ?? initialItems.length;

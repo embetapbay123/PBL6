@@ -1959,6 +1959,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Sticky Bottom Action Bar
   Widget _buildBottomActionBar(BuildContext context) {
+    final isHidden = _isProductHiddenOrDeleted();
+    final isOutOfStock = !isHidden && _isProductOutOfStock();
+    final isUnavailable = isHidden || isOutOfStock;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2043,7 +2047,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 child: SizedBox(
                   height: 44,
                   child: OutlinedButton.icon(
-                    onPressed: _addingToCart
+                    onPressed: (_addingToCart || isUnavailable)
                         ? null
                         : () => _addToCart(navigateToCart: false),
                     icon: const Icon(Icons.shopping_cart_outlined, size: 18),
@@ -2052,8 +2056,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary, width: 1.2),
+                      foregroundColor: isUnavailable ? const Color(0xFF9CA3AF) : AppColors.primary,
+                      side: BorderSide(
+                        color: isUnavailable ? const Color(0xFFD1D5DB) : AppColors.primary,
+                        width: 1.2,
+                      ),
+                      backgroundColor: isUnavailable ? const Color(0xFFF3F4F6) : Colors.white,
                       shape: const StadiumBorder(),
                       padding: EdgeInsets.zero,
                     ),
@@ -2068,12 +2076,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 child: SizedBox(
                   height: 44,
                   child: FilledButton(
-                    onPressed: _addingToCart
+                    onPressed: (_addingToCart || isUnavailable)
                         ? null
                         : () => _addToCart(navigateToCart: true),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: isUnavailable ? const Color(0xFFE5E7EB) : AppColors.primary,
+                      foregroundColor: isUnavailable ? const Color(0xFF9CA3AF) : Colors.white,
                       shape: const StadiumBorder(),
                       padding: EdgeInsets.zero,
                     ),

@@ -34,6 +34,7 @@ import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
 import 'package:pbl6_mobile/features/catalog/shop_page.dart';
+import 'package:pbl6_mobile/features/store/store_provider.dart';
 import 'package:pbl6_mobile/features/banner/hero_banner_carousel.dart';
 
 class MockApiClient extends ApiClient {
@@ -1513,6 +1514,44 @@ void main() {
       },
     );
 
+    testWidgets('CatalogPage excludes out-of-stock products from the product list and search suggestions', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {
+                'items': [
+                  {
+                    'id': 'p-available',
+                    'title': 'Sản phẩm có sẵn',
+                    'price_vnd': 50000,
+                    'is_out_of_stock': false,
+                  },
+                  {
+                    'id': 'p-oos',
+                    'title': 'Sản phẩm đã bán hết',
+                    'price_vnd': 60000,
+                    'is_out_of_stock': true,
+                  },
+                ],
+                'total': 2,
+              },
+            ),
+          ],
+          child: const MaterialApp(
+            home: CatalogPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Available product is shown
+      expect(find.text('Sản phẩm có sẵn', skipOffstage: false), findsOneWidget);
+      // Out-of-stock product is NOT shown
+      expect(find.text('Sản phẩm đã bán hết', skipOffstage: false), findsNothing);
+    });
+
     testWidgets('AppBottomNav renders 4 tabs without Đã lưu button', (tester) async {
       int tappedIndex = -1;
       await tester.pumpWidget(
@@ -2773,6 +2812,53 @@ void main() {
 
       // Ensure "Sản phẩm nổi bật" is in view
       expect(find.text('Sản phẩm nổi bật'), findsOneWidget);
+    });
+
+    testWidgets('StorePage displays out-of-stock products at the bottom with circular "Đã hết" badge and disabled add to cart button', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            storeProductsListProvider('d3e00000-0000-4000-8000-000000000201').overrideWith(
+              (ref) => Future.value([
+                {
+                  'id': 'prod-in-stock',
+                  'title': 'Sản phẩm còn hàng',
+                  'price_vnd': 100000,
+                  'is_out_of_stock': false,
+                },
+                {
+                  'id': 'prod-out-stock',
+                  'title': 'Sản phẩm hết hàng',
+                  'price_vnd': 200000,
+                  'is_out_of_stock': true,
+                },
+              ]),
+            ),
+          ],
+          child: const MaterialApp(
+            home: StorePage(
+              shopName: 'TechZone Official',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Circular "Đã hết" badge exists on the out-of-stock product
+      expect(find.text('Đã hết'), findsOneWidget);
+      expect(find.text('Hết hàng'), findsOneWidget);
+
+      // Verify that the out-of-stock "Hết hàng" button cannot add to cart
+      final outOfStockButton = find.widgetWithText(OutlinedButton, 'Hết hàng');
+      expect(outOfStockButton, findsOneWidget);
+      final OutlinedButton buttonWidget = tester.widget(outOfStockButton);
+      expect(buttonWidget.onPressed, isNull);
     });
   });
 
