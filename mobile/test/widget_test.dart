@@ -1385,6 +1385,77 @@ void main() {
     );
 
     testWidgets(
+      'CartPage search bar filters cart items inline without navigating to another page and search button has magnifying glass icon',
+      (tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            cartItemsProvider.overrideWith(
+              (ref) async => {
+                'items': [
+                  {
+                    'id': 'ci-01',
+                    'store_id': 'store-tech',
+                    'store_name': 'PBL Tech Store',
+                    'product_id': 'prod-01',
+                    'title': 'Chuột Gaming không dây',
+                    'sku': 'MOUSE-RGB',
+                    'unit_price_vnd': 350000,
+                    'quantity': 1,
+                  },
+                  {
+                    'id': 'ci-02',
+                    'store_id': 'store-fashion',
+                    'store_name': 'PBL Fashion Hub',
+                    'product_id': 'prod-02',
+                    'title': 'Áo hoodie Unisex',
+                    'sku': 'HOODIE-BLACK-L',
+                    'unit_price_vnd': 450000,
+                    'quantity': 2,
+                  },
+                ],
+                'total': 2,
+              },
+            ),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CartPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Initially both items are shown
+        expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+        expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+
+        // Search button has magnifying glass icon, not text 'Tìm kiếm'
+        expect(find.text('Tìm kiếm'), findsNothing);
+        expect(find.byTooltip('Tìm kiếm'), findsOneWidget);
+
+        // Search for 'hoodie'
+        final searchField = find.byType(TextField);
+        await tester.enterText(searchField, 'hoodie');
+        await tester.tap(find.byTooltip('Tìm kiếm'));
+        await tester.pumpAndSettle();
+
+        // CartPage stays on cart, filters items: 'Áo hoodie Unisex' visible, 'Chuột Gaming' filtered out
+        expect(find.text('Giỏ hàng của bạn'), findsOneWidget);
+        expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+        expect(find.text('Chuột Gaming không dây'), findsNothing);
+
+        // Clear search restores all items
+        await tester.tap(find.byIcon(Icons.close));
+        await tester.pumpAndSettle();
+        expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+        expect(find.text('Áo hoodie Unisex'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'Tapping variant pill opens CartVariantModal, updates price & stock on variant change, and confirms',
       (tester) async {
         final container = ProviderContainer(

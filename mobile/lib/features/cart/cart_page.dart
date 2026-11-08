@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
-import '../catalog/catalog_page.dart';
 import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
 import '../chat/chat_ai_modal.dart';
@@ -29,6 +28,7 @@ class _CartPageState extends ConsumerState<CartPage> {
   final _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchHovered = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -50,13 +50,9 @@ class _CartPageState extends ConsumerState<CartPage> {
   }
 
   void _handleSearch(String query) {
-    final text = query.trim();
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CatalogPage(initialSearch: text),
-      ),
-    );
+    setState(() {
+      _searchQuery = query.trim();
+    });
   }
 
   String _formatPrice(int price) {
@@ -113,10 +109,13 @@ class _CartPageState extends ConsumerState<CartPage> {
                   focusNode: _searchFocusNode,
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
+                  onChanged: (val) {
+                    setState(() => _searchQuery = val.trim());
+                  },
                   onSubmitted: _handleSearch,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Bạn đang tìm sản phẩm gì?',
-                    hintStyle: TextStyle(
+                    hintStyle: const TextStyle(
                       color: Color(0xFF6B7280),
                       fontSize: 13.5,
                     ),
@@ -129,35 +128,53 @@ class _CartPageState extends ConsumerState<CartPage> {
                     errorBorder: InputBorder.none,
                     focusedErrorBorder: InputBorder.none,
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              size: 16,
+                              color: Color(0xFF9CA3AF),
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 24,
+                              minHeight: 24,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
                   ),
                 ),
               ),
-          Padding(
-            padding: const EdgeInsets.all(4),
-            child: Material(
-              color: const Color(0xFFBA3416),
-              borderRadius: BorderRadius.circular(8),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: () => _handleSearch(_searchController.text),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 9,
-                  ),
-                  child: Text(
-                    'Tìm kiếm',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13.5,
+              Padding(
+                padding: const EdgeInsets.all(4),
+                child: Material(
+                  color: const Color(0xFFBA3416),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Tooltip(
+                    message: 'Tìm kiếm',
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () => _handleSearch(_searchController.text),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 9,
+                        ),
+                        child: Icon(
+                          Icons.search,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
         ],
       ),
     ),
@@ -410,11 +427,30 @@ class _CartPageState extends ConsumerState<CartPage> {
             );
           }
 
+          // Filter items by search query inside cart
+          final filteredItems = _searchQuery.isEmpty
+              ? items
+              : items.where((item) {
+                  final q = _searchQuery.toLowerCase();
+                  final title = (item['title'] ?? item['product_title'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  final store =
+                      (item['store_name'] ?? '').toString().toLowerCase();
+                  final sku = (item['sku'] ?? '').toString().toLowerCase();
+                  final variant =
+                      (item['variant_text'] ?? '').toString().toLowerCase();
+                  return title.contains(q) ||
+                      store.contains(q) ||
+                      sku.contains(q) ||
+                      variant.contains(q);
+                }).toList();
+
           // Group items by store_id
           final Map<String, List<Map<String, dynamic>>> storeGroups = {};
           final Map<String, String> storeNames = {};
 
-          for (final item in items) {
+          for (final item in filteredItems) {
             final storeId = item['store_id']?.toString() ?? 'store-default';
             final storeName =
                 item['store_name']?.toString() ?? 'Cửa hàng $storeId';
@@ -473,8 +509,45 @@ class _CartPageState extends ConsumerState<CartPage> {
                   // Top Search Bar (matches web marketplace header)
                   _buildSearchBar(),
 
-                  // Store Groups List
-                  ListView.builder(
+                  if (filteredItems.isEmpty && _searchQuery.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 36,
+                        horizontal: 24,
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.search_off_rounded,
+                              size: 44,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Không tìm thấy sản phẩm nào trong giỏ hàng phù hợp với "$_searchQuery"',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            TextButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                              child: const Text('Xóa bộ lọc tìm kiếm'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    // Store Groups List
+                    ListView.builder(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 6,
@@ -961,7 +1034,24 @@ class _CartPageState extends ConsumerState<CartPage> {
   }
 
   Widget _buildBottomCheckoutBar(List<Map<String, dynamic>> items) {
-    final allAvailableItemIds = items
+    final activeItems = _searchQuery.isEmpty
+        ? items
+        : items.where((item) {
+            final q = _searchQuery.toLowerCase();
+            final title = (item['title'] ?? item['product_title'] ?? '')
+                .toString()
+                .toLowerCase();
+            final store = (item['store_name'] ?? '').toString().toLowerCase();
+            final sku = (item['sku'] ?? '').toString().toLowerCase();
+            final variant =
+                (item['variant_text'] ?? '').toString().toLowerCase();
+            return title.contains(q) ||
+                store.contains(q) ||
+                sku.contains(q) ||
+                variant.contains(q);
+          }).toList();
+
+    final allAvailableItemIds = activeItems
         .where(_available)
         .map((e) => e['id']?.toString() ?? '')
         .where((id) => id.isNotEmpty)
