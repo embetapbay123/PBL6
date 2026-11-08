@@ -479,12 +479,21 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             // 1. Hero Image & Gallery Thumbnails (full screen width, flush against all edges)
             _buildHeroImageGallery(),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 2. Price, Rating & Sold Row (directly below image, matching Image 2)
+            Transform.translate(
+              offset: const Offset(0, -16),
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 2. Price, Rating & Sold Row (directly below image, matching Image 2)
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
@@ -603,9 +612,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             _buildRelatedProductsSection(),
 
             const SizedBox(height: 30),
-                ],
+                    ],
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -735,7 +745,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               ),
             if (imageList.length > 1)
               Positioned(
-                bottom: 12,
+                bottom: 24,
                 right: 12,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
