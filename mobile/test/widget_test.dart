@@ -28,6 +28,7 @@ import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
 import 'package:pbl6_mobile/features/customer/customer_settings_page.dart';
 import 'package:pbl6_mobile/features/customer/store_application_page.dart';
 import 'package:pbl6_mobile/features/customer/favorites_page.dart';
+import 'package:pbl6_mobile/features/customer/recently_viewed_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
@@ -2634,6 +2635,86 @@ void main() {
       expect(find.text('Điện thoại thông minh màn hình AMOLED 128GB'), findsOneWidget);
       // Products of other categories are filtered out
       expect(find.text('Tai nghe không dây Bluetooth chống ồn, pin lâu'), findsNothing);
+    });
+  });
+
+  group('RecentlyViewedPage Tests', () {
+    testWidgets('ProfilePage displays "Đã xem" and tapping opens RecentlyViewedPage', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+          ],
+          child: MaterialApp(
+            routes: {
+              '/customer/recently-viewed': (_) => const RecentlyViewedPage(),
+            },
+            home: const ProfilePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Label is "Đã xem" (not "Đã xem gần đây")
+      expect(find.text('Đã xem'), findsOneWidget);
+
+      // Tap on "Đã xem"
+      await tester.tap(find.text('Đã xem'));
+      await tester.pumpAndSettle();
+
+      // Navigated to RecentlyViewedPage with header title "Đã xem gần đây"
+      expect(find.text('Đã xem gần đây'), findsOneWidget);
+    });
+
+    testWidgets('RecentlyViewedPage renders with title "Đã xem gần đây", filter tabs, search and cards matching favorites page', (tester) async {
+      final mockProduct = {
+        'id': 'recent-view-01',
+        'title': 'Áo hoodie xám Weekend',
+        'price_vnd': 389000,
+        'discount': '-25%',
+        'image_url': 'https://example.com/hoodie.jpg',
+        'rating': 4.8,
+        'sold': 516,
+        'variants': [
+          {'id': 'v-1', 'price_vnd': 389000},
+        ],
+      };
+
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+        ],
+      );
+
+      // Add a product to recently viewed
+      container.read(recentlyViewedProvider.notifier).addProduct(mockProduct);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: RecentlyViewedPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Top title
+      expect(find.text('Đã xem gần đây'), findsOneWidget);
+
+      // Filter tabs matching favorites page
+      expect(find.text('Tất Cả'), findsOneWidget);
+      expect(find.text('Trạng thái'), findsOneWidget);
+      expect(find.text('Giảm giá'), findsOneWidget);
+      expect(find.text('Ngành hàng'), findsOneWidget);
+
+      // Product card matching unified search/favorites card
+      expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+      expect(find.text('389.000 đ'), findsOneWidget);
+      expect(find.text('-25%'), findsOneWidget);
+      expect(find.text('Thêm vào giỏ'), findsOneWidget);
+      expect(find.byIcon(Icons.shopping_cart_outlined), findsWidgets);
+      expect(find.byIcon(Icons.favorite_border_rounded), findsWidgets);
     });
   });
 }

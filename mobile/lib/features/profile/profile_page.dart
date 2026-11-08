@@ -384,12 +384,8 @@ class ProfilePage extends ConsumerWidget {
               child: _buildActivityCard(
                 context,
                 icon: Icons.access_time_rounded,
-                title: 'Đã xem gần đây',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Danh sách sản phẩm đã xem gần đây.')),
-                  );
-                },
+                title: 'Đã xem',
+                onTap: () => Navigator.pushNamed(context, '/customer/recently-viewed'),
               ),
             ),
             const SizedBox(width: 12),
