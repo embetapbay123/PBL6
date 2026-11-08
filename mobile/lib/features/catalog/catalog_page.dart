@@ -1692,7 +1692,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.58,
+            childAspectRatio: 0.54,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -1742,6 +1742,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
         : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
 
+    final ratingNum = product['rating'] ?? product['rating_average'] ?? product['avg_rating'];
+    final ratingStr = (ratingNum is num)
+        ? (ratingNum > 0 ? ratingNum.toStringAsFixed(1) : '0')
+        : (ratingNum is String && double.tryParse(ratingNum) != null
+            ? (double.parse(ratingNum) > 0 ? double.parse(ratingNum).toStringAsFixed(1) : '0')
+            : '0');
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -1761,8 +1768,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image & Badges
-            Expanded(
-              flex: 5,
+            AspectRatio(
+              aspectRatio: 1.0,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1860,12 +1867,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
             // Product Details
             Expanded(
-              flex: 7,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Title
                     Text(
@@ -1879,147 +1884,143 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         height: 1.25,
                       ),
                     ),
+                    const SizedBox(height: 4),
 
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Price Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
-                        // Price Row
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '$lowestPrice ₫',
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13.5,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$originalPriceInt ₫',
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 10,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        // Rating & Sold Row
-                        Row(
-                          children: [
-                            const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
-                            const SizedBox(width: 2),
-                            const Text(
-                              '4.8',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '• Đã bán ${_formatSalesCount(_getProductMonthlySales(product))}',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        // "Thêm vào giỏ" Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return AppColors.primary;
-                                }
-                                return Colors.white;
-                              }),
-                              foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return Colors.white;
-                                }
-                                return AppColors.primary;
-                              }),
-                              iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return Colors.white;
-                                }
-                                return AppColors.primary;
-                              }),
-                              side: const WidgetStatePropertyAll(
-                                BorderSide(color: AppColors.primary, width: 0.8),
-                              ),
-                              padding: const WidgetStatePropertyAll(
-                                EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                              ),
-                              minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
-                              shape: WidgetStatePropertyAll(
-                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              ),
-                            ),
-                            icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                            label: const Text(
-                              'Thêm vào giỏ',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            onPressed: () => _quickAddToCart(product),
+                        Text(
+                          '$lowestPrice ₫',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        // Dưới cùng là tên store (Clickable)
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            if (storeName.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ShopPage(
-                                    shopId: product['store_id']?.toString() ?? '',
-                                    shopName: storeName,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.storefront_outlined,
-                                size: 11,
-                                color: AppColors.textMuted,
-                              ),
-                              const SizedBox(width: 3),
-                              Expanded(
-                                child: Text(
-                                  '$storeName ›',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 4),
+                        Text(
+                          '$originalPriceInt ₫',
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 10,
+                            decoration: TextDecoration.lineThrough,
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 3),
+                    // Rating & Sold Row
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                        const SizedBox(width: 2),
+                        Text(
+                          ratingStr,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '• Đã bán ${_formatSalesCount(_getProductMonthlySales(product))}',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    // "Thêm vào giỏ" Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: ButtonStyle(
+                          backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                              return AppColors.primary;
+                            }
+                            return Colors.white;
+                          }),
+                          foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                              return Colors.white;
+                            }
+                            return AppColors.primary;
+                          }),
+                          iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                              return Colors.white;
+                            }
+                            return AppColors.primary;
+                          }),
+                          side: const WidgetStatePropertyAll(
+                            BorderSide(color: AppColors.primary, width: 0.8),
+                          ),
+                          padding: const WidgetStatePropertyAll(
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                          ),
+                          minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          ),
+                        ),
+                        icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                        label: const Text(
+                          'Thêm vào giỏ',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onPressed: () => _quickAddToCart(product),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Dưới cùng là tên store (Clickable)
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        if (storeName.isNotEmpty) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ShopPage(
+                                shopId: product['store_id']?.toString() ?? '',
+                                shopName: storeName,
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.storefront_outlined,
+                            size: 11,
+                            color: AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              '$storeName ›',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
