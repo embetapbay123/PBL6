@@ -4,7 +4,7 @@ import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
-import '../chat/chat_ai_modal.dart';
+import '../shared/chat_badge_button.dart';
 import '../checkout/checkout_page.dart';
 import '../customer/favorites_page.dart';
 import '../shared/recommendations_section.dart';
@@ -264,13 +264,8 @@ class _CartPageState extends ConsumerState<CartPage> {
             },
             orElse: () => const SizedBox.shrink(),
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              color: AppColors.textPrimary,
-            ),
+          const ChatBadgeButton(
             tooltip: 'Chat',
-            onPressed: () => ChatAiModal.show(context),
           ),
           const SizedBox(width: 4),
         ],

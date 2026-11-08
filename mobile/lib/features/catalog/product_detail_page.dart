@@ -1794,18 +1794,49 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               InkWell(
                 onTap: () => ChatAiModal.show(context, productContext: _product),
                 borderRadius: BorderRadius.circular(12),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.chat_outlined,
-                        color: AppColors.primary,
-                        size: 22,
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(
+                            Icons.chat_outlined,
+                            color: AppColors.primary,
+                            size: 22,
+                          ),
+                          if (ref.watch(chatBadgeCountProvider) > 0)
+                            Positioned(
+                              right: -6,
+                              top: -4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.white, width: 1.2),
+                                ),
+                                constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                                child: Text(
+                                  ref.watch(chatBadgeCountProvider) > 99
+                                      ? '99+'
+                                      : '${ref.watch(chatBadgeCountProvider)}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.1,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      SizedBox(height: 2),
-                      Text(
+                      const SizedBox(height: 2),
+                      const Text(
                         'Chat ngay',
                         style: TextStyle(
                           fontSize: 10.5,

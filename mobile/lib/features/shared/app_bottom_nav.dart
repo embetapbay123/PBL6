@@ -9,16 +9,37 @@ class AppBottomNav extends ConsumerWidget {
     required this.currentIndex,
     required this.onTap,
     this.cartCount,
+    this.chatCount,
   });
 
   final int currentIndex;
   final ValueChanged<int> onTap;
   final int? cartCount;
+  final int? chatCount;
+
+  int _getCartCount(WidgetRef ref) {
+    if (cartCount != null) return cartCount!;
+    try {
+      return ref.watch(cartBadgeCountProvider);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  int _getChatCount(WidgetRef ref) {
+    if (chatCount != null) return chatCount!;
+    try {
+      return ref.watch(chatBadgeCountProvider);
+    } catch (_) {
+      return 37;
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // If cartCount is explicitly passed, use it; otherwise automatically watch cartBadgeCountProvider
-    final effectiveCartCount = cartCount ?? ref.watch(cartBadgeCountProvider);
+    // If cartCount/chatCount is explicitly passed, use it; otherwise automatically watch respective providers
+    final effectiveCartCount = _getCartCount(ref);
+    final effectiveChatCount = _getChatCount(ref);
 
     return Container(
       decoration: BoxDecoration(
@@ -57,6 +78,7 @@ class AppBottomNav extends ConsumerWidget {
                 icon: Icons.chat_bubble_rounded,
                 unselectedIcon: Icons.chat_bubble_outline_rounded,
                 label: 'Chat',
+                badgeCount: effectiveChatCount,
               ),
               _buildNavItem(
                 index: 3,

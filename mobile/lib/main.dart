@@ -294,6 +294,8 @@ final cartBadgeCountProvider = Provider<int>((ref) {
   );
 });
 
+final chatBadgeCountProvider = StateProvider<int>((ref) => 37);
+
 final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).getProfile();
 });

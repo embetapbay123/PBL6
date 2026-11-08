@@ -7,7 +7,7 @@ import '../cart/cart_page.dart';
 import '../catalog/shop_page.dart';
 import 'order_detail_page.dart';
 import 'order_refund_page.dart';
-import '../chat/chat_ai_modal.dart';
+import '../shared/chat_badge_button.dart';
 
 final customerOrdersProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return await ref.read(apiProvider).listOwnOrders();
@@ -193,13 +193,8 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                 setState(() => _isSearching = true);
               },
             ),
-          IconButton(
-            icon: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              color: AppColors.textPrimary,
-            ),
+          const ChatBadgeButton(
             tooltip: 'Trung tâm chat',
-            onPressed: () => ChatAiModal.show(context),
           ),
         ],
         bottom: PreferredSize(

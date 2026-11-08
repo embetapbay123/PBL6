@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
-import '../chat/chat_ai_modal.dart';
+import '../shared/chat_badge_button.dart';
 
 enum SettingsTab {
   privacy,
@@ -233,40 +233,8 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  color: Color(0xFFEE4D2D),
-                  size: 24,
-                ),
-                Positioned(
-                  right: -6,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEE4D2D),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: const Text(
-                      '37',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          const ChatBadgeButton(
             tooltip: 'Tin nhắn',
-            onPressed: () => ChatAiModal.show(context),
           ),
         ],
       ),

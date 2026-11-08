@@ -2,6 +2,7 @@ import '../../core/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../chat/chat_ai_modal.dart';
+import '../shared/chat_badge_button.dart';
 
 class StoreMessagesPage extends ConsumerStatefulWidget {
   const StoreMessagesPage({super.key});
@@ -48,9 +49,7 @@ class _StoreMessagesPageState extends ConsumerState<StoreMessagesPage> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF8C7E74), size: 22),
-            onPressed: () => ChatAiModal.show(context),
+          const ChatBadgeButton(
             tooltip: 'Trung tâm chat',
           ),
         ],

@@ -741,6 +741,7 @@ void main() {
 
       expect(find.text('Cài đặt'), findsWidgets);
       expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+      expect(find.text('37'), findsOneWidget);
       expect(find.text('Tài khoản của tôi'), findsOneWidget);
       expect(find.text('Tài khoản & Bảo mật'), findsOneWidget);
       expect(find.text('Địa Chỉ'), findsOneWidget);
@@ -1443,6 +1444,7 @@ void main() {
       expect(find.text('Khám phá'), findsOneWidget);
       expect(find.text('Giỏ hàng'), findsOneWidget);
       expect(find.text('Chat'), findsOneWidget);
+      expect(find.text('37'), findsOneWidget);
       expect(find.text('Cá nhân'), findsOneWidget);
       expect(find.text('Đã lưu'), findsNothing);
 
@@ -1618,6 +1620,7 @@ void main() {
         // Verify Chat button is present next to Sửa in AppBar
         expect(find.byTooltip('Chat'), findsOneWidget);
         expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+      expect(find.text('37'), findsOneWidget);
 
         // Verify bottom navigation bar (AppBottomNav) is removed from CartPage
         expect(find.text('Khám phá'), findsNothing);
@@ -2078,6 +2081,7 @@ void main() {
       expect(find.byIcon(Icons.refresh), findsNothing);
       expect(find.byIcon(Icons.search), findsOneWidget);
       expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+      expect(find.text('37'), findsOneWidget);
 
       // Verify page background is light grey
       final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
