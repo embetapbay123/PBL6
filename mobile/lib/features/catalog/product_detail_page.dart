@@ -1692,36 +1692,26 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
             children: [
-              // Chat AI Button
+              // "Chat ngay" Button
               InkWell(
                 onTap: () => ChatAiModal.show(context, productContext: _product),
                 borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: const BoxDecoration(
-                          gradient: AppColors.redGradient,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.auto_awesome,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
+                      Icon(
+                        Icons.chat_outlined,
+                        color: AppColors.primary,
+                        size: 22,
                       ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Chat AI',
+                      SizedBox(height: 2),
+                      Text(
+                        'Chat ngay',
                         style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                         ),
                       ),
