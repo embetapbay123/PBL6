@@ -443,7 +443,7 @@ class BootstrapApp extends StatelessWidget {
           case '/customer/settings':
           case '/settings':
             final args = settings.arguments as Map<String, dynamic>?;
-            final tab = args?['tab'] as SettingsTab? ?? SettingsTab.privacy;
+            final tab = args?['tab'] as SettingsTab?;
             return MaterialPageRoute(
               builder: (_) => CustomerSettingsPage(initialTab: tab),
             );

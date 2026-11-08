@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/app_notice_dialog.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../chat/chat_ai_modal.dart';
@@ -211,7 +210,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
 
   Widget _buildMainSettingsScreen() {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -508,8 +507,10 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFF6F6F6),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
       child: Text(
         title,
         style: const TextStyle(
@@ -534,8 +535,8 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
   Widget _buildDivider() {
     return const Divider(
       height: 1,
-      thickness: 0.8,
-      color: Color(0xFFF3F4F6),
+      thickness: 0.6,
+      color: Color(0xFFEEEEEE),
       indent: 16,
     );
   }
@@ -578,8 +579,8 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
             ),
             const Icon(
               Icons.arrow_forward_ios_rounded,
-              size: 14,
-              color: Color(0xFFD1D5DB),
+              size: 13,
+              color: Color(0xFFBDBDBD),
             ),
           ],
         ),
