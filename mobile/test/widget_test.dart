@@ -1250,9 +1250,12 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
 
-        await tester.tap(find.text('PBL6 Market'));
+        // Tap back button next to search bar -> routes back to Explore
+        expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+        await tester.tap(find.byIcon(Icons.arrow_back));
         await tester.pumpAndSettle();
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
+        expect(find.byIcon(Icons.arrow_back), findsNothing);
       },
     );
 

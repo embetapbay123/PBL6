@@ -333,7 +333,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ? [
                   // Top Bar & Navbar & Search Bar
                   SliverToBoxAdapter(
-                    child: _buildWebTopSection(context, cartCount),
+                    child: _buildWebTopSection(context, cartCount, isSearchMode: true),
                   ),
 
                   // Dedicated Search & Category View Header (Breadcrumb, Title, Counter, Toolbar, Active Tags)
@@ -351,7 +351,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               : [
                   // Top Bar & Navbar & Search Bar
                   SliverToBoxAdapter(
-                    child: _buildWebTopSection(context, cartCount),
+                    child: _buildWebTopSection(context, cartCount, isSearchMode: false),
                   ),
 
                   // Hero Banner ("TỪ NHỮNG ĐIỀU GIẢN ĐƠN ...")
@@ -514,7 +514,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   /// Web-like top section: Announcement Bar + Brand Navbar + Search Bar
-  Widget _buildWebTopSection(BuildContext context, int cartCount) {
+  Widget _buildWebTopSection(BuildContext context, int cartCount, {bool isSearchMode = false}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -671,16 +671,32 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             color: Colors.white,
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-          child: MouseRegion(
-            onEnter: (_) => setState(() => _isSearchHovered = true),
-            onExit: (_) => setState(() => _isSearchHovered = false),
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _isSearchSuggesting = true);
-                _searchFocusNode.requestFocus();
-              },
-              child: Container(
+          padding: EdgeInsets.fromLTRB(isSearchMode ? 6 : 16, 12, 16, 14),
+          child: Row(
+            children: [
+              if (isSearchMode)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Color(0xFF1F2937),
+                      size: 24,
+                    ),
+                    tooltip: 'Quay lại',
+                    onPressed: _resetToExplore,
+                  ),
+                ),
+              Expanded(
+                child: MouseRegion(
+                  onEnter: (_) => setState(() => _isSearchHovered = true),
+                  onExit: (_) => setState(() => _isSearchHovered = false),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _isSearchSuggesting = true);
+                      _searchFocusNode.requestFocus();
+                    },
+                    child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -775,6 +791,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ),
           ),
           ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -830,7 +849,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     IconButton(
                       icon: const Icon(
                         Icons.arrow_back,
-                        color: Color(0xFFEE4D2D),
+                        color: AppColors.primary,
                         size: 24,
                       ),
                       onPressed: () {
@@ -846,7 +865,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: const Color(0xFFEE4D2D),
+                            color: AppColors.primary,
                             width: 1.5,
                           ),
                         ),
@@ -897,7 +916,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               ),
                             const SizedBox(width: 4),
                             Material(
-                              color: const Color(0xFFEE4D2D),
+                              color: AppColors.primary,
                               borderRadius: BorderRadius.circular(6),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(6),
