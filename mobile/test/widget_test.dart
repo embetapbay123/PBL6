@@ -666,8 +666,8 @@ void main() {
 
       expect(find.text('Tài khoản'), findsNothing);
       expect(find.text('Nguyễn Văn A'), findsOneWidget);
-      expect(find.textContaining('Đang theo dõi'), findsOneWidget);
-      expect(find.textContaining('Người theo dõi'), findsOneWidget);
+      expect(find.textContaining('Đang theo dõi'), findsNothing);
+      expect(find.textContaining('Người theo dõi'), findsNothing);
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
       expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       expect(find.text('user@example.com'), findsOneWidget);
@@ -711,8 +711,8 @@ void main() {
 
       expect(find.text('[DEMO] Nguyễn Văn A'), findsOneWidget);
       expect(find.text('customer.a@pbl6.test'), findsOneWidget);
-      expect(find.text('513 Đang theo dõi'), findsOneWidget);
-      expect(find.text('1 Người theo dõi'), findsOneWidget);
+      expect(find.text('513 Đang theo dõi'), findsNothing);
+      expect(find.text('1 Người theo dõi'), findsNothing);
       expect(find.text('CUSTOMER'), findsOneWidget);
     });
 

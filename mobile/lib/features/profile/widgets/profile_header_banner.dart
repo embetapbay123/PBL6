@@ -155,29 +155,6 @@ class ProfileHeaderBanner extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 4),
-                    // Server-driven stats row: Đang theo dõi, Người theo dõi
-                    Row(
-                      children: [
-                        Text(
-                          profile.formattedFollowing,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          profile.formattedFollowers,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
