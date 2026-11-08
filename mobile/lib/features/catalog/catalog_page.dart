@@ -66,6 +66,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     setState(() {
       _searchQuery = val.trim();
       _forceSearchMode = _searchQuery.isNotEmpty;
+      _sort = 'best_selling';
       _page = 1;
     });
   }
@@ -75,6 +76,46 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       _sort = sort;
       _page = 1;
     });
+  }
+
+  String _getSortLabel(String sort) {
+    switch (sort) {
+      case 'best_selling':
+        return 'Bán chạy';
+      case 'newest':
+        return 'Mới nhất';
+      case 'price_asc':
+        return 'Giá tăng dần';
+      case 'price_desc':
+        return 'Giá giảm dần';
+      default:
+        return 'Bán chạy';
+    }
+  }
+
+  PopupMenuItem<String> _buildSortMenuItem(String value, String label) {
+    final isSelected = _sort == value;
+    return PopupMenuItem<String>(
+      value: value,
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE5E7EB) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            color: isSelected ? const Color(0xFF111827) : const Color(0xFF374151),
+          ),
+        ),
+      ),
+    );
   }
 
   int _getProductMonthlySales(Map<String, dynamic> product) {
@@ -428,13 +469,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         icon: Icons.access_time_rounded,
                         selected: _sort == 'newest',
                         onTap: () => _onSortChanged('newest'),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildSortChip(
-                        label: 'Tên sản phẩm',
-                        icon: Icons.sort_by_alpha,
-                        selected: _sort == 'title',
-                        onTap: () => _onSortChanged('title'),
                       ),
                       const SizedBox(width: 8),
                       _buildSortChip(
@@ -1939,35 +1973,53 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
                 const Spacer(),
 
-                // Dropdown Sắp xếp
-                Container(
-                  height: 33,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+                // Dropdown Sắp xếp (mặc định xổ xuống dưới)
+                PopupMenuButton<String>(
+                  position: PopupMenuPosition.under,
+                  offset: const Offset(0, 4),
+                  elevation: 4,
+                  shadowColor: Colors.black26,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
+                    side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
                   ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _sort,
-                      icon: const Icon(Icons.keyboard_arrow_down, size: 15, color: Color(0xFF6B7280)),
-                      isDense: true,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        color: Color(0xFF374151),
-                        fontWeight: FontWeight.w500,
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'best_selling', child: Text('Bán chạy')),
-                        DropdownMenuItem(value: 'newest', child: Text('Mới nhất')),
-                        DropdownMenuItem(value: 'title', child: Text('Tên sản phẩm')),
-                        DropdownMenuItem(value: 'price_asc', child: Text('Giá tăng dần')),
-                        DropdownMenuItem(value: 'price_desc', child: Text('Giá giảm dần')),
+                  color: Colors.white,
+                  padding: EdgeInsets.zero,
+                  onSelected: (val) {
+                    _onSortChanged(val);
+                  },
+                  itemBuilder: (context) => [
+                    _buildSortMenuItem('best_selling', 'Bán chạy'),
+                    _buildSortMenuItem('newest', 'Mới nhất'),
+                    _buildSortMenuItem('price_asc', 'Giá tăng dần'),
+                    _buildSortMenuItem('price_desc', 'Giá giảm dần'),
+                  ],
+                  child: Container(
+                    height: 33,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _getSortLabel(_sort),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF374151),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 15,
+                          color: Color(0xFF6B7280),
+                        ),
                       ],
-                      onChanged: (val) {
-                        if (val != null) _onSortChanged(val);
-                      },
                     ),
                   ),
                 ),

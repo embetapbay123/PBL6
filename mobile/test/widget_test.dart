@@ -1096,7 +1096,7 @@ void main() {
     );
 
     testWidgets(
-      'CatalogPage defaults to Bán chạy sort and provides Mới nhất, Bán chạy, Tên sản phẩm, Giá tăng/giảm',
+      'CatalogPage defaults to Bán chạy sort and provides Mới nhất, Bán chạy, Giá tăng/giảm (no Tên sản phẩm)',
       (tester) async {
         tester.view.physicalSize = const Size(800, 1400);
         tester.view.devicePixelRatio = 1.0;
@@ -1180,18 +1180,19 @@ void main() {
         await tester.tap(find.text('Tìm kiếm'));
         await tester.pumpAndSettle();
 
-        // The Dropdown should exist and display current sort
-        final dropdownFinder = find.byType(DropdownButton<String>);
+        // The Dropdown should exist and display current sort (defaults to Bán chạy on new search)
+        final dropdownFinder = find.byType(PopupMenuButton<String>);
         expect(dropdownFinder, findsOneWidget);
+        expect(find.descendant(of: dropdownFinder, matching: find.text('Bán chạy')), findsOneWidget);
 
         // Tap dropdown to open menu
         await tester.tap(dropdownFinder);
         await tester.pumpAndSettle();
 
-        // Check options inside popup
-        expect(find.text('Bán chạy').last, findsOneWidget);
-        expect(find.text('Mới nhất').last, findsOneWidget);
-        expect(find.text('Tên sản phẩm'), findsWidgets);
+        // Check options inside popup (NO 'Tên sản phẩm')
+        expect(find.text('Bán chạy'), findsWidgets);
+        expect(find.text('Mới nhất'), findsWidgets);
+        expect(find.text('Tên sản phẩm'), findsNothing);
         expect(find.text('Giá tăng dần'), findsWidgets);
         expect(find.text('Giá giảm dần'), findsWidgets);
 
@@ -1205,6 +1206,13 @@ void main() {
             .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
             .toList();
         expect(titlesPriceAsc.first, 'Sản phẩm C (Mới nhất)'); // 100k
+
+        // 3. Changing to a new search keyword resets sort to 'Bán chạy'
+        await tester.enterText(find.byType(TextField).first, 'áo');
+        await tester.tap(find.text('Tìm kiếm'));
+        await tester.pumpAndSettle();
+
+        expect(find.descendant(of: dropdownFinder, matching: find.text('Bán chạy')), findsOneWidget);
       },
     );
 
