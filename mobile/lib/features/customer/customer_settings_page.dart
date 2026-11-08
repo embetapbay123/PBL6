@@ -225,7 +225,7 @@ class _CustomerSettingsPageState extends ConsumerState<CustomerSettingsPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Thiết lập tài khoản',
+          'Cài đặt',
           style: TextStyle(
             color: Color(0xFF1F2937),
             fontSize: 18,

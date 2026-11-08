@@ -21,6 +21,7 @@ import 'package:pbl6_mobile/main.dart';
 import 'package:pbl6_mobile/features/cart/cart_page.dart';
 import 'package:pbl6_mobile/features/checkout/checkout_page.dart';
 import 'package:pbl6_mobile/features/checkout/order_success_page.dart';
+import 'package:pbl6_mobile/features/customer/customer_settings_page.dart';
 import 'package:pbl6_mobile/features/customer/store_application_page.dart';
 import 'package:pbl6_mobile/features/customer/favorites_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
@@ -641,6 +642,40 @@ void main() {
       expect(find.text('Có thể bạn cũng thích', skipOffstage: false), findsOneWidget);
       expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
       expect(find.text('Đăng xuất'), findsNothing);
+    });
+
+    testWidgets('CustomerSettingsPage renders settings screen matching design with title Cài đặt and chat button', (tester) async {
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = ProviderContainer(
+        overrides: [
+          apiProvider.overrideWithValue(MockApiClient()),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: CustomerSettingsPage(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Cài đặt'), findsWidgets);
+      expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+      expect(find.text('Tài khoản của tôi'), findsOneWidget);
+      expect(find.text('Tài khoản & Bảo mật'), findsOneWidget);
+      expect(find.text('Địa Chỉ'), findsOneWidget);
+      expect(find.text('Cài đặt Thông báo'), findsOneWidget);
+      expect(find.text('Cài đặt riêng tư'), findsOneWidget);
+      expect(find.text('Hỗ trợ', skipOffstage: false), findsOneWidget);
+      expect(find.text('Chuyển tài khoản / Đăng xuất', skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {
