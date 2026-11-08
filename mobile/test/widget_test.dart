@@ -1430,6 +1430,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
+        expect(find.byType(PageView), findsOneWidget);
         expect(find.text('Bàn phím cơ không dây Bluetooth'), findsWidgets);
         expect(find.text('Đang bán'), findsNothing);
         expect(find.text('Tất cả sản phẩm'), findsNothing);

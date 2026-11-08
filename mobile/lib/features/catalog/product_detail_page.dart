@@ -34,6 +34,13 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   int _selectedVariantIndex = 0;
   int _quantity = 1;
   bool _addingToCart = false;
+  late final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
 
   @override
@@ -47,6 +54,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   void didUpdateWidget(covariant ProductDetailPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.productId != widget.productId || oldWidget.initialProduct != widget.initialProduct) {
+      _selectedImageIndex = 0;
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(0);
+      }
       _product = widget.initialProduct;
       _loadAll();
     }
@@ -426,16 +437,19 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       ),
       bottomNavigationBar: _buildBottomActionBar(context),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Hero Image & Gallery Thumbnails (contain, aspect 1:1, soft grey bg)
+            // 1. Hero Image & Gallery Thumbnails (full screen width, flush against all edges)
             _buildHeroImageGallery(),
 
-            const SizedBox(height: 12),
-
-            // 2. Price, Rating & Sold Row (directly below image, matching Image 2)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 2. Price, Rating & Sold Row (directly below image, matching Image 2)
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
@@ -543,156 +557,199 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             _buildRelatedProductsSection(),
 
             const SizedBox(height: 30),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// 1. Hero Image Container & Gallery
+  /// 1. Hero Image Container & Gallery (full width, flush against all edges)
   Widget _buildHeroImageGallery() {
     final images = (_product?['images'] as List?) ?? [];
-    final hasImages = images.isNotEmpty;
-    final currentImageUrl = hasImages && _selectedImageIndex < images.length
-        ? (images[_selectedImageIndex] is Map
-            ? images[_selectedImageIndex]['image_url']?.toString()
-            : images[_selectedImageIndex]?.toString())
-        : (_product?['image_url']?.toString() ?? _product?['thumbnail']?.toString());
+    final fallbackUrl = _product?['image_url']?.toString() ?? _product?['thumbnail']?.toString();
+    final List<String> imageList = [];
+    if (images.isNotEmpty) {
+      for (final img in images) {
+        final u = img is Map ? img['image_url']?.toString() : img?.toString();
+        if (u != null && u.isNotEmpty) {
+          imageList.add(u);
+        }
+      }
+    }
+    if (imageList.isEmpty && fallbackUrl != null && fallbackUrl.isNotEmpty) {
+      imageList.add(fallbackUrl);
+    }
 
     final isHidden = _isProductHiddenOrDeleted();
     final isOutOfStock = !isHidden && _isProductOutOfStock();
     final overlayText = isHidden ? 'Đã ẩn' : (isOutOfStock ? 'Đã hết' : null);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 280,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: (currentImageUrl != null && currentImageUrl.isNotEmpty && currentImageUrl.startsWith('http'))
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.network(
-                          currentImageUrl,
-                          fit: BoxFit.contain,
-                          errorBuilder: (ctx, err, stack) => const Center(
-                            child: Icon(
-                              Icons.image_outlined,
-                              size: 70,
-                              color: Color(0xFFCBD5E1),
-                            ),
-                          ),
-                          loadingBuilder: (ctx, child, progress) {
-                            if (progress == null) return child;
-                            return const Center(
-                              child: SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : const Center(
+    final currentIndex = (_selectedImageIndex < imageList.length)
+        ? _selectedImageIndex
+        : 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
+          children: [
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: imageList.isNotEmpty ? imageList.length : 1,
+                onPageChanged: (idx) {
+                  setState(() => _selectedImageIndex = idx);
+                },
+                itemBuilder: (context, index) {
+                  if (imageList.isEmpty) {
+                    return Container(
+                      color: const Color(0xFFF3F4F6),
+                      child: const Center(
                         child: Icon(
                           Icons.image_outlined,
                           size: 70,
                           color: Color(0xFFCBD5E1),
                         ),
                       ),
+                    );
+                  }
+                  final imgUrl = imageList[index];
+                  return (imgUrl.isNotEmpty && imgUrl.startsWith('http'))
+                      ? Image.network(
+                          imgUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => Container(
+                            color: const Color(0xFFF3F4F6),
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_outlined,
+                                size: 70,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                          ),
+                          loadingBuilder: (ctx, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: const Color(0xFFF3F4F6),
+                              child: const Center(
+                                child: SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: const Color(0xFFF3F4F6),
+                          child: const Center(
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 70,
+                              color: Color(0xFFCBD5E1),
+                            ),
+                          ),
+                        );
+                },
               ),
-              if (overlayText != null)
-                Positioned.fill(
-                  child: Center(
-                    child: Container(
-                      width: 96,
-                      height: 96,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xCC262626),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        overlayText,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.5,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              if (images.length > 1)
-                Positioned(
-                  bottom: 10,
-                  right: 10,
+            ),
+            if (overlayText != null)
+              Positioned.fill(
+                child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withAlpha(140),
-                      borderRadius: BorderRadius.circular(12),
+                    width: 96,
+                    height: 96,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xCC262626),
                     ),
+                    alignment: Alignment.center,
                     child: Text(
-                      '${_selectedImageIndex + 1}/${images.length}',
+                      overlayText,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 16.5,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          if (images.length > 1) ...[
-            const SizedBox(height: 12),
-            SingleChildScrollView(
+              ),
+            if (imageList.length > 1)
+              Positioned(
+                bottom: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(140),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${currentIndex + 1}/${imageList.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (imageList.length > 1) ...[
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: images.asMap().entries.map((entry) {
+                children: imageList.asMap().entries.map((entry) {
                   final idx = entry.key;
-                  final img = entry.value;
-                  final isSelected = _selectedImageIndex == idx;
-                  final thumbUrl = img is Map ? img['image_url']?.toString() : img?.toString();
+                  final thumbUrl = entry.value;
+                  final isSelected = currentIndex == idx;
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: InkWell(
-                      onTap: () => setState(() => _selectedImageIndex = idx),
-                      borderRadius: BorderRadius.circular(10),
+                      onTap: () {
+                        setState(() => _selectedImageIndex = idx);
+                        if (_pageController.hasClients) {
+                          _pageController.animateToPage(
+                            idx,
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        width: 58,
-                        height: 58,
+                        width: 56,
+                        height: 56,
                         padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
-                            width: isSelected ? 2 : 1.2,
+                            width: isSelected ? 2 : 1,
                           ),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(7),
-                          child: (thumbUrl != null && thumbUrl.isNotEmpty && thumbUrl.startsWith('http'))
+                          borderRadius: BorderRadius.circular(6),
+                          child: (thumbUrl.isNotEmpty && thumbUrl.startsWith('http'))
                               ? Image.network(thumbUrl, fit: BoxFit.cover)
                               : const Icon(Icons.image_outlined, size: 24, color: Colors.grey),
                         ),
@@ -702,9 +759,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 }).toList(),
               ),
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
