@@ -42,6 +42,15 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     _loadAll();
   }
 
+  @override
+  void didUpdateWidget(covariant ProductDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.productId != widget.productId || oldWidget.initialProduct != widget.initialProduct) {
+      _product = widget.initialProduct;
+      _loadAll();
+    }
+  }
+
   Future<void> _loadAll() async {
     setState(() {
       _loading = true;
@@ -89,7 +98,81 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     }
   }
 
+  bool _isProductHiddenOrDeleted() {
+    final p = _product;
+    if (p == null) return false;
+    final status = p['status']?.toString().toUpperCase() ?? '';
+    if (status == 'HIDDEN' ||
+        status == 'DELETED' ||
+        status == 'INACTIVE' ||
+        status == 'DRAFT' ||
+        status == 'ẨN' ||
+        status == 'ĐÃ ẨN') {
+      return true;
+    }
+    if (p['is_hidden'] == true ||
+        p['is_deleted'] == true ||
+        p['is_active'] == false) {
+      return true;
+    }
+    return false;
+  }
+
+  bool _isProductOutOfStock() {
+    final p = _product;
+    if (p == null) return false;
+    final status = p['status']?.toString().toUpperCase() ?? '';
+    if (p['is_out_of_stock'] == true ||
+        p['stock_status']?.toString().toUpperCase() == 'OUT_OF_STOCK' ||
+        status == 'OUT_OF_STOCK' ||
+        status == 'HẾT HÀNG' ||
+        status == 'ĐÃ HẾT') {
+      return true;
+    }
+
+    final variants = (p['variants'] as List?) ?? [];
+    if (variants.isNotEmpty) {
+      int totalStock = 0;
+      bool hasExplicitStock = false;
+      for (final v in variants) {
+        if (v is Map) {
+          final s1 = (v['available_quantity'] as num?)?.toInt();
+          final s2 = (v['stock'] as num?)?.toInt();
+          final s3 = (v['inventory_quantity'] as num?)?.toInt();
+          final s = s1 ?? s2 ?? s3;
+          if (s != null) {
+            hasExplicitStock = true;
+            totalStock += s;
+          }
+        }
+      }
+      if (hasExplicitStock && totalStock <= 0) return true;
+    } else {
+      final s1 = (p['available_quantity'] as num?)?.toInt();
+      final s2 = (p['stock'] as num?)?.toInt();
+      final s3 = (p['inventory_quantity'] as num?)?.toInt();
+      final s = s1 ?? s2 ?? s3;
+      if (s != null && s <= 0) return true;
+    }
+    return false;
+  }
+
   Future<void> _addToCart({bool navigateToCart = false}) async {
+    if (_isProductHiddenOrDeleted()) {
+      AppNoticeDialog.show(
+        context,
+        message: 'Sản phẩm đã bị ẩn hoặc tạm ngừng kinh doanh',
+      );
+      return;
+    }
+    if (_isProductOutOfStock()) {
+      AppNoticeDialog.show(
+        context,
+        message: 'Sản phẩm hiện đã hết hàng',
+      );
+      return;
+    }
+
     final variants = (_product?['variants'] as List?) ?? [];
     if (variants.isEmpty) {
       AppNoticeDialog.show(
@@ -204,7 +287,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     }
 
     final product = _product!;
-    final status = product['status']?.toString() ?? 'ACTIVE';
     final title = product['title']?.toString() ?? 'Sản phẩm';
     final desc = product['description']?.toString() ?? 'Không có mô tả sản phẩm.';
     final attributes = (product['attributes'] as Map?) ?? {};
@@ -328,63 +410,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Breadcrumb navigation matching Web
-            InkWell(
-              onTap: () => Navigator.pop(context),
-              child: const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.arrow_back_rounded, size: 15, color: Color(0xFF6B7280)),
-                    SizedBox(width: 4),
-                    Text(
-                      'Tất cả sản phẩm',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
             // 1. Hero Image & Gallery Thumbnails (contain, aspect 1:1, soft grey bg)
             _buildHeroImageGallery(),
 
-            const SizedBox(height: 16),
-
-            // 2. Status Badge ("Đang bán")
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-              decoration: BoxDecoration(
-                color: status.toUpperCase() == 'ACTIVE'
-                    ? const Color(0xFFECFDF5)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: status.toUpperCase() == 'ACTIVE'
-                      ? const Color(0xFFA7F3D0)
-                      : Colors.grey.shade300,
-                  width: 0.8,
-                ),
-              ),
-              child: Text(
-                status.toUpperCase() == 'ACTIVE'
-                    ? 'Đang bán'
-                    : (status.isEmpty ? 'Đang bán' : status),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: status.toUpperCase() == 'ACTIVE'
-                      ? const Color(0xFF059669)
-                      : Colors.grey.shade700,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 14),
 
             // 3. Product Title & SKU
             Text(
@@ -511,6 +540,10 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             : images[_selectedImageIndex]?.toString())
         : (_product?['image_url']?.toString() ?? _product?['thumbnail']?.toString());
 
+    final isHidden = _isProductHiddenOrDeleted();
+    final isOutOfStock = !isHidden && _isProductOutOfStock();
+    final overlayText = isHidden ? 'Đã ẩn' : (isOutOfStock ? 'Đã hết' : null);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -565,6 +598,29 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                         ),
                       ),
               ),
+              if (overlayText != null)
+                Positioned.fill(
+                  child: Center(
+                    child: Container(
+                      width: 96,
+                      height: 96,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xCC262626),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        overlayText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               if (images.length > 1)
                 Positioned(
                   bottom: 10,

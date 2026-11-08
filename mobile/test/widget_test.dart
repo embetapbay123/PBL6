@@ -73,16 +73,38 @@ class MockApiClient extends ApiClient {
   ) async => {'status': status, 'version': expectedVersion + 1};
 
   @override
-  Future<Map<String, dynamic>> getProduct(String id) async => {
-    'id': id,
-    'title': 'Bàn phím cơ không dây Bluetooth',
-    'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
-    'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
-    'variants': [
-      {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000', 'available_quantity': 25},
-      {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000', 'available_quantity': 10},
-    ],
-  };
+  Future<Map<String, dynamic>> getProduct(String id) async {
+    if (id == 'prod-oos') {
+      return {
+        'id': id,
+        'title': 'Sản phẩm hết hàng',
+        'is_out_of_stock': true,
+        'variants': [
+          {'id': 'v-1', 'sku': 'OOS', 'price_vnd': '100000', 'available_quantity': 0},
+        ],
+      };
+    }
+    if (id == 'prod-hidden') {
+      return {
+        'id': id,
+        'title': 'Sản phẩm đã ẩn',
+        'status': 'HIDDEN',
+        'variants': [
+          {'id': 'v-1', 'sku': 'HID', 'price_vnd': '100000', 'available_quantity': 10},
+        ],
+      };
+    }
+    return {
+      'id': id,
+      'title': 'Bàn phím cơ không dây Bluetooth',
+      'description': 'Bàn phím cơ switch Red êm ái, pin 4000mAh',
+      'attributes': {'Hãng': 'PBL Tech', 'Bảo hành': '12 tháng'},
+      'variants': [
+        {'id': 'v-red', 'sku': 'KB-RED', 'price_vnd': '1200000', 'available_quantity': 25},
+        {'id': 'v-blue', 'sku': 'KB-BLUE', 'price_vnd': '1250000', 'available_quantity': 10},
+      ],
+    };
+  }
 
   @override
   Future<List<Map<String, dynamic>>> getProductReviews(
@@ -1365,7 +1387,8 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Bàn phím cơ không dây Bluetooth'), findsWidgets);
-        expect(find.text('Đang bán'), findsOneWidget);
+        expect(find.text('Đang bán'), findsNothing);
+        expect(find.text('Tất cả sản phẩm'), findsNothing);
         expect(find.text('1200000 ₫'), findsOneWidget);
         expect(find.text('Mã SKU: KB-RED'), findsOneWidget);
         expect(find.text('KB-RED (1200000 ₫)'), findsOneWidget);
@@ -1386,6 +1409,46 @@ void main() {
         await tester.tap(find.byIcon(Icons.add));
         await tester.pumpAndSettle();
         expect(find.text('2'), findsWidgets);
+
+        // Verify out of stock displays 'Đã hết'
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [apiProvider.overrideWithValue(MockApiClient())],
+            child: MaterialApp(
+              home: ProductDetailPage(
+                key: UniqueKey(),
+                productId: 'prod-oos',
+                initialProduct: const {
+                  'id': 'prod-oos',
+                  'title': 'Sản phẩm hết hàng',
+                  'is_out_of_stock': true,
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Đã hết'), findsOneWidget);
+
+        // Verify hidden product displays 'Đã ẩn'
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [apiProvider.overrideWithValue(MockApiClient())],
+            child: MaterialApp(
+              home: ProductDetailPage(
+                key: UniqueKey(),
+                productId: 'prod-hidden',
+                initialProduct: const {
+                  'id': 'prod-hidden',
+                  'title': 'Sản phẩm đã ẩn',
+                  'status': 'HIDDEN',
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Đã ẩn'), findsOneWidget);
       },
     );
 
