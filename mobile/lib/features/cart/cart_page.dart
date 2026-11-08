@@ -153,7 +153,7 @@ class _CartPageState extends ConsumerState<CartPage> {
               Padding(
                 padding: const EdgeInsets.all(4),
                 child: Material(
-                  color: const Color(0xFFBA3416),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(8),
                   child: Tooltip(
                     message: 'Tìm kiếm',
@@ -162,13 +162,16 @@ class _CartPageState extends ConsumerState<CartPage> {
                       onTap: () => _handleSearch(_searchController.text),
                       child: const Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: 14,
+                          horizontal: 16,
                           vertical: 9,
                         ),
-                        child: Icon(
-                          Icons.search,
-                          color: Colors.white,
-                          size: 18,
+                        child: Text(
+                          'Tìm kiếm',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),

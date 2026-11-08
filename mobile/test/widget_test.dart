@@ -1472,7 +1472,7 @@ void main() {
     );
 
     testWidgets(
-      'CartPage search bar filters cart items inline without navigating to another page and search button has magnifying glass icon',
+      'CartPage search bar filters cart items inline without navigating to another page and search button has Tìm kiếm label',
       (tester) async {
         final container = ProviderContainer(
           overrides: [
@@ -1519,14 +1519,13 @@ void main() {
         expect(find.text('Chuột Gaming không dây'), findsOneWidget);
         expect(find.text('Áo hoodie Unisex'), findsOneWidget);
 
-        // Search button has magnifying glass icon, not text 'Tìm kiếm'
-        expect(find.text('Tìm kiếm'), findsNothing);
-        expect(find.byTooltip('Tìm kiếm'), findsOneWidget);
+        // Search button has text 'Tìm kiếm'
+        expect(find.text('Tìm kiếm'), findsOneWidget);
 
         // Search for 'hoodie'
         final searchField = find.byType(TextField);
         await tester.enterText(searchField, 'hoodie');
-        await tester.tap(find.byTooltip('Tìm kiếm'));
+        await tester.tap(find.text('Tìm kiếm'));
         await tester.pumpAndSettle();
 
         // CartPage stays on cart, filters items: 'Áo hoodie Unisex' visible, 'Chuột Gaming' filtered out
