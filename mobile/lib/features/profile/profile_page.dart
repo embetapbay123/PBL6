@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_notice_dialog.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../catalog/product_detail_page.dart';
 import '../chat/chat_ai_modal.dart';
+import '../customer/favorites_page.dart';
 import '../customer/customer_settings_page.dart';
 import '../orders/order_list_page.dart';
 import '../shared/app_bottom_nav.dart';
@@ -138,9 +140,9 @@ class ProfilePage extends ConsumerWidget {
                 _buildSupportSettingsSection(context, ref),
                 const SizedBox(height: 20),
 
-                // 6. Nút Đăng xuất
-                _buildLogoutButton(context, ref),
-                const SizedBox(height: 12),
+                // 6. Section "Có thể bạn cũng thích" (Gợi ý sản phẩm)
+                _buildRecommendationsSection(context, ref),
+                const SizedBox(height: 20),
 
                 // 7. Phiên bản footer
                 const Center(
@@ -992,58 +994,350 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  /// 6. Nút Đăng xuất
-  Widget _buildLogoutButton(BuildContext context, WidgetRef ref) {
-    return OutlinedButton.icon(
-      onPressed: () async {
-        final confirm = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Xác nhận đăng xuất'),
-            content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Hủy'),
+  /// 6. Section "Có thể bạn cũng thích" (Gợi ý sản phẩm)
+  Widget _buildRecommendationsSection(BuildContext context, WidgetRef ref) {
+    final catalogAsync = ref.watch(catalogProductsProvider(''));
+    final recAsync = ref.watch(recommendationProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'Có thể bạn cũng thích',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            InkWell(
+              onTap: () => Navigator.pushNamed(context, '/explore'),
+              child: const Row(
+                children: [
+                  Text(
+                    'Xem tất cả',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                ],
               ),
-              FilledButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                child: const Text('Đăng xuất'),
-              ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        catalogAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
           ),
-        );
+          error: (_, _) => const SizedBox.shrink(),
+          data: (data) {
+            final rawItems = (data['items'] as List?)
+                    ?.map((e) => Map<String, dynamic>.from(e as Map))
+                    .toList() ??
+                [];
 
-        if (confirm == true) {
-          await ref.read(apiProvider).logout();
-          ref.invalidate(profileProvider);
-          ref.invalidate(addressListProvider);
-          ref.invalidate(cartItemsProvider);
-          ref.invalidate(recommendationProvider);
+            if (rawItems.isEmpty) return const SizedBox.shrink();
 
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đã đăng xuất thành công.')),
+            final recIds = (recAsync.value?['product_ids'] as List?)
+                    ?.map((e) => e.toString())
+                    .toList() ??
+                [];
+
+            List<Map<String, dynamic>> products;
+            if (recIds.isNotEmpty) {
+              final recProducts = <Map<String, dynamic>>[];
+              final otherProducts = <Map<String, dynamic>>[];
+              for (final p in rawItems) {
+                final id = p['id']?.toString() ?? '';
+                if (recIds.contains(id)) {
+                  recProducts.add(p);
+                } else {
+                  otherProducts.add(p);
+                }
+              }
+              products = [...recProducts, ...otherProducts].take(6).toList();
+            } else {
+              products = rawItems.take(6).toList();
+            }
+
+            return GridView.builder(
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.68,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+              ),
+              itemCount: products.length,
+              itemBuilder: (context, idx) {
+                final prod = products[idx];
+                return _buildRecommendationCard(context, ref, prod);
+              },
             );
-            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-          }
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendationCard(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> product,
+  ) {
+    final title = product['title']?.toString() ?? 'Sản phẩm';
+    final pId = product['id']?.toString() ?? '';
+    final images = product['images'] as List?;
+    final imageUrl = (images != null && images.isNotEmpty)
+        ? (images.first is Map
+            ? (images.first as Map)['image_url']?.toString()
+            : images.first?.toString())
+        : null;
+
+    final variants = product['variants'] as List?;
+    int priceInt = 299000;
+    if (variants != null && variants.isNotEmpty) {
+      final firstVar = variants.first as Map;
+      final rawPrice = firstVar['price_vnd'];
+      if (rawPrice is num) {
+        priceInt = rawPrice.toInt();
+      } else if (rawPrice is String) {
+        priceInt = int.tryParse(rawPrice) ?? 299000;
+      }
+    }
+
+    final originalPriceInt = (priceInt * 1.3).round();
+
+    return InkWell(
+      onTap: () {
+        if (pId.isNotEmpty) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailPage(productId: pId),
+            ),
+          );
         }
       },
-      icon: const Icon(Icons.logout_rounded, color: AppColors.primary, size: 20),
-      label: const Text(
-        'Đăng xuất',
-        style: TextStyle(
-          color: AppColors.primary,
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200, width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-      ),
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.primary, width: 1.4),
-        shape: const StadiumBorder(),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        backgroundColor: Colors.white,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: Container(
+                    height: 140,
+                    width: double.infinity,
+                    color: Colors.grey.shade100,
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, _, _) => const Center(
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                color: Colors.grey,
+                                size: 36,
+                              ),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.shopping_bag_outlined,
+                              color: Colors.grey,
+                              size: 36,
+                            ),
+                          ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      '-25%',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final isFav =
+                          ref.watch(favoritesProvider).any((f) => f.id == pId);
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          ref
+                              .read(favoritesProvider.notifier)
+                              .toggleFavorite(product);
+                          AppNoticeDialog.show(
+                            context,
+                            message: isFav
+                                ? 'Đã xóa khỏi danh sách yêu thích.'
+                                : 'Đã thêm vào danh sách yêu thích!',
+                          );
+                        },
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: isFav
+                                  ? const Color(0xFFFEF2F2)
+                                  : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: isFav
+                                    ? const Color(0xFFDC2626)
+                                    : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      height: 1.25,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _formatVnd(priceInt),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatVnd(originalPriceInt),
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 11,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, size: 12, color: Colors.amber),
+                      const SizedBox(width: 3),
+                      const Text(
+                        '4.9',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Đã bán 1,2K',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

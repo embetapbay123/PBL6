@@ -95,6 +95,13 @@ class MockApiClient extends ApiClient {
   }) async => [];
 
   @override
+  Future<Map<String, dynamic>> getRecommendations() async => {
+    'source': 'BASELINE',
+    'mode': 'mock',
+    'product_ids': ['prod-01'],
+  };
+
+  @override
   Future<Map<String, dynamic>> getStore(String storeId) async => {
     'id': storeId,
     'name': 'PBL Tech Store',
@@ -594,6 +601,20 @@ void main() {
               'roles': ['CUSTOMER'],
             },
           ),
+          catalogProductsProvider.overrideWith(
+            (ref, query) async => {
+              'items': [
+                {
+                  'id': 'prod-01',
+                  'title': 'Áo thun thể thao Dry-Fit',
+                  'variants': [
+                    {'id': 'v-01', 'sku': 'AT-M', 'price_vnd': '250000'},
+                  ],
+                },
+              ],
+              'total': 1,
+            },
+          ),
         ],
       );
 
@@ -604,6 +625,7 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.text('Tài khoản'), findsNothing);
       expect(find.text('Nguyễn Văn A'), findsOneWidget);
@@ -616,6 +638,9 @@ void main() {
       expect(find.text('Tin nhắn với gian hàng', skipOffstage: false), findsOneWidget);
       expect(find.text('Sổ địa chỉ nhận hàng', skipOffstage: false), findsOneWidget);
       expect(find.text('Đổi mật khẩu', skipOffstage: false), findsOneWidget);
+      expect(find.text('Có thể bạn cũng thích', skipOffstage: false), findsOneWidget);
+      expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
+      expect(find.text('Đăng xuất'), findsNothing);
     });
 
     testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {
