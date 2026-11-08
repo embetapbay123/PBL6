@@ -1379,6 +1379,10 @@ void main() {
       expect(find.byIcon(Icons.search), findsOneWidget);
       expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
 
+      // Verify page background is light grey
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+      expect(scaffold.backgroundColor, const Color(0xFFF6F6F6));
+
       // Verify tapping search button enables search mode and filters orders
       await tester.tap(find.byIcon(Icons.search));
       await tester.pumpAndSettle();

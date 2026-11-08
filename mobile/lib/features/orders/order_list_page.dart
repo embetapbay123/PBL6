@@ -157,7 +157,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     final ordersAsync = ref.watch(customerOrdersProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
