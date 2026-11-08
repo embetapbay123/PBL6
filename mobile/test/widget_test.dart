@@ -794,6 +794,9 @@ void main() {
         await tester.pump();
 
         expect(find.text('PBL6 Market'), findsOneWidget);
+        expect(find.byTooltip('Thông báo'), findsOneWidget);
+        expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.menu_rounded), findsOneWidget);
         expect(find.text('Sản phẩm dành cho bạn', skipOffstage: false), findsOneWidget);
         expect(find.text('Thời trang', skipOffstage: false), findsWidgets);
         expect(find.text('Góc làm việc', skipOffstage: false), findsOneWidget);

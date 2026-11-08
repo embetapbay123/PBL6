@@ -422,59 +422,25 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 ),
               ),
               const Spacer(),
-              // Cart with badge
-              InkWell(
-                onTap: () => Navigator.pushNamed(context, '/cart'),
-                borderRadius: BorderRadius.circular(20),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const Icon(
-                        Icons.shopping_cart_outlined,
-                        size: 24,
-                        color: Color(0xFF374151),
-                      ),
-                      if (cartCount > 0)
-                        Positioned(
-                          top: -4,
-                          right: -6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                            child: Center(
-                              child: Text(
-                                cartCount > 99 ? '99+' : '$cartCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // User Profile Icon
-              InkWell(
-                onTap: () => Navigator.pushNamed(context, '/profile'),
-                borderRadius: BorderRadius.circular(20),
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Icon(
-                    Icons.person_outline_rounded,
-                    size: 24,
-                    color: Color(0xFF374151),
+              // Notification Icon
+              Tooltip(
+                message: 'Thông báo',
+                child: InkWell(
+                  onTap: () {
+                    AppNoticeDialog.show(
+                      context,
+                      message: 'Không có thông báo mới.',
+                      buttonText: 'Đã hiểu',
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(
+                      Icons.notifications_outlined,
+                      size: 24,
+                      color: Color(0xFF374151),
+                    ),
                   ),
                 ),
               ),
