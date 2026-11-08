@@ -53,7 +53,7 @@ final catalogProductsProvider =
               size: size,
             );
       } catch (e) {
-        return _buildFallbackProducts(
+        return buildFallbackProducts(
           categoryId: params['category_id'] as String?,
           q: params['q'] as String?,
           page: (params['page'] as int?) ?? 1,
@@ -62,7 +62,7 @@ final catalogProductsProvider =
       }
     });
 
-Map<String, dynamic> _buildFallbackProducts({
+Map<String, dynamic> buildFallbackProducts({
   String? categoryId,
   String? q,
   int page = 1,

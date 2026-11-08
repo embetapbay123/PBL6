@@ -28,7 +28,6 @@ import 'package:pbl6_mobile/features/customer/customer_settings_page.dart';
 import 'package:pbl6_mobile/features/customer/store_application_page.dart';
 import 'package:pbl6_mobile/features/customer/favorites_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
-import 'package:pbl6_mobile/features/orders/order_refund_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
 import 'package:pbl6_mobile/features/catalog/shop_page.dart';
@@ -810,6 +809,76 @@ void main() {
         expect(tfWidget.decoration?.focusedBorder, InputBorder.none);
         expect(tfWidget.decoration?.border, InputBorder.none);
         expect(tfWidget.decoration?.filled, isFalse);
+      },
+    );
+
+    testWidgets(
+      'CatalogPage search bar click displays search suggestions screen matching Image 2 with Gợi ý tìm kiếm, keyword tags and best-sellers for new users',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {
+                'items': [
+                  {
+                    'id': 'prod-01',
+                    'title': 'Pate Snappy Tom 400g',
+                    'price_vnd': 45000,
+                    'monthly_sales': 2500,
+                  },
+                  {
+                    'id': 'prod-02',
+                    'title': 'Dây Sạc Baseus iPhone',
+                    'price_vnd': 89000,
+                    'monthly_sales': 3200,
+                  },
+                ],
+                'total': 2,
+              },
+            ),
+            categoriesProvider.overrideWith((ref) async => []),
+            cartItemsProvider.overrideWith((ref) async => {'items': []}),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Initially in explore mode
+        expect(find.text('Gợi ý tìm kiếm'), findsNothing);
+
+        // Tap search bar to open suggestions
+        final searchBar = find.widgetWithText(TextField, 'Bạn đang tìm sản phẩm gì?');
+        await tester.tap(searchBar);
+        await tester.pumpAndSettle();
+
+        // Verify Search Suggestions screen (Image 2) is now displayed
+        expect(find.text('Gợi ý tìm kiếm'), findsOneWidget);
+        expect(find.text('Mì Tôm Hảo Hảo'), findsOneWidget);
+        expect(find.text('Nến'), findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
+
+        // For new user (empty cart, no prior search), best sellers are suggested
+        expect(find.text('Dây Sạc Baseus iPhone'), findsOneWidget);
+        expect(find.text('Pate Snappy Tom 400g'), findsOneWidget);
+
+        // Tap back arrow to return to catalog
+        await tester.tap(find.byIcon(Icons.arrow_back));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Gợi ý tìm kiếm'), findsNothing);
       },
     );
     testWidgets(

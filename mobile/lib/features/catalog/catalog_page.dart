@@ -25,6 +25,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   final TextEditingController _maxPriceController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchHovered = false;
+  bool _isSearchSuggesting = false;
+  final List<String> _searchHistory = [];
+  final List<String> _recentlyInteractedProductIds = [];
   String _searchQuery = '';
   String? _selectedCategory;
   String _sort = 'best_selling';
@@ -41,7 +44,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     _searchController = TextEditingController(text: _searchQuery);
     _scrollController = ScrollController();
     _searchFocusNode.addListener(() {
-      if (mounted) setState(() {});
+      if (_searchFocusNode.hasFocus && !_isSearchSuggesting) {
+        setState(() {
+          _isSearchSuggesting = true;
+        });
+      } else if (mounted) {
+        setState(() {});
+      }
     });
   }
 
@@ -63,9 +72,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   void _onSearch(String val) {
+    final trimmed = val.trim();
+    if (trimmed.isNotEmpty) {
+      _searchHistory.remove(trimmed);
+      _searchHistory.insert(0, trimmed);
+    }
+    _searchFocusNode.unfocus();
     setState(() {
-      _searchQuery = val.trim();
+      _searchQuery = trimmed;
       _forceSearchMode = _searchQuery.isNotEmpty;
+      _isSearchSuggesting = false;
       _sort = 'best_selling';
       _page = 1;
     });
@@ -237,11 +253,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   void _resetToExplore() {
+    _searchFocusNode.unfocus();
     setState(() {
       _searchController.clear();
       _searchQuery = '';
       _selectedCategory = null;
       _forceSearchMode = false;
+      _isSearchSuggesting = false;
       _minPrice = null;
       _maxPrice = null;
       _minPriceController.clear();
@@ -266,11 +284,16 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final productsAsync = ref.watch(catalogProductsProvider(_catalogKey));
     final categoriesAsync = ref.watch(categoriesProvider);
     final cartCount = ref.watch(cartBadgeCountProvider);
+    final cartAsync = ref.watch(cartItemsProvider);
     final isSearchMode = _searchQuery.isNotEmpty ||
         _selectedCategory != null ||
         _forceSearchMode ||
         _minPrice != null ||
         _maxPrice != null;
+
+    if (_isSearchSuggesting) {
+      return _buildSearchSuggestionScreen(context, productsAsync, cartAsync);
+    }
 
 
     return Scaffold(
@@ -671,44 +694,52 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           child: MouseRegion(
             onEnter: (_) => setState(() => _isSearchHovered = true),
             onExit: (_) => setState(() => _isSearchHovered = false),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: (_searchFocusNode.hasFocus || _isSearchHovered)
-                      ? AppColors.primary
-                      : const Color(0xFFD1D5DB),
-                  width: (_searchFocusNode.hasFocus || _isSearchHovered) ? 1.5 : 1.2,
-                ),
-                boxShadow: _searchFocusNode.hasFocus
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.08),
-                          blurRadius: 6,
-                          offset: const Offset(0, 1),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Row(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12),
-                    child: Icon(
-                      Icons.search,
-                      color: (_searchFocusNode.hasFocus || _isSearchHovered)
-                          ? AppColors.primary
-                          : const Color(0xFF9CA3AF),
-                      size: 20,
-                    ),
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _isSearchSuggesting = true);
+                _searchFocusNode.requestFocus();
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: (_searchFocusNode.hasFocus || _isSearchHovered)
+                        ? AppColors.primary
+                        : const Color(0xFFD1D5DB),
+                    width: (_searchFocusNode.hasFocus || _isSearchHovered) ? 1.5 : 1.2,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      focusNode: _searchFocusNode,
-                      controller: _searchController,
-                      onSubmitted: _onSearch,
+                  boxShadow: _searchFocusNode.hasFocus
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            blurRadius: 6,
+                            offset: const Offset(0, 1),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: Icon(
+                        Icons.search,
+                        color: (_searchFocusNode.hasFocus || _isSearchHovered)
+                            ? AppColors.primary
+                            : const Color(0xFF9CA3AF),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        focusNode: _searchFocusNode,
+                        controller: _searchController,
+                        onTap: () {
+                          setState(() => _isSearchSuggesting = true);
+                        },
+                        onSubmitted: _onSearch,
                       decoration: const InputDecoration(
                         hintText: 'Bạn đang tìm sản phẩm gì?',
                         hintStyle: TextStyle(
@@ -762,8 +793,457 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
           ),
           ),
+          ),
         ),
       ],
+    );
+  }
+
+  /// Screen displayed when user taps/clicks the search bar (Image 2)
+  Widget _buildSearchSuggestionScreen(
+    BuildContext context,
+    AsyncValue<Map<String, dynamic>> productsAsync,
+    AsyncValue<Map<String, dynamic>> cartAsync,
+  ) {
+    final allProducts = <Map<String, dynamic>>[];
+    final pData = productsAsync.value;
+    if (pData != null && pData['items'] is List) {
+      for (final item in (pData['items'] as List)) {
+        if (item is Map<String, dynamic>) {
+          allProducts.add(item);
+        }
+      }
+    }
+    if (allProducts.isEmpty) {
+      final fallback = buildFallbackProducts()['items'] as List;
+      for (final item in fallback) {
+        if (item is Map<String, dynamic>) {
+          allProducts.add(item);
+        }
+      }
+    }
+
+    final cartItems = (cartAsync.value?['items'] as List?) ?? [];
+    final suggestedProducts = _getSuggestedProducts(allProducts, cartItems);
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _searchFocusNode.unfocus();
+        setState(() {
+          _isSearchSuggesting = false;
+        });
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Top Bar: < Back arrow + Search Bar matching Image 2
+              Padding(
+                padding: const EdgeInsets.fromLTRB(6, 8, 16, 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Color(0xFFEE4D2D),
+                        size: 24,
+                      ),
+                      onPressed: () {
+                        _searchFocusNode.unfocus();
+                        setState(() {
+                          _isSearchSuggesting = false;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFFEE4D2D),
+                            width: 1.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.camera_alt_outlined,
+                              size: 20,
+                              color: Color(0xFF888888),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                focusNode: _searchFocusNode,
+                                controller: _searchController,
+                                autofocus: true,
+                                textInputAction: TextInputAction.search,
+                                onSubmitted: _onSearch,
+                                decoration: const InputDecoration(
+                                  hintText: 'Bạn đang tìm sản phẩm gì?',
+                                  hintStyle: TextStyle(
+                                    color: Color(0xFF9CA3AF),
+                                    fontSize: 13.5,
+                                  ),
+                                  filled: false,
+                                  fillColor: Colors.transparent,
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  errorBorder: InputBorder.none,
+                                  focusedErrorBorder: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                            if (_searchController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear, size: 16, color: Color(0xFF9CA3AF)),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                              ),
+                            const SizedBox(width: 4),
+                            Material(
+                              color: const Color(0xFFEE4D2D),
+                              borderRadius: BorderRadius.circular(6),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(6),
+                                onTap: () => _onSearch(_searchController.text),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.search,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Tìm kiếm',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Search History / Tags + Gợi ý tìm kiếm + Grid of products
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    _buildSearchTagsSection(),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Gợi ý tìm kiếm',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F2937),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSuggestedProductsGrid(context, suggestedProducts),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchTagsSection() {
+    final tags = _searchHistory.isNotEmpty
+        ? _searchHistory
+        : const [
+            'Mì Tôm Hảo Hảo',
+            'Nến',
+            'hạt mèo charm',
+            'Charm hạt',
+            'reflex 15kg',
+            'Bún',
+            'Muối',
+            'Mì',
+          ];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: tags.map((tag) {
+                return InkWell(
+                  onTap: () {
+                    _searchController.text = tag;
+                    _onSearch(tag);
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF374151),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: IconButton(
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                size: 20,
+                color: Color(0xFF9CA3AF),
+              ),
+              tooltip: 'Xóa lịch sử',
+              onPressed: () {
+                setState(() {
+                  _searchHistory.clear();
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _getSuggestedProducts(
+    List<Map<String, dynamic>> allProducts,
+    List<dynamic> cartItems,
+  ) {
+    final bool hasSearchHistory = _searchHistory.isNotEmpty;
+    final bool hasCartItems = cartItems.isNotEmpty;
+    final bool hasRecentInteractions = _recentlyInteractedProductIds.isNotEmpty;
+
+    // Nếu người dùng là mới (chưa từng thêm giỏ hay tìm kiếm) -> hiện các sản phẩm bán chạy
+    if (!hasSearchHistory && !hasCartItems && !hasRecentInteractions) {
+      final sorted = List<Map<String, dynamic>>.from(allProducts);
+      sorted.sort((a, b) => _getProductMonthlySales(b).compareTo(_getProductMonthlySales(a)));
+      return sorted.take(10).toList();
+    }
+
+    // Người dùng đã có tương tác: tìm các sản phẩm theo lịch sử tìm kiếm, thêm giỏ, hoặc tương tác gần đây
+    final List<Map<String, dynamic>> results = [];
+    final Set<String> addedIds = {};
+
+    // 1. Sản phẩm trong giỏ hàng gần đây
+    for (final item in cartItems) {
+      final pId = (item['product_id'] ?? item['id'])?.toString();
+      if (pId != null && !addedIds.contains(pId)) {
+        final match = allProducts.firstWhere(
+          (p) => p['id']?.toString() == pId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (match.isNotEmpty) {
+          results.add(match);
+          addedIds.add(pId);
+        }
+      }
+    }
+
+    // 2. Sản phẩm người dùng vừa tương tác gần đây
+    for (final pId in _recentlyInteractedProductIds) {
+      if (!addedIds.contains(pId)) {
+        final match = allProducts.firstWhere(
+          (p) => p['id']?.toString() == pId,
+          orElse: () => <String, dynamic>{},
+        );
+        if (match.isNotEmpty) {
+          results.add(match);
+          addedIds.add(pId);
+        }
+      }
+    }
+
+    // 3. Sản phẩm liên quan đến từ khóa tìm kiếm gần đây
+    for (final query in _searchHistory) {
+      final qLower = query.toLowerCase();
+      for (final prod in allProducts) {
+        final pId = prod['id']?.toString() ?? '';
+        if (!addedIds.contains(pId)) {
+          final title = (prod['title'] ?? '').toString().toLowerCase();
+          final desc = (prod['description'] ?? '').toString().toLowerCase();
+          final store = (prod['store_name'] ?? '').toString().toLowerCase();
+          if (title.contains(qLower) || desc.contains(qLower) || store.contains(qLower)) {
+            results.add(prod);
+            addedIds.add(pId);
+          }
+        }
+      }
+    }
+
+    // Nếu số lượng ít hơn 6, bổ sung sản phẩm bán chạy nhất
+    if (results.length < 6) {
+      final sorted = List<Map<String, dynamic>>.from(allProducts);
+      sorted.sort((a, b) => _getProductMonthlySales(b).compareTo(_getProductMonthlySales(a)));
+      for (final p in sorted) {
+        final pId = p['id']?.toString() ?? '';
+        if (!addedIds.contains(pId)) {
+          results.add(p);
+          addedIds.add(pId);
+          if (results.length >= 10) break;
+        }
+      }
+    }
+
+    return results.take(10).toList();
+  }
+
+  Widget _buildSuggestedProductsGrid(
+    BuildContext context,
+    List<Map<String, dynamic>> products,
+  ) {
+    if (products.isEmpty) {
+      return const SizedBox(
+        height: 120,
+        child: Center(
+          child: Text(
+            'Không có sản phẩm gợi ý',
+            style: TextStyle(color: Color(0xFF9CA3AF)),
+          ),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: products.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.82,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemBuilder: (context, index) {
+        final product = products[index];
+        final id = product['id']?.toString() ?? '';
+        final title = product['title']?.toString() ?? 'Sản phẩm';
+        final images = product['images'] as List?;
+        final imageUrl = (images != null && images.isNotEmpty)
+            ? (images[0] is Map ? images[0]['image_url']?.toString() : images[0]?.toString())
+            : (product['image_url']?.toString() ?? product['thumbnail']?.toString());
+
+        return InkWell(
+          onTap: () {
+            if (id.isNotEmpty) {
+              _recentlyInteractedProductIds.remove(id);
+              _recentlyInteractedProductIds.insert(0, id);
+            }
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProductDetailPage(
+                  productId: id,
+                  initialProduct: product,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFFE5E7EB),
+                width: 0.8,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    child: Container(
+                      color: const Color(0xFFF9FAFB),
+                      child: (imageUrl != null && imageUrl.isNotEmpty && imageUrl.startsWith('http'))
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (ctx, err, stack) => const Center(
+                                child: Icon(
+                                  Icons.image_outlined,
+                                  size: 36,
+                                  color: Color(0xFFCBD5E1),
+                                ),
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.image_outlined,
+                                size: 36,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1345,7 +1825,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
-              final product = items[index] as Map<String, dynamic>;
+              final product = items[index];
               return _buildProductCard(context, product);
             },
             childCount: items.length,
@@ -1705,17 +2185,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       if (count % 3 == 0 && i > 0) buffer.write('.');
     }
     return '${buffer.toString().split('').reversed.join('')} ₫';
-  }
-
-  String _formatShortPrice(int price) {
-    if (price >= 1000000) {
-      final m = (price / 1000000).toStringAsFixed(1).replaceAll('.0', '');
-      return '${m}tr';
-    }
-    if (price >= 1000) {
-      return '${(price / 1000).round()}k';
-    }
-    return '$price';
   }
 
   String _getCategoryName(
@@ -2212,7 +2681,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ? Image.network(
                             imageUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Center(
+                            errorBuilder: (context, error, stackTrace) => const Center(
                               child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 36),
                             ),
                           )
@@ -2411,7 +2880,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   ) {
     final id = product['id']?.toString() ?? '';
     final title = product['title']?.toString() ?? 'Sản phẩm';
-    final storeName = product['store_name']?.toString() ?? 'An Nhiên Studio';
     final categoryId = product['category_id']?.toString();
     final categoryName = _getCategoryName(categoryId, categoriesAsync);
 
