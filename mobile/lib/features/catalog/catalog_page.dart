@@ -388,7 +388,12 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
         // 2. Main White Brand Header
         Container(
-          color: Colors.white,
+          color: AppColors.primary,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
@@ -460,14 +465,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ),
             ],
           ),
+          ),
         ),
 
         // Divider
-        const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+        Container(
+          color: Colors.white,
+          child: const Divider(height: 1, thickness: 1, color: Color(0xFFE5E7EB)),
+        ),
 
         // 3. Search Bar Section
         Container(
-          color: Colors.white,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          ),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
           child: MouseRegion(
             onEnter: (_) => setState(() => _isSearchHovered = true),
