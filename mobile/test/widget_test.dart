@@ -1021,7 +1021,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Now in dedicated search results mode matching web
-        expect(find.text('KHÁM PHÁ CÙNG PBL6'), findsOneWidget);
+        expect(find.text('KHÁM PHÁ CÙNG PBL6'), findsNothing);
         expect(find.text('Trang chủ'), findsOneWidget);
         expect(find.text('Bộ lọc'), findsOneWidget);
         expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);

@@ -1667,23 +1667,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
           ),
 
-          // 2. Subtitle & Title & Total count Row
+          // 2. Title & Total count Row
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'KHÁM PHÁ CÙNG PBL6',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF6B7280),
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
+            child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1725,8 +1712,6 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     ),
                   ],
                 ),
-              ],
-            ),
           ),
 
           // 3. Toolbar Row: Nút Bộ lọc, Sắp xếp dropdown, Toggle Grid/List
