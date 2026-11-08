@@ -1797,7 +1797,7 @@ void main() {
       expect(find.text('Gửi hồ sơ đăng ký'), findsOneWidget);
     });
 
-    testWidgets('FavoritesPage renders favorite products matching web design and handles removal', (tester) async {
+    testWidgets('FavoritesPage renders favorite products matching modern design and handles removal', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [apiProvider.overrideWithValue(MockApiClient())],
@@ -1806,27 +1806,24 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Tiếp tục khám phá'), findsOneWidget);
-      expect(find.text('Sản phẩm yêu thích'), findsOneWidget);
+      expect(find.text('Đã lưu'), findsOneWidget);
       expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
       expect(find.text('Từ 389.000 đ'), findsOneWidget);
       expect(find.text('An Nhiên Studio'), findsOneWidget);
       expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
       expect(find.text('349.000 đ'), findsOneWidget);
       expect(find.text('Mây Xanh Living'), findsOneWidget);
-      expect(find.text('Bỏ yêu thích'), findsNWidgets(2));
       expect(find.text('Thêm vào giỏ'), findsNWidgets(2));
-      expect(find.text('Trang 1 · 2 kết quả'), findsOneWidget);
+      expect(find.byIcon(Icons.favorite), findsNWidgets(2));
 
-      // Scroll and Tap "Bỏ yêu thích" on first product
-      await tester.ensureVisible(find.text('Bỏ yêu thích').first);
+      // Tap favorite heart button on first product to remove
+      await tester.ensureVisible(find.byTooltip('Bỏ yêu thích').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Bỏ yêu thích').first);
+      await tester.tap(find.byTooltip('Bỏ yêu thích').first);
       await tester.pumpAndSettle();
 
       expect(find.text('Áo hoodie xám Weekend'), findsNothing);
       expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
-      expect(find.text('Trang 1 · 1 kết quả'), findsOneWidget);
     });
   });
 
