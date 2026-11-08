@@ -1716,7 +1716,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.67,
+            childAspectRatio: 0.58,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -1866,7 +1866,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
             // Product Details
             Expanded(
-              flex: 6,
+              flex: 7,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 child: Column(
@@ -1965,6 +1965,54 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 6),
+                        // "Thêm vào giỏ" Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return AppColors.primary;
+                                }
+                                return Colors.white;
+                              }),
+                              foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return Colors.white;
+                                }
+                                return AppColors.primary;
+                              }),
+                              iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                  return Colors.white;
+                                }
+                                return AppColors.primary;
+                              }),
+                              side: const WidgetStatePropertyAll(
+                                BorderSide(color: AppColors.primary, width: 0.8),
+                              ),
+                              padding: const WidgetStatePropertyAll(
+                                EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                              ),
+                              minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
+                              shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                            ),
+                            icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                            label: const Text(
+                              'Thêm vào giỏ',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onPressed: () => _quickAddToCart(product),
+                          ),
                         ),
                       ],
                     ),
