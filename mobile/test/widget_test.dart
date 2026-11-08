@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pbl6_mobile/core/api_client.dart';
+import 'package:pbl6_mobile/core/app_theme.dart';
 import 'package:pbl6_mobile/features/address/address_form_page.dart';
 import 'package:pbl6_mobile/features/address/address_list_page.dart';
 import 'package:pbl6_mobile/features/auth/change_password_page.dart';
@@ -924,6 +925,14 @@ void main() {
       );
       expect(filledHeartFinder, findsOneWidget);
 
+      // Verified: Heart button background remains white when clicked
+      final heartContainer = tester.widget<Container>(
+        find.ancestor(of: filledHeartFinder, matching: find.byType(Container)).first,
+      );
+      expect((heartContainer.decoration as BoxDecoration).color, Colors.white);
+
+
+
       // Verified: Did not navigate to ProductDetailPage
       expect(find.text('Mã SKU:'), findsNothing);
       expect(find.text('Mua ngay'), findsNothing);
@@ -1017,6 +1026,30 @@ void main() {
         expect(find.text('Bộ lọc'), findsOneWidget);
         expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
         expect(find.text('Thêm vào giỏ'), findsOneWidget);
+
+        // Verify 'Thêm vào giỏ' button hover states (orange background, white foreground and icon)
+        final addToCartBtnFinder = find.widgetWithText(OutlinedButton, 'Thêm vào giỏ');
+        final outlinedBtn = tester.widget<OutlinedButton>(addToCartBtnFinder);
+        expect(
+          outlinedBtn.style?.backgroundColor?.resolve({WidgetState.hovered}),
+          AppColors.primary,
+        );
+        expect(
+          outlinedBtn.style?.foregroundColor?.resolve({WidgetState.hovered}),
+          Colors.white,
+        );
+        expect(
+          outlinedBtn.style?.iconColor?.resolve({WidgetState.hovered}),
+          Colors.white,
+        );
+        expect(
+          outlinedBtn.style?.backgroundColor?.resolve({}),
+          Colors.white,
+        );
+        expect(
+          outlinedBtn.style?.foregroundColor?.resolve({}),
+          const Color(0xFF374151),
+        );
         expect(find.text('Xóa bộ lọc'), findsOneWidget);
 
         // Tap "Xóa bộ lọc" returns to home mode

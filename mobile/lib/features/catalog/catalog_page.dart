@@ -1276,7 +1276,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: isFav ? const Color(0xFFFEF2F2) : Colors.white,
+                                color: Colors.white,
                                 shape: BoxShape.circle,
                                 boxShadow: const [
                                   BoxShadow(
@@ -2153,19 +2153,45 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           children: [
                             Expanded(
                               child: OutlinedButton.icon(
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                                  minimumSize: const Size(0, 32),
-                                  side: const BorderSide(color: Color(0xFFD1D5DB)),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                style: ButtonStyle(
+                                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                      return AppColors.primary;
+                                    }
+                                    return Colors.white;
+                                  }),
+                                  foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                      return Colors.white;
+                                    }
+                                    return const Color(0xFF374151);
+                                  }),
+                                  iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                      return Colors.white;
+                                    }
+                                    return const Color(0xFF374151);
+                                  }),
+                                  side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                                    if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                      return const BorderSide(color: AppColors.primary);
+                                    }
+                                    return const BorderSide(color: Color(0xFFD1D5DB));
+                                  }),
+                                  padding: const WidgetStatePropertyAll(
+                                    EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                  ),
+                                  minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+                                  shape: WidgetStatePropertyAll(
+                                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                                  ),
                                 ),
-                                icon: const Icon(Icons.shopping_cart_outlined, size: 13, color: Color(0xFF374151)),
+                                icon: const Icon(Icons.shopping_cart_outlined, size: 13),
                                 label: const Text(
                                   'Thêm vào giỏ',
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w600,
-                                    color: Color(0xFF374151),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -2190,10 +2216,10 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                     width: 32,
                                     height: 32,
                                     decoration: BoxDecoration(
-                                      color: isFav ? const Color(0xFFFEF2F2) : Colors.white,
+                                      color: Colors.white,
                                       borderRadius: BorderRadius.circular(6),
                                       border: Border.all(
-                                        color: isFav ? const Color(0xFFFECACA) : const Color(0xFFE5E7EB),
+                                        color: const Color(0xFFE5E7EB),
                                       ),
                                     ),
                                     child: Center(
@@ -2332,16 +2358,43 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     Row(
                       children: [
                         OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                            minimumSize: const Size(0, 30),
-                            side: const BorderSide(color: Color(0xFFD1D5DB)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                              if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                return AppColors.primary;
+                              }
+                              return Colors.white;
+                            }),
+                            foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                              if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                return Colors.white;
+                              }
+                              return const Color(0xFF374151);
+                            }),
+                            iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                              if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                return Colors.white;
+                              }
+                              return const Color(0xFF374151);
+                            }),
+                            side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                              if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                return const BorderSide(color: AppColors.primary);
+                              }
+                              return const BorderSide(color: Color(0xFFD1D5DB));
+                            }),
+                            padding: const WidgetStatePropertyAll(
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                            ),
+                            minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
+                            shape: WidgetStatePropertyAll(
+                              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            ),
                           ),
-                          icon: const Icon(Icons.shopping_cart_outlined, size: 13, color: Color(0xFF374151)),
+                          icon: const Icon(Icons.shopping_cart_outlined, size: 13),
                           label: const Text(
                             'Thêm vào giỏ',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF374151)),
+                            style: TextStyle(fontSize: 11),
                           ),
                           onPressed: () => _quickAddToCart(product),
                         ),

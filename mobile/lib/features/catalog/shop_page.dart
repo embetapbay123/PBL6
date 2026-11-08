@@ -806,7 +806,7 @@ class _ShopPageState extends ConsumerState<ShopPage> with SingleTickerProviderSt
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: isFav ? const Color(0xFFFEF2F2) : Colors.white,
+                              color: Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: const [
                                 BoxShadow(

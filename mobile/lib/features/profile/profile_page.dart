@@ -1246,9 +1246,7 @@ class ProfilePage extends ConsumerWidget {
                             width: 30,
                             height: 30,
                             decoration: BoxDecoration(
-                              color: isFav
-                                  ? const Color(0xFFFEF2F2)
-                                  : Colors.white,
+                              color: Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: const [
                                 BoxShadow(

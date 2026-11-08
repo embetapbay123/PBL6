@@ -572,17 +572,38 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                    color: Color(0xFFE5E7EB), width: 1),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 9,
+                              style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                  if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                    return AppColors.primary;
+                                  }
+                                  return Colors.white;
+                                }),
+                                foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                  if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                    return Colors.white;
+                                  }
+                                  return const Color(0xFF374151);
+                                }),
+                                iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                                  if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                    return Colors.white;
+                                  }
+                                  return const Color(0xFF374151);
+                                }),
+                                side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                                  if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                    return const BorderSide(color: AppColors.primary);
+                                  }
+                                  return const BorderSide(color: Color(0xFFE5E7EB));
+                                }),
+                                padding: const WidgetStatePropertyAll(
+                                  EdgeInsets.symmetric(horizontal: 6, vertical: 9),
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                shape: WidgetStatePropertyAll(
+                                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                minimumSize: const Size(0, 36),
+                                minimumSize: const WidgetStatePropertyAll(Size(0, 36)),
                               ),
                               onPressed: isAddingCart
                                   ? null
@@ -599,14 +620,12 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                                   : const Icon(
                                       Icons.shopping_cart_outlined,
                                       size: 15,
-                                      color: Color(0xFF374151),
                                     ),
                               label: const Text(
                                 'Thêm vào giỏ',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF374151),
                                 ),
                               ),
                             ),
