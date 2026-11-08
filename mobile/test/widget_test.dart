@@ -1355,6 +1355,14 @@ void main() {
         expect(find.text('Áo hoodie Unisex'), findsOneWidget);
         expect(find.text('Mua hàng (0)'), findsOneWidget);
 
+        // Verify Chat button is present next to Sửa in AppBar
+        expect(find.byTooltip('Chat'), findsOneWidget);
+        expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+
+        // Verify bottom navigation bar (AppBottomNav) is removed from CartPage
+        expect(find.text('Khám phá'), findsNothing);
+        expect(find.text('Cá nhân'), findsNothing);
+
         // Select All items
         await tester.tap(find.text('Chọn tất cả sản phẩm'));
         await tester.pumpAndSettle();
@@ -1550,6 +1558,8 @@ void main() {
 
       expect(find.text('Giỏ hàng của bạn đang trống'), findsOneWidget);
       expect(find.text('Tiếp tục mua sắm'), findsOneWidget);
+      expect(find.byTooltip('Chat'), findsOneWidget);
+      expect(find.text('Khám phá'), findsNothing);
     });
 
     testWidgets(

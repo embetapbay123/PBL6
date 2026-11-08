@@ -6,7 +6,6 @@ import '../catalog/product_detail_page.dart';
 import '../catalog/shop_page.dart';
 import '../chat/chat_ai_modal.dart';
 import '../checkout/checkout_page.dart';
-import '../shared/app_bottom_nav.dart';
 import '../shared/recommendations_section.dart';
 import 'cart_variant_modal.dart';
 
@@ -261,6 +260,15 @@ class _CartPageState extends ConsumerState<CartPage> {
             },
             orElse: () => const SizedBox.shrink(),
           ),
+          IconButton(
+            icon: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.textPrimary,
+            ),
+            tooltip: 'Chat',
+            onPressed: () => ChatAiModal.show(context),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       bottomNavigationBar: cartAsync.maybeWhen(
@@ -270,43 +278,10 @@ class _CartPageState extends ConsumerState<CartPage> {
                   ?.map((e) => Map<String, dynamic>.from(e as Map))
                   .toList() ??
               [];
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (items.isNotEmpty) _buildBottomCheckoutBar(items),
-              AppBottomNav(
-                currentIndex: 1,
-                onTap: (index) {
-                  if (index == 1) return;
-                  if (index == 0) {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/',
-                      (route) => false,
-                    );
-                  } else if (index == 2) {
-                    ChatAiModal.show(context);
-                  } else if (index == 3) {
-                    Navigator.pushNamed(context, '/profile');
-                  }
-                },
-              ),
-            ],
-          );
+          if (items.isEmpty) return null;
+          return _buildBottomCheckoutBar(items);
         },
-        orElse: () => AppBottomNav(
-          currentIndex: 1,
-          onTap: (index) {
-            if (index == 1) return;
-            if (index == 0) {
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            } else if (index == 2) {
-              ChatAiModal.show(context);
-            } else if (index == 3) {
-              Navigator.pushNamed(context, '/profile');
-            }
-          },
-        ),
+        orElse: () => null,
       ),
       body: cartAsync.when(
         loading: () => const Center(
