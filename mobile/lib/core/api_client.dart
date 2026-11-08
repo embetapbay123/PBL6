@@ -484,6 +484,21 @@ class ApiClient {
     return Map<String, dynamic>.from(res as Map);
   }
 
+  Future<List<Map<String, dynamic>>> getStoreVouchers(String storeId) async {
+    try {
+      final res = await get('/stores/$storeId/vouchers');
+      if (res is List) {
+        return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (res is Map && res['items'] is List) {
+        return (res['items'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   // --- Cart & Checkout Endpoints (MOB-03) ---
   Future<Map<String, dynamic>> getAllCartItems() async {
     final first = await getCartItems(page: 1, size: 100);

@@ -1,0 +1,735 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
+import '../catalog/product_detail_page.dart';
+import '../chat/chat_ai_modal.dart';
+import '../customer/favorites_page.dart';
+import '../shared/app_bottom_nav.dart';
+import 'store_model.dart';
+import 'store_provider.dart';
+import 'widgets/store_header_view.dart';
+
+class StorePage extends ConsumerStatefulWidget {
+  const StorePage({
+    super.key,
+    this.shopId = 'd3e00000-0000-4000-8000-000000000201',
+    this.shopName = 'TechZone Official',
+  });
+
+  final String shopId;
+  final String shopName;
+
+  @override
+  ConsumerState<StorePage> createState() => _StorePageState();
+}
+
+/// Backward compatibility alias
+typedef ShopPage = StorePage;
+
+class _StorePageState extends ConsumerState<StorePage> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _isFollowing = false;
+  final Set<String> _savedVouchers = {};
+
+  final List<Map<String, dynamic>> _featuredProductsFallback = [
+    {
+      'id': 'prod-phone-01',
+      'title': 'Điện thoại thông minh màn hình AMOLED 128GB',
+      'discount': '-25%',
+      'price_vnd': 5990000,
+      'original_price_vnd': 7990000,
+      'rating': 4.9,
+      'sold': '1,2K',
+      'icon': Icons.phone_android_rounded,
+      'color': Colors.indigo,
+    },
+    {
+      'id': 'prod-earbuds-01',
+      'title': 'Tai nghe không dây Bluetooth chống ồn, pin lâu',
+      'discount': '-30%',
+      'price_vnd': 699000,
+      'original_price_vnd': 999000,
+      'rating': 4.8,
+      'sold': '2,1K',
+      'icon': Icons.headphones_rounded,
+      'color': Colors.grey,
+    },
+    {
+      'id': 'prod-watch-01',
+      'title': 'Đồng hồ thông minh theo dõi sức khỏe đa năng',
+      'discount': '-20%',
+      'price_vnd': 1590000,
+      'original_price_vnd': 1990000,
+      'rating': 4.9,
+      'sold': '842',
+      'icon': Icons.watch_rounded,
+      'color': Colors.blueGrey,
+    },
+    {
+      'id': 'prod-powerbank-01',
+      'title': 'Sạc dự phòng 20000mAh sạc nhanh 22.5W',
+      'discount': '-35%',
+      'price_vnd': 390000,
+      'original_price_vnd': 599000,
+      'rating': 4.7,
+      'sold': '1,5K',
+      'icon': Icons.battery_charging_full_rounded,
+      'color': Colors.amber,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  String _formatPrice(int price) {
+    final s = price.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i > 0) buffer.write('.');
+    }
+    return '${buffer.toString().split('').reversed.join('')} đ';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final storeProfileAsync = ref.watch(
+      storeProfileProvider((widget.shopId, widget.shopName)),
+    );
+    final storeProductsAsync = ref.watch(storeProductsListProvider(widget.shopId));
+    final storeVouchersAsync = ref.watch(storeVouchersListProvider(widget.shopId));
+
+    final profile = storeProfileAsync.value ??
+        StoreProfile(
+          id: widget.shopId,
+          name: widget.shopName,
+        );
+
+    final storeProducts = storeProductsAsync.value ?? [];
+    final storeVouchers = storeVouchersAsync.value ?? const [
+      StoreVoucherItem(
+        id: 'VOUCHER_50K',
+        title: 'Giảm 50K',
+        condition: 'Đơn từ 500.000 đ',
+        expiry: 'HSD: 31/12/2026',
+      ),
+      StoreVoucherItem(
+        id: 'VOUCHER_FREESHIP',
+        title: 'Freeship',
+        condition: 'Đơn từ 300.000 đ',
+        expiry: 'HSD: 31/12/2026',
+      ),
+    ];
+
+    final displayProducts = storeProducts.isNotEmpty ? storeProducts : _featuredProductsFallback;
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      bottomNavigationBar: AppBottomNav(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.popUntil(context, (route) => route.isFirst);
+          } else if (index == 1) {
+            Navigator.pushNamed(context, '/cart');
+          } else if (index == 2) {
+            ChatAiModal.show(context);
+          } else if (index == 3) {
+            Navigator.pushNamed(context, '/profile');
+          }
+        },
+      ),
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          final topPadding = MediaQuery.of(context).padding.top;
+          return [
+            SliverAppBar(
+              expandedHeight: 215 + topPadding,
+              pinned: true,
+              backgroundColor: const Color(0xFFEE4D2D),
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: innerBoxIsScrolled
+                  ? Text(
+                      profile.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    )
+                  : null,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white),
+                  onPressed: () {},
+                ),
+                IconButton(
+                  icon: const Icon(Icons.share_outlined, color: Colors.white),
+                  onPressed: () {},
+                ),
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                      onPressed: () => Navigator.pushNamed(context, '/cart'),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                        child: const Center(
+                          child: Text(
+                            '5',
+                            style: TextStyle(
+                              color: Color(0xFFEE4D2D),
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFFEE4D2D),
+                        Color(0xFFFF5722),
+                      ],
+                    ),
+                  ),
+                  padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 12),
+                  child: StoreHeaderView(
+                    profile: profile,
+                    isFollowing: _isFollowing,
+                    onToggleFollow: () {
+                      setState(() => _isFollowing = !_isFollowing);
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ];
+        },
+        body: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Tab Bar
+            Container(
+              color: Colors.white,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: AppColors.primary,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                tabs: const [
+                  Tab(text: 'Trang chủ'),
+                  Tab(text: 'Sản phẩm'),
+                  Tab(text: 'Danh mục'),
+                  Tab(text: 'Đánh giá'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Shop Promo Banner
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: AppColors.aiBannerGradient,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'ƯU ĐÃI RIÊNG TẠI SHOP',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Giảm đến 40%',
+                          style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Mua ngay',
+                                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                              Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 64),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Shop Vouchers Section (loaded from server)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.confirmation_num_outlined, color: AppColors.primary, size: 18),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Mã giảm giá của Shop',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Xem tất cả', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                        Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Voucher Cards Horizontal List
+            SizedBox(
+              height: 96,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: storeVouchers.map((v) => _buildVoucherCard(v)).toList(),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Shop Category Circles
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildCategoryCircle(Icons.phone_iphone_rounded, 'Điện thoại'),
+                  _buildCategoryCircle(Icons.headphones_rounded, 'Tai nghe'),
+                  _buildCategoryCircle(Icons.watch_rounded, 'Đồng hồ'),
+                  _buildCategoryCircle(Icons.cable_rounded, 'Phụ kiện'),
+                  _buildCategoryCircle(Icons.more_horiz_rounded, 'Xem thêm'),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Featured Products Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  const Icon(Icons.local_fire_department, color: AppColors.primary, size: 20),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Sản phẩm nổi bật',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Xem tất cả', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                        Icon(Icons.chevron_right, color: AppColors.primary, size: 14),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Products Grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: storeProductsAsync.isLoading
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      ),
+                    )
+                  : GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: displayProducts.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.65,
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = displayProducts[index];
+                        return _buildProductCard(item);
+                      },
+                    ),
+            ),
+
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVoucherCard(StoreVoucherItem voucher) {
+    final isSaved = _savedVouchers.contains(voucher.id);
+
+    return Container(
+      width: 220,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withAlpha(50)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.confirmation_number_outlined, color: AppColors.primary, size: 22),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  voucher.title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppColors.primary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  voucher.condition,
+                  style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  voucher.expiry,
+                  style: const TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          FilledButton(
+            onPressed: () {
+              setState(() {
+                if (isSaved) {
+                  _savedVouchers.remove(voucher.id);
+                } else {
+                  _savedVouchers.add(voucher.id);
+                }
+              });
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: isSaved ? Colors.grey.shade300 : AppColors.primary,
+              foregroundColor: isSaved ? Colors.black87 : Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              minimumSize: Size.zero,
+              visualDensity: VisualDensity.compact,
+            ),
+            child: Text(isSaved ? 'Đã lưu' : 'Lưu', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCircle(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: Colors.grey.shade800, size: 24),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductCard(Map<String, dynamic> item) {
+    final id = item['id']?.toString() ?? 'prod-01';
+    final title = item['title']?.toString() ?? '';
+
+    // Price extraction
+    int priceInt = 100000;
+    if (item['price_vnd'] != null) {
+      priceInt = int.tryParse(item['price_vnd'].toString()) ?? 100000;
+    } else if (item['variants'] is List && (item['variants'] as List).isNotEmpty) {
+      final firstVariant = (item['variants'] as List).first;
+      if (firstVariant is Map && firstVariant['price_vnd'] != null) {
+        priceInt = int.tryParse(firstVariant['price_vnd'].toString()) ?? 100000;
+      }
+    }
+    final originalPriceInt = item['original_price_vnd'] != null
+        ? int.tryParse(item['original_price_vnd'].toString())
+        : (priceInt * 1.25).round();
+
+    // Image extraction
+    String? imageUrl;
+    final images = item['images'] as List?;
+    if (images != null && images.isNotEmpty) {
+      final firstImg = images.first;
+      if (firstImg is Map && firstImg['image_url'] != null) {
+        imageUrl = firstImg['image_url'].toString();
+      } else if (firstImg is String) {
+        imageUrl = firstImg;
+      }
+    } else if (item['image_url'] != null) {
+      imageUrl = item['image_url'].toString();
+    }
+
+    final rating = item['rating']?.toString() ?? '4.8';
+    final sold = item['sold']?.toString() ?? '100+';
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailPage(
+              productId: id,
+              initialProduct: item,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(8),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image area + discount badge + favorite
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  child: Container(
+                    height: 130,
+                    width: double.infinity,
+                    color: Colors.grey.shade50,
+                    child: imageUrl != null && imageUrl.startsWith('http')
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => Center(
+                              child: Icon(
+                                item['icon'] as IconData? ?? Icons.shopping_bag_outlined,
+                                size: 54,
+                                color: item['color'] as Color? ?? AppColors.primary,
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(
+                              item['icon'] as IconData? ?? Icons.shopping_bag_outlined,
+                              size: 54,
+                              color: item['color'] as Color? ?? AppColors.primary,
+                            ),
+                          ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      item['discount']?.toString() ?? '-20%',
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          ref.read(favoritesProvider.notifier).toggleFavorite(item);
+                          AppNoticeDialog.show(
+                            context,
+                            message: isFav
+                                ? 'Đã xóa khỏi danh sách yêu thích.'
+                                : 'Đã thêm vào danh sách yêu thích!',
+                          );
+                        },
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 17,
+                                color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, height: 1.3),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(
+                        _formatPrice(priceInt),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (originalPriceInt != null && originalPriceInt > priceInt)
+                    Text(
+                      _formatPrice(originalPriceInt),
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 10,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: AppColors.star, size: 12),
+                      Text(
+                        ' $rating | Đã bán $sold',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
