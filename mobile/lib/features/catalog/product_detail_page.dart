@@ -33,7 +33,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   int _selectedVariantIndex = 0;
   int _quantity = 1;
   bool _addingToCart = false;
-  bool _isFavorite = false;
+
 
   @override
   void initState() {

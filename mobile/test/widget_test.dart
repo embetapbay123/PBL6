@@ -2078,24 +2078,40 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Đã lưu'), findsOneWidget);
-      expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
-      expect(find.text('Từ 389.000 đ'), findsOneWidget);
-      expect(find.text('An Nhiên Studio'), findsOneWidget);
-      expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
-      expect(find.text('349.000 đ'), findsOneWidget);
-      expect(find.text('Mây Xanh Living'), findsOneWidget);
-      expect(find.text('Thêm vào giỏ'), findsNWidgets(2));
-      expect(find.byIcon(Icons.favorite), findsNWidgets(2));
+      expect(find.text('Lượt Thích'), findsOneWidget);
+      expect(find.text('Chỉnh sửa'), findsOneWidget);
+      expect(find.text('Tất Cả'), findsOneWidget);
+      expect(find.text('Trạng thái'), findsOneWidget);
+      expect(find.text('Giảm giá'), findsOneWidget);
+      expect(find.text('Ngành hàng'), findsOneWidget);
+      expect(find.text('Mall'), findsWidgets);
+      expect(find.text('Tìm sản p...'), findsWidgets);
+      expect(find.byIcon(Icons.more_horiz), findsWidgets);
+      expect(find.byIcon(Icons.shopping_cart_outlined), findsWidgets);
 
-      // Tap favorite heart button on first product to remove
+      // Verify product info from sample
+      expect(find.textContaining('CHÉERYEP OFFICIAL'), findsOneWidget);
+      expect(find.text('85.455 đ'), findsOneWidget);
+      expect(find.text('-37%'), findsOneWidget);
+      expect(find.text('8k+ đã bán'), findsOneWidget);
+
+      // Test removal via options menu
       await tester.ensureVisible(find.byTooltip('Bỏ yêu thích').first);
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Bỏ yêu thích').first);
       await tester.pumpAndSettle();
 
-      expect(find.text('Áo hoodie xám Weekend'), findsNothing);
-      expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
+      expect(find.text('Bỏ yêu thích'), findsOneWidget);
+      await tester.tap(find.text('Bỏ yêu thích'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('CHÉERYEP OFFICIAL'), findsNothing);
+
+      // Test Edit Mode
+      await tester.tap(find.text('Chỉnh sửa'));
+      await tester.pumpAndSettle();
+      expect(find.text('Xong'), findsOneWidget);
+      expect(find.textContaining('Chọn tất cả'), findsOneWidget);
     });
   });
 
