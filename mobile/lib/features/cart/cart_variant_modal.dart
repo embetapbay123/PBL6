@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
@@ -44,6 +45,8 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
   List<Map<String, dynamic>> _variants = [];
   Map<String, dynamic>? _selectedVariant;
   int _quantity = 1;
+  late final TextEditingController _quantityController;
+  late final FocusNode _quantityFocusNode;
   bool _isSubmitting = false;
 
   // Multi-axis variant values: e.g. {"Màu sắc": "Đen", "Kích cỡ": "XL"}
@@ -55,11 +58,118 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
     super.initState();
     _quantity = (widget.cartItem['quantity'] as num?)?.toInt() ?? 1;
     if (_quantity < 1) _quantity = 1;
+    _quantityController = TextEditingController(text: '$_quantity');
+    _quantityFocusNode = FocusNode();
+    _quantityFocusNode.addListener(_onQuantityFocusChanged);
     if (widget.initialProduct != null) {
       _applyProduct(widget.initialProduct!);
       _isLoading = false;
     }
     _fetchProductDetails();
+  }
+
+  @override
+  void dispose() {
+    _quantityFocusNode.removeListener(_onQuantityFocusChanged);
+    _quantityFocusNode.dispose();
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  void _onQuantityFocusChanged() {
+    if (!_quantityFocusNode.hasFocus) {
+      _syncQuantityFromText();
+    }
+  }
+
+  void _syncQuantityFromText() {
+    final rawText = _quantityController.text.trim();
+    final parsed = int.tryParse(rawText);
+    final stock = _getStock(_selectedVariant);
+
+    if (parsed == null || parsed < 1) {
+      _quantity = 1;
+    } else if (stock > 0 && parsed > stock) {
+      _quantity = stock;
+      AppNoticeDialog.show(
+        context,
+        message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
+      );
+    } else {
+      _quantity = parsed;
+    }
+
+    final newText = '$_quantity';
+    if (_quantityController.text != newText) {
+      _quantityController.text = newText;
+      _quantityController.selection = TextSelection.fromPosition(
+        TextPosition(offset: newText.length),
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _onQuantityChanged(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    final parsed = int.tryParse(trimmed);
+    if (parsed == null || parsed < 1) {
+      return;
+    }
+
+    final stock = _getStock(_selectedVariant);
+    if (stock > 0 && parsed > stock) {
+      _quantity = stock;
+      _quantityController.text = '$stock';
+      _quantityController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _quantityController.text.length),
+      );
+      AppNoticeDialog.show(
+        context,
+        message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
+      );
+      if (mounted) setState(() {});
+      return;
+    }
+
+    _quantity = parsed;
+    if (mounted) setState(() {});
+  }
+
+  void _decrementQuantity() {
+    _syncQuantityFromText();
+    final stock = _getStock(_selectedVariant);
+    if (_quantity > 1 && stock > 0 && !_isSubmitting) {
+      setState(() {
+        _quantity--;
+        _quantityController.text = '$_quantity';
+        _quantityController.selection = TextSelection.fromPosition(
+          TextPosition(offset: _quantityController.text.length),
+        );
+      });
+    }
+  }
+
+  void _incrementQuantity(int stock) {
+    _syncQuantityFromText();
+    if (stock > 0 && !_isSubmitting) {
+      if (_quantity >= stock) {
+        AppNoticeDialog.show(
+          context,
+          message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
+        );
+      } else {
+        setState(() {
+          _quantity++;
+          _quantityController.text = '$_quantity';
+          _quantityController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _quantityController.text.length),
+          );
+        });
+      }
+    }
   }
 
   void _applyProduct(Map<String, dynamic> prod) {
@@ -111,6 +221,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
     if (_quantity > stock && stock > 0) {
       _quantity = stock;
     }
+    _quantityController.text = '$_quantity';
 
     _product = prod;
     _variants = variants;
@@ -220,6 +331,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
         } else if (_quantity <= 0 && stock > 0) {
           _quantity = 1;
         }
+        _quantityController.text = '$_quantity';
       }
     });
   }
@@ -233,6 +345,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
       } else if (_quantity <= 0 && stock > 0) {
         _quantity = 1;
       }
+      _quantityController.text = '$_quantity';
     });
   }
 
@@ -277,6 +390,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
   }
 
   Future<void> _handleSubmit() async {
+    _syncQuantityFromText();
     if (_selectedVariant == null) return;
     final stock = _getStock(_selectedVariant);
     if (stock <= 0) {
@@ -590,7 +704,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                       children: [
                                         InkWell(
                                           onTap: (_quantity > 1 && stock > 0 && !_isSubmitting)
-                                              ? () => setState(() => _quantity--)
+                                              ? _decrementQuantity
                                               : null,
                                           child: SizedBox(
                                             width: 32,
@@ -605,7 +719,7 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                           ),
                                         ),
                                         Container(
-                                          width: 44,
+                                          width: 48,
                                           height: 32,
                                           alignment: Alignment.center,
                                           decoration: const BoxDecoration(
@@ -616,27 +730,33 @@ class _CartVariantModalState extends ConsumerState<CartVariantModal> {
                                               ),
                                             ),
                                           ),
-                                          child: Text(
-                                            '$_quantity',
+                                          child: TextField(
+                                            controller: _quantityController,
+                                            focusNode: _quantityFocusNode,
+                                            enabled: stock > 0 && !_isSubmitting,
+                                            keyboardType: TextInputType.number,
+                                            textAlign: TextAlign.center,
+                                            textAlignVertical: TextAlignVertical.center,
+                                            inputFormatters: [
+                                              FilteringTextInputFormatter.digitsOnly,
+                                            ],
+                                            onChanged: _onQuantityChanged,
+                                            onSubmitted: (_) => _syncQuantityFromText(),
                                             style: const TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.bold,
                                               color: Color(0xFF1F2937),
                                             ),
+                                            decoration: const InputDecoration(
+                                              border: InputBorder.none,
+                                              isDense: true,
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
                                           ),
                                         ),
                                         InkWell(
                                           onTap: (stock > 0 && !_isSubmitting)
-                                              ? () {
-                                                  if (_quantity >= stock) {
-                                                    AppNoticeDialog.show(
-                                                      context,
-                                                      message: 'Chỉ còn lại $stock sản phẩm cho mặt hàng này',
-                                                    );
-                                                  } else {
-                                                    setState(() => _quantity++);
-                                                  }
-                                                }
+                                              ? () => _incrementQuantity(stock)
                                               : null,
                                           child: SizedBox(
                                             width: 32,

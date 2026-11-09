@@ -1927,6 +1927,16 @@ void main() {
         // Quantity becomes 2
         expect(find.text('2'), findsWidgets);
 
+        // Quantity is editable via text input
+        final modalQtyField = find.descendant(
+          of: find.byType(CartVariantModal),
+          matching: find.byType(TextField),
+        );
+        expect(modalQtyField, findsOneWidget);
+        await tester.enterText(modalQtyField, '5');
+        await tester.pumpAndSettle();
+        expect(find.text('5'), findsWidgets);
+
         // Confirm variant change
         await tester.tap(find.text('Xác nhận'));
         await tester.pumpAndSettle();
