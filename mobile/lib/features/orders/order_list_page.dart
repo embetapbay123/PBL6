@@ -109,6 +109,16 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     }
   }
 
+  String _refundDisplayStatus(Map<String, dynamic> order) {
+    final refundStatus = (order['refund_status']?.toString() ?? '').toUpperCase();
+    final status = (order['status']?.toString() ?? '').toUpperCase();
+    if (['SUCCEEDED', 'COMPLETED', 'REFUNDED', 'RETURNED'].contains(refundStatus) ||
+        ['REFUNDED', 'RETURNED'].contains(status)) {
+      return 'Đã hoàn tiền';
+    }
+    return 'Yêu cầu hoàn tiền';
+  }
+
   String _statusDisplay(String status) {
     final upper = status.toUpperCase();
     switch (upper) {
@@ -533,32 +543,14 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          hasRefund ? 'Yêu cầu trả hàng' : _statusDisplay(status),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (order['refund_status'] != null &&
-                            order['refund_status'].toString().isNotEmpty &&
-                            order['refund_status'].toString().toUpperCase() != 'NONE') ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            _refundStatusBadgeText(order['refund_status'].toString()),
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ],
+                    const SizedBox(width: 12),
+                    Text(
+                      hasRefund ? _refundDisplayStatus(order) : _statusDisplay(status),
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
