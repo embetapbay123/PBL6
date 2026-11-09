@@ -100,7 +100,7 @@ class FavoriteProductItem {
         'An Nhiên Studio';
 
     final sold = map['sold_count']?.toString() ??
-        (map['monthly_sales'] != null ? '${map['monthly_sales']} đã bán' : '100+ đã bán');
+        (map['monthly_sales'] != null ? '${map['monthly_sales']} đã bán' : (map['sold'] != null ? '${map['sold']} đã bán' : '0 đã bán'));
 
     return FavoriteProductItem(
       id: map['id']?.toString() ?? '',

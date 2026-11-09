@@ -1231,7 +1231,13 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
     }
 
     final rating = item['rating']?.toString() ?? '4.8';
-    final sold = item['sold']?.toString() ?? '100+';
+    final rawSold = item['sold'] ??
+        item['sold_count'] ??
+        item['monthly_sales'] ??
+        item['sales_monthly'] ??
+        item['sales'] ??
+        item['total_sold'];
+    final sold = (rawSold != null && rawSold.toString().isNotEmpty) ? rawSold.toString() : '0';
     final isOutOfStock = isProductOutOfStock(item);
 
     return GestureDetector(

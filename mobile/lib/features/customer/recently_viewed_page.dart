@@ -606,8 +606,13 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
             : '4.8');
 
     // Sales
-    final rawSold = rawProduct['sold'] ?? rawProduct['sold_count'] ?? rawProduct['monthly_sales'];
-    final soldStr = (rawSold != null && rawSold.toString().isNotEmpty) ? rawSold.toString() : '100+';
+    final rawSold = rawProduct['sold'] ??
+        rawProduct['sold_count'] ??
+        rawProduct['monthly_sales'] ??
+        rawProduct['sales_monthly'] ??
+        rawProduct['sales'] ??
+        rawProduct['total_sold'];
+    final soldStr = (rawSold != null && rawSold.toString().isNotEmpty) ? rawSold.toString() : '0';
 
     return GestureDetector(
       onTap: () {

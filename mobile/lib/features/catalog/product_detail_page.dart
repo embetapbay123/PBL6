@@ -190,9 +190,19 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         product['sales'] ??
         product['sold'] ??
         product['sold_quantity'] ??
-        product['total_sold'];
+        product['total_sold'] ??
+        product['units_sold'] ??
+        product['order_count'] ??
+        product['sales_count'];
     if (v is num) return v.toInt();
-    if (v is String) return int.tryParse(v) ?? 0;
+    if (v is String) {
+      final s = v.trim();
+      if (s.endsWith('k') || s.endsWith('K')) {
+        final numPart = double.tryParse(s.substring(0, s.length - 1).replaceAll(',', '.')) ?? 0;
+        return (numPart * 1000).toInt();
+      }
+      return int.tryParse(s) ?? 0;
+    }
     return 0;
   }
 
@@ -1720,18 +1730,17 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             final pOriginalPriceInt = (pPriceInt * 1.25).round();
 
             // Rating
-            final rawRating = item['rating'] ?? item['rating_average'] ?? item['avg_rating'];
+            final revSummary = (item['review_summary'] is Map) ? (item['review_summary'] as Map) : null;
+            final rawRating = revSummary?['average'] ?? item['rating'] ?? item['rating_average'] ?? item['avg_rating'];
             final pRatingStr = (rawRating is num && rawRating > 0)
                 ? rawRating.toStringAsFixed(1)
                 : (rawRating is String && (double.tryParse(rawRating) ?? 0) > 0
                     ? double.parse(rawRating).toStringAsFixed(1)
                     : '4.8');
 
-            // Sales
-            final rawSold = item['sold'] ?? item['sold_count'] ?? item['monthly_sales'];
-            final pSoldStr = (rawSold != null && rawSold.toString().isNotEmpty)
-                ? rawSold.toString()
-                : '100+';
+            // Sales from actual server quantity
+            final soldCount = _getProductSold(item);
+            final pSoldStr = _formatSales(soldCount);
 
             return InkWell(
               onTap: () {
