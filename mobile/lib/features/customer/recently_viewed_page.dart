@@ -420,7 +420,7 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
-                      childAspectRatio: 0.51,
+                      childAspectRatio: 0.54,
                     ),
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) => _buildProductCard(filteredList[index]),
@@ -641,7 +641,7 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: AspectRatio(
-                aspectRatio: 1.0,
+                aspectRatio: 0.90,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -739,7 +739,7 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
             // 2. Product Details
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -815,6 +815,8 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         style: ButtonStyle(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
                           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return AppColors.primary;

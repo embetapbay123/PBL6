@@ -228,7 +228,7 @@ class _RecommendationsSectionState
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.51,
+                      childAspectRatio: 0.54,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -445,7 +445,7 @@ class _RecommendationsSectionState
                     top: Radius.circular(12),
                   ),
                   child: AspectRatio(
-                    aspectRatio: 1.0,
+                    aspectRatio: 0.90,
                     child: Container(
                     width: double.infinity,
                     color: Colors.grey.shade100,
@@ -550,7 +550,7 @@ class _RecommendationsSectionState
             // Product Info
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -622,6 +622,8 @@ class _RecommendationsSectionState
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         style: ButtonStyle(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
                           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return AppColors.primary;

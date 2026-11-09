@@ -547,7 +547,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                       crossAxisCount: 2,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
-                      childAspectRatio: 0.51,
+                      childAspectRatio: 0.54,
                     ),
                     itemCount: filteredList.length,
                     itemBuilder: (context, index) =>
@@ -806,7 +806,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
           children: [
             // 1. Product Image & Badges
             AspectRatio(
-              aspectRatio: 1.0,
+              aspectRatio: 0.90,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -898,7 +898,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             // 2. Product Details
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -970,6 +970,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         style: ButtonStyle(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
                           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return AppColors.primary;

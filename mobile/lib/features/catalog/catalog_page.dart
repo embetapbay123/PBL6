@@ -1696,7 +1696,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.51,
+            childAspectRatio: 0.54,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -1772,7 +1772,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           children: [
             // Product Image & Badges
             AspectRatio(
-              aspectRatio: 1.0,
+              aspectRatio: 0.90,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1871,7 +1871,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             // Product Details
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1947,6 +1947,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         style: ButtonStyle(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
                           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                               return AppColors.primary;
@@ -2541,7 +2543,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.50,
+              childAspectRatio: 0.54,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildDedicatedProductGridCard(
@@ -2631,7 +2633,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           children: [
             // 1. Thumbnail Image with Favorite Button on Top-Right
             AspectRatio(
-              aspectRatio: 1.0,
+              aspectRatio: 0.90,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -2700,7 +2702,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             // 2. Details Column
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

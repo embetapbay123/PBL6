@@ -1659,7 +1659,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.51,
+            childAspectRatio: 0.54,
           ),
           itemCount: displayItems.length,
           itemBuilder: (context, idx) {
@@ -1743,7 +1743,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                     ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                       child: AspectRatio(
-                        aspectRatio: 1.0,
+                        aspectRatio: 0.90,
                         child: Stack(
                           fit: StackFit.expand,
                           children: [
@@ -1832,7 +1832,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                     // Product Details
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -1908,6 +1908,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                               width: double.infinity,
                               child: OutlinedButton.icon(
                                 style: ButtonStyle(
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  visualDensity: VisualDensity.compact,
                                   backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                                     if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                                       return AppColors.primary;

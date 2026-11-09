@@ -750,7 +750,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 0.51,
+                      childAspectRatio: 0.54,
                     ),
                     itemBuilder: (context, index) {
                       final item = homeProducts[index];
@@ -904,7 +904,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.51,
+                  childAspectRatio: 0.54,
                 ),
                 itemBuilder: (context, index) {
                   final item = sorted[index];
@@ -1148,7 +1148,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
           children: [
             // Image area + discount badge + favorite
             AspectRatio(
-              aspectRatio: 1.0,
+              aspectRatio: 0.90,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1267,7 +1267,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
             // Details area with Add to Cart button
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1337,6 +1337,8 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         style: ButtonStyle(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
                           backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                             if (isOutOfStock) return const Color(0xFFF3F4F6);
                             if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
