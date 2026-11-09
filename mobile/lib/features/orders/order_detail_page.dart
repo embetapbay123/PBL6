@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
+import '../cart/cart_page.dart';
 import '../catalog/shop_page.dart';
 import 'order_list_page.dart';
 import 'order_refund_page.dart';
@@ -1321,19 +1322,87 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-              onPressed: () {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/',
-                  (route) => false,
-                );
-              },
+              onPressed: _handleReorder,
               child: const Text(
                 'Mua lại',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleReorder() async {
+    final rawItems = (_order?['items'] as List?) ??
+        (widget.initialOrder?['items'] as List?) ??
+        [];
+    final items = rawItems
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    if (items.isEmpty) {
+      AppNoticeDialog.show(
+        context,
+        message: 'Đơn hàng không có sản phẩm để mua lại.',
+        buttonText: 'Đóng',
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppColors.primary),
+      ),
+    );
+
+    final client = ref.read(apiProvider);
+    final reorderedVariantIds = <String>{};
+
+    for (final it in items) {
+      final variantId = (it['variant_id'] ?? it['product_variant_id'])?.toString() ?? '';
+      final productId = it['product_id']?.toString() ?? '';
+      final qty = (it['quantity'] as num?)?.toInt() ?? 1;
+
+      if (variantId.isNotEmpty && productId.isNotEmpty) {
+        try {
+          await client.addToCart(
+            variantId: variantId,
+            productId: productId,
+            quantity: qty,
+          );
+          reorderedVariantIds.add(variantId);
+        } catch (_) {}
+      } else if (productId.isNotEmpty) {
+        try {
+          await client.addToCart(
+            variantId: variantId,
+            productId: productId,
+            quantity: qty,
+          );
+        } catch (_) {}
+        reorderedVariantIds.add(productId);
+      }
+    }
+
+    ref.invalidate(cartItemsProvider);
+    ref.invalidate(cartBadgeCountProvider);
+
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CartPage(
+          initialSelectedVariantIds: reorderedVariantIds,
         ),
       ),
     );

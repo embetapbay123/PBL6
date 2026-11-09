@@ -807,7 +807,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                         ),
                         const SizedBox(width: 8),
                       ],
-                      if (hasRefund) ...[
+                      if (hasRefund || status.toUpperCase() == 'CANCELLED') ...[
                         OutlinedButton(
                           key: const ValueKey('reorder_button'),
                           style: OutlinedButton.styleFrom(

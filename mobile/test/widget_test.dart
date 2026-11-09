@@ -2397,6 +2397,11 @@ void main() {
       expect(find.text('Trả hàng/Hoàn tiền'), findsOneWidget);
       expect(find.text('Đánh giá'), findsOneWidget);
       expect(find.text('Mua lại'), findsOneWidget);
+
+      // Tapping "Mua lại" adds items with order quantity to cart and navigates to CartPage
+      await tester.tap(find.text('Mua lại'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Giỏ hàng'), findsWidgets);
     });
 
     testWidgets('StoreApplicationPage renders submission form and previous applications', (tester) async {
