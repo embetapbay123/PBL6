@@ -33,7 +33,7 @@ class ProfileHeaderBanner extends ConsumerWidget {
           bottom: Radius.circular(24),
         ),
       ),
-      padding: EdgeInsets.fromLTRB(16, topPadding + 8, 8, 16),
+      padding: EdgeInsets.fromLTRB(16, topPadding + 14, 8, 22),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,12 +57,12 @@ class ProfileHeaderBanner extends ConsumerWidget {
                   }
                 },
                 child: Container(
-                  width: 52,
-                  height: 52,
+                  width: 62,
+                  height: 62,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withAlpha(220), width: 2),
+                    border: Border.all(color: Colors.white.withAlpha(220), width: 2.2),
                   ),
                   child: ClipOval(
                     child: profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty
@@ -72,7 +72,7 @@ class ProfileHeaderBanner extends ConsumerWidget {
                             errorBuilder: (ctx, _, _) => Center(
                               child: Icon(
                                 Icons.person,
-                                size: 32,
+                                size: 38,
                                 color: Colors.grey.shade400,
                               ),
                             ),
@@ -80,14 +80,14 @@ class ProfileHeaderBanner extends ConsumerWidget {
                         : Center(
                             child: Icon(
                               Icons.person,
-                              size: 32,
+                              size: 38,
                               color: Colors.grey.shade400,
                             ),
                           ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
 
               // Username + Email + Badge
               Expanded(
@@ -98,25 +98,25 @@ class ProfileHeaderBanner extends ConsumerWidget {
                       profile.displayName,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16.5,
+                        fontSize: 19.0,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (profile.email.isNotEmpty && profile.email != profile.displayName) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         profile.email,
                         style: TextStyle(
-                          color: Colors.white.withAlpha(200),
-                          fontSize: 11.5,
+                          color: Colors.white.withAlpha(225),
+                          fontSize: 13.0,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     // Badge (CUSTOMER > / Kim Cương >)
                     InkWell(
                       onTap: () {
@@ -127,10 +127,10 @@ class ProfileHeaderBanner extends ConsumerWidget {
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E293B).withAlpha(150),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -139,14 +139,14 @@ class ProfileHeaderBanner extends ConsumerWidget {
                               profile.tier,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
+                                fontSize: 12.0,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const SizedBox(width: 2),
+                            const SizedBox(width: 3),
                             const Icon(
                               Icons.chevron_right,
-                              size: 13,
+                              size: 15,
                               color: Colors.white70,
                             ),
                           ],
@@ -166,7 +166,7 @@ class ProfileHeaderBanner extends ConsumerWidget {
                     icon: const Icon(
                       Icons.settings_outlined,
                       color: Colors.white,
-                      size: 22,
+                      size: 24,
                     ),
                     tooltip: 'Cài đặt',
                     onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
@@ -176,7 +176,7 @@ class ProfileHeaderBanner extends ConsumerWidget {
                     icon: const Icon(
                       Icons.notifications_outlined,
                       color: Colors.white,
-                      size: 22,
+                      size: 24,
                     ),
                     tooltip: 'Thông báo',
                     onPressed: () {
