@@ -27,12 +27,15 @@ async function model(page: Page, lostAck = false) {
   await page.goto('/seller/inventory'); await expect(page.getByRole('button', {name: 'Điều chỉnh', exact: true})).toBeEnabled();
   return state;
 }
-test('inventory-only employee identifies the item, previews a reduction and immediately sees its history', async ({page}) => {
+test('inventory-only employee identifies the item, previews a reduction and immediately sees its history', async ({page}, info) => {
   const s = await model(page); await expect(page.locator('main')).toContainText('Áo thứ 300 · Đen / XL · SKU: OPAQUE-299-11'); expect(s.catalogReads).toBe(0);
   const inventoryUrl = page.url();
+  await page.setViewportSize({width:390,height:844});
   await page.getByRole('button', {name: 'Điều chỉnh', exact: true}).click(); const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Loại điều chỉnh').selectOption('REMOVE'); await dialog.getByLabel('Số lượng', {exact: true}).fill('8'); await expect(dialog.getByRole('button', {name: 'Lưu điều chỉnh', exact: true})).toBeDisabled();
-  await dialog.getByLabel('Số lượng', {exact: true}).fill('2'); await dialog.getByLabel('Lý do', {exact: true}).fill('Hàng hỏng đã kiểm tra'); await expect(dialog).toContainText('tồn thương mại 10 → 8; đang giữ 3; khả dụng 7 → 5');
+  await expect(dialog.getByLabel('Số lượng', {exact: true})).toHaveAccessibleDescription(/thấp hơn 3 đang giữ/);
+  await dialog.getByLabel('Số lượng', {exact: true}).fill('2'); await dialog.getByLabel('Lý do', {exact: true}).fill('Hàng hỏng đã kiểm tra'); await expect(dialog).toContainText('Có thể bán 7 → 5 · Đang giữ 3');
+  await dialog.screenshot({path:info.outputPath('adjustment-mobile.png')});
   const reads = s.movementReads; await dialog.getByRole('button', {name: 'Lưu điều chỉnh', exact: true}).click(); await expect(dialog).toHaveCount(0); await expect(page.locator('main')).toContainText('Hàng hỏng đã kiểm tra'); await expect.poll(() => s.movementReads).toBeGreaterThan(reads); expect(s.posts).toHaveLength(1); expect(s.posts[0]).toMatchObject({delta_quantity: -2, expected_version: 0});
   await expect(page).toHaveURL(inventoryUrl);
 });
@@ -60,5 +63,5 @@ test('adjusting from an older history page returns to the newest movement and pr
 });
 
 test('history date filter sends a bounded Vietnam period and can be cleared',async({page})=>{
- const s=await model(page);await page.getByRole('link',{name:'Xem biến động',exact:true}).click();const form=page.locator('.stock-period-filter');await form.getByLabel('Từ ngày',{exact:true}).fill('2026-11-01');await form.getByLabel('Đến hết ngày',{exact:true}).fill('2026-11-02');await form.getByRole('button',{name:'Lọc lịch sử',exact:true}).click();await expect.poll(()=>s.movementUrls.some(value=>new URL(value).searchParams.get('from')==='2026-10-31T17:00:00.000Z'&&new URL(value).searchParams.get('to')==='2026-11-02T17:00:00.000Z')).toBe(true);await form.getByRole('button',{name:'Bỏ lọc ngày'}).click();await expect(page).not.toHaveURL(/stock_from=/);
+ const s=await model(page);const history=page.getByRole('link',{name:'Xem biến động',exact:true});await expect(history).toHaveCount(0);await page.getByRole('button',{name:/^Thêm thao tác cho /}).press('Enter');await expect(history).toBeVisible();await history.click();const form=page.locator('.stock-period-filter');await form.getByLabel('Từ ngày',{exact:true}).fill('2026-11-01');await form.getByLabel('Đến hết ngày',{exact:true}).fill('2026-11-02');await form.getByRole('button',{name:'Lọc lịch sử',exact:true}).click();await expect.poll(()=>s.movementUrls.some(value=>new URL(value).searchParams.get('from')==='2026-10-31T17:00:00.000Z'&&new URL(value).searchParams.get('to')==='2026-11-02T17:00:00.000Z')).toBe(true);await form.getByRole('button',{name:'Bỏ lọc ngày'}).click();await expect(page).not.toHaveURL(/stock_from=/);
 });

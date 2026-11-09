@@ -2955,6 +2955,354 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/shipping/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getShippingConnection */
+        get: operations["getShippingConnection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** listShippingLocations */
+        get: operations["listShippingLocations"];
+        put?: never;
+        /** saveShippingLocation */
+        post: operations["saveShippingLocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/shipping/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** storeShippingShipments */
+        get: operations["storeShippingShipments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/shipping/shipments/{id}/commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** storeShippingCommand */
+        post: operations["storeShippingCommand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/shipping/shipments/{id}/label": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** storeShippingLabel */
+        post: operations["storeShippingLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** adminShippingShipments */
+        get: operations["adminShippingShipments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/shipments/{id}/commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** adminShippingCommand */
+        post: operations["adminShippingCommand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/shipments/{id}/label": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** adminShippingLabel */
+        post: operations["adminShippingLabel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/orders/{id}/shipping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getStoreShipping */
+        get: operations["getStoreShipping"];
+        put?: never;
+        /** bookStoreShipment */
+        post: operations["bookStoreShipment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/orders/{id}/shipping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** getOwnShipping */
+        get: operations["getOwnShipping"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/shipments/{id}/cod": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** confirmShippingCod */
+        post: operations["confirmShippingCod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/return-requests/{id}/shipping": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** registerReturnShipping */
+        post: operations["registerReturnShipping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shipping/webhooks/ghn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ghnCallback */
+        post: operations["ghnCallback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/store/shipping/shipments/{id}/exchange-receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** storeInspectExchangeReturn */
+        post: operations["storeInspectExchangeReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/shipments/{id}/exchange-receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** adminInspectExchangeReturn */
+        post: operations["adminInspectExchangeReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/shipping/platform/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** savePlatformPickup */
+        post: operations["savePlatformPickup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/returns/{id}/pickup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** requestPlatformReturnPickup */
+        post: operations["requestPlatformReturnPickup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shipping/webhooks/delivery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Signed callback from delivery provider */
+        post: operations["deliveryCallback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem lịch sử sự kiện của nhóm thông báo
+         * @description Xem lịch sử các sự kiện cập nhật của một nhóm thông báo đơn hàng.
+         */
+        get: operations["listNotificationGroupHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications/read-group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Đánh dấu đã đọc toàn bộ nhóm thông báo đến mốc thời gian
+         * @description Đánh dấu đã đọc các sự kiện trong cùng một nhóm thông báo đơn hàng.
+         */
+        post: operations["markNotificationGroupRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3044,6 +3392,10 @@ export interface components {
             return_policy_snapshot?: components["schemas"]["ReturnPolicySnapshot"];
             /** Format: date-time */
             completed_at?: string;
+            /** @enum {string} */
+            shipping_mode?: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
+            /** Format: date-time */
+            shipping_delivered_at?: string;
         };
         Payment: {
             /** Format: uuid */
@@ -4085,6 +4437,8 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             read: boolean;
+            update_count: number;
+            unread_count: number;
         };
         PageCustomerNotifications: {
             items: components["schemas"]["CustomerNotification"][];
@@ -4164,6 +4518,8 @@ export interface components {
                 collected_vnd?: number;
                 refunded_vnd?: number;
             };
+            /** @enum {string} */
+            shipping_mode?: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
         };
         PageOrderReturnRequests: {
             items: components["schemas"]["OrderReturnRequest"][];
@@ -4802,6 +5158,235 @@ export interface components {
             id: string;
             archived: boolean;
             unread_count: number;
+        };
+        ShippingAddress: {
+            recipient_name: string;
+            phone: string;
+            line1: string;
+            ward: string;
+            district?: string;
+            city: string;
+            new_address?: boolean;
+        };
+        ShippingPickup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            store_id: string;
+            name: string;
+            shop_id?: number;
+            /** @enum {string} */
+            environment: "staging" | "production";
+            address: components["schemas"]["ShippingAddress"];
+            enabled: boolean;
+            version: number;
+            /** @enum {string} */
+            provider?: "GHN" | "PLATFORM";
+        };
+        SaveShippingPickup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            store_id: string;
+            name: string;
+            shop_id: number;
+            /** @enum {string} */
+            environment: "staging" | "production";
+            address: components["schemas"]["ShippingAddress"];
+            enabled: boolean;
+            expected_version: number;
+        };
+        ShippingConnection: {
+            /** @enum {string} */
+            provider: "GHN";
+            /** @enum {string} */
+            environment: "staging" | "production";
+            configured: boolean;
+            booking_enabled: boolean;
+            cod_verification_enabled: boolean;
+        };
+        ShippingShipment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** Format: uuid */
+            return_request_id?: string;
+            /** @enum {string} */
+            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+            /** @enum {string} */
+            provider: "GHN" | "EXTERNAL" | "PLATFORM";
+            status: string;
+            tracking_code?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expected_delivery_at?: string;
+            /** Format: date-time */
+            picked_up_at?: string;
+            /** Format: date-time */
+            delivered_at?: string;
+            version: number;
+            events: {
+                status: string;
+                /** Format: date-time */
+                occurred_at: string;
+                /** @enum {string} */
+                source: "CARRIER" | "MANUAL";
+            }[];
+        };
+        ShippingShipmentStaff: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            store_id: string;
+            /** Format: uuid */
+            return_request_id?: string;
+            /** @enum {string} */
+            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+            /** @enum {string} */
+            provider: "GHN" | "EXTERNAL" | "PLATFORM";
+            status: string;
+            tracking_code?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expected_delivery_at?: string;
+            /** Format: date-time */
+            picked_up_at?: string;
+            /** Format: date-time */
+            delivered_at?: string;
+            version: number;
+            events: {
+                status: string;
+                /** Format: date-time */
+                occurred_at: string;
+                /** @enum {string} */
+                source: "CARRIER" | "MANUAL";
+            }[];
+            last_error?: string;
+            provider_status?: string;
+            cod_vnd: number;
+            actual_fee_vnd?: number;
+            /** Format: date-time */
+            cod_collected_at?: string;
+            /** Format: date-time */
+            cod_remitted_at?: string;
+            /** @enum {string} */
+            pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+            /** @enum {string} */
+            pending_command_status?: "PENDING" | "UNKNOWN";
+            /** @enum {string} */
+            environment: "staging" | "production";
+            label_available: boolean;
+            exchange_items?: {
+                /** Format: uuid */
+                variant_id: string;
+                name: string;
+                quantity: number;
+            }[];
+            /** @enum {string} */
+            exchange_receipt_status?: "PENDING" | "APPLIED";
+            courier_name?: string;
+            delivery_note?: string;
+            pickup_label?: string;
+            destination_label?: string;
+        };
+        BookShipment: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_order_version: number;
+            /** Format: uuid */
+            pickup_location_id: string;
+            /** Format: uuid */
+            return_request_id?: string;
+            weight: number;
+            length: number;
+            width: number;
+            height: number;
+            note?: string;
+        };
+        ShippingCommand: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            /** @enum {string} */
+            kind: "CANCEL" | "REDELIVER" | "RETURN";
+        };
+        ShippingCodEvidence: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            amount_vnd: number;
+            reference: string;
+        };
+        ExternalReturnShipment: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            tracking_code: string;
+            carrier_name: string;
+        };
+        ShippingPage: {
+            items: components["schemas"]["ShippingShipmentStaff"][];
+            page: number;
+            size: number;
+            total: number;
+        };
+        ShippingTimeline: {
+            /** @enum {string} */
+            mode: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
+            items: components["schemas"]["ShippingShipment"][];
+        };
+        ShippingStoreTimeline: {
+            /** @enum {string} */
+            mode: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
+            items: components["schemas"]["ShippingShipmentStaff"][];
+            locations: components["schemas"]["ShippingPickup"][];
+            booking_enabled: boolean;
+        };
+        ExchangeReceiptLine: {
+            /** Format: uuid */
+            variant_id: string;
+            received_quantity: number;
+            resellable_quantity: number;
+            damaged_quantity: number;
+        };
+        InspectExchangeReturn: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            note: string;
+            lines: components["schemas"]["ExchangeReceiptLine"][];
+        };
+        SavePlatformPickup: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            store_id: string;
+            name: string;
+            address: components["schemas"]["ShippingAddress"];
+            enabled: boolean;
+            expected_version: number;
+        };
+        PlatformDeliveryAction: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
+            /** @enum {string} */
+            action: "ASSIGN" | "PICK_UP" | "TRANSIT" | "OUT_FOR_DELIVERY" | "DELIVER" | "FAIL" | "REDELIVER" | "RETURN" | "RECEIVE_RETURN" | "CANCEL" | "REMIT_COD";
+            courier_name?: string;
+            note?: string;
+            collected_vnd?: number;
+        };
+        RequestPlatformPickup: {
+            /** Format: uuid */
+            operation_id: string;
+            expected_version: number;
         };
     };
     responses: never;
@@ -20740,6 +21325,665 @@ export interface operations {
             };
             /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
             501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getShippingConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingConnection"];
+                };
+            };
+        };
+    };
+    listShippingLocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ShippingPickup"][];
+                    };
+                };
+            };
+        };
+    };
+    saveShippingLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveShippingPickup"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingPickup"];
+                };
+            };
+        };
+    };
+    storeShippingShipments: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: string;
+                order_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingPage"];
+                };
+            };
+        };
+    };
+    storeShippingCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingCommand"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipmentStaff"];
+                };
+            };
+        };
+    };
+    storeShippingLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url: string;
+                    };
+                };
+            };
+        };
+    };
+    adminShippingShipments: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: string;
+                order_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingPage"];
+                };
+            };
+        };
+    };
+    adminShippingCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingCommand"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipmentStaff"];
+                };
+            };
+        };
+    };
+    adminShippingLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url: string;
+                    };
+                };
+            };
+        };
+    };
+    getStoreShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingStoreTimeline"];
+                };
+            };
+        };
+    };
+    bookStoreShipment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookShipment"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipmentStaff"];
+                };
+            };
+        };
+    };
+    getOwnShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingTimeline"];
+                };
+            };
+        };
+    };
+    confirmShippingCod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShippingCodEvidence"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipmentStaff"];
+                };
+            };
+        };
+    };
+    registerReturnShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExternalReturnShipment"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipment"];
+                };
+            };
+        };
+    };
+    ghnCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ShopID: number;
+                    /** Format: date-time */
+                    Time: string;
+                    OrderCode: string;
+                    ClientOrderCode?: string;
+                    Type: string;
+                    Status?: string;
+                } & {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    storeInspectExchangeReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectExchangeReturn"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipmentStaff"];
+                };
+            };
+        };
+    };
+    adminInspectExchangeReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InspectExchangeReturn"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipmentStaff"];
+                };
+            };
+        };
+    };
+    savePlatformPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavePlatformPickup"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingPickup"];
+                };
+            };
+        };
+    };
+    requestPlatformReturnPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPlatformPickup"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingShipment"];
+                };
+            };
+        };
+    };
+    deliveryCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    event_id: string;
+                    parcel: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    listNotificationGroupHistory: {
+        parameters: {
+            query: {
+                kind: "ORDER_STATUS" | "PAYMENT_EVENT" | "RETURN_STATUS";
+                order_id: string;
+                page?: number;
+                size?: number;
+                exclude_primary?: boolean;
+                up_to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Thành công: liệt kê lịch sử sự kiện của nhóm */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PageCustomerNotifications"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    markNotificationGroupRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    kind: "ORDER_STATUS" | "PAYMENT_EVENT" | "RETURN_STATUS";
+                    /** Format: uuid */
+                    order_id: string;
+                    up_to?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Đã đánh dấu đọc thành công */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        updated: number;
+                    };
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

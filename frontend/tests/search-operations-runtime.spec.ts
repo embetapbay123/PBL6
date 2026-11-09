@@ -29,7 +29,7 @@ test('Customer Seller and Admin search hundred-order datasets by Vietnamese snap
     } finally {await view.evaluate(() => document.querySelectorAll<HTMLInputElement>('input[type="password"]').forEach(e => {e.value = '';})).catch(() => {});}
   }
   async function newView() {const context = await browser.newContext({viewport: {width: 1440, height: 900}}); contexts.push(context); const view = await context.newPage(); view.setDefaultTimeout(15000); view.on('pageerror', e => errors.push(e.message)); return view;}
-  async function search(view: Page, text: string) {await view.getByRole('searchbox', {name: 'Tìm đơn theo mã, món, SKU hoặc người nhận', exact: true}).fill(text); await view.getByRole('button', {name: 'Tìm trong toàn bộ đơn', exact: true}).click();}
+  async function search(view: Page, text: string) {await view.getByRole('searchbox', {name: 'Tìm đơn theo mã, món, SKU hoặc người nhận', exact: true}).fill(text); await view.getByRole('button', {name: 'Tìm đơn', exact: true}).click();}
   async function customerOrders(view: Page) {await view.getByRole('button', {name: 'Menu tài khoản', exact: true}).click(); await view.getByRole('navigation', {name: 'Menu tài khoản', exact: true}).getByRole('link', {name: 'Đơn hàng', exact: true}).click();}
   const addressA = (await a.api('/me/addresses', a.buyer.access)).items[0], addressB = (await b.api('/me/addresses', b.buyer.access)).items[0];
   async function place(m: typeof a, customer: typeof a.buyer, product: any, variant: any, method: 'COD'|'SANDBOX' = 'COD') {
@@ -82,9 +82,9 @@ test('Customer Seller and Admin search hundred-order datasets by Vietnamese snap
     await page.getByRole('banner').getByRole('searchbox', {name: 'Tìm kiếm toàn sàn', exact: true}).fill(a.tag + ' dien thoai do');
     await page.getByRole('banner').getByRole('button', {name: 'Tìm toàn sàn', exact: true}).click();
     await page.getByRole('combobox', {name: 'Sắp xếp', exact: true}).selectOption('price_desc');
-    await page.getByRole('button', {name: 'Trang sau', exact: true}).click(); await expect(page.locator('.boot-pagination')).toContainText('Trang 2 · 25 kết quả');
+    await page.getByRole('button', {name: 'Trang sau', exact: true}).click(); await expect(page.locator('.boot-pagination')).toContainText('Trang 2'); await expect(page.getByText('25 sản phẩm', {exact: true})).toBeVisible();
     const returnUrl = page.url(); await page.locator('.product-card').filter({has: page.getByRole('heading', {name: title, exact: true})}).locator('.market-product-link').click();
-    await page.goBack(); await expect(page).toHaveURL(returnUrl); await expect(page.locator('.boot-pagination')).toContainText('Trang 2 · 25 kết quả'); await page.reload(); await expect(page).toHaveURL(returnUrl); await expect(page.locator('.boot-pagination')).toContainText('Trang 2 · 25 kết quả'); await expect(page.getByRole('combobox', {name: 'Sắp xếp', exact: true})).toHaveValue('price_desc');
+    await page.goBack(); await expect(page).toHaveURL(returnUrl); await expect(page.locator('.boot-pagination')).toContainText('Trang 2'); await expect(page.getByText('25 sản phẩm', {exact: true})).toBeVisible(); await page.reload(); await expect(page).toHaveURL(returnUrl); await expect(page.locator('.boot-pagination')).toContainText('Trang 2'); await expect(page.getByText('25 sản phẩm', {exact: true})).toBeVisible(); await expect(page.getByRole('combobox', {name: 'Sắp xếp', exact: true})).toHaveValue('price_desc');
     record('VIETNAMESE_PUBLIC_SEARCH', {catalog: catalogProof, literal_metacharacter_total: 1, empty_query_total: 0, back_reload_url: returnUrl});
     // The current catalog changes after purchase; every search must continue using the ordered snapshot.
     let current = await a.api('/store/products/' + target.id, a.owner.access);
@@ -94,16 +94,16 @@ test('Customer Seller and Admin search hundred-order datasets by Vietnamese snap
     await expect(page.getByText(title, {exact: true})).toBeVisible();
     await search(page, 'dien thoai do'); await page.getByRole('combobox', {name: 'Trạng thái đơn', exact: true}).selectOption('COMPLETED');
     await page.getByRole('combobox', {name: 'Tình trạng tiền', exact: true}).selectOption('SUCCEEDED');
-    await expect(page.locator('.boot-pagination')).toContainText('1 kết quả'); await expect(page.getByText(title, {exact: true})).toBeVisible();
+    await expect(page.locator('.boot-pagination')).toHaveCount(0); await expect(page.getByText(title, {exact: true})).toBeVisible();
     await page.getByRole('link', {name: 'Xem chi tiết', exact: true}).click(); await expect(page).toHaveURL(new RegExp('/customer/orders/' + original.id + '$'));
-    await page.getByRole('link', {name: 'Quay lại lịch sử đơn hàng', exact: true}).click(); await expect(page.getByRole('searchbox', {name: 'Tìm đơn theo mã, món, SKU hoặc người nhận', exact: true})).toHaveValue('dien thoai do');
+    await page.getByRole('link', {name: 'Về đơn hàng', exact: true}).click(); await expect(page.getByRole('searchbox', {name: 'Tìm đơn theo mã, món, SKU hoặc người nhận', exact: true})).toHaveValue('dien thoai do');
     const customerUrl = page.url(); await page.reload(); await expect(page).toHaveURL(customerUrl); await expect(page.getByText(title, {exact: true})).toBeVisible(); await expect(page.getByRole('combobox', {name: 'Trạng thái đơn', exact: true})).toHaveValue('COMPLETED'); await expect(page.getByRole('combobox', {name: 'Tình trạng tiền', exact: true})).toHaveValue('SUCCEEDED');
     await page.screenshot({path: info.outputPath('customer-hundred-orders-desktop.png'), fullPage: true});
     const seller = await newView(); await login(seller, a, a.owner.email);
     await seller.getByRole('button', {name: 'Menu tài khoản', exact: true}).click(); await seller.getByRole('navigation', {name: 'Menu tài khoản', exact: true}).getByRole('link', {name: 'Store Portal', exact: true}).click();
     await seller.getByRole('complementary').getByRole('link', {name: 'Đơn hàng Store', exact: true}).click(); await expect(seller.locator('.boot-pagination')).toContainText('100 kết quả');
     await search(seller, 'dien thoai do'); await expect(seller.locator('tbody tr')).toHaveCount(2);
-    await seller.getByRole('combobox', {name: 'Trạng thái đơn', exact: true}).selectOption('COMPLETED'); await expect(seller.locator('tbody tr')).toHaveCount(1);
+    await seller.getByRole('button', {name: 'Hoàn tất', exact: true}).click(); await expect(seller.locator('tbody tr')).toHaveCount(1);
     await seller.locator('tbody').getByRole('button', {name: 'Xem đơn', exact: true}).click(); await expect(seller.getByRole('dialog')).toContainText(sku); await expect(seller.getByRole('dialog')).toContainText(a.address.recipient_name);
     await seller.keyboard.press('Escape'); await expect(seller.getByRole('searchbox', {name: 'Tìm đơn theo mã, món, SKU hoặc người nhận', exact: true})).toHaveValue('dien thoai do');
     await seller.screenshot({path: info.outputPath('seller-hundred-orders-desktop.png'), fullPage: true});

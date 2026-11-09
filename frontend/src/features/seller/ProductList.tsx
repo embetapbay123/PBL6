@@ -1,8 +1,8 @@
 import { Button as UiButton } from "../../components/ui/Button";
-import { FormEvent, useState } from "react";
-import { Link, useSearchParams, useLocation } from "react-router-dom";
+import { FormEvent, useEffect, useState } from "react";
+import { Link, useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, RefreshCw, Eye, SquarePen, Package, Store } from "lucide-react";
+import { Plus, RefreshCw, Eye, SquarePen, Package, Store, Sparkles, CheckCircle2 } from "lucide-react";
 import { ActionMenu } from "../../components/ActionMenu";
 import { Modal } from "../../components/Modal";
 import { ProductModerationNotice } from "./ProductModerationNotice";
@@ -20,7 +20,8 @@ import {
 import { SellerSubNav } from "../../live/SellerWorkspace";
 import { AttributeFields } from "./AttributeFields";
 import { useProductTypes } from "./useProductTypes";
-import { VariantMatrix, type MatrixVariant } from "./VariantMatrix";
+import { VariantMatrix, type MatrixRow } from "./VariantMatrix";
+import { parseVariantPrice } from "./variant-price";
 import { SortHeader } from '../../components/SortHeader';
 import { variantLabel } from '../../components/variant-identity';
 
@@ -80,13 +81,24 @@ export function SellerProductList() {
   });
   const showCreate = params.get("create") === "1",
     canWrite = access.can("product.store.read_write");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (showCreate && canWrite) {
+      navigate("/seller/products/new", { replace: true });
+    }
+  }, [showCreate, canWrite, navigate]);
+
   function create(open: boolean) {
-    setParams((current) => {
-      const next = new URLSearchParams(current);
-      if (open) next.set("create", "1");
-      else next.delete("create");
-      return next;
-    });
+    if (open) {
+      navigate("/seller/products/new");
+    } else {
+      setParams((current) => {
+        const next = new URLSearchParams(current);
+        next.delete("create");
+        return next;
+      });
+    }
   }
   const items = data?.items ?? [];
   async function changeStatus() {
@@ -151,25 +163,23 @@ export function SellerProductList() {
               Xem gian hàng
             </Link>
           )}
-          <UiButton
-            variant="primary"
-            type="submit"
-            disabled={!canWrite}
-            onClick={() => create(true)}
-          >
-            <Plus size={17} />
-            Thêm sản phẩm mới
-          </UiButton>
+          {canWrite && (
+            <Link
+              className="ui-button ui-button-primary inline-flex items-center gap-1.5"
+              to="/seller/products/new"
+              style={{ textDecoration: 'none' }}
+            >
+              <Plus size={17} />
+              Thêm sản phẩm mới
+            </Link>
+          )}
         </div>
       </div>
-      {showCreate && canWrite && (
-        <CreateProductModal
-          close={() => create(false)}
-          onCreated={() => {
-            create(false);
-            void refetch();
-          }}
-        />
+      {Boolean(location.state?.notice) && (
+        <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-emerald-800 text-sm flex items-center gap-2">
+          <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+          <span>{String(location.state?.notice)}</span>
+        </div>
       )}
       <nav className="order-status-tabs" aria-label="Lọc nhanh sản phẩm">{[['','Tất cả'],['ACTIVE','Đang bán'],['DRAFT','Bản nháp'],['STOPPED','Dừng bán']].map(([value,label])=><button key={value} type="button" aria-pressed={status===value} onClick={()=>setFilter('status',value)}>{label}</button>)}</nav>
       <div className="seller-product-filters seller-filter-bar">
@@ -181,16 +191,13 @@ export function SellerProductList() {
           value={search}
           onChange={(event) => setFilter("q", event.target.value)}
         />
-        <select
-          aria-label="Trạng thái sản phẩm trong Store"
-          value={status}
-          onChange={(event) => setFilter("status", event.target.value)}
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="ACTIVE">Đang bán</option>
-          <option value="DRAFT">Bản nháp</option>
-          <option value="STOPPED">Dừng bán</option>
-        </select>
+        {(search || status || sort !== "NAME_ASC") && (
+          <UiButton variant="secondary" onClick={() => setParams((current) => {
+            const next = new URLSearchParams(current);
+            for (const key of ["q", "status", "sort", "page"]) next.delete(key);
+            return next;
+          }, { replace: true })}>Xóa bộ lọc</UiButton>
+        )}
         <span>
           {data
             ? data.total.toLocaleString("vi-VN") + " sản phẩm trong gian hàng"
@@ -219,6 +226,7 @@ export function SellerProductList() {
                   <SortHeader label="Sản phẩm" value={sort} ascending="NAME_ASC" descending="NAME_DESC" onChange={value=>setFilter('sort',value)}/>
                   <SortHeader label="Giá bán" value={sort} ascending="PRICE_ASC" descending="PRICE_DESC" onChange={value=>setFilter('sort',value)}/>
                   <th scope="col">Phân loại</th>
+                  <th scope="col">Đã bán</th>
                   <th scope="col">Trạng thái</th>
                   <th scope="col">Thao tác</th>
                 </tr>
@@ -257,6 +265,7 @@ export function SellerProductList() {
                         : "Chưa có giá"}
                     </td>
                     <td>{product.variants?.length ?? 0} biến thể</td>
+                    <td style={{ fontSize: "14px", fontWeight: 500 }}>{product.sold_count ?? 0}</td>
                     <td>
                       <span className="market-badge">
                         {product.status === "ACTIVE"
@@ -497,16 +506,29 @@ function CreateProductModal({
   const selectedType = types.data?.find((type) => type.id === productTypeId);
   const [sku, setSku] = useState("");
   const [matrix, setMatrix] = useState(false),
-    [matrixRows, setMatrixRows] = useState<MatrixVariant[]>([]);
-  const [price, setPrice] = useState(100000);
+    [matrixRows, setMatrixRows] = useState<MatrixRow[]>([]),
+    [matrixPreviewCurrent, setMatrixPreviewCurrent] = useState(false);
+  const [price, setPrice] = useState("");
+  const [appliedPrice, setAppliedPrice] = useState<number>();
   const [imageUrl, setImageUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>();
+  const parsedPrice = parseVariantPrice(price);
+  const customPriceCount = matrixRows.filter(row => row.customPrice !== undefined).length;
+  const hasCommonRows = matrixRows.length > customPriceCount;
+  const commonPricePending = hasCommonRows && (appliedPrice === undefined || appliedPrice !== parsedPrice);
+  const matrixVariants = matrixRows.flatMap(({ customPrice, ...row }) => {
+    const price_vnd = customPrice === undefined ? appliedPrice : parseVariantPrice(customPrice);
+    return row.sku.trim() && price_vnd !== undefined ? [{ ...row, sku: row.sku.trim(), price_vnd }] : [];
+  });
+  const readyToPrice = matrix
+    ? matrixPreviewCurrent && matrixRows.length > 0 && !commonPricePending && matrixVariants.length === matrixRows.length
+    : parsedPrice !== undefined;
 
   const releaseUnsaved = useUnsavedChanges(
     !createdId &&
       !uncertain &&
-      !!(title || sku || description || imageUrl || productTypeId),
+      !!(title || sku || price || description || imageUrl || productTypeId),
   );
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -515,7 +537,7 @@ function CreateProductModal({
       uncertain ||
       createdId ||
       !selectedType ||
-      (matrix && !matrixRows.length)
+      !readyToPrice
     )
       return;
     setSubmitting(true);
@@ -530,11 +552,11 @@ function CreateProductModal({
             ? { ...attributes, ...matrixRows[0].variant_values }
             : attributes,
           variants: matrix
-            ? matrixRows
+            ? matrixVariants
             : [
                 {
                   sku: sku.trim(),
-                  price_vnd: price,
+                  price_vnd: parsedPrice!,
                   variant_values: Object.fromEntries(
                     (selectedType?.attribute_definitions ?? [])
                       .filter(
@@ -621,6 +643,8 @@ function CreateProductModal({
                   setAttributes({});
                   setMatrix(false);
                   setMatrixRows([]);
+                  setMatrixPreviewCurrent(false);
+                  setAppliedPrice(undefined);
                 }}
               >
                 <option value="">Chọn loại sản phẩm</option>
@@ -672,16 +696,36 @@ function CreateProductModal({
                 <input
                   type="checkbox"
                   checked={matrix}
-                  onChange={(event) => setMatrix(event.target.checked)}
+                  onChange={(event) => {
+                    setMatrix(event.target.checked);
+                    setMatrixPreviewCurrent(false);
+                  }}
                 />
                 Tạo nhiều phân loại theo ma trận
               </label>
             )}
+            <div className="shopee-seo-tip-box" style={{ margin: '12px 0 8px', padding: '10px 14px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px' }}>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 mb-1">
+                <Sparkles size={14} className="text-amber-600" />
+                <span>Gợi ý đặt tên chuẩn SEO Shopee Uni:</span>
+              </div>
+              <p className="text-xs text-amber-700 m-0">
+                <strong>[Loại SP]</strong> + <strong>[Thương hiệu]</strong> + <strong>[Model / Mã đặc trưng]</strong> + <strong>[Đặc tính nổi bật / Màu sắc / Size]</strong>
+              </p>
+              <p className="text-[11px] text-amber-600/90 mt-1 mb-0 italic">
+                * Tránh spam từ khóa, không viết IN HOA toàn bộ, không chèn số điện thoại để tối ưu điểm hiển thị trên sàn.
+              </p>
+            </div>
             <label>
-              Tên sản phẩm *
+              <span className="flex items-center justify-between">
+                <span>Tên sản phẩm *</span>
+                <span className="font-normal text-xs text-slate-500">{title.length}/200 ký tự</span>
+              </span>
               <input
                 required
+                maxLength={200}
                 value={title}
+                placeholder="VD: Áo Thun Nam Cotton Cổ Tròn Thoáng Khí Phong Cách Basic"
                 onChange={(e) => setTitle(e.target.value)}
               />
             </label>
@@ -693,39 +737,48 @@ function CreateProductModal({
                 onChange={(e) => setDescription(e.target.value)}
               />
             </label>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-              }}
-            >
+            <div className="create-product-pricing">
               <label>
                 {matrix
                   ? "Tiền tố SKU cho các tổ hợp *"
                   : "SKU phân loại mặc định *"}
                 <input
                   required
+                  maxLength={matrix ? 196 : 200}
                   value={sku}
                   placeholder="VD: SKU-SP-01"
-                  onChange={(e) => setSku(e.target.value)}
+                  onChange={(e) => {
+                    setSku(e.target.value);
+                    if (matrix) setMatrixPreviewCurrent(false);
+                  }}
                 />
               </label>
-              <label>
-                Giá bán (VNĐ) *
-                <input
-                  type="number"
-                  min={0}
-                  max={Number.MAX_SAFE_INTEGER}
-                  step={1}
-                  required
-                  value={price}
-                  onChange={(e) => setPrice(Number(e.target.value))}
-                />
-              </label>
+              <div className="create-product-price">
+                <label>
+                  {matrix ? "Giá chung (VNĐ)" : "Giá bán (VNĐ) *"}
+                  <input type="number" min={0} max={Number.MAX_SAFE_INTEGER} step={1}
+                    required={!matrix || hasCommonRows} value={price}
+                    onChange={event => setPrice(event.target.value)} />
+                </label>
+                {price !== "" && parsedPrice === undefined && <p className="variant-inline-error">Nhập giá là số nguyên từ 0 ₫.</p>}
+                {matrix && matrixRows.length > 0 && (
+                  <>
+                    <UiButton variant="secondary" disabled={parsedPrice === undefined || !commonPricePending}
+                      onClick={() => setAppliedPrice(parsedPrice)}>
+                      Áp dụng giá cho các phân loại
+                    </UiButton>
+                    <p role="status" className="create-product-price-note">
+                      {commonPricePending && (appliedPrice === undefined
+                        ? "Nhập và áp dụng giá chung trước khi tạo."
+                        : `Giá mới chưa được áp dụng. Các dòng giá chung vẫn dùng ${appliedPrice.toLocaleString("vi-VN")} ₫.`)}
+                      {!!customPriceCount && ` ${customPriceCount} phân loại giữ giá riêng.`}
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
             <label>
-              Link ảnh sản phẩm
+              <span>Ảnh bìa sản phẩm (Tỷ lệ 1:1)</span>
               <input
                 type="url"
                 pattern="https?://.+"
@@ -733,6 +786,9 @@ function CreateProductModal({
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
               />
+              <span className="text-xs text-slate-500 mt-1 block font-normal">
+                ★ Chuẩn Shopee: Tỷ lệ vuông 1:1, phông sáng sạch. Bạn có thể bổ sung thêm tối đa 8 ảnh bộ sưu tập và video chi tiết sau khi tạo.
+              </span>
               {/^https?:\/\//.test(imageUrl) && (
                 <img
                   className="product-url-preview"
@@ -749,8 +805,15 @@ function CreateProductModal({
                   (definition) => definition.variant_axis,
                 )}
                 sku={sku}
-                price={price}
+                commonPrice={appliedPrice}
                 rows={matrixRows}
+                current={matrixPreviewCurrent}
+                onSelectionChange={() => setMatrixPreviewCurrent(false)}
+                onGenerate={rows => {
+                  setMatrixRows(rows);
+                  setAppliedPrice(parsedPrice);
+                  setMatrixPreviewCurrent(true);
+                }}
                 onChange={setMatrixRows}
               />
             )}
@@ -763,7 +826,7 @@ function CreateProductModal({
                 !!createdId ||
                 uncertain ||
                 !selectedType ||
-                (matrix && !matrixRows.length)
+                !readyToPrice
               }
             >
               {submitting ? "Đang tạo..." : "Tạo sản phẩm"}

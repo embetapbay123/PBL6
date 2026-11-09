@@ -17,7 +17,7 @@ async function model(page:Page,{existing=false,lostAck=false,conflict=false,hold
   if(path==='/stores/'+id(2))return route.fulfill({json:{id:id(2),name:'Store đã mua',shipping_fee_vnd:20000}});
   if(path==='/products/'+id(1)+'/reviews')return route.fulfill({json:{items:state.review?.status==='VISIBLE'?[state.review]:[],total:state.review?.status==='VISIBLE'?1:0,page:1,size:20}});
   if(path==='/me/orders')return route.fulfill({json:{items:[order],total:1,page:1,size:20}});
-  if(path==='/me/reviews'&&request.method()==='GET'){state.reads++;return state.failRead?route.fulfill({status:503,json:{code:'READ_FAILED',message:'Đọc đối chiếu tạm lỗi'}}):route.fulfill({json:{items:state.review?[wrongRead?{...state.review,order_item_id:id(40)}:state.review]:[],total:state.review?1:0,page:1,size:1}});}
+  if(path==='/me/reviews'&&request.method()==='GET'){if(new URL(request.url()).searchParams.has('order_item_id'))state.reads++;return state.failRead?route.fulfill({status:503,json:{code:'READ_FAILED',message:'Đọc đối chiếu tạm lỗi'}}):route.fulfill({json:{items:state.review?[wrongRead?{...state.review,order_item_id:id(40)}:state.review]:[],total:state.review?1:0,page:1,size:1}});}
   if((path==='/me/reviews'&&request.method()==='POST')||(path==='/me/reviews/'+id(5)&&request.method()==='PATCH')){
    const body=request.postDataJSON();state.writes.push({method:request.method(),body});
    if(hold){state.pending.push(route);return;}
@@ -37,18 +37,18 @@ async function model(page:Page,{existing=false,lostAck=false,conflict=false,hold
 test('an uncertain inline create freezes its body until an owned read confirms it, with no second POST',async({page})=>{
  const s=await model(page,{lostAck:true});await page.goto('/products/'+id(1));await page.getByRole('combobox',{name:'Mục đơn hàng',exact:true}).selectOption(id(4));const input=page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true});await input.fill('  Nội dung đã gửi cần đối chiếu  ');await page.getByRole('button',{name:'Gửi đánh giá',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('Chưa rõ kết quả');await expect(input).toBeDisabled();
- await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();await expect(page.locator('#reviews').getByRole('status').filter({hasText:'đối chiếu'})).toContainText('đối chiếu');
+ await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();await expect(page.locator('#reviews').getByRole('status').filter({hasText:'đối chiếu'})).toContainText('đối chiếu');
  expect(s.writes).toHaveLength(1);expect(s.reads).toBe(1);await expect(page.getByRole('button',{name:'Lưu đánh giá',exact:true})).toBeEnabled();
 });
 
 test('failed owned readback preserves the frozen inline attempt and retries only GET',async({page})=>{
  const s=await model(page,{lostAck:true});await page.goto('/products/'+id(1));await page.getByRole('combobox',{name:'Mục đơn hàng',exact:true}).selectOption(id(4));await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('Giữ bản nháp tới lúc xác định kết quả');await page.getByRole('button',{name:'Gửi đánh giá',exact:true}).click();s.failRead=true;
- await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Đọc đối chiếu tạm lỗi');await expect(page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true})).toBeDisabled();expect(s.writes).toHaveLength(1);
- s.failRead=false;await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();expect(s.writes).toHaveLength(1);expect(s.reads).toBe(2);
+ await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Đọc đối chiếu tạm lỗi');await expect(page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true})).toBeDisabled();expect(s.writes).toHaveLength(1);
+ s.failRead=false;await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();expect(s.writes).toHaveLength(1);expect(s.reads).toBe(2);
 });
 
 test('a stale owned edit shows the freshly read server content beside the preserved draft before overwrite',async({page})=>{
- const s=await model(page,{existing:true,conflict:true});await page.goto('/customer/reviews');await page.getByRole('button',{name:'Sửa đánh giá',exact:true}).click();await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('Bản nháp của tôi vẫn giữ');await page.getByRole('button',{name:'Lưu đánh giá',exact:true}).click();await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();
+ const s=await model(page,{existing:true,conflict:true});await page.goto('/customer/reviews');await page.getByRole('button',{name:'Sửa đánh giá',exact:true}).click();await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('Bản nháp của tôi vẫn giữ');await page.getByRole('button',{name:'Lưu đánh giá',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();
  const current=page.getByRole('region',{name:'Nội dung đã lưu mới nhất',exact:true});await expect(current).toContainText('Nội dung đã được tab khác sửa');await expect(current).toContainText('2 / 5');await expect(page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true})).toHaveValue('Bản nháp của tôi vẫn giữ');expect(s.writes).toHaveLength(1);
  await page.getByRole('button',{name:'Lưu đánh giá',exact:true}).click();expect(s.writes[1].body.expected_version).toBe(8);expect(s.review?.status).toBe('HIDDEN');
 });
@@ -60,17 +60,17 @@ test('an owned edit double activation sends only one PATCH while pending',async(
 
 test('an unresolved create read as absent retries its exact original item/rating/body only after explicit action',async({page})=>{
  const s=await model(page,{notCommitted:true});await page.goto('/products/'+id(1));await page.getByRole('combobox',{name:'Mục đơn hàng',exact:true}).selectOption(id(4));await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('Nội dung gốc của lần gửi');await page.getByRole('button',{name:'Gửi đánh giá',exact:true}).click();
- await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();await expect(page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true})).toBeDisabled();expect(s.writes).toHaveLength(1);
- await page.getByRole('button',{name:'Thử lại đúng nội dung đánh giá',exact:true}).click();await expect(page.locator('#reviews').getByRole('status').filter({hasText:'Đã lưu'})).toContainText('Đã lưu');expect(s.writes).toHaveLength(2);expect(s.writes[1]).toEqual(s.writes[0]);
+ await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();await expect(page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true})).toBeDisabled();expect(s.writes).toHaveLength(1);
+ await page.getByRole('button',{name:'Thử lại',exact:true}).click();await expect(page.locator('#reviews').getByRole('status').filter({hasText:'Đã lưu'})).toContainText('Đã lưu');expect(s.writes).toHaveLength(2);expect(s.writes[1]).toEqual(s.writes[0]);
 });
 
 test('an owned update acknowledged only by readback compares normalized text without a second PATCH',async({page})=>{
  const s=await model(page,{existing:true,lostAck:true});await page.goto('/customer/reviews');await page.getByRole('button',{name:'Sửa đánh giá',exact:true}).click();await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('  Nội dung có khoảng trắng ngoài  ');await page.getByRole('button',{name:'Lưu đánh giá',exact:true}).click();
- await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();await expect(page.getByRole('form',{name:'Sửa đánh giá sở hữu',exact:true})).toHaveCount(0);await expect(page.getByText('Nội dung có khoảng trắng ngoài',{exact:true})).toBeVisible();expect(s.writes).toHaveLength(1);expect(s.review?.status).toBe('HIDDEN');
+ await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();await expect(page.getByRole('form',{name:'Sửa đánh giá sở hữu',exact:true})).toHaveCount(0);await expect(page.getByText('Nội dung có khoảng trắng ngoài',{exact:true})).toBeVisible();expect(s.writes).toHaveLength(1);expect(s.review?.status).toBe('HIDDEN');
 });
 
 test('readback for another purchased item stays blocked and cannot supply a write version',async({page})=>{
- const s=await model(page,{lostAck:true,wrongRead:true});await page.goto('/products/'+id(1));await page.getByRole('combobox',{name:'Mục đơn hàng',exact:true}).selectOption(id(4));await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('Giữ đúng mục đã mua');await page.getByRole('button',{name:'Gửi đánh giá',exact:true}).click();await page.getByRole('button',{name:'Đối chiếu đánh giá đã lưu',exact:true}).click();
+ const s=await model(page,{lostAck:true,wrongRead:true});await page.goto('/products/'+id(1));await page.getByRole('combobox',{name:'Mục đơn hàng',exact:true}).selectOption(id(4));await page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true}).fill('Giữ đúng mục đã mua');await page.getByRole('button',{name:'Gửi đánh giá',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('không khớp đánh giá');await expect(page.getByRole('textbox',{name:'Nội dung đánh giá',exact:true})).toBeDisabled();expect(s.writes).toHaveLength(1);
 });
 

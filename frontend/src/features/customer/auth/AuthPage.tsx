@@ -1,9 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { takeAuthReturn, peekAuthReturn, clearAuthReturn } from "./auth-return";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../../api/auth-context";
-import { ErrorView, ProtectedRoute } from "../../../bootstrap/components";
+import { ProtectedRoute } from "../../../bootstrap/components";
 import { LoginForm } from "./LoginForm";
 import { DemoLogin } from "./DemoLogin";
 import { RegisterForm } from "./RegisterForm";
@@ -11,12 +10,9 @@ import { VerifyForm } from "./VerifyForm";
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
-import { useAuthCommand } from "./useAuthCommand";
 export function AuthPage() {
   const { pathname, state } = useLocation(),
-    auth = useAuth(),
-    cache = useQueryClient(),
-    command = useAuthCommand();
+    auth = useAuth();
   const forms: Record<string, React.ReactNode> = {
     "/register": <RegisterForm />,
     "/verify-email": <VerifyForm />,
@@ -50,19 +46,7 @@ export function AuthPage() {
   const login = auth.session ? (
     <section className="boot-card">
       <h2>Đã đăng nhập</h2>
-      <p>{auth.session.context?.roles?.join(", ")}</p>
-      <button
-        onClick={() =>
-          void command.run(async () => {
-            await auth.logout();
-            cache.clear();
-          })
-        }
-      >
-        Đăng xuất
-      </button>
-      {command.error != null && <ErrorView error={command.error} />}
-      <Link to="/change-password">Đổi mật khẩu</Link>
+      <Link className="ui-button ui-button-secondary" to="/">Về trang chủ</Link>
     </section>
   ) : (
     <>
@@ -72,7 +56,7 @@ export function AuthPage() {
   );
   return (
     <section key={pathname} className="auth-page">
-      {state?.verified && (
+      {!auth.session && state?.verified && (
         <p role="status">Email đã được xác thực. Bạn có thể đăng nhập.</p>
       )}
       {auth.session && pending && (
@@ -97,11 +81,10 @@ export function AuthPage() {
           ) : (
             <>
               <p>
-                Đã đăng nhập ở phiên hiện tại. Mở lại lựa chọn để kiểm tra giá,
-                tồn và số lượng trước khi tiếp tục.
+                Đã đăng nhập. Kiểm tra lại lựa chọn trước khi mua.
               </p>
               <button type="button" onClick={resume}>
-                Tiếp tục lựa chọn mua
+                Mua tiếp
               </button>
             </>
           )}
@@ -109,17 +92,18 @@ export function AuthPage() {
       )}
       {auth.session && pathname === "/register" ? (
         <p>
-          Bạn đang đăng nhập. Dùng Đăng xuất trong menu tài khoản nếu muốn tạo
-          tài khoản khác.
+          Đăng xuất trước khi tạo tài khoản khác.
         </p>
       ) : (
         (forms[pathname] ?? login)
       )}
-      <p>
-        <Link to="/login">Đăng nhập</Link> ·{" "}
-        <Link to="/register">Đăng ký tài khoản</Link> ·{" "}
-        <Link to="/forgot-password">Quên mật khẩu</Link>
-      </p>
+      {!auth.session && (
+        <nav className="auth-page-links" aria-label="Tài khoản">
+          <Link to="/login">Đăng nhập</Link>
+          <Link to="/register">Đăng ký tài khoản</Link>
+          <Link to="/forgot-password">Quên mật khẩu</Link>
+        </nav>
+      )}
     </section>
   );
 }

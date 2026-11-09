@@ -1,4 +1,7 @@
 {$SITE_ADDRESS:80} {
+  handle_path /delivery/* {
+    reverse_proxy delivery:3110
+  }
   @private path /internal/* /health/* /metrics
   respond @private "Not found" 404
   @publicStore path_regexp publicStore ^/api/v1/stores/[^/]+$

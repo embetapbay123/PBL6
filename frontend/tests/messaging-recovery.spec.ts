@@ -39,12 +39,12 @@ async function model(page:Page,{lostAck=false,rejectRetry=false}={}){
 }
 
 test('a different Store opened through contact never inherits the previous Store message page',async({page})=>{
- const f=await model(page);await page.goto('/stores/'+f.threads[0].store_id);await page.getByRole('button',{name:'Nhắn tin gian hàng',exact:true}).click();
+ const f=await model(page);await page.goto('/stores/'+f.threads[0].store_id);await page.getByRole('button',{name:'Nhắn tin',exact:true}).click();
  const chat=page.getByRole('dialog',{name:'Trung tâm chat',exact:true});await expect(chat.getByRole('log')).toContainText('Store riêng 1 tin 22');
  await chat.getByRole('button',{name:'Trang sau',exact:true}).last().click();await expect(chat.getByRole('log')).toContainText('Store riêng 1 tin 1');
  await chat.getByRole('button',{name:'Đóng chat',exact:true}).click();
  await page.getByRole('button',{name:'Menu tài khoản',exact:true}).click();await page.getByRole('navigation',{name:'Menu tài khoản',exact:true}).getByRole('link',{name:'Đơn hàng',exact:true}).click();
- await page.getByRole('link',{name:'Xem chi tiết',exact:true}).click();await page.getByRole('button',{name:'Hỏi Store về đơn này',exact:true}).click();
+ await page.getByRole('link',{name:'Xem chi tiết',exact:true}).click();await page.getByRole('button',{name:'Nhắn tin',exact:true}).click();
  await expect(chat.getByRole('log')).toContainText('Store riêng 2 tin 1');
  expect(f.reads.filter(r=>r.id===f.threads[1].id).map(r=>r.page)).toEqual([1]);
 });
@@ -58,10 +58,10 @@ test('a direct conversation outside the first list page identifies its actual St
 
 test('an uncertain message keeps its exact key and body after a retry meets a temporary Store conflict',async({page})=>{
  const f=await model(page,{lostAck:true,rejectRetry:true});await page.goto('/customer/messages/'+f.threads[0].id);
- const input=page.getByRole('textbox',{name:'Nội dung tin nhắn',exact:true});await input.fill('Giữ mã gửi khi chưa rõ kết quả');await page.getByRole('button',{name:'Gửi tin nhắn',exact:true}).click();
- await page.getByRole('button',{name:'Thử gửi lại',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Store tạm khóa');
- await expect(input).toBeDisabled();await expect(page.getByRole('button',{name:'Thử gửi lại',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'Thử gửi lại',exact:true}).click();await expect(page.getByRole('status')).toContainText('Đã gửi tin nhắn');
+ const input=page.getByRole('textbox',{name:'Nội dung tin nhắn',exact:true});await input.fill('Giữ mã gửi khi chưa rõ kết quả');await page.getByRole('button',{name:'Gửi',exact:true}).click();
+ await page.getByRole('button',{name:'Thử gửi',exact:true}).click();await expect(page.getByRole('alert')).toContainText('Store tạm khóa');
+ await expect(input).toBeDisabled();await expect(page.getByRole('button',{name:'Thử gửi',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Thử gửi',exact:true}).click();await expect(page.getByRole('status')).toContainText('Đã gửi tin nhắn');
  expect(f.sends).toHaveLength(3);expect(f.sends[1]).toEqual(f.sends[0]);expect(f.sends[2]).toEqual(f.sends[0]);
 });
 
@@ -84,7 +84,7 @@ test('a mismatched history response is an error and cannot enable a message to a
 });
 
 test('order-reference chat retains a readable history instead of shrinking it below its messages',async({page})=>{
- const f=await model(page);await page.goto('/customer/orders/'+id(900));await page.getByRole('button',{name:'Hỏi Store về đơn này',exact:true}).click();
+ const f=await model(page);await page.goto('/customer/orders/'+id(900));await page.getByRole('button',{name:'Nhắn tin',exact:true}).click();
  const chat=page.getByRole('dialog',{name:'Trung tâm chat',exact:true}),log=chat.getByRole('log');
  await expect(chat.getByRole('region',{name:'Đơn hàng tham chiếu khi gửi',exact:true})).toBeVisible();
  await expect.poll(()=>log.evaluate(element=>element.clientHeight)).toBeGreaterThanOrEqual(160);

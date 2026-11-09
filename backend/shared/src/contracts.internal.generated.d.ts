@@ -251,6 +251,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/inventory/exchange-restock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restock inspected replacement goods once */
+        post: operations["RestockExchangeItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1667,6 +1684,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    RestockExchangeItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    /** Format: uuid */
+                    receipt_id: string;
+                    /** Format: uuid */
+                    dispatch_receipt_id: string;
+                    /** Format: uuid */
+                    order_id: string;
+                    /** Format: uuid */
+                    actor_user_id: string;
+                    items: {
+                        /** Format: uuid */
+                        variant_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        quantity: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Applied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        operation_id: string;
+                        /** @enum {string} */
+                        status: "APPLIED" | "ALREADY_APPLIED";
+                    };
                 };
             };
         };

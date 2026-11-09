@@ -112,6 +112,8 @@ export class OrderService {
   private mapOrderRowToDto(order: OrderRow & { items: OrderItemRow[] }): OperationOutputs['getOwnOrder'] {
     return {
       id: order.id,
+      shipping_mode: order.shipping_mode ?? 'LEGACY_MANUAL',
+      ...(order.shipping_delivered_at?{shipping_delivered_at:new Date(order.shipping_delivered_at).toISOString()}:{}),
       ...(order.created_at ? {created_at: new Date(order.created_at).toISOString()} : {}),
       ...(order.status_history ? {timeline: order.status_history.map(event => ({status: event.to_status,
         ...(event.from_status ? {from_status: event.from_status} : {}), occurred_at: new Date(event.created_at).toISOString(),
@@ -782,6 +784,7 @@ export class OrderService {
       }
 
       await assertDeliveryNotReturning(manager,id);
+      if(['GHN','PLATFORM'].includes(order.shipping_mode??'')&&['SHIPPED','COMPLETED'].includes(toStatus))throw new ApiError(409,'CARRIER_MANAGED_ORDER','Trạng thái giao hàng được xác nhận bởi hãng vận chuyển.');
       // Legal state transitions:
       // PENDING is reached only after inventory consumption by the checkout/payment workflow.
       // CONFIRMED -> PROCESSING
@@ -901,6 +904,7 @@ export class OrderService {
       const repo=new OrderRepository(manager),order=await repo.lockStoreOrderById(id,storeId);
       if(!order) throw new ApiError(404,'NOT_FOUND','Không tìm thấy Order.');
       if(order.version!==input.expected_version) throw new ApiError(409,'VERSION_CONFLICT','Order đã thay đổi.');
+      if(['GHN','PLATFORM'].includes(order.shipping_mode??''))throw new ApiError(409,'CARRIER_MANAGED_COD','Nền tảng đối soát COD từ hãng vận chuyển.');
       if(BigInt(order.payable_vnd)===0n)throw new ApiError(409,'PAYMENT_NOT_REQUIRED','Đơn 0đ không cần thu tiền.');
       if(order.status!=='SHIPPED' || order.payment_method!=='COD') throw new ApiError(409,'INVALID_STATE_TRANSITION','Chỉ thu COD cho đơn đang giao.');
       const payment=await repo.lockPaymentByOrderId(id);

@@ -295,7 +295,7 @@ export class InventoryService {
           throw new ApiError(409, 'RESERVATION_EXPIRED', 'Reservation đã hết hạn, không thể consume.');
 
         for (const item of active) {
-          if (mode === 'CONSUME') await repository.consumeStock(item.inventory_id, item.quantity);
+          if (mode === 'CONSUME') { await repository.consumeStock(item.inventory_id, item.quantity); await repository.incrementSoldCountByInventory(item.inventory_id, item.quantity); }
           else await repository.releaseStock(item.inventory_id, item.quantity);
           await repository.insertMovement({ inventoryId: item.inventory_id, reservationItemId: item.id, orderId: input.order_id,
             operationId: input.operation_id, deltaQuantity: mode === 'CONSUME' ? -item.quantity : 0,
@@ -341,7 +341,7 @@ export class InventoryService {
 
         await repository.lockInventoryById([...new Set(consumed.map(item => item.inventory_id))]);
         for (const item of consumed) {
-          await repository.restockStock(item.inventory_id, item.quantity);
+          await repository.restockStock(item.inventory_id, item.quantity); await repository.decrementSoldCountByInventory(item.inventory_id, item.quantity);
           await repository.insertMovement({ inventoryId: item.inventory_id, reservationItemId: item.id,
             orderId: input.order_id, operationId: input.operation_id, deltaQuantity: item.quantity,
             deltaReserved: 0, reason: 'RESTOCK', actorUserId: SYSTEM_ACTOR });
@@ -374,10 +374,34 @@ export class InventoryService {
         const balances=await repository.lockInventoryById(consumed.filter(row=>seen.has(row.variant_id)).map(row=>row.inventory_id));
         for(const item of input.items){const balance=balances.find(row=>row.variant_id===item.variant_id);if(!balance||balance.quantity+item.quantity>2147483647)throw new ApiError(409,'STOCK_LIMIT_EXCEEDED','Lượng sau nhận hoàn vượt giới hạn tồn thương mại.');}
         await manager.query('INSERT INTO inventory_return_receipt(id,order_id,operation_id,payload_hash,actor_user_id,items_json) VALUES($1,$2,$3,$4,$5,$6)',[input.receipt_id,input.order_id,input.operation_id,hash,input.actor_user_id,JSON.stringify(canonical.items)]);
-        for(const item of input.items){const original=consumed.find(row=>row.variant_id===item.variant_id)!;await repository.restockStock(original.inventory_id,item.quantity);await repository.insertMovement({inventoryId:original.inventory_id,reservationItemId:original.id,orderId:input.order_id,operationId:input.operation_id,deltaQuantity:item.quantity,deltaReserved:0,reason:'RETURN_RECEIVED',actorUserId:input.actor_user_id,receiptId:input.receipt_id});}
+        for(const item of input.items){const original=consumed.find(row=>row.variant_id===item.variant_id)!;await repository.restockStock(original.inventory_id,item.quantity); await repository.decrementSoldCountByInventory(original.inventory_id,item.quantity);await repository.insertMovement({inventoryId:original.inventory_id,reservationItemId:original.id,orderId:input.order_id,operationId:input.operation_id,deltaQuantity:item.quantity,deltaReserved:0,reason:'RETURN_RECEIVED',actorUserId:input.actor_user_id,receiptId:input.receipt_id});}
         return {operation_id:input.operation_id,status:'APPLIED' as const};
       });
     });
+  }
+
+  /** A separate receipt restores replacement variants, never the original purchase twice. */
+  async restockExchange(input:OperationInputs['RestockExchangeItems']['body']):Promise<OperationOutputs['RestockExchangeItems']>{
+    const canonical={...input,items:[...input.items].sort((a,b)=>a.variant_id.localeCompare(b.variant_id))};
+    return this.db.transaction(async manager=>once(manager,'M2.Inventory.exchange-restock',input.operation_id,canonical,async()=>{
+      const repo=new InventoryRepository(manager);await repo.lockReservationOrders([input.order_id]);
+      const hash=fingerprint(canonical);
+      const [prior]=await manager.query('SELECT r.payload_hash FROM inventory_exchange_return e JOIN inventory_return_receipt r ON r.id=e.receipt_id WHERE e.dispatch_receipt_id=$1',[input.dispatch_receipt_id]);
+      if(prior){if(prior.payload_hash!==hash)throw new ApiError(409,'EXCHANGE_RETURN_CONFLICT','Kiện đổi đã có biên bản khác.');return {operation_id:input.operation_id,status:'ALREADY_APPLIED' as const};}
+      const [dispatch]=await manager.query('SELECT d.items_json FROM inventory_exchange_dispatch d JOIN inventory_return_receipt r ON r.id=d.receipt_id WHERE d.receipt_id=$1 AND r.order_id=$2',[input.dispatch_receipt_id,input.order_id]);
+      if(!dispatch)throw new ApiError(409,'EXCHANGE_DISPATCH_MISSING','Thiếu bằng chứng xuất hàng đổi.');
+      const totals=new Map<string,{quantity:number;store:string}>();
+      for(const line of dispatch.items_json){const entry=totals.get(line.variant_id);totals.set(line.variant_id,{quantity:(entry?.quantity??0)+line.quantity,store:line.store_id});}
+      const seen=new Set<string>();
+      for(const item of input.items){const original=totals.get(item.variant_id);
+        if(seen.has(item.variant_id)||!original||original.store!==item.store_id||!Number.isSafeInteger(item.quantity)||item.quantity<=0||item.quantity>original.quantity)throw new ApiError(409,'EXCHANGE_RETURN_QUANTITY_INVALID','Không cộng vượt lượng hàng đổi đã xuất.');seen.add(item.variant_id);}
+      const balances=await manager.query('SELECT * FROM inventory WHERE variant_id=ANY($1::uuid[]) ORDER BY id FOR UPDATE',[input.items.map(i=>i.variant_id)]);
+      if(balances.length!==input.items.length)throw new ApiError(409,'EXCHANGE_INVENTORY_MISSING','Thiếu sổ tồn của hàng đổi.');
+      await manager.query("INSERT INTO inventory_return_receipt(id,order_id,operation_id,payload_hash,actor_user_id,items_json,kind) VALUES($1,$2,$3,$4,$5,$6,'EXCHANGE')",[input.receipt_id,input.order_id,input.operation_id,hash,input.actor_user_id,JSON.stringify(input.items)]);
+      await manager.query('INSERT INTO inventory_exchange_return(receipt_id,dispatch_receipt_id) VALUES($1,$2)',[input.receipt_id,input.dispatch_receipt_id]);
+      for(const item of input.items){const balance=balances.find((v:any)=>v.variant_id===item.variant_id);await repo.restockStock(balance.id,item.quantity);await repo.insertMovement({inventoryId:balance.id,orderId:input.order_id,operationId:input.operation_id,deltaQuantity:item.quantity,deltaReserved:0,reason:'EXCHANGE_RETURN',actorUserId:input.actor_user_id,receiptId:input.receipt_id});}
+      return {operation_id:input.operation_id,status:'APPLIED' as const};
+    }));
   }
 
   /** One same-price replacement dispatch per inspected receipt; no stock effect on rejection. */

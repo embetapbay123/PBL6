@@ -1,0 +1,1950 @@
+/* Customer bug-report fixes: keep focus visible and controls reachable. */
+.live-market .commerce-global-search:focus-within {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}
+.live-market .commerce-global-search input {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  margin: 0;
+}
+.live-market .commerce-global-search input:focus-visible { outline: none; }
+@media (min-width: 1024px) {
+  .live-market .catalog-filters {
+    top: 190px;
+    max-height: calc(100dvh - 210px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    padding-bottom: 20px;
+  }
+}
+.live-market .live-content .product-add-button:hover:not(:disabled),
+.live-market .live-content .product-add-button:focus-visible {
+  background: #c2410c;
+  border-color: #c2410c;
+  color: #fff;
+}
+.live-market .chat-header button { width: 40px; height: 40px; min-height: 40px; flex-shrink: 0; }
+.live-market .chat-composer-help { justify-content: flex-end; }
+.live-market .address-add-button { margin-bottom: 20px; }
+.live-market .address-card-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+.live-market .address-card-heading > :last-child:not(.address-card-phone) { margin-left: auto; }
+.live-market .address-card-phone { color: #57534e; font-size: 14px; }
+.live-market .live-content .address-card-actions .addr-btn-danger { background: #b91c1c !important; color: #fff !important; border-color: #b91c1c !important; }
+.live-market .live-content .address-card-actions .addr-btn-danger:hover:not(:disabled) { background: #991b1b !important; color: #fff !important; }
+.live-market .auth-page-links { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 24px; }
+.live-market .auth-page-links > :last-child { margin-left: auto; }
+.live-market .cart-page .purchase-summary > div > p { margin: 0 0 10px; }
+.live-market .order-history-page .order-history-card { display: flow-root; }
+.live-market .order-history-page .order-card-items { margin-top: 16px; }
+.live-market .order-history-page .order-card-image { width: 72px; height: 72px; flex-shrink: 0; }
+.live-market .order-history-page .order-card-image img { width: 100%; height: 100%; object-fit: cover; }
+.live-market .order-status-tabs > a { display: inline-flex; align-items: center; padding: 10px 14px; white-space: nowrap; border: 1px solid var(--line); border-radius: 6px; }
+.live-market .personalization-heading,
+.live-market .notification-unread-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.live-market .personalization-heading h2,
+.live-market .notification-unread-tools p { margin: 0; }
+.live-market .personalization-support { margin-top: 16px; }
+.live-market .personalization-support summary { cursor: pointer; }
+.live-market .personalization-support dl > div { display: flex; gap: 8px; }
+.live-market .personalization-support dd { margin: 0; }
+.live-market .notification-unread-tools { margin-bottom: 16px; }
+@media (max-width: 480px) {
+  .live-market .auth-page-links { gap: 12px 16px; }
+  .live-market .auth-page-links > :last-child { margin-left: 0; }
+}
+
+/* ==========================================================================
+   Shopee-style Order History & Order Card Design
+   ========================================================================== */
+
+/* Inline Search Bar under status tabs */
+.order-inline-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+.order-search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.order-search-input-wrap:focus-within {
+  border-color: #ee4d2d;
+  box-shadow: 0 0 0 2px rgba(238, 77, 45, 0.12);
+}
+.order-search-icon {
+  color: #94a3b8;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+.order-search-input-wrap input {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  height: 38px;
+  font-size: 13.5px;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+}
+.order-search-input-wrap input::placeholder {
+  color: #94a3b8;
+}
+.order-search-clear-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 50%;
+}
+.order-search-clear-btn:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+.order-search-submit-btn {
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: #ee4d2d !important;
+  border-color: #ee4d2d !important;
+  color: #fff !important;
+  border-radius: 6px;
+}
+.order-search-submit-btn:hover {
+  background: #d73211 !important;
+  border-color: #d73211 !important;
+}
+
+/* Order History Card Header */
+.order-history-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.order-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.order-header-store-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.order-store-badge {
+  background: #ee4d2d;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+.order-view-store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  color: #475569;
+  text-decoration: none;
+  background: #fff;
+  line-height: 1.3;
+  transition: all 0.15s;
+}
+.order-view-store-link:hover {
+  border-color: #94a3b8;
+  color: #0f172a;
+  background: #f8fafc;
+}
+.order-header-chat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #ee4d2d;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  color: #ee4d2d;
+  background: #fff;
+  cursor: pointer;
+  line-height: 1.3;
+  transition: background-color 0.15s;
+}
+.order-header-chat-btn:hover:not(:disabled) {
+  background: #fff5f2;
+}
+.order-header-status-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font-size: 12.5px;
+}
+.order-delivery-milestone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+.order-delivery-milestone.is-delivered {
+  color: #16a34a;
+}
+.order-delivery-milestone.is-shipping {
+  color: #0284c7;
+}
+.order-status-tag {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.order-status-tag.status-completed {
+  color: #16a34a;
+}
+.order-status-tag.status-cancelled {
+  color: #dc2626;
+}
+.order-status-tag.status-shipped {
+  color: #ea580c;
+}
+.order-status-tag.status-pending,
+.order-status-tag.status-confirmed,
+.order-status-tag.status-placed {
+  color: #2563eb;
+}
+
+/* Product Row Pricing & Details */
+.order-card-item-row {
+  border-bottom: 1px solid #f8fafc;
+}
+.order-card-item-row:last-child {
+  border-bottom: none;
+}
+.order-card-item-price {
+  font-feature-settings: "tnum";
+}
+
+/* Shopee-style Highlight Total Row */
+.order-history-total-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 8px;
+  padding: 14px 0 12px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
+}
+.order-total-label {
+  font-size: 13.5px;
+  color: #475569;
+}
+.order-total-price-highlight {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ee4d2d;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+}
+.order-currency {
+  font-size: 15px;
+  margin-left: 1px;
+}
+
+/* Shopee-style Order Footer */
+.order-history-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.order-footer-microcopy {
+  flex: 1;
+  min-width: 220px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.45;
+}
+.order-footer-microcopy p {
+  margin: 0;
+}
+.order-microcopy-hint {
+  color: #64748b;
+}
+.order-microcopy-refund {
+  color: #b45309;
+  font-weight: 500;
+}
+.order-microcopy-payment {
+  color: #64748b;
+}
+.order-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.order-footer-actions .ui-button {
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+}
+.order-btn-highlight {
+  background: #ee4d2d !important;
+  border-color: #ee4d2d !important;
+  color: #fff !important;
+}
+.order-btn-highlight:hover:not(:disabled) {
+  background: #d73211 !important;
+  border-color: #d73211 !important;
+}
+
+/* ==========================================================================
+   Shopee-style Order Detail Page Design
+   ========================================================================== */
+
+.order-detail-page {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.order-detail-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.order-detail-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
+}
+.order-detail-back-link:hover {
+  color: #ee4d2d;
+}
+.order-detail-topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  font-size: 13px;
+}
+.order-detail-id-label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: #334155;
+  letter-spacing: 0.02em;
+}
+.order-detail-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.order-detail-refresh-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* Logistics & Address 2-column Grid */
+.order-detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.order-detail-info-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+.order-detail-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+}
+.order-detail-card-header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.order-detail-address-body {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.6;
+}
+.order-detail-address-body section h3 {
+  display: none;
+}
+.order-detail-address-body address {
+  font-style: normal;
+}
+.order-detail-shipping-body {
+  font-size: 13px;
+  color: #334155;
+}
+
+/* Order Items Table Card */
+.order-detail-items-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.order-detail-items-list {
+  display: flex;
+  flex-direction: column;
+}
+.order-detail-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid #f8fafc;
+  gap: 16px;
+}
+.order-detail-item-row:last-child {
+  border-bottom: none;
+}
+.order-detail-item-identity-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.order-detail-item-action-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Shopee-style Bill Summary Card */
+.order-detail-bill-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.order-detail-bill-content {
+  max-width: 440px;
+  margin-left: auto;
+}
+.order-bill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 5px 0;
+  font-size: 13.5px;
+  color: #475569;
+}
+.order-bill-total-row {
+  padding: 12px 0 8px;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 8px;
+  font-size: 14.5px;
+  color: #0f172a;
+}
+.order-bill-payment-method {
+  padding-top: 6px;
+  font-size: 12.5px;
+  border-top: 1px solid #f8fafc;
+  margin-top: 6px;
+}
+
+/* Bottom Action Footer */
+.order-detail-action-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+/* ==========================================================================
+   Shopee-style Address Book Design
+   ========================================================================== */
+
+.shopee-address-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s;
+}
+.shopee-address-card.is-default {
+  border-color: #cbd5e1;
+}
+.shopee-address-main {
+  flex: 1;
+  min-width: 260px;
+}
+.shopee-address-user-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.shopee-address-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.shopee-address-divider {
+  color: #cbd5e1;
+  font-weight: 300;
+}
+.shopee-address-phone {
+  font-size: 13.5px;
+  color: #64748b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.shopee-address-detail {
+  font-size: 13px;
+  color: #475569;
+  margin: 4px 0 8px;
+  line-height: 1.5;
+}
+.shopee-address-badge-row {
+  margin-top: 6px;
+}
+.shopee-default-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ee4d2d;
+  border: 1px solid #ee4d2d;
+  background: #fff5f2;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.02em;
+}
+.shopee-address-side-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  margin-left: auto;
+}
+.shopee-address-text-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.shopee-text-action-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2563eb;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.shopee-text-action-btn:hover:not(:disabled) {
+  text-decoration: underline;
+  color: #1d4ed8;
+}
+.shopee-text-action-btn.is-delete {
+  color: #dc2626;
+}
+.shopee-text-action-btn.is-delete:hover:not(:disabled) {
+  color: #b91c1c;
+}
+.shopee-address-btn-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shopee-set-default-btn {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shopee-set-default-btn:hover:not(:disabled) {
+  border-color: #94a3b8;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+/* ==========================================================================
+   Shopee-style Notification Center Design
+   ========================================================================== */
+
+.shopee-noti-container {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.shopee-noti-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s;
+}
+.shopee-noti-row:last-child {
+  border-bottom: none;
+}
+.shopee-noti-row.is-unread {
+  background: #fffaf8;
+}
+.shopee-noti-row:hover:not(.is-unread) {
+  background: #fcfcfd;
+}
+.shopee-noti-thumb {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shopee-noti-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.shopee-noti-thumb.is-fallback {
+  background: #f8fafc;
+}
+.shopee-noti-thumb.kind-order_status {
+  background: #fff5f2;
+  border-color: #fbd5cb;
+}
+.shopee-noti-thumb.kind-payment_event {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.shopee-noti-thumb.kind-return_status {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.shopee-noti-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.shopee-noti-action-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Shopee-style Full-Width Cart & Sticky Payment Bar
+   ========================================================================== */
+
+.shopee-cart-layout {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Checkbox reset & alignment for Shopee Cart */
+.live-content .shopee-cart-layout input[type="checkbox"],
+.live-content .shopee-cart-sticky-bar input[type="checkbox"],
+.shopee-cart-layout input[type="checkbox"],
+.shopee-cart-sticky-bar input[type="checkbox"],
+.shopee-cart-checkbox {
+  appearance: auto !important;
+  -webkit-appearance: auto !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 3px !important;
+  accent-color: #ee4d2d !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  top: 0 !important;
+}
+
+/* Force flex alignment and eliminate unwanted margins from .live-content label */
+.live-content .shopee-cart-sticky-bar label,
+.live-content .shopee-cart-select-all-label,
+.live-content .cart-store-group label,
+.shopee-cart-sticky-bar label,
+.shopee-cart-select-all-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  line-height: 18px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.live-content .shopee-cart-sticky-bar label span,
+.live-content .shopee-cart-select-all-label span,
+.shopee-cart-sticky-bar label span {
+  display: inline-block !important;
+  line-height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+}
+
+.shopee-cart-sticky-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+}
+
+.shopee-cart-divider {
+  color: #cbd5e1 !important;
+  user-select: none !important;
+  font-size: 13px !important;
+  display: inline-block !important;
+  line-height: 1 !important;
+}
+
+.shopee-cart-sticky-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+  margin-top: 20px;
+  overflow: hidden;
+}
+.shopee-cart-sticky-voucher-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 10px 24px;
+  border-bottom: 1px dashed #e2e8f0;
+  background: #fffdfc;
+}
+.shopee-cart-sticky-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.shopee-cart-total-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ee4d2d;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+}
+.shopee-cart-checkout-btn {
+  height: 44px;
+  min-width: 180px;
+  padding: 0 32px;
+  background: #ee4d2d !important;
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.shopee-cart-checkout-btn:hover:not(:disabled) {
+  background: #d73211 !important;
+}
+.shopee-cart-checkout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.shopee-cart-store-footer {
+  padding: 10px 16px;
+  background: #fafafa;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* Fix for Cart Clear Button without background overlay */
+.shopee-cart-sticky-bar .shopee-cart-clear-btn {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  min-height: unset !important;
+  color: #475569 !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  transition: color 0.15s !important;
+  box-shadow: none !important;
+}
+.shopee-cart-sticky-bar .shopee-cart-clear-btn:hover {
+  color: #ee4d2d !important;
+  text-decoration: underline !important;
+}
+
+/* ==========================================================================
+   Shopee Floating Chat Dock & Dialog
+   ========================================================================== */
+
+.chat-center {
+  position: fixed !important;
+  bottom: 0 !important;
+  right: 24px !important;
+  z-index: 85 !important;
+  pointer-events: none !important;
+}
+.chat-center > * {
+  pointer-events: auto !important;
+}
+
+/* Shopee Bottom Dock Tab */
+.shopee-chat-dock {
+  display: inline-flex !important;
+  align-items: flex-end !important;
+  box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.12) !important;
+  border-radius: 4px 4px 0 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+.shopee-chat-tab-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 16px !important;
+  background: #ee4d2d !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 4px 0 0 0 !important;
+  font-family: inherit !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: background-color 0.15s ease !important;
+  outline: none !important;
+  user-select: none !important;
+}
+
+.shopee-chat-dock.is-collapsed .shopee-chat-tab-btn {
+  padding: 0 12px !important;
+}
+
+.shopee-chat-tab-btn:hover {
+  background: #d73211 !important;
+}
+
+.shopee-chat-icon-box {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.shopee-chat-svg {
+  display: inline-block !important;
+  vertical-align: middle !important;
+}
+
+.shopee-chat-badge {
+  position: absolute !important;
+  top: -12px !important;
+  right: -14px !important;
+  background: #ff424f !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  padding: 2px 5px !important;
+  min-width: 17px !important;
+  text-align: center !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+  pointer-events: none !important;
+}
+
+.shopee-chat-tab-text {
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.01em !important;
+}
+
+.shopee-chat-collapse-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 !important;
+  background: #ee4d2d !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  border: none !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 0 4px 0 0 !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s !important;
+  outline: none !important;
+}
+.shopee-chat-collapse-toggle:hover {
+  background: #d73211 !important;
+  color: #ffffff !important;
+}
+
+/* Shopee Dialog Docking & Design Overhaul */
+.live-market .chat-dialog {
+  position: fixed !important;
+  inset: auto 24px 0 auto !important;
+  margin: 0 !important;
+  width: 700px !important;
+  height: min(600px, calc(100dvh - 48px)) !important;
+  border-radius: 10px 10px 0 0 !important;
+  border: 1px solid #cbd5e1 !important;
+  border-bottom: none !important;
+  box-shadow: 0 -6px 28px rgba(0, 0, 0, 0.18) !important;
+  background: #ffffff !important;
+  z-index: 100 !important;
+  overflow: hidden !important;
+}
+
+.live-market .chat-dialog-expanded {
+  width: min(1080px, calc(100vw - 48px)) !important;
+  height: calc(100dvh - 36px) !important;
+}
+
+.chat-dialog .chat-header {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 10px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 50px !important;
+}
+
+.chat-dialog .chat-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.chat-dialog .chat-header-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+  padding: 0 !important;
+  min-height: unset !important;
+  box-shadow: none !important;
+}
+
+.chat-dialog .chat-header-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.chat-dialog .chat-close-btn:hover {
+  background: #fee2e2 !important;
+  color: #ef4444 !important;
+}
+
+.shopee-chat-header-badge {
+  background: #ff424f !important;
+  color: #ffffff !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  padding: 1px 6px !important;
+  border-radius: 10px !important;
+  margin-left: 6px !important;
+  line-height: 1.2 !important;
+}
+
+.chat-dialog .chat-tabs {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 8px 16px !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.chat-dialog .chat-tabs button {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 14px !important;
+  min-height: unset !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s !important;
+}
+
+.chat-dialog .chat-tabs button:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.chat-dialog .chat-tabs button[aria-selected="true"] {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #ee4d2d !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+.shopee-chat-tab-badge {
+  background: #ee4d2d !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  padding: 2px 6px !important;
+  border-radius: 10px !important;
+  margin-left: 4px !important;
+}
+
+@media (max-width: 767px) {
+  .chat-center {
+    right: 16px !important;
+  }
+  .shopee-chat-dock {
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    border-radius: 20px !important;
+  }
+  .shopee-chat-tab-btn {
+    border-radius: 20px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+  .shopee-chat-collapse-toggle {
+    display: none !important;
+  }
+  .live-market .chat-dialog {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100vw !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
+
+/* ==========================================================================
+   Shopee-style Voucher Modal Dialog
+   ========================================================================== */
+
+.shopee-voucher-dialog {
+  display: flex;
+  flex-direction: column;
+  max-width: 580px;
+  width: 100%;
+  max-height: 85vh;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.shopee-voucher-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.shopee-voucher-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+.shopee-voucher-help-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  min-height: unset !important;
+  font-size: 13px !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+.shopee-voucher-help-btn:hover {
+  color: #0f172a !important;
+}
+
+/* Voucher Input Bar */
+.shopee-voucher-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+.shopee-voucher-input-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+}
+.shopee-voucher-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.shopee-voucher-text-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  outline: none;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+.shopee-voucher-text-input:focus {
+  border-color: #ee4d2d;
+}
+.shopee-voucher-apply-btn {
+  height: 38px;
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #ee4d2d !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  transition: background 0.15s;
+  min-height: unset !important;
+}
+.shopee-voucher-apply-btn:hover:not(:disabled) {
+  background: #d73211 !important;
+}
+.shopee-voucher-apply-btn:disabled {
+  background: #cbd5e1 !important;
+  color: #fff !important;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Voucher Body */
+.shopee-voucher-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px;
+  max-height: 420px;
+}
+.shopee-voucher-section {
+  margin-bottom: 20px;
+}
+.shopee-voucher-section-title-wrap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.shopee-voucher-section-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+.shopee-voucher-section-subtitle {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Perforated Ticket Card */
+.shopee-ticket-card {
+  display: flex;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+  position: relative;
+}
+.shopee-ticket-card:hover {
+  border-color: #cbd5e1;
+}
+.shopee-ticket-card.is-selected {
+  border-color: #ee4d2d;
+  box-shadow: 0 0 0 1px #ee4d2d;
+}
+.shopee-ticket-left {
+  width: 105px;
+  flex: 0 0 105px;
+  padding: 14px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-align: center;
+  border-right: 2px dashed rgba(255, 255, 255, 0.4);
+}
+.shopee-ticket-left.is-teal {
+  background: #26aa99;
+}
+.shopee-ticket-left.is-orange {
+  background: #ee4d2d;
+}
+.shopee-ticket-badge-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.shopee-ticket-badge-sub {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+.shopee-ticket-right {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.shopee-ticket-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+.shopee-ticket-count-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #e11d48;
+  background: #ffe4e6;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.shopee-ticket-exp {
+  font-size: 11.5px;
+  color: #64748b;
+}
+.shopee-ticket-terms {
+  color: #2563eb;
+  margin-left: 8px;
+  cursor: pointer;
+}
+.shopee-ticket-terms:hover {
+  text-decoration: underline;
+}
+.shopee-ticket-radio {
+  display: flex;
+  align-items: center;
+}
+.shopee-radio-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: inline-block;
+  transition: all 0.15s;
+}
+.shopee-radio-circle.is-checked {
+  border-color: #ee4d2d;
+  background: #ee4d2d;
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+/* Modal Footer */
+.shopee-voucher-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  background: #fff;
+}
+.shopee-voucher-btn-cancel {
+  height: 40px !important;
+  min-width: 120px !important;
+  padding: 0 20px !important;
+  background: #fff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  letter-spacing: 0.02em !important;
+}
+.shopee-voucher-btn-cancel:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+}
+.shopee-voucher-btn-confirm {
+  height: 40px !important;
+  min-width: 120px !important;
+  padding: 0 20px !important;
+  background: #ee4d2d !important;
+  border: none !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  letter-spacing: 0.02em !important;
+}
+.shopee-voucher-btn-confirm:hover {
+  background: #d73211 !important;
+}
+
+/* ==========================================================================
+   AI Chat Session Management (Delete & List)
+   ========================================================================== */
+
+/* Sidebar List Container Padding to Avoid Scrollbar Overlap */
+.live-market .chat-sidebar .chat-thread-list {
+  padding-right: 8px !important;
+  overflow-y: auto !important;
+}
+
+.chat-session-item-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 8px !important;
+  transition: background-color 0.15s ease !important;
+  position: relative !important;
+  margin-bottom: 2px !important;
+  padding: 0 4px 0 0 !important;
+  box-sizing: border-box !important;
+}
+
+.chat-session-item-wrap:hover {
+  background: #f1f5f9 !important;
+}
+
+.chat-session-item-wrap.is-active {
+  background: #fceee7 !important;
+}
+
+.chat-session-item-wrap .chat-session-row {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  max-width: calc(100% - 32px) !important;
+  min-width: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 8px 8px !important;
+  margin: 0 !important;
+}
+
+.chat-session-delete-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 26px !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  margin-right: 2px !important;
+  z-index: 10 !important;
+  opacity: 0.8 !important;
+}
+
+.chat-session-item-wrap:hover .chat-session-delete-btn {
+  opacity: 1 !important;
+  color: #ef4444 !important;
+}
+
+.chat-session-delete-btn:hover {
+  background: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+.chat-clear-all-sessions-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: 100% !important;
+  margin-top: 12px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+  border: 1px dashed #fca5a5 !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.chat-clear-all-sessions-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+/* Shopee-style Numbered Pagination for Chat */
+.chat-numbered-pagination {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 10px 4px 6px !important;
+  margin: 0 !important;
+  border-top: 1px solid #f1f5f9 !important;
+  flex-shrink: 0 !important;
+}
+
+.chat-page-nav-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.chat-page-nav-btn:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+.chat-page-nav-btn:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+.chat-page-num-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.chat-page-num-btn:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+.chat-page-num-btn.is-active {
+  background: #ee4d2d !important;
+  border-color: #ee4d2d !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  cursor: default !important;
+}
+
+.chat-page-dots {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+}
+
+.chat-thread-delete-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  min-height: unset !important;
+  transition: all 0.15s ease !important;
+}
+
+.chat-thread-delete-btn:hover:not(:disabled) {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+}
+
+/* ==========================================================================
+   Chat Composer Media Attachments & Toolbar
+   ========================================================================== */
+
+.chat-composer-attachments {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-bottom: none !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.chat-composer-attachment-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  padding: 3px 8px 3px 4px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.chat-composer-thumb {
+  width: 28px !important;
+  height: 28px !important;
+  object-fit: cover !important;
+  border-radius: 4px !important;
+}
+
+.chat-composer-video-thumb {
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #1e293b !important;
+  border-radius: 4px !important;
+}
+
+.chat-composer-attachment-label {
+  max-width: 90px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.chat-composer-attachment-remove {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  background: #e2e8f0 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  margin-left: 2px !important;
+  transition: all 0.15s ease !important;
+}
+
+.chat-composer-attachment-remove:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.chat-composer-toolbar {
+  padding: 6px 12px !important;
+  background: #ffffff !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+.chat-toolbar-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 4px 8px !important;
+  min-height: unset !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.chat-toolbar-btn:hover:not(:disabled) {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* URL Input Modal */
+.chat-url-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  z-index: 200 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.chat-url-modal-card {
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 16px 20px !important;
+  max-width: 400px !important;
+  width: 90% !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+.chat-url-input {
+  width: 100% !important;
+  height: 38px !important;
+  padding: 0 10px !important;
+  font-size: 13px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  outline: none !important;
+}
+
+.chat-url-input:focus {
+  border-color: #ee4d2d !important;
+}
+
+.chat-url-cancel-btn {
+  padding: 6px 14px !important;
+  min-height: unset !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  background: #fff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+
+.chat-url-confirm-btn {
+  padding: 6px 16px !important;
+  min-height: unset !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  background: #ee4d2d !important;
+  border: none !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+}
+
+/* ==========================================================================
+   Chat Message Rich Media (Images & Videos)
+   ========================================================================== */
+
+.chat-message-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.chat-text-line {
+  margin: 0 !important;
+  word-break: break-word !important;
+}
+
+.chat-media-images-grid {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-top: 4px !important;
+}
+
+.chat-media-img-card {
+  position: relative !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  cursor: pointer !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  background: #f8fafc !important;
+  max-width: 240px !important;
+  max-height: 180px !important;
+}
+
+.chat-media-img-card:hover {
+  transform: scale(1.02) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.chat-media-img {
+  display: block !important;
+  max-width: 240px !important;
+  max-height: 180px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+.chat-media-videos-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  margin-top: 4px !important;
+  max-width: 320px !important;
+}
+
+.chat-media-video-card {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  background: #000000 !important;
+}
+
+.chat-media-video {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: 220px !important;
+  width: 100% !important;
+}
+
+/* Lightbox Modal */
+.chat-lightbox-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.88) !important;
+  z-index: 1000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+}
+
+.chat-lightbox-container {
+  position: relative !important;
+  max-width: 90vw !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.chat-lightbox-image {
+  max-width: 85vw !important;
+  max-height: 85vh !important;
+  object-fit: contain !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.chat-lightbox-video-player {
+  max-width: 85vw !important;
+  max-height: 85vh !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+.chat-lightbox-close {
+  position: absolute !important;
+  top: -36px !important;
+  right: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: #ffffff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.chat-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+
+
+
+
+

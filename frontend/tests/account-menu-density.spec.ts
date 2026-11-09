@@ -89,6 +89,7 @@ test("dirty profile can cancel logout without losing edits or contacting the ser
 }) => {
   const s = await model(page);
   await page.goto("/customer/profile");
+  await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
   await page.getByLabel("Tên hiển thị", { exact: true }).fill("Đang nhập dở");
   page.once("dialog", (d) => d.dismiss());
   await (await menu(page))
@@ -131,7 +132,8 @@ for (const width of [1440, 390])
     await page.setViewportSize({ width, height: 900 });
     await model(page);
     await page.goto("/customer/profile");
-    const input = page.locator("#profile-email");
+  await page.getByRole("button", { name: "Chỉnh sửa", exact: true }).click();
+    const input = page.locator("#profile-phone");
     await expect(input).toBeVisible();
     const size = await input.boundingBox();
     expect(size!.width).toBeLessThanOrEqual(625);

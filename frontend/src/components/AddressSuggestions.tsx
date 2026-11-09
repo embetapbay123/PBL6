@@ -64,9 +64,7 @@ export function AddressSuggestions({
         ))}
       </datalist>
       <p className="form-hint">
-        Chọn tỉnh/thành để có gợi ý phường/xã theo danh mục sau 07/2025. Có thể
-        nhập nguyên văn địa chỉ được cung cấp; dữ liệu gợi ý không tự sửa địa
-        chỉ đã lưu.
+        Chọn tỉnh/thành để xem gợi ý phường/xã. Bạn cũng có thể tự nhập.
       </p>
     </div>
   );

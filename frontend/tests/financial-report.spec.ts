@@ -386,6 +386,24 @@ test("Seller and Admin without platform permission cannot read financial reports
   }
 });
 
+test("the report shows its applied period until the keyboard submits a new one", async ({page}, info) => {
+  const m = await model(page);
+  await page.goto('/seller/reports?from=2026-11-01&to=2026-11-04');
+  const period = page.locator('.report-current-period');
+  await expect(period).toContainText('Kỳ đang xem: 2026-11-01 đến trước 2026-11-04');
+  await expect(page.getByRole('button', {name:'Làm mới', exact:true})).toHaveCount(0);
+  await page.getByLabel('Từ ngày (bao gồm)', {exact:true}).fill('2026-11-02');
+  await expect(period).toContainText('2026-11-01 đến trước 2026-11-04');
+  expect(m.requests.some(r => r.path === '/store/reports' && r.params.from.startsWith('2026-11-02'))).toBe(false);
+  await page.getByRole('button', {name:'Xem báo cáo',exact:true}).press('Enter');
+  await expect(period).toContainText('Kỳ đang xem: 2026-11-02 đến trước 2026-11-04');
+  expect(m.requests.some(r => r.path === '/store/reports' && r.params.from === '2026-11-02T00:00:00+07:00')).toBe(true);
+  await page.setViewportSize({width:390,height:844});
+  await period.scrollIntoViewIfNeeded();
+  await expect(period).toBeInViewport();
+  await page.screenshot({path:info.outputPath('report-period-mobile.png')});
+});
+
 test("submitting unchanged report filters reloads the summary and source pages after new money arrives", async ({
   page,
 }) => {

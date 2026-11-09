@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Plus,
   ShoppingBag,
+  Trash2,
   Wallet,
 } from "lucide-react";
 import { useAuth } from "../../api/auth-context";
@@ -29,6 +30,7 @@ import { ErrorView, Loading } from "../../bootstrap/components";
 import {
   ChatAvatar,
   ChatComposer,
+  ChatMessageContent,
   ChatPages,
   chatDate,
 } from "../../chat/ChatPrimitives";
@@ -249,6 +251,43 @@ export function AiChatPanel({ active }: { active: boolean }) {
     setDraft("");
     setError(undefined);
   }
+  const userStorageKey = "pbl6_deleted_ai_sessions_" + (session?.context?.user_id ?? "guest");
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(userStorageKey);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  function deleteSession(sessionId: string) {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa phiên chat này không?")) return;
+    const next = new Set(deletedIds);
+    next.add(sessionId);
+    setDeletedIds(next);
+    try {
+      localStorage.setItem(userStorageKey, JSON.stringify([...next]));
+    } catch {}
+    if (!current || current.id === sessionId) {
+      newSession();
+    }
+    setReload((n) => n + 1);
+  }
+
+  function clearAllSessions() {
+    if (!history?.items.length) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử các phiên chat với AI không?")) return;
+    const next = new Set([...deletedIds, ...history.items.map((s) => s.id)]);
+    setDeletedIds(next);
+    try {
+      localStorage.setItem(userStorageKey, JSON.stringify([...next]));
+    } catch {}
+    newSession();
+  }
+
+  const visibleSessions = history?.items.filter((s) => !deletedIds.has(s.id)) ?? [];
+
   return (
     <div
       className={
@@ -259,7 +298,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
         <section className="chat-sidebar" aria-label="Lịch sử chat">
           <div className="chat-sidebar-heading">
             <h3>Lịch sử của bạn</h3>
-            <span>{history?.total ?? "—"}</span>
+            <span>{visibleSessions.length}</span>
           </div>
           <button
             type="button"
@@ -278,31 +317,47 @@ export function AiChatPanel({ active }: { active: boolean }) {
               />
             ) : !history ? (
               <Loading />
-            ) : !history.items.length ? (
+            ) : !visibleSessions.length ? (
               <div className="chat-sidebar-empty">
                 <MessageSquare size={24} />
                 <p>Chưa có phiên chat.</p>
                 <small>Các cuộc trò chuyện sẽ xuất hiện ở đây.</small>
               </div>
             ) : (
-              history.items.map((s) => (
-                <button
-                  type="button"
-                  className="chat-session-row"
+              visibleSessions.map((s) => (
+                <div
                   key={s.id}
-                  disabled={busy}
-                  aria-current={s.id === current?.id ? "true" : undefined}
-                  onClick={() => void choose(s.id)}
+                  className={"chat-session-item-wrap" + (s.id === current?.id ? " is-active" : "")}
                 >
-                  <MessageSquare size={16} />
-                  <span>
-                    <strong>{titles[s.id] ?? "Tư vấn mua sắm"}</strong>
-                    <small>
-                      {chatDate(s.created_at, true)} · #
-                      {s.id.slice(-4).toUpperCase()}
-                    </small>
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    className="chat-session-row"
+                    disabled={busy}
+                    aria-current={s.id === current?.id ? "true" : undefined}
+                    onClick={() => void choose(s.id)}
+                  >
+                    <MessageSquare size={16} />
+                    <span>
+                      <strong>{titles[s.id] ?? "Tư vấn mua sắm"}</strong>
+                      <small>
+                        {chatDate(s.created_at, true)} · #
+                        {s.id.slice(-4).toUpperCase()}
+                      </small>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="chat-session-delete-btn"
+                    title="Xóa phiên chat"
+                    aria-label="Xóa phiên chat"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSession(s.id);
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -314,16 +369,48 @@ export function AiChatPanel({ active }: { active: boolean }) {
               onPage={setPage}
             />
           )}
-          <p className="chat-sidebar-note">Lịch sử riêng của tài khoản bạn.</p>
+
+          {visibleSessions.length > 1 && (
+            <button
+              type="button"
+              className="chat-clear-all-sessions-btn"
+              onClick={clearAllSessions}
+              title="Xóa tất cả lịch sử chat"
+            >
+              <Trash2 size={13} />
+              <span>Xóa toàn bộ lịch sử</span>
+            </button>
+          )}
         </section>
       )}
       <div className="chat-thread">
         <header className="chat-thread-header">
           <ChatAvatar ai />
-          <div>
+          <div className="flex-1 min-w-0">
             <h2>Trợ lý mua sắm</h2>
             <p>Tìm sản phẩm theo nhu cầu của bạn</p>
           </div>
+          {(current || messages.length > 0) && (
+            <button
+              type="button"
+              className="chat-thread-delete-btn"
+              title="Xóa cuộc trò chuyện hiện tại"
+              aria-label="Xóa cuộc trò chuyện hiện tại"
+              disabled={busy}
+              onClick={() => {
+                if (current?.id) {
+                  deleteSession(current.id);
+                } else {
+                  if (window.confirm("Bạn có chắc chắn muốn xóa cuộc trò chuyện này không?")) {
+                    newSession();
+                  }
+                }
+              }}
+            >
+              <Trash2 size={14} />
+              <span>Xóa phiên</span>
+            </button>
+          )}
           {!customer && (
             <button
               type="button"
@@ -408,7 +495,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
                 )}
               </span>
               <div className="chat-bubble">
-                <p>{m.content}</p>
+                <ChatMessageContent content={m.content} />
               </div>
               {!!m.product_cards?.length && (
                 <div className="chat-product-cards">
@@ -481,9 +568,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
           buttonText={busy ? "Đang trả lời…" : "Gửi câu hỏi"}
           placeholder="Bạn muốn tìm món gì?"
         />
-        <p className="chat-disclaimer">
-          Gợi ý có hỗ trợ AI. Kiểm tra thông tin sản phẩm trước khi mua.
-        </p>
+
       </div>
     </div>
   );

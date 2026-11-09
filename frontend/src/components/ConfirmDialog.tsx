@@ -5,6 +5,7 @@ type Confirmation = {
   title: string;
   description: string;
   confirmLabel?: string;
+  danger?: boolean;
 };
 /** Each request needs an explicit decision. Escape, backdrop and unmount all cancel. */
 export function useConfirm() {
@@ -44,7 +45,7 @@ export function useConfirm() {
         </UiButton>
         <UiButton
           type="button"
-          variant="primary"
+          variant={pending.danger ? "danger" : "primary"}
           onClick={() => settle(true)}
         >
           {pending.confirmLabel ?? "Xác nhận"}

@@ -48,8 +48,10 @@ export class ReturnsRunner {
         await manager.query("UPDATE order_return_request SET inventory_status='APPLIED',version=version+1 WHERE id=$1",[id]);
         await manager.query("UPDATE order_inventory_state SET state='RETURN_INSPECTED',last_error=NULL,updated_at=now() WHERE order_id=$1 AND state='CONSUMED' AND command_kind IS NULL",[row.order_id]);
       }else{
-        await manager.query("UPDATE order_return_request SET exchange_status='APPLIED',status='EXCHANGE_SENT',exchange_dispatch_snapshot=$2,version=version+1 WHERE id=$1",[id,dispatch?JSON.stringify(dispatch):null]);
-        await manager.query("INSERT INTO return_status_history(request_id,from_status,to_status,actor_user_id,reason) VALUES($1,'RECEIVED','EXCHANGE_SENT',$2,$3)",[id,claim.body.actor_user_id,'Hàng đổi đã được trừ tồn theo lệnh bàn giao '+row.replacement_reference]);
+        const [order]=await manager.query('SELECT shipping_mode FROM "order" WHERE id=$1',[row.order_id]);
+        const managed=['GHN','PLATFORM'].includes(order?.shipping_mode);
+        await manager.query("UPDATE order_return_request SET exchange_status='APPLIED',status=$3,exchange_dispatch_snapshot=$2,version=version+1 WHERE id=$1",[id,dispatch?JSON.stringify(dispatch):null,managed?'RECEIVED':'EXCHANGE_SENT']);
+        if(!managed)await manager.query("INSERT INTO return_status_history(request_id,from_status,to_status,actor_user_id,reason) VALUES($1,'RECEIVED','EXCHANGE_SENT',$2,$3)",[id,claim.body.actor_user_id,'Hàng đổi đã được trừ tồn theo lệnh bàn giao '+row.replacement_reference]);
       }
       await manager.query('UPDATE order_return_request SET lease_token=NULL,lease_until=NULL,last_error=NULL,next_attempt_at=now(),updated_at=now() WHERE id=$1',[id]);
       const action=claim.receiving?'RECEIVED_STOCK_CONFIRMED':'EXCHANGE_STOCK_CONFIRMED';

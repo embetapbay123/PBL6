@@ -61,35 +61,78 @@ export function Pagination({
   total,
   onPage,
   disabled = false,
+  showTotal = true,
 }: {
   page: number;
   size: number;
   total: number;
   onPage: (p: number) => void;
   disabled?: boolean;
+  showTotal?: boolean;
 }) {
+  const totalPages = Math.ceil(total / size);
+  if (totalPages <= 1) return null;
+
+  const getPages = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | "...")[] = [];
+    if (page <= 4) {
+      pages.push(1, 2, 3, 4, "...", totalPages);
+    } else if (page >= totalPages - 3) {
+      pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, "...", page - 1, page, page + 1, "...", totalPages);
+    }
+    return pages;
+  };
+
+  const pages = getPages();
+
   return (
-    <div className="boot-pagination">
+    <nav className="boot-pagination flex items-center gap-1.5" aria-label="Phân trang">
       <Button
         variant="secondary"
         size="sm"
-          disabled={disabled || page <= 1}
+        disabled={disabled || page <= 1}
         onClick={() => onPage(page - 1)}
+        title="Trang trước"
       >
-        Trang trước
+        &lt;
       </Button>
-      <span>
-        Trang {page} · {total} kết quả
-      </span>
+      {pages.map((p, idx) =>
+        p === "..." ? (
+          <span key={`dots-${idx}`} className="px-1 text-slate-400">
+            …
+          </span>
+        ) : (
+          <Button
+            key={p}
+            variant={p === page ? "primary" : "secondary"}
+            size="sm"
+            disabled={disabled || p === page}
+            onClick={() => onPage(p)}
+          >
+            {p}
+          </Button>
+        ),
+      )}
       <Button
         variant="secondary"
         size="sm"
-          disabled={disabled || page * size >= total}
+        disabled={disabled || page >= totalPages}
         onClick={() => onPage(page + 1)}
+        title="Trang sau"
       >
-        Trang sau
+        &gt;
       </Button>
-    </div>
+      {showTotal && (
+        <span className="text-xs text-slate-500 ml-2">
+          {total} kết quả
+        </span>
+      )}
+    </nav>
   );
 }
 export function FormPanel({
@@ -113,7 +156,7 @@ export function FormPanel({
       {children}
       <div className="ui-actions">
         <Button type="submit" loading={busy} disabled={disabled}>
-          {busy ? "Đang lưu…" : "Lưu thay đổi"}
+          {busy ? "Đang lưu…" : "Lưu"}
         </Button>
       </div>
       {error != null && <ErrorView error={error} />}

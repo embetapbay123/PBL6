@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../api/auth-context";
 import { callOperation } from "../../api/operations";
 import type { OperationOutputs } from "../../api/operations.generated";
@@ -13,7 +13,7 @@ import {
   reviewItemLabel,
 } from "./owned-review";
 type Review = OperationOutputs["createReview"];
-type Orders = OperationOutputs["listOwnOrders"];
+type ReviewItem = { id: string; label: string };
 type ReviewAttempt = {
   orderItemId: string;
   rating: number;
@@ -23,35 +23,44 @@ type ReviewAttempt = {
 };
 export function ProductReviews({ productId }: { productId: string }) {
   const { session } = useAuth();
+  const [params] = useSearchParams();
+  const requestedOrder = params.get("review_order") ?? undefined;
+  const requestedItem = params.get("review_item") ?? undefined;
   const userId = session?.context?.roles.includes("CUSTOMER")
     ? session.context.user_id
     : undefined;
   return (
     <ReviewsInner
-      key={productId + ":" + (userId ?? "guest")}
+      key={[productId, userId, requestedOrder, requestedItem].join(":")}
       productId={productId}
       userId={userId}
+      requestedOrder={requestedOrder}
+      requestedItem={requestedItem}
     />
   );
 }
 function ReviewsInner({
   productId,
   userId,
+  requestedOrder,
+  requestedItem,
 }: {
   productId: string;
   userId?: string;
+  requestedOrder?: string;
+  requestedItem?: string;
 }) {
   const [filterRating, setFilterRating] = useState(""),
     [sort, setSort] = useState<"newest" | "rating_desc" | "rating_asc">(
       "newest",
     );
   const [page, setPage] = useState(1),
-    [orderPage, setOrderPage] = useState(1),
     [reload, setReload] = useState(0),
     [ordersReload, setOrdersReload] = useState(0);
   const [reviews, setReviews] =
       useState<OperationOutputs["listProductReviews"]>(),
-    [orders, setOrders] = useState<Orders>();
+    [eligible, setEligible] = useState<ReviewItem[]>();
+  const [reviewedItems, setReviewedItems] = useState<Set<string>>();
   const [loading, setLoading] = useState(true),
     [error, setError] = useState<unknown>(),
     [orderError, setOrderError] = useState<unknown>();
@@ -94,15 +103,33 @@ function ReviewsInner({
     };
   }, [productId, page, reload, sort, filterRating]);
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !requestedOrder) return;
     let active = true;
     setOrderError(undefined);
-    setOrders(undefined);
-    setItemId("");
-    setEditing(undefined);
-    callOperation("listOwnOrders", { query: { page: orderPage, size: 20 } })
-      .then((value) => {
-        if (active) setOrders(value);
+    setEligible(undefined);
+    setReviewedItems(undefined);
+    const lookup = callOperation("getOwnOrder", { path: { id: requestedOrder } }).then((order) => [order]);
+    lookup
+      .then(async (orders) => {
+        if (!active) return;
+        const items = orders
+          .filter((order) => order.status === "COMPLETED")
+          .flatMap((order) => (order.items ?? [])
+            .filter((item) => item.product_id === productId && typeof item.id === "string")
+            .map((item) => ({ id: String(item.id), label: reviewItemLabel(order.id, item) })));
+        setEligible(items);
+        const reviewed = new Set<string>();
+        if (items.length) {
+          const candidates = new Set(items.map((item) => item.id));
+          for (let page = 1; active; page++) {
+            const result = await callOperation("listOwnReviews", { query: { product_id: productId, page, size: 100 } });
+            for (const review of result.items) {
+              if (candidates.has(review.order_item_id)) reviewed.add(review.order_item_id);
+            }
+            if (reviewed.size === candidates.size || !result.items.length || page * result.size >= result.total) break;
+          }
+        }
+        if (active) setReviewedItems(reviewed);
       })
       .catch((e) => {
         if (active) setOrderError(e);
@@ -110,22 +137,14 @@ function ReviewsInner({
     return () => {
       active = false;
     };
-  }, [userId, orderPage, ordersReload]);
-  const eligible = (orders?.items ?? [])
-    .filter((order) => order.status === "COMPLETED")
-    .flatMap((order) =>
-      (order.items ?? [])
-        .filter(
-          (item) =>
-            item.product_id === productId && typeof item.id === "string",
-        )
-        .map((item) => ({
-          id: String(item.id),
-          order: order.id,
-          label: reviewItemLabel(order.id, item),
-        })),
-    );
-  const owned = new Set(eligible.map((item) => item.id));
+  }, [userId, productId, requestedOrder, ordersReload]);
+  const owned = new Set(eligible?.map((item) => item.id));
+  const reviewed = new Set(reviewedItems);
+  reviews?.items.forEach((review) => reviewed.add(review.order_item_id));
+  if (saved) reviewed.add(saved.order_item_id);
+  const availableItems = reviewedItems ? eligible?.filter((item) => !reviewed.has(item.id)) ?? [] : [];
+  const showForm = !!editing || !!attempt || (!!requestedOrder && availableItems.length > 0);
+  const selectedItem = itemId || (availableItems.some((item) => item.id === requestedItem) ? requestedItem! : "");
   const edit = (review: Review) => {
     if (!owned.has(review.order_item_id) || loading || attempt) return;
     setBlocked(false);
@@ -184,7 +203,7 @@ function ReviewsInner({
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (flight.current || blocked || !owned.has(itemId)) return;
+    if (flight.current || blocked || !owned.has(selectedItem) || (!editing && reviewed.has(selectedItem))) return;
     if (editing && editing.version === undefined) {
       setError(
         new ApiError(
@@ -196,7 +215,7 @@ function ReviewsInner({
       return;
     }
     await write({
-      orderItemId: itemId,
+      orderItemId: selectedItem,
       rating,
       body,
       ...(editing ? { reviewId: editing.id, version: editing.version } : {}),
@@ -248,7 +267,7 @@ function ReviewsInner({
   return (
     <section id="reviews" className="boot-card">
       <h3>Đánh giá sản phẩm</h3>
-      <div className="ui-actions">
+      {(!!reviews?.total || !!filterRating) && <div className="ui-actions">
         <label>
           Lọc số sao
           <select
@@ -282,22 +301,21 @@ function ReviewsInner({
             <option value="rating_asc">Điểm thấp nhất</option>
           </select>
         </label>
-      </div>
+      </div>}
       {error !== undefined && (
         <ErrorView error={error} onRetry={() => setReload((n) => n + 1)} />
       )}
       {blocked && (
         <>
           <p>
-            Kết nối bị gián đoạn hoặc đánh giá vừa thay đổi. Nội dung bạn viết
-            vẫn được giữ; kiểm tra bản đã lưu trước khi gửi lại.
+            Bản nháp vẫn được giữ. Kiểm tra đánh giá đã lưu trước khi gửi lại.
           </p>
           <button
             type="button"
             disabled={busy}
             onClick={() => void reconcile()}
           >
-            Đối chiếu đánh giá đã lưu
+            Kiểm tra
           </button>
           {retryCreate && attempt && (
             <button
@@ -305,7 +323,7 @@ function ReviewsInner({
               disabled={busy}
               onClick={() => void write(attempt)}
             >
-              Thử lại đúng nội dung đánh giá
+              Thử lại
             </button>
           )}
         </>
@@ -317,7 +335,7 @@ function ReviewsInner({
         reviews && (
           <>
             {!reviews.items.length && (
-              <p>Chưa có đánh giá nào cho sản phẩm này.</p>
+              <p>{filterRating ? "Không có đánh giá phù hợp." : "Chưa có đánh giá"}</p>
             )}
             {reviews.items.map((review) => (
               <article
@@ -338,12 +356,12 @@ function ReviewsInner({
                 )}
               </article>
             ))}
-            <Pagination
+            {reviews.total > reviews.size && <Pagination
               page={page}
               size={reviews.size}
               total={reviews.total}
               onPage={setPage}
-            />
+            />}
           </>
         )
       )}
@@ -351,45 +369,24 @@ function ReviewsInner({
         <Link to="/login">Đăng nhập để viết đánh giá sau mua hàng</Link>
       ) : (
         <>
-          <div className="review-compose-heading">
-            <h4>Viết đánh giá sau mua</h4>
-            <p>
-              Chọn món đã nhận trong đơn hoàn tất. Bạn cũng có thể mở đơn hàng
-              để tìm đúng món cần đánh giá.
-            </p>
-            <Link to="/customer/orders?status=COMPLETED">
-              Xem đơn đã hoàn tất
-            </Link>
-          </div>
-          <Link to={"/customer/reviews?product_id=" + productId}>
-            Tìm và sửa đánh giá của tôi, kể cả đánh giá bị ẩn
-          </Link>
           {orderError !== undefined && (
             <ErrorView
               error={orderError}
               onRetry={() => setOrdersReload((n) => n + 1)}
             />
           )}
-          {!orders && !orderError && <Loading />}
-          {orders && (
+          {requestedOrder && !reviewedItems && !orderError && <Loading />}
+          {!requestedOrder && (
+            <div className="review-order-hint my-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 flex items-center justify-between flex-wrap gap-2">
+              <span>Bạn đã mua sản phẩm này? Đánh giá được quản lý trong Đơn mua.</span>
+              <Link className="ui-button ui-button-secondary text-xs" to="/customer/orders?status=COMPLETED">
+                Đến đơn hàng hoàn tất →
+              </Link>
+            </div>
+          )}
+          {showForm && (
             <>
-              {!eligible.length && (
-                <p>
-                  Trang đơn hàng này chưa có mục đã hoàn tất cho sản phẩm. Có
-                  thể xem trang đơn hàng khác.
-                </p>
-              )}
-              <fieldset
-                disabled={busy || !!attempt}
-                aria-label="Trang đơn hàng để đánh giá"
-              >
-                <Pagination
-                  page={orderPage}
-                  size={orders.size}
-                  total={orders.total}
-                  onPage={setOrderPage}
-                />
-              </fieldset>
+              <h4>{editing ? "Sửa đánh giá" : "Viết đánh giá"}</h4>
               <form onSubmit={submit}>
                 {editing?.status === "HIDDEN" && (
                   <p>
@@ -401,7 +398,7 @@ function ReviewsInner({
                   Mục đơn hàng
                   <select
                     aria-label="Mục đơn hàng"
-                    value={itemId}
+                    value={selectedItem}
                     disabled={busy || blocked || !!editing}
                     onChange={(e) => {
                       setItemId(e.target.value);
@@ -410,17 +407,17 @@ function ReviewsInner({
                     required
                   >
                     <option value="">Chọn mục đã mua</option>
-                    {eligible.map((item) => (
+                    {(editing || attempt ? eligible ?? [] : availableItems).map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.label}
                       </option>
                     ))}
                   </select>
                 </label>
-                {itemId && (
+                {selectedItem && (
                   <p role="status" className="whitespace-normal break-words">
                     Đang đánh giá:{" "}
-                    {eligible.find((item) => item.id === itemId)?.label ??
+                    {eligible?.find((item) => item.id === selectedItem)?.label ??
                       "Mục đã chọn không có trong trang đơn hàng hiện tại; kiểm tra lại trước khi lưu."}
                   </p>
                 )}
@@ -439,7 +436,7 @@ function ReviewsInner({
                     onChange={(e) => setBody(e.target.value)}
                   />
                 </label>
-                <button disabled={busy || blocked || !owned.has(itemId)}>
+                <button disabled={busy || blocked || !owned.has(selectedItem)}>
                   {busy
                     ? "Đang lưu…"
                     : editing
@@ -454,7 +451,7 @@ function ReviewsInner({
                       setBlocked(false);
                       setLatestSaved(undefined);
                       setEditing(undefined);
-                      setSaved(undefined);
+                      setItemId("");
                       setBody("");
                       setNotice("");
                     }}
@@ -463,12 +460,10 @@ function ReviewsInner({
                   </button>
                 )}
               </form>
-              {saved?.id && !editing && owned.has(saved.order_item_id) && (
-                <button onClick={() => edit(saved)}>
-                  Sửa đánh giá vừa lưu
-                </button>
-              )}
             </>
+          )}
+          {saved?.id && !editing && owned.has(saved.order_item_id) && !reviews?.items.some((review) => review.id === saved.id) && (
+            <button onClick={() => edit(saved)}>Sửa đánh giá</button>
           )}
         </>
       )}

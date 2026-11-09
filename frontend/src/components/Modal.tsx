@@ -12,7 +12,7 @@ export function Modal({children,onClose,busy=false,label,labelledBy,variant='dia
     onKeyDown={event=>{
       if(event.key!=='Tab'||event.ctrlKey||event.altKey||event.metaKey)return;
       const dialog=event.currentTarget;
-      const items=Array.from(dialog.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,[tabindex]')).filter(element=>element.tabIndex>=0&&!element.matches(':disabled')&&element.getClientRects().length>0);
+      const items=Array.from(dialog.querySelectorAll<HTMLElement>('a[href],button,input,select,textarea,summary,[tabindex]')).filter(element=>element.tabIndex>=0&&!element.matches(':disabled')&&element.getClientRects().length>0);
       const first=items[0],last=items.at(-1),active=document.activeElement;
       if(!first){event.preventDefault();dialog.focus();}
       else if(event.shiftKey&&(active===first||active===dialog)){event.preventDefault();last?.focus();}

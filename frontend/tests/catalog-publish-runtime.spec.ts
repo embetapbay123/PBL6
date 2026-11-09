@@ -101,7 +101,7 @@ test('Owner publishes twelve UI-created variants among300products and Customer p
     await seller.goBack(); await expect(checklist).toContainText('1/12 phân loại đang bán còn tồn khả dụng');
     await expect(seller.getByRole('link', {name: 'Xem trang khách', exact: true})).toHaveCount(0);
     await seller.getByRole('combobox', {name: 'Trạng thái bán', exact: true}).selectOption('ACTIVE');
-    await seller.getByRole('button', {name: 'Lưu thay đổi', exact: true}).click();
+    await seller.getByRole('button', {name: 'Lưu', exact: true}).click();
     await expect(seller.getByRole('status').filter({hasText: 'Đã lưu sản phẩm.'})).toBeVisible();
     await expect(checklist).toContainText('Sản phẩm đang mở bán và không bị ẩn.');
     await seller.screenshot({path: info.outputPath('publish-readiness-desktop.png'), fullPage: true});
@@ -122,12 +122,12 @@ test('Owner publishes twelve UI-created variants among300products and Customer p
     }
     await page.getByRole('banner').getByRole('link', {name: 'Giỏ hàng', exact: true}).click();
     await expect(page.locator('.cart-store-group')).toHaveCount(2); await expect(page.locator('main')).toContainText('Đen / XL');
-    await page.getByRole('button', {name: 'Tiến hành thanh toán', exact: true}).click();
+    await page.getByRole('button', {name: 'Thanh toán', exact: true}).click();
     await expect(page.locator('.purchase-summary')).toContainText('281.000');
     await expect(page.getByRole('img', {name: 'Không tải được ảnh của ' + title, exact: true})).toBeVisible();
     await expect(page.locator('.market-cart-image img[src*="/__catalog-publish/"]')).toHaveCount(0);
     await page.screenshot({path: info.outputPath('published-multistore-checkout-desktop.png'), fullPage: true});
-    const [confirmed] = await Promise.all([page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/orders/batches'), page.getByRole('button', {name: 'Xác nhận đặt hàng', exact: true}).click()]);
+    const [confirmed] = await Promise.all([page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/v1/orders/batches'), page.getByRole('button', {name: 'Đặt hàng', exact: true}).click()]);
     expect(confirmed.status()).toBe(201); const group = await confirmed.json(); orders.push(...group.orders); expect(orders).toHaveLength(2);
     const chosenOrder = orders.find(o => o.store_id === a.store.id);
     expect(chosenOrder.items).toEqual([expect.objectContaining({variant_id: target.id, quantity: 2, unit_price_vnd: 100500, product_snapshot: expect.objectContaining({title, variant_values: {color: 'Đen', size: 'XL'}})})]);

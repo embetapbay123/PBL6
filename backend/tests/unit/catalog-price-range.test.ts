@@ -19,3 +19,12 @@ test('variant image metadata remains optional, is returned only for its own prod
  const result=productResponse(row,[],[{id:'red',product_id:'p',variant_id:'red-small',image_url:'https://example.test/red.webp',position:1},{id:'other',product_id:'other',variant_id:'bad',image_url:'https://example.test/bad.webp'}]);
  expect(result.images).toEqual([{id:'red',product_id:'p',variant_id:'red-small',image_url:'https://example.test/red.webp',position:1}]);
 });
+
+test('search query orders by title match before description match while keeping price sort when requested',async()=>{
+ const manager={query:jest.fn().mockResolvedValueOnce([{total:0}]).mockResolvedValueOnce([])};
+ await new CatalogRepository(manager as any).page(['store'],{page:1,size:20,q:'áo',sort:'title'});
+ expect(manager.query.mock.calls[1][0]).toContain("CASE WHEN marketplace_search(p.title) ~ ('\\m' || $2) THEN 0 ELSE 1 END, p.title ASC, p.id");
+ const priceManager={query:jest.fn().mockResolvedValueOnce([{total:0}]).mockResolvedValueOnce([])};
+ await new CatalogRepository(priceManager as any).page(['store'],{page:1,size:20,q:'áo',sort:'price_asc'});
+ expect(priceManager.query.mock.calls[1][0]).toContain('min_price ASC NULLS LAST, p.id');
+});

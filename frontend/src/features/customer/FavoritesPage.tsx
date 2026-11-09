@@ -1,10 +1,8 @@
 import { useProductBatch } from "./useProductBatch";
-import { useConfirm } from "../../components/ConfirmDialog";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useFavorites } from "./favorite-state";
-import { ApiError } from "../../api/client";
 import { callOperation } from "../../api/operations";
 import {
   Empty,
@@ -17,7 +15,6 @@ import { CustomerSubNav } from "./CustomerSubNav";
 
 export function FavoritesPage() {
   const favorites = useFavorites();
-  const { confirm, dialog } = useConfirm();
   const [page, setPage] = useState(1),
     [busy, setBusy] = useState(""),
     [error, setError] = useState<unknown>();
@@ -33,17 +30,9 @@ export function FavoritesPage() {
       if (page > last) setPage(last);
     }
   }, [query.data, query.isFetching, query.error, page]);
+
   async function remove(id: string) {
     if (busy || query.isFetching) return;
-    if (
-      !(await confirm({
-        title: "Bỏ sản phẩm khỏi yêu thích?",
-        description:
-          "Bạn có thể tìm lại tại trang sản phẩm và lưu yêu thích lần nữa.",
-        confirmLabel: "Bỏ yêu thích",
-      }))
-    )
-      return;
     setBusy(id);
     setError(undefined);
     try {
@@ -54,10 +43,10 @@ export function FavoritesPage() {
       setBusy("");
     }
   }
+
   return (
     <section>
       <CustomerSubNav />
-      {dialog}
       <Link to="/">← Tiếp tục khám phá</Link>
       <h1>Sản phẩm yêu thích</h1>
       {query.isLoading && <Loading />}
@@ -95,14 +84,23 @@ export function FavoritesPage() {
                   ) : products.error ? (
                     <p>Chưa tải được thông tin sản phẩm.</p>
                   ) : (
-                    <p>Sản phẩm này hiện không còn hiển thị.</p>
+                    <div
+                      className="boot-card"
+                      style={{ padding: "16px", textAlign: "center" }}
+                    >
+                      <p style={{ margin: "0 0 12px", color: "#64748b" }}>
+                        Sản phẩm này hiện không còn hiển thị.
+                      </p>
+                      <button
+                        type="button"
+                        className="ui-button ui-button-secondary"
+                        disabled={!!busy || query.isFetching}
+                        onClick={() => void remove(id)}
+                      >
+                        {busy === id ? "Đang bỏ…" : "Bỏ yêu thích"}
+                      </button>
+                    </div>
                   )}
-                  <button
-                    disabled={!!busy || query.isFetching}
-                    onClick={() => void remove(id)}
-                  >
-                    {busy === id ? "Đang bỏ…" : "Bỏ yêu thích"}
-                  </button>
                 </div>
               );
             })}

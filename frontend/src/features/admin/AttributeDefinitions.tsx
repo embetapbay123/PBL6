@@ -56,7 +56,10 @@ export function AttributeDefinitions({
             <select
               aria-label="Thuộc tính cần sửa"
               value={definitionId}
-              onChange={(event) => setDefinitionId(event.target.value)}
+              onChange={(event) => {
+                setDefinitionId(event.target.value);
+                if (event.target.value) setFormOpen(true);
+              }}
             >
               <option value="">Chọn thuộc tính để xem</option>
               {definitions.map((row) => (
@@ -368,7 +371,7 @@ function DefinitionForm({
             disabled={busy || blocked}
             onClick={() => void cancel()}
           >
-            Hủy thay đổi
+            Hủy
           </UiButton>
           {error !== undefined && <ErrorView error={error} />}{" "}
           {(blocked || missingVersion) && (

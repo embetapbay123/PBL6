@@ -1,7 +1,7 @@
 import {Button as UiButton} from '../../components/ui/Button';
 import {OrderQueue} from '../../components/OrderQueue';
 import { useCallback, useEffect, useState } from 'react';
-import {Link} from 'react-router-dom';
+import {Link,useLocation} from 'react-router-dom';
 import {useQuery} from '@tanstack/react-query';
 import type {OperationOutputs} from '../../api/operations.generated';
 import {OrderListFilters,useOrderListFilters,refundStatusLabel,paymentMethodLabel,paymentStatusLabel} from '../../components/OrderListTools';
@@ -16,8 +16,13 @@ const money = (value: number) => new Intl.NumberFormat('vi-VN', { style: 'curren
 
 export function AdminOrders() {
   const filters=useOrderListFilters(),[selected,setSelected]=useState<AdminOrder>();
+  const linkedOrderId: unknown = useLocation().state?.openOrderId;
   const query=useQuery({queryKey:['admin-orders',filters.query],staleTime:0,queryFn:({signal})=>callOperation('listAllOrders',{query:filters.query},{signal})});
+  const linkedOrder = typeof linkedOrderId === 'string' && linkedOrderId === filters.query.q
+    ? query.data?.items.find(order => order.id === linkedOrderId)
+    : undefined;
   useEffect(()=>setSelected(undefined),[JSON.stringify(filters.query)]);
+  useEffect(()=>{if (linkedOrder) setSelected(linkedOrder);},[linkedOrder?.id]);
   useEffect(()=>{if(query.data&&!query.isFetching&&!query.error&&filters.page>Math.max(1,Math.ceil(query.data.total/query.data.size)))filters.set('page',String(Math.max(1,Math.ceil(query.data.total/query.data.size))),{replace:true});},[query.data,query.isFetching,query.error,filters.page]);
   return <section className="boot-card"><div className="seller-products-toolbar"><div><h3>Đơn hàng toàn sàn</h3><p>Tìm trên toàn bộ đơn và dữ liệu đã chốt; kiểm tra món, tiền và người nhận trước khi hỗ trợ.</p></div><UiButton variant="secondary" type="submit" disabled={query.isFetching} onClick={()=>void query.refetch()}><RefreshCw size={15}/>Tải lại</UiButton></div>
     <OrderListFilters filters={filters}/>
@@ -25,7 +30,7 @@ export function AdminOrders() {
       <p role="status">{query.data.total.toLocaleString('vi-VN')} đơn phù hợp · trang {filters.page}.</p>
       <OrderQueue admin orders={query.data.items} onOpen={id=>setSelected(query.data.items.find(order=>order.id===id))}/><Pagination page={filters.page} size={query.data.size} total={query.data.total} onPage={page=>filters.set('page',String(page))}/>
     </>}
-    {selected&&<Modal label={'Chi tiết đơn '+selected.id} onClose={()=>setSelected(undefined)}><h2>Chi tiết đơn hàng</h2><p>{selected.id}</p><dl className="admin-order-details">{[['Mã nhóm mua',selected.purchase_group_id],['Store',selected.store_id],['Trạng thái',orderStatusLabel(selected.status)],['Phương thức',paymentMethodLabel(selected.payment_method)],['Thanh toán',paymentStatusLabel(selected.payment_status,selected.amounts.payable_vnd)],['Hoàn tiền',selected.refund_status?refundStatusLabel(selected.refund_status):'Chưa có kết quả hoàn'],['Tiền hàng',money(selected.amounts.goods_vnd)],['Giảm giá',money(selected.amounts.store_discount_vnd+selected.amounts.platform_discount_vnd)],['Phí giao hàng',money(selected.amounts.shipping_vnd)],['Phải trả',money(selected.amounts.payable_vnd)]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><OrderPackingSheet order={selected}/><ReturnPolicyNotice policy={selected.return_policy_snapshot}/><OrderTimeline order={selected}/><div className="ui-actions"><UiButton variant="secondary" type="submit" onClick={()=>setSelected(undefined)}>Đóng</UiButton><Link className="ui-button ui-button-primary" to="/admin?tab=returns">Xem yêu cầu đổi trả</Link></div></Modal>}
+    {selected&&<Modal label={'Chi tiết đơn '+selected.id} onClose={()=>setSelected(undefined)}><h2>Chi tiết đơn hàng</h2><p>{selected.id}</p><dl className="admin-order-details">{[['Mã nhóm mua',selected.purchase_group_id],['Store',selected.store_id],['Trạng thái',orderStatusLabel(selected.status)],['Phương thức',paymentMethodLabel(selected.payment_method)],['Thanh toán',paymentStatusLabel(selected.payment_status,selected.amounts.payable_vnd)],['Hoàn tiền',selected.refund_status?refundStatusLabel(selected.refund_status):'Chưa có kết quả hoàn'],['Tiền hàng',money(selected.amounts.goods_vnd)],['Giảm giá',money(selected.amounts.store_discount_vnd+selected.amounts.platform_discount_vnd)],['Phí giao hàng',money(selected.amounts.shipping_vnd)],['Phải trả',money(selected.amounts.payable_vnd)]].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl><OrderPackingSheet order={selected}/><ReturnPolicyNotice policy={selected.return_policy_snapshot}/><OrderTimeline order={selected}/><div className="ui-actions"><UiButton variant="secondary" type="submit" onClick={()=>setSelected(undefined)}>Đóng</UiButton><Link className="ui-button ui-button-primary" to={`/admin?tab=returns&order_id=${encodeURIComponent(selected.id)}`}>Xem yêu cầu đổi trả</Link></div></Modal>}
   </section>;
 }
 
@@ -33,8 +38,16 @@ export function AdminDashboardSummary() {
   const [data, setData] = useState<Record<string, number | null>>(); const [error, setError] = useState<unknown>(); const [loading, setLoading] = useState(true);
   const load = useCallback(async () => { setLoading(true); setError(undefined); try { setData(await callOperation('getPlatformDashboard', {}) as Record<string, number | null>); } catch (cause) { setError(cause); } finally { setLoading(false); } }, []);
   useEffect(() => { void load(); }, [load]);
+  const metricLabels: Record<string, string> = {
+    order_value_vnd: "Tổng giá trị đơn đặt",
+    completed_goods_revenue_vnd: "Doanh thu hàng đã hoàn tất",
+    collected_vnd: "Thực thu (COD & thanh toán)",
+    refunded_vnd: "Đã hoàn trả",
+    store_count: "Gian hàng",
+    user_count: "Người dùng",
+  };
   return <section className="boot-card"><h3>Tổng quan nền tảng</h3>{error !== undefined && <ErrorView error={error} />}{loading ? <Loading /> : data && <>
-    <dl className="admin-metric-grid">{Object.entries(data).map(([key, value]) => <div key={key}><dt>{({order_value_vnd:"Giá trị đơn hàng",completed_goods_revenue_vnd:"Doanh thu hàng đã hoàn tất",collected_vnd:"Đã thu",refunded_vnd:"Đã hoàn tiền",store_count:"Gian hàng",user_count:"Người dùng"} as Record<string,string>)[key] ?? key}</dt><dd>{value == null ? 'Chưa có dữ liệu' : key.endsWith('_vnd') ? money(value) : value.toLocaleString('vi-VN')}</dd></div>)}</dl>
+    <dl className="admin-metric-grid">{Object.entries(data).map(([key, value]) => <div key={key}><dt>{metricLabels[key] ?? key}</dt><dd>{value == null ? 'Chưa có dữ liệu' : key.endsWith('_vnd') ? money(value) : value.toLocaleString('vi-VN')}</dd></div>)}</dl>
     <div className="ui-actions"><UiButton variant="secondary" type="submit" onClick={() => void load()}>Tải lại</UiButton><Link className="ui-button ui-button-primary" to="/admin?tab=orders">Quản lý đơn hàng</Link><Link className="ui-button ui-button-secondary" to="/admin/store-applications">Duyệt gian hàng</Link></div>
   </>}</section>;
 }

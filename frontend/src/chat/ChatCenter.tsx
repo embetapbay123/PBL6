@@ -1,32 +1,55 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
-  MessageCircle,
   Minus,
   X,
   Bot,
   Store,
-  ArrowUpRight,
   Maximize2,
   Minimize2,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useChat } from "./ChatProvider";
 import { useAuth } from "../api/auth-context";
+import { callOperation } from "../api/operations";
 import { AiChatPanel } from "../features/customer/CustomerChatWidget";
 import { MessagesWorkspace } from "./ConversationWorkspace";
+
+function ShopeeChatIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="shopee-chat-svg"
+      aria-hidden="true"
+    >
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+      <path d="M8.5 12a3.5 3.5 0 0 0 7 0" />
+    </svg>
+  );
+}
 
 export function ChatCenter() {
   const chat = useChat(),
     { ui } = chat,
     { session } = useAuth(),
     location = useLocation(),
-    navigate = useNavigate(),
     dialog = useRef<HTMLDialogElement>(null),
     opener = useRef<HTMLElement | null>(null);
   const [mobile, setMobile] = useState(
     () => matchMedia("(max-width:767px)").matches,
   );
   const [expanded, setExpanded] = useState(false);
+  const [dockCollapsed, setDockCollapsed] = useState(false);
   const [visible, setVisible] = useState(
     () => document.visibilityState === "visible",
   );
@@ -35,6 +58,15 @@ export function ChatCenter() {
       /^\/(seller|admin|customer\/messages)(\/|$)/.test(location.pathname) ||
       (!!session && !customer);
   const open = ui.status === "open" && !excluded;
+
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations", "CUSTOMER", 1, "", false],
+    enabled: customer && !excluded,
+    refetchInterval: open ? 10000 : 30000,
+    queryFn: () => callOperation("listOwnConversations", { query: { page: 1, size: 20 } }),
+  });
+  const unreadTotal = conversationsQuery.data?.unread_total ?? 0;
+
   useEffect(() => {
     const media = matchMedia("(max-width:767px)"),
       change = () => setMobile(media.matches),
@@ -106,6 +138,42 @@ export function ChatCenter() {
       }
       hidden={excluded}
     >
+      {/* Shopee-style Bottom Right Docked Chat Tab */}
+      {!open && (
+        <div className={`shopee-chat-dock ${dockCollapsed ? "is-collapsed" : ""}`}>
+          <button
+            type="button"
+            className="shopee-chat-tab-btn"
+            onClick={() => chat.openChat()}
+            aria-label="Mở cửa sổ Chat"
+            title="Chat với Shop và Trợ lý AI"
+            data-chat-opener
+          >
+            <div className="shopee-chat-icon-box">
+              <ShopeeChatIcon size={20} />
+              {unreadTotal > 0 && (
+                <span className="shopee-chat-badge">
+                  {unreadTotal > 99 ? "99+" : unreadTotal}
+                </span>
+              )}
+            </div>
+            {!dockCollapsed && <span className="shopee-chat-tab-text">Chat</span>}
+          </button>
+          <button
+            type="button"
+            className="shopee-chat-collapse-toggle"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDockCollapsed((v) => !v);
+            }}
+            title={dockCollapsed ? "Mở rộng thanh Chat" : "Thu gọn thanh Chat"}
+            aria-label={dockCollapsed ? "Mở rộng thanh Chat" : "Thu gọn thanh Chat"}
+          >
+            {dockCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+      )}
+
       <dialog
         id="chat-center-dialog"
         ref={dialog}
@@ -124,44 +192,53 @@ export function ChatCenter() {
         }}
       >
         <header className="chat-header">
-          <div>
-            <MessageCircle size={21} />
-            <strong>Trung tâm chat</strong>
+          <div className="flex items-center gap-2">
+            <ShopeeChatIcon size={19} />
+            <strong>Chat</strong>
+            {unreadTotal > 0 && (
+              <span className="shopee-chat-header-badge">
+                {unreadTotal > 99 ? "99+" : unreadTotal}
+              </span>
+            )}
           </div>
-          <div>
-            {ui.tab === "ai" ? (
-              <button
-                aria-label={expanded ? "Thu gọn chat" : "Mở rộng chat"}
-                title={expanded ? "Thu gọn chat" : "Mở rộng chat"}
-                onClick={() => setExpanded((value) => !value)}
+          <div className="chat-header-actions">
+            {customer && (
+              <Link
+                to="/customer/messages"
+                onClick={close}
+                className="chat-header-btn"
+                title="Mở toàn màn hình"
+                aria-label="Mở toàn màn hình"
               >
-                {expanded ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
-              </button>
-            ) : (
-              <button
-                aria-label="Mở trang Tin nhắn"
-                title="Mở trang Tin nhắn"
-                onClick={() => {
-                  chat.closeChat();
-                  navigate(
-                    ui.conversationId
-                      ? "/customer/messages/" + ui.conversationId
-                      : "/customer/messages",
-                  );
-                }}
-              >
-                <ArrowUpRight size={19} />
-              </button>
+                <ExternalLink size={15} />
+              </Link>
             )}
             <button
+              type="button"
+              className="chat-header-btn"
+              aria-label={expanded ? "Thu gọn kích thước" : "Mở rộng kích thước"}
+              title={expanded ? "Thu gọn kích thước" : "Mở rộng kích thước"}
+              onClick={() => setExpanded((value) => !value)}
+            >
+              {expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+            <button
+              type="button"
+              className="chat-header-btn"
               aria-label="Thu nhỏ chat"
-              title="Thu nhỏ"
+              title="Thu nhỏ chat"
               onClick={() => chat.minimizeChat()}
             >
-              <Minus size={19} />
+              <Minus size={18} />
             </button>
-            <button aria-label="Đóng chat" title="Đóng" onClick={close}>
-              <X size={21} />
+            <button
+              type="button"
+              className="chat-header-btn chat-close-btn"
+              aria-label="Đóng chat"
+              title="Đóng"
+              onClick={close}
+            >
+              <X size={18} />
             </button>
           </div>
         </header>
@@ -193,8 +270,8 @@ export function ChatCenter() {
             aria-selected={ui.tab === "ai"}
             onClick={() => chat.openChat({ tab: "ai" })}
           >
-            <Bot size={18} />
-            Trợ lý AI
+            <Bot size={17} />
+            <span>Trợ lý AI</span>
           </button>
           <button
             id="chat-tab-store"
@@ -204,8 +281,13 @@ export function ChatCenter() {
             aria-selected={ui.tab === "store"}
             onClick={() => chat.openChat({ tab: "store" })}
           >
-            <Store size={18} />
-            Gian hàng
+            <Store size={17} />
+            <span>Gian hàng</span>
+            {unreadTotal > 0 && (
+              <span className="shopee-chat-tab-badge">
+                {unreadTotal > 99 ? "99+" : unreadTotal}
+              </span>
+            )}
           </button>
         </div>
         <section

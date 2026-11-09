@@ -1,4 +1,7 @@
 import { OrderService } from '../../commerce-service/src/order/order.service';
+import {DeliverySync} from '../../commerce-service/src/shipping/delivery-sync';
+import {ShippingRunner} from '../../commerce-service/src/shipping/shipping.runner';
+import {GhnAdapter,shippingConfig} from '../../commerce-service/src/shipping/ghn.adapter';
 import amqp from 'amqplib';
 import { randomUUID } from 'node:crypto';
 import { initializeDatabase,database } from './database';
@@ -7,6 +10,9 @@ import { applyEvent,validSampleEnvelope } from './events';
 async function main() {
   await initializeDatabase();
   const id=required('SERVICE_ID');const orders=id==='M2'?new OrderService():undefined;const connection=await amqp.connect(required('RABBITMQ_URL'));
+  const shippingSettings=id==='M2'?shippingConfig():undefined;
+  const delivery=id==='M2'?new DeliverySync(database):undefined;
+  const shipping=shippingSettings?new ShippingRunner(database,shippingSettings,new GhnAdapter(shippingSettings)):undefined;
   const channel=await connection.createConfirmChannel();
   await channel.assertExchange('pbl6.events','topic',{durable:true});
   const queue=`pbl6.${id.toLowerCase()}.bootstrap.v1`;
@@ -49,7 +55,11 @@ async function main() {
     } catch {console.error(JSON.stringify({service:id,code:'WORKER_DEPENDENCY_UNAVAILABLE'}));} finally {running=false;}
   };
   const timer=setInterval(tick,1000);await tick();
-  const close=async()=>{clearInterval(timer);while(running) await new Promise(r=>setTimeout(r,20));await channel.close();await connection.close();await database.destroy();process.exit(0);};
+  let shippingRunning=false;
+  const shippingTick=async()=>{if(!shipping||shippingRunning)return;shippingRunning=true;try{await shipping.tick();if(delivery)await delivery.tick();}catch{console.error(JSON.stringify({service:id,code:'SHIPPING_WORKER_RETRY'}));}finally{shippingRunning=false;}};
+  const shippingTimer=shipping?setInterval(shippingTick,5000):undefined;
+  if(shipping)void shippingTick();
+  const close=async()=>{clearInterval(timer);if(shippingTimer)clearInterval(shippingTimer);while(running||shippingRunning) await new Promise(r=>setTimeout(r,20));await channel.close();await connection.close();await database.destroy();process.exit(0);};
   process.on('SIGTERM',close);process.on('SIGINT',close);
   console.log(JSON.stringify({service:id,status:'worker-ready',run_id:randomUUID()}));
 }

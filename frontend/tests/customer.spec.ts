@@ -92,7 +92,7 @@ async function prepareCheckout(page: Page) {
   }
 
   // click() auto-waits until the button is visible AND enabled.
-  await page.getByRole('button', { name: 'Tiến hành thanh toán' }).click({ timeout: 10_000 });
+  await page.getByRole('button', { name: 'Thanh toán' }).click({ timeout: 10_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +198,7 @@ test('checkout sends Store-keyed COD methods and preserves confirm key and paylo
 
   await prepareCheckout(page);
 
-  const button = page.getByRole('button', { name: 'Xác nhận đặt hàng' });
+  const button = page.getByRole('button', { name: 'Đặt hàng' });
   await expect(button).toBeEnabled();
   expect(quoteBodies.length).toBeGreaterThan(0);
   expect(quoteBodies[0].payment_methods).toEqual({ [STORE]: 'COD' });
@@ -234,7 +234,7 @@ test('quote 501 disables confirmation and does not invent a successful checkout'
   await prepareCheckout(page);
 
   await expect(page.getByRole('alert')).toContainText('Checkout implementation pending');
-  await expect(page.getByRole('button', { name: 'Xác nhận đặt hàng' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Đặt hàng' })).toBeDisabled();
 });
 
 test('detail handles missing products and unavailable variants on a phone viewport', async ({ page }) => {
@@ -303,7 +303,7 @@ test('account isolation prevents session leakage and direct checkout entry works
   for (const box of await checkboxes.all()) {
     await box.check({ force: true }).catch(() => {});
   }
-  await page.getByRole('button', { name: 'Tiến hành thanh toán' }).click();
+  await page.getByRole('button', { name: 'Thanh toán' }).click();
   await expect(page).toHaveURL(/\/checkout/);
 
   // Direct entry test: reloading or entering /checkout directly should retain selection via namespaced key

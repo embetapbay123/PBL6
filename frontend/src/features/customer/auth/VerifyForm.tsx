@@ -23,12 +23,11 @@ export function VerifyForm() {
       <h2>Xác thực email</h2>
       {location.state?.registered && (
         <p role="status">
-          Đã tiếp nhận đăng ký. Kiểm tra email và nhập mã xác thực để tiếp tục.
+          Kiểm tra email để lấy mã xác thực.
         </p>
       )}
       <p>
-        Mã chỉ được giữ trong tab này. Nếu đã tải lại trang, mở lại liên kết từ
-        email hoặc nhập mã; không gửi mã cho người khác.
+        Nhập mã trong email. Không chia sẻ mã.
       </p>
       <fieldset disabled={command.busy}>
         <label>

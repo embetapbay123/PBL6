@@ -25,6 +25,7 @@ async function model(page:Page,role:'OWNER'|'SELLER'|'ADMIN'|'CUSTOMER'='OWNER',
   return route.fulfill({status:404,json:{code:'NOT_FOUND',message:'Fixture chưa cấu hình'}});
  });
  await page.goto('/login');await page.getByLabel('Email',{exact:true}).fill('fixture@example.test');await page.getByLabel('Mật khẩu',{exact:true}).fill('Fixture-password-123');await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập'})).toBeVisible();await page.goto(role==='ADMIN'?'/admin?tab=returns':role==='CUSTOMER'?'/customer/returns':'/seller/returns');
+ if(role==='CUSTOMER')await page.getByRole('link',{name:/Xem chi tiết đơn/}).click();
  return {state,writes,gets,loseAck:()=>{lose=true;},failGet:(v:boolean)=>{fail=v;},revoke:()=>{deny=true;},effects:()=>effects};
 }
 test('Owner reviews server amount; lost ACK and reload preserve one frozen recovery command, GET errors never refund',async({page})=>{

@@ -272,7 +272,7 @@ export function AuditLogPage() {
           </p>
         </details>
         {validation && <p role="alert">{validation}</p>}
-        <button>Áp dụng bộ lọc nhật ký</button>
+        <button>Lọc</button>
         <UiButton
           type="button"
           variant="secondary"

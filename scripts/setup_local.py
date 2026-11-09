@@ -25,6 +25,8 @@ else:
   names.add(name)
   if name in local_ids: lines[index]=name+'='+local_ids[name]
  additions=[name+'='+value for name,value in local_ids.items() if name not in names]
+ for name in ['DELIVERY_DB_PASSWORD','DELIVERY_API_KEY','DELIVERY_OPERATOR_PASSWORD','DELIVERY_SESSION_KEY','DELIVERY_WEBHOOK_SECRET']:
+  if name not in names: additions.append(name+'='+secrets.token_hex(32))
  if additions: lines.extend(additions)
  env.write_text('\n'.join(lines)+'\n',encoding='utf-8')
 if not (keys/'jwt-private.pem').exists():

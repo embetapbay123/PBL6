@@ -249,15 +249,15 @@ export const ProfilePage: React.FC = () => {
             </div>
           </dl>
           <div className="ui-actions">
-            <button
+            <UiButton
               type="button"
               onClick={() => {
                 setSaveError(null);
                 setEditing("all");
               }}
             >
-              Chỉnh sửa thông tin
-            </button>
+              Chỉnh sửa
+            </UiButton>
             <Link to="/change-password">Đổi mật khẩu</Link>
           </div>
         </section>
@@ -288,13 +288,14 @@ export const ProfilePage: React.FC = () => {
               </div>
             )}
 
-            <p>
-              Email đăng nhập: <strong>{email}</strong>
-            </p>
-            <p id="profile-email-hint">
-              Email đăng nhập không thể thay đổi tại đây.
-            </p>
-            <Link to="/change-password">Đổi mật khẩu</Link>
+            <div className="bg-gray-50 border rounded-md p-3 text-sm">
+              <span className="text-gray-500 block text-xs">Email đăng nhập</span>
+              <strong className="text-gray-900">{email}</strong>
+              <p id="profile-email-hint" className="text-xs text-gray-500 mt-1">
+                Email không thể thay đổi.
+              </p>
+            </div>
+
             {editing !== "name" && (
               <div>
                 <label
@@ -317,13 +318,13 @@ export const ProfilePage: React.FC = () => {
             )}
 
             <div className="ui-actions">
-              <button
+              <UiButton
                 type="submit"
                 disabled={saving}
-                className="bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                loading={saving}
               >
-                {saving ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
+                {saving ? "Đang lưu..." : "Lưu"}
+              </UiButton>
               <UiButton
                 type="button"
                 variant="secondary"
@@ -335,7 +336,7 @@ export const ProfilePage: React.FC = () => {
                   setEditing(null);
                 }}
               >
-                Hủy thay đổi
+                Hủy
               </UiButton>
             </div>
           </fieldset>

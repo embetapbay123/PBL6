@@ -50,6 +50,8 @@ test('product taxonomy fields preserve numeric and boolean values when saved',as
 
 test('variant attribute edits retain other variants and existing typed values',async({page})=>{
   const writes=await setup(page),section=page.getByRole('region',{name:'Chỉnh sửa biến thể'});
+  await page.getByRole('button',{name:'Biến thể & giá',exact:true}).click();
+  await section.locator('summary').first().click();
   await section.getByLabel('Màu *').first().selectOption('blue');
   await section.getByRole('button',{name:'Lưu biến thể'}).click();
   await expect(section.getByRole('status')).toContainText('Đã lưu biến thể.');
@@ -65,7 +67,7 @@ test('a taxonomy rejection refreshes choices while preserving the unsent SKU pri
 });
 
 test('an active Variant with undeclared attributes needs an explicit correction instead of silently dropping data',async({page})=>{
- const writes=await setup(page);await page.route('**/api/v1/store/products/'+id,async route=>{if(route.request().method()==='PATCH'){writes.push(route.request().postDataJSON());return route.fulfill({json:{id,version:8,attributes:{},variants:route.request().postDataJSON().variants}});}return route.fulfill({json:{id,product_type_id:typeId,title:'Legacy axes',attributes:{weight:1.5,fragile:false,color:'red'},version:7,status:'DRAFT',variants:[{id:'v1',sku:'LEGACY',price_vnd:10,variant_values:{color:'red',obsolete_axis:'Giữ cho tới khi xác nhận'},status:'ACTIVE'}],images:[]}});});await page.reload();const editor=page.getByRole('region',{name:'Chỉnh sửa biến thể',exact:true});await expect(editor).toContainText('Giữ cho tới khi xác nhận');await expect(editor.getByRole('button',{name:'Lưu biến thể',exact:true})).toBeDisabled();await editor.getByRole('button',{name:'Xóa thuộc tính obsolete_axis',exact:true}).click();await editor.getByRole('button',{name:'Lưu biến thể',exact:true}).click();await expect.poll(()=>writes.length).toBe(1);expect(writes[0].variants[0].variant_values).toEqual({color:'red'});
+ const writes=await setup(page);await page.route('**/api/v1/store/products/'+id,async route=>{if(route.request().method()==='PATCH'){writes.push(route.request().postDataJSON());return route.fulfill({json:{id,version:8,attributes:{},variants:route.request().postDataJSON().variants}});}return route.fulfill({json:{id,product_type_id:typeId,title:'Legacy axes',attributes:{weight:1.5,fragile:false,color:'red'},version:7,status:'DRAFT',variants:[{id:'v1',sku:'LEGACY',price_vnd:10,variant_values:{color:'red',obsolete_axis:'Giữ cho tới khi xác nhận'},status:'ACTIVE'}],images:[]}});});await page.reload();await page.getByRole('button',{name:'Biến thể & giá',exact:true}).click();const editor=page.getByRole('region',{name:'Chỉnh sửa biến thể',exact:true});await editor.locator('summary').first().click();await expect(editor).toContainText('Giữ cho tới khi xác nhận');await expect(editor.getByRole('button',{name:'Lưu biến thể',exact:true})).toHaveCount(0);await editor.getByRole('button',{name:'Xóa thuộc tính obsolete_axis',exact:true}).click();await editor.getByRole('button',{name:'Lưu biến thể',exact:true}).click();await expect.poll(()=>writes.length).toBe(1);expect(writes[0].variants[0].variant_values).toEqual({color:'red'});
 });
 
 test('an out-of-range legacy option is identified and cannot be resubmitted unchanged',async({page})=>{
@@ -88,14 +90,19 @@ test('adding a new variant refreshes the stock checklist without reloading or dr
 test('saving another section preserves a dirty variant draft and asks for a fresh read',async({page})=>{
   await setup(page);
   const variants=page.getByRole('region',{name:'Chỉnh sửa biến thể'}),attributes=page.getByRole('region',{name:'Thuộc tính sản phẩm'});
+  await page.getByRole('button',{name:'Biến thể & giá',exact:true}).click();
+  await variants.locator('summary').first().click();
   await variants.getByLabel('Giá bán (VNĐ)').first().fill('18000');
+  await page.getByRole('button',{name:'Thuộc tính',exact:true}).click();
   await attributes.getByLabel('Khối lượng (kg) *').fill('2');
   await attributes.getByRole('button',{name:'Lưu thuộc tính'}).click();
+  await expect(attributes.getByRole('status')).toContainText('Đã lưu thuộc tính sản phẩm.');
+  await page.getByRole('button',{name:'Biến thể & giá',exact:true}).click();
   await expect(variants.getByLabel('Giá bán (VNĐ)').first()).toHaveValue('18000');
   await expect(variants.getByRole('button',{name:'Lưu biến thể'})).toBeDisabled();
   await variants.getByRole('button',{name:'Tải lại dữ liệu'}).click();
   await expect(variants.getByLabel('Giá bán (VNĐ)').first()).toHaveValue('10000');
-  await expect(variants.getByRole('button',{name:'Lưu biến thể'})).toBeEnabled();
+  await expect(variants.getByRole('button',{name:'Lưu biến thể'})).toHaveCount(0);
 });
 
 test('attribute forms remain usable across desktop, tablet and phone widths',async({page},testInfo)=>{

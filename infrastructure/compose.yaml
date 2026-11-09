@@ -1,4 +1,14 @@
 name: pbl6
+x-shipping-env: &shipping-env
+  SHIPPING_ENABLED: ${SHIPPING_ENABLED:-0}
+  GHN_ENVIRONMENT: ${GHN_ENVIRONMENT:-staging}
+  GHN_ACCOUNT_KEY: ${GHN_ACCOUNT_KEY:-platform}
+  GHN_TOKEN: ${GHN_TOKEN:-}
+  GHN_WEBHOOK_SECRET: ${GHN_WEBHOOK_SECRET:-}
+  GHN_VERIFY_COD_COLLECTION: ${GHN_VERIFY_COD_COLLECTION:-0}
+  DELIVERY_API_URL: http://delivery:3110
+  DELIVERY_API_KEY: ${DELIVERY_API_KEY:-}
+  DELIVERY_WEBHOOK_SECRET: ${DELIVERY_WEBHOOK_SECRET:-}
 x-app-env: &app-env
   M1_INTERNAL_KEY: ${M1_INTERNAL_KEY}
   M2_INTERNAL_KEY: ${M2_INTERNAL_KEY}
@@ -24,6 +34,33 @@ x-node: &node
     postgres: {condition: service_healthy}
     redis: {condition: service_healthy}
 services:
+  delivery-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: delivery
+      POSTGRES_DB: delivery
+      POSTGRES_PASSWORD: ${DELIVERY_DB_PASSWORD}
+    volumes: [deliverydata:/var/lib/postgresql/data]
+    healthcheck: {test: [CMD-SHELL, 'pg_isready -U delivery -d delivery'], interval: 3s, timeout: 3s, retries: 20}
+    restart: unless-stopped
+  delivery:
+    image: pbl6-node:local
+    build: {context: .., dockerfile: backend/Dockerfile}
+    command: [node, dist/delivery-service/src/server.js]
+    environment:
+      PORT: '3110'
+      DELIVERY_DATABASE_URL: postgresql://delivery:${DELIVERY_DB_PASSWORD}@delivery-postgres:5432/delivery
+      DELIVERY_API_KEY: ${DELIVERY_API_KEY}
+      DELIVERY_OPERATOR_PASSWORD: ${DELIVERY_OPERATOR_PASSWORD}
+      DELIVERY_SESSION_KEY: ${DELIVERY_SESSION_KEY}
+      DELIVERY_WEBHOOK_SECRET: ${DELIVERY_WEBHOOK_SECRET}
+      DELIVERY_WEBHOOK_URL: http://m2:3102/api/v1/shipping/webhooks/delivery
+      DELIVERY_PUBLIC_PATH: /delivery
+      DELIVERY_PUBLIC_ORIGIN: ${WEB_ORIGIN}
+      DELIVERY_COOKIE_SECURE: ${DELIVERY_COOKIE_SECURE:-0}
+    depends_on:
+      delivery-postgres: {condition: service_healthy}
+    restart: unless-stopped
   postgres:
     image: pgvector/pgvector:0.8.0-pg16
     environment:
@@ -54,7 +91,7 @@ services:
     command: [node, dist/catalog-service/src/main.js]
   m2:
     <<: *node
-    environment: {<<: *app-env, SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}', SANDBOX_WEBHOOK_SECRET: '${SANDBOX_WEBHOOK_SECRET:-}', PAYMENT_PROVIDER_MODE: '${PAYMENT_PROVIDER_MODE:-disabled}', SEPAY_TEST_ACCOUNT: '${SEPAY_TEST_ACCOUNT:-}', SEPAY_TEST_BANK: '${SEPAY_TEST_BANK:-}'}
+    environment: {<<: [*app-env, *shipping-env], SERVICE_ID: M2, PORT: '3102', M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2', SEPAY_WEBHOOK_SECRET: '${SEPAY_WEBHOOK_SECRET}', SANDBOX_WEBHOOK_SECRET: '${SANDBOX_WEBHOOK_SECRET:-}', PAYMENT_PROVIDER_MODE: '${PAYMENT_PROVIDER_MODE:-disabled}', SEPAY_TEST_ACCOUNT: '${SEPAY_TEST_ACCOUNT:-}', SEPAY_TEST_BANK: '${SEPAY_TEST_BANK:-}'}
     command: [node, dist/commerce-service/src/main.js]
   m3:
     <<: *node
@@ -75,7 +112,7 @@ services:
     depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
   worker-m2:
     <<: *node
-    environment: {<<: *app-env, SERVICE_ID: M2, M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2'}
+    environment: {<<: [*app-env, *shipping-env], SERVICE_ID: M2, M2_DATABASE_URL: 'postgresql://m2:${M2_DB_PASSWORD}@postgres:5432/m2'}
     command: [node, dist/shared/src/worker.js]
     depends_on: {postgres: {condition: service_healthy}, rabbitmq: {condition: service_healthy}}
   worker-m3:
@@ -117,6 +154,7 @@ services:
     restart: 'no'
     command: [node, dist/shared/src/migrate.js]
 volumes:
+  deliverydata:
   pgdata:
   redisdata:
   rabbitdata:

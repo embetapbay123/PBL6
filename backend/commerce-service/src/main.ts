@@ -1,3 +1,4 @@
+import {ShippingController} from './shipping/shipping.controller';
 import {ConversationOrderController} from './order/conversation-order.controller';
 import {storeAuditController} from '../../shared/src/store-audit';
 import {DeliveryReturnController} from './returns/delivery-return.controller';
@@ -20,6 +21,7 @@ import { NotificationController } from './notification/notification.controller';
 import { ReturnsController } from './returns/returns.controller';
 
 bootstrap('M2', [
+  ShippingController,
   ConversationOrderController,
   DeliveryReturnController,
   auditLogController('M2'),storeAuditController('M2'),

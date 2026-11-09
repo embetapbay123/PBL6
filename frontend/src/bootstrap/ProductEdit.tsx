@@ -1,5 +1,5 @@
 import { FormField } from "../components/FormField";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { callOperation } from "../api/operations";
@@ -11,8 +11,12 @@ import { VariantEditor } from "../features/seller/VariantEditor";
 import { ProductAttributesEditor } from "../features/seller/ProductAttributesEditor";
 import { AttributeFields } from "../features/seller/AttributeFields";
 import { useProductTypes } from "../features/seller/useProductTypes";
-import { ProductReadiness } from "../features/seller/ProductReadiness";
+import { ProductReadiness, useProductStock } from "../features/seller/ProductReadiness";
 import { ProductModerationNotice } from "../features/seller/ProductModerationNotice";
+import { ActionMenu } from "../components/ActionMenu";
+import { useConfirm } from "../components/ConfirmDialog";
+import { Button } from "../components/ui/Button";
+import { Sparkles, Info, Truck, CheckCircle2, Image as ImageIcon } from "lucide-react";
 type SaleStatus = "DRAFT" | "ACTIVE" | "STOPPED";
 /**
  * Seller Product edit form.
@@ -23,6 +27,10 @@ type SaleStatus = "DRAFT" | "ACTIVE" | "STOPPED";
  */
 export function ProductEdit() {
   const { id } = useParams();
+  const activeProductId = useRef(id);
+  activeProductId.current = id;
+  const { confirm, dialog: imageConfirmation } = useConfirm();
+  const [sortingImages, setSortingImages] = useState(false);
   const [section, setSection] = useState(
     () =>
       ["general", "attributes", "variants", "images"].find(
@@ -43,6 +51,7 @@ export function ProductEdit() {
     enabled: !!id,
     refetchOnWindowFocus: false,
   });
+  const stock = useProductStock(query.data);
   const types = useProductTypes();
   const productType = types.data?.find(
       (type) => type.id === query.data?.product_type_id,
@@ -65,6 +74,7 @@ export function ProductEdit() {
     [error, setError] = useState<unknown>(),
     [busy, setBusy] = useState(false),
     [saved, setSaved] = useState(false);
+  const showStockStatus = !!query.data && status === 'ACTIVE' && !stock.stocked;
   const [sku, setSku] = useState(""),
     [price, setPrice] = useState(""),
     [imageUrl, setImageUrl] = useState("");
@@ -188,7 +198,8 @@ export function ProductEdit() {
         body: { image_url: imageUrl.trim() },
       });
       setImageUrl("");
-      await query.refetch();
+      const result = await query.refetch();
+      if (result.error) throw result.error;
       setExtraNotice("Đã thêm ảnh sản phẩm.");
     } catch (e) {
       if (isUncertainMutation(e)) setUncertain(true);
@@ -197,8 +208,15 @@ export function ProductEdit() {
       setExtraBusy(false);
     }
   }
-  async function removeImage(imageId: string) {
-    if (!id || extraBusy || uncertain) return;
+  async function removeImage(imageId: string, index: number) {
+    if (!id || busy || extraBusy || uncertain) return;
+    const accepted = await confirm({
+      title: "Bỏ ảnh sản phẩm?",
+      description: `Ảnh ${index + 1} sẽ được gỡ khỏi sản phẩm.`,
+      confirmLabel: "Bỏ ảnh",
+      danger: true,
+    });
+    if (!accepted || activeProductId.current !== id) return;
     setExtraBusy(true);
     setExtraError(undefined);
     setExtraNotice("");
@@ -211,6 +229,7 @@ export function ProductEdit() {
       await cache.invalidateQueries({ queryKey: ["products"] });
       setExtraNotice("Đã bỏ ảnh sản phẩm.");
     } catch (e) {
+      if (isUncertainMutation(e)) setUncertain(true);
       setExtraError(e);
     } finally {
       setExtraBusy(false);
@@ -219,7 +238,7 @@ export function ProductEdit() {
   async function moveImage(index: number, direction: -1 | 1) {
     const images = query.data?.images ?? [],
       target = index + direction;
-    if (!id || extraBusy || uncertain || target < 0 || target >= images.length)
+    if (!id || busy || extraBusy || uncertain || target < 0 || target >= images.length)
       return;
     const expected_image_ids = images.map((image) => image.id),
       image_ids = [...expected_image_ids];
@@ -265,6 +284,15 @@ export function ProductEdit() {
         <ErrorView error={query.error} />
       </>
     );
+  const images = query.data?.images ?? [];
+  const imagesLocked = busy || extraBusy || uncertain;
+  const extraFeedback = <>
+    {uncertain && (
+      <p role="alert">Chưa xác định được kết quả thao tác. Hãy tải lại trang và kiểm tra dữ liệu trước khi thử lại.</p>
+    )}
+    {extraError !== undefined && <ErrorView error={extraError} />}
+    {extraNotice && <p role="status">{extraNotice}</p>}
+  </>;
   return (
     <div
       className="seller-product-editor"
@@ -317,8 +345,8 @@ export function ProductEdit() {
       </nav>
       {query.data && (
         <details className="product-readiness-disclosure">
-          <summary>Kiểm tra điều kiện sẵn sàng bán</summary>
-          <ProductReadiness product={query.data} />
+          <summary>Điều kiện bán</summary>
+          <ProductReadiness product={query.data} stock={stock} />
         </details>
       )}
       <div id="product-general" hidden={section !== "general"}>
@@ -340,6 +368,18 @@ export function ProductEdit() {
               maxLength={200}
             />
           </FormField>
+          <div className="shopee-seo-tip-box mb-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-700">
+              <Sparkles size={14} className="text-orange-500" /> Công thức đặt tên chuẩn SEO Shopee Uni:
+            </div>
+            <p className="text-xs text-slate-600 m-0 mt-1">
+              <code>[Loại sản phẩm]</code> + <code>[Thương hiệu]</code> + <code>[Model/Mã]</code> + <code>[Đặc tính nổi bật]</code>
+            </p>
+            <div className="flex justify-between items-center mt-2 text-[11px] text-slate-500">
+              <span>Ví dụ: <em>Áo polo nam Coolmate sợi cafe khử mùi co giãn</em></span>
+              <span className={`font-mono font-semibold ${title.length > 120 ? 'text-amber-600' : 'text-slate-500'}`}>{title.length}/200 ký tự</span>
+            </div>
+          </div>
           <FormField label="Mô tả" name="description" error={error}>
             <textarea
               value={description}
@@ -354,6 +394,7 @@ export function ProductEdit() {
             Trạng thái bán
             <select
               value={status}
+              aria-describedby={showStockStatus ? 'product-sale-stock' : undefined}
               onChange={(e) => {
                 setDirty(true);
                 setStatus(e.target.value as SaleStatus);
@@ -364,6 +405,20 @@ export function ProductEdit() {
               <option value="STOPPED">Dừng bán</option>
             </select>
           </label>
+          {showStockStatus && (
+            <div id="product-sale-stock" className="product-sale-stock" role="status">
+              {!stock.active.length ? <p>Chưa có phân loại đang bán.</p> : !stock.canStock ? (
+                <p>Nhờ chủ shop hoặc nhân viên kho kiểm tra tồn khả dụng.</p>
+              ) : stock.inventory.isLoading ? <p>Đang kiểm tra tồn khả dụng…</p> : stock.stocked === undefined ? (
+                <p>Chưa xác nhận được tồn khả dụng. <Link to={'/seller/inventory?product_id=' + id}>Kiểm tra kho sản phẩm này</Link></p>
+              ) : (
+                <>
+                  <p><strong>Chưa có tồn khả dụng</strong> · <Link to={'/seller/inventory?product_id=' + id}>Nhập kho sản phẩm này</Link></p>
+                  {query.data?.moderation_status !== 'HIDDEN' && <p>Khách sẽ thấy trạng thái <strong>Tạm hết hàng</strong>.</p>}
+                </>
+              )}
+            </div>
+          )}
         </FormPanel>
       </div>
       {needsReload && (
@@ -414,19 +469,7 @@ export function ProductEdit() {
       </div>
       <section className="boot-card" hidden={section !== "variants"}>
         <h2>Thêm biến thể</h2>
-        {query.data?.variants?.length ? (
-          <ul>
-            {query.data.variants.map((variant) => (
-              <li key={variant.id}>
-                {variant.sku} · {variant.price_vnd.toLocaleString("vi-VN")} ₫ ·{" "}
-                {variant.status}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>Chưa có biến thể.</p>
-        )}
-        <p>
+        <p className="text-sm text-slate-500 mb-3">
           Biến thể mới bắt đầu với tồn kho bằng 0. Các biến thể phải có tổ hợp
           thuộc tính khác nhau.
         </p>
@@ -476,68 +519,71 @@ export function ProductEdit() {
         className="boot-card"
         hidden={section !== "images"}
       >
-        <h2>Ảnh sản phẩm</h2>
-        <div className="market-product-grid">
-          {query.data?.images?.map((image, index) => (
-            <div key={image.id}>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="m-0">Bộ sưu tập hình ảnh sản phẩm</h2>
+          <span className="text-xs font-semibold text-slate-500">{images.length}/9 ảnh</span>
+        </div>
+        <div className="shopee-image-guide-banner mb-4">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-orange-700">
+            <ImageIcon size={14} className="text-orange-500" /> Tiêu chuẩn hình ảnh Shopee Uni:
+          </div>
+          <ul className="text-xs text-slate-600 m-0 mt-1 pl-4 list-disc space-y-0.5">
+            <li>Ảnh bìa (ô số 1) bắt buộc khung hình tỷ lệ <strong>1:1</strong> (tối thiểu 500x500px, đề xuất 800x800px).</li>
+            <li>Nền sáng sạch, sản phẩm rõ nét chiếm ít nhất 70% diện tích khung hình. Tối đa 9 hình ảnh.</li>
+          </ul>
+        </div>
+        <div className="product-image-toolbar">
+          <form onSubmit={addImage} className="product-image-add">
+            <label>Đường dẫn ảnh
+              <input type="url" required value={imageUrl} disabled={imagesLocked}
+                onChange={event => setImageUrl(event.target.value)} />
+            </label>
+            <Button type="submit" disabled={imagesLocked}>Thêm ảnh</Button>
+          </form>
+          {images.length > 1 && (
+            <Button variant="secondary" aria-pressed={sortingImages} disabled={imagesLocked}
+              onClick={() => setSortingImages(value => !value)}>
+              {sortingImages ? "Xong sắp xếp" : "Sắp xếp ảnh"}
+            </Button>
+          )}
+        </div>
+        {section === "images" && extraFeedback}
+        {sortingImages && images.length > 1 && <p>Thứ tự ảnh được lưu sau mỗi lần di chuyển.</p>}
+        {images.length === 0 && <p>Chưa có ảnh sản phẩm.</p>}
+        <div className="product-image-grid">
+          {images.map((image, index) => (
+            <div className={`product-image-tile ${index === 0 ? 'is-cover-tile' : ''}`} key={image.id}>
               <img
                 src={image.image_url}
                 alt={`Ảnh sản phẩm ${index + 1}`}
                 loading="lazy"
-                style={{ width: "100%", aspectRatio: "1", objectFit: "cover" }}
               />
-              <button
-                type="button"
-                aria-label={`Đưa ảnh ${index + 1} lên trước`}
-                disabled={extraBusy || uncertain || index === 0}
-                onClick={() => void moveImage(index, -1)}
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                aria-label={`Đưa ảnh ${index + 1} ra sau`}
-                disabled={
-                  extraBusy ||
-                  uncertain ||
-                  index === query.data!.images!.length - 1
-                }
-                onClick={() => void moveImage(index, 1)}
-              >
-                →
-              </button>
-              <button
-                type="button"
-                aria-label={`Bỏ ảnh sản phẩm ${index + 1}`}
-                disabled={extraBusy || uncertain}
-                onClick={() => void removeImage(image.id)}
-              >
-                Bỏ ảnh
-              </button>
+              <div className="product-image-tile-actions">
+                {index === 0 ? (
+                  <span className="shopee-cover-badge">★ Ảnh bìa</span>
+                ) : (
+                  <span>Ảnh {index + 1}</span>
+                )}
+                {sortingImages && images.length > 1 ? (
+                  <div className="product-image-order-buttons">
+                    <Button size="sm" variant="secondary" aria-label={`Đưa ảnh ${index + 1} lên trước`}
+                      disabled={imagesLocked || index === 0} onClick={() => void moveImage(index, -1)}>←</Button>
+                    <Button size="sm" variant="secondary" aria-label={`Đưa ảnh ${index + 1} ra sau`}
+                      disabled={imagesLocked || index === images.length - 1} onClick={() => void moveImage(index, 1)}>→</Button>
+                  </div>
+                ) : (
+                  <ActionMenu label={`Thêm thao tác cho ảnh ${index + 1}`} triggerText="Thêm" disabled={imagesLocked}>
+                    <Button variant="secondary" aria-label={`Bỏ ảnh sản phẩm ${index + 1}`} disabled={imagesLocked}
+                      onClick={() => void removeImage(image.id, index)}>Bỏ ảnh</Button>
+                  </ActionMenu>
+                )}
+              </div>
             </div>
           ))}
         </div>
-        <form onSubmit={addImage}>
-          <label>
-            Đường dẫn ảnh
-            <input
-              type="url"
-              required
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-            />
-          </label>
-          <button disabled={extraBusy || uncertain}>Thêm ảnh</button>
-        </form>
       </section>
-      {uncertain && (
-        <p role="alert">
-          Chưa xác định được kết quả thao tác. Hãy tải lại trang và kiểm tra dữ
-          liệu trước khi thử lại.
-        </p>
-      )}
-      {extraError !== undefined && <ErrorView error={extraError} />}
-      {extraNotice && <p role="status">{extraNotice}</p>}
+      {imageConfirmation}
+      {section !== "images" && extraFeedback}
     </div>
   );
 }

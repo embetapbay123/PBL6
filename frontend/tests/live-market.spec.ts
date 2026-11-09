@@ -326,7 +326,7 @@ test("Store order conflicts block further writes until a fresh version is read",
   await expect(
     page.getByRole("button", { name: "Xác nhận đơn",exact:true }),
   ).toBeDisabled();
-  await page.getByRole("button", { name: "Đọc lại đơn" }).click();
+  await page.getByRole("button", { name: "Làm mới" }).click();
   await page.getByRole("button", { name: "Xác nhận đơn",exact:true }).click();
   await expect(page.getByRole("dialog")).toContainText("Đã xác nhận");
   expect(
@@ -355,14 +355,14 @@ test("COD requires explicit cash confirmation and a failed API never reports col
   });
   await page.goto("/seller/orders");
   await page.getByRole("button", { name: "Xem đơn", exact: true }).click();
-  const collect = page.getByRole("button", { name: "Ghi nhận đã thu tiền" });
+  const collect = page.getByRole("button", { name: "Xác nhận COD" });
   await expect(collect).toBeDisabled();
   await page.getByRole("checkbox").check();
   await collect.click();
   await expect(page.getByRole("alert")).toContainText("Collection unavailable");
   await expect(collect).toBeDisabled();
   await expect(
-    page.getByRole("button", { name: "Xác nhận giao thành công và hoàn tất",exact:true }),
+    page.getByRole("button", { name: "Hoàn tất đơn",exact:true }),
   ).toBeDisabled();
   expect(
     calls.filter((c) => c.path.endsWith("/cod-collection")).map((c) => c.body),
@@ -416,6 +416,11 @@ test("Owner creates a percentage voucher with an explicit cap and the Store scop
   await page.getByLabel("Mã voucher", { exact: true }).fill("TEST10");
   await page.getByLabel("Loại giảm").selectOption("PERCENT");
   await page.getByLabel("Giảm tối đa (VND)", { exact: true }).fill("30000");
+  const dialog = page.getByRole("dialog", { name: "Tạo voucher mới", exact: true });
+  await expect(dialog.getByText(/Giảm 10% cho đơn từ 50\.000.*Tối đa 30\.000/)).toBeVisible();
+  await dialog.getByText("Thử mức giảm", { exact: true }).click();
+  await dialog.getByRole("spinbutton", { name: "Tiền hàng ví dụ (VND)" }).fill("-1");
+  await expect(dialog.getByText("Nhập số nguyên từ 0 đến 1 tỷ đồng.")).toBeVisible();
   await page.getByRole("button", { name: "Tạo voucher", exact: true }).click();
   await expect(
     page.getByRole("cell", { name: "TEST10", exact: true }),
@@ -566,7 +571,7 @@ test("mixed payment and voucher checkout freezes its exact body and key across u
     }
   });
   await page.goto("/cart");
-  await page.getByRole("button", { name: "Tiến hành thanh toán" }).click();
+  await page.getByRole("button", { name: "Thanh toán" }).click();
   await page
     .getByLabel("Thanh toán cửa hàng " + store, { exact: true })
     .selectOption("SANDBOX");
@@ -574,9 +579,9 @@ test("mixed payment and voucher checkout freezes its exact body and key across u
   await page
     .getByLabel("Voucher cửa hàng " + store, { exact: true })
     .fill("STORE10K");
-  await page.getByRole("button", { name: "Áp dụng ưu đãi" }).click();
+  await page.getByRole("button", { name: "Áp dụng" }).click();
   const confirm = page.getByRole("button", {
-    name: "Xác nhận đặt hàng",
+    name: "Đặt hàng",
     exact: true,
   });
   await expect(confirm).toBeEnabled();
@@ -594,7 +599,7 @@ test("mixed payment and voucher checkout freezes its exact body and key across u
     page.getByRole("heading", { name: "Đã tạo nhóm đơn hàng" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Mở thông tin chuyển khoản" }),
+    page.getByRole("link", { name: "Chuyển khoản" }),
   ).toHaveAttribute("href", "/orders/" + orderId + "/pay");
   const writes = calls.filter((c) => c.path === "/orders/batches");
   expect(writes).toHaveLength(2);
@@ -661,9 +666,9 @@ test("changing payment input cannot confirm with a previous quote while replacem
     }
   });
   await page.goto("/cart");
-  await page.getByRole("button", { name: "Tiến hành thanh toán" }).click();
+  await page.getByRole("button", { name: "Thanh toán" }).click();
   const confirm = page.getByRole("button", {
-    name: "Xác nhận đặt hàng",
+    name: "Đặt hàng",
     exact: true,
   });
   await expect(confirm).toBeEnabled();
@@ -802,7 +807,7 @@ test('catalog favorite button reads persisted favorites after a reload',async({p
 
 test('mobile catalog filter applies only after confirmation and account menu exposes secondary routes',async({page})=>{
  const calls=await setup(page);await page.setViewportSize({width:390,height:844});await page.goto('/');await page.getByRole('button',{name:'Bộ lọc',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Bộ lọc sản phẩm',exact:true});await expect(dialog).toBeVisible();await dialog.getByRole('button',{name:'Áp dụng',exact:true}).click();await expect(dialog).not.toBeVisible();
- await page.getByRole('button',{name:'Menu tài khoản',exact:true}).click();const menu=page.getByRole('navigation',{name:'Menu tài khoản',exact:true});await expect(menu.getByRole('link',{name:'Sổ địa chỉ',exact:true})).toBeVisible();await menu.getByRole('link',{name:'Hồ sơ',exact:true}).click();await expect(page).toHaveURL(/\/profile$/);await expect(page.getByRole('complementary',{name:'Điều hướng tài khoản'})).toBeVisible();expect(calls.filter(c=>c.path==='/products').length).toBeGreaterThan(0);
+ await page.getByRole('button',{name:'Menu tài khoản',exact:true}).click();const menu=page.getByRole('navigation',{name:'Menu tài khoản',exact:true});await expect(menu.getByRole('link',{name:'Sổ địa chỉ',exact:true})).toBeVisible();await menu.getByRole('link',{name:'Tài khoản của tôi',exact:true}).click();await expect(page).toHaveURL(/\/profile$/);await expect(page.getByRole('complementary',{name:'Điều hướng tài khoản'})).toBeVisible();expect(calls.filter(c=>c.path==='/products').length).toBeGreaterThan(0);
 });
 
 test('Seller shell collapses navigation and never shows the customer chat launcher',async({page})=>{

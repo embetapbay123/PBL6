@@ -70,7 +70,7 @@ function Invitations() {
   }
   const locked = busy || loading || readRequired;
   return <section className="boot-card"><CustomerSubNav/><h2>Lời mời tham gia Store</h2>
-    <p>Mỗi tài khoản chỉ tham gia một Store đang hoạt động. Chấp nhận lời mời không cấp quyền chủ Store.</p>
+    <p>Mỗi tài khoản chỉ tham gia một Store đang hoạt động. Chấp nhận không cấp quyền chủ Store.</p>
     {notice && <p role="status">{notice}</p>}{error != null && <ErrorView error={error}/>}
     {(error != null || readRequired) && <button disabled={busy || loading} onClick={() => {setError(undefined);void load();}}>Đọc lại lời mời</button>}
     {loading && <Loading/>}
@@ -80,8 +80,8 @@ function Invitations() {
         return <article className="boot-card" key={item.id ?? i}><h3>{item.store_name ?? 'Store'}</h3>
           <p>{item.invited_email} · {invitationLabels[status] ?? 'Chưa rõ trạng thái'} · hạn {invitationTime(item.expires_at)}</p>
           <p>Quyền: {item.permissions.map(p => sellerPermissions.find(([code]) => code === p)?.[1] ?? p).join(', ') || 'Chưa cấp quyền vận hành'}</p>
-          {status === 'PENDING' && item.id && <button disabled={locked || membership?.status === 'ACTIVE'} onClick={() => void accept(item)}>Chấp nhận lời mời</button>}
-          {status === 'ACCEPTED' && item.store_id && !differentStore && <button disabled={locked} onClick={() => void enter(item)}>Cập nhật quyền và vào Store</button>}
+          {status === 'PENDING' && item.id && <button disabled={locked || membership?.status === 'ACTIVE'} onClick={() => void accept(item)}>Chấp nhận</button>}
+          {status === 'ACCEPTED' && item.store_id && !differentStore && <button disabled={locked} onClick={() => void enter(item)}>Mở shop</button>}
           {differentStore && <p>Tài khoản hiện đang tham gia Store khác; lời mời này không thay đổi Store hiện hành.</p>}
         </article>;
       })}

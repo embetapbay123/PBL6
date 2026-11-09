@@ -44,7 +44,7 @@ const actions: Record<string, string> = {
   VARIANT_ADD: "Thêm phân loại",
   STAFF_MEMBERSHIP_UPDATED: "Thay quyền / trạng thái nhân viên",
   STAFF_INVITATION_CREATED: "Mời nhân viên",
-  STAFF_INVITATION_ACCEPTED: "Chấp nhận lời mời",
+  STAFF_INVITATION_ACCEPTED: "Chấp nhận",
   STAFF_INVITATION_REVOKED: "Thu hồi lời mời",
   STAFF_INVITATION_EXPIRED: "Lời mời hết hạn",
   STAFF_INVITATION_DELIVERY_FAILED: "Gửi lời mời thất bại, đã thu hồi",
@@ -363,7 +363,7 @@ export function StoreAuditPage() {
         <p>
           Đang lọc người thao tác: {params.get("actor_user_id")}{" "}
           <button onClick={() => patch("actor_user_id", "")}>
-            Bỏ lọc người thao tác
+            Bỏ lọc
           </button>
         </p>
       )}
@@ -426,7 +426,7 @@ export function StoreAuditPage() {
                                   patch("actor_user_id", entry.actor_user_id!)
                                 }
                               >
-                                Xem nhật ký của người này
+                                Lọc theo người
                               </button>
                             )}
                         </div>
@@ -447,7 +447,7 @@ export function StoreAuditPage() {
                               style={{ fontSize: '12px', fontWeight: 600, padding: '4px 10px', borderRadius: 6, background: '#ffffff', color: '#0f172a', border: '1px solid #94a3b8', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}
                               onClick={() => patch("action", entry.action)}
                             >
-                              Chỉ xem hành động này
+                              Lọc thao tác
                             </button>
                           </div>
                           <small style={{ color: '#64748b', fontSize: '11.5px', marginTop: 2 }}>
@@ -504,7 +504,7 @@ export function StoreAuditPage() {
                     />
                   </p>
                   <button type="button" className="audit-sub-btn" onClick={() => patch("action", entry.action)}>
-                    Chỉ xem hành động này
+                    Lọc thao tác
                   </button>
                   <p>
                     <small>
@@ -521,7 +521,7 @@ export function StoreAuditPage() {
                         patch("actor_user_id", entry.actor_user_id!)
                       }
                     >
-                      Xem nhật ký của người này
+                      Lọc theo người
                     </button>
                   )}
                   <EntryDestination entry={entry} />

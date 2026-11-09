@@ -433,6 +433,9 @@ export class ListStoreProductsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
   "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 200}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
+  "q"?: string;
 }
 export class ListStoreProductsHeadersDto {
 }
@@ -2840,6 +2843,364 @@ export class ArchiveStoreConversationHeadersDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "x-store-context"?: string;
 }
+export class ListNotificationGroupHistoryPathDto {
+}
+export class ListNotificationGroupHistoryQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["ORDER_STATUS", "PAYMENT_EVENT", "RETURN_STATUS"]}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["ORDER_STATUS", "PAYMENT_EVENT", "RETURN_STATUS"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "ORDER_STATUS" | "PAYMENT_EVENT" | "RETURN_STATUS";
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "order_id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 1000000, "default": 1},false),defaultMessage:()=> 'Invalid contract field'}})
+  "page": number = 1;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100, "default": 20}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100, "default": 20},false),defaultMessage:()=> 'Invalid contract field'}})
+  "size": number = 20;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "boolean", "default": false}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean", "default": false},false),defaultMessage:()=> 'Invalid contract field'}})
+  "exclude_primary": boolean = false;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "up_to"?: string;
+}
+export class ListNotificationGroupHistoryHeadersDto {
+}
+export class MarkNotificationGroupReadBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["ORDER_STATUS", "PAYMENT_EVENT", "RETURN_STATUS"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "ORDER_STATUS" | "PAYMENT_EVENT" | "RETURN_STATUS";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "order_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "up_to"?: string;
+}
+export class MarkNotificationGroupReadPathDto {
+}
+export class MarkNotificationGroupReadQueryDto {
+}
+export class MarkNotificationGroupReadHeadersDto {
+}
+export class GetShippingConnectionPathDto {
+}
+export class GetShippingConnectionQueryDto {
+}
+export class GetShippingConnectionHeadersDto {
+}
+export class ListShippingLocationsPathDto {
+}
+export class ListShippingLocationsQueryDto {
+}
+export class ListShippingLocationsHeadersDto {
+}
+export class SaveShippingLocationBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "store_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "name"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "shop_id"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["staging", "production"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "environment"!: "staging" | "production";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "properties": {"recipient_name": {"type": "string", "minLength": 1, "maxLength": 200}, "phone": {"type": "string", "minLength": 1, "maxLength": 20}, "line1": {"type": "string", "minLength": 1, "maxLength": 500}, "ward": {"type": "string", "minLength": 1, "maxLength": 200}, "district": {"type": "string", "maxLength": 200}, "city": {"type": "string", "minLength": 1, "maxLength": 200}, "new_address": {"type": "boolean"}}, "required": ["recipient_name", "phone", "line1", "ward", "city"], "additionalProperties": false},true),defaultMessage:()=> 'Invalid contract field'}})
+  "address"!: {"recipient_name": string; "phone": string; "line1": string; "ward": string; "district"?: string; "city": string; "new_address"?: boolean};
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "enabled"!: boolean;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+}
+export class SaveShippingLocationPathDto {
+}
+export class SaveShippingLocationQueryDto {
+}
+export class SaveShippingLocationHeadersDto {
+}
+export class StoreShippingShipmentsPathDto {
+}
+export class StoreShippingShipmentsQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 50000000}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 50000000},false),defaultMessage:()=> 'Invalid contract field'}})
+  "page"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "size"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "minLength": 1, "maxLength": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "status"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "order_id"?: string;
+}
+export class StoreShippingShipmentsHeadersDto {
+}
+export class StoreShippingCommandBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["CANCEL", "REDELIVER", "RETURN"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "CANCEL" | "REDELIVER" | "RETURN";
+}
+export class StoreShippingCommandPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class StoreShippingCommandQueryDto {
+}
+export class StoreShippingCommandHeadersDto {
+}
+export class StoreShippingLabelPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class StoreShippingLabelQueryDto {
+}
+export class StoreShippingLabelHeadersDto {
+}
+export class AdminShippingShipmentsPathDto {
+}
+export class AdminShippingShipmentsQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 50000000}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 50000000},false),defaultMessage:()=> 'Invalid contract field'}})
+  "page"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1, "maximum": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "size"?: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "minLength": 1, "maxLength": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "status"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "order_id"?: string;
+}
+export class AdminShippingShipmentsHeadersDto {
+}
+export class AdminShippingCommandBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["CANCEL", "REDELIVER", "RETURN"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "CANCEL" | "REDELIVER" | "RETURN";
+}
+export class AdminShippingCommandPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class AdminShippingCommandQueryDto {
+}
+export class AdminShippingCommandHeadersDto {
+}
+export class AdminShippingLabelPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class AdminShippingLabelQueryDto {
+}
+export class AdminShippingLabelHeadersDto {
+}
+export class GetStoreShippingPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetStoreShippingQueryDto {
+}
+export class GetStoreShippingHeadersDto {
+}
+export class BookStoreShipmentBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_order_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "pickup_location_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "return_request_id"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 19999},true),defaultMessage:()=> 'Invalid contract field'}})
+  "weight"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "length"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "width"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "height"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 500},false),defaultMessage:()=> 'Invalid contract field'}})
+  "note"?: string;
+}
+export class BookStoreShipmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class BookStoreShipmentQueryDto {
+}
+export class BookStoreShipmentHeadersDto {
+}
+export class GetOwnShippingPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetOwnShippingQueryDto {
+}
+export class GetOwnShippingHeadersDto {
+}
+export class ConfirmShippingCodBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "amount_vnd"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "reference"!: string;
+}
+export class ConfirmShippingCodPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class ConfirmShippingCodQueryDto {
+}
+export class ConfirmShippingCodHeadersDto {
+}
+export class RegisterReturnShippingBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "tracking_code"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "carrier_name"!: string;
+}
+export class RegisterReturnShippingPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class RegisterReturnShippingQueryDto {
+}
+export class RegisterReturnShippingHeadersDto {
+}
+export class GhnCallbackBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "ShopID"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "date-time"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "Time"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "OrderCode"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 50},false),defaultMessage:()=> 'Invalid contract field'}})
+  "ClientOrderCode"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "Type"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "Status"?: string;
+}
+export class GhnCallbackPathDto {
+}
+export class GhnCallbackQueryDto {
+}
+export class GhnCallbackHeadersDto {
+}
+export class StoreInspectExchangeReturnBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "note"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "items": {"type": "object", "properties": {"variant_id": {"type": "string", "format": "uuid"}, "received_quantity": {"type": "integer", "minimum": 0, "maximum": 100000}, "resellable_quantity": {"type": "integer", "minimum": 0, "maximum": 100000}, "damaged_quantity": {"type": "integer", "minimum": 0, "maximum": 100000}}, "required": ["variant_id", "received_quantity", "resellable_quantity", "damaged_quantity"], "additionalProperties": false}},true),defaultMessage:()=> 'Invalid contract field'}})
+  "lines"!: Array<{"variant_id": string; "received_quantity": number; "resellable_quantity": number; "damaged_quantity": number}>;
+}
+export class StoreInspectExchangeReturnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class StoreInspectExchangeReturnQueryDto {
+}
+export class StoreInspectExchangeReturnHeadersDto {
+}
+export class AdminInspectExchangeReturnBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 50000000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "note"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "items": {"type": "object", "properties": {"variant_id": {"type": "string", "format": "uuid"}, "received_quantity": {"type": "integer", "minimum": 0, "maximum": 100000}, "resellable_quantity": {"type": "integer", "minimum": 0, "maximum": 100000}, "damaged_quantity": {"type": "integer", "minimum": 0, "maximum": 100000}}, "required": ["variant_id", "received_quantity", "resellable_quantity", "damaged_quantity"], "additionalProperties": false}},true),defaultMessage:()=> 'Invalid contract field'}})
+  "lines"!: Array<{"variant_id": string; "received_quantity": number; "resellable_quantity": number; "damaged_quantity": number}>;
+}
+export class AdminInspectExchangeReturnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class AdminInspectExchangeReturnQueryDto {
+}
+export class AdminInspectExchangeReturnHeadersDto {
+}
+export class SavePlatformPickupBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "store_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 200},true),defaultMessage:()=> 'Invalid contract field'}})
+  "name"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "properties": {"recipient_name": {"type": "string", "minLength": 1, "maxLength": 200}, "phone": {"type": "string", "minLength": 1, "maxLength": 20}, "line1": {"type": "string", "minLength": 1, "maxLength": 500}, "ward": {"type": "string", "minLength": 1, "maxLength": 200}, "district": {"type": "string", "maxLength": 200}, "city": {"type": "string", "minLength": 1, "maxLength": 200}, "new_address": {"type": "boolean"}}, "required": ["recipient_name", "phone", "line1", "ward", "city"], "additionalProperties": false},true),defaultMessage:()=> 'Invalid contract field'}})
+  "address"!: {"recipient_name": string; "phone": string; "line1": string; "ward": string; "district"?: string; "city": string; "new_address"?: boolean};
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "enabled"!: boolean;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+}
+export class SavePlatformPickupPathDto {
+}
+export class SavePlatformPickupQueryDto {
+}
+export class SavePlatformPickupHeadersDto {
+}
+export class RequestPlatformReturnPickupBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0, "maximum": 2147483647},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+}
+export class RequestPlatformReturnPickupPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class RequestPlatformReturnPickupQueryDto {
+}
+export class RequestPlatformReturnPickupHeadersDto {
+}
+export class DeliveryCallbackBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "event_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": true},true),defaultMessage:()=> 'Invalid contract field'}})
+  "parcel"!: {} & Record<string, unknown>;
+}
+export class DeliveryCallbackPathDto {
+}
+export class DeliveryCallbackQueryDto {
+}
+export class DeliveryCallbackHeadersDto {
+}
+export class GetStorePickupStatusPathDto {
+}
+export class GetStorePickupStatusQueryDto {
+}
+export class GetStorePickupStatusHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3084,6 +3445,26 @@ export class ResolveConversationOrderHeadersDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 64},false),defaultMessage:()=> 'Invalid contract field'}})
   "x-correlation-id"?: string;
 }
+export class RestockExchangeItemsBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "operation_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "receipt_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "dispatch_receipt_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "order_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "actor_user_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "items": {"type": "object", "properties": {"variant_id": {"type": "string", "format": "uuid"}, "store_id": {"type": "string", "format": "uuid"}, "quantity": {"type": "integer", "minimum": 1, "maximum": 100000}}, "required": ["variant_id", "store_id", "quantity"], "additionalProperties": false}},true),defaultMessage:()=> 'Invalid contract field'}})
+  "items"!: Array<{"variant_id": string; "store_id": string; "quantity": number}>;
+}
+export class RestockExchangeItemsPathDto {
+}
+export class RestockExchangeItemsQueryDto {
+}
+export class RestockExchangeItemsHeadersDto {
+}
 export const runtimeDtos = {
   register: {body: RegisterBodyDto, path: RegisterPathDto, query: RegisterQueryDto, headers: RegisterHeadersDto},
   verifyEmail: {body: VerifyEmailBodyDto, path: VerifyEmailPathDto, query: VerifyEmailQueryDto, headers: VerifyEmailHeadersDto},
@@ -3249,6 +3630,29 @@ export const runtimeDtos = {
   markAllNotificationsRead: {body: undefined, path: MarkAllNotificationsReadPathDto, query: MarkAllNotificationsReadQueryDto, headers: MarkAllNotificationsReadHeadersDto},
   markStoreConversationRead: {body: MarkStoreConversationReadBodyDto, path: MarkStoreConversationReadPathDto, query: MarkStoreConversationReadQueryDto, headers: MarkStoreConversationReadHeadersDto},
   archiveStoreConversation: {body: ArchiveStoreConversationBodyDto, path: ArchiveStoreConversationPathDto, query: ArchiveStoreConversationQueryDto, headers: ArchiveStoreConversationHeadersDto},
+  listNotificationGroupHistory: {body: undefined, path: ListNotificationGroupHistoryPathDto, query: ListNotificationGroupHistoryQueryDto, headers: ListNotificationGroupHistoryHeadersDto},
+  markNotificationGroupRead: {body: MarkNotificationGroupReadBodyDto, path: MarkNotificationGroupReadPathDto, query: MarkNotificationGroupReadQueryDto, headers: MarkNotificationGroupReadHeadersDto},
+  getShippingConnection: {body: undefined, path: GetShippingConnectionPathDto, query: GetShippingConnectionQueryDto, headers: GetShippingConnectionHeadersDto},
+  listShippingLocations: {body: undefined, path: ListShippingLocationsPathDto, query: ListShippingLocationsQueryDto, headers: ListShippingLocationsHeadersDto},
+  saveShippingLocation: {body: SaveShippingLocationBodyDto, path: SaveShippingLocationPathDto, query: SaveShippingLocationQueryDto, headers: SaveShippingLocationHeadersDto},
+  storeShippingShipments: {body: undefined, path: StoreShippingShipmentsPathDto, query: StoreShippingShipmentsQueryDto, headers: StoreShippingShipmentsHeadersDto},
+  storeShippingCommand: {body: StoreShippingCommandBodyDto, path: StoreShippingCommandPathDto, query: StoreShippingCommandQueryDto, headers: StoreShippingCommandHeadersDto},
+  storeShippingLabel: {body: undefined, path: StoreShippingLabelPathDto, query: StoreShippingLabelQueryDto, headers: StoreShippingLabelHeadersDto},
+  adminShippingShipments: {body: undefined, path: AdminShippingShipmentsPathDto, query: AdminShippingShipmentsQueryDto, headers: AdminShippingShipmentsHeadersDto},
+  adminShippingCommand: {body: AdminShippingCommandBodyDto, path: AdminShippingCommandPathDto, query: AdminShippingCommandQueryDto, headers: AdminShippingCommandHeadersDto},
+  adminShippingLabel: {body: undefined, path: AdminShippingLabelPathDto, query: AdminShippingLabelQueryDto, headers: AdminShippingLabelHeadersDto},
+  getStoreShipping: {body: undefined, path: GetStoreShippingPathDto, query: GetStoreShippingQueryDto, headers: GetStoreShippingHeadersDto},
+  bookStoreShipment: {body: BookStoreShipmentBodyDto, path: BookStoreShipmentPathDto, query: BookStoreShipmentQueryDto, headers: BookStoreShipmentHeadersDto},
+  getOwnShipping: {body: undefined, path: GetOwnShippingPathDto, query: GetOwnShippingQueryDto, headers: GetOwnShippingHeadersDto},
+  confirmShippingCod: {body: ConfirmShippingCodBodyDto, path: ConfirmShippingCodPathDto, query: ConfirmShippingCodQueryDto, headers: ConfirmShippingCodHeadersDto},
+  registerReturnShipping: {body: RegisterReturnShippingBodyDto, path: RegisterReturnShippingPathDto, query: RegisterReturnShippingQueryDto, headers: RegisterReturnShippingHeadersDto},
+  ghnCallback: {body: GhnCallbackBodyDto, path: GhnCallbackPathDto, query: GhnCallbackQueryDto, headers: GhnCallbackHeadersDto},
+  storeInspectExchangeReturn: {body: StoreInspectExchangeReturnBodyDto, path: StoreInspectExchangeReturnPathDto, query: StoreInspectExchangeReturnQueryDto, headers: StoreInspectExchangeReturnHeadersDto},
+  adminInspectExchangeReturn: {body: AdminInspectExchangeReturnBodyDto, path: AdminInspectExchangeReturnPathDto, query: AdminInspectExchangeReturnQueryDto, headers: AdminInspectExchangeReturnHeadersDto},
+  savePlatformPickup: {body: SavePlatformPickupBodyDto, path: SavePlatformPickupPathDto, query: SavePlatformPickupQueryDto, headers: SavePlatformPickupHeadersDto},
+  requestPlatformReturnPickup: {body: RequestPlatformReturnPickupBodyDto, path: RequestPlatformReturnPickupPathDto, query: RequestPlatformReturnPickupQueryDto, headers: RequestPlatformReturnPickupHeadersDto},
+  deliveryCallback: {body: DeliveryCallbackBodyDto, path: DeliveryCallbackPathDto, query: DeliveryCallbackQueryDto, headers: DeliveryCallbackHeadersDto},
+  getStorePickupStatus: {body: undefined, path: GetStorePickupStatusPathDto, query: GetStorePickupStatusQueryDto, headers: GetStorePickupStatusHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},
@@ -3263,4 +3667,5 @@ export const runtimeDtos = {
   RestockReceivedItems: {body: RestockReceivedItemsBodyDto, path: RestockReceivedItemsPathDto, query: RestockReceivedItemsQueryDto, headers: RestockReceivedItemsHeadersDto},
   DispatchExchangeItems: {body: DispatchExchangeItemsBodyDto, path: DispatchExchangeItemsPathDto, query: DispatchExchangeItemsQueryDto, headers: DispatchExchangeItemsHeadersDto},
   ResolveConversationOrder: {body: ResolveConversationOrderBodyDto, path: ResolveConversationOrderPathDto, query: ResolveConversationOrderQueryDto, headers: ResolveConversationOrderHeadersDto},
+  RestockExchangeItems: {body: RestockExchangeItemsBodyDto, path: RestockExchangeItemsPathDto, query: RestockExchangeItemsQueryDto, headers: RestockExchangeItemsHeadersDto},
 };

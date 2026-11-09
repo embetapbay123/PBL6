@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError } from "../api/client";
@@ -29,7 +29,7 @@ const payments: Record<NonNullable<Query["payment_status"]>, string> = {
   UNKNOWN: "Đang đối soát",
   SUCCEEDED: "Đã thu",
   FAILED: "Thanh toán thất bại",
-  CANCELLED: "Đã đóng nghĩa vụ thu",
+  CANCELLED: "Không cần thanh toán",
   REFUNDED: "Đã hoàn tiền",
 };
 const refunds: Record<NonNullable<Query["refund_status"]>, string> = {
@@ -85,6 +85,7 @@ export function useOrderListFilters(storeScope = false) {
     query,
     page,
     set,
+    storeScope,
     reset: () =>
       setParams((current) => {
         const next = new URLSearchParams(current);
@@ -103,21 +104,44 @@ export function useOrderListFilters(storeScope = false) {
 }
 export function OrderStatusTabs({
   filters,
+  returns = false,
 }: {
   filters: ReturnType<typeof useOrderListFilters>;
+  returns?: boolean;
 }) {
-  return (
-    <nav className="order-status-tabs" aria-label="Lọc nhanh trạng thái đơn">
-      {[
+  const tabs = filters.storeScope
+    ? [
+        ["", "Tất cả"],
+        ["PENDING", "Chờ xác nhận"],
+        ["CONFIRMED", "Chờ lấy hàng"],
+        ["PROCESSING", "Đang đóng gói"],
+        ["SHIPPED", "Đang giao"],
+        ["COMPLETED", "Đã giao"],
+        ["CANCELLED", "Đã hủy"],
+      ]
+    : [
         ["", "Tất cả"],
         ["AWAITING_PAYMENT", "Chờ thanh toán"],
         ["PENDING", "Chờ xác nhận"],
-        ["CONFIRMED", "Đã xác nhận"],
-        ["PROCESSING", "Chuẩn bị hàng"],
+        ["CONFIRMED", "Chờ lấy hàng"],
+        ["PROCESSING", "Đang đóng gói"],
         ["SHIPPED", "Đang giao"],
-        ["COMPLETED", "Hoàn tất"],
+        ["COMPLETED", "Đã giao"],
         ["CANCELLED", "Đã hủy"],
-      ].map(([value, label]) => (
+      ];
+  if (filters.storeScope && ["PREPARING", "EXPIRED", "RECOVERING"].includes(filters.query.status ?? "")) {
+    const techLabels: Record<string, string> = {
+      PREPARING: "Đang tạo đơn",
+      EXPIRED: "Hết hạn",
+      RECOVERING: "Đang khôi phục",
+    };
+    tabs.push([filters.query.status!, techLabels[filters.query.status!]]);
+  }
+  return (
+    <nav className="order-status-tabs" aria-label="Lọc nhanh trạng thái đơn">
+      {tabs.map(([value, label]) => (
+        <Fragment key={value}>
+        {returns && value === "CANCELLED" && <Link to="/customer/returns">Đổi trả</Link>}
         <button
           type="button"
           key={value}
@@ -126,6 +150,7 @@ export function OrderStatusTabs({
         >
           {label}
         </button>
+        </Fragment>
       ))}
     </nav>
   );
@@ -137,28 +162,12 @@ export function OrderListFilters({
 }) {
   const [search, setSearch] = useState(filters.query.q ?? "");
   useEffect(() => setSearch(filters.query.q ?? ""), [filters.query.q]);
-  return (
-    <div className="order-filter-panel">
-      <form
-        className="admin-moderation-search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          filters.set("q", search.trim());
-        }}
-      >
-        <label>
-          Tìm đơn theo mã, món, SKU hoặc người nhận
-          <input
-            type="search"
-            maxLength={200}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
-        <button className="ui-button ui-button-primary">Tìm trong toàn bộ đơn</button>
-      </form>
+  const store = filters.storeScope;
+  const extraCount = Number(!!filters.query.payment_status) + Number(!!filters.query.refund_status);
+  const hasFilters = !!(filters.query.q || filters.query.status || extraCount || filters.query.sort && filters.query.sort !== "CREATED_DESC");
+  const fields = (
       <div className="seller-product-filters">
-        <label>
+        {!store && <label>
           Trạng thái đơn
           <select
             value={filters.query.status ?? ""}
@@ -171,7 +180,7 @@ export function OrderListFilters({
               </option>
             ))}
           </select>
-        </label>
+        </label>}
         <label>
           Tình trạng tiền
           <select
@@ -204,10 +213,41 @@ export function OrderListFilters({
             ))}
           </select>
         </label>
-        <button type="button" className="ui-button ui-button-secondary" onClick={filters.reset}>
+        {!store && <button type="button" className="ui-button ui-button-secondary" onClick={filters.reset}>
           Bỏ bộ lọc đơn
-        </button>
+        </button>}
       </div>
+  );
+  return (
+    <div className={"order-filter-panel" + (store ? " store-order-filters" : "")}>
+      <form
+        className="admin-moderation-search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          filters.set("q", search.trim());
+        }}
+      >
+        <label>
+          <span className={store ? "sr-only" : undefined}>Tìm đơn theo mã, món, SKU hoặc người nhận</span>
+          <input
+            type="search"
+            maxLength={200}
+            placeholder={store ? "Mã đơn, món, SKU hoặc người nhận" : undefined}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+        <button className="ui-button ui-button-primary">Tìm đơn</button>
+      </form>
+      {store ? (
+        <>
+          <details className="store-order-extra-filters">
+            <summary>Bộ lọc thêm{extraCount > 0 ? ` (${extraCount})` : ""}</summary>
+            {fields}
+          </details>
+          {hasFilters && <button type="button" className="ui-button ui-button-secondary" onClick={filters.reset}>Xóa bộ lọc</button>}
+        </>
+      ) : fields}
     </div>
   );
 }
@@ -222,28 +262,43 @@ export function OrderListIdentity({
   store = false,
   compact = false,
   currentImages,
+  showPrice = false,
 }: {
   order: OperationOutputs["getOwnOrder"];
   recipient?: boolean;
   store?: boolean;
   compact?: boolean;
   currentImages?: Map<string,string>;
+  showPrice?: boolean;
 }) {
   const address = record(order.address_snapshot);
   return (
     <div style={{ overflowWrap: "anywhere" }}>
       {order.created_at && Number.isFinite(Date.parse(order.created_at)) && (
-        <p>
-          Tạo lúc{" "}
-          <time dateTime={order.created_at}>
-            {new Date(order.created_at).toLocaleString("vi-VN", {
-              timeZone: "Asia/Ho_Chi_Minh",
-            })}
-          </time>{" "}
-          (giờ Việt Nam)
+        <p className="text-xs text-slate-500 mb-2">
+          {compact ? (
+            <>
+              Ngày đặt:{" "}
+              <time dateTime={order.created_at}>
+                {new Date(order.created_at).toLocaleDateString("vi-VN", {
+                  timeZone: "Asia/Ho_Chi_Minh",
+                })}
+              </time>
+            </>
+          ) : (
+            <>
+              Tạo lúc{" "}
+              <time dateTime={order.created_at}>
+                {new Date(order.created_at).toLocaleString("vi-VN", {
+                  timeZone: "Asia/Ho_Chi_Minh",
+                })}
+              </time>{" "}
+              (giờ Việt Nam)
+            </>
+          )}
         </p>
       )}
-      {store && <OrderStoreLabel id={order.store_id} />}
+      {store && <OrderStoreLabel id={order.store_id} compact={compact} />}
       {order.items?.length ? (
         <ul className={compact || currentImages ? "order-card-items" : undefined}>
           {order.items.slice(0, compact ? 2 : 3).map((item, index) => {
@@ -252,53 +307,56 @@ export function OrderListIdentity({
               title =
                 typeof snapshot.title === "string"
                   ? snapshot.title
-                  : "Mục đơn cũ chưa lưu tên";
+                  : "Mục đơn cũ chưa lưu tên",
+              unitPrice = typeof item.unit_price_vnd === "number" ? item.unit_price_vnd : undefined;
             return (
-              <li key={typeof item.id === "string" ? item.id : index}>
-                {(compact || currentImages) && (
-                  <span className="order-card-image">
-                    {typeof snapshot.image_url === "string" &&
-                    /^https?:\/\//.test(snapshot.image_url) ? (
-                      <ProductImage
-                        src={snapshot.image_url}
-                        name={title}
-                        alt={title}
-                      />
-                    ) : typeof item.product_id==='string' && currentImages?.has(item.product_id) ? (
-                      <ProductImage src={currentImages.get(item.product_id)} name={title} alt="Ảnh sản phẩm hiện tại" title="Ảnh sản phẩm hiện tại, có thể khác khi đặt" />
-                    ) : (
-                      <Package
-                        size={22}
-                        aria-label="Đơn chưa lưu ảnh sản phẩm"
-                      />
-                    )}
-                  </span>
+              <li key={typeof item.id === "string" ? item.id : index} className={showPrice ? "order-card-item-row flex items-center justify-between gap-3 py-2 border-b border-slate-50" : undefined}>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {(compact || currentImages) && (
+                    <span className="order-card-image shrink-0">
+                      {typeof snapshot.image_url === "string" &&
+                      /^https?:\/\//.test(snapshot.image_url) ? (
+                        <ProductImage
+                          src={snapshot.image_url}
+                          name={title}
+                          alt={title}
+                        />
+                      ) : typeof item.product_id==='string' && currentImages?.has(item.product_id) ? (
+                        <ProductImage src={currentImages.get(item.product_id)} name={title} alt="Ảnh sản phẩm hiện tại" title="Ảnh sản phẩm hiện tại, có thể khác khi đặt" />
+                      ) : (
+                        <Package
+                          size={22}
+                          aria-label="Đơn chưa lưu ảnh sản phẩm"
+                        />
+                      )}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <strong className="block text-sm text-slate-900 line-clamp-1">{title}</strong>
+                    {currentImages && typeof item.product_id==='string' && currentImages.has(item.product_id) && typeof snapshot.image_url!=='string' && <small className="order-current-image-note">Ảnh hiện tại của sản phẩm</small>}
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      <span>Phân loại: {values || (typeof snapshot.variant_title === "string" ? snapshot.variant_title : "Tiêu chuẩn")}</span>
+                      <span className="mx-1.5">·</span>
+                      <span className="font-medium text-slate-700">x{typeof item.quantity === "number" ? item.quantity : 1}</span>
+                      {!compact && typeof item.sku_snapshot === "string" && (
+                        <> · SKU {item.sku_snapshot}</>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {showPrice && unitPrice !== undefined && (
+                  <div className="order-card-item-price text-right text-xs shrink-0 pl-3">
+                    <span className="font-semibold text-slate-800">
+                      {unitPrice.toLocaleString("vi-VN")} ₫
+                    </span>
+                  </div>
                 )}
-                <span>
-                  <strong>{title}</strong>
-                  {currentImages && typeof item.product_id==='string' && currentImages.has(item.product_id) && typeof snapshot.image_url!=='string' && <small className="order-current-image-note">Ảnh hiện tại của sản phẩm</small>}
-                  <span>
-                    {" "}
-                    ·{" "}
-                    {values ||
-                      (typeof snapshot.variant_title === "string"
-                        ? snapshot.variant_title
-                        : "Chưa lưu phân loại")}{" "}
-                    · SL{" "}
-                    {typeof item.quantity === "number"
-                      ? item.quantity
-                      : "chưa có dữ liệu"}
-                    {!compact && typeof item.sku_snapshot === "string" && (
-                      <> · SKU {item.sku_snapshot}</>
-                    )}
-                  </span>
-                </span>
               </li>
             );
           })}
           {order.items.length > (compact ? 2 : 3) && (
-            <li>
-              Còn {order.items.length - (compact ? 2 : 3)} dòng hàng; xem chi
+            <li className="text-xs text-slate-500 italic pt-1">
+              Còn {order.items.length - (compact ? 2 : 3)} sản phẩm khác trong đơn; xem chi
               tiết để kiểm đủ.
             </li>
           )}
@@ -318,17 +376,32 @@ export function OrderListIdentity({
     </div>
   );
 }
-function OrderStoreLabel({ id }: { id: string }) {
+export function OrderStoreLabel({ id, compact = false }: { id: string; compact?: boolean }) {
   const query = useQuery({
     queryKey: ["order-current-store", id],
     queryFn: ({ signal }) =>
       callOperation("getPublicStore", { path: { id } }, { signal }),
     retry: false,
   });
+  if (compact) {
+    return (
+      <span className="order-store-label-compact font-bold text-slate-800">
+        {query.data ? (
+          <Link to={"/stores/" + id} className="hover:underline text-indigo-700">
+            {query.data.name}
+          </Link>
+        ) : query.error instanceof ApiError && query.error.status === 404 ? (
+          <span className="text-slate-500">Store không còn mở</span>
+        ) : (
+          <span>Store</span>
+        )}
+      </span>
+    );
+  }
   return (
     <p>
       {query.data ? (
-        <Link to={"/stores/" + id}>Store hiện tại: {query.data.name}</Link>
+        <Link to={"/stores/" + id}>Store: {query.data.name}</Link>
       ) : query.error instanceof ApiError && query.error.status === 404 ? (
         "Store không còn công khai"
       ) : query.error ? (

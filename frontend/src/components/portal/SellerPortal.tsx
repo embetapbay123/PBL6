@@ -751,7 +751,7 @@ export const SellerPortal: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold"
                 >
-                  Lưu thay đổi
+                  Lưu
                 </button>
               </div>
             </form>
@@ -829,7 +829,7 @@ export const SellerPortal: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold"
                 >
-                  Gửi lời mời qua Email
+                  Gửi lời mời
                 </button>
               </div>
             </form>

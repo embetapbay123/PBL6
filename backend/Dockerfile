@@ -12,6 +12,8 @@ COPY --from=build /app/backend/dist ./dist
 COPY backend/catalog-service/migrations ./catalog-service/migrations
 COPY backend/commerce-service/migrations ./commerce-service/migrations
 COPY backend/identity-store-service/migrations ./identity-store-service/migrations
+COPY backend/delivery-service/migrations ./delivery-service/migrations
+COPY backend/delivery-service/public ./delivery-service/public
 COPY backend/ai-service/migrations ./ai-service/migrations
 COPY backend/tests ./tests
 COPY backend/jest*.cjs ./
@@ -21,5 +23,6 @@ COPY backend/catalog-service/src ./catalog-service/src
 COPY backend/commerce-service/src ./commerce-service/src
 COPY backend/identity-store-service/src ./identity-store-service/src
 COPY backend/package.json ./
+RUN chmod -R a+rX /app/backend
 USER node
 CMD ["node","dist/catalog-service/src/main.js"]

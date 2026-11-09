@@ -10,7 +10,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   await page.route('**/api/v1/**', route => route.fulfill({status:404,json:{code:'NOT_FOUND',message:'Unconfigured fixture',details:[]}}));
   await page.route('**/api/v1/auth/login', route => route.fulfill({ json: {
     access_token: 'test-access-token', refresh_token: 'test-refresh-token', token_type: 'Bearer', expires_in: 900,
-    context: { user_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', roles: [role], token_version: 0 },
+    context: { user_id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', roles: [role], role_permissions: role === 'ADMIN' ? ['platform.admin'] : [], token_version: 0 },
   } }));
   await page.goto('/login');
   await page.locator('input[type="email"]').fill(`${role.toLowerCase()}@example.test`);
@@ -18,7 +18,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
   const loginResponse = page.waitForResponse(response => response.url().endsWith('/api/v1/auth/login'));
   await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
   expect((await loginResponse).status()).toBe(200);
-  await expect(page.getByText(role, { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Đã đăng nhập',exact:true})).toBeVisible();
 }
 
  (fixtureRun ? test.skip : test)('customer submission and history use the API and display the server response', async ({ page }) => {
@@ -36,7 +36,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: saved?[saved]:[], total: saved?1:0, page: 1, size: 10 } });
     }
   });
-  await page.getByRole('link',{name:'Đăng ký bán hàng',exact:true}).click();
+  await page.getByRole('link',{name:'Bán hàng cùng PBL6',exact:true}).first().click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -57,7 +57,7 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [], total: 0, page: 1, size: 10 } });
     }
   });
-  await page.getByRole('link',{name:'Đăng ký bán hàng',exact:true}).click();
+  await page.getByRole('link',{name:'Bán hàng cùng PBL6',exact:true}).first().click();
   const inputs = page.locator('.store-app-form input');
   await inputs.nth(0).fill('API Store');
   await inputs.nth(1).fill('seller@example.test');
@@ -80,8 +80,8 @@ async function signInAs(page: Page, role: 'CUSTOMER' | 'ADMIN') {
       await route.fulfill({ json: { items: [application], total: 1, page: 1, size: 10 } });
     }
   });
-  await page.getByRole('link',{name:'Quản trị',exact:true}).click();
-  await page.getByRole('link',{name:'Hồ sơ mở gian hàng',exact:true}).click();
+  await page.getByRole('link',{name:'Quản trị hệ thống',exact:true}).click();
+  await page.getByRole('link',{name:/Duyệt gian hàng/}).click();
   await page.locator('.store-app-icon-button--approve').first().click();
   await page.getByRole('button',{name:'Xác nhận duyệt',exact:true}).click();
   await expect(page.locator('.store-app-notice')).toContainText('API Store');

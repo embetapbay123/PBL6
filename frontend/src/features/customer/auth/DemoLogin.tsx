@@ -21,7 +21,7 @@ export function DemoLogin(){
  if(import.meta.env.VITE_DEMO_LOGIN_ENABLED!=='1')return null;
  return <section className="boot-card demo-login" aria-labelledby="demo-login-heading">
   <h2 id="demo-login-heading">Đăng nhập nhanh demo</h2>
-  <p>Chọn vai trò để thử với dữ liệu mẫu dùng chung. Các thao tác thay đổi dữ liệu demo.</p>
+  <p>Các tài khoản dùng chung dữ liệu demo.</p>
   <fieldset disabled={command.busy} aria-busy={command.busy}>
    <legend>Chọn tài khoản có sẵn</legend>
    <div className="demo-login-accounts">{accounts.map(account=><button type="button" key={account.id} onClick={()=>void command.run(async()=>{

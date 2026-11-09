@@ -99,13 +99,13 @@ export function AdminCatalogManagement() {
       setNotice('Đã cập nhật loại sản phẩm.'); await load();
     } catch (cause) { setError(cause); } finally { setBusy(false); }
   };
-  return <section className="boot-card admin-catalog"><h3>Taxonomy và kiểm duyệt</h3>
+  return <section className="boot-card admin-catalog"><h3>Danh mục, thuộc tính & kiểm duyệt</h3>
     <p>Quản lý danh mục, loại sản phẩm và thuộc tính dùng chung cho các gian hàng.</p>
     <nav className="admin-catalog-shortcuts" aria-label="Công cụ danh mục">{[['taxonomy','Danh mục & loại sản phẩm'],['attributes','Thuộc tính'],['products','Kiểm duyệt sản phẩm'],['reviews','Kiểm duyệt đánh giá']].map(([value,label])=><Link key={value} className={'ui-button '+(section===value?'ui-button-primary':'ui-button-secondary')} aria-current={section===value?'page':undefined} to={'/admin?tab=catalog&section='+value}>{label}</Link>)}{(section==='taxonomy'||section==='attributes')&&<UiButton variant="secondary" type="submit" disabled={busy||loading} onClick={()=>void load()}>Tải lại taxonomy</UiButton>}</nav>
     {error !== undefined && <ErrorView error={error} />}{notice && <p role="status">{notice}</p>}
     {(section==='taxonomy'||section==='attributes')&&(loading ? <Loading /> : <>
       {section==='taxonomy'&&<div id="taxonomy" className="admin-taxonomy-grid">
-        <div><h4>Danh mục</h4><ul>{categories.map(item => <li key={item.id}>{item.name} · {item.status ?? 'ACTIVE'}</li>)}</ul>
+        <div><h4>Danh mục</h4><ul>{categories.map(item => <li key={item.id}>{item.name} · <span className="ui-badge">{item.status === 'ACTIVE' || !item.status ? 'Hoạt động' : 'Tạm ngưng'}</span></li>)}</ul>
           <form onSubmit={handleCreateCategory}>
             <label>Tên danh mục<input required value={categoryName} onChange={event => setCategoryName(event.target.value)} /></label><button disabled={busy}>Tạo danh mục</button>
           </form>
@@ -119,7 +119,7 @@ export function AdminCatalogManagement() {
             <button disabled={busy}>Tạo loại sản phẩm</button>
           </form>
           <label>Sửa loại sản phẩm<select value={editTypeId} onChange={event => {const item=productTypes.find(row=>row.id===event.target.value);setEditTypeId(event.target.value);setTypeName(item?.name ?? '');setCategoryId(item?.category_id ?? '');}}><option value="">Chọn loại sản phẩm</option>{productTypes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <button disabled={busy || !editTypeId} onClick={handleUpdateProductType}>Cập nhật loại sản phẩm</button>
+          <button disabled={busy || !editTypeId} onClick={handleUpdateProductType}>Lưu</button>
 
         </div>
       </div>}

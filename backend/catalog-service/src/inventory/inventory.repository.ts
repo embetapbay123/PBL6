@@ -269,6 +269,26 @@ export class InventoryRepository extends OwnedRepository {
       [inventoryId, quantity]);
   }
 
+  async incrementSoldCountByInventory(inventoryId: string, quantity: number): Promise<void> {
+    await this.manager.query(
+      `UPDATE product p
+       SET sold_count = p.sold_count + $2
+       FROM inventory i
+       JOIN product_variant pv ON pv.id = i.variant_id
+       WHERE p.id = pv.product_id AND i.id = $1`,
+      [inventoryId, quantity]);
+  }
+
+  async decrementSoldCountByInventory(inventoryId: string, quantity: number): Promise<void> {
+    await this.manager.query(
+      `UPDATE product p
+       SET sold_count = GREATEST(0, p.sold_count - $2)
+       FROM inventory i
+       JOIN product_variant pv ON pv.id = i.variant_id
+       WHERE p.id = pv.product_id AND i.id = $1`,
+      [inventoryId, quantity]);
+  }
+
   /** Release only clears the hold; commercial quantity is untouched. */
   async releaseStock(inventoryId: string, quantity: number): Promise<void> {
     await this.manager.query(

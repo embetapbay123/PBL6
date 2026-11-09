@@ -53,7 +53,7 @@ export function StockCommitments({
         vào số đếm thực tế.
       </Alert>
       <details>
-        <summary>Cách đọc số liệu đối soát</summary>
+        <summary>Cách tính</summary>
         <p>
           Đơn COD có thể trừ tồn trước khi lấy/giao hàng. Đơn đã bàn giao không
           nằm trong danh sách này. Đây không phải tồn vật lý hoặc tổng tồn khả
@@ -74,20 +74,21 @@ export function StockCommitments({
       ) : (
         query.data && (
           <>
-            <dl className="operational-metrics">
-              <div>
+            {/* Metric cards */}
+            <div className="commitment-kpi-strip">
+              <dl className="inv-metric-card">
                 <dt>Đã trừ, chưa bàn giao</dt>
-                <dd>{query.data.consumed_quantity}</dd>
-              </div>
-              <div>
-                <dt>Cần đối soát lệnh kho / đóng đơn</dt>
-                <dd>{query.data.uncertain_quantity}</dd>
-              </div>
-              <div>
-                <dt>Dòng hàng cần theo dõi</dt>
-                <dd>{query.data.total}</dd>
-              </div>
-            </dl>
+                <dd>{query.data.consumed_quantity.toLocaleString("vi-VN")}</dd>
+              </dl>
+              <dl className="inv-metric-card">
+                <dt>Cần đối soát</dt>
+                <dd>{query.data.uncertain_quantity.toLocaleString("vi-VN")}</dd>
+              </dl>
+              <dl className="inv-metric-card">
+                <dt>Tổng dòng theo dõi</dt>
+                <dd>{query.data.total.toLocaleString("vi-VN")}</dd>
+              </dl>
+            </div>
             <p className="form-hint">
               Tổng theo toàn bộ bộ lọc, không chỉ trang đang xem. Đọc lúc{" "}
               {new Date(query.data.as_of).toLocaleString("vi-VN", {
@@ -116,7 +117,7 @@ export function StockCommitments({
                       <th>Món / phân loại / SKU</th>
                       <th>Đơn hàng</th>
                       <th>Lượng</th>
-                      <th>Việc cần đối chiếu</th>
+                      <th>Trạng thái đối soát</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -155,11 +156,11 @@ export function StockCommitments({
                           <br />
                           {orderStatusLabel(row.order_status)}
                         </td>
-                        <td>{row.quantity}</td>
+                        <td>{row.quantity.toLocaleString("vi-VN")}</td>
                         <td>
                           <span
                             className={
-                              "stock-reconciliation-badge " +
+                              "commitment-badge " +
                               (row.reconciliation === "CONSUMED_NOT_HANDED_OVER"
                                 ? "is-consumed"
                                 : "is-uncertain")
@@ -169,17 +170,14 @@ export function StockCommitments({
                               ? "Chưa bàn giao"
                               : "Cần đối soát"}
                           </span>
-                          {row.reconciliation === "CONSUMED_NOT_HANDED_OVER"
-                            ? "Đã trừ tồn thương mại; cửa hàng chưa xác nhận bàn giao"
-                            : "Chưa xác định xong kết quả kho; không coi là tồn đã được nhả/hoàn"}
                           {row.command_kind && (
-                            <p>
+                            <span className="commitment-cmd-chip">
                               {row.command_kind === "CONSUME"
                                 ? "Chờ xác nhận trừ tồn"
                                 : row.command_kind === "RELEASE"
                                   ? "Chờ xác nhận nhả giữ"
                                   : "Chờ xác nhận hoàn kho"}
-                            </p>
+                            </span>
                           )}
                         </td>
                       </tr>
@@ -202,7 +200,7 @@ export function StockCommitments({
         disabled={query.isFetching}
         onClick={() => void query.refetch()}
       >
-        Làm mới hàng chưa bàn giao
+        Làm mới
       </button>
     </section>
   );

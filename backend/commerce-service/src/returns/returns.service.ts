@@ -10,9 +10,9 @@ import { ApiError } from '../../../shared/src/errors';
 import { audit } from '../../../shared/src/audit';
 import { moneyNumber } from '../../../shared/src/money';
 type Scope='CUSTOMER'|'STORE'|'ADMIN';
-const projection=`SELECT r.*,o.return_policy_snapshot,o.customer_user_id,o.store_id,o.created_at AS order_created_at,o.status AS order_status,o.payment_method,o.payable_vnd,p.status AS payment_status,p.payable_vnd AS payment_payable_vnd,p.collected_vnd,p.refunded_vnd,f.status AS refund_status,(SELECT coalesce(jsonb_agg(jsonb_build_object('order_item_id',i.id,'product_id',i.product_id,'variant_id',i.variant_id,'product_snapshot',i.product_snapshot,'sku_snapshot',i.sku_snapshot,'quantity',i.quantity,'unit_price_vnd',i.unit_price_vnd) ORDER BY i.id),'[]'::jsonb) FROM order_item i WHERE i.order_id=o.id) AS items
+const projection=`SELECT r.*,o.shipping_mode,o.return_policy_snapshot,o.customer_user_id,o.store_id,o.created_at AS order_created_at,o.status AS order_status,o.payment_method,o.payable_vnd,p.status AS payment_status,p.payable_vnd AS payment_payable_vnd,p.collected_vnd,p.refunded_vnd,f.status AS refund_status,(SELECT coalesce(jsonb_agg(jsonb_build_object('order_item_id',i.id,'product_id',i.product_id,'variant_id',i.variant_id,'product_snapshot',i.product_snapshot,'sku_snapshot',i.sku_snapshot,'quantity',i.quantity,'unit_price_vnd',i.unit_price_vnd) ORDER BY i.id),'[]'::jsonb) FROM order_item i WHERE i.order_id=o.id) AS items
   FROM order_return_request r JOIN "order" o ON o.id=r.order_id LEFT JOIN payment p ON p.order_id=o.id LEFT JOIN refund f ON f.order_id=o.id`;
-const map=(row:any):OperationOutputs['createReturnRequest']=>({legacy_policy:!readReturnPolicy(row.return_policy_snapshot),...(readReturnPolicy(row.return_policy_snapshot)?{return_policy_snapshot:readReturnPolicy(row.return_policy_snapshot)}:{}),...Object.fromEntries(['original_type','fault_party','fee_payer','return_instructions','inspection_note','inventory_status','exchange_status','conversion_status','conversion_note','last_error'].filter(key=>row[key]!=null).map(key=>[key,row[key]])),...(row.exchange_dispatch_snapshot?{exchange_dispatch:row.exchange_dispatch_snapshot}:{}),inspection:row.inspection_json??[],items:(row.items??[]).map((item:any)=>({...item,...(item.unit_price_vnd==null?{}:{unit_price_vnd:moneyNumber(item.unit_price_vnd)})})),id:row.id,order_id:row.order_id,type:row.type,reason:row.reason,status:row.status,version:row.version,payment_method:row.payment_method,amount_vnd:moneyNumber(row.payable_vnd),created_at:new Date(row.created_at).toISOString(),updated_at:new Date(row.updated_at).toISOString(),...(row.decision_note?{decision_note:row.decision_note}:{}),...(row.replacement_reference?{replacement_reference:row.replacement_reference}:{}),...(row.refund_status?{refund_status:row.refund_status}:{})});
+const map=(row:any):OperationOutputs['createReturnRequest']=>({shipping_mode:row.shipping_mode??'LEGACY_MANUAL',legacy_policy:!readReturnPolicy(row.return_policy_snapshot),...(readReturnPolicy(row.return_policy_snapshot)?{return_policy_snapshot:readReturnPolicy(row.return_policy_snapshot)}:{}),...Object.fromEntries(['original_type','fault_party','fee_payer','return_instructions','inspection_note','inventory_status','exchange_status','conversion_status','conversion_note','last_error'].filter(key=>row[key]!=null).map(key=>[key,row[key]])),...(row.exchange_dispatch_snapshot?{exchange_dispatch:row.exchange_dispatch_snapshot}:{}),inspection:row.inspection_json??[],items:(row.items??[]).map((item:any)=>({...item,...(item.unit_price_vnd==null?{}:{unit_price_vnd:moneyNumber(item.unit_price_vnd)})})),id:row.id,order_id:row.order_id,type:row.type,reason:row.reason,status:row.status,version:row.version,payment_method:row.payment_method,amount_vnd:moneyNumber(row.payable_vnd),created_at:new Date(row.created_at).toISOString(),updated_at:new Date(row.updated_at).toISOString(),...(row.decision_note?{decision_note:row.decision_note}:{}),...(row.replacement_reference?{replacement_reference:row.replacement_reference}:{}),...(row.refund_status?{refund_status:row.refund_status}:{})});
 export class ReturnsService {
   constructor(private readonly source?:DataSource) {}
   private get db():DataSource{return this.source ?? database;}
@@ -47,11 +47,12 @@ export class ReturnsService {
       const [existing]=await manager.query(projection+' WHERE r.order_id=$1',[orderId]);
       if(existing){if(existing.type!==input.type||existing.reason!==reason)throw new ApiError(409,'RETURN_ALREADY_EXISTS','Đơn hàng đã có yêu cầu đổi trả.');return map(existing);}
       if(order.version!==input.expected_order_version)throw new ApiError(409,'VERSION_CONFLICT','Đơn hàng đã thay đổi. Vui lòng tải lại.');
-      if(order.status!=='COMPLETED')throw new ApiError(409,'RETURN_NOT_ELIGIBLE','Chỉ yêu cầu đổi trả cho đơn đã hoàn tất.');
+      const carrierDelivered=['GHN','PLATFORM'].includes(order.shipping_mode)&&order.shipping_delivered_at&&['SHIPPED','COMPLETED'].includes(order.status);
+      if(order.status!=='COMPLETED'&&!carrierDelivered)throw new ApiError(409,'RETURN_NOT_ELIGIBLE','Chỉ yêu cầu đổi trả cho đơn đã giao thành công.');
       if(readReturnPolicy(order.return_policy_snapshot)) {
-        const [completion]=await manager.query("SELECT created_at,now() AS checked_at FROM order_status_history WHERE order_id=$1 AND to_status='COMPLETED' ORDER BY created_at,id LIMIT 1",[orderId]);
+        const [completion]=carrierDelivered?await manager.query('SELECT shipping_delivered_at AS created_at,now() AS checked_at FROM "order" WHERE id=$1',[orderId]):await manager.query("SELECT created_at,now() AS checked_at FROM order_status_history WHERE order_id=$1 AND to_status='COMPLETED' ORDER BY created_at,id LIMIT 1",[orderId]);
         if(!completion)throw new ApiError(409,'RETURN_POLICY_RECONCILIATION_REQUIRED','Thiếu thời điểm hoàn tất để xác định quyền đổi trả. Cần đối chiếu đơn.');
-        if(new Date(completion.checked_at).getTime()>new Date(completion.created_at).getTime()+168*3600000)throw new ApiError(409,'RETURN_WINDOW_EXPIRED','Đã quá 7×24 giờ từ lúc đơn hoàn tất. Yêu cầu đã gửi đúng hạn vẫn tiếp tục được xử lý.');
+        if(new Date(completion.checked_at).getTime()>new Date(completion.created_at).getTime()+168*3600000)throw new ApiError(409,'RETURN_WINDOW_EXPIRED','Đã quá thời hạn 7×24 giờ đổi trả của đơn. Yêu cầu đã gửi đúng hạn vẫn tiếp tục được xử lý.');
       }
 
       const [row]=await manager.query('INSERT INTO order_return_request(order_id,type,reason,original_type) VALUES($1,$2,$3,$2) RETURNING id',[orderId,input.type,reason]);
@@ -95,6 +96,10 @@ export class ReturnsService {
         const allowed=scope==='CUSTOMER'?before.type==='EXCHANGE'&&before.status==='EXCHANGE_SENT'&&input.status==='COMPLETED'
           :(before.status==='REQUESTED'&&['APPROVED','REJECTED'].includes(input.status))||receiving||(before.status==='RECEIVED'&&((before.type==='EXCHANGE'&&input.status==='EXCHANGE_SENT')||(before.type==='REFUND'&&input.status==='COMPLETED')));
         if(!allowed)throw new ApiError(409,'RETURN_STATE_CONFLICT','Không thể chuyển trạng thái yêu cầu.');
+        if(scope==='CUSTOMER'&&input.status==='COMPLETED'&&['GHN','PLATFORM'].includes(before.shipping_mode)){
+          const [delivered]=await manager.query("SELECT id FROM shipping_shipment WHERE return_request_id=$1 AND leg='EXCHANGE_OUTBOUND' AND status='DELIVERED'",[id]);
+          if(!delivered)throw new ApiError(409,'EXCHANGE_NOT_DELIVERED','Hãng chưa xác nhận giao thành công kiện đổi.');
+        }
         if(['APPROVED','REJECTED'].includes(input.status)&&!note)throw new ApiError(422,'DECISION_NOTE_REQUIRED','Cần ghi rõ nội dung quyết định.');
         if(input.status==='APPROVED'){
           if(!input.fault_party)throw new ApiError(422,'RETURN_FAULT_DECISION_REQUIRED','Ghi kết luận bên có lỗi; nếu tranh chấp phải chuyển Admin, không tự suy từ lời khai.');
@@ -105,6 +110,10 @@ export class ReturnsService {
           await this.record(manager,id,auth,'RETURN_DECISION',{fault_party:input.fault_party,fee_payer:input.fault_party==='DISPUTED'?null:input.fault_party,note,instructions});
         }
         if(receiving){
+          if(before.shipping_mode==='PLATFORM'){
+            const [received]=await manager.query("SELECT id FROM shipping_shipment WHERE return_request_id=$1 AND leg='CUSTOMER_RETURN' AND provider='PLATFORM' AND status='DELIVERED'",[id]);
+            if(!received)throw new ApiError(409,'RETURN_PICKUP_NOT_DELIVERED','Bộ phận giao hàng cần bàn giao kiện trả về kho trước khi kiểm hàng.');
+          }
           if(!input.operation_id)throw new ApiError(422,'OPERATION_ID_REQUIRED','Cần mã thao tác nhận hàng để retry an toàn.');
           const {lines,note:inspectionNote,items,complete}=this.receipt(before,input);
           if(!complete)nextStatus='APPROVED';
@@ -120,15 +129,23 @@ export class ReturnsService {
           }
           await manager.query('UPDATE order_return_request SET inspection_json=$2,inspection_note=$3,inventory_status=$4,inventory_command_json=$5,next_attempt_at=now(),last_error=NULL WHERE id=$1',[id,JSON.stringify(lines),inspectionNote,inventoryStatus,command?JSON.stringify(command):null]);
           await this.record(manager,id,auth,'RECEIPT_INSPECTED',{lines,note:inspectionNote,inventory_status:inventoryStatus,legacy_reconciliation_note:input.legacy_reconciliation_note});
+          if(complete){
+            await manager.query(`WITH received AS (
+              UPDATE shipping_shipment SET status='MANUAL_RECEIVED',delivered_at=now(),version=version+1
+              WHERE return_request_id=$1 AND leg='CUSTOMER_RETURN' AND provider='EXTERNAL' AND status='MANUAL_IN_TRANSIT' RETURNING id
+            ) INSERT INTO shipping_event(shipment_id,status,source,occurred_at)
+              SELECT id,'MANUAL_RECEIVED','MANUAL',now() FROM received`,[id]);
+          }
         }
         if(input.status==='EXCHANGE_SENT'){
-          if(!input.operation_id||!reference)throw new ApiError(422,'REPLACEMENT_REFERENCE_REQUIRED','Cần mã thao tác và tham chiếu bàn giao hàng đổi.');
+          if(['GHN','PLATFORM'].includes(before.shipping_mode)&&(await manager.query("SELECT id FROM shipping_shipment WHERE return_request_id=$1 AND leg='EXCHANGE_OUTBOUND' AND status='RETURNED'",[id])).length)throw new ApiError(409,'EXCHANGE_ALREADY_RETURNED','Kiện đổi đã hoàn về. Cần thống nhất hoàn tiền với khách.');
+          if(!input.operation_id||(!reference&&!['GHN','PLATFORM'].includes(before.shipping_mode)))throw new ApiError(422,'REPLACEMENT_REFERENCE_REQUIRED','Cần mã thao tác và tham chiếu bàn giao hàng đổi.');
           if(before.inventory_status!=='APPLIED'||!['NOT_STARTED','BLOCKED'].includes(before.exchange_status)||before.fault_party==='DISPUTED'||!before.fee_payer||before.conversion_status==='PROPOSED')throw new ApiError(409,'EXCHANGE_NOT_READY','Chờ đối chiếu kho, quyết định phí hoặc phản hồi đề nghị hoàn tiền trước khi gửi đổi.');
           const replacements=input.replacements,items=before.items as any[];
           if(!replacements||replacements.length!==items.length||new Set(replacements.map(row=>row.order_item_id)).size!==items.length||replacements.some(row=>!items.some(item=>item.order_item_id===row.order_item_id)))throw new ApiError(422,'EXCHANGE_ITEMS_REQUIRED','Chọn phân loại hàng đổi cho đủ từng dòng; không đổi một phần hoặc khác giá.');
           const prices=await manager.query('SELECT id,unit_price_vnd FROM order_item WHERE order_id=$1',[before.order_id]);
           const command={operation_id:commandId('return-exchange:'+id+':'+input.operation_id),receipt_id:id,order_id:before.order_id,actor_user_id:auth.user_id,items:items.map(item=>({original_variant_id:item.variant_id,variant_id:replacements.find(row=>row.order_item_id===item.order_item_id)!.variant_id,store_id:before.store_id,quantity:item.quantity,unit_price_vnd:moneyNumber(prices.find((row:any)=>row.id===item.order_item_id).unit_price_vnd)}))};
-          await manager.query("UPDATE order_return_request SET exchange_status='PENDING',exchange_command_json=$2,replacement_reference=$3,version=version+1,next_attempt_at=now(),last_error=NULL,updated_at=now() WHERE id=$1",[id,JSON.stringify(command),reference]);
+          await manager.query("UPDATE order_return_request SET exchange_status='PENDING',exchange_command_json=$2,replacement_reference=$3,version=version+1,next_attempt_at=now(),last_error=NULL,updated_at=now() WHERE id=$1",[id,JSON.stringify(command),reference??null]);
           await this.record(manager,id,auth,'EXCHANGE_DISPATCH_REQUESTED',{reference,items:command.items});
           const [result]=await manager.query(projection+' WHERE r.id=$1',[id]);return map(result);
         }

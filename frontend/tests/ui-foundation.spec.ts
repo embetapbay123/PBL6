@@ -179,7 +179,7 @@ test("UNKNOWN payment is a warning and only offers read-only recovery", async ({
   await expect(warning.locator("svg")).toBeVisible();
   await warning
     .getByRole("button", {
-      name: "Đọc lại đơn và kết quả thanh toán",
+      name: "Kiểm tra",
       exact: true,
     })
     .click();

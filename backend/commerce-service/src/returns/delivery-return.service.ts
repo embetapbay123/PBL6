@@ -56,6 +56,7 @@ export class DeliveryReturnService {
   return this.source.transaction(async manager=>{
    const [order]=await manager.query('SELECT * FROM "order" WHERE id=$1 AND store_id=$2 FOR UPDATE',[orderId,store]);
    if(!order)throw new ApiError(404,'NOT_FOUND','Không tìm thấy đơn thuộc cửa hàng.');
+   if(['GHN','PLATFORM'].includes(order.shipping_mode))throw new ApiError(409,'CARRIER_MANAGED_RETURN','Hãng vận chuyển xác nhận chuyển hoàn; hồ sơ sẽ được tạo tự động.');
    return once(manager,'M2.DeliveryReturn.open',input.operation_id,{...input,order_id:orderId,store_id:store,actor:auth.user_id},async()=>{
     if(order.version!==input.expected_order_version)throw new ApiError(409,'VERSION_CONFLICT','Đơn đã thay đổi. Đọc lại trước khi ghi nhận.');
     if(order.status!=='SHIPPED')throw new ApiError(409,'DELIVERY_RETURN_NOT_ALLOWED','Chỉ ghi nhận giao thất bại sau khi bàn giao.');
@@ -81,6 +82,10 @@ export class DeliveryReturnService {
    return once(manager,'M2.DeliveryReturn.inspect',input.operation_id,{...input,case_id:id,actor:auth.user_id},async()=>{
     if(row.version!==input.expected_version)throw new ApiError(409,'VERSION_CONFLICT','Biên bản đã thay đổi.');
     if(!['OPEN','RECEIVED'].includes(row.status))throw new ApiError(409,'INSPECTION_FROZEN','Biên bản đang đối chiếu hoặc đã đóng; không sửa im lặng lịch sử.');
+    if(row.shipping_shipment_id){
+      const [shipment]=await manager.query('SELECT status FROM shipping_shipment WHERE id=$1',[row.shipping_shipment_id]);
+      if(shipment?.status!=='RETURNED')throw new ApiError(409,'CARRIER_RETURN_NOT_RECEIVED','Chờ hãng xác nhận đã giao trả kiện trước khi kiểm hàng hoàn.');
+    }
     const originals=await manager.query('SELECT id,quantity FROM order_item WHERE order_id=$1',[order.id]);
     if(!originals.length||input.lines.length!==originals.length||new Set(input.lines.map(line=>line.order_item_id)).size!==originals.length)throw new ApiError(422,'INSPECTION_LINES_REQUIRED','Cần kiểm từng dòng của chính đơn, kể cả dòng chưa nhận đủ.');
     for(const line of input.lines){const original=originals.find((item:any)=>item.id===line.order_item_id);const counts=[line.received_quantity,line.resellable_quantity,line.damaged_quantity,line.pending_quantity];

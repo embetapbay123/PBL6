@@ -20,4 +20,6 @@ export class Product {
   moderation_status!: string;
   @Column({"type": "integer", "nullable": false})
   version!: number;
+  @Column({"type": "integer", "nullable": false, "default": 0})
+  sold_count!: number;
 }

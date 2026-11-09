@@ -4195,6 +4195,15 @@
               "maximum": 100,
               "default": 20
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
           }
         ],
         "responses": {
@@ -23549,6 +23558,4430 @@
         "x-member-owner": "Trí",
         "x-implementation-status": "IMPLEMENTED"
       }
+    },
+    "/me/notifications/group": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "listNotificationGroupHistory",
+        "summary": "Xem lịch sử sự kiện của nhóm thông báo",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ORDER_STATUS",
+                "PAYMENT_EVENT",
+                "RETURN_STATUS"
+              ]
+            }
+          },
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "exclude_primary",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "up_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công: liệt kê lịch sử sự kiện của nhóm",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageCustomerNotifications"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "description": "Xem lịch sử các sự kiện cập nhật của một nhóm thông báo đơn hàng.",
+        "x-service-owner": "M2",
+        "x-module": "notification",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/me/notifications/read-group": {
+      "post": {
+        "tags": [
+          "Notifications"
+        ],
+        "operationId": "markNotificationGroupRead",
+        "summary": "Đánh dấu đã đọc toàn bộ nhóm thông báo đến mốc thời gian",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "order_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "ORDER_STATUS",
+                      "PAYMENT_EVENT",
+                      "RETURN_STATUS"
+                    ]
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "up_to": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đã đánh dấu đọc thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "updated"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "updated": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "description": "Đánh dấu đã đọc các sự kiện trong cùng một nhóm thông báo đơn hàng.",
+        "x-service-owner": "M2",
+        "x-module": "notification",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/admin/shipping/connection": {
+      "get": {
+        "operationId": "getShippingConnection",
+        "summary": "getShippingConnection",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "configured": {
+                      "type": "boolean"
+                    },
+                    "booking_enabled": {
+                      "type": "boolean"
+                    },
+                    "cod_verification_enabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "provider",
+                    "environment",
+                    "configured",
+                    "booking_enabled",
+                    "cod_verification_enabled"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/locations": {
+      "get": {
+        "operationId": "listShippingLocations",
+        "summary": "listShippingLocations",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "store_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "shop_id": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 2147483647
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "staging",
+                              "production"
+                            ]
+                          },
+                          "address": {
+                            "type": "object",
+                            "properties": {
+                              "recipient_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "phone": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 20
+                              },
+                              "line1": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "ward": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "district": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "city": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "new_address": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "recipient_name",
+                              "phone",
+                              "line1",
+                              "ward",
+                              "city"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "GHN",
+                              "PLATFORM"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "store_id",
+                          "name",
+                          "environment",
+                          "address",
+                          "enabled",
+                          "version"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveShippingLocation",
+        "summary": "saveShippingLocation",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "shop_id": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 2147483647
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "recipient_name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "phone": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 20
+                        },
+                        "line1": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "ward": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "district": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "city": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "new_address": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "recipient_name",
+                        "phone",
+                        "line1",
+                        "ward",
+                        "city"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "PLATFORM"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "store_id",
+                    "name",
+                    "environment",
+                    "address",
+                    "enabled",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "store_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "shop_id": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
+                  },
+                  "environment": {
+                    "type": "string",
+                    "enum": [
+                      "staging",
+                      "production"
+                    ]
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "recipient_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "phone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 20
+                      },
+                      "line1": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "ward": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "district": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "city": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "new_address": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "recipient_name",
+                      "phone",
+                      "line1",
+                      "ward",
+                      "city"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  }
+                },
+                "required": [
+                  "id",
+                  "store_id",
+                  "name",
+                  "shop_id",
+                  "environment",
+                  "address",
+                  "enabled",
+                  "expected_version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store/shipping/shipments": {
+      "get": {
+        "operationId": "storeShippingShipments",
+        "summary": "storeShippingShipments",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50000000
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "order_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "store_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "return_request_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "leg": {
+                            "type": "string",
+                            "enum": [
+                              "OUTBOUND",
+                              "EXCHANGE_OUTBOUND",
+                              "CUSTOMER_RETURN"
+                            ]
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "GHN",
+                              "EXTERNAL",
+                              "PLATFORM"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "tracking_code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "expected_delivery_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "picked_up_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "delivered_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "events": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                },
+                                "occurred_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CARRIER",
+                                    "MANUAL"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "occurred_at",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "last_error": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "provider_status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "cod_vnd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "actual_fee_vnd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "cod_collected_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "cod_remitted_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "pending_command": {
+                            "type": "string",
+                            "enum": [
+                              "CREATE",
+                              "CANCEL",
+                              "REDELIVER",
+                              "RETURN"
+                            ]
+                          },
+                          "pending_command_status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "UNKNOWN"
+                            ]
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "staging",
+                              "production"
+                            ]
+                          },
+                          "label_available": {
+                            "type": "boolean"
+                          },
+                          "exchange_items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "variant_id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 512
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                }
+                              },
+                              "required": [
+                                "variant_id",
+                                "name",
+                                "quantity"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "exchange_receipt_status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "APPLIED"
+                            ]
+                          },
+                          "courier_name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "delivery_note": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "pickup_label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "destination_label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "order_id",
+                          "store_id",
+                          "leg",
+                          "provider",
+                          "status",
+                          "created_at",
+                          "version",
+                          "events",
+                          "cod_vnd",
+                          "environment",
+                          "label_available"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 50000000
+                    },
+                    "size": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 100
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 2147483647
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "page",
+                    "size",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store/shipping/shipments/{id}/commands": {
+      "post": {
+        "operationId": "storeShippingCommand",
+        "summary": "storeShippingCommand",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "last_error": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "provider_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "cod_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "actual_fee_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "cod_collected_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cod_remitted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pending_command": {
+                      "type": "string",
+                      "enum": [
+                        "CREATE",
+                        "CANCEL",
+                        "REDELIVER",
+                        "RETURN"
+                      ]
+                    },
+                    "pending_command_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "label_available": {
+                      "type": "boolean"
+                    },
+                    "exchange_items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "variant_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 512
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "variant_id",
+                          "name",
+                          "quantity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "exchange_receipt_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "APPLIED"
+                      ]
+                    },
+                    "courier_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "delivery_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "pickup_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "destination_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events",
+                    "cod_vnd",
+                    "environment",
+                    "label_available"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "CANCEL",
+                      "REDELIVER",
+                      "RETURN"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store/shipping/shipments/{id}/label": {
+      "post": {
+        "operationId": "storeShippingLabel",
+        "summary": "storeShippingLabel",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/shipments": {
+      "get": {
+        "operationId": "adminShippingShipments",
+        "summary": "adminShippingShipments",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50000000
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "order_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "order_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "store_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "return_request_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "leg": {
+                            "type": "string",
+                            "enum": [
+                              "OUTBOUND",
+                              "EXCHANGE_OUTBOUND",
+                              "CUSTOMER_RETURN"
+                            ]
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "GHN",
+                              "EXTERNAL",
+                              "PLATFORM"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "tracking_code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "expected_delivery_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "picked_up_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "delivered_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "events": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                },
+                                "occurred_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CARRIER",
+                                    "MANUAL"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "occurred_at",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "last_error": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "provider_status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "cod_vnd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "actual_fee_vnd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "cod_collected_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "cod_remitted_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "pending_command": {
+                            "type": "string",
+                            "enum": [
+                              "CREATE",
+                              "CANCEL",
+                              "REDELIVER",
+                              "RETURN"
+                            ]
+                          },
+                          "pending_command_status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "UNKNOWN"
+                            ]
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "staging",
+                              "production"
+                            ]
+                          },
+                          "label_available": {
+                            "type": "boolean"
+                          },
+                          "exchange_items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "variant_id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 512
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                }
+                              },
+                              "required": [
+                                "variant_id",
+                                "name",
+                                "quantity"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "exchange_receipt_status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "APPLIED"
+                            ]
+                          },
+                          "courier_name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "delivery_note": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "pickup_label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "destination_label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "order_id",
+                          "store_id",
+                          "leg",
+                          "provider",
+                          "status",
+                          "created_at",
+                          "version",
+                          "events",
+                          "cod_vnd",
+                          "environment",
+                          "label_available"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "page": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 50000000
+                    },
+                    "size": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 100
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 2147483647
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "page",
+                    "size",
+                    "total"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/shipments/{id}/commands": {
+      "post": {
+        "operationId": "adminShippingCommand",
+        "summary": "adminShippingCommand",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "last_error": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "provider_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "cod_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "actual_fee_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "cod_collected_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cod_remitted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pending_command": {
+                      "type": "string",
+                      "enum": [
+                        "CREATE",
+                        "CANCEL",
+                        "REDELIVER",
+                        "RETURN"
+                      ]
+                    },
+                    "pending_command_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "label_available": {
+                      "type": "boolean"
+                    },
+                    "exchange_items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "variant_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 512
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "variant_id",
+                          "name",
+                          "quantity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "exchange_receipt_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "APPLIED"
+                      ]
+                    },
+                    "courier_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "delivery_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "pickup_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "destination_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events",
+                    "cod_vnd",
+                    "environment",
+                    "label_available"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "CANCEL",
+                      "REDELIVER",
+                      "RETURN"
+                    ]
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/shipments/{id}/label": {
+      "post": {
+        "operationId": "adminShippingLabel",
+        "summary": "adminShippingLabel",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store/orders/{id}/shipping": {
+      "get": {
+        "operationId": "getStoreShipping",
+        "summary": "getStoreShipping",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "LEGACY_MANUAL",
+                        "GHN",
+                        "PLATFORM"
+                      ]
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "order_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "store_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "return_request_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "leg": {
+                            "type": "string",
+                            "enum": [
+                              "OUTBOUND",
+                              "EXCHANGE_OUTBOUND",
+                              "CUSTOMER_RETURN"
+                            ]
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "GHN",
+                              "EXTERNAL",
+                              "PLATFORM"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "tracking_code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "expected_delivery_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "picked_up_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "delivered_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "events": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                },
+                                "occurred_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CARRIER",
+                                    "MANUAL"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "occurred_at",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "last_error": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "provider_status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "cod_vnd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "actual_fee_vnd": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "cod_collected_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "cod_remitted_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "pending_command": {
+                            "type": "string",
+                            "enum": [
+                              "CREATE",
+                              "CANCEL",
+                              "REDELIVER",
+                              "RETURN"
+                            ]
+                          },
+                          "pending_command_status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "UNKNOWN"
+                            ]
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "staging",
+                              "production"
+                            ]
+                          },
+                          "label_available": {
+                            "type": "boolean"
+                          },
+                          "exchange_items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "variant_id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "name": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 512
+                                },
+                                "quantity": {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "maximum": 100000
+                                }
+                              },
+                              "required": [
+                                "variant_id",
+                                "name",
+                                "quantity"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "exchange_receipt_status": {
+                            "type": "string",
+                            "enum": [
+                              "PENDING",
+                              "APPLIED"
+                            ]
+                          },
+                          "courier_name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "delivery_note": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "pickup_label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          },
+                          "destination_label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 1000
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "order_id",
+                          "store_id",
+                          "leg",
+                          "provider",
+                          "status",
+                          "created_at",
+                          "version",
+                          "events",
+                          "cod_vnd",
+                          "environment",
+                          "label_available"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "locations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "store_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "shop_id": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 2147483647
+                          },
+                          "environment": {
+                            "type": "string",
+                            "enum": [
+                              "staging",
+                              "production"
+                            ]
+                          },
+                          "address": {
+                            "type": "object",
+                            "properties": {
+                              "recipient_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "phone": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 20
+                              },
+                              "line1": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "ward": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "district": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "city": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "new_address": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "recipient_name",
+                              "phone",
+                              "line1",
+                              "ward",
+                              "city"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "enabled": {
+                            "type": "boolean"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "GHN",
+                              "PLATFORM"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "store_id",
+                          "name",
+                          "environment",
+                          "address",
+                          "enabled",
+                          "version"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "booking_enabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "items",
+                    "locations",
+                    "booking_enabled"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "bookStoreShipment",
+        "summary": "bookStoreShipment",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "last_error": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "provider_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "cod_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "actual_fee_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "cod_collected_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cod_remitted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pending_command": {
+                      "type": "string",
+                      "enum": [
+                        "CREATE",
+                        "CANCEL",
+                        "REDELIVER",
+                        "RETURN"
+                      ]
+                    },
+                    "pending_command_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "label_available": {
+                      "type": "boolean"
+                    },
+                    "exchange_items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "variant_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 512
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "variant_id",
+                          "name",
+                          "quantity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "exchange_receipt_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "APPLIED"
+                      ]
+                    },
+                    "courier_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "delivery_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "pickup_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "destination_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events",
+                    "cod_vnd",
+                    "environment",
+                    "label_available"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_order_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "pickup_location_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "return_request_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "weight": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 19999
+                  },
+                  "length": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 200
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_order_version",
+                  "pickup_location_id",
+                  "weight",
+                  "length",
+                  "width",
+                  "height"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/orders/{id}/shipping": {
+      "get": {
+        "operationId": "getOwnShipping",
+        "summary": "getOwnShipping",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "LEGACY_MANUAL",
+                        "GHN",
+                        "PLATFORM"
+                      ]
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "order_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "store_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "return_request_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "leg": {
+                            "type": "string",
+                            "enum": [
+                              "OUTBOUND",
+                              "EXCHANGE_OUTBOUND",
+                              "CUSTOMER_RETURN"
+                            ]
+                          },
+                          "provider": {
+                            "type": "string",
+                            "enum": [
+                              "GHN",
+                              "EXTERNAL",
+                              "PLATFORM"
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "tracking_code": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "expected_delivery_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "picked_up_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "delivered_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "version": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 50000000
+                          },
+                          "events": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "status": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 100
+                                },
+                                "occurred_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "enum": [
+                                    "CARRIER",
+                                    "MANUAL"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "status",
+                                "occurred_at",
+                                "source"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "order_id",
+                          "store_id",
+                          "leg",
+                          "provider",
+                          "status",
+                          "created_at",
+                          "version",
+                          "events"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/shipments/{id}/cod": {
+      "post": {
+        "operationId": "confirmShippingCod",
+        "summary": "confirmShippingCod",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "last_error": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "provider_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "cod_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "actual_fee_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "cod_collected_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cod_remitted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pending_command": {
+                      "type": "string",
+                      "enum": [
+                        "CREATE",
+                        "CANCEL",
+                        "REDELIVER",
+                        "RETURN"
+                      ]
+                    },
+                    "pending_command_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "label_available": {
+                      "type": "boolean"
+                    },
+                    "exchange_items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "variant_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 512
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "variant_id",
+                          "name",
+                          "quantity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "exchange_receipt_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "APPLIED"
+                      ]
+                    },
+                    "courier_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "delivery_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "pickup_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "destination_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events",
+                    "cod_vnd",
+                    "environment",
+                    "label_available"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "amount_vnd": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50000000
+                  },
+                  "reference": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version",
+                  "amount_vnd",
+                  "reference"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/return-requests/{id}/shipping": {
+      "post": {
+        "operationId": "registerReturnShipping",
+        "summary": "registerReturnShipping",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "tracking_code": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "carrier_name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version",
+                  "tracking_code",
+                  "carrier_name"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shipping/webhooks/ghn": {
+      "post": {
+        "operationId": "ghnCallback",
+        "summary": "ghnCallback",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ShopID": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
+                  },
+                  "Time": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "OrderCode": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "ClientOrderCode": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "Type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "Status": {
+                    "type": "string",
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "ShopID",
+                  "Time",
+                  "OrderCode",
+                  "Type"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store/shipping/shipments/{id}/exchange-receipt": {
+      "post": {
+        "operationId": "storeInspectExchangeReturn",
+        "summary": "storeInspectExchangeReturn",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "last_error": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "provider_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "cod_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "actual_fee_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "cod_collected_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cod_remitted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pending_command": {
+                      "type": "string",
+                      "enum": [
+                        "CREATE",
+                        "CANCEL",
+                        "REDELIVER",
+                        "RETURN"
+                      ]
+                    },
+                    "pending_command_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "label_available": {
+                      "type": "boolean"
+                    },
+                    "exchange_items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "variant_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 512
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "variant_id",
+                          "name",
+                          "quantity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "exchange_receipt_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "APPLIED"
+                      ]
+                    },
+                    "courier_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "delivery_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "pickup_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "destination_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events",
+                    "cod_vnd",
+                    "environment",
+                    "label_available"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "variant_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "received_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "resellable_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "damaged_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        }
+                      },
+                      "required": [
+                        "variant_id",
+                        "received_quantity",
+                        "resellable_quantity",
+                        "damaged_quantity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version",
+                  "note",
+                  "lines"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/shipments/{id}/exchange-receipt": {
+      "post": {
+        "operationId": "adminInspectExchangeReturn",
+        "summary": "adminInspectExchangeReturn",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "last_error": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "provider_status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "cod_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "actual_fee_vnd": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "cod_collected_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "cod_remitted_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pending_command": {
+                      "type": "string",
+                      "enum": [
+                        "CREATE",
+                        "CANCEL",
+                        "REDELIVER",
+                        "RETURN"
+                      ]
+                    },
+                    "pending_command_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "label_available": {
+                      "type": "boolean"
+                    },
+                    "exchange_items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "variant_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 512
+                          },
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100000
+                          }
+                        },
+                        "required": [
+                          "variant_id",
+                          "name",
+                          "quantity"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "exchange_receipt_status": {
+                      "type": "string",
+                      "enum": [
+                        "PENDING",
+                        "APPLIED"
+                      ]
+                    },
+                    "courier_name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "delivery_note": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "pickup_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "destination_label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events",
+                    "cod_vnd",
+                    "environment",
+                    "label_available"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 50000000
+                  },
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "variant_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "received_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "resellable_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "damaged_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        }
+                      },
+                      "required": [
+                        "variant_id",
+                        "received_quantity",
+                        "resellable_quantity",
+                        "damaged_quantity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version",
+                  "note",
+                  "lines"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/shipping/platform/locations": {
+      "post": {
+        "operationId": "savePlatformPickup",
+        "summary": "savePlatformPickup",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    },
+                    "shop_id": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 2147483647
+                    },
+                    "environment": {
+                      "type": "string",
+                      "enum": [
+                        "staging",
+                        "production"
+                      ]
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "recipient_name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "phone": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 20
+                        },
+                        "line1": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "ward": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "district": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "city": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "new_address": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "recipient_name",
+                        "phone",
+                        "line1",
+                        "ward",
+                        "city"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "PLATFORM"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "store_id",
+                    "name",
+                    "environment",
+                    "address",
+                    "enabled",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "store_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "address": {
+                    "type": "object",
+                    "properties": {
+                      "recipient_name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "phone": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 20
+                      },
+                      "line1": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 500
+                      },
+                      "ward": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "district": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "city": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "new_address": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "recipient_name",
+                      "phone",
+                      "line1",
+                      "ward",
+                      "city"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  }
+                },
+                "required": [
+                  "id",
+                  "store_id",
+                  "name",
+                  "address",
+                  "enabled",
+                  "expected_version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/returns/{id}/pickup": {
+      "post": {
+        "operationId": "requestPlatformReturnPickup",
+        "summary": "requestPlatformReturnPickup",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "order_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "store_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "return_request_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "leg": {
+                      "type": "string",
+                      "enum": [
+                        "OUTBOUND",
+                        "EXCHANGE_OUTBOUND",
+                        "CUSTOMER_RETURN"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "GHN",
+                        "EXTERNAL",
+                        "PLATFORM"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "tracking_code": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expected_delivery_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "picked_up_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "delivered_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 50000000
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "occurred_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "CARRIER",
+                              "MANUAL"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "status",
+                          "occurred_at",
+                          "source"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "order_id",
+                    "store_id",
+                    "leg",
+                    "provider",
+                    "status",
+                    "created_at",
+                    "version",
+                    "events"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expected_version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 2147483647
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "expected_version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shipping/webhooks/delivery": {
+      "post": {
+        "operationId": "deliveryCallback",
+        "summary": "deliveryCallback",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "event_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "parcel": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "parcel"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        }
+      }
+    },
+    "/store/shipping/pickup-status": {
+      "get": {
+        "operationId": "getStorePickupStatus",
+        "summary": "getStorePickupStatus",
+        "x-service-owner": "M2",
+        "x-implementation-status": "IMPLEMENTED",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "configured": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "configured"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -23860,6 +28293,18 @@
             "$ref": "#/components/schemas/ReturnPolicySnapshot"
           },
           "completed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shipping_mode": {
+            "type": "string",
+            "enum": [
+              "LEGACY_MANUAL",
+              "GHN",
+              "PLATFORM"
+            ]
+          },
+          "shipping_delivered_at": {
             "type": "string",
             "format": "date-time"
           }
@@ -24774,6 +29219,11 @@
                 "maximum": 5
               }
             }
+          },
+          "sold_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Tổng số lượng đã bán của sản phẩm."
           }
         },
         "required": [
@@ -27798,6 +32248,14 @@
           },
           "read": {
             "type": "boolean"
+          },
+          "update_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "unread_count": {
+            "type": "integer",
+            "minimum": 0
           }
         },
         "required": [
@@ -27806,7 +32264,9 @@
           "order_id",
           "event_status",
           "created_at",
-          "read"
+          "read",
+          "update_count",
+          "unread_count"
         ],
         "additionalProperties": false
       },
@@ -28098,6 +32558,14 @@
                 "maximum": 9007199254740991
               }
             }
+          },
+          "shipping_mode": {
+            "type": "string",
+            "enum": [
+              "LEGACY_MANUAL",
+              "GHN",
+              "PLATFORM"
+            ]
           }
         },
         "required": [

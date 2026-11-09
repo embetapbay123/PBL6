@@ -87,8 +87,10 @@ test("twelve-variant UI matrix commits required taxonomy attributes and twelve z
       .getByLabel("Tiền tố SKU cho các tổ hợp *", { exact: true })
       .fill(f.tag);
     const matrix = dialog.getByRole("region", { name: "Ma trận phân loại" });
-    await matrix.getByLabel("Màu sắc", { exact: false }).fill("Đỏ, Xanh, Đen");
-    await matrix.getByLabel("Kích cỡ", { exact: false }).fill("S, M, L, XL");
+    for (const value of ["Đỏ", "Xanh", "Đen", "S", "M", "L", "XL"]) {
+      await matrix.getByRole("checkbox", { name: value, exact: true }).check();
+    }
+    await dialog.getByLabel("Giá chung (VNĐ)", { exact: true }).fill("100000");
     await matrix
       .getByRole("button", { name: "Xem trước tổ hợp", exact: true })
       .click();

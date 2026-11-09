@@ -153,7 +153,7 @@ export function ProductsSample() {
           <p role="note" className="text-xs text-slate-500">
             Chưa tải được danh mục.{" "}
             <button onClick={() => void cats.refetch()}>
-              Thử tải danh mục
+              Thử lại
             </button>
           </p>
         )}

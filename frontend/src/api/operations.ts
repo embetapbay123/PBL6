@@ -12,7 +12,8 @@ export async function callOperation<K extends OperationId>(
   input: Partial<OperationInputs[K]> = {},
   options: Pick<RequestInit, 'signal'> = {}
 ): Promise<OperationOutputs[K]> {
-  const record = registry[operation];
+  const record = (registry as Record<string, any>)[operation];
+  if (!record) throw new ApiError(0, 'UNKNOWN_OPERATION', 'Không tìm thấy thao tác: ' + String(operation));
   if (record.internal) throw new ApiError(0, 'INTERNAL_API_BLOCKED', 'Web không gọi API nội bộ.');
 
   if (fixtureMode) {
@@ -21,7 +22,7 @@ export async function callOperation<K extends OperationId>(
     return getMockFallback(operation, input);
   }
 
-  let path = record.path.replace(/\{([^}]+)\}/g, (_, key) => {
+  let path = record.path.replace(/\{([^}]+)\}/g, (_: string, key: string) => {
     const value = (input.path as Record<string, unknown> | undefined)?.[key];
     if (value === undefined) throw new ApiError(0, 'MISSING_PATH_PARAMETER', 'Thiếu tham số ' + key);
     return encodeURIComponent(String(value));

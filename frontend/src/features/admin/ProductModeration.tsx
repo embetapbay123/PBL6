@@ -200,29 +200,44 @@ function ProductDecision({
     }
   }
   return (
-    <article className="boot-card">
-      <h4>{product.title}</h4>
-      <p>
-        Mã sản phẩm: <code>{product.id}</code>
-      </p>
-      <AdminStoreIdentity id={product.store_id} parties={parties} />
-      <ProductModerationNotice product={product} />
-      <p>
-        Trạng thái bán: {product.status} · Kiểm duyệt:{" "}
-        {visible ? "Được hiển thị" : "Bị ẩn"}
-      </p>
-      <p>{product.description}</p>
-      <div className="market-moderation-images">
-        {product.images?.map((image, index) => (
-          <ImagePreview
-            key={image.id}
-            src={image.image_url}
-            name={product.title + " — ảnh " + (index + 1)}
-          />
-        ))}
+    <article className="boot-card moderation-card">
+      <div className="moderation-card-top flex items-start gap-3">
+        {product.images?.[0] && (
+          <div className="product-moderation-thumbnail flex-shrink-0">
+            <img
+              src={product.images[0].image_url}
+              alt={product.title}
+              className="w-12 h-12 object-cover rounded border border-slate-200"
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="m-0 text-sm font-bold text-slate-900">{product.title}</h4>
+            <span className={`market-badge ${visible ? "is-success" : "is-warning"}`}>
+              {visible ? "Được hiển thị" : "Bị ẩn"}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 my-0.5">
+            Mã sản phẩm: <code>{product.id}</code> · Trạng thái bán: {product.status} · Kiểm duyệt:{" "}
+            {visible ? "Được hiển thị" : "Bị ẩn"}
+          </p>
+          <AdminStoreIdentity id={product.store_id} parties={parties} />
+        </div>
       </div>
-      <details>
-        <summary>Thuộc tính và biến thể</summary>
+      <ProductModerationNotice product={product} />
+      {product.description && (
+        <details className="moderation-desc-expand text-xs text-slate-600 my-1">
+          <summary className="cursor-pointer text-indigo-600 hover:text-indigo-800 font-medium">
+            Mô tả sản phẩm (xem đầy đủ)
+          </summary>
+          <div className="mt-1 p-2 bg-slate-50 rounded whitespace-pre-wrap text-slate-700">
+            {product.description}
+          </div>
+        </details>
+      )}
+      <details className="text-xs text-slate-600">
+        <summary className="cursor-pointer text-slate-600 font-medium">Thuộc tính và biến thể ({product.variants?.length ?? 0} SKU)</summary>
         <dl>
           {Object.entries(product.attributes ?? {}).map(([key, value]) => (
             <div key={key}>
@@ -242,65 +257,60 @@ function ProductDecision({
             </li>
           ))}
         </ul>
+        {product.images && product.images.length > 0 && (
+          <div className="market-moderation-images mt-3 flex flex-wrap gap-2">
+            {product.images.map((image, index) => (
+              <ImagePreview
+                key={image.id}
+                src={image.image_url}
+                name={product.title + " — ảnh " + (index + 1)}
+              />
+            ))}
+          </div>
+        )}
       </details>
       {dialog}
-      <button
-        type="button"
-        disabled={busy || missing}
-        onClick={() => setDecisionOpen(true)}
-      >
-        {visible ? "Ẩn sản phẩm" : "Bỏ ẩn sản phẩm"}
-      </button>
-      {decisionOpen && (
-        <Modal
-          label="Quyết định kiểm duyệt sản phẩm"
-          busy={busy || blocked}
-          onClose={() => void closeDecision()}
-        >
-          <h3>{product.title}</h3>
-          <p>
-            Quyết định chỉ thay đổi khả năng hiển thị, không tự mở bán sản phẩm.
-          </p>
-          <form onSubmit={submit}>
-            <label>
-              Lý do kiểm duyệt sản phẩm
-              <textarea
-                aria-label="Lý do kiểm duyệt sản phẩm"
-                required
-                maxLength={200}
-                value={reason}
-                disabled={busy || blocked || missing}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </label>
-            <button disabled={busy || blocked || missing || !reason.trim()}>
-              {busy ? "Đang lưu…" : visible ? "Ẩn sản phẩm" : "Bỏ ẩn sản phẩm"}
-            </button>
-          </form>
-          <UiButton
-            type="button"
-            variant="secondary"
-            disabled={busy || blocked}
-            onClick={() => void closeDecision()}
-          >
-            Hủy kiểm duyệt
-          </UiButton>
-          {!visible && <p>Bỏ ẩn giữ nguyên trạng thái bán của gian hàng.</p>}
-          {error !== undefined && <ErrorView error={error} />}{" "}
-          {(blocked || missing) && (
+      <details className="moderation-decision-details mt-2 border-t pt-2">
+        <summary className="ui-button ui-button-secondary text-xs cursor-pointer inline-block list-none">
+          {visible ? "Ẩn sản phẩm…" : "Bỏ ẩn sản phẩm…"}
+        </summary>
+        <form onSubmit={submit} className="moderation-decision-form mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded">
+          <label className="block text-xs font-medium text-slate-700">
+            Lý do kiểm duyệt sản phẩm
+            <textarea
+              aria-label="Lý do kiểm duyệt sản phẩm"
+              required
+              rows={2}
+              className="w-full text-xs p-1.5 border border-slate-300 rounded mt-1 block"
+              placeholder="Nhập lý do kiểm duyệt..."
+              maxLength={200}
+              value={reason}
+              disabled={busy || blocked || missing}
+              onChange={(event) => setReason(event.target.value)}
+            />
+          </label>
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5">
+            {!visible && <p className="text-xs text-slate-500 m-0">Bỏ ẩn giữ nguyên trạng thái bán của gian hàng.</p>}
             <button
-              disabled={busy}
-              onClick={() => {
-                setBusy(true);
-                void reload()
-                  .catch(setError)
-                  .finally(() => setBusy(false));
-              }}
+              className="ui-button ui-button-primary text-xs"
+              disabled={busy || blocked || missing || !reason.trim()}
             >
-              Tải lại sản phẩm trước khi xử lý tiếp
+              {busy ? "Đang lưu…" : visible ? "Xác nhận ẩn" : "Xác nhận bỏ ẩn"}
             </button>
-          )}
-        </Modal>
+          </div>
+        </form>
+      </details>
+      {error !== undefined && <ErrorView error={error} />}
+      {(blocked || missing) && (
+        <button
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            void reload().finally(() => setBusy(false));
+          }}
+        >
+          Tải lại để xử lý tiếp
+        </button>
       )}
     </article>
   );

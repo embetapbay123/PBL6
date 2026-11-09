@@ -8,6 +8,7 @@ import { ErrorView, Loading } from "../../bootstrap/components";
 import { AttributeFields, unknownAttributeKeys } from "./AttributeFields";
 import { useProductTypes } from "./useProductTypes";
 import { Button } from "../../components/ui/Button";
+import { parseVariantPrice } from "./variant-price";
 
 type Product = OperationOutputs["getOwnStoreProduct"];
 type Variant = NonNullable<Product["variants"]>[number];
@@ -48,6 +49,11 @@ export function VariantEditor({
     (v) =>
       !historical(v) && unknownAttributeKeys(axes, v.variant_values).length > 0,
   );
+  const invalidPrices = variants.some(row => !Number.isSafeInteger(row.price_vnd) || row.price_vnd < 0);
+  const draftBulkPrice = parseVariantPrice(bulkPrice);
+  const changedPrices = variants.filter((row, index) =>
+    Number.isSafeInteger(row.price_vnd) && row.price_vnd >= 0 && row.price_vnd !== product.variants?.[index]?.price_vnd,
+  ).length;
   useEffect(() => {
     if (product.version === baseVersion) return;
     if (dirty) setConflict(true);
@@ -58,6 +64,7 @@ export function VariantEditor({
   }, [product.version, product.variants, baseVersion, dirty]);
   function change(index: number, patch: Partial<Variant>) {
     setDirty(true);
+    setNotice("");
     setVariants((current) =>
       current.map((variant, i) =>
         i === index ? { ...variant, ...patch } : variant,
@@ -69,12 +76,13 @@ export function VariantEditor({
     if (
       !product.id ||
       baseVersion === undefined ||
+      !dirty ||
       busy ||
       conflict ||
       !type ||
       !!types.error ||
       types.isFetching ||
-      invalidLegacy
+      invalidLegacy || invalidPrices
     )
       return;
     setBusy(true);
@@ -122,6 +130,25 @@ export function VariantEditor({
           vẫn có thể dừng bán ở Thông tin chung.
         </p>
       )}
+      {error !== undefined && <ErrorView error={error} />}
+      {conflict && (
+        <div>
+          <p>Dữ liệu đã thay đổi. Tải lại trước khi chỉnh sửa tiếp. Các thay đổi chưa lưu sẽ bị bỏ.</p>
+          <Button variant="secondary" disabled={busy} onClick={() => {
+            setBusy(true);
+            void reload().then(fresh => {
+              setVariants(fresh.variants ?? []);
+              setBaseVersion(fresh.version);
+              setDirty(false);
+              setBulkPrice("");
+              setError(undefined);
+              setConflict(false);
+            }).catch(setError).finally(() => setBusy(false));
+          }}>Tải lại dữ liệu</Button>
+        </div>
+      )}
+      {types.error && <ErrorView error={types.error} onRetry={() => void types.refetch()} />}
+      {notice && <p role="status">{notice}</p>}
       {!variants.length ? (
         <p>Chưa có biến thể để chỉnh sửa.</p>
       ) : (
@@ -146,39 +173,46 @@ export function VariantEditor({
             <label>
               Giá cho các phân loại đang bán (VNĐ)
               <input
-                type="number"
-                min={0}
-                step={1}
-                max={Number.MAX_SAFE_INTEGER}
+                type="text"
+                inputMode="numeric"
+                aria-invalid={bulkPrice !== "" && draftBulkPrice === undefined ? true : undefined}
                 value={bulkPrice}
                 onChange={(event) => setBulkPrice(event.target.value)}
               />
+              {bulkPrice !== "" && draftBulkPrice === undefined && <small>Nhập số tiền nguyên từ 0 ₫.</small>}
             </label>
             <Button
               variant="secondary"
               disabled={
-                bulkPrice === "" ||
-                !Number.isSafeInteger(Number(bulkPrice)) ||
-                Number(bulkPrice) < 0 ||
-                !variants.some((row) => row.status !== "STOPPED")
+                draftBulkPrice === undefined ||
+                !variants.some(row => row.status !== "STOPPED" && row.price_vnd !== draftBulkPrice)
               }
               onClick={() => {
+                if (draftBulkPrice === undefined) return;
                 setVariants((current) =>
                   current.map((row) =>
                     row.status === "STOPPED"
                       ? row
-                      : { ...row, price_vnd: Number(bulkPrice) },
+                      : { ...row, price_vnd: draftBulkPrice },
                   ),
                 );
                 setDirty(true);
-                setNotice(
-                  "Đã cập nhật giá trong bản nháp cho các phân loại đang bán. Kiểm tra rồi bấm Lưu biến thể để áp dụng.",
-                );
+                setNotice("");
               }}
             >
               Áp giá vào bản nháp
             </Button>
           </fieldset>
+          {dirty && (
+            <div className="variant-save-toolbar">
+              <p role="status">{changedPrices > 0 && `${changedPrices} phân loại đã đổi giá · `}Chưa lưu</p>
+              <Button type="submit" loading={busy}
+                disabled={conflict || baseVersion === undefined || !type || !!types.error || types.isFetching || invalidLegacy || invalidPrices}>
+                {busy ? "Đang lưu…" : "Lưu biến thể"}
+              </Button>
+            </div>
+          )}
+          {dirty && invalidPrices && <p className="variant-inline-error">Kiểm tra giá từng phân loại. Giá phải là số nguyên từ 0 ₫.</p>}
           {variants.map((variant, index) => (
             <details className="variant-accordion" key={variant.id ?? index}>
               <summary>
@@ -187,7 +221,7 @@ export function VariantEditor({
                     "Phân loại tiêu chuẩn"}
                 </strong>
                 <span>
-                  {variant.sku} · {variant.price_vnd.toLocaleString("vi-VN")} ₫
+                  {variant.sku} · {Number.isNaN(variant.price_vnd) ? "Chưa nhập giá" : `${variant.price_vnd.toLocaleString("vi-VN")} ₫`}
                   · {variant.status === "STOPPED" ? "Dừng bán" : "Đang bán"}
                 </span>
               </summary>
@@ -216,11 +250,13 @@ export function VariantEditor({
                     required
                     type="number"
                     min="0"
+                    max={Number.MAX_SAFE_INTEGER}
                     step="1"
-                    value={variant.price_vnd}
-                    onChange={(event) =>
-                      change(index, { price_vnd: Number(event.target.value) })
-                    }
+                    value={Number.isNaN(variant.price_vnd) ? "" : variant.price_vnd}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      change(index, { price_vnd: value === "" ? Number.NaN : Number(value) });
+                    }}
                   />
                 </label>
                 <label>
@@ -242,6 +278,7 @@ export function VariantEditor({
                     checked={!!variant.is_default}
                     onChange={() => {
                       setDirty(true);
+                      setNotice("");
                       setVariants((current) =>
                         current.map((item, i) => ({
                           ...item,
@@ -268,53 +305,8 @@ export function VariantEditor({
               </fieldset>
             </details>
           ))}
-          <button
-            disabled={
-              busy ||
-              conflict ||
-              product.version === undefined ||
-              !type ||
-              !!types.error ||
-              types.isFetching ||
-              invalidLegacy
-            }
-          >
-            {busy ? "Đang lưu…" : "Lưu biến thể"}
-          </button>
         </form>
       )}
-      {error !== undefined && <ErrorView error={error} />}{" "}
-      {conflict && (
-        <div>
-          <p>
-            Dữ liệu đã thay đổi. Tải lại trước khi chỉnh sửa tiếp; các thay đổi
-            chưa lưu sẽ bị bỏ.
-          </p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setBusy(true);
-              void reload()
-                .then((fresh) => {
-                  setVariants(fresh.variants ?? []);
-                  setBaseVersion(fresh.version);
-                  setDirty(false);
-                  setError(undefined);
-                  setConflict(false);
-                })
-                .catch(setError)
-                .finally(() => setBusy(false));
-            }}
-          >
-            Tải lại dữ liệu
-          </button>
-        </div>
-      )}
-      {types.error && (
-        <ErrorView error={types.error} onRetry={() => void types.refetch()} />
-      )}
-      {notice && <p role="status">{notice}</p>}
     </section>
   );
 }

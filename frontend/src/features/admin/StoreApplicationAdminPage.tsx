@@ -125,11 +125,10 @@ function ReviewDialog({
           {blocked && (
             <>
               <p role="status">
-                Dữ liệu hoặc kết quả đã thay đổi. Đọc lại đúng hồ sơ trước khi
-                quyết định tiếp; không gửi lại từ phiên bản cũ.
+                Hồ sơ đã thay đổi. Làm mới trước khi quyết định.
               </p>
               <button type="button" disabled={busy} onClick={onReload}>
-                Đọc lại hồ sơ này
+                Làm mới
               </button>
             </>
           )}

@@ -1,14 +1,16 @@
 import { AddressSuggestions } from "../../components/AddressSuggestions";
+import { Button as UiButton } from "../../components/ui/Button";
 import { useConfirm } from "../../components/ConfirmDialog";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, isUncertainMutation } from "../../api/client";
 import { callOperation } from "../../api/operations";
 import { CustomerSubNav } from "./CustomerSubNav";
 import { useAuth } from "../../api/auth-context";
-import { checkoutAddressState } from "./checkout-intent";
+import { checkoutAddressState, ownsCheckoutState } from "./checkout-intent";
 import { useUnsavedChanges } from "../../components/useUnsavedChanges";
 import { readAddressBook } from "./address-book";
+import { Plus } from "lucide-react";
 
 interface ApiAddress {
   id: string;
@@ -54,9 +56,16 @@ export const AddressPage: React.FC = () => {
   const { session } = useAuth(),
     userId = session?.context?.user_id;
   const [params] = useSearchParams();
+  const { state } = useLocation();
+  const navigate = useNavigate();
   const returnTo =
     params.get("returnTo") === "/checkout" ? "/checkout" : undefined;
-  const [editorOpen, setEditorOpen] = useState(false);
+  const addingForCheckout = !!returnTo && params.get("add") === "1";
+  const checkoutSelection = ownsCheckoutState(userId, state) ? state : undefined;
+  const returnState = (addressId?: string) => addressId && userId
+    ? { ...checkoutSelection, ...checkoutAddressState(userId, addressId) }
+    : checkoutSelection;
+  const [editorOpen, setEditorOpen] = useState(addingForCheckout);
   const [editing, setEditing] = useState<string | null>(null);
   const form = useRef<HTMLFormElement>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -100,13 +109,13 @@ export const AddressPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!editorOpen) return;
+    if (!editorOpen || loading || loadError) return;
     const frame = requestAnimationFrame(() => {
       form.current?.scrollIntoView({ block: "nearest" });
       form.current?.querySelector("input")?.focus();
     });
     return () => cancelAnimationFrame(frame);
-  }, [editorOpen, editing]);
+  }, [editorOpen, editing, loading, loadError]);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -138,6 +147,7 @@ export const AddressPage: React.FC = () => {
 
   const runMutation = async (
     mutate: () => Promise<unknown>,
+    refresh = true,
   ): Promise<boolean> => {
     setActionError(null);
     try {
@@ -153,6 +163,10 @@ export const AddressPage: React.FC = () => {
       }
       flight.current = false;
       return false;
+    }
+    if (!refresh) {
+      flight.current = false;
+      return true;
     }
     try {
       await fetchAddresses();
@@ -195,20 +209,26 @@ export const AddressPage: React.FC = () => {
     flight.current = true;
     setAdding(true);
     const body = { recipient_name: name, phone, line1, ward, district, city };
-    const ok = await runMutation(() =>
-      editing
-        ? callOperation("updateAddress", { path: { id: editing }, body })
-        : callOperation("createAddress", {
-            body: {
-              ...body,
-              is_default: addresses.length === 0,
-            },
-          }),
-    );
+    let newAddressId: string | undefined;
+    const resumeCheckout = addingForCheckout && !editing;
+    const ok = await runMutation(async () => {
+      if (editing) await callOperation("updateAddress", { path: { id: editing }, body });
+      else {
+        const result = await callOperation("createAddress", {
+          body: { ...body, is_default: addresses.length === 0 },
+        });
+        newAddressId = result.id;
+      }
+    }, !resumeCheckout);
     if (mounted.current) {
       setAdding(false);
       // chỉ xóa form khi server nhận thành công
       if (ok) {
+        if (resumeCheckout) {
+          releaseUnsaved();
+          navigate("/checkout", { replace: true, state: returnState(newAddressId) });
+          return;
+        }
         setEditorOpen(false);
         setEditing(null);
         setNewName("");
@@ -325,73 +345,32 @@ export const AddressPage: React.FC = () => {
       <CustomerSubNav />
       {dialog}
 
-      <h1 className="text-2xl font-bold mb-6">Sổ địa chỉ</h1>
-      {returnTo && (
-        <Link className="ui-button ui-button-secondary" to={returnTo}>
-          Quay lại thanh toán
-        </Link>
-      )}
-
-      {actionError && (
-        <div
-          role="alert"
-          className="mb-4 p-4 text-sm text-red-700 bg-red-100 rounded-lg"
-        >
-          {actionError}
+      <div className="address-page-header flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 m-0">Địa chỉ của tôi</h1>
+          <p className="text-xs text-slate-500 mt-1">Quản lý địa chỉ nhận hàng để trải nghiệm mua sắm nhanh chóng</p>
         </div>
-      )}
-      {uncertain && (
-        <section role="region" aria-label="Đối chiếu thao tác địa chỉ">
-          <h2>Kiểm tra kết quả lưu</h2>
-          <p>
-            {knownSaved
-              ? "Server đã xác nhận thay đổi nhưng chưa đọc lại được danh sách."
-              : "Kết nối bị gián đoạn khi lưu. Hãy kiểm tra danh sách trước khi thử thêm hoặc sửa lần nữa."}{" "}
-            Chỉ đọc lại và kiểm tra địa chỉ bên dưới; không gửi lại thao tác cũ.
-          </p>
-          <button
-            type="button"
-            disabled={reading}
-            onClick={() => void reconcile()}
-          >
-            Đọc lại sổ địa chỉ
-          </button>
-          {reconciled && (
-            <>
-              <p>
-                Đã đọc danh sách hiện tại. Kiểm tra thông tin trước khi kết
-                thúc; việc đọc lại không xác nhận ai đã tạo hoặc sửa một địa chỉ
-                giống nhau.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  releaseUnsaved();
-                  setUncertain(false);
-                  setKnownSaved(false);
-                  setReconciled(false);
-                  setActionError(null);
-                  cancelEdit();
-                }}
-              >
-                Đã đối chiếu, kết thúc thao tác này
-              </button>
-            </>
+        <div className="flex items-center gap-2">
+          {returnTo && (
+            <Link className="ui-button ui-button-secondary text-xs" to={returnTo} state={returnState()}>
+              Quay lại thanh toán
+            </Link>
           )}
-        </section>
-      )}
-
-      {!editorOpen && (
-        <button
-          type="button"
-          onClick={() => {
-            cancelEdit();
-            setEditorOpen(true);
-          }}
-        >
-          Thêm địa chỉ
-        </button>
-      )}
+          {!editorOpen && (
+            <button
+              className="ui-button ui-button-primary order-btn-highlight text-xs flex items-center gap-1.5"
+              type="button"
+              onClick={() => {
+                cancelEdit();
+                setEditorOpen(true);
+              }}
+            >
+              <Plus size={15} />
+              <span>Thêm địa chỉ mới</span>
+            </button>
+          )}
+        </div>
+      </div>
       {editorOpen && (
         <>
           {/* Form thêm địa chỉ mới */}
@@ -467,46 +446,58 @@ export const AddressPage: React.FC = () => {
                 onCity={setNewCity}
                 onWard={setNewWard}
               />
-              <label>
-                Quận/huyện (theo địa chỉ được cung cấp)
+              <div>
+                <label
+                  htmlFor="addr-district"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Quận / huyện
+                </label>
                 <input
+                  id="addr-district"
                   required
                   maxLength={200}
                   value={newDistrict}
                   onChange={(e) => setNewDistrict(e.target.value)}
+                  className="w-full border rounded-md p-2"
+                  placeholder="Quận / Huyện"
                 />
-              </label>
-              <p className="form-hint">
-                Giữ thông tin quận/huyện của địa chỉ giao nhận khi có; hệ thống
-                hiện vẫn sử dụng trường này.
-              </p>
-              <button
-                type="submit"
-                disabled={adding}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {adding
-                  ? "Đang lưu..."
-                  : editing
-                    ? "Lưu địa chỉ"
-                    : "Thêm địa chỉ"}
-              </button>
-              {editorOpen && (
-                <button type="button" disabled={adding} onClick={cancelEdit}>
-                  {editing ? "Hủy sửa địa chỉ" : "Hủy thêm địa chỉ"}
-                </button>
-              )}
+              </div>
+              <div className="ui-actions flex items-center gap-2 mt-4">
+                <UiButton
+                  type="submit"
+                  disabled={adding}
+                  loading={adding}
+                >
+                  {adding
+                    ? "Đang lưu..."
+                    : editing
+                      ? "Lưu địa chỉ"
+                      : "Thêm địa chỉ"}
+                </UiButton>
+                {editorOpen && (
+                  <UiButton
+                    type="button"
+                    variant="secondary"
+                    disabled={adding}
+                    onClick={cancelEdit}
+                  >
+                    {editing ? "Hủy" : "Hủy"}
+                  </UiButton>
+                )}
+              </div>
             </fieldset>
           </form>
         </>
       )}
-      {/* Danh sách địa chỉ */}
-      <div className="address-card-grid">
+      {/* Danh sách địa chỉ chuẩn Shopee */}
+      <div className="shopee-address-list space-y-3">
         {addresses.length === 0 && (
-          <p className="text-sm text-gray-600">
-            Bạn chưa có địa chỉ nào. Hãy thêm địa chỉ nhận hàng ở form phía
-            trên.
-          </p>
+          <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
+            <p className="text-sm text-slate-500">
+              Bạn chưa có địa chỉ nhận hàng nào. Bấm &quot;Thêm địa chỉ mới&quot; để thiết lập.
+            </p>
+          </div>
         )}
         {addresses.map((addr) => {
           const busy = busyId === addr.id;
@@ -515,57 +506,64 @@ export const AddressPage: React.FC = () => {
               aria-label={"Địa chỉ " + addr.name}
               key={addr.id}
               className={
-                "address-book-card" + (addr.isDefault ? " is-default" : "")
+                "shopee-address-card" + (addr.isDefault ? " is-default" : "")
               }
             >
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-lg">{addr.name}</span>
-                  <span className="text-gray-500 text-sm">({addr.phone})</span>
-                  {addr.isDefault && (
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">
-                      Mặc định
-                    </span>
-                  )}
+              <div className="shopee-address-main">
+                <div className="shopee-address-user-line">
+                  <span className="shopee-address-name">{addr.name}</span>
+                  <span className="shopee-address-divider">|</span>
+                  <span className="shopee-address-phone">{addr.phone}</span>
                 </div>
-                <p className="text-gray-600 mt-2">{addr.detail}</p>
-              </div>
-              <div className="address-card-actions">
-                {returnTo && userId && !locked && (
-                  <Link
-                    to={returnTo}
-                    state={checkoutAddressState(userId, addr.id)}
-                    className="addr-btn addr-btn-primary"
-                  >
-                    Giao đến địa chỉ này
-                  </Link>
+                <p className="shopee-address-detail">{addr.detail}</p>
+                {addr.isDefault && (
+                  <div className="shopee-address-badge-row">
+                    <span className="shopee-default-badge">Mặc định</span>
+                  </div>
                 )}
-                <button
-                  type="button"
-                  className="addr-btn addr-btn-secondary"
-                  disabled={locked}
-                  onClick={() => editAddress(addr)}
-                >
-                  Sửa địa chỉ
-                </button>
-                {!addr.isDefault && (
+              </div>
+              <div className="shopee-address-side-actions">
+                <div className="shopee-address-text-actions">
                   <button
                     type="button"
-                    onClick={() => void handleSetDefault(addr.id)}
+                    className="shopee-text-action-btn"
                     disabled={locked}
-                    className="addr-btn addr-btn-default"
+                    onClick={() => editAddress(addr)}
                   >
-                    {busy ? "Đang xử lý..." : "Thiết lập mặc định"}
+                    Cập nhật
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => void handleDelete(addr.id)}
-                  disabled={locked}
-                  className="addr-btn addr-btn-danger"
-                >
-                  Xóa
-                </button>
+                  {!addr.isDefault && (
+                    <button
+                      type="button"
+                      className="shopee-text-action-btn is-delete"
+                      disabled={locked}
+                      onClick={() => void handleDelete(addr.id)}
+                    >
+                      Xóa
+                    </button>
+                  )}
+                </div>
+                <div className="shopee-address-btn-actions">
+                  {returnTo && userId && !locked && (
+                    <Link
+                      to={returnTo}
+                      state={returnState(addr.id)}
+                      className="ui-button ui-button-primary order-btn-highlight text-xs"
+                    >
+                      Giao đến địa chỉ này
+                    </Link>
+                  )}
+                  {!addr.isDefault ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleSetDefault(addr.id)}
+                      disabled={locked}
+                      className="shopee-set-default-btn"
+                    >
+                      {busy ? "Đang xử lý..." : "Thiết lập mặc định"}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </article>
           );

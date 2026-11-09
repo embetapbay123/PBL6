@@ -246,6 +246,34 @@
   align-items: center;
   justify-content: center;
 }
+.seller-workspace .store-order-filters,
+.seller-workspace .seller-filter-bar {
+  flex-flow: row wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+}
+.seller-workspace .store-order-filters form.admin-moderation-search {
+  flex: 1 1 300px;
+  width: auto;
+}
+.seller-workspace .store-order-filters form label,
+.seller-workspace .seller-filter-bar input {
+  min-width: 0;
+}
+.seller-workspace .seller-filter-bar input {
+  flex: 1 1 240px;
+  width: auto;
+}
+.seller-workspace .store-order-extra-filters > summary {
+  cursor: pointer;
+  padding: 8px 4px;
+  font-size: 13px;
+}
+.seller-workspace .store-order-extra-filters[open] {
+  flex-basis: 100%;
+  order: 1;
+}
 .seller-workspace .table-result-note {
   font-size: 12.5px;
   color: var(--sw-text-muted);
@@ -430,7 +458,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  align-items: start;
 }
+.seller-workspace .seller-overview-guides .store-setup-guide { margin: 0; }
 .seller-workspace .seller-guide {
   border: 1px solid var(--sw-border);
   border-radius: 12px;
@@ -561,21 +591,47 @@
   margin-left: 6px;
 }
 .seller-workspace .inventory-row-actions {
-  min-width: 200px;
+  min-width: 156px;
+  text-align: right;
   white-space: nowrap;
 }
-.seller-workspace .inventory-row-actions button {
-  padding: 5px 11px;
+.seller-workspace .inventory-row-actions > button {
+  min-height: 36px;
+  padding: 5px 10px;
   font-size: 12px;
-  border-radius: 6px;
 }
-.seller-workspace .inventory-row-actions .inventory-history-link {
-  display: inline-block;
-  margin: 4px 8px 0 0;
-  font-size: 12px;
-  color: var(--sw-primary);
-  text-decoration: underline;
+.seller-workspace .inventory-row-actions > button + button {
+  margin-inline-start: 6px;
 }
+.inventory-explanation {
+  margin-block: 12px;
+}
+.inventory-result-count {
+  color: var(--sw-text-muted);
+  font-size: 13px;
+  margin-block: 12px 8px;
+}
+.inventory-adjust-footer {
+  margin-top: 16px;
+}
+.inventory-adjust-footer .ui-actions {
+  justify-content: flex-end;
+  margin: 0;
+}
+.inventory-adjust-preview {
+  margin: 0;
+  font-weight: 600;
+}
+.inventory-adjust-preview:not(:empty) {
+  margin-bottom: 8px;
+}
+.inventory-amount-help,
+.inventory-amount-error {
+  font-size: 13px;
+  margin: -8px 0 12px;
+}
+.inventory-amount-help { color: #475569; }
+.inventory-amount-error { color: #b42318; }
 
 /* === Financial Report Table Redesign === */
 .seller-workspace .financial-kpi-grid {
@@ -698,6 +754,36 @@
 }
 
 /* === Seller Staff & Invitations Tables === */
+.seller-staff-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block: 0 16px;
+}
+.seller-staff-heading h1 { margin: 0; }
+.seller-staff-actions {
+  justify-content: flex-end;
+  gap: 6px;
+}
+.seller-staff-actions > .ui-button { white-space: nowrap; }
+.seller-staff-actions .action-menu-popover .staff-lock-action {
+  justify-content: flex-start;
+  color: #b42318;
+}
+.staff-permission-scope { margin-block: 8px 12px; }
+.staff-permission-scope > summary { cursor: pointer; }
+.report-current-period {
+  margin-block: 12px 16px;
+  padding: 10px 14px;
+  border-inline-start: 3px solid var(--ui-accent);
+  background: var(--ui-surface);
+  overflow-wrap: anywhere;
+}
+.report-current-period p { margin: 0; }
+.report-current-period time { white-space: nowrap; }
+.report-current-period small { color: var(--ui-muted); }
 .seller-staff-table,
 .seller-invitations-table,
 .store-audit-table table {
@@ -871,8 +957,8 @@
 
 /* Voucher Dialog Modal Centering & Clean Sizing */
 .market-native-dialog:has(.voucher-modal-form) {
-  width: min(840px, calc(100vw - 32px)) !important;
-  max-width: 840px !important;
+  width: min(620px, calc(100vw - 32px)) !important;
+  max-width: 620px !important;
   border-radius: 12px !important;
   padding: 24px !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
@@ -882,23 +968,956 @@
   padding: 0 !important;
   box-shadow: none !important;
   background: transparent !important;
+  margin: 0;
 }
-.voucher-modal-body-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 300px) minmax(320px, 1fr);
-  gap: 20px;
-  align-items: start;
+.voucher-modal-form .voucher-discount-summary {
+  margin: 12px 0 0;
+  font-weight: 600;
 }
-.voucher-modal-body-layout .voucher-preview {
-  margin: 0 !important;
+.voucher-usage-note,
+.voucher-example small {
+  font-size: 13px;
+  color: #475569;
 }
-.voucher-modal-body-layout .voucher-fields-container {
-  min-width: 0;
+.voucher-modal-form .voucher-usage-note {
+  margin: 6px 0 0;
 }
-@media (max-width: 768px) {
-  .voucher-modal-body-layout {
-    grid-template-columns: 1fr;
+.voucher-form-submit-row {
+  margin-top: 12px;
+}
+.voucher-example {
+  border-top: 1px solid var(--ui-line);
+  margin-top: 16px;
+  padding-top: 12px;
+}
+.voucher-example > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.voucher-example > label {
+  max-width: 16rem;
+  margin-top: 12px;
+}
+@media (360px <= width <= 640px) {
+  .voucher-modal-form .market-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 12px;
+  }
+  .voucher-field-wide {
+    grid-column: 1 / -1;
   }
 }
 
+/* === Inventory Filter Bar === */
+.seller-workspace .inventory-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #ffffff;
+  border: 1px solid var(--sw-border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.seller-workspace .inventory-filter-bar form {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 240px;
+  align-items: center;
+}
+.seller-workspace .inventory-filter-bar input[type="search"] {
+  flex: 1;
+  height: 36px;
+  padding: 6px 11px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.seller-workspace .inventory-filter-bar input[type="search"]:focus {
+  border-color: var(--sw-primary);
+  background: #fff;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(168,60,24,0.09);
+}
+.seller-workspace .inventory-stock-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.seller-workspace .inv-stock-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.13s ease;
+}
+.seller-workspace .inv-stock-chip:hover { border-color: var(--sw-primary); color: var(--sw-primary); }
+.seller-workspace .inv-stock-chip[aria-pressed="true"] {
+  background: var(--sw-primary);
+  color: #fff;
+  border-color: var(--sw-primary);
+}
+.seller-workspace .inv-stock-chip.is-out[aria-pressed="true"] { background: var(--sw-danger); border-color: var(--sw-danger); }
+.seller-workspace .inv-stock-chip.is-low[aria-pressed="true"] { background: var(--sw-warning); border-color: var(--sw-warning); }
+.seller-workspace .inv-stock-chip.is-ok[aria-pressed="true"] { background: var(--sw-success); border-color: var(--sw-success); }
 
+/* === Stats View === */
+.seller-workspace .inventory-stats-period {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid var(--sw-border);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.seller-workspace .inventory-stats-period label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+.seller-workspace .inventory-stats-period input[type="date"] {
+  height: 36px;
+  padding: 5px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.seller-workspace .inventory-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.seller-workspace .inv-stat-card {
+  padding: 16px 20px;
+  border: 1px solid var(--sw-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.seller-workspace .inv-stat-card dt {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--sw-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.seller-workspace .inv-stat-card dd {
+  font-size: 28px;
+  font-weight: 750;
+  margin: 0;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--sw-text-main);
+}
+.seller-workspace .inv-stat-card.is-in dd { color: var(--sw-success); }
+.seller-workspace .inv-stat-card.is-out dd { color: var(--sw-danger); }
+.seller-workspace .inv-stat-card.is-net-positive dd { color: var(--sw-success); }
+.seller-workspace .inv-stat-card.is-net-negative dd { color: var(--sw-danger); }
+.seller-workspace .inv-stat-card.is-neutral dd { color: #64748b; }
+
+/* === Balance Sheet (Reconciliation) === */
+.seller-workspace .stock-balance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+  margin: 16px 0;
+}
+.seller-workspace .stock-balance-col {
+  border: 1px solid var(--sw-border);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.seller-workspace .stock-balance-col-header {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f8fafc;
+  border-bottom: 2px solid var(--sw-border);
+  color: #475569;
+}
+.seller-workspace .stock-balance-col.is-opening .stock-balance-col-header { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.seller-workspace .stock-balance-col.is-change .stock-balance-col-header { background: #fafafa; color: #334155; }
+.seller-workspace .stock-balance-col.is-closing .stock-balance-col-header { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.seller-workspace .stock-balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13px;
+}
+.seller-workspace .stock-balance-row:last-child { border-bottom: none; }
+.seller-workspace .stock-balance-label { color: #475569; font-weight: 550; }
+.seller-workspace .stock-balance-value {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sw-text-main);
+}
+.seller-workspace .stock-balance-value.is-in { color: var(--sw-success); }
+.seller-workspace .stock-balance-value.is-out { color: var(--sw-danger); }
+.seller-workspace .stock-balance-footer {
+  margin-top: 14px;
+  padding: 14px 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.seller-workspace .stock-balance-footer-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.seller-workspace .stock-balance-footer-metric dt { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; }
+.seller-workspace .stock-balance-footer-metric dd { font-size: 16px; font-weight: 700; margin: 0; font-variant-numeric: tabular-nums; }
+@media (max-width: 768px) {
+  .seller-workspace .stock-balance-grid { grid-template-columns: 1fr; }
+}
+
+/* === Commitment Metric Cards === */
+.seller-workspace .commitment-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.seller-workspace .inv-metric-card {
+  padding: 14px 18px;
+  border: 1px solid var(--sw-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.seller-workspace .inv-metric-card dt {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--sw-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.seller-workspace .inv-metric-card dd {
+  font-size: 26px;
+  font-weight: 750;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--sw-text-main);
+  letter-spacing: -0.02em;
+}
+.seller-workspace .commitment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 650;
+}
+.seller-workspace .commitment-badge.is-consumed { background: #fef9c3; color: #854d0e; }
+.seller-workspace .commitment-badge.is-uncertain { background: #fee2e2; color: #991b1b; }
+.seller-workspace .commitment-cmd-chip {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* === Inventory Delta Cell === */
+.seller-workspace .inv-delta-pos { color: var(--sw-success); font-weight: 700; }
+.seller-workspace .inv-delta-neg { color: var(--sw-danger); font-weight: 700; }
+.seller-workspace .stock-change {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.seller-workspace .stock-change span { color: #475569; }
+
+@media (max-width: 640px) {
+  .seller-workspace .commitment-kpi-strip { grid-template-columns: 1fr; }
+  .seller-workspace .inventory-stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* === Shopee Uni Onboarding Checklist Card === */
+.shopee-onboarding-card {
+  border: 1px solid #fed7aa;
+  background: linear-gradient(180deg, #fffbf7 0%, #ffffff 100%);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+.shopee-onboarding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.shopee-tag-pill {
+  display: inline-block;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+.shopee-onboarding-progress-badge {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+.shopee-progress-bar-track {
+  width: 100%;
+  height: 8px;
+  background: #ffedd5;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.shopee-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ea580c 0%, #f97316 100%);
+  border-radius: 9999px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.shopee-onboarding-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.shopee-onboarding-step-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.shopee-onboarding-step-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.shopee-onboarding-step-row.is-done {
+  background: #f8fafc;
+  opacity: 0.92;
+}
+.shopee-step-icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shopee-step-number-bubble {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffedd5;
+  color: #c2410c;
+  font-size: 11px;
+  font-weight: 750;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.shopee-step-text-content {
+  flex: 1;
+  min-width: 0;
+}
+.shopee-done-badge {
+  display: inline-block;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 10.5px;
+  font-weight: 650;
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px solid #a7f3d0;
+}
+.shopee-step-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.shopee-step-btn.btn-primary {
+  background: #ea580c;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.25);
+}
+.shopee-step-btn.btn-primary:hover {
+  background: #c2410c;
+}
+.shopee-step-btn.btn-secondary {
+  background: #f1f5f9;
+  color: #334155 !important;
+}
+.shopee-step-btn.btn-secondary:hover {
+  background: #e2e8f0;
+}
+.shopee-onboarding-completed-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 12px 18px;
+  border-radius: 10px;
+}
+
+/* === Shopee Link Button (Override global .live-content button) === */
+.live-content button.shopee-link-btn,
+:where(.live-content, .market-native-dialog) button.shopee-link-btn,
+.shopee-link-btn,
+button.shopee-link-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: auto !important;
+  height: auto !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  text-decoration: underline !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+.live-content button.shopee-link-btn:hover,
+:where(.live-content, .market-native-dialog) button.shopee-link-btn:hover,
+.shopee-link-btn:hover,
+button.shopee-link-btn:hover {
+  color: #0f172a !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  filter: none !important;
+}
+.live-content button.shopee-link-btn.btn-emerald,
+:where(.live-content, .market-native-dialog) button.shopee-link-btn.btn-emerald,
+.shopee-link-btn.btn-emerald,
+button.shopee-link-btn.btn-emerald {
+  color: #047857 !important;
+  font-weight: 600 !important;
+}
+.live-content button.shopee-link-btn.btn-emerald:hover,
+:where(.live-content, .market-native-dialog) button.shopee-link-btn.btn-emerald:hover,
+.shopee-link-btn.btn-emerald:hover,
+button.shopee-link-btn.btn-emerald:hover {
+  color: #065f46 !important;
+}
+
+/* === Shopee To-Do List Matrix === */
+.shopee-todo-section {
+  border-radius: 14px;
+  background: #ffffff;
+}
+.shopee-todo-matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+.shopee-todo-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  text-decoration: none !important;
+  transition: all 0.15s ease;
+}
+.shopee-todo-tile:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+.shopee-todo-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.shopee-todo-label {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #334155;
+}
+.shopee-todo-icon-bubble {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.shopee-todo-count-wrap {
+  margin: 10px 0 6px;
+}
+.shopee-todo-count {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.shopee-todo-tile-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #64748b;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 6px;
+}
+.shopee-todo-arrow {
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: all 0.15s ease;
+}
+.shopee-todo-tile:hover .shopee-todo-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Tone styles */
+.shopee-todo-tile.tone-urgent {
+  border-left: 3px solid #ea580c;
+}
+.shopee-todo-tile.tone-urgent .shopee-todo-icon-bubble {
+  background: #ffedd5;
+  color: #ea580c;
+}
+.shopee-todo-tile.tone-urgent .shopee-todo-count {
+  color: #c2410c;
+}
+
+.shopee-todo-tile.tone-info {
+  border-left: 3px solid #0284c7;
+}
+.shopee-todo-tile.tone-info .shopee-todo-icon-bubble {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+.shopee-todo-tile.tone-info .shopee-todo-count {
+  color: #0369a1;
+}
+
+.shopee-todo-tile.tone-danger {
+  border-left: 3px solid #dc2626;
+}
+.shopee-todo-tile.tone-danger .shopee-todo-icon-bubble {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.shopee-todo-tile.tone-danger .shopee-todo-count {
+  color: #b91c1c;
+}
+
+.shopee-todo-tile.tone-warning {
+  border-left: 3px solid #d97706;
+}
+.shopee-todo-tile.tone-warning .shopee-todo-icon-bubble {
+  background: #fef3c7;
+  color: #d97706;
+}
+.shopee-todo-tile.tone-warning .shopee-todo-count {
+  color: #b45309;
+}
+
+.shopee-todo-tile.tone-primary {
+  border-left: 3px solid #7c3aed;
+}
+.shopee-todo-tile.tone-primary .shopee-todo-icon-bubble {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+.shopee-todo-tile.tone-primary .shopee-todo-count {
+  color: #6d28d9;
+}
+
+.shopee-todo-tile.tone-neutral {
+  border-left: 3px solid #64748b;
+}
+.shopee-todo-tile.tone-neutral .shopee-todo-icon-bubble {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.shopee-todo-tile.tone-neutral .shopee-todo-count {
+  color: #334155;
+}
+
+/* === Shopee SEO Tip Box === */
+.shopee-seo-tip-box {
+  background: #fffbf7;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.shopee-seo-tip-box code {
+  background: #ffedd5;
+  color: #c2410c;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* === Shopee Image Guide Banner & Cover Badge === */
+.shopee-image-guide-banner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #ea580c;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.shopee-cover-badge {
+  background: #ea580c;
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 750;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+.product-image-tile.is-cover-tile {
+  border: 2px solid #ea580c !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.15);
+}
+
+/* === Shopee Batch Apply Toolbar === */
+.shopee-batch-apply-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+.shopee-batch-label {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #334155;
+}
+.shopee-batch-input {
+  width: 160px;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  background: #ffffff !important;
+}
+
+/* === Shopee Marketing Banner & Voucher Tabs === */
+.shopee-marketing-banner {
+  background: #fffbf7;
+  border: 1px solid #fed7aa;
+  border-left: 3px solid #ea580c;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.shopee-voucher-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.shopee-tab-pill {
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.shopee-tab-pill:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+.shopee-tab-pill.is-active {
+  background: #ea580c !important;
+  border-color: #ea580c !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.25);
+}
+
+/* === Shopee Account Health & Penalty Points === */
+.shopee-account-health-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.shopee-health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.shopee-health-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+.shopee-health-badge-good {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.shopee-health-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.shopee-health-metric-tile {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.15s ease;
+}
+.shopee-health-metric-tile:hover {
+  border-color: #cbd5e1;
+}
+.shopee-health-metric-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.shopee-health-metric-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+.shopee-health-metric-target {
+  font-size: 11px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.shopee-health-bottom-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+.shopee-penalty-box {
+  background: #fffbf7;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  padding: 14px;
+}
+.shopee-preferred-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 14px;
+}
+.shopee-sqt-track {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 10px 0;
+  display: flex;
+}
+.shopee-sqt-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* === Shopee My Income Settlement Cards === */
+.shopee-settlement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 16px 0 20px;
+}
+.shopee-settlement-card {
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.shopee-settlement-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.shopee-settlement-card.is-settled {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+.shopee-settlement-card.is-pending {
+  border-color: #fed7aa;
+  background: #fffaf5;
+}
+.shopee-settlement-card.is-refund {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.shopee-settlement-card.is-gmv {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+.shopee-settlement-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.shopee-settlement-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.shopee-settlement-badge.is-settled {
+  background: #dcfce7;
+  color: #166534;
+}
+.shopee-settlement-badge.is-pending {
+  background: #ffedd5;
+  color: #9a3412;
+}
+.shopee-settlement-badge.is-refund {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.shopee-settlement-badge.is-gmv {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+.shopee-settlement-amount {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 4px 0;
+}
+.shopee-settlement-note {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.shopee-quick-dates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
+}
+.shopee-date-btn {
+  padding: 5px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.shopee-date-btn:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.shopee-date-btn.is-active {
+  background: #ea580c !important;
+  border-color: #ea580c !important;
+  color: #ffffff !important;
+}

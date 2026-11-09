@@ -1,0 +1,98 @@
+.customer-returns-list {
+  margin-block: 1rem;
+}
+
+.customer-returns-list th[scope="row"] {
+  text-align: start;
+}
+
+.customer-returns-list small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #475569;
+  font-weight: 400;
+}
+
+.customer-returns-list .market-badge {
+  white-space: normal;
+}
+
+.market-table-scroll.customer-returns-list td {
+  min-width: 0;
+}
+
+.customer-returns-list td a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .customer-returns-list :is(th, td) {
+    padding-inline: 0.5rem;
+  }
+}
+
+.customer-return-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-return-card .market-return-heading,
+.customer-return-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+
+.customer-return-meta {
+  margin: 0.5rem 0;
+}
+
+.customer-return-meta > span {
+  color: #475569;
+}
+
+.customer-return-card > details,
+.customer-return-card .market-return-decision details {
+  border-top: 1px solid #e2e8f0;
+}
+
+.customer-return-card summary,
+.customer-return-create summary {
+  padding-block: 0.65rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.customer-return-guidance {
+  padding: 0.75rem 1rem;
+  border-inline-start: 3px solid #64748b;
+  background: #f8fafc;
+}
+
+.customer-return-guidance :is(h3, p) {
+  margin: 0;
+}
+
+.customer-return-guidance p {
+  white-space: pre-wrap;
+}
+
+.customer-return-guidance p,
+.customer-return-guidance address {
+  margin-top: 0.5rem;
+}
+
+.customer-return-guidance address {
+  font-style: normal;
+}
+
+.customer-return-create > p {
+  margin: 0;
+}
+
+.customer-return-create textarea {
+  resize: vertical;
+}

@@ -15,6 +15,7 @@ import {
 import {
   ChatAvatar,
   ChatComposer,
+  ChatMessageContent,
   ChatPages,
   chatDate,
 } from "./ChatPrimitives";
@@ -170,6 +171,7 @@ export function MessagesWorkspace({
       : selected.customer_name
     : (rememberedName ?? "Hội thoại");
   const selectedThread=threads.data?.items.find(thread=>thread.id===id);
+  const standalone = scope === "CUSTOMER" && !id && (!threads.data || threads.data.total === 0);
   async function archiveThread(){
     if(!id||!selectedThread||archiveBusy||archiveBlocked)return;setArchiveBusy(true);setArchiveError(undefined);
     try{await callOperation('archiveStoreConversation',{path:{id},body:{archived:!selectedThread.archived}});await Promise.all([cache.invalidateQueries({queryKey:['conversations','STORE']}),cache.invalidateQueries({queryKey:['store-unread']})]);onSelect?onSelect(''):navigate(base);}
@@ -196,7 +198,25 @@ export function MessagesWorkspace({
           <MessageSquare size={25} />
         </div>
       )}
-      <div className="market-messages chat-shell">
+      <div className={"market-messages chat-shell" + (standalone ? " chat-shell-standalone" : "")}>
+        {standalone ? (
+          <div className="chat-welcome chat-standalone">
+            {threads.error ? (
+              <ErrorView error={threads.error} onRetry={() => void threads.refetch()} retryBusy={threads.isFetching} />
+            ) : !threads.data ? (
+              <Loading label="Đang tải hội thoại…" />
+            ) : (
+              <>
+                <span className="chat-welcome-icon"><MessageSquare size={26} aria-hidden="true" /></span>
+                <h2>Chưa có hội thoại</h2>
+                <p>Mở một sản phẩm và chọn Nhắn tin gian hàng để bắt đầu.</p>
+                <Link className="ui-button ui-button-primary" to="/" onClick={() => chat.closeChat()}>
+                  Khám phá sản phẩm
+                </Link>
+              </>
+            )}
+          </div>
+        ) : <>
         <aside className="chat-sidebar" aria-label="Danh sách hội thoại">
           <div className="chat-sidebar-heading">
             <h2>Hội thoại</h2>
@@ -217,15 +237,6 @@ export function MessagesWorkspace({
                 <div className="chat-sidebar-empty">
                   <MessageSquare size={24} />
                   <p>{search?'Không tìm thấy khách hàng phù hợp.':'Chưa có hội thoại.'}</p>
-                  {scope === "CUSTOMER" && <small>
-                    Mở sản phẩm hoặc gian hàng rồi chọn Nhắn tin gian hàng để
-                    bắt đầu.
-                  </small>}
-                  {scope === "CUSTOMER" && (
-                    <Link to="/" onClick={() => chat.closeChat()}>
-                      Khám phá sản phẩm →
-                    </Link>
-                  )}
                 </div>
               ) : (
                 <nav aria-label="Hội thoại">
@@ -286,11 +297,7 @@ export function MessagesWorkspace({
               onPage={setListPage}
             />
           )}
-          <p className="chat-sidebar-note">
-            {scope === "CUSTOMER"
-              ? "Tin nhắn giữa bạn và gian hàng."
-              : "Hội thoại trong phạm vi Store hiện tại."}
-          </p>
+          {scope === "STORE" && <p className="chat-sidebar-note">Hội thoại trong phạm vi Store hiện tại.</p>}
         </aside>
         <div className="chat-thread">
           {!id ? (
@@ -321,11 +328,7 @@ export function MessagesWorkspace({
                 <ChatAvatar name={name} />
                 <div>
                   <h2>{name}</h2>
-                  <p>
-                    {scope === "CUSTOMER"
-                      ? "Trao đổi trực tiếp với gian hàng"
-                      : "Hỗ trợ khách hàng"}
-                  </p>
+                  {scope === "STORE" && <p>Hỗ trợ khách hàng</p>}
                 </div>
                 {scope==='STORE'&&selectedThread?.archived!==undefined&&<button type="button" disabled={archiveBusy||archiveBlocked} onClick={()=>void archiveThread()}>{archiveBusy?'Đang cập nhật…':selectedThread.archived?'Mở lại hội thoại':'Lưu trữ hội thoại'}</button>}
               </header>
@@ -391,7 +394,7 @@ export function MessagesWorkspace({
                           </time>
                         </span>
                         <div className="chat-bubble">
-                          <p>{message.content}</p>
+                          <ChatMessageContent content={message.content} />
                           {message.order_id && (
                             <div className="message-order-actions">
                               <Link
@@ -466,7 +469,7 @@ export function MessagesWorkspace({
                       chat.chooseOrder(scope, id!, undefined, true)
                     }
                   >
-                    Bỏ tham chiếu đơn
+                    Bỏ liên kết
                   </button>
                 </section>
               )}
@@ -483,14 +486,13 @@ export function MessagesWorkspace({
                   (!pending && !draft.trim())
                 }
                 buttonText={
-                  busy ? "Đang gửi…" : pending ? "Thử gửi lại" : "Gửi tin nhắn"
+                  busy ? "Đang gửi…" : pending ? "Thử gửi" : "Gửi"
                 }
                 placeholder="Viết tin nhắn…"
               />
               {pending && !busy && error !== undefined && (
                 <p className="chat-send-note" role="note">
-                  Chưa xác định được kết quả. Thử gửi lại sẽ dùng cùng mã và nội
-                  dung tin nhắn.
+                  Chưa rõ kết quả. Thử gửi lại tin này.
                 </p>
               )}
               {error !== undefined && <ErrorView error={error} />}{" "}
@@ -502,6 +504,7 @@ export function MessagesWorkspace({
             </>
           )}
         </div>
+        </>}
       </div>
     </section>
   );

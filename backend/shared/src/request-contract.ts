@@ -10,7 +10,7 @@ import { ApiError } from './errors';
 export const operationContracts = bundle.operations;
 export function validateOperation<K extends OperationId>(id: K, input: Partial<OperationInputs[K]>): OperationInputs[K] {
   const record = operationContracts[id];
-  const dtos = runtimeDtos[id];
+  const dtos = (runtimeDtos as Record<string, any>)[id] ?? {};
   const result: Record<string, unknown> = {};
   for (const part of ['body', 'path', 'query', 'headers'] as const) {
     const schema = record[part];
@@ -42,7 +42,7 @@ export class RequestContractInterceptor implements NestInterceptor {
         (r.internal ? r.route : '/api/v1' + r.route) === route;
     });
     // Raw callback authentication belongs before body validation in its controller.
-    if (id && !['sepayCallback','sandboxCallback','integrationPaymentCallback'].includes(id)) validateHttpRequest(id, request);
+    if (id && !['sepayCallback','sandboxCallback','integrationPaymentCallback','ghnCallback','deliveryCallback'].includes(id)) validateHttpRequest(id, request);
     return next.handle();
   }
 }

@@ -16,6 +16,7 @@ export function CartProduct({
   metadataProvided = false,
   metadataLoading = false,
   metadataError,
+  hideInlinePrices = false,
 }: {
   metadata?: OperationOutputs["getProduct"];
   metadataProvided?: boolean;
@@ -24,6 +25,7 @@ export function CartProduct({
   productId: string;
   variantId: string;
   quantity?: number;
+  hideInlinePrices?: boolean;
   quotedLine?: {
     product_title?: string;
     variant_title?: string;
@@ -59,11 +61,11 @@ export function CartProduct({
           alt=""
         />
       </div>
-      <div className="min-w-0">
-        <Link to={"/products/" + productId}>
+      <div className="min-w-0 flex-1">
+        <Link to={"/products/" + productId} className="font-medium text-sm text-slate-900 hover:underline line-clamp-1">
           {quotedLine?.product_title ?? data?.title ?? "Xem sản phẩm"}
         </Link>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 m-0">
           {quotedLine || variant
             ? variantLabel(
                 quotedLine?.variant_values ?? variant?.variant_values,
@@ -72,25 +74,29 @@ export function CartProduct({
             : "Chưa tải phân loại"}{" "}
           · {quotedLine?.sku ?? variant?.sku ?? "Chưa tải SKU"}
         </p>
-        {(quotedLine || variant) && (
-          <p className="text-sm text-emerald-700">
-            {quotedLine ? "Đơn giá báo giá" : "Giá hiện tại"}:{" "}
-            {formatMoney(quotedLine?.unit_price_vnd ?? variant!.price_vnd)}
-          </p>
-        )}
-        {(quotedLine || (quantity !== undefined && variant)) && (
-          <p>
-            Thành tiền{quotedLine ? "" : " dự tính"}:{" "}
-            {formatMoney(
-              quotedLine?.line_total_vnd ?? variant!.price_vnd * quantity!,
+        {!hideInlinePrices && (
+          <div className="flex flex-wrap items-baseline gap-x-3 text-xs mt-1">
+            {(quotedLine || variant) && (
+              <span className="text-slate-600">
+                {quotedLine ? "Đơn giá báo giá" : "Giá hiện tại"}:{" "}
+                <strong className="text-slate-900">{formatMoney(quotedLine?.unit_price_vnd ?? variant!.price_vnd)}</strong>
+              </span>
             )}
-          </p>
+            {(quotedLine || (quantity !== undefined && variant)) && (
+              <span className="text-emerald-700 font-semibold">
+                Thành tiền{quotedLine ? "" : " dự tính"}:{" "}
+                {formatMoney(
+                  quotedLine?.line_total_vnd ?? variant!.price_vnd * quantity!,
+                )}
+              </span>
+            )}
+          </div>
         )}
         {!!(metadataProvided ? metadataError : product.error) && (
-          <small>Chưa tải được thông tin sản phẩm.</small>
+          <small className="block text-red-600 text-xs">Chưa tải được thông tin sản phẩm.</small>
         )}
         {metadataProvided && !data && !metadataLoading && !metadataError && (
-          <small>
+          <small className="block text-slate-500 text-xs">
             Sản phẩm không còn công khai. Kiểm tra lại trước khi đặt.
           </small>
         )}

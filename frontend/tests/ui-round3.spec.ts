@@ -269,17 +269,17 @@ test("profile starts read-only, cancel discards the draft and Save changes the d
   await expect(page.locator("#profile-display-name")).toHaveCount(0);
   await expect(page.locator("main")).toContainText("Tên đã lưu");
   await page
-    .getByRole("button", { name: "Chỉnh sửa thông tin", exact: true })
+    .getByRole("button", { name: "Chỉnh sửa", exact: true })
     .click();
   await page.getByLabel("Tên hiển thị", { exact: true }).fill("Bản nháp");
-  await page.getByRole("button", { name: "Hủy thay đổi", exact: true }).click();
+  await page.getByRole("button", { name: "Hủy", exact: true }).click();
   expect(s.writes).toEqual([]);
   await expect(page.locator("main")).not.toContainText("Bản nháp");
   await page
-    .getByRole("button", { name: "Chỉnh sửa thông tin", exact: true })
+    .getByRole("button", { name: "Chỉnh sửa", exact: true })
     .click();
   await page.getByLabel("Tên hiển thị", { exact: true }).fill("Tên mới");
-  await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
+  await page.getByRole("button", { name: "Lưu", exact: true }).click();
   await expect(page.locator("#profile-display-name")).toHaveCount(0);
   await expect(page.locator("main")).toContainText("Tên mới");
   expect(s.writes[0]).toMatchObject({
@@ -299,7 +299,7 @@ test("Store view requires explicit edit and cancel does not patch", async ({
     .getByRole("button", { name: "Chỉnh sửa gian hàng", exact: true })
     .click();
   await page.getByLabel("Tên gian hàng", { exact: true }).fill("Không lưu");
-  await page.getByRole("button", { name: "Hủy thay đổi", exact: true }).click();
+  await page.getByRole("button", { name: "Hủy", exact: true }).click();
   expect(s.writes).toEqual([]);
   await expect(page.locator("main")).toContainText("An Nhiên Studio");
 });
@@ -314,7 +314,7 @@ test("address form only opens on Add or Edit, with explicit cancel", async ({
   await page.getByRole("button", { name: "Thêm địa chỉ", exact: true }).click();
   await page.getByLabel("Tên người nhận", { exact: true }).fill("Chưa lưu");
   await page
-    .getByRole("button", { name: "Hủy thêm địa chỉ", exact: true })
+    .getByRole("button", { name: "Hủy", exact: true })
     .click();
   await expect(page.getByLabel("Tên người nhận", { exact: true })).toHaveCount(
     0,
@@ -324,7 +324,7 @@ test("address form only opens on Add or Edit, with explicit cancel", async ({
     "Lan",
   );
   await page
-    .getByRole("button", { name: "Hủy sửa địa chỉ", exact: true })
+    .getByRole("button", { name: "Hủy", exact: true })
     .click();
   expect(s.writes).toEqual([]);
 });
@@ -370,7 +370,7 @@ test("product moderation opens a deliberate decision and cancelling sends no com
     .getByLabel("Lý do kiểm duyệt sản phẩm", { exact: true })
     .fill("Lý do đang nhập");
   await dialog
-    .getByRole("button", { name: "Hủy kiểm duyệt", exact: true })
+    .getByRole("button", { name: "Hủy", exact: true })
     .click();
   await page
     .getByRole("dialog", { name: "Bỏ lý do chưa gửi?", exact: true })
@@ -486,7 +486,7 @@ test("Admin audit has sources, identity lookup and reset; Store audit renders on
     page.getByLabel("Mã người thực hiện", { exact: true }),
   ).toHaveValue(id(1));
   await page
-    .getByRole("button", { name: "Áp dụng bộ lọc nhật ký", exact: true })
+    .getByRole("button", { name: "Lọc", exact: true })
     .click();
   await expect(page).toHaveURL(/actor_user_id=/);
   await page
@@ -589,7 +589,7 @@ test("desktop profile and product editor screenshots show focused content withou
   await model(page, "STORE_OWNER");
   await page.goto("/customer/profile");
   await expect(
-    page.getByRole("button", { name: "Chỉnh sửa thông tin", exact: true }),
+    page.getByRole("button", { name: "Chỉnh sửa", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: "C:/PBL6/artifacts/ui-round3/profile-desktop.png",

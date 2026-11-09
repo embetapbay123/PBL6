@@ -16,9 +16,7 @@ export function PaymentPage() {
         Thanh toán đơn #{id.slice(-8).toUpperCase()}
       </h1>
       <p className="mb-4">
-        Mở ứng dụng ngân hàng để quét mã QR hoặc dùng đúng nội dung chuyển khoản
-        bên dưới. Kiểm tra số tiền và thông tin người nhận trong ứng dụng trước
-        khi xác nhận. Kết quả sẽ được cập nhật tại đây.
+        Quét QR bằng ứng dụng ngân hàng. Kiểm tra người nhận, số tiền và nội dung trước khi chuyển.
       </p>
       <PaymentPanel orderId={id} />
     </main>

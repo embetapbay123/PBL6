@@ -1,15 +1,18 @@
 import { RefundRecoveryPanel } from "./RefundRecoveryPanel";
+import {ReturnShipping} from '../shipping/ReturnShipping';
 import { useState, useId } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../../api/auth-context";
 import { callOperation } from "../../api/operations";
 import type { OperationInputs } from "../../api/operations.generated";
 import { ErrorView } from "../../bootstrap/components";
+import { ReturnInspectionFields } from "./ReturnInspectionFields";
+import "./return-inspection.css";
 import { OrderItemIdentity } from "../../components/OrderPresentation";
 import { variantLabel } from "../../components/variant-identity";
 import { CaseFeedback, useCaseCommand } from "./DeliveryReturnsPage";
 import { CodRefundForm } from "./CodRefundForm";
-import type { ReturnRequest } from "./ReturnRequestView";
+import { canInspectReturn, type ReturnRequest } from "./ReturnRequestView";
 
 type Scope = "CUSTOMER" | "STORE" | "ADMIN";
 type Body = OperationInputs["updateStoreReturnRequest"]["body"] & {
@@ -23,6 +26,8 @@ type ActionProps = {
 };
 export function ReturnActions(props: ActionProps) {
   const { request, scope } = props;
+  const inspecting = canInspectReturn(request, scope);
+  const [receiptNotice, setReceiptNotice] = useState("");
   const showCodRefund =
     scope === "STORE" &&
     request.payment_method === "COD" &&
@@ -36,17 +41,23 @@ export function ReturnActions(props: ActionProps) {
   // Revisions reset decisions and inspections, but preserve a receipt draft or immutable pending command.
   return (
     <>
+      {!inspecting && <ReturnShipping {...props}/>}
       {showCodRefund && (
         <CodRefundForm key={request.order_id} request={request} />
       )}
       <ReturnDecisionActions
         key={request.id + ":" + request.version}
         {...props}
+        onReceiptSaved={(complete) => setReceiptNotice(complete
+          ? "Đã lưu kiểm hàng. Đang đối chiếu kho."
+          : "Đã lưu kiểm hàng. Cập nhật khi nhận hoặc kiểm thêm.")}
       />
+      {receiptNotice && <p className="return-inspection-saved" role="status">{receiptNotice}</p>}
+      {inspecting && <ReturnShipping {...props}/>}
     </>
   );
 }
-function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
+function ReturnDecisionActions({ request, scope, refresh, onReceiptSaved }: ActionProps & { onReceiptSaved: (complete: boolean) => void }) {
   const fieldId = useId();
   const { session } = useAuth(),
     key = `${session?.context?.user_id}_${session?.context?.store_membership?.store_id ?? scope}_${request.id}`;
@@ -71,9 +82,9 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
     );
   const items = request.items ?? [];
   const [lines, setLines] = useState(
-    state.saved?.inspection ??
       items.map(
         (item) =>
+          state.saved?.inspection?.find((line) => line.order_item_id === item.order_item_id) ??
           request.inspection?.find(
             (line) => line.order_item_id === item.order_item_id,
           ) ?? {
@@ -98,10 +109,15 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
     [resolutionFault, setResolutionFault] = useState<"STORE" | "CUSTOMER">(
       resolve.saved?.fault_party ?? "STORE",
     );
-  const canInspect =
-    scope !== "CUSTOMER" &&
-    ["APPROVED", "RECEIVED"].includes(request.status) &&
-    (!request.inventory_status || request.inventory_status === "NOT_STARTED");
+  const canInspect = canInspectReturn(request, scope);
+  const invalidLine = items.findIndex((item, index) => {
+    const line = lines[index];
+    return !line || ![line.received_quantity, line.resellable_quantity, line.damaged_quantity, line.pending_quantity].every(n => Number.isSafeInteger(n) && n >= 0)
+      || line.received_quantity > item.quantity
+      || line.received_quantity !== line.resellable_quantity + line.damaged_quantity + line.pending_quantity;
+  });
+  const inspectionError = invalidLine < 0 ? "" : `Mục ${invalidLine + 1}: Thực nhận phải bằng Bán lại được + Hỏng / không bán lại + Chờ kiểm và không vượt số lượng đã mua.`;
+  const inspectionComplete = items.length > 0 && invalidLine < 0 && items.every((item, index) => lines[index].received_quantity === item.quantity && lines[index].pending_quantity === 0);
   const ready =
     request.inventory_status === "APPLIED" ||
     request.inventory_status === "LEGACY_RECONCILED";
@@ -171,6 +187,10 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
       })
       .catch(state.setError);
   async function send(status: Body["status"]) {
+    if (status === "RECEIVED" && !state.uncertain && inspectionError) {
+      document.getElementById(fieldId + "-line-" + invalidLine)?.focus();
+      return;
+    }
     await state.run(
       () => ({
         operation_id: crypto.randomUUID(),
@@ -190,7 +210,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
             }
           : {}),
         ...(status === "EXCHANGE_SENT"
-          ? { replacement_reference: reference.trim(), replacements }
+          ? { ...(['GHN','PLATFORM'].includes(request.shipping_mode??'')?{}:{replacement_reference:reference.trim()}), replacements }
           : {}),
       }),
       (body) =>
@@ -203,7 +223,10 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
               path: { id: request.id },
               body,
             }),
-      refresh,
+      async () => {
+        await refresh();
+        if (status === "RECEIVED") onReceiptSaved(inspectionComplete);
+      },
     );
   }
   async function decide(action: Resolution["action"]) {
@@ -233,6 +256,8 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
       refresh,
     );
   }
+  const optionalDispute = scope === "CUSTOMER" && request.conversion_status !== "PROPOSED";
+  const ResolutionPanel = optionalDispute ? "details" : "section";
   return (
     <div className="market-return-decision">
       {scope !== "CUSTOMER" &&
@@ -243,7 +268,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
           <RefundRecoveryPanel orderId={request.order_id} scope={scope} />
         )}
       {actionable && (
-        <form
+        <form className={canInspect ? "return-inspection-form" : undefined}
           onSubmit={(event) => {
             event.preventDefault();
             void send(
@@ -259,7 +284,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
             );
           }}
         >
-          <h3>Xử lý yêu cầu</h3>
+          {!canInspect && <h3>Xử lý yêu cầu</h3>}
           {request.status === "REQUESTED" && (
             <>
               <label>
@@ -334,70 +359,14 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
           )}
           {canInspect && (
             <>
-              <h4>Biên bản thực nhận và kiểm hàng</h4>
-              <p>
-                Ghi đúng số thực nhận và tình trạng từng món. Biên bản nhận
-                thiếu / chờ kiểm được lưu để tiếp tục; chỉ đối chiếu kho khi đã
-                nhận và kiểm đủ. Hàng hỏng không được cộng tồn bán được; không
-                mặc định hàng trả đều còn nguyên.
-              </p>
-              {items.map((item, index) => (
-                <fieldset disabled={locked} key={item.order_item_id}>
-                  <legend>Mục {index + 1}</legend>
-                  <OrderItemIdentity
-                    item={{ ...item, id: item.order_item_id }}
-                  />
-                  {(
-                    [
-                      "received_quantity",
-                      "resellable_quantity",
-                      "damaged_quantity",
-                      "pending_quantity",
-                    ] as const
-                  ).map((field, i) => (
-                    <label key={field}>
-                      {
-                        [
-                          "Thực nhận",
-                          "Bán lại được",
-                          "Hỏng / không bán lại",
-                          "Chờ kiểm",
-                        ][i]
-                      }
-                      <input
-                        required
-                        type="number"
-                        min={0}
-                        max={item.quantity}
-                        step={1}
-                        value={
-                          Number.isNaN(lines[index]?.[field])
-                            ? ""
-                            : (lines[index]?.[field] ?? 0)
-                        }
-                        onChange={(e) =>
-                          setLines(
-                            lines.map((line, n) =>
-                              n === index
-                                ? {
-                                    ...line,
-                                    [field]:
-                                      e.target.value === ""
-                                        ? NaN
-                                        : Number(e.target.value),
-                                  }
-                                : line,
-                            ),
-                          )
-                        }
-                      />
-                    </label>
-                  ))}
-                </fieldset>
-              ))}
-              <label htmlFor={fieldId + "-inspection"}>Kết quả kiểm hàng</label>
+              <ReturnInspectionFields items={items} lines={lines} locked={locked} id={fieldId}
+                onChange={next => { setLines(next); if (!state.uncertain && !state.stale) state.setError(undefined); }} />
+              <div className="return-inspection-notes">
+              <label htmlFor={fieldId + "-inspection"}>Ghi chú kiểm hàng</label>
               <textarea
                 id={fieldId + "-inspection"}
+                rows={3}
+                placeholder="Ví dụ: Đã nhận 1/2 balo, sản phẩm còn nguyên; chờ khách gửi bổ sung."
                 required
                 maxLength={2000}
                 disabled={locked}
@@ -406,7 +375,8 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
               />
               {(scope === "ADMIN" ||
                 session?.context?.store_membership?.role === "OWNER") && (
-                <>
+                <details className="return-inspection-advanced">
+                  <summary>Kiểm tra đơn cũ</summary>
                   <label>
                     Đối chiếu riêng cho đơn cũ thiếu nguồn xuất tồn (chỉ
                     Owner/Admin)
@@ -422,8 +392,9 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                     lượng bán lại bằng0. Hệ thống không tự cộng tồn; nếu cần,
                     tạo điều chỉnh bù riêng với lý do.
                   </p>
-                </>
+                </details>
               )}
+              </div>
             </>
           )}
           {exchanging && (
@@ -508,7 +479,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                   );
                 })
               )}
-              <label>
+              {!['GHN','PLATFORM'].includes(request.shipping_mode??'')&&<label>
                 Mã vận đơn / tham chiếu bàn giao hàng đổi
                 <input
                   required
@@ -517,7 +488,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                   value={reference}
                   onChange={(e) => setReference(e.target.value)}
                 />
-              </label>
+              </label>}
             </>
           )}
           {request.status === "RECEIVED" && !ready && (
@@ -527,10 +498,10 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
           )}
           {refundPending && (
             <p>
-              Chưa xác nhận hoàn đủ tiền. Online được đối soát riêng; chỉ làm
-              mới trạng thái, không tự gửi lệnh hoàn lại.
+              Chưa xác nhận hoàn tiền. Làm mới để kiểm tra, không hoàn lại lần nữa.
             </p>
           )}
+          <div className={canInspect ? "return-inspection-actions" : undefined}>
           <button
             disabled={
               state.busy ||
@@ -553,19 +524,25 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
               : request.status === "REQUESTED"
                 ? "Lưu quyết định"
                 : canInspect
-                  ? "Xác nhận kiểm hàng thực nhận"
+                  ? state.busy ? "Đang lưu biên bản…" : "Lưu kiểm hàng"
                   : exchanging
-                    ? "Kiểm tồn và xác nhận bàn giao hàng đổi"
+                    ? ['GHN','PLATFORM'].includes(request.shipping_mode??'')?"Chuẩn bị hàng đổi":"Chuẩn bị hàng đổi"
                     : "Hoàn tất yêu cầu"}
           </button>
           <CaseFeedback state={state} reload={reload} />
+          </div>
         </form>
       )}
       {["APPROVED", "RECEIVED"].includes(request.status) &&
         request.exchange_status !== "PENDING" &&
-        request.exchange_status !== "APPLIED" && (
-          <section>
-            <h3>Thống nhất cách xử lý</h3>
+        request.exchange_status !== "APPLIED" &&
+        ((scope === "STORE" && request.type === "EXCHANGE" && request.conversion_status !== "PROPOSED") ||
+          (scope === "CUSTOMER" && (request.fault_party !== "DISPUTED" || (request.type === "EXCHANGE" && request.conversion_status === "PROPOSED"))) ||
+          (scope === "ADMIN" && request.fault_party === "DISPUTED")) && (
+          <ResolutionPanel>
+            {optionalDispute
+              ? <summary>Xem lại phí</summary>
+              : <h3>Thống nhất cách xử lý</h3>}
             <label htmlFor={fieldId + "-resolution"}>
               Nội dung trao đổi / căn cứ
             </label>
@@ -584,7 +561,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                   disabled={locked || !resolutionNote.trim()}
                   onClick={() => void decide("PROPOSE_REFUND")}
                 >
-                  Đề nghị chuyển sang hoàn đủ tiền
+                  Đề nghị hoàn tiền
                 </button>
               )}
             {scope === "CUSTOMER" &&
@@ -601,13 +578,13 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                       disabled={locked || !resolutionNote.trim()}
                       onClick={() => void decide("ACCEPT_REFUND")}
                     >
-                      Đồng ý chuyển sang hoàn đủ tiền
+                      Đồng ý hoàn tiền
                     </button>
                     <button
                       disabled={locked || !resolutionNote.trim()}
                       onClick={() => void decide("DECLINE_REFUND")}
                     >
-                      Giữ yêu cầu đổi hàng
+                      Tiếp tục đổi
                     </button>
                   </div>
                 </>
@@ -617,7 +594,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                 disabled={locked || !resolutionNote.trim()}
                 onClick={() => void decide("DISPUTE")}
               >
-                Yêu cầu Admin xem xét trách nhiệm / phí
+                Gửi tranh chấp
               </button>
             )}
             {scope === "ADMIN" && request.fault_party === "DISPUTED" && (
@@ -641,7 +618,7 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                   disabled={locked || !resolutionNote.trim()}
                   onClick={() => void decide("RESOLVE")}
                 >
-                  Lưu kết luận tranh chấp
+                  Lưu kết luận
                 </button>
               </>
             )}
@@ -651,10 +628,10 @@ function ReturnDecisionActions({ request, scope, refresh }: ActionProps) {
                 disabled={resolve.busy}
                 onClick={() => void decide(resolve.saved!.action)}
               >
-                Thử lại phản hồi cũ
+                Thử lại
               </button>
             )}
-          </section>
+          </ResolutionPanel>
         )}
     </div>
   );

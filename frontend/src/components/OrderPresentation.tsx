@@ -4,6 +4,7 @@ import { orderNextStep } from "./order-actions";
 import { PrintPackingSlip } from "./PrintPackingSlip";
 import {useCurrentOrderImages} from './useCurrentOrderImages';
 import {ProductImage} from './ProductImage';
+import { ProgressSteps } from "./ui/ProgressSteps";
 type Order = OperationOutputs["getOwnOrder"];
 export function OrderNextStep({
   order,
@@ -12,24 +13,24 @@ export function OrderNextStep({
   order: Order;
   store?: boolean;
 }) {
-  return (
+  const next = orderNextStep(order, store);
+  return next ? (
     <section aria-label="Bước tiếp theo">
-      <h3>Bước tiếp theo</h3>
-      <p>{orderNextStep(order, store)}</p>
+      <p>{next}</p>
     </section>
-  );
+  ) : null;
 }
 const labels: Record<string, string> = {
-  PREPARING: "Đang xác nhận đặt hàng",
-  AWAITING_PAYMENT: "Chờ khách thanh toán",
-  PENDING: "Chờ cửa hàng xác nhận",
-  CONFIRMED: "Đã xác nhận",
-  PROCESSING: "Đang chuẩn bị hàng",
-  SHIPPED: "Đã bàn giao giao hàng",
-  COMPLETED: "Hoàn tất",
+  PREPARING: "Đang tạo đơn",
+  AWAITING_PAYMENT: "Chờ thanh toán",
+  PENDING: "Chờ xác nhận",
+  CONFIRMED: "Chờ lấy hàng",
+  PROCESSING: "Đang đóng gói",
+  SHIPPED: "Đang giao hàng",
+  COMPLETED: "Đã giao / Hoàn tất",
   CANCELLED: "Đã hủy",
   EXPIRED: "Hết hạn thanh toán",
-  RECOVERING: "Đang khôi phục kết quả đặt hàng",
+  RECOVERING: "Đang đối soát hoàn hàng",
 };
 export const orderStatusLabel = (status: string) => labels[status] ?? status;
 const money = (value: number) => value.toLocaleString("vi-VN") + " ₫";
@@ -43,57 +44,61 @@ function text(value: unknown) {
 }
 function collectionInstruction(order: Order) {
   if (order.amounts.payable_vnd === 0)
-    return "Đơn 0đ không cần thu tiền hoặc chuyển khoản. Không ghi biên nhận thu/hoàn tiền giả.";
+    return "Đơn 0đ, không cần thu tiền.";
   if (order.payment_status === "REFUNDED")
-    return "Đã ghi nhận hoàn đủ khoản đã thu. Không thu lại.";
+    return "Đã hoàn tiền. Không thu lại.";
   if (order.payment_status === "CANCELLED")
-    return "Đã đóng nghĩa vụ thu. Không thu tiền cho đơn này.";
+    return "Đã hủy khoản thu. Không thu tiền.";
   if (order.payment_status === "UNKNOWN")
-    return "Chưa rõ kết quả thu tiền. Cần đối soát; không thu lại khi chưa xác định.";
+    return "Chưa rõ kết quả thu tiền. Kiểm tra trước khi thu lại.";
   if (["CANCELLED", "EXPIRED"].includes(order.status))
-    return "Đơn đã đóng. Đối soát khoản đã thu hoặc cần hoàn; không thu tiền cho đơn này.";
+    return "Đơn đã đóng, không thu thêm tiền.";
   if (order.payment_method === "COD") {
     if (order.payment_status === "SUCCEEDED")
       return "Đã ghi nhận thu đủ COD. Không thu lại.";
     if (order.payment_status === "PENDING")
-      return `COD cần thu: ${money(order.amounts.payable_vnd)}. Chỉ ghi nhận sau khi đã nhận đủ tiền.`;
-    return "Chưa xác định nghĩa vụ thu COD. Đọc lại đơn hoặc liên hệ hỗ trợ trước khi thu.";
+      return `COD cần thu: ${money(order.amounts.payable_vnd)}.`;
+    return "Chưa rõ khoản COD. Kiểm tra trước khi thu.";
   }
   return order.payment_status === "SUCCEEDED"
-    ? "Đơn online đã xác nhận thanh toán. Không thu COD."
-    : "Chưa xác nhận tiền online. Cần đối soát trước khi giao hàng.";
+    ? "Đã thanh toán online. Không thu COD."
+    : "Chưa xác nhận thanh toán online. Chưa giao hàng.";
 }
 export function OrderItemIdentity({
   item,
   snapshotKind = "PURCHASE",
   currentImage,
+  scope = "CUSTOMER",
 }: {
   item: Record<string, unknown>;
   snapshotKind?: "PURCHASE" | "EXCHANGE";
-  currentImage?:string;
+  currentImage?: string;
+  scope?: "CUSTOMER" | "STORE" | "ADMIN";
 }) {
   const snapshot = record(item.product_snapshot),
     values = variantLabel(record(snapshot.variant_values), "");
   const variant = values || text(snapshot.variant_title);
   return (
     <div className="order-item-identity">
-      {currentImage&&<div className="order-item-current-image"><ProductImage src={currentImage} name={text(snapshot.title)??'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/><small>Ảnh hiện tại</small></div>}
+      {currentImage&&<div className="order-item-current-image" title="Ảnh sản phẩm hiện tại"><ProductImage src={currentImage} name={text(snapshot.title)??'sản phẩm'} alt="Ảnh sản phẩm hiện tại"/></div>}
       <div>
       <p>
         <strong>
-          {text(snapshot.title) ?? "Mục đơn cũ chưa có tên snapshot"}
+          {text(snapshot.title) ?? "Sản phẩm chưa có tên"}
         </strong>
       </p>
       <p>
         {variant
           ? `Phân loại: ${variant}`
-          : "Đơn cũ chưa lưu màu/size. Cần đối chiếu với khách trước khi lấy hàng."}
+          : (scope === "STORE" || scope === "ADMIN")
+            ? "Thiếu phân loại. Xác nhận với khách trước khi lấy hàng."
+            : "Phân loại tiêu chuẩn"}
       </p>
       {text(item.sku_snapshot) && (
         <p>
           {snapshotKind === "EXCHANGE"
-            ? "SKU lúc xuất hàng đổi"
-            : "SKU khi đặt"}
+            ? "SKU hàng đổi"
+            : "SKU"}
           : {String(item.sku_snapshot)}
         </p>
       )}
@@ -104,8 +109,8 @@ export function OrderItemIdentity({
       {typeof item.unit_price_vnd === "number" && (
         <p>
           {snapshotKind === "EXCHANGE"
-            ? "Đơn giá đối chiếu khi đổi"
-            : "Đơn giá khi đặt"}
+            ? "Đơn giá hàng đổi"
+            : "Đơn giá"}
           : {money(item.unit_price_vnd)}
         </p>
       )}
@@ -116,7 +121,13 @@ export function OrderItemIdentity({
     </div>
   );
 }
-export function OrderDeliveryAddress({ order }: { order: Order }) {
+export function OrderDeliveryAddress({
+  order,
+  scope = "CUSTOMER",
+}: {
+  order: Order;
+  scope?: "CUSTOMER" | "STORE" | "ADMIN";
+}) {
   const address = record(order.address_snapshot),
     name = text(address.recipient_name),
     phone = text(address.phone);
@@ -125,7 +136,7 @@ export function OrderDeliveryAddress({ order }: { order: Order }) {
     .filter(Boolean);
   return (
     <section aria-label="Địa chỉ giao hàng đã chốt">
-      <h3>Thông tin giao hàng đã chốt</h3>
+      <h3>Địa chỉ nhận hàng</h3>
       {name && phone && parts.length ? (
         <address style={{ fontStyle: "normal", overflowWrap: "anywhere" }}>
           {name}
@@ -136,60 +147,68 @@ export function OrderDeliveryAddress({ order }: { order: Order }) {
         </address>
       ) : (
         <p role="status">
-          Đơn cũ thiếu thông tin người nhận hoặc địa chỉ. Đối chiếu với khách
-          trước khi bàn giao; không dùng địa chỉ hồ sơ hiện tại thay lịch sử.
+          {scope === "STORE" || scope === "ADMIN"
+            ? "Đơn cũ thiếu thông tin người nhận hoặc địa chỉ. Xác nhận với khách trước khi giao."
+            : "Chưa có đầy đủ thông tin địa chỉ người nhận."}
         </p>
       )}
     </section>
   );
 }
-export function OrderPackingSheet({ order }: { order: Order }) {
+export function OrderPackingSheet({ order, showPayment = true }: { order: Order; showPayment?: boolean }) {
   const images=useCurrentOrderImages(order.items??[]);
   return (
     <section aria-label="Thông tin lấy hàng và giao hàng">
-      <PrintPackingSlip order={order} />
-      <OrderDeliveryAddress order={order} />
-      <h3>Danh sách lấy hàng</h3>
+      <OrderDeliveryAddress order={order} scope="STORE" />
+      <div className="packing-list-heading">
+        <h3>Danh sách lấy hàng</h3>
+        <PrintPackingSlip order={order} />
+      </div>
       {order.items?.length ? (
         order.items.map((item, index) => (
           <article
             className="boot-card"
             key={typeof item.id === "string" ? item.id : index}
           >
-            <OrderItemIdentity item={item} currentImage={images.get(String(item.variant_id??item.product_id))} />
+            <OrderItemIdentity
+              item={item}
+              currentImage={images.get(String(item.variant_id??item.product_id))}
+              scope="STORE"
+            />
           </article>
         ))
       ) : (
-        <p>Chưa có dữ liệu món trong đơn. Đọc lại đơn trước khi lấy hàng.</p>
+        <p>Chưa tải được sản phẩm. Làm mới đơn trước khi lấy hàng.</p>
       )}
-      <p>{collectionInstruction(order)}</p>
+      {showPayment && <p>{collectionInstruction(order)}</p>}
     </section>
   );
 }
 export function ReturnPolicyNotice({
   policy,
+  scope = "CUSTOMER",
 }: {
   policy?: Order["return_policy_snapshot"];
+  scope?: "CUSTOMER" | "STORE" | "ADMIN";
 }) {
   if (!policy?.return_address)
     return (
       <p>
-        Đơn cũ chưa lưu snapshot chính sách. Cửa hàng xét từng ca; không áp hồi
-        tố hạn 7 ngày.
+        {scope === "STORE" || scope === "ADMIN"
+          ? "Đơn cũ chưa lưu snapshot chính sách. Cửa hàng xét từng ca; không áp hồi tố hạn 7 ngày."
+          : "Áp dụng theo chính sách đổi trả tiêu chuẩn của sàn và gian hàng."}
       </p>
     );
   const a = policy.return_address;
   return (
     <section aria-label="Chính sách đổi trả đã chốt">
       <p>
-        Gửi yêu cầu trong 7×24 giờ kể từ khi đơn hoàn tất. Yêu cầu gửi đúng hạn
-        tiếp tục xử lý sau hạn. Hoàn đủ khoản đã thu, gồm phí giao ban đầu;
-        không trừ phí trả hàng.
+        Gửi yêu cầu trong 7×24 giờ từ khi giao thành công. Yêu cầu đúng hạn tiếp tục
+        được xử lý sau hạn. Hoàn đủ tiền đã thu, gồm phí giao ban đầu.
       </p>
       <p>
-        Store chịu phí khi lỗi Store; khách chịu khi đổi ý / chọn sai. Kết luận
-        bên có lỗi phải được ghi trong quyết định; tranh chấp chuyển Admin xem
-        xét.
+        Cửa hàng chịu phí trả khi giao sai/lỗi; khách chịu phí khi đổi ý hoặc chọn sai.
+        Phí trả được xử lý riêng, không trừ vào khoản hoàn. Tranh chấp do Admin xem xét.
       </p>
       <address>
         Địa chỉ nhận trả: {a.recipient_name} · {a.phone}
@@ -197,18 +216,56 @@ export function ReturnPolicyNotice({
         {[a.line1, a.ward, a.district, a.city].join(", ")}
       </address>
       <p>
-        Chỉ gửi hàng sau khi yêu cầu được chấp thuận và nhận hướng dẫn của cửa
-        hàng.
+        Chờ cửa hàng duyệt và hướng dẫn trước khi gửi trả.
       </p>
     </section>
   );
 }
+export function OrderProgressTracker({ order }: { order: Order }) {
+  const steps = ["Đơn đã đặt", "Đã xác nhận", "Đang giao hàng", "Hoàn tất"];
+  const isCancelled = order.status === "CANCELLED" || order.status === "EXPIRED";
+
+  let currentStep = 0;
+  if (order.status === "COMPLETED") {
+    currentStep = 4;
+  } else if (order.status === "SHIPPED") {
+    currentStep = 2;
+  } else if (["CONFIRMED", "PROCESSING"].includes(order.status)) {
+    currentStep = 1;
+  } else {
+    currentStep = 0;
+  }
+
+  if (isCancelled) {
+    return (
+      <div className="order-stepper-container is-cancelled bg-rose-50 border border-rose-200 rounded-xl p-4 my-4">
+        <span className="text-xs font-semibold uppercase tracking-wider text-rose-700 block">Trạng thái đơn hàng</span>
+        <strong className="text-base text-rose-900">{orderStatusLabel(order.status)}</strong>
+        <p className="text-xs text-rose-600 mt-1">Đơn hàng này không còn tiếp tục luồng xử lý thông thường.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="order-stepper-container bg-white border border-slate-200 rounded-xl p-4 sm:p-6 my-4 shadow-sm">
+      <ProgressSteps
+        steps={steps}
+        current={currentStep}
+        label="Tiến trình đơn hàng"
+      />
+    </div>
+  );
+}
+
 export function OrderTimeline({ order }: { order: Order }) {
   const formatTime = (value: string) =>
     new Date(value).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
   return (
     <section className="order-timeline" aria-label="Diễn biến đơn hàng">
-      <h3>Diễn biến đơn hàng (giờ Việt Nam)</h3>
+      <details className="order-timeline-details">
+        <summary className="cursor-pointer font-medium text-slate-700 hover:text-slate-900">
+          Xem lịch sử cập nhật trạng thái ({order.timeline?.length ?? 0} sự kiện)
+        </summary>
       {order.created_at && (
         <p>
           Tạo đơn:{" "}
@@ -237,8 +294,9 @@ export function OrderTimeline({ order }: { order: Order }) {
           ))}
         </ol>
       ) : (
-        <p>Chưa có lịch sử trạng thái trong dữ liệu đơn này.</p>
+        <p>Chưa có cập nhật.</p>
       )}
+      </details>
     </section>
   );
 }

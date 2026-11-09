@@ -162,6 +162,30 @@ async function setup(page: Page) {
 }
 test.use({ viewport: { width: 1440, height: 900 } });
 
+test('empty Store chat presents one action in the inbox and chat dialog', async ({page}, info) => {
+  await setup(page);
+  await page.route(url => url.pathname === '/api/v1/me/conversations', route =>
+    route.fulfill({json:{items:[],total:0,page:1,size:20}}));
+  const dialog=page.getByRole('dialog',{name:'Trung tâm chat'});
+  await dialog.getByRole('tab',{name:'Gian hàng',exact:true}).click();
+  await expect(dialog.getByRole('heading',{name:'Chưa có hội thoại',exact:true})).toBeVisible();
+  await expect(dialog.getByRole('complementary',{name:'Danh sách hội thoại'})).toHaveCount(0);
+  await expect(dialog.getByRole('link',{name:'Khám phá sản phẩm',exact:true})).toHaveCount(1);
+  await dialog.getByRole('button',{name:'Đóng chat',exact:true}).click();
+  await page.goto('/customer/messages');
+  const main=page.getByRole('main');
+  for (const width of [1280,390]) {
+    await page.setViewportSize({width,height:800});
+    await expect(main.getByRole('heading',{name:'Chưa có hội thoại',exact:true})).toBeVisible();
+    await expect(main.getByText('Chọn hội thoại để xem và gửi tin nhắn.',{exact:true})).toHaveCount(0);
+    await expect(main.getByRole('complementary',{name:'Danh sách hội thoại'})).toHaveCount(0);
+    await expect(main.getByRole('link',{name:'Khám phá sản phẩm',exact:true})).toBeVisible();
+    await page.screenshot({path:info.outputPath('empty-messages-'+width+'.png')});
+  }
+  await main.getByRole('link',{name:'Khám phá sản phẩm',exact:true}).click();
+  await expect(page).toHaveURL(/\/$/);
+});
+
 test("long AI history opens at the latest page and new answers stay visible after reading an older page", async ({
   page,
 }) => {
@@ -308,6 +332,16 @@ test("Store chat keeps both panes visible and the composer reachable on desktop"
     exact: true,
   });
   await expect(composer).toBeVisible();
+  await composer.press("Enter");
+  await expect(composer).toHaveValue("");
+  await dialog.getByRole("button", { name: "Mở rộng chat", exact: true }).click();
+  await expect(dialog).toHaveClass(/chat-dialog-expanded/);
+  await expect(page).not.toHaveURL(/customer\/messages/);
+  await dialog.getByRole("button", { name: "Thu gọn chat", exact: true }).click();
+  await dialog.getByRole("button", { name: "Thu nhỏ chat", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole("button", { name: "Khôi phục chat", exact: true }).click();
+  await expect(dialog).toBeVisible();
   expect(
     await composer.evaluate((el) => el.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(64);
@@ -316,7 +350,7 @@ test("Store chat keeps both panes visible and the composer reachable on desktop"
   await expect(composer).toBeVisible();
   expect(
     await dialog
-      .getByRole("button", { name: "Gửi tin nhắn", exact: true })
+      .getByRole("button", { name: "Gửi", exact: true })
       .evaluate((el) => {
         const r = el.getBoundingClientRect();
         return r.bottom <= innerHeight && r.right <= innerWidth;

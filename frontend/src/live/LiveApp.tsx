@@ -53,6 +53,7 @@ import "./commerce.css";
 import "../chat/chat-workspace.css";
 import "../styles/ui-components.css";
 import "../styles/seller-workspace.css";
+import "../styles/customer-polish.css";
 import { StoreContextNotice } from "../components/StoreContextNotice";
 import { MarketplaceHeader } from "./MarketplaceHeader";
 import { listenFavoritesChange } from "../features/customer/favorite-state";
@@ -278,20 +279,99 @@ function ApplicationRoutes() {
     },
   ]);
 }
-const merchantLinks = [
-  ["/seller", "Tổng quan", LayoutDashboard],
-  ["/seller/products", "Sản phẩm Store", ShoppingBag],
-  ["/seller/inventory", "Tồn kho", Boxes],
-  ["/seller/orders", "Đơn hàng Store", Package],
-  ["/seller/messages", "Tin nhắn khách hàng", MessageSquare],
-  ["/seller/returns", "Đổi trả", Package],
-  ["/seller/delivery-returns", "Giao thất bại / hoàn về", Package],
-  ["/seller/vouchers", "Voucher Store", Ticket],
-  ["/seller/staff", "Nhân viên & lời mời", Users],
-  ["/seller/settings", "Thông tin gian hàng", Settings],
-  ["/seller/reports", "Báo cáo", BarChart3],
-  ["/seller/audit", "Nhật ký Store", ShieldCheck],
+const merchantSectionGroups = [
+  {
+    title: "Tổng quan",
+    items: [["/seller", "Tổng quan", LayoutDashboard]],
+  },
+  {
+    title: "Bán hàng",
+    items: [
+      ["/seller/orders", "Đơn hàng Store", Package],
+      ["/seller/shipping", "Vận đơn giao hàng", Package],
+      ["/seller/returns", "Đổi trả", Package],
+      ["/seller/delivery-returns", "Giao thất bại / hoàn về", Package],
+    ],
+  },
+  {
+    title: "Hàng hóa",
+    items: [
+      ["/seller/products", "Sản phẩm Store", ShoppingBag],
+      ["/seller/inventory", "Tồn kho", Boxes],
+    ],
+  },
+  {
+    title: "Khách hàng & Ưu đãi",
+    items: [
+      ["/seller/messages", "Tin nhắn khách hàng", MessageSquare],
+      ["/seller/vouchers", "Voucher Store", Ticket],
+    ],
+  },
+  {
+    title: "Thiết lập & Báo cáo",
+    items: [
+      ["/seller/staff", "Nhân viên & lời mời", Users],
+      ["/seller/settings", "Thông tin gian hàng", Settings],
+      ["/seller/reports", "Báo cáo", BarChart3],
+      ["/seller/audit", "Nhật ký Store", ShieldCheck],
+    ],
+  },
 ] as const;
+
+const adminSectionGroups = [
+  {
+    title: "Tổng quan",
+    items: [["dashboard", "Tổng quan", LayoutDashboard]],
+  },
+  {
+    title: "Bán hàng & Vận hành",
+    items: [
+      ["orders", "Đơn hàng toàn sàn", Package],
+      ["shipping", "Giao nhận hàng", Package],
+      ["returns", "Yêu cầu đổi trả", ShoppingBag],
+      ["delivery-returns", "Hồ sơ giao thất bại", Package],
+    ],
+  },
+  {
+    title: "Hàng hóa & Gian hàng",
+    items: [
+      ["catalog", "Danh mục & kiểm duyệt", Boxes],
+      ["stores", "Gian hàng", Store],
+      ["vouchers", "Ưu đãi toàn sàn", Ticket],
+    ],
+  },
+  {
+    title: "Tài khoản & Phân quyền",
+    items: [
+      ["users", "Tài khoản", Users],
+      ["roles", "Phân quyền", Key],
+    ],
+  },
+  {
+    title: "Hệ thống",
+    items: [
+      ["reports", "Báo cáo thu / hoàn", BarChart3],
+      ["ai", "Vận hành AI", MessageSquare],
+      ["audit", "Nhật ký quản trị", ShieldCheck],
+    ],
+  },
+] as const;
+
+const adminTabTitles: Record<string, string> = {
+  dashboard: "Tổng quan",
+  users: "Tài khoản",
+  stores: "Gian hàng",
+  roles: "Phân quyền",
+  catalog: "Danh mục & kiểm duyệt",
+  orders: "Đơn hàng toàn sàn",
+  shipping: "Giao nhận hàng",
+  reports: "Báo cáo thu / hoàn",
+  returns: "Yêu cầu đổi trả",
+  "delivery-returns": "Hồ sơ giao thất bại",
+  vouchers: "Ưu đãi toàn sàn",
+  ai: "Vận hành AI",
+  audit: "Nhật ký quản trị",
+};
 function Market() {
   const { session } = useAuth(),
     location = useLocation();
@@ -336,6 +416,14 @@ function Market() {
             <Link to="/">PBL6 Market</Link>
             <span>/</span>
             <span>{portal === "seller" ? "Kênh người bán" : "Quản trị"}</span>
+            {portal === "admin" && (
+              <>
+                <span>/</span>
+                <span className="font-semibold text-slate-800">
+                  {adminTabTitles[new URLSearchParams(location.search).get("tab") ?? "dashboard"] ?? "Tổng quan"}
+                </span>
+              </>
+            )}
           </nav>
         </div>
       )}
@@ -347,11 +435,11 @@ function Market() {
       >
         {portal === "seller" && merchant && (
           <aside className="market-sidebar" aria-label="Menu Store">
-            <p className="text-xs font-bold tracking-widest text-slate-400 mb-5">
+            <p className="text-xs font-bold tracking-widest text-slate-400 mb-2">
               QUẢN LÝ GIAN HÀNG
             </p>
-            {merchantLinks
-              .filter(([path]) =>
+            {merchantSectionGroups.map((group) => {
+              const visibleItems = group.items.filter(([path]) =>
                 path.includes("audit") ||
                 path.includes("staff") ||
                 path.includes("settings") ||
@@ -367,82 +455,86 @@ function Market() {
                           path.includes("returns")
                         ? can("order.store.read_status_cancel")
                         : true,
-              )
-              .map(([to, label, Icon]) => (
-                <NavLink
-                  key={to}
-                  aria-label={to==='/seller/messages'&&unreadMessages.data?.unread_total?`${label} · ${unreadMessages.data.unread_total} tin chưa đọc`:label}
-                  title={label}
-                  end={to === "/seller"}
-                  to={to}
-                >
-                  <Icon size={17} />
-                  <span>{label}</span>
-                  {to==='/seller/messages'&&!!unreadMessages.data?.unread_total&&<span aria-hidden="true" className="chat-unread-badge">{unreadMessages.data.unread_total>99?'99+':unreadMessages.data.unread_total}</span>}
-                </NavLink>
-              ))}
+              );
+              if (!visibleItems.length) return null;
+              return (
+                <div key={group.title} className="market-sidebar-group">
+                  <div className="market-sidebar-group-title">{group.title}</div>
+                  {visibleItems.map(([to, label, Icon]) => (
+                    <NavLink
+                      key={to}
+                      aria-label={
+                        to === "/seller/messages" && unreadMessages.data?.unread_total
+                          ? `${label} · ${unreadMessages.data.unread_total} tin chưa đọc`
+                          : label
+                      }
+                      title={label}
+                      end={to === "/seller"}
+                      to={to}
+                    >
+                      <Icon size={17} />
+                      <span>{label}</span>
+                      {to === "/seller/messages" && !!unreadMessages.data?.unread_total && (
+                        <span aria-hidden="true" className="chat-unread-badge">
+                          {unreadMessages.data.unread_total > 99
+                            ? "99+"
+                            : unreadMessages.data.unread_total}
+                        </span>
+                      )}
+                    </NavLink>
+                  ))}
+                </div>
+              );
+            })}
           </aside>
         )}
         {portal === "admin" && admin && (
           <aside className="market-sidebar" aria-label="Menu quản trị">
-            <p className="text-xs font-bold tracking-widest text-slate-400 mb-5">
+            <p className="text-xs font-bold tracking-widest text-slate-400 mb-2">
               QUẢN TRỊ NỀN TẢNG
             </p>
-            {(
-              [
-                ["dashboard", "Tổng quan", LayoutDashboard],
-                ["users", "Tài khoản", Users],
-                ["stores", "Gian hàng", Store],
-                ["roles", "Phân quyền", Key],
-                ["catalog", "Danh mục & kiểm duyệt", Boxes],
-                ["orders", "Đơn hàng toàn sàn", Package],
-                ["reports", "Báo cáo thu / hoàn", BarChart3],
-                ["returns", "Yêu cầu đổi trả", ShoppingBag],
-                ["delivery-returns", "Hồ sơ giao thất bại", Package],
-                ["vouchers", "Ưu đãi toàn sàn", Ticket],
-                ["ai", "Vận hành AI", MessageSquare],
-                ["audit", "Nhật ký quản trị", ShieldCheck],
-              ] as const
-            ).map(([tab, label, Icon]) => {
-              const selected =
-                (new URLSearchParams(location.search).get("tab") ??
-                  "dashboard") === tab && location.pathname === "/admin";
-              return (
-                <Link
-                  key={tab}
-                  aria-label={label}
-                  title={label}
-                  to={"/admin?tab=" + tab}
-                  className={selected ? "active" : undefined}
-                  aria-current={selected ? "page" : undefined}
-                >
-                  <Icon size={16} />
-                  <span>{label}</span>
-                </Link>
-              );
-            })}
-            <NavLink
-              aria-label="Hồ sơ mở gian hàng"
-              title="Hồ sơ mở gian hàng"
-              to="/admin/store-applications"
-            >
-              <Store size={16} />
-              <span>Hồ sơ mở gian hàng</span>
-            </NavLink>
+            {adminSectionGroups.map((group) => (
+              <div key={group.title} className="market-sidebar-group">
+                <div className="market-sidebar-group-title">{group.title}</div>
+                {group.items.map(([tab, label, Icon]) => {
+                  const selected =
+                    (new URLSearchParams(location.search).get("tab") ??
+                      "dashboard") === tab && location.pathname === "/admin";
+                  return (
+                    <Link
+                      key={tab}
+                      aria-label={label}
+                      title={label}
+                      to={"/admin?tab=" + tab}
+                      className={selected ? "active" : undefined}
+                      aria-current={selected ? "page" : undefined}
+                    >
+                      <Icon size={16} />
+                      <span>{label}</span>
+                    </Link>
+                  );
+                })}
+                {group.title === "Hàng hóa & Gian hàng" && (
+                  <NavLink
+                    aria-label="Hồ sơ mở gian hàng"
+                    title="Hồ sơ mở gian hàng"
+                    to="/admin/store-applications"
+                  >
+                    <Store size={16} />
+                    <span>Hồ sơ mở gian hàng</span>
+                  </NavLink>
+                )}
+              </div>
+            ))}
           </aside>
         )}
         {account && (
           <aside className="account-sidebar" aria-label="Điều hướng tài khoản">
             <h2>Tài khoản của tôi</h2>
             {[
-              ["/profile", "Tổng quan"],
               ["/customer/profile", "Thông tin cá nhân"],
               ["/customer/orders", "Đơn hàng"],
               ["/customer/favorites", "Yêu thích"],
-              ["/customer/reviews", "Đánh giá của tôi"],
-              ["/customer/messages", "Tin nhắn"],
-              ["/customer/notifications", "Thông báo"],
-              ["/customer/returns", "Đổi trả"],
               ["/customer/addresses", "Sổ địa chỉ"],
               ["/customer/invitations", "Lời mời Store"],
               ["/customer/store-applications", "Mở gian hàng"],
@@ -477,7 +569,7 @@ function Market() {
         </main>
       </div>
       <ChatCenter />
-      {portal === 'seller' && membership?.status === 'ACTIVE' && membership.store_id && can('order.store.read_status_cancel') && !location.pathname.startsWith('/seller/messages') && <SellerChatLauncher key={`${session?.context?.user_id}:${membership.store_id}`} unread={unreadMessages.data?.unread_total}/>}
+      {portal === 'seller' && membership?.status === 'ACTIVE' && membership.store_id && can('order.store.read_status_cancel') && !/^\/seller\/(?:messages|orders)(?:\/|$)/i.test(location.pathname) && <SellerChatLauncher key={`${session?.context?.user_id}:${membership.store_id}`} unread={unreadMessages.data?.unread_total}/>}
       <footer className="border-t border-slate-200 bg-white mt-16">
         <div className="market-width py-8 flex flex-wrap justify-between gap-4">
           <div>

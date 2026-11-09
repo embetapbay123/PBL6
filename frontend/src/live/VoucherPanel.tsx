@@ -1,4 +1,5 @@
 import { Modal } from "../components/Modal";
+import { Button as UiButton } from "../components/ui/Button";
 import { useConfirm } from "../components/ConfirmDialog";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useUnsavedChanges } from "../components/useUnsavedChanges";
@@ -11,6 +12,7 @@ import type {
 } from "../api/operations.generated";
 import { ErrorView, Loading, Pagination } from "../bootstrap/components";
 import { formatMoney, useCommand } from "./useLiveData";
+import { Sparkles, Ticket } from "lucide-react";
 
 type Voucher = OperationOutputs["createStoreVoucher"];
 const localDateTime = (date: Date) =>
@@ -69,6 +71,7 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
   const formCommand = useCommand();
   const [formReview, setFormReview] = useState(false);
   const [formDirty, setFormDirty] = useState(false);
+  const [voucherFilter, setVoucherFilter] = useState<'ALL' | 'ONGOING' | 'UPCOMING' | 'EXPIRED'>('ALL');
   const discardDraft = async () =>
     !formDirty ||
     (await confirm({
@@ -208,7 +211,7 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
               disabled={controlsLocked}
               onClick={() => void closeForm()}
             >
-              Đóng và quay lại danh sách
+              Đóng
             </button>
           </div>
           <CreateVoucher
@@ -236,15 +239,14 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
         <section className="boot-card" aria-label="Kiểm tra quyết định voucher">
           <h2>Cần đọc lại voucher {statusReview.code}</h2>
           <p>
-            Quyết định trước bị xung đột hoặc chưa rõ kết quả. Tạm khóa sửa và
-            đổi trạng thái mã này để tránh gửi tiếp từ phiên bản cũ.
+            Chưa rõ kết quả. Làm mới mã trước khi sửa.
           </p>
           <button
             type="button"
             disabled={command.busy || list.isFetching}
             onClick={readStatus}
           >
-            Đọc lại trạng thái voucher
+            Làm mới
           </button>
         </section>
       )}
@@ -264,112 +266,190 @@ export function VoucherPanel({ scope }: { scope: "STORE" | "PLATFORM" }) {
         <Loading />
       ) : (
         <>
-          <div className="boot-card market-table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Mã voucher</th>
-                  <th>Ưu đãi</th>
-                  <th>Điều kiện</th>
-                  <th>Thời hạn</th>
-                  <th>Trạng thái</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.data.items.map((v) => (
-                  <tr key={v.id ?? v.code}>
-                    <td>
-                      <strong>{v.code}</strong>
-                    </td>
-                    <td>
-                      {v.discount_type === "PERCENT"
-                        ? v.discount_value + "%"
-                        : formatMoney(v.discount_value)}
-                      {v.discount_type === "PERCENT" &&
-                        v.max_discount_vnd != null && (
-                          <p>Tối đa {formatMoney(v.max_discount_vnd)}</p>
-                        )}
-                    </td>
-                    <td className="voucher-conditions">
-                      <strong>Đơn từ {formatMoney(v.min_goods_vnd ?? 0)}</strong>
-                      <span>{v.usage_limit} lượt · {v.per_customer_limit}/khách</span>
-                      {v.usage_summary && <small>Còn {v.usage_summary.remaining_count} lượt · đã dùng {v.usage_summary.redeemed_count} · đang giữ {v.usage_summary.reserved_count}</small>}
-                    </td>
-                    <td>
-                      {new Date(v.starts_at).toLocaleString("vi-VN")}
-                      <p>đến {new Date(v.ends_at).toLocaleString("vi-VN")}</p>
-                    </td>
-                    <td>
-                      <span className={'seller-status '+(v.status==='ACTIVE'?'is-active':'is-inactive')}>{v.status==='ACTIVE'?'Đang hoạt động':v.status==='STOPPED'?'Đã dừng':'Chưa rõ trạng thái'}</span>
-                    </td>
-                    <td>
-                      <div className="voucher-table-actions">
-                        <button
-                          type="button"
-                          className="voucher-action-btn"
-                          disabled={controlsLocked || !v.id}
-                          onClick={() => showUsage(v)}
-                        >
-                          Xem lượt dùng
-                        </button>
-                        <button
-                          type="button"
-                          className="voucher-action-btn"
-                          disabled={controlsLocked || !v.id || !!statusReview}
-                          onClick={async () => {
-                            if (showForm && editing?.id === v.id) return;
-                            if (!(await discardDraft())) return;
-                            formCommand.setError(undefined);
-                            formCommand.setNotice("");
-                            setEditing(v);
-                            setShowForm(true);
-                          }}
-                        >
-                          Sửa voucher
-                        </button>
-                        {v.status === "STOPPED" && (
-                          <button
-                            type="button"
-                            className="voucher-action-btn voucher-btn-activate"
-                            disabled={
-                              controlsLocked ||
-                              list.isFetching ||
-                              !v.id ||
-                              v.version === undefined ||
-                              statusReview?.id === v.id ||
-                              (showForm && editing?.id === v.id)
-                            }
-                            onClick={() => changeStatus(v, "ACTIVE")}
-                          >
-                            Mở lại voucher
-                          </button>
-                        )}
-                        {v.status === "ACTIVE" && (
-                          <button
-                            type="button"
-                            className="voucher-action-btn voucher-btn-stop"
-                            disabled={
-                              controlsLocked ||
-                              list.isFetching ||
-                              !v.id ||
-                              v.version === undefined ||
-                              statusReview?.id === v.id ||
-                              (showForm && editing?.id === v.id)
-                            }
-                            onClick={() => changeStatus(v, "STOPPED")}
-                          >
-                            Dừng voucher
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!list.data.items.length && <p>Chưa có voucher ở trang này.</p>}
-          </div>
+          {(() => {
+            const now = Date.now();
+            const allVouchers = list.data.items ?? [];
+            const filteredVouchers = allVouchers.filter((v) => {
+              if (voucherFilter === "ALL") return true;
+              const start = new Date(v.starts_at).getTime();
+              const end = new Date(v.ends_at).getTime();
+              if (voucherFilter === "ONGOING") {
+                return v.status === "ACTIVE" && start <= now && end >= now;
+              }
+              if (voucherFilter === "UPCOMING") {
+                return v.status === "ACTIVE" && start > now;
+              }
+              if (voucherFilter === "EXPIRED") {
+                return v.status === "STOPPED" || end < now;
+              }
+              return true;
+            });
+
+            return (
+              <>
+                <div className="shopee-marketing-banner mb-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-orange-700">
+                    <Sparkles size={15} className="text-orange-500" /> Bí kíp thiết lập Voucher hiệu quả từ Shopee Uni:
+                  </div>
+                  <p className="text-xs text-slate-600 m-0 mt-1">
+                    Thiết lập song song 2 nhóm voucher: <strong>Voucher giảm nhẹ</strong> (kích thích chốt đơn nhanh với giá trị đơn nhỏ) và <strong>Voucher giảm sâu</strong> (đơn giá trị cao để tăng giá trị trung bình đơn hàng AOV).
+                  </p>
+                </div>
+
+                <div className="shopee-voucher-tabs mb-3 flex items-center gap-2 flex-wrap">
+                  {[
+                    ["ALL", `Tất cả (${allVouchers.length})`],
+                    ["ONGOING", `Đang diễn ra (${allVouchers.filter(v => v.status === 'ACTIVE' && new Date(v.starts_at).getTime() <= now && new Date(v.ends_at).getTime() >= now).length})`],
+                    ["UPCOMING", `Sắp diễn ra (${allVouchers.filter(v => v.status === 'ACTIVE' && new Date(v.starts_at).getTime() > now).length})`],
+                    ["EXPIRED", `Đã kết thúc / Đã dừng (${allVouchers.filter(v => v.status === 'STOPPED' || new Date(v.ends_at).getTime() < now).length})`],
+                  ].map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`shopee-tab-pill ${voucherFilter === key ? "is-active" : ""}`}
+                      onClick={() => setVoucherFilter(key as typeof voucherFilter)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="boot-card market-table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Mã voucher</th>
+                        <th>Ưu đãi</th>
+                        <th>Điều kiện</th>
+                        <th>Thời hạn</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!filteredVouchers.length ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                            Không có voucher nào trong mục này.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredVouchers.map((v) => {
+                          const start = new Date(v.starts_at).getTime();
+                          const end = new Date(v.ends_at).getTime();
+                          const isStopped = v.status === "STOPPED";
+                          const isExpired = !isStopped && end < now;
+                          const isUpcoming = !isStopped && start > now;
+                          return (
+                            <tr key={v.id ?? v.code}>
+                              <td>
+                                <div className="flex items-center gap-1.5">
+                                  <Ticket size={15} className="text-orange-600 flex-shrink-0" />
+                                  <strong className="font-mono text-sm">{v.code}</strong>
+                                </div>
+                              </td>
+                              <td>
+                                <strong className="text-orange-600">
+                                  {v.discount_type === "PERCENT"
+                                    ? v.discount_value + "%"
+                                    : formatMoney(v.discount_value)}
+                                </strong>
+                                {v.discount_type === "PERCENT" &&
+                                  v.max_discount_vnd != null && (
+                                    <p className="text-xs text-slate-500 m-0">Tối đa {formatMoney(v.max_discount_vnd)}</p>
+                                  )}
+                              </td>
+                              <td className="voucher-conditions">
+                                <strong>Đơn từ {formatMoney(v.min_goods_vnd ?? 0)}</strong>
+                                <span>{v.usage_limit} lượt · {v.per_customer_limit}/khách</span>
+                                {v.usage_summary && <small>Còn {v.usage_summary.remaining_count} lượt · đã dùng {v.usage_summary.redeemed_count} · đang giữ {v.usage_summary.reserved_count}</small>}
+                              </td>
+                              <td>
+                                <span className="text-xs">{new Date(v.starts_at).toLocaleString("vi-VN")}</span>
+                                <p className="text-xs text-slate-500 m-0">đến {new Date(v.ends_at).toLocaleString("vi-VN")}</p>
+                              </td>
+                              <td>
+                                {isStopped ? (
+                                  <span className="market-badge" style={{ background: '#f1f5f9', color: '#64748b' }}>Đã dừng</span>
+                                ) : isExpired ? (
+                                  <span className="market-badge" style={{ background: '#fee2e2', color: '#dc2626' }}>Hết hạn</span>
+                                ) : isUpcoming ? (
+                                  <span className="market-badge" style={{ background: '#fef3c7', color: '#d97706' }}>Sắp diễn ra</span>
+                                ) : (
+                                  <span className="market-badge" style={{ background: '#ecfdf5', color: '#047857' }}>Đang diễn ra</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="voucher-table-actions">
+                                  <button
+                                    type="button"
+                                    className="voucher-action-btn"
+                                    disabled={controlsLocked || !v.id}
+                                    onClick={() => showUsage(v)}
+                                  >
+                                    Lượt dùng
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="voucher-action-btn"
+                                    disabled={controlsLocked || !v.id || !!statusReview}
+                                    onClick={async () => {
+                                      if (showForm && editing?.id === v.id) return;
+                                      if (!(await discardDraft())) return;
+                                      formCommand.setError(undefined);
+                                      formCommand.setNotice("");
+                                      setEditing(v);
+                                      setShowForm(true);
+                                    }}
+                                  >
+                                    Sửa voucher
+                                  </button>
+                                  {v.status === "STOPPED" && (
+                                    <button
+                                      type="button"
+                                      className="voucher-action-btn voucher-btn-activate"
+                                      disabled={
+                                        controlsLocked ||
+                                        list.isFetching ||
+                                        !v.id ||
+                                        v.version === undefined ||
+                                        statusReview?.id === v.id ||
+                                        (showForm && editing?.id === v.id)
+                                      }
+                                      onClick={() => changeStatus(v, "ACTIVE")}
+                                    >
+                                      Bật lại
+                                    </button>
+                                  )}
+                                  {v.status === "ACTIVE" && (
+                                    <button
+                                      type="button"
+                                      className="voucher-action-btn voucher-btn-stop"
+                                      disabled={
+                                        controlsLocked ||
+                                        list.isFetching ||
+                                        !v.id ||
+                                        v.version === undefined ||
+                                        statusReview?.id === v.id ||
+                                        (showForm && editing?.id === v.id)
+                                      }
+                                      onClick={() => changeStatus(v, "STOPPED")}
+                                    >
+                                      Dừng voucher
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            );
+          })()}
           <fieldset disabled={controlsLocked || list.isFetching}>
             <legend>Trang voucher</legend>
             <Pagination
@@ -428,26 +508,11 @@ function CreateVoucher({
         : new Date(Date.now() + 30 * 86400000),
     ),
   );
-  const [exampleGoods, setExampleGoods] = useState(200000);
-  const previewValid =
-    Number.isSafeInteger(exampleGoods) &&
-    exampleGoods >= 0 &&
-    exampleGoods <= 1000000000 &&
-    Number.isFinite(value) &&
-    value >= 0 &&
-    (type !== "PERCENT" || value <= 100);
-  const estimatedDiscount =
-    previewValid && exampleGoods >= minimum
-      ? Math.min(
-          exampleGoods,
-          type === "PERCENT"
-            ? Math.min(
-                Math.floor((exampleGoods * value) / 100),
-                capped ? cap : Infinity,
-              )
-            : value,
-        )
-      : 0;
+  const percentCap = type === "PERCENT" && capped ? cap : undefined;
+  const discountValid =
+    Number.isSafeInteger(value) && value > 0 && (type !== "PERCENT" || value <= 100) &&
+    Number.isSafeInteger(minimum) && minimum >= 0 &&
+    (percentCap === undefined || (Number.isSafeInteger(percentCap) && percentCap >= 0));
   const [blocked, setBlocked] = useState(false),
     [version, setVersion] = useState(initial?.version),
     [server, setServer] = useState<Voucher>(),
@@ -530,50 +595,10 @@ function CreateVoucher({
     });
   };
   return (
+    <>
     <form className="boot-card voucher-modal-form" onSubmit={submit}>
-      <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: '13px' }}>
-        Đơn đã chốt giữ nguyên snapshot ưu đãi. Lượt đã dùng không được phục hồi
-        sau hủy / hoàn; lượt giữ chưa tạo đơn được nhả.
-      </p>
-      <div className="voucher-modal-body-layout">
-        <aside className="voucher-preview">
-          <div className="seller-voucher-card" aria-label="Xem trước voucher">
-            <span>{scope === 'STORE' ? 'Ưu đãi từ gian hàng' : 'Ưu đãi từ sàn'}</span>
-            <strong>{type === 'PERCENT' ? `${value || 0}%` : formatMoney(value || 0)}</strong>
-            <span>Mã: {code.trim() || 'Chưa nhập mã'}</span>
-            <small>Đơn từ {formatMoney(minimum || 0)}{type === 'PERCENT' && capped ? ` · Giảm tối đa ${formatMoney(cap || 0)}` : ''}</small>
-          </div>
-          <h3>Thử mức giảm</h3>
-          <label>
-            Tiền hàng ví dụ (VND)
-            <input
-              type="number"
-              min={0}
-              max={1000000000}
-              step={1}
-              value={exampleGoods}
-              onChange={(e) => setExampleGoods(Number(e.target.value))}
-            />
-          </label>
-          <p role="status">
-            {!previewValid
-              ? "Nhập số nguyên từ 0 đến 1 tỷ đồng để xem ví dụ."
-              : exampleGoods < minimum
-                ? "Ví dụ này chưa đạt tiền hàng tối thiểu."
-                : "Ước tính giảm " +
-                  formatMoney(estimatedDiscount) +
-                  "; tiền hàng còn " +
-                  formatMoney(exampleGoods - estimatedDiscount) +
-                  "."}
-          </p>
-          <small>
-            Chỉ minh họa riêng mã này; chưa gồm phí giao hàng, mã khác, thời hạn
-            và hạn mức. Tổng thực tế do checkout kiểm tra.
-          </small>
-        </aside>
-        <div className="voucher-fields-container">
-          <fieldset disabled={command.busy || blocked} className="market-form-grid">
-        <label>
+      <fieldset disabled={command.busy || blocked} className="market-form-grid">
+        <label className="voucher-field-wide">
           Mã voucher
           <input
             required
@@ -583,7 +608,7 @@ function CreateVoucher({
             onChange={(e) => setCode(e.target.value.toUpperCase())}
           />
         </label>
-        <label>
+        <label className="voucher-field-wide">
           Loại giảm
           <select
             value={type}
@@ -622,7 +647,7 @@ function CreateVoucher({
           />
         </label>
         {type === "PERCENT" && (
-          <label>
+          <label className="voucher-field-wide">
             <input
               type="checkbox"
               checked={capped}
@@ -632,7 +657,7 @@ function CreateVoucher({
           </label>
         )}
         {type === "PERCENT" && capped && (
-          <label>
+          <label className="voucher-field-wide">
             Giảm tối đa (VND)
             <input
               required
@@ -669,7 +694,7 @@ function CreateVoucher({
             onChange={(e) => setPerCustomer(Number(e.target.value))}
           />
         </label>
-        <label>
+        <label className="voucher-field-wide">
           Bắt đầu
           <input
             required
@@ -679,7 +704,7 @@ function CreateVoucher({
             onChange={(e) => setStart(e.target.value)}
           />
         </label>
-        <label>
+        <label className="voucher-field-wide">
           Kết thúc
           <input
             required
@@ -691,16 +716,22 @@ function CreateVoucher({
           />
         </label>
       </fieldset>
-      </div>
-      </div>
+      {discountValid && (
+        <p className="voucher-discount-summary">
+          Giảm {type === "PERCENT" ? `${value}%` : formatMoney(value)}
+          {minimum > 0 ? ` cho đơn từ ${formatMoney(minimum)}` : " · Không yêu cầu đơn tối thiểu"}
+          {percentCap !== undefined && ` · Tối đa ${formatMoney(percentCap)}`}
+        </p>
+      )}
+      <p className="voucher-usage-note">Hủy hoặc hoàn đơn không trả lại lượt đã dùng.</p>
       {command.error != null && <ErrorView error={command.error} />}
-      <div className="voucher-form-submit-row" style={{ marginTop: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
-        <button
-          className="ui-button ui-button-primary"
+      <div className="voucher-form-submit-row">
+        <UiButton
+          type="submit"
           disabled={command.busy || blocked || end <= start || !code.trim()}
         >
           {initial ? "Lưu voucher" : "Tạo voucher"}
-        </button>
+        </UiButton>
       </div>
       {blocked && initial && (
         <button
@@ -821,5 +852,44 @@ function CreateVoucher({
         </p>
       )}
     </form>
+    <VoucherDiscountExample type={type} value={value} minimum={minimum} cap={percentCap} discountValid={discountValid} />
+    </>
+  );
+}
+
+function VoucherDiscountExample({ type, value, minimum, cap, discountValid }: {
+  type: "FIXED" | "PERCENT";
+  value: number;
+  minimum: number;
+  cap?: number;
+  discountValid: boolean;
+}) {
+  const [exampleGoods, setExampleGoods] = useState("200000");
+  const goods = Number(exampleGoods);
+  const exampleValid = exampleGoods !== "" && Number.isSafeInteger(goods) && goods >= 0 && goods <= 1000000000;
+  const discount = type === "PERCENT" ? Math.min(Math.floor(goods * value / 100), cap ?? Infinity) : value;
+  const estimated = Math.min(goods, discount);
+  return (
+    <details className="voucher-example">
+      <summary>Thử mức giảm</summary>
+      <label>
+        Tiền hàng ví dụ (VND)
+        <input
+          type="number"
+          min={0}
+          max={1000000000}
+          step={1}
+          value={exampleGoods}
+          onChange={(e) => setExampleGoods(e.target.value)}
+        />
+      </label>
+      <p role="status">
+        {!exampleValid ? "Nhập số nguyên từ 0 đến 1 tỷ đồng."
+          : !discountValid ? "Kiểm tra mức giảm và điều kiện đơn."
+          : goods < minimum ? "Chưa đạt tiền hàng tối thiểu."
+          : `Ước tính giảm ${formatMoney(estimated)} · Tiền hàng còn ${formatMoney(goods - estimated)}.`}
+      </p>
+      <small>Chỉ tính mã này trên tiền hàng, chưa xét thời hạn và lượt dùng.</small>
+    </details>
   );
 }

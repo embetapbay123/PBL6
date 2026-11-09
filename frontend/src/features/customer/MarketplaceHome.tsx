@@ -31,6 +31,7 @@ const collectionPhotos: Record<string, string> = {
   "Nhà cửa & đời sống": "plants-and-table-decorations",
   "Góc làm việc": "a-minimal-yet-cosy-workspace",
 };
+const mobileCatalog = "(max-width: 1023px)";
 const priceValue = (value: string | null) =>
   value !== null &&
   value !== "" &&
@@ -42,10 +43,11 @@ export function MarketplaceHome() {
   const [params, setParams] = useSearchParams(),
     location = useLocation();
   const [view, setView] = useState<"grid" | "list">("grid"),
+    [usesFilterDrawer, setUsesFilterDrawer] = useState(() => matchMedia(mobileCatalog).matches),
     [filterOpen, setFilterOpen] = useState(false),
     [filterCategory, setFilterCategory] = useState("");
   const query = params.get("q") ?? "",
-    category = params.get("category") ?? "",
+    category = params.get("category") ?? params.get("category_id") ?? "",
     rawPage = Number(params.get("page"));
   const page =
     Number.isSafeInteger(rawPage) && rawPage >= 1 && rawPage <= 1000000
@@ -71,14 +73,31 @@ export function MarketplaceHome() {
       return next;
     });
   useEffect(() => {
-    if (
-      location.hash === "#danh-muc" &&
-      matchMedia("(max-width:1023px)").matches
-    ) {
+    const media = matchMedia(mobileCatalog);
+    const syncLayout = () => {
+      setUsesFilterDrawer(media.matches);
+      if (!media.matches) setFilterOpen(false);
+    };
+    syncLayout();
+    media.addEventListener("change", syncLayout);
+    return () => media.removeEventListener("change", syncLayout);
+  }, []);
+  useEffect(() => {
+    if (location.hash === "#danh-muc" && matchMedia(mobileCatalog).matches) {
       setFilterCategory(category);
       setFilterOpen(true);
     }
   }, [location.key]);
+  useEffect(() => {
+    const currentPath = location.pathname + location.search;
+    if (location.search) {
+      try {
+        sessionStorage.setItem("lastMarketplaceSearch", currentPath);
+      } catch {
+        /* Storage is optional. */
+      }
+    }
+  }, [location.pathname, location.search]);
   const products = useQuery({
     queryKey: ["products", query, category, page, sort, min, max],
     placeholderData: keepPreviousData,
@@ -253,15 +272,13 @@ export function MarketplaceHome() {
               ? "Kết quả cho “" + query + "”"
               : (selectedCategory ?? "Khám phá sản phẩm")}
           </Heading>
-          <p>
-            {filtered
-              ? "Lọc để tìm món phù hợp với nhu cầu của bạn."
-              : "Những lựa chọn cho tủ đồ, góc nhà và ngày làm việc."}
-          </p>
+          {!filtered && <p>Những lựa chọn cho tủ đồ, góc nhà và ngày làm việc.</p>}
         </div>
-        <span className="catalog-total">
-          {products.data?.total ?? "—"} <small>sản phẩm</small>
-        </span>
+        {products.data && !products.error && (
+          <span className="catalog-total">
+            {products.data.total.toLocaleString("vi-VN")} <small>sản phẩm</small>
+          </span>
+        )}
       </header>
       <div className="catalog-layout">
         <aside
@@ -296,14 +313,6 @@ export function MarketplaceHome() {
             />
           )}
           <div className="catalog-price-area">{priceFilter}</div>
-          <div className="catalog-filter-help">
-            <Store size={21} />
-            <h3>Một gian hàng của riêng bạn</h3>
-            <p>Đăng sản phẩm và quản lý đơn bán tại kênh người bán.</p>
-            <Link to="/customer/store-applications">
-              Bắt đầu bán hàng <ArrowRight size={14} />
-            </Link>
-          </div>
         </aside>
         <section
           id="san-pham"
@@ -312,32 +321,27 @@ export function MarketplaceHome() {
           aria-busy={products.isFetching}
         >
           <div className="catalog-toolbar">
-            <UiButton
-              variant="secondary"
-              className="catalog-filter-trigger"
-              type="submit"
-              onClick={() => {
-                setFilterCategory(category);
-                setFilterOpen(true);
-              }}
-            >
-              <SlidersHorizontal size={17} />
-              Bộ lọc
-            </UiButton>
-            <span className="catalog-result-count">
-              {products.data
-                ? `${products.data.total} kết quả`
-                : products.error
-                  ? "Chưa tải được sản phẩm"
-                  : "Đang tải sản phẩm"}
-            </span>
+            {usesFilterDrawer && (
+              <UiButton
+                variant="secondary"
+                className="catalog-filter-trigger"
+                aria-haspopup="dialog"
+                onClick={() => {
+                  setFilterCategory(category);
+                  setFilterOpen(true);
+                }}
+              >
+                <SlidersHorizontal size={17} />
+                Bộ lọc
+              </UiButton>
+            )}
             <label>
               Sắp xếp
               <select
                 value={sort}
                 onChange={(event) => update({ sort: event.target.value })}
               >
-                <option value="title">Tên sản phẩm</option>
+                <option value="title">{query ? "Liên quan nhất" : "Tên sản phẩm"}</option>
                 <option value="price_asc">Giá tăng dần</option>
                 <option value="price_desc">Giá giảm dần</option>
               </select>
@@ -385,7 +389,9 @@ export function MarketplaceHome() {
                   <X size={13} />
                 </button>
               )}
-              <button onClick={() => setParams({})}>Xóa bộ lọc</button>
+              {(category || min !== undefined || max !== undefined) && (
+                <button onClick={() => update({ category: "", category_id: "", min: "", max: "" })}>Xóa bộ lọc</button>
+              )}
             </div>
           )}
           {products.isFetching && !products.isPending && (
@@ -431,11 +437,12 @@ export function MarketplaceHome() {
               )}
             </>
           )}
-          {products.data && !products.error && (
+          {products.data && !products.error && (page > 1 || products.data.total > products.data.size) && (
             <Pagination
               page={page}
               size={products.data.size}
               total={products.data.total}
+              showTotal={false}
               onPage={(value) =>
                 setParams((current) => {
                   const next = new URLSearchParams(current);
@@ -447,7 +454,7 @@ export function MarketplaceHome() {
           )}
         </section>
       </div>
-      {filterOpen && (
+      {usesFilterDrawer && filterOpen && (
         <Modal
           variant="drawer"
           label="Bộ lọc sản phẩm"
@@ -488,16 +495,6 @@ export function MarketplaceHome() {
               Xóa lọc
             </UiButton>
             <UiButton
-              variant="primary"
-              type="submit"
-              onClick={() => {
-                update({ category: filterCategory });
-                setFilterOpen(false);
-              }}
-            >
-              Áp dụng
-            </UiButton>
-            <UiButton
               variant="secondary"
               type="submit"
               onClick={() => setFilterOpen(false)}
@@ -507,7 +504,13 @@ export function MarketplaceHome() {
           </div>
         </Modal>
       )}
-      <CustomerRecommendations />
+      {(!filtered || products.data?.items?.length === 0) && (
+        <CustomerRecommendations
+          excludeIds={products.data?.items?.map((p) => p.id).filter((id): id is string => !!id)}
+          compact={page > 1 || products.data?.items?.length === 0}
+          limit={page > 1 ? 4 : undefined}
+        />
+      )}
     </div>
   );
 }

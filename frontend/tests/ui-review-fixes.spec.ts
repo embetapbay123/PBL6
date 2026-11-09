@@ -284,8 +284,12 @@ async function setup(
       });
     if (p === "/products/" + id(1) + "/reviews") {
       s.reviewQueries.push(u.searchParams);
+      const items = u.searchParams.has("rating") ? [] : [
+        { id: id(90), order_item_id: id(91), rating: 5, body: "Đúng phân loại" },
+        { id: id(92), order_item_id: id(93), rating: 4, body: "Giao đúng hẹn" },
+      ];
       return route.fulfill({
-        json: { items: [], page: 1, size: 20, total: 0 },
+        json: { items, page: 1, size: 20, total: items.length },
       });
     }
     if (p === "/me/orders")
@@ -350,10 +354,10 @@ async function setup(
 async function checkout(page: Page) {
   await page.goto("/cart");
   await page
-    .getByRole("button", { name: "Tiến hành thanh toán", exact: true })
+    .getByRole("button", { name: "Thanh toán", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Xác nhận đặt hàng", exact: true }),
+    page.getByRole("button", { name: "Đặt hàng", exact: true }),
   ).toBeEnabled();
 }
 test("cart uses batch metadata once, bounds rows and keeps selection over pages", async ({
@@ -362,12 +366,12 @@ test("cart uses batch metadata once, bounds rows and keeps selection over pages"
   const s = await setup(page, { rows: 26 });
   await page.goto("/cart");
   await expect(page.getByRole("group", { name: /Dòng giỏ/ })).toHaveCount(25);
-  await expect(page.getByText("Tổng số lượng: 26")).toBeVisible();
+  await expect(page.getByText("Đã chọn 26 món")).toBeVisible();
   await page.getByRole("button", { name: "Trang sau", exact: true }).click();
   await expect(page.getByRole("group", { name: /Dòng giỏ/ })).toHaveCount(1);
   expect(s.batchReads).toBe(1);
   expect(s.detailReads).toBe(0);
-  await expect(page.getByText("Tổng số lượng: 26")).toBeVisible();
+  await expect(page.getByText("Đã chọn 26 món")).toBeVisible();
 });
 test("checkout exposes full addresses, separate payment and picker with server-validated codes", async ({
   page,
@@ -385,14 +389,14 @@ test("checkout exposes full addresses, separate payment and picker with server-v
     page.locator("#checkout-payment").getByRole("combobox"),
   ).toHaveCount(1);
   await page
-    .getByRole("button", { name: "Chọn mã ưu đãi", exact: true })
+    .getByRole("button", { name: "Chọn mã", exact: true })
     .click();
   await page.getByRole("button", { name: "Chọn GIAM10", exact: true }).click();
   await expect(
     page.getByLabel("Voucher cửa hàng " + id(2), { exact: true }),
   ).toHaveValue("GIAM10");
   await page
-    .getByRole("button", { name: "Áp dụng ưu đãi", exact: true })
+    .getByRole("button", { name: "Áp dụng", exact: true })
     .click();
   await expect
     .poll(() => s.quotes.at(-1)?.store_vouchers?.[id(2)])
@@ -407,11 +411,11 @@ test("pending voucher validation blocks confirmation and ignores a stale address
   s.holdValidation = true;
   await page.getByLabel("Voucher toàn sàn", { exact: true }).fill("FIRST");
   await page
-    .getByRole("button", { name: "Áp dụng ưu đãi", exact: true })
+    .getByRole("button", { name: "Áp dụng", exact: true })
     .click();
   await expect.poll(() => !!s.validation).toBe(true);
   await expect(
-    page.getByRole("button", { name: "Xác nhận đặt hàng", exact: true }),
+    page.getByRole("button", { name: "Đặt hàng", exact: true }),
   ).toBeDisabled();
   await page.locator("#checkout-address").getByRole("radio").nth(1).check();
   await s.validation!.fulfill({ json: { ...f.quoteCheckout.response } });
@@ -430,14 +434,14 @@ test("expiring quote requires an explicit refresh without creating an order", as
   s.timeOffset = 6000;
   await page.clock.runFor(6000);
   await expect(
-    page.getByRole("button", { name: "Xác nhận đặt hàng", exact: true }),
+    page.getByRole("button", { name: "Đặt hàng", exact: true }),
   ).toBeDisabled();
   await expect(page.getByRole("timer")).toContainText("đã hết hạn");
   await page
-    .getByRole("button", { name: "Tính lại báo giá", exact: true })
+    .getByRole("button", { name: "Tính lại", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Xác nhận đặt hàng", exact: true }),
+    page.getByRole("button", { name: "Đặt hàng", exact: true }),
   ).toBeEnabled();
   expect(s.writes.some((w) => w.path === "/orders/batches")).toBe(false);
 });
@@ -447,7 +451,7 @@ test("success distinguishes a recorded COD order from money collected", async ({
   await setup(page);
   await checkout(page);
   await page
-    .getByRole("button", { name: "Xác nhận đặt hàng", exact: true })
+    .getByRole("button", { name: "Đặt hàng", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Đã tạo nhóm đơn hàng", exact: true }),
@@ -513,14 +517,18 @@ test("address suggestions are local, keep typed historic data and do not reset o
 });
 test("staff permission checkboxes stay local until Save; lock and revoke require confirmation", async ({
   page,
-}) => {
+}, info) => {
   const s = await setup(page, { owner: true });
   await page.goto("/seller/staff");
+  await expect(page.getByRole('button', {name:'Mời nhân viên',exact:true})).toBeVisible();
+  await expect(page.getByRole('button', {name:'Trang sau',exact:true})).toHaveCount(0);
+  await expect(page.getByText('Phạm vi quyền',{exact:true})).toHaveCount(0);
   await page.getByRole("button", { name: "Sửa quyền", exact: true }).click();
   const editor = page.getByRole("dialog", {
     name: "Sửa quyền nhân viên",
     exact: true,
   });
+  await expect(editor.getByText('Phạm vi quyền',{exact:true})).toBeVisible();
   await editor
     .getByRole("checkbox", { name: "Xem và điều chỉnh kho", exact: true })
     .check();
@@ -531,9 +539,12 @@ test("staff permission checkboxes stay local until Save; lock and revoke require
     expected_version: 2,
     permissions: ["product.store.read_write", "inventory.store.read_adjust"],
   });
-  await page
-    .getByRole("button", { name: "Khóa nhân viên", exact: true })
-    .click();
+  const lock = page.getByRole("button", { name: "Khóa nhân viên", exact: true });
+  await expect(lock).toHaveCount(0);
+  await page.getByRole('button',{name:/^Thêm thao tác cho /}).press('Enter');
+  await expect(lock).toBeVisible();
+  await page.screenshot({path:info.outputPath('staff-row-menu.png')});
+  await lock.click();
   await page
     .getByRole("dialog")
     .getByRole("button", { name: "Quay lại", exact: true })
@@ -551,12 +562,10 @@ test("notification read-all updates through one owner-scoped request", async ({
 }) => {
   const s = await setup(page);
   await page.goto("/customer/notifications");
-  await page
-    .getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true })
-    .click();
-  await expect(
-    page.getByText("0 thông báo chưa đọc", { exact: true }),
-  ).toBeVisible();
+  const markAll = page.getByRole("button", { name: "Đánh dấu tất cả đã đọc", exact: true });
+  await markAll.click();
+  await expect(markAll).toHaveCount(0);
+  await expect(page.getByText("Đã đọc", { exact: true })).toBeVisible();
   expect(
     s.writes.filter((w) => w.path === "/me/notifications/read-all"),
   ).toHaveLength(1);
@@ -596,7 +605,7 @@ for (const width of [1440, 390])
     await setup(page);
     await checkout(page);
     await page
-      .getByRole("button", { name: "Chọn mã ưu đãi", exact: true })
+      .getByRole("button", { name: "Chọn mã", exact: true })
       .click();
     await expect(page.getByRole("dialog")).toBeVisible();
     expect(
@@ -623,8 +632,43 @@ for (const width of [1440, 390])
 test('inventory sections preserve a variant deep link without stacking all workspaces',async({page})=>{
  await setup(page,{owner:true});await page.goto('/seller/inventory?variant_id='+id(4)+'#stock-history');await expect(page.getByRole('heading',{name:'Lịch sử biến động kho',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Đối chiếu tồn thương mại theo kỳ',exact:true})).toHaveCount(0);await page.getByRole('link',{name:'Tồn có thể bán',exact:true}).click();await expect(page).toHaveURL(new RegExp('variant_id='+id(4)+'.*view=inventory'));await expect(page.getByRole('heading',{name:'Lịch sử biến động kho',exact:true})).toHaveCount(0);
 });
-test('voucher editor is a drawer with an illustrative preview and deliberate discard',async({page})=>{
- const s=await setup(page,{owner:true});await page.goto('/seller/vouchers');await expect(page.getByText(/Còn 97 lượt/)).toBeVisible();await page.getByRole('button',{name:'Tạo voucher mới',exact:true}).click();const drawer=page.getByRole('dialog',{name:'Tạo voucher mới',exact:true});await expect(drawer.getByRole('heading',{name:'Thử mức giảm',exact:true})).toBeVisible();await drawer.getByRole('spinbutton',{name:'Tiền hàng ví dụ (VND)',exact:true}).fill('250000');await expect(drawer.locator('.voucher-preview')).toContainText('10.000');await drawer.getByRole('textbox',{name:'Mã voucher',exact:true}).fill('CHUALUU');await page.keyboard.press('Escape');await page.getByRole('dialog',{name:'Bỏ thay đổi voucher?',exact:true}).getByRole('button',{name:'Quay lại',exact:true}).click();await expect(drawer.getByRole('textbox',{name:'Mã voucher',exact:true})).toHaveValue('CHUALUU');expect(s.writes).toEqual([]);
+test('voucher editor shows the terms before an optional calculator and protects the draft',async({page},info)=>{
+ const s=await setup(page,{owner:true});await page.goto('/seller/vouchers');await expect(page.getByText(/Còn 97 lượt/)).toBeVisible();await page.getByRole('button',{name:'Tạo voucher mới',exact:true}).click();const drawer=page.getByRole('dialog',{name:'Tạo voucher mới',exact:true});
+ await expect(drawer.getByText(/Giảm 10\.000.*cho đơn từ 50\.000/)).toBeVisible();
+ const example=drawer.getByRole('spinbutton',{name:'Tiền hàng ví dụ (VND)',exact:true}),toggle=drawer.getByText('Thử mức giảm',{exact:true});
+ await expect(example).toBeHidden();
+ for(const width of [1280,390]){
+  await page.setViewportSize({width,height:844});
+  expect(await drawer.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await expect(drawer.getByRole('button',{name:'Tạo voucher',exact:true})).toBeInViewport();
+  await drawer.screenshot({path:info.outputPath(`voucher-${width}.png`)});
+ }
+ const code=drawer.getByRole('textbox',{name:'Mã voucher',exact:true});
+ await code.fill('CHUALUU');
+ await drawer.getByRole('button',{name:'Tạo voucher',exact:true}).press('Tab');
+ await expect(toggle).toBeFocused();await toggle.press('Enter');
+ await example.fill('250000');await expect(drawer.getByRole('status')).toContainText(/Ước tính giảm 10\.000.*240\.000/);
+ await page.keyboard.press('Escape');await page.getByRole('dialog',{name:'Bỏ thay đổi voucher?',exact:true}).getByRole('button',{name:'Quay lại',exact:true}).click();await expect(code).toHaveValue('CHUALUU');expect(s.writes).toEqual([]);
 });
 
-test('empty customer returns gives a real route to eligible completed orders',async({page})=>{await setup(page);await page.goto('/customer/returns');await expect(page.getByRole('link',{name:'Xem đơn đã hoàn tất',exact:true})).toHaveAttribute('href','/customer/orders?status=COMPLETED');});
+test('empty orders distinguish status filters and the returns empty state links to completed orders',async({page})=>{
+ await setup(page);
+ const statuses:(string|null)[]=[];
+ await page.route(url=>url.pathname==='/api/v1/me/orders',route=>{
+   statuses.push(new URL(route.request().url()).searchParams.get('status'));
+   return route.fulfill({json:{items:[],page:1,size:20,total:0}});
+ });
+ await page.goto('/customer/orders');
+ await expect(page.getByText('Bạn chưa có đơn hàng.',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Đang giao',exact:true}).click();
+ await expect(page.getByText('Không có đơn đang giao.',{exact:true})).toBeVisible();
+ await page.getByRole('link',{name:'Xem tất cả đơn',exact:true}).click();
+ await expect(page.getByText('Bạn chưa có đơn hàng.',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Đang giao',exact:true}).click();
+ await page.getByRole('navigation',{name:'Lọc nhanh trạng thái đơn'}).getByRole('link',{name:'Đổi trả',exact:true}).click();
+ const completed=page.locator('.ui-empty').getByRole('link',{name:'Xem đơn đã hoàn tất',exact:true});
+ await completed.click();
+ await expect(page).toHaveURL(/\/customer\/orders\?status=COMPLETED$/);
+ await expect(page.getByText('Không có đơn đã hoàn tất.',{exact:true})).toBeVisible();
+ expect(statuses).toEqual(expect.arrayContaining([null,'SHIPPED','COMPLETED']));
+});

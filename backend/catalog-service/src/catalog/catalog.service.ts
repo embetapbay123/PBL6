@@ -242,7 +242,7 @@ export class CatalogService {
   Promise<OperationOutputs['listStoreProducts']> {
     if(!(await this.stores(correlation)).includes(id))
       throw new ApiError(404,'NOT_FOUND','Không tìm thấy Store đang bán.');
-    return new CatalogRepository(database.manager).page([id],{page:query.page ?? 1,size:query.size ?? 20});
+    return new CatalogRepository(database.manager).page([id],{page:query.page ?? 1,size:query.size ?? 20,q:query.q});
   }
 
   /**

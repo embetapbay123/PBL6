@@ -19,7 +19,7 @@ function CustomerStoreApplicationPage(){
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  const user=session?.context?.user_id,member=session?.context?.store_membership,active=member?.status==='ACTIVE';
  const query=(p:number)=>({queryKey:['own-store-applications',user,p],queryFn:()=>listOwnStoreApplications(p,10)});
- const history=useQuery(query(page)),data=history.data;
+ const history=useQuery({...query(page),refetchInterval:15000}),data=history.data;
  const pending=!!data?.status_counts?.PENDING||!!data?.items.some(a=>a.status==='PENDING');
  const approved=!!data?.status_counts?.APPROVED||!!data?.items.some(a=>a.status==='APPROVED');
  const blocked=busy||history.isFetching||!!history.error||readRequired;
@@ -29,7 +29,7 @@ function CustomerStoreApplicationPage(){
  }
  async function refresh(){
   if(flight.current)return;flight.current=true;setBusy(true);setError(undefined);
-  try{await readFirst();if(alive.current)setNotice('Đã đọc lại trạng thái. Đối chiếu hồ sơ bên dưới trước khi thao tác tiếp.');}
+  try{await readFirst();if(alive.current)setNotice('Đã cập nhật trạng thái hồ sơ.');}
   catch(cause){if(alive.current){setError(cause);setReadRequired(true);}}
   finally{flight.current=false;if(alive.current)setBusy(false);}
  }
@@ -55,29 +55,28 @@ function CustomerStoreApplicationPage(){
  }
  function reuse(app:StoreApplication){setName(app.proposed_name);setContact(app.contact);setNotice('Đã điền lại thông tin. Bổ sung theo lý do từ chối rồi kiểm tra trước khi gửi hồ sơ mới; hồ sơ cũ được giữ lại.');nameInput.current?.focus();}
  return <section className="store-app-page"><CustomerSubNav/>
-  <header className="store-app-page-heading"><p className="store-app-eyebrow">DÀNH CHO NHÀ BÁN HÀNG</p><h1>Bắt đầu bán hàng cùng PBL6</h1><p>Gửi hồ sơ → chờ Admin xét duyệt → cập nhật quyền → hoàn thiện Store trước khi nhận đơn.</p></header>
+  <header className="store-app-page-heading"><p className="store-app-eyebrow">DÀNH CHO NHÀ BÁN HÀNG</p><h1>Bắt đầu bán hàng cùng PBL6</h1><p>Đăng ký cửa hàng và theo dõi kết quả duyệt.</p></header>
   {dataMode==='fixture'&&<p className="store-app-demo-banner">FIXTURE: hồ sơ chỉ lưu trong trình duyệt, không tạo Store hoặc cấp quyền thật.</p>}
   {notice&&<p className="store-app-notice" role="status">{notice}</p>}{error!=null&&<ErrorView error={error}/>}
-  <section className="boot-card store-app-card" aria-label="Trạng thái và bước tiếp">
-   <h2>Theo dõi hồ sơ và tiếp tục</h2><p>Admin xét duyệt hồ sơ. Dùng nút dưới đây để kiểm tra quyết định khi trang đang mở; không cần đăng xuất.</p>
-   <button type="button" disabled={busy||history.isFetching} onClick={()=>void refresh()}>Đọc lại trạng thái hồ sơ</button>
-   {pending&&<p>Hồ sơ đang chờ Admin. Không gửi thêm hồ sơ trong lúc chờ; nếu bị từ chối, xem lý do rồi bổ sung và gửi hồ sơ mới.</p>}
-   {approved&&!active&&dataMode!=='fixture'&&<><p>Hồ sơ đã được duyệt. Cập nhật quyền hiện hành để mở Store; lịch sử duyệt không thay thế quyền truy cập hiện tại.</p><button type="button" disabled={blocked} onClick={()=>void enter()}>Cập nhật quyền và vào Store</button></>}
+  {(pending||approved||active||readRequired)&&<section className="boot-card store-app-card" aria-label="Trạng thái và bước tiếp">
+   {pending&&<p>Hồ sơ đang chờ duyệt.</p>}
+   {approved&&!active&&dataMode!=='fixture'&&<><p>Hồ sơ đã được duyệt. Cập nhật quyền để mở cửa hàng.</p><button type="button" disabled={blocked} onClick={()=>void enter()}>Mở shop</button></>}
    {active&&<p>{member.role==='OWNER'?'Bạn đang có quyền chủ Store.':'Bạn đang là nhân viên của một Store, chưa phải chủ Store.'} <Link to="/seller">Mở Store hiện tại</Link>. Mỗi tài khoản chỉ tham gia một Store đang hoạt động.</p>}
-  </section>
-  {!active&&<section className="boot-card store-app-card"><h2>Đăng ký mở cửa hàng</h2><p>Kiểm tra tên và thông tin liên hệ trước khi gửi. Hồ sơ bị từ chối được giữ trong lịch sử; gửi lại tạo một hồ sơ mới.</p>
+   {readRequired&&<button type="button" disabled={busy||history.isFetching} onClick={()=>void refresh()}>Làm mới</button>}
+  </section>}
+  {!active&&<section className="boot-card store-app-card"><h2>Đăng ký mở cửa hàng</h2>
    <form onSubmit={submit} className="store-app-form"><fieldset disabled={blocked||pending}><legend>Thông tin đề nghị mở Store</legend>
     <label>Tên cửa hàng <span aria-hidden="true">*</span><input ref={nameInput} value={name} onChange={e=>setName(e.target.value)} placeholder="Ví dụ: Cửa hàng Minh An" required minLength={2} maxLength={200}/></label>
     <label>Email hoặc số điện thoại liên hệ <span aria-hidden="true">*</span><input value={contact} onChange={e=>setContact(e.target.value)} placeholder="email@example.com hoặc 0901234567" required minLength={3} maxLength={200}/></label>
-    <UiButton variant="primary" type="submit">{busy?'Đang xử lý…':dataMode==='fixture'?'Tạo hồ sơ fixture':'Gửi hồ sơ đăng ký'}</UiButton>
-   </fieldset></form>{readRequired&&<p>Đang khóa việc gửi mới cho đến khi đọc lại được trạng thái hồ sơ.</p>}
+    <UiButton variant="primary" type="submit">{busy?'Đang xử lý…':dataMode==='fixture'?'Tạo hồ sơ fixture':'Gửi hồ sơ'}</UiButton>
+   </fieldset></form>{readRequired&&<p>Kiểm tra lại hồ sơ trước khi gửi mới.</p>}
   </section>}
   <section className="boot-card store-app-card"><h2>Hồ sơ của bạn</h2>
    {history.error!=null&&<ErrorView error={history.error}/>}{history.isFetching&&<Loading/>}
    {!history.error&&data&&<>{!data.items.length?<p>Chưa có hồ sơ đăng ký.</p>:<div className="store-app-list">{data.items.map((app,i)=><article className="store-app-row" key={app.id??i}>
     <div className="store-app-row-main"><div><h3>{app.proposed_name}</h3><p>{app.contact}</p></div><span className={`store-app-status store-app-status--${(app.status??'unknown').toLowerCase()}`}>{labels[app.status??'']??'Chưa rõ trạng thái'}</span></div>
     {app.decision_reason&&<p className="store-app-reason"><strong>Lý do từ chối:</strong> {app.decision_reason}</p>}
-    {app.status==='REJECTED'&&!active&&<button type="button" disabled={blocked||pending} onClick={()=>reuse(app)}>Bổ sung và gửi hồ sơ mới</button>}
+    {app.status==='REJECTED'&&!active&&<button type="button" disabled={blocked||pending} onClick={()=>reuse(app)}>Sửa hồ sơ</button>}
     {app.id&&<small>Mã hồ sơ: <code>{app.id}</code></small>}
    </article>)}</div>}<fieldset disabled={blocked}><legend>Trang hồ sơ</legend><Pagination page={data.page} size={data.size} total={data.total} onPage={setPage}/></fieldset></>}
   </section>

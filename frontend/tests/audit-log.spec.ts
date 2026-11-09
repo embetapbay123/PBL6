@@ -82,7 +82,7 @@ test("Admin filters and switches audit sources within a contained table", async 
   const reads = await setup(page);
   await expect(page.getByRole("table")).toContainText("audit-trace-fixture");
   await page.getByLabel("Hành động", { exact: true }).fill("UPDATE");
-  await page.getByRole("button", { name: "Áp dụng bộ lọc nhật ký" }).click();
+  await page.getByRole("button", { name: "Lọc" }).click();
   await expect(page.getByRole("table")).toContainText("UPDATE");
   expect(reads.some((url) => url.includes("action=UPDATE"))).toBe(true);
   for (const [source, label] of [

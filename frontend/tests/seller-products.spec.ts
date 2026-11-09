@@ -71,8 +71,9 @@ test('editing one variant preserves the entire set and uses the product version'
     return route.fulfill({json:record});
   });
   await loginAsOwner(page);
-  await page.goto(`/seller/products/${id}/edit`);
+  await page.goto(`/seller/products/${id}/edit#product-variants`);
   const editor=page.getByRole('region',{name:'Chỉnh sửa biến thể'});
+  await editor.locator('summary').first().click();
   await editor.getByLabel('Giá bán (VNĐ)').first().fill('15000');
   await editor.getByRole('button',{name:'Lưu biến thể'}).click();
   await expect.poll(()=>sent).toBeTruthy();
@@ -91,12 +92,14 @@ test('variant version conflict blocks another save until a fresh read',async({pa
     if(route.request().method()==='PATCH'){version=4;return route.fulfill({status:409,json:{code:'VERSION_CONFLICT',message:'Dữ liệu đã thay đổi.',details:[]}});}
     return route.fulfill({json:{...product(id,'Sản phẩm nháp','DRAFT','VISIBLE'),attributes:{color:'red'},version,variants}});
   });
-  await loginAsOwner(page); await page.goto(`/seller/products/${id}/edit`);
+  await loginAsOwner(page); await page.goto(`/seller/products/${id}/edit#product-variants`);
   const editor=page.getByRole('region',{name:'Chỉnh sửa biến thể'});
+  await editor.locator('summary').first().click();
+  await editor.getByLabel('Giá bán (VNĐ)').first().fill('15000');
   await editor.getByRole('button',{name:'Lưu biến thể'}).click();
   await expect(editor.getByRole('button',{name:'Lưu biến thể'})).toBeDisabled();
   await editor.getByRole('button',{name:'Tải lại dữ liệu'}).click();
-  await expect(page.getByRole('region',{name:'Chỉnh sửa biến thể'}).getByRole('button',{name:'Lưu biến thể'})).toBeEnabled();
+  await expect(page.getByRole('region',{name:'Chỉnh sửa biến thể'}).getByRole('button',{name:'Lưu biến thể'})).toHaveCount(0);
 });
 
 test('seller removes an image through the scoped endpoint and refreshes the list',async({page})=>{
@@ -108,8 +111,10 @@ test('seller removes an image through the scoped endpoint and refreshes the list
     expect(route.request().method()).toBe('DELETE');removed=true;
     return route.fulfill({json:{id:imageId,product_id:id}});
   });
-  await loginAsOwner(page);await page.goto(`/seller/products/${id}/edit`);
+  await loginAsOwner(page);await page.goto(`/seller/products/${id}/edit#product-images`);
+  await page.getByRole('button',{name:'Thêm thao tác cho ảnh 1',exact:true}).click();
   await page.getByRole('button',{name:'Bỏ ảnh sản phẩm 1'}).click();
+  await page.getByRole('dialog',{name:'Bỏ ảnh sản phẩm?',exact:true}).getByRole('button',{name:'Bỏ ảnh',exact:true}).click();
   await expect(page.getByRole('button',{name:'Bỏ ảnh sản phẩm 1'})).toHaveCount(0);
   await expect(page.getByText('Đã bỏ ảnh sản phẩm.')).toBeVisible();
 });
@@ -123,7 +128,8 @@ test('seller sends the current and requested image order before refreshing',asyn
     sent=route.request().postDataJSON();order=sent.image_ids;
     return route.fulfill({json:{product_id:id,image_ids:order}});
   });
-  await loginAsOwner(page);await page.goto(`/seller/products/${id}/edit`);
+  await loginAsOwner(page);await page.goto(`/seller/products/${id}/edit#product-images`);
+  await page.getByRole('button',{name:'Sắp xếp ảnh',exact:true}).click();
   await page.getByRole('button',{name:'Đưa ảnh 2 lên trước'}).click();
   await expect(page.getByText('Đã cập nhật thứ tự ảnh.')).toBeVisible();
   expect(sent).toEqual({expected_image_ids:ids,image_ids:[ids[1],ids[0]]});

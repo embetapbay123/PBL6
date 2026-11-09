@@ -331,11 +331,11 @@ test("Store chat keeps drafts through close and retries the same client message 
     dialog.getByRole("textbox", { name: "Nội dung tin nhắn", exact: true }),
   ).toHaveValue("Tin nhắn kiểm thử");
   await dialog
-    .getByRole("button", { name: "Gửi tin nhắn", exact: true })
+    .getByRole("button", { name: "Gửi", exact: true })
     .click();
   await expect(dialog.getByRole("alert")).toContainText("Chưa rõ kết quả gửi");
   await dialog
-    .getByRole("button", { name: "Thử gửi lại", exact: true })
+    .getByRole("button", { name: "Thử gửi", exact: true })
     .click();
   await expect(dialog.getByRole("log")).toContainText("Tin nhắn kiểm thử");
   expect(s.sends).toHaveLength(2);

@@ -1474,6 +1474,119 @@
           }
         }
       }
+    },
+    "/internal/inventory/exchange-restock": {
+      "post": {
+        "operationId": "RestockExchangeItems",
+        "tags": [
+          "Inventory"
+        ],
+        "summary": "Restock inspected replacement goods once",
+        "x-service-owner": "M1",
+        "x-implementation-status": "implemented",
+        "x-allowed-callers": [
+          "M2"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operation_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "receipt_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "dispatch_receipt_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "order_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "actor_user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "variant_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "store_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 100000
+                        }
+                      },
+                      "required": [
+                        "variant_id",
+                        "store_id",
+                        "quantity"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "operation_id",
+                  "receipt_id",
+                  "dispatch_receipt_id",
+                  "order_id",
+                  "actor_user_id",
+                  "items"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operation_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "APPLIED",
+                        "ALREADY_APPLIED"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "operation_id",
+                    "status"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

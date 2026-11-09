@@ -343,6 +343,9 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
   const sourceKey = buyNow
     ? "BUY_NOW:" + JSON.stringify(buyNow)
     : "CART:" + JSON.stringify([...selectedIds].sort());
+  const addressReturnState = userId
+    ? checkoutState(userId, buyNow ? { buyNow } : { cartItemIds: selectedIds })
+    : undefined;
   const [draft] = useState(() => readDraft(userId, sourceKey));
   const [savedResult] = useState(() => {
     try {
@@ -367,6 +370,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
       draft?.addressId ??
       "",
   );
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quotedInput, setQuotedInput] = useState("");
   const [selectedMethods, setSelectedMethods] = useState<
@@ -391,6 +395,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
   const [created, setCreated] = useState(!!savedResult);
 
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [missingAddress, setMissingAddress] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [conflictNotice, setConflictNotice] = useState<string | null>(null);
@@ -472,6 +477,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      setMissingAddress(false);
       setLoadError(null);
       setQuote(null);
       setQuoteError(null);
@@ -515,9 +521,10 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
           return;
         }
         if (book.items.length === 0) {
-          setLoadError(
-            "Bạn chưa có địa chỉ nhận hàng. Hãy thêm địa chỉ trước khi thanh toán.",
-          );
+          setMissingAddress(true);
+          setItems([]);
+          setAddresses([]);
+          setAddressId("");
           return;
         }
         setItems(chosen);
@@ -685,7 +692,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
       } else if (isUncertain(error)) {
         setConfirmError(
           `${describe(error)} Chưa xác định được đơn hàng đã được tạo hay chưa. ` +
-            'Nhấn "Xác nhận đặt hàng" để kiểm tra lại yêu cầu này; các món, địa chỉ và số tiền được giữ nguyên để tránh đặt trùng.',
+            'Bấm Đặt hàng để kiểm tra đơn này. Hệ thống giữ nguyên thông tin để tránh đặt trùng.',
         );
       } else {
         setConfirmError(describe(error));
@@ -694,6 +701,56 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
     } finally {
       inFlight.current = false;
       setSubmitting(false);
+    }
+  };
+
+  const applyVouchers = async (
+    targetPlatformCode: string,
+    targetStoreDraft: Record<string, string>,
+  ) => {
+    if (submitting || quoting || voucherFlight.current) return;
+    voucherFlight.current = true;
+    setValidatingVouchers(true);
+    setQuoteError(null);
+    const fingerprint = inputFingerprint;
+    const store_vouchers = Object.fromEntries(
+      storeGroups
+        .map(([id]) => [id, (targetStoreDraft[id] ?? "").trim()])
+        .filter(([, code]) => code),
+    );
+    const voucherPayload = {
+      ...(targetPlatformCode.trim()
+        ? { platform_voucher_code: targetPlatformCode.trim() }
+        : {}),
+      ...(Object.keys(store_vouchers).length ? { store_vouchers } : {}),
+    };
+    const {
+      platform_voucher_code: _oldPlatform,
+      store_vouchers: _oldStore,
+      ...base
+    } = quoteInput;
+    try {
+      if (
+        voucherPayload.platform_voucher_code ||
+        voucherPayload.store_vouchers
+      ) {
+        await callOperation("validateVouchers", {
+          body: { ...base, ...voucherPayload },
+        });
+      }
+      if (latestInput.current !== fingerprint) {
+        setQuoteError(
+          "Thông tin đặt hàng vừa thay đổi. Kiểm tra lại rồi áp dụng mã lần nữa.",
+        );
+        return;
+      }
+      setVouchers(voucherPayload);
+      setQuoteTick((n) => n + 1);
+    } catch (error) {
+      setQuoteError(describe(error));
+    } finally {
+      voucherFlight.current = false;
+      setValidatingVouchers(false);
     }
   };
 
@@ -717,7 +774,6 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
             </p>
           </div>
         </header>
-        <p className="text-gray-600">Đơn hàng của bạn đã được ghi nhận.</p>
         {loadError && <p role="alert">{loadError}</p>}
         <Link to="/customer/orders">Xem đơn hàng của tôi</Link>
         {createdOrders.map((order) => (
@@ -733,8 +789,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
             <p>Phải trả: {formatVnd(order.amounts.payable_vnd)}</p>
             {order.amounts.payable_vnd === 0 && (
               <p>
-                Không cần thanh toán. Cửa hàng tiếp tục xử lý hàng; không chuyển
-                tiền cho đơn này.
+                  Đơn 0đ, không cần thanh toán.
               </p>
             )}
             <Link to={`/customer/orders/${order.id}`}>Xem chi tiết đơn</Link>
@@ -743,7 +798,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
               order.amounts.payable_vnd > 0 && (
                 <p>
                   <Link to={`/orders/${order.id}/pay`}>
-                    Mở thông tin chuyển khoản
+                    Chuyển khoản
                   </Link>
                 </p>
               )}
@@ -781,7 +836,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
       </Link>
       <h1 className="text-2xl font-bold mb-6">Kiểm tra và đặt hàng</h1>
 
-      <ol
+      {!loading && !loadError && !missingAddress && items.length > 0 && <ol
         className="checkout-steps"
         aria-label="Các phần cần kiểm tra trước khi đặt"
       >
@@ -797,7 +852,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
         <li>
           <a href="#checkout-vouchers">4. Ưu đãi và tổng tiền</a>
         </li>
-      </ol>
+      </ol>}
       {error && (
         <div
           role="alert"
@@ -831,25 +886,27 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
         <p className="text-gray-500">Đang tải thông tin thanh toán...</p>
       )}
 
-      {!loading && loadError && (
-        <div className="flex gap-4 text-sm">
-          <button
-            type="button"
-            onClick={() => setReloadTick((n) => n + 1)}
-            className="text-indigo-600 hover:underline"
-          >
-            Thử lại
-          </button>
+      {!loading && missingAddress && (
+        <section id="checkout-address" className="bg-white p-6 rounded-lg shadow space-y-3">
+          <h2 className="text-lg font-bold">Địa chỉ nhận hàng</h2>
+          <p role="alert">Bạn chưa có địa chỉ nhận hàng.</p>
           <Link
-            to="/customer/addresses?returnTo=%2Fcheckout"
-            className="text-indigo-600 hover:underline"
+            to="/customer/addresses?returnTo=%2Fcheckout&add=1"
+            state={addressReturnState}
+            className="ui-button ui-button-primary"
           >
-            Quản lý địa chỉ
+            Thêm địa chỉ nhận hàng
           </Link>
-        </div>
+        </section>
       )}
 
-      {!loading && !loadError && items.length > 0 && (
+      {!loading && loadError && (
+        <UiButton variant="secondary" onClick={() => setReloadTick((n) => n + 1)}>
+          Thử lại
+        </UiButton>
+      )}
+
+      {!loading && !loadError && !missingAddress && items.length > 0 && (
         <div className="checkout-layout">
           <div className="checkout-sections space-y-6">
             <div
@@ -861,46 +918,96 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                 <p className="text-sm text-gray-700">{attempt.addressLabel}</p>
               ) : (
                 <>
-                  <fieldset className="checkout-addresses">
-                    <legend className="sr-only">Địa chỉ nhận hàng</legend>
-                    {addresses.map((a) => (
-                      <label
-                        className={
-                          "checkout-address-option " +
-                          (addressId === a.id ? "is-selected" : "")
-                        }
-                        key={a.id}
-                      >
-                        <input
-                          type="radio"
-                          name="checkout-address"
-                          value={a.id}
-                          checked={addressId === a.id}
-                          onChange={() => {
-                            setConfirmError(null);
-                            setAddressId(a.id);
-                          }}
-                        />
-                        <span>
-                          <strong>
-                            {a.recipient_name} · {a.phone}
-                          </strong>
-                          {a.is_default && <small>Mặc định</small>}
-                          <span>
-                            {[a.line1, a.ward, a.district, a.city]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                  </fieldset>
-                  <Link
-                    to="/customer/addresses?returnTo=%2Fcheckout"
-                    className="text-xs text-indigo-600 hover:underline mt-2 inline-block"
-                  >
-                    Quản lý địa chỉ
-                  </Link>
+                  {(() => {
+                    const selectedAddress = addresses.find((a) => a.id === addressId);
+                    if (selectedAddress && !showAddressPicker) {
+                      return (
+                        <div className="flex items-start justify-between gap-3 p-3 bg-slate-50 border border-slate-200 rounded">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <strong className="text-sm font-semibold text-slate-900">
+                                {selectedAddress.recipient_name} · {selectedAddress.phone}
+                              </strong>
+                              {selectedAddress.is_default && (
+                                <span className="text-xs bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">Mặc định</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-600 mt-1">
+                              {[selectedAddress.line1, selectedAddress.ward, selectedAddress.district, selectedAddress.city]
+                                .filter(Boolean)
+                                .join(", ")}
+                            </p>
+                          </div>
+                          <UiButton
+                            type="button"
+                            variant="secondary"
+                            className="text-xs py-1 px-2.5 shrink-0"
+                            onClick={() => setShowAddressPicker(true)}
+                          >
+                            Thay đổi
+                          </UiButton>
+                        </div>
+                      );
+                    }
+                    return (
+                      <>
+                        <fieldset className="checkout-addresses">
+                          <legend className="sr-only">Địa chỉ nhận hàng</legend>
+                          {addresses.map((a) => (
+                            <label
+                              className={
+                                "checkout-address-option " +
+                                (addressId === a.id ? "is-selected" : "")
+                              }
+                              key={a.id}
+                            >
+                              <input
+                                type="radio"
+                                name="checkout-address"
+                                value={a.id}
+                                checked={addressId === a.id}
+                                onChange={() => {
+                                  setConfirmError(null);
+                                  setAddressId(a.id);
+                                  setShowAddressPicker(false);
+                                }}
+                              />
+                              <span>
+                                <strong>
+                                  {a.recipient_name} · {a.phone}
+                                </strong>
+                                {a.is_default && <small>Mặc định</small>}
+                                <span>
+                                  {[a.line1, a.ward, a.district, a.city]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </span>
+                              </span>
+                            </label>
+                          ))}
+                        </fieldset>
+                        <div className="flex items-center gap-3 mt-2">
+                          {selectedAddress && (
+                            <UiButton
+                              type="button"
+                              variant="secondary"
+                              className="text-xs py-1 px-2.5"
+                              onClick={() => setShowAddressPicker(false)}
+                            >
+                              Thu gọn
+                            </UiButton>
+                          )}
+                          <Link
+                            to="/customer/addresses?returnTo=%2Fcheckout"
+                            state={addressReturnState}
+                            className="text-xs text-indigo-600 hover:underline"
+                          >
+                            Quản lý địa chỉ
+                          </Link>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>
@@ -912,6 +1019,11 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
               <h2 className="text-lg font-bold mb-1">
                 2. Sản phẩm từ các cửa hàng
               </h2>
+              {storeGroups.length > 1 && (
+                <p className="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded px-3 py-1.5 mb-2">
+                  Đơn hàng gồm {storeGroups.length} gian hàng. Hệ thống sẽ tạo {storeGroups.length} đơn hàng riêng biệt với phí giao và phương thức thanh toán tương ứng.
+                </p>
+              )}
               {storeGroups.map(([storeId, storeItems]) => (
                 <div key={storeId} className="border-t pt-3">
                   <h3 className="checkout-store-heading">
@@ -946,71 +1058,138 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
               className="bg-white p-6 rounded-lg shadow space-y-4"
             >
               <h2 className="text-lg font-bold">3. Phương thức thanh toán</h2>
-              <p>
-                Mỗi cửa hàng có một khoản thanh toán riêng. COD được thu khi
-                nhận hàng; chuyển khoản được thực hiện sau khi tạo đơn.
+              <p className="text-xs text-slate-500 m-0">
+                COD trả khi nhận hàng. Chuyển khoản sau khi đặt đơn.
               </p>
-              {storeGroups.map(([storeId]) => (
-                <div key={storeId} className="checkout-payment-method">
-                  <h3>
-                    <StoreLabel id={storeId} />
-                  </h3>{" "}
-                  {attempt ? (
-                    <p>
-                      Thanh toán:{" "}
-                      {attempt.payload.payment_methods[storeId] === "SANDBOX"
-                        ? "Chuyển khoản qua SePay"
-                        : "COD"}
-                    </p>
-                  ) : (
-                    <label>
-                      Phương thức thanh toán
-                      <select
-                        aria-label={"Thanh toán cửa hàng " + storeId}
-                        value={paymentMethods[storeId]}
-                        disabled={submitting}
-                        onChange={(e) =>
-                          setSelectedMethods((current) => ({
-                            ...current,
-                            [storeId]: e.target.value as "COD" | "SANDBOX",
-                          }))
-                        }
-                      >
-                        <option value="COD">
-                          Thanh toán khi nhận hàng (COD)
-                        </option>
-                        <option value="SANDBOX">Chuyển khoản qua SePay</option>
-                      </select>
-                    </label>
-                  )}
+              {!attempt && (
+                <div className="checkout-global-payment my-3 p-3 bg-slate-50 border border-slate-200 rounded">
+                  <span className="block text-xs font-semibold text-slate-700 mb-2">
+                    Phương thức thanh toán toàn đơn:
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      const allSame = storeGroups.every(
+                        ([storeId]) => paymentMethods[storeId] === paymentMethods[storeGroups[0]?.[0]],
+                      );
+                      const currentUnified = allSame ? paymentMethods[storeGroups[0]?.[0]] : undefined;
+                      const applyUnified = (method: "COD" | "SANDBOX") => {
+                        setSelectedMethods((curr) => {
+                          const next = { ...curr };
+                          storeGroups.forEach(([sid]) => {
+                            next[sid] = method;
+                          });
+                          return next;
+                        });
+                      };
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            className={`ui-button text-xs py-1.5 px-3 rounded ${
+                              currentUnified === "COD"
+                                ? "ui-button-primary"
+                                : "ui-button-secondary bg-white"
+                            }`}
+                            disabled={submitting}
+                            onClick={() => applyUnified("COD")}
+                          >
+                            Thanh toán khi nhận hàng (COD)
+                          </button>
+                          <button
+                            type="button"
+                            className={`ui-button text-xs py-1.5 px-3 rounded ${
+                              currentUnified === "SANDBOX"
+                                ? "ui-button-primary"
+                                : "ui-button-secondary bg-white"
+                            }`}
+                            disabled={submitting}
+                            onClick={() => applyUnified("SANDBOX")}
+                          >
+                            Chuyển khoản qua SePay
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
-              ))}
+              )}
+              {storeGroups.length > 1 && !attempt ? (
+                <details className="text-xs text-slate-600 mt-2">
+                  <summary className="cursor-pointer text-slate-500 hover:text-slate-700 font-medium">
+                    Tùy chỉnh riêng cho từng gian hàng ({storeGroups.length} gian hàng)
+                  </summary>
+                  <div className="mt-2 space-y-2">
+                    {storeGroups.map(([storeId]) => {
+                      const storeQuote = shownQuote?.stores?.find((s) => s.store_id === storeId);
+                      return (
+                        <div key={storeId} className="p-2 border rounded bg-white flex items-center justify-between gap-2">
+                          <div>
+                            <strong><StoreLabel id={storeId} /></strong>
+                            {storeQuote && <span className="text-xs text-slate-500 ml-2">Phí giao {formatVnd(storeQuote.amounts.shipping_vnd)}</span>}
+                          </div>
+                          <select
+                            aria-label={"Thanh toán cửa hàng " + storeId}
+                            value={paymentMethods[storeId]}
+                            disabled={submitting}
+                            className="text-xs p-1 border rounded"
+                            onChange={(e) =>
+                              setSelectedMethods((current) => ({
+                                ...current,
+                                [storeId]: e.target.value as "COD" | "SANDBOX",
+                              }))
+                            }
+                          >
+                            <option value="COD">COD</option>
+                            <option value="SANDBOX">SePay</option>
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              ) : attempt ? (
+                <div className="space-y-1 mt-2">
+                  {storeGroups.map(([storeId]) => (
+                    <p key={storeId} className="text-xs text-slate-600">
+                      <StoreLabel id={storeId} />: {attempt.payload.payment_methods[storeId] === "SANDBOX" ? "Chuyển khoản qua SePay" : "COD"}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </section>
             <div
               id="checkout-vouchers"
               className="bg-white p-6 rounded-lg shadow"
             >
-              <h2 className="text-lg font-bold mb-3">4. Mã ưu đãi</h2>
-              {!attempt && (
-                <UiButton
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setPickerOpen(true)}
-                >
-                  Chọn mã ưu đãi
-                </UiButton>
-              )}
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <h2 className="text-lg font-bold m-0">4. Mã ưu đãi</h2>
+                {!attempt && (
+                  <UiButton
+                    type="button"
+                    variant="secondary"
+                    className="text-xs py-1.5 px-3"
+                    onClick={() => setPickerOpen(true)}
+                  >
+                    Chọn mã ưu đãi
+                  </UiButton>
+                )}
+              </div>
               {pickerOpen && !attempt && (
                 <VoucherPicker
                   storeIds={storeGroups.map(([id]) => id)}
                   onClose={() => setPickerOpen(false)}
                   onPick={(id, code) => {
-                    if (id)
-                      setVoucherDraft((current) => ({
-                        ...current,
+                    if (id) {
+                      const nextStoreDraft = {
+                        ...voucherDraft,
                         [id]: code,
-                      }));
-                    else setPlatformDraft(code);
+                      };
+                      setVoucherDraft(nextStoreDraft);
+                      void applyVouchers(platformDraft, nextStoreDraft);
+                    } else {
+                      setPlatformDraft(code);
+                      void applyVouchers(code, voucherDraft);
+                    }
                   }}
                 />
               )}
@@ -1026,97 +1205,100 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                     ),
                   )}
                   <p>
-                    Phương thức và ưu đãi được giữ nguyên khi kiểm tra lại lần
-                    đặt hàng này.
+                    Giữ nguyên lựa chọn khi kiểm tra lại đơn này.
                   </p>
                 </>
               ) : (
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (submitting || quoting || voucherFlight.current) return;
-                    voucherFlight.current = true;
-                    setValidatingVouchers(true);
-                    setQuoteError(null);
-                    const fingerprint = inputFingerprint;
-                    const store_vouchers = Object.fromEntries(
-                      storeGroups
-                        .map(([id]) => [id, (voucherDraft[id] ?? "").trim()])
-                        .filter(([, code]) => code),
-                    );
-                    const voucherPayload = {
-                      ...(platformDraft.trim()
-                        ? { platform_voucher_code: platformDraft.trim() }
-                        : {}),
-                      ...(Object.keys(store_vouchers).length
-                        ? { store_vouchers }
-                        : {}),
-                    };
-                    const {
-                      platform_voucher_code: _oldPlatform,
-                      store_vouchers: _oldStore,
-                      ...base
-                    } = quoteInput;
-                    try {
-                      if (
-                        voucherPayload.platform_voucher_code ||
-                        voucherPayload.store_vouchers
-                      )
-                        await callOperation("validateVouchers", {
-                          body: { ...base, ...voucherPayload },
-                        });
-                      if (latestInput.current !== fingerprint) {
-                        setQuoteError(
-                          "Thông tin đặt hàng vừa thay đổi. Kiểm tra lại rồi áp dụng mã lần nữa.",
+                <>
+                  {(vouchers.platform_voucher_code || (vouchers.store_vouchers && Object.keys(vouchers.store_vouchers).length > 0)) && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {vouchers.platform_voucher_code && (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          Sàn: <strong>{vouchers.platform_voucher_code}</strong>
+                        </span>
+                      )}
+                      {Object.entries(vouchers.store_vouchers ?? {}).map(([id, code]) => (
+                        <span key={id} className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          <StoreLabel id={id} />: <strong>{code}</strong>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <details className="text-xs text-slate-600 mt-2">
+                    <summary className="cursor-pointer text-slate-500 hover:text-slate-700 font-medium">
+                      Hoặc nhập mã voucher trực tiếp
+                    </summary>
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        await applyVouchers(platformDraft, voucherDraft);
+                      }}
+                      className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded space-y-2"
+                    >
+                      <label htmlFor="platform-voucher-input" className="block">
+                        <span className="block font-medium mb-1">
+                          Voucher toàn sàn
+                          {platformDraft.trim() ? (
+                            platformDraft.trim() === (vouchers.platform_voucher_code ?? "").trim() ? (
+                              <span style={{ marginLeft: 8, fontSize: "12px", color: "#15803d", fontWeight: 600 }}>✓ Đã áp dụng</span>
+                            ) : (
+                              <span style={{ marginLeft: 8, fontSize: "12px", color: "#b45309" }}>(Chưa áp dụng - bấm Áp dụng để tính lại)</span>
+                            )
+                          ) : null}
+                        </span>
+                        <input
+                          id="platform-voucher-input"
+                          value={platformDraft}
+                          maxLength={50}
+                          className="w-full text-xs p-1.5 border rounded"
+                          onChange={(e) =>
+                            setPlatformDraft(e.target.value.toUpperCase())
+                          }
+                        />
+                      </label>
+                      {storeGroups.map(([id]) => {
+                        const isStoreApplied =
+                          !!(voucherDraft[id] ?? "").trim() &&
+                          (voucherDraft[id] ?? "").trim() === (vouchers.store_vouchers?.[id] ?? "").trim();
+                        return (
+                          <label key={id} htmlFor={"store-voucher-" + id} className="block">
+                            <span className="block font-medium mb-1">
+                              Voucher gian hàng <StoreLabel id={id} />
+                              {(voucherDraft[id] ?? "").trim() ? (
+                                isStoreApplied ? (
+                                  <span style={{ marginLeft: 8, fontSize: "12px", color: "#15803d", fontWeight: 600 }}>✓ Đã áp dụng</span>
+                                ) : (
+                                  <span style={{ marginLeft: 8, fontSize: "12px", color: "#b45309" }}>(Chưa áp dụng - bấm Áp dụng để tính lại)</span>
+                                )
+                              ) : null}
+                            </span>
+                            <input
+                              id={"store-voucher-" + id}
+                              aria-label={"Voucher cửa hàng " + id}
+                              value={voucherDraft[id] ?? ""}
+                              maxLength={50}
+                              className="w-full text-xs p-1.5 border rounded"
+                              onChange={(e) =>
+                                setVoucherDraft((current) => ({
+                                  ...current,
+                                  [id]: e.target.value.toUpperCase(),
+                                }))
+                              }
+                            />
+                          </label>
                         );
-                        return;
-                      }
-                      setVouchers(voucherPayload);
-                      setQuoteTick((n) => n + 1);
-                    } catch (error) {
-                      setQuoteError(describe(error));
-                    } finally {
-                      voucherFlight.current = false;
-                      setValidatingVouchers(false);
-                    }
-                  }}
-                >
-                  <label>
-                    Voucher toàn sàn
-                    <input
-                      value={platformDraft}
-                      maxLength={50}
-                      onChange={(e) =>
-                        setPlatformDraft(e.target.value.toUpperCase())
-                      }
-                    />
-                  </label>
-                  {storeGroups.map(([id]) => (
-                    <label key={id}>
-                      Voucher gian hàng
-                      <input
-                        aria-label={"Voucher cửa hàng " + id}
-                        value={voucherDraft[id] ?? ""}
-                        maxLength={50}
-                        onChange={(e) =>
-                          setVoucherDraft((current) => ({
-                            ...current,
-                            [id]: e.target.value.toUpperCase(),
-                          }))
-                        }
-                      />
-                    </label>
-                  ))}
-                  <button
-                    disabled={submitting || quoting || validatingVouchers}
-                  >
-                    Áp dụng ưu đãi
-                  </button>
-                  <p className="text-xs text-gray-500">
-                    Bấm áp dụng để cập nhật báo giá. Tổng tiền và điều kiện được
-                    kiểm tra bởi hệ thống.
-                  </p>
-                </form>
+                      })}
+                      <UiButton
+                        type="submit"
+                        variant="secondary"
+                        className="text-xs py-1 px-3 mt-1"
+                        disabled={submitting || quoting || validatingVouchers}
+                      >
+                        Áp dụng
+                      </UiButton>
+                    </form>
+                  </details>
+                </>
               )}
             </div>
           </div>
@@ -1136,38 +1318,30 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
             )}
 
             {shownQuote && (
-              <div className="text-sm space-y-2">
-                {shownQuote.stores?.map((store) => (
-                  <div
-                    key={store.store_id}
-                    className="border-b border-slate-100 pb-3"
-                  >
-                    <strong>
-                      <StoreLabel id={store.store_id} />
-                    </strong>
-                    {store.return_policy_snapshot && (
-                      <details className="checkout-policy-details">
-                        <summary>Chính sách đổi trả của cửa hàng</summary>
-                        <ReturnPolicyNotice
-                          policy={store.return_policy_snapshot}
-                        />
-                      </details>
-                    )}
-                    <p>Hàng hóa: {formatVnd(store.amounts.goods_vnd)}</p>
-                    <p>
-                      Giảm từ cửa hàng:{" "}
-                      {formatVnd(store.amounts.store_discount_vnd)}
-                    </p>
-                    <p>
-                      Giảm từ sàn:{" "}
-                      {formatVnd(store.amounts.platform_discount_vnd)}
-                    </p>
-                    <p>
-                      Phí giao hàng: {formatVnd(store.amounts.shipping_vnd)}
-                    </p>
-                    <p>Phải trả: {formatVnd(store.amounts.payable_vnd)}</p>
+              <div className="text-sm space-y-2.5">
+                <div className="space-y-1.5 text-slate-700">
+                  <div className="flex justify-between">
+                    <span>Tiền hàng</span>
+                    <span>{formatVnd(shownQuote.stores?.reduce((s, st) => s + st.amounts.goods_vnd, 0) ?? 0)}</span>
                   </div>
-                ))}
+                  <div className="flex justify-between">
+                    <span>Phí giao hàng</span>
+                    <span>{formatVnd(shownQuote.stores?.reduce((s, st) => s + st.amounts.shipping_vnd, 0) ?? 0)}</span>
+                  </div>
+                  {(shownQuote.stores?.reduce((s, st) => s + st.amounts.store_discount_vnd, 0) ?? 0) > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-medium">
+                      <span>Giảm từ cửa hàng:</span>
+                      <span>-{formatVnd(shownQuote.stores?.reduce((s, st) => s + st.amounts.store_discount_vnd, 0) ?? 0)}</span>
+                    </div>
+                  )}
+                  {(shownQuote.stores?.reduce((s, st) => s + st.amounts.platform_discount_vnd, 0) ?? 0) > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-medium">
+                      <span>Giảm từ sàn:</span>
+                      <span>-{formatVnd(shownQuote.stores?.reduce((s, st) => s + st.amounts.platform_discount_vnd, 0) ?? 0)}</span>
+                    </div>
+                  )}
+                </div>
+
                 {staleTotal !== null &&
                   staleTotal !== shownQuote.payable_total_vnd && (
                     <p className="text-xs text-amber-700">
@@ -1175,73 +1349,173 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                       {formatVnd(shownQuote.payable_total_vnd)}
                     </p>
                   )}
-                <div className="flex justify-between font-bold text-base text-gray-900">
+
+                <div className="flex justify-between items-baseline font-bold text-base text-gray-900 border-t pt-2">
                   <span>Tổng thanh toán</span>
-                  <span className="text-indigo-600">
+                  <span className="text-indigo-600 text-lg">
                     {formatVnd(shownQuote.payable_total_vnd)}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Tổng tiền này có hiệu lực đến{" "}
-                  {new Date(shownQuote.expires_at).toLocaleTimeString("vi-VN")}
-                </p>
+
+                {/* Short method split if COD and sandbox differ across stores */}
+                {(() => {
+                  const hasCod = (shownQuote.stores ?? []).some((st) => paymentMethods[st.store_id] !== "SANDBOX");
+                  const hasSandbox = (shownQuote.stores ?? []).some((st) => paymentMethods[st.store_id] === "SANDBOX");
+                  if (hasCod && hasSandbox) {
+                    const codTotal = (shownQuote.stores ?? [])
+                      .filter((st) => paymentMethods[st.store_id] !== "SANDBOX")
+                      .reduce((sum, st) => sum + st.amounts.payable_vnd, 0);
+                    const sandboxTotal = (shownQuote.stores ?? [])
+                      .filter((st) => paymentMethods[st.store_id] === "SANDBOX")
+                      .reduce((sum, st) => sum + st.amounts.payable_vnd, 0);
+                    return (
+                      <div className="checkout-payment-summary-box p-2 bg-slate-50 border border-slate-200 rounded text-xs space-y-1" role="region" aria-label="Tóm tắt số tiền theo phương thức thanh toán">
+                        <div className="flex justify-between text-slate-700">
+                          <span>Trả khi nhận (COD):</span>
+                          <strong className="text-emerald-800">{formatVnd(codTotal)}</strong>
+                        </div>
+                        <div className="flex justify-between text-slate-700">
+                          <span>Chuyển khoản (SePay):</span>
+                          <strong className="text-indigo-700">{formatVnd(sandboxTotal)}</strong>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Combined single-line expiration notice */}
+                {!hasAttempt && (
+                  <p
+                    className={
+                      Date.parse(shownQuote.expires_at) <= now
+                        ? "text-xs text-red-700 font-medium"
+                        : "text-xs text-slate-500"
+                    }
+                    role="timer"
+                    aria-live="off"
+                  >
+                    {Date.parse(shownQuote.expires_at) <= now
+                      ? "Báo giá đã hết hạn. Vui lòng bấm Tính lại."
+                      : `Báo giá có hiệu lực đến ${new Date(shownQuote.expires_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} (còn ${Math.floor(Math.max(0, Date.parse(shownQuote.expires_at) - now) / 60000)}:${String(Math.floor(Math.max(0, Date.parse(shownQuote.expires_at) - now) / 1000) % 60).padStart(2, "0")})`}
+                  </p>
+                )}
+
+                {!hasAttempt &&
+                  !quoting &&
+                  (quoteError ||
+                    conflictNotice ||
+                    (!!shownQuote && Date.parse(shownQuote.expires_at) <= now)) && (
+                    <UiButton
+                      type="button"
+                      onClick={() => setQuoteTick((n) => n + 1)}
+                      variant="secondary"
+                      className="w-full text-xs py-1.5"
+                    >
+                      Tính lại
+                    </UiButton>
+                  )}
+
+                <PurchaseActionBar
+                  summary={
+                    shownQuote
+                      ? formatVnd(shownQuote.payable_total_vnd)
+                      : quoting
+                        ? "Đang tính…"
+                        : "Chưa có báo giá"
+                  }
+                  label="Tổng thanh toán"
+                  onAction={() => void confirmOrder()}
+                  disabled={
+                    submitting ||
+                    validatingVouchers ||
+                    (!hasAttempt &&
+                      (!shownQuote ||
+                        quoting ||
+                        Date.parse(shownQuote.expires_at) <= now))
+                  }
+                >
+                  {submitting
+                    ? "Đang xử lý đơn hàng..."
+                    : hasAttempt
+                      ? "Kiểm tra đơn đã gửi"
+                      : "Đặt hàng"}
+                </PurchaseActionBar>
+
+                {/* Return policy for single-store checkout */}
+                {shownQuote.stores?.length === 1 && shownQuote.stores[0].return_policy_snapshot && (
+                  <details className="checkout-policy-details text-xs text-slate-600 border-t pt-2">
+                    <summary className="cursor-pointer text-indigo-600 hover:text-indigo-800 font-medium py-1">
+                      Chính sách đổi trả
+                    </summary>
+                    <div className="mt-2 pl-1 bg-slate-50 p-2 rounded">
+                      <ReturnPolicyNotice policy={shownQuote.stores[0].return_policy_snapshot} />
+                    </div>
+                  </details>
+                )}
+
+                {/* Per-store breakdown available on demand */}
+                {(shownQuote.stores ?? []).length > 1 && (
+                  <details className="checkout-store-breakdown text-xs text-slate-600 border-t pt-2">
+                    <summary className="cursor-pointer text-indigo-600 hover:text-indigo-800 font-medium py-1">
+                      Xem chi tiết theo từng shop ({(shownQuote.stores ?? []).length} shop)
+                    </summary>
+                    <div className="mt-2 space-y-3 pl-1 max-h-60 overflow-y-auto">
+                      {shownQuote.stores?.map((store) => (
+                        <div key={store.store_id} className="border-b border-slate-100 pb-2 space-y-1">
+                          <strong className="text-slate-800 block">
+                            <StoreLabel id={store.store_id} />
+                          </strong>
+                          {store.return_policy_snapshot && (
+                            <details className="checkout-policy-details text-[11px]" open>
+                              <summary className="cursor-pointer text-indigo-600 font-medium">Đổi trả</summary>
+                              <div className="mt-1 bg-slate-50 p-1.5 rounded">
+                                <ReturnPolicyNotice policy={store.return_policy_snapshot} />
+                              </div>
+                            </details>
+                          )}
+                          <div className="flex justify-between">
+                            <span>Hàng hóa:</span>
+                            <span>{formatVnd(store.amounts.goods_vnd)}</span>
+                          </div>
+                          {store.amounts.store_discount_vnd > 0 && (
+                            <div className="flex justify-between text-emerald-700">
+                              <span>Giảm từ cửa hàng:</span>
+                              <span>-{formatVnd(store.amounts.store_discount_vnd)}</span>
+                            </div>
+                          )}
+                          {store.amounts.platform_discount_vnd > 0 && (
+                            <div className="flex justify-between text-emerald-700">
+                              <span>Giảm từ sàn:</span>
+                              <span>-{formatVnd(store.amounts.platform_discount_vnd)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span>Phí giao hàng:</span>
+                            <span>{formatVnd(store.amounts.shipping_vnd)}</span>
+                          </div>
+                          <div className="flex justify-between font-semibold text-slate-800 pt-0.5">
+                            <span>Phải trả ({paymentMethods[store.store_id] === "SANDBOX" ? "chuyển khoản" : "COD"}):</span>
+                            <span>{formatVnd(store.amounts.payable_vnd)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </div>
             )}
 
-            {shownQuote && !hasAttempt && (
-              <p
-                className={
-                  Date.parse(shownQuote.expires_at) <= now
-                    ? "text-red-700"
-                    : "text-slate-600"
-                }
-                role="timer"
-                aria-live="off"
+            {!shownQuote && (
+              <PurchaseActionBar
+                summary="Chưa có báo giá"
+                label="Tổng thanh toán"
+                onAction={() => void confirmOrder()}
+                disabled={true}
               >
-                {Date.parse(shownQuote.expires_at) <= now
-                  ? "Báo giá đã hết hạn. Cập nhật tổng tiền trước khi đặt."
-                  : `Còn ${Math.floor(Math.max(0, Date.parse(shownQuote.expires_at) - now) / 60000)}:${String(Math.floor(Math.max(0, Date.parse(shownQuote.expires_at) - now) / 1000) % 60).padStart(2, "0")} để xác nhận mức giá này.`}
-              </p>
+                Đặt hàng
+              </PurchaseActionBar>
             )}
-            {!hasAttempt &&
-              !quoting &&
-              (quoteError ||
-                conflictNotice ||
-                (!!shownQuote && Date.parse(shownQuote.expires_at) <= now)) && (
-                <UiButton
-                  type="button"
-                  onClick={() => setQuoteTick((n) => n + 1)}
-                  variant="secondary"
-                >
-                  Tính lại báo giá
-                </UiButton>
-              )}
-
-            <PurchaseActionBar
-              summary={
-                shownQuote
-                  ? formatVnd(shownQuote.payable_total_vnd)
-                  : quoting
-                    ? "Đang tính…"
-                    : "Chưa có báo giá"
-              }
-              label="Tổng thanh toán"
-              onAction={() => void confirmOrder()}
-              disabled={
-                submitting ||
-                validatingVouchers ||
-                (!hasAttempt &&
-                  (!shownQuote ||
-                    quoting ||
-                    Date.parse(shownQuote.expires_at) <= now))
-              }
-            >
-              {submitting
-                ? "Đang xử lý đơn hàng..."
-                : hasAttempt
-                  ? "Kiểm tra đơn đã gửi"
-                  : "Xác nhận đặt hàng"}
-            </PurchaseActionBar>
           </div>
         </div>
       )}

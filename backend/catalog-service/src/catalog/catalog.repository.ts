@@ -1,9 +1,9 @@
 import { OwnedRepository } from '../../../shared/src/repository';
-import {searchPattern} from '../../../shared/src/search';
+import {searchPattern, searchRegexPattern} from '../../../shared/src/search';
 import { categoryResponse, productResponse, productTypeResponse } from './catalog.mapper';
 
 const PRODUCT_COLUMNS = `p.id, p.store_id, p.product_type_id, p.title, p.description,
-  p.attributes_json AS attributes, p.status, p.moderation_status, p.version`;
+  p.attributes_json AS attributes, p.status, p.moderation_status, p.version, p.sold_count`;
 
 export interface ProductQuery {
   page: number;
@@ -30,7 +30,7 @@ export class CatalogRepository extends OwnedRepository {
   }
   async updateText(id:string,title?:string,description?:string) {
     await this.manager.query('UPDATE product SET title=coalesce($1,title),description=coalesce($2,description),version=version+1 WHERE id=$3',[title,description,id]);
-    const [row]=await this.manager.query('SELECT id,store_id,product_type_id,title,description,attributes_json AS attributes,status,moderation_status,version FROM product WHERE id=$1',[id]);return row;
+    const [row]=await this.manager.query('SELECT id,store_id,product_type_id,title,description,attributes_json AS attributes,status,moderation_status,version,sold_count FROM product WHERE id=$1',[id]);return row;
   }
 
   /**
@@ -39,26 +39,48 @@ export class CatalogRepository extends OwnedRepository {
    * correlated scalar subquery, which keeps ordering and pagination in a single statement.
    */
   async page(storeIds:string[],query:ProductQuery) {
-    const filters:unknown[]=[storeIds,searchPattern(query.q)??'%'];
-    const conditions=[`p.status='ACTIVE'`,`p.moderation_status='VISIBLE'`,`p.store_id=ANY($1::uuid[])`,
-      `(marketplace_search(p.title) LIKE $2 OR marketplace_search(p.description) LIKE $2)`];
+    const rawPattern=searchRegexPattern(query.q);
+    const likePattern=searchPattern(query.q)??'%';
+    const filters:unknown[]=[storeIds,rawPattern ?? likePattern];
+    const conditions=[`p.status='ACTIVE'`,`p.moderation_status='VISIBLE'`,`p.store_id=ANY($1::uuid[])`];
+    if(rawPattern){
+      conditions.push(`(marketplace_search(p.title) ~ ('\\m' || $2) OR marketplace_search(p.description) ~ ('\\m' || $2))`);
+    } else {
+      conditions.push(`(marketplace_search(p.title) LIKE $2 OR marketplace_search(p.description) LIKE $2)`);
+    }
     if(query.ids){filters.push(query.ids.split(','));conditions.push(`p.id=ANY($${filters.length}::uuid[])`);}
     if(query.category_id){filters.push(query.category_id);conditions.push(`pt.category_id=$${filters.length}`);}
     if(query.product_type_id){filters.push(query.product_type_id);conditions.push(`p.product_type_id=$${filters.length}`);}
-    if(query.min_price_vnd!==undefined||query.max_price_vnd!==undefined){
+    const hasPriceFilter = query.min_price_vnd!==undefined||query.max_price_vnd!==undefined;
+    const inStockPrices:string[]=["v.product_id=p.id", "v.status='ACTIVE'", 'fi.quantity>fi.reserved_quantity'];
+    if(hasPriceFilter){
       const prices=["fv.product_id=p.id", "fv.status='ACTIVE'", 'fi.quantity>fi.reserved_quantity'];
-      if(query.min_price_vnd!==undefined){filters.push(query.min_price_vnd);prices.push(`fv.price_vnd>=$${filters.length}`);}
-      if(query.max_price_vnd!==undefined){filters.push(query.max_price_vnd);prices.push(`fv.price_vnd<=$${filters.length}`);}
+      if(query.min_price_vnd!==undefined){
+        filters.push(query.min_price_vnd);
+        prices.push(`fv.price_vnd>=$${filters.length}`);
+        inStockPrices.push(`v.price_vnd>=$${filters.length}`);
+      }
+      if(query.max_price_vnd!==undefined){
+        filters.push(query.max_price_vnd);
+        prices.push(`fv.price_vnd<=$${filters.length}`);
+        inStockPrices.push(`v.price_vnd<=$${filters.length}`);
+      }
       conditions.push(`EXISTS(SELECT 1 FROM product_variant fv JOIN inventory fi ON fi.variant_id=fv.id AND fi.store_id=fv.store_id WHERE ${prices.join(' AND ')})`);
     }
     const where=conditions.join(' AND ');
+    const hasSearch=Boolean(query.q && query.q.trim());
     const order=query.sort==='price_asc' ? 'min_price ASC NULLS LAST, p.id'
-      : query.sort==='price_desc' ? 'min_price DESC NULLS LAST, p.id' : 'p.title ASC, p.id';
+      : query.sort==='price_desc' ? 'min_price DESC NULLS LAST, p.id'
+      : (hasSearch && rawPattern) ? `CASE WHEN marketplace_search(p.title) ~ ('\\m' || $2) THEN 0 ELSE 1 END, p.title ASC, p.id`
+      : 'p.title ASC, p.id';
 
     const [count]=await this.manager.query(
       `SELECT count(*)::int AS total FROM product p JOIN product_type pt ON pt.id=p.product_type_id WHERE ${where}`,filters);
+    const minPriceSql = hasPriceFilter
+      ? `(SELECT min(v.price_vnd) FROM product_variant v JOIN inventory fi ON fi.variant_id=v.id AND fi.store_id=v.store_id WHERE ${inStockPrices.join(' AND ')})`
+      : `coalesce((SELECT min(v.price_vnd) FROM product_variant v JOIN inventory fi ON fi.variant_id=v.id AND fi.store_id=v.store_id WHERE ${inStockPrices.join(' AND ')}), (SELECT min(v.price_vnd) FROM product_variant v WHERE v.product_id=p.id AND v.status='ACTIVE'))`;
     const rows=await this.manager.query(
-      `SELECT ${PRODUCT_COLUMNS}, (SELECT min(v.price_vnd) FROM product_variant v WHERE v.product_id=p.id AND v.status='ACTIVE') AS min_price
+      `SELECT ${PRODUCT_COLUMNS}, ${minPriceSql} AS min_price
          FROM product p JOIN product_type pt ON pt.id=p.product_type_id
         WHERE ${where} ORDER BY ${order} LIMIT $${filters.length+1} OFFSET $${filters.length+2}`,
       [...filters,query.size,(query.page-1)*query.size]);
@@ -196,7 +218,7 @@ export class CatalogRepository extends OwnedRepository {
     const [row]=await this.manager.query(
       `INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version)
        VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,'VISIBLE',0)
-       RETURNING id,store_id,product_type_id,title,description,attributes_json AS attributes,status,moderation_status,version`,
+       RETURNING id,store_id,product_type_id,title,description,attributes_json AS attributes,status,moderation_status,version,sold_count`,
       [input.storeId,input.productTypeId,input.title,input.description,JSON.stringify(input.attributes),input.status]);
     return row;
   }
@@ -211,7 +233,7 @@ export class CatalogRepository extends OwnedRepository {
         fields.attributes===undefined ? null : JSON.stringify(fields.attributes),fields.status ?? null]);
     const [row]=await this.manager.query(
       `SELECT id,store_id,product_type_id,title,description,attributes_json AS attributes,
-              status,moderation_status,version FROM product WHERE id=$1`,[id]);
+              status,moderation_status,version,sold_count FROM product WHERE id=$1`,[id]);
     return row;
   }
 

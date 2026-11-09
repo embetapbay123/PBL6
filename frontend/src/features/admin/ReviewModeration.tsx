@@ -148,63 +148,38 @@ function Moderate({
         Xem sản phẩm <span className="sr-only">(mở tab mới)</span>
       </Link>
       {dialog}
-      <button type="button" onClick={() => setDecisionOpen(true)}>
-        {review.status === "HIDDEN" ? "Hiện lại đánh giá" : "Ẩn đánh giá"}
-      </button>
-      {decisionOpen && (
-        <Modal
-          label="Quyết định kiểm duyệt đánh giá"
-          busy={busy || blocked}
-          onClose={() => void closeDecision()}
-        >
-          <h3>Kiểm duyệt đánh giá</h3>
-          <StarRating rating={review.rating} />
-          <p>{review.body}</p>
-          <form onSubmit={submit}>
-            <label>
-              Lý do kiểm duyệt
-              <textarea
-                aria-label="Lý do kiểm duyệt"
-                required
-                maxLength={200}
-                disabled={busy || blocked}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </label>
-            <button disabled={busy || blocked || !reason.trim()}>
-              {busy
-                ? "Đang lưu…"
-                : review.status === "HIDDEN"
-                  ? "Hiện lại đánh giá"
-                  : "Ẩn đánh giá"}
-            </button>
-          </form>
-          <UiButton
-            type="button"
-            variant="secondary"
+      <form onSubmit={submit} className="review-moderation-form" style={{ marginTop: '10px' }}>
+        <label>
+          Lý do kiểm duyệt
+          <textarea
+            aria-label="Lý do kiểm duyệt"
+            required
+            maxLength={200}
             disabled={busy || blocked}
-            onClick={() => void closeDecision()}
-          >
-            Hủy kiểm duyệt
-          </UiButton>
-          {error !== undefined && <ErrorView error={error} />}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
+        </label>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+          <button disabled={busy || blocked || !reason.trim()}>
+            {busy
+              ? "Đang lưu…"
+              : review.status === "HIDDEN"
+                ? "Hiện lại đánh giá"
+                : "Ẩn đánh giá"}
+          </button>
           {blocked && (
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
-                setBusy(true);
-                void reload()
-                  .catch(setError)
-                  .finally(() => setBusy(false));
-              }}
+              onClick={() => void reload()}
             >
-              Tải lại đánh giá trước khi xử lý tiếp
+              Đọc lại phiên bản mới nhất
             </button>
           )}
-        </Modal>
-      )}
+        </div>
+      </form>
+      {error !== undefined && <ErrorView error={error} />}
     </article>
   );
 }

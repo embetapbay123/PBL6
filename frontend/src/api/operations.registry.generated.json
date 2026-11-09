@@ -819,6 +819,121 @@
     "path": "/store/conversations/{id}/archive",
     "internal": false
   },
+  "listNotificationGroupHistory": {
+    "method": "GET",
+    "path": "/me/notifications/group",
+    "internal": false
+  },
+  "markNotificationGroupRead": {
+    "method": "POST",
+    "path": "/me/notifications/read-group",
+    "internal": false
+  },
+  "getShippingConnection": {
+    "method": "GET",
+    "path": "/admin/shipping/connection",
+    "internal": false
+  },
+  "listShippingLocations": {
+    "method": "GET",
+    "path": "/admin/shipping/locations",
+    "internal": false
+  },
+  "saveShippingLocation": {
+    "method": "POST",
+    "path": "/admin/shipping/locations",
+    "internal": false
+  },
+  "storeShippingShipments": {
+    "method": "GET",
+    "path": "/store/shipping/shipments",
+    "internal": false
+  },
+  "storeShippingCommand": {
+    "method": "POST",
+    "path": "/store/shipping/shipments/{id}/commands",
+    "internal": false
+  },
+  "storeShippingLabel": {
+    "method": "POST",
+    "path": "/store/shipping/shipments/{id}/label",
+    "internal": false
+  },
+  "adminShippingShipments": {
+    "method": "GET",
+    "path": "/admin/shipping/shipments",
+    "internal": false
+  },
+  "adminShippingCommand": {
+    "method": "POST",
+    "path": "/admin/shipping/shipments/{id}/commands",
+    "internal": false
+  },
+  "adminShippingLabel": {
+    "method": "POST",
+    "path": "/admin/shipping/shipments/{id}/label",
+    "internal": false
+  },
+  "getStoreShipping": {
+    "method": "GET",
+    "path": "/store/orders/{id}/shipping",
+    "internal": false
+  },
+  "bookStoreShipment": {
+    "method": "POST",
+    "path": "/store/orders/{id}/shipping",
+    "internal": false
+  },
+  "getOwnShipping": {
+    "method": "GET",
+    "path": "/me/orders/{id}/shipping",
+    "internal": false
+  },
+  "confirmShippingCod": {
+    "method": "POST",
+    "path": "/admin/shipping/shipments/{id}/cod",
+    "internal": false
+  },
+  "registerReturnShipping": {
+    "method": "POST",
+    "path": "/me/return-requests/{id}/shipping",
+    "internal": false
+  },
+  "ghnCallback": {
+    "method": "POST",
+    "path": "/shipping/webhooks/ghn",
+    "internal": false
+  },
+  "storeInspectExchangeReturn": {
+    "method": "POST",
+    "path": "/store/shipping/shipments/{id}/exchange-receipt",
+    "internal": false
+  },
+  "adminInspectExchangeReturn": {
+    "method": "POST",
+    "path": "/admin/shipping/shipments/{id}/exchange-receipt",
+    "internal": false
+  },
+  "savePlatformPickup": {
+    "method": "POST",
+    "path": "/admin/shipping/platform/locations",
+    "internal": false
+  },
+  "requestPlatformReturnPickup": {
+    "method": "POST",
+    "path": "/me/returns/{id}/pickup",
+    "internal": false
+  },
+  "deliveryCallback": {
+    "method": "POST",
+    "path": "/shipping/webhooks/delivery",
+    "internal": false
+  },
+  "getStorePickupStatus": {
+    "method": "GET",
+    "path": "/store/shipping/pickup-status",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",
@@ -887,6 +1002,11 @@
   "ResolveConversationOrder": {
     "method": "POST",
     "path": "/internal/orders/conversation-context",
+    "internal": true
+  },
+  "RestockExchangeItems": {
+    "method": "POST",
+    "path": "/internal/inventory/exchange-restock",
     "internal": true
   }
 }

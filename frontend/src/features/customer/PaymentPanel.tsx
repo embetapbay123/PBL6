@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { CopyButton } from "../../components/CopyButton";
 import { Button } from "../../components/ui/Button";
 import { Alert } from "../../components/ui/Alert";
@@ -14,10 +15,18 @@ type Order = OperationOutputs["getOwnOrder"];
 
 export function describePaymentError(e: unknown): string {
   if (e instanceof ApiError) {
+    if (e.code === "VERSION_CONFLICT")
+      return "Thông tin đơn hàng vừa thay đổi. Vui lòng làm mới để cập nhật trạng thái mới nhất.";
+    if (e.code === "PAYMENT_EXPIRED")
+      return "Phiên thanh toán đã hết hạn. Đơn hàng đã quá hạn thanh toán; không thể tạo mã mới. Vui lòng kiểm tra chi tiết đơn hàng hoặc liên hệ hỗ trợ nếu bạn đã chuyển tiền.";
+    if (e.code === "ORDER_CANCELLED")
+      return "Đơn hàng này đã bị hủy. Không thể tiếp tục thanh toán.";
+    if (e.code === "ALREADY_PAID")
+      return "Đơn hàng đã được ghi nhận thanh toán thành công.";
     if (e.status === 503)
       return "Cổng thanh toán hiện chưa được bật. Vui lòng thử lại sau.";
     if (e.status === 409)
-      return "Giao dịch cần được đối soát. Đừng thanh toán lại, hãy liên hệ hỗ trợ.";
+      return "Giao dịch cần được đối soát. Nếu bạn đã chuyển khoản, đừng thanh toán lại mà hãy liên hệ hỗ trợ.";
     if (e.status === 422) return "Yêu cầu thanh toán không hợp lệ.";
     if (e.status === 401 || e.status === 403)
       return "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
@@ -55,7 +64,8 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
         const o = await callOperation("getOwnOrder", { path: { id: orderId } });
         if (cancelled) return;
         setOrder(o);
-        if (!canStartOrderPayment(o) || readOnly) return;
+        const isOrderExpired = !!o.payment_expires_at && new Date(o.payment_expires_at).getTime() <= Date.now();
+        if (!canStartOrderPayment(o) || readOnly || isOrderExpired) return;
         const a = await callOperation("createPaymentAttempt", {
           path: { id: orderId },
           body: { expected_order_version: o.version },
@@ -100,17 +110,47 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
     );
 
   if (setupError) {
-    const blocked = setupError instanceof ApiError && setupError.status === 409;
+    const isConflict = setupError instanceof ApiError && setupError.code === "VERSION_CONFLICT";
+    const isExpired = setupError instanceof ApiError && setupError.code === "PAYMENT_EXPIRED";
+    const isBlocked = setupError instanceof ApiError && setupError.status === 409 && !isConflict && !isExpired;
     return (
       <Alert
-        level={blocked ? "warning" : "error"}
+        level={isBlocked ? "warning" : isExpired ? "warning" : "error"}
         title={
-          blocked ? "Cần kiểm tra giao dịch" : "Chưa thể tạo mã thanh toán"
+          isConflict
+            ? "Đơn hàng vừa thay đổi"
+            : isExpired
+              ? "Phiên thanh toán đã hết hạn"
+              : isBlocked
+                ? "Cần kiểm tra giao dịch"
+                : "Chưa thể tạo mã thanh toán"
         }
         data-testid="payment-setup-error"
       >
         <p>{describePaymentError(setupError)}</p>
-        {!blocked && (
+        {isConflict && (
+          <Button variant="secondary" onClick={() => setRound((r) => r + 1)}>
+            Làm mới đơn hàng
+          </Button>
+        )}
+        {isExpired && (
+          <div className="ui-actions" style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setReadOnly(true);
+                setSetupError(null);
+                setRound((r) => r + 1);
+              }}
+            >
+              Kiểm tra trạng thái đơn
+            </Button>
+            <Link className="ui-button ui-button-secondary" to={`/customer/orders/${orderId}`}>
+              Xem chi tiết đơn
+            </Link>
+          </div>
+        )}
+        {!isBlocked && !isConflict && !isExpired && (
           <Button variant="secondary" onClick={() => setRound((r) => r + 1)}>
             Thử lại
           </Button>
@@ -139,6 +179,21 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
     );
 
   if (!attempt) {
+    if (order?.payment_status === "SUCCEEDED")
+      return (
+        <Alert level="success" data-testid="payment-succeeded">
+          Đã nhận thanh toán.
+        </Alert>
+      );
+    if (
+      order?.payment_status === "REFUNDED" ||
+      order?.refund_status === "SUCCEEDED"
+    )
+      return (
+        <Alert level="success" data-testid="payment-refunded">
+          Đã hoàn tiền.
+        </Alert>
+      );
     if (order?.payment_status === "UNKNOWN")
       return (
         <Alert
@@ -157,25 +212,43 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
               setRound((r) => r + 1);
             }}
           >
-            Đọc lại đơn và kết quả thanh toán
+            Kiểm tra
           </Button>
         </Alert>
       );
-    if (order?.payment_status === "SUCCEEDED")
+
+    const isOrderExpired = !!order?.payment_expires_at && new Date(order.payment_expires_at).getTime() <= now;
+    if (isOrderExpired || order?.status === "EXPIRED")
       return (
-        <Alert level="success" data-testid="payment-succeeded">
-          Đã nhận thanh toán.
+        <Alert
+          level="warning"
+          title="Phiên thanh toán đã hết hạn"
+          data-testid="payment-order-expired"
+        >
+          <p>
+            Đơn hàng đã hết hạn thanh toán{order?.payment_expires_at ? ` (hạn chót: ${new Date(order.payment_expires_at).toLocaleString("vi-VN")})` : ""}.
+            Hệ thống không thể tạo mã thanh toán mới cho đơn này.
+          </p>
+          <p>
+            Nếu bạn đã chuyển tiền trước khi hết hạn, đừng thanh toán lại mà hãy liên hệ hỗ trợ để đối soát.
+          </p>
+          <div className="ui-actions" style={{ marginTop: 12, display: "flex", gap: 8 }}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setReadOnly(true);
+                setRound((r) => r + 1);
+              }}
+            >
+              Kiểm tra trạng thái đơn
+            </Button>
+            <Link className="ui-button ui-button-secondary" to={`/customer/orders/${orderId}`}>
+              Xem chi tiết đơn
+            </Link>
+          </div>
         </Alert>
       );
-    if (
-      order?.payment_status === "REFUNDED" ||
-      order?.refund_status === "SUCCEEDED"
-    )
-      return (
-        <Alert level="success" data-testid="payment-refunded">
-          Đã hoàn tiền.
-        </Alert>
-      );
+
     if (order && readOnly && canStartOrderPayment(order))
       return (
         <div>
@@ -189,7 +262,7 @@ export function PaymentPanel({ orderId }: { orderId: string }) {
               setRound((r) => r + 1);
             }}
           >
-            Tạo mã thanh toán
+            Tạo mã QR
           </Button>
         </div>
       );

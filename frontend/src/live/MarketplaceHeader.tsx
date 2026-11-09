@@ -187,7 +187,7 @@ export function MarketplaceHeader() {
               <input
                 aria-label="Tìm kiếm toàn sàn"
                 type="search"
-                placeholder="Bạn đang tìm sản phẩm gì?"
+                placeholder="Tìm kiếm sản phẩm trên toàn sàn…"
                 maxLength={200}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -331,7 +331,7 @@ export function MarketplaceHeader() {
             </button>
           </div>
         </div>
-        {!portal && (
+        {!portal && (location.pathname === "/" || mobile) && (
           <nav
             className={
               "market-width market-navigation" + (mobile ? " mobile-open" : "")

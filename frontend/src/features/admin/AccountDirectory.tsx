@@ -244,10 +244,6 @@ export function AccountDirectory({ kind }: { kind: "users" | "stores" }) {
   return (
     <section>
       <h3>{kind === "users" ? "Quản lý tài khoản" : "Quản lý Store"}</h3>
-      <p>
-        Khóa tài khoản và khóa Store có phạm vi khác nhau. Mọi quyết định lưu lý
-        do, người thực hiện và phiên bản để truy vết.
-      </p>
       <form
         className="admin-moderation-search"
         onSubmit={(event) => {
@@ -445,7 +441,7 @@ export function AccountDirectory({ kind }: { kind: "users" | "stores" }) {
                   type="button"
                   onClick={() => void reconcile()}
                 >
-                  Đọc lại đối tượng
+                  Làm mới
                 </button>
               ) : (
                 <button disabled={busy || !reason.trim()}>

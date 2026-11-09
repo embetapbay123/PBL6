@@ -9,7 +9,7 @@ const f = JSON.parse(
 const id = (n: number) =>
   "b5000000-0000-4000-8000-" + String(n).padStart(12, "0");
 test.use({ viewport: { width: 1440, height: 900 } });
-async function model(page: Page, owner = false) {
+async function model(page: Page, owner = false, numericAxis = false) {
   const s = {
     writes: [] as { path: string; body: any }[],
     profile: {
@@ -67,6 +67,7 @@ async function model(page: Page, owner = false) {
         variant_axis: true,
         allowed_values: ["S", "M", "L", "XL"],
       },
+      ...(numericAxis ? [{ code: "width", name: "Độ rộng", data_type: "NUMBER", required: true, variant_axis: true }] : []),
     ],
   };
   const order = {
@@ -219,14 +220,14 @@ test("editing just a phone does not send the name, and cancellation restores sav
     .click();
   await expect(page.getByLabel("Tên hiển thị", { exact: true })).toHaveCount(0);
   await page.getByLabel("Số điện thoại", { exact: true }).fill("0909999999");
-  await page.getByRole("button", { name: "Lưu thay đổi", exact: true }).click();
+  await page.getByRole("button", { name: "Lưu", exact: true }).click();
   await expect(page.getByRole("status")).toContainText(
     "Cập nhật thông tin thành công",
   );
   expect(s.writes).toEqual([{ path: "/me", body: { phone: "0909999999" } }]);
   await page.getByRole("button", { name: "Thay đổi tên", exact: true }).click();
   await page.getByLabel("Tên hiển thị", { exact: true }).fill("Tên chưa lưu");
-  await page.getByRole("button", { name: "Hủy thay đổi", exact: true }).click();
+  await page.getByRole("button", { name: "Hủy", exact: true }).click();
   await expect(
     page.getByRole("region", { name: "Thông tin cá nhân hiện tại" }),
   ).toContainText("Tên nguyên bản");
@@ -247,6 +248,7 @@ test("matrix previews twelve variants, submits their exact prices and SKUs witho
   await dialog
     .getByRole("combobox", { name: "Loại sản phẩm *", exact: true })
     .selectOption(id(3));
+  await expect(dialog.getByLabel("Giá bán (VNĐ) *", { exact: true })).toHaveValue("");
   await dialog.getByLabel("Tạo nhiều phân loại theo ma trận").check();
   await dialog
     .getByLabel("Tên sản phẩm *", { exact: true })
@@ -258,15 +260,37 @@ test("matrix previews twelve variants, submits their exact prices and SKUs witho
     name: "Ma trận phân loại",
     exact: true,
   });
-  await matrix.getByLabel("Màu sắc", { exact: false }).fill("Đỏ, Xanh, Đen");
-  await matrix.getByLabel("Kích cỡ", { exact: false }).fill("S, M, L, XL");
+  for (const value of ["Đỏ", "Xanh", "Đen", "S", "M", "L", "XL"]) {
+    await matrix.getByRole("checkbox", { name: value, exact: true }).check();
+  }
+  await expect(matrix.getByText("3 màu sắc × 4 kích cỡ = 12 phân loại", { exact: true })).toBeVisible();
   await matrix
     .getByRole("button", { name: "Xem trước tổ hợp", exact: true })
     .click();
   await expect(matrix.locator("tbody tr")).toHaveCount(12);
+  const create = dialog.getByRole("button", { name: "Tạo sản phẩm", exact: true });
+  const common = dialog.getByLabel("Giá chung (VNĐ)", { exact: true });
+  const apply = dialog.getByRole("button", { name: "Áp dụng giá cho các phân loại", exact: true });
+  await expect(create).toBeDisabled();
+  await common.fill("100000");
+  await apply.click();
   await matrix.getByLabel("SKU tổ hợp 12", { exact: true }).fill("CUSTOM-XL");
   await matrix.getByLabel("Giá tổ hợp 12", { exact: true }).fill("95000");
+  await common.fill("159000");
+  await expect(create).toBeDisabled();
+  await expect(dialog.getByText(/Giá mới chưa được áp dụng/)).toBeVisible();
+  await expect(matrix.getByLabel("Giá tổ hợp 1", { exact: true })).toHaveValue("100000");
+  await apply.click();
+  await expect(matrix.getByLabel("Giá tổ hợp 1", { exact: true })).toHaveValue("159000");
+  await expect(matrix.getByLabel("Giá tổ hợp 12", { exact: true })).toHaveValue("95000");
+  await expect(matrix.getByLabel("Giá tổ hợp 12", { exact: true })).toHaveAccessibleDescription("Giá riêng");
+  await expect(dialog.getByText("1 phân loại giữ giá riêng.", { exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath("variant-matrix.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await common.scrollIntoViewIfNeeded();
+  expect(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  await expect(apply).toBeInViewport();
+  await page.screenshot({ path: info.outputPath("variant-matrix-mobile.png") });
   await dialog
     .getByRole("button", { name: "Tạo sản phẩm", exact: true })
     .click();
@@ -274,6 +298,7 @@ test("matrix previews twelve variants, submits their exact prices and SKUs witho
   expect(s.writes).toHaveLength(1);
   const rows = s.writes[0].body.variants;
   expect(rows).toHaveLength(12);
+  expect(rows.slice(0, 11).map((row: any) => row.price_vnd)).toEqual(Array(11).fill(159000));
   expect(s.writes[0].body.attributes).toEqual({ color: "Đỏ", size: "S" });
   expect(rows.filter((r: any) => r.is_default)).toHaveLength(1);
   expect(rows[11]).toMatchObject({
@@ -288,10 +313,10 @@ test("matrix previews twelve variants, submits their exact prices and SKUs witho
     ),
   ).toBe(true);
 });
-test("matrix rejects unsupported axis values before generating rows", async ({
+test("matrix explains an invalid free value next to its field before generation", async ({
   page,
 }) => {
-  const { s } = await model(page, true);
+  const { s } = await model(page, true, true);
   await page.goto("/seller/products");
   await page
     .getByRole("button", { name: "Thêm sản phẩm mới", exact: true })
@@ -305,16 +330,109 @@ test("matrix rejects unsupported axis values before generating rows", async ({
     .getByLabel("Tiền tố SKU cho các tổ hợp *", { exact: true })
     .fill("MATRIX");
   const matrix = dialog.getByRole("region", { name: "Ma trận phân loại" });
-  await matrix.getByLabel("Màu sắc", { exact: false }).fill("Giá trị lạ");
-  await matrix.getByLabel("Kích cỡ", { exact: false }).fill("M");
-  await matrix
-    .getByRole("button", { name: "Xem trước tổ hợp", exact: true })
-    .click();
-  await expect(matrix.getByRole("alert")).toContainText("chưa đúng cấu hình");
+  await matrix.getByRole("checkbox", { name: "Đỏ", exact: true }).check();
+  await matrix.getByRole("checkbox", { name: "M", exact: true }).check();
+  const width = matrix.getByRole("textbox", { name: "Độ rộng", exact: true });
+  await width.fill("3, rộng");
+  await expect(width).toHaveAccessibleDescription(/“rộng” phải là số/);
+  await expect(matrix.getByRole("button", { name: "Xem trước tổ hợp", exact: true })).toBeDisabled();
   expect(s.writes).toEqual([]);
   await expect(
     dialog.getByRole("button", { name: "Tạo sản phẩm", exact: true }),
   ).toBeDisabled();
+});
+test("image actions stay out of the grid until requested and removal requires confirmation", async ({ page }, info) => {
+  await model(page, true);
+  const productId = id(20);
+  const artwork = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120"%3E%3Crect width="120" height="120" fill="tan"/%3E%3C/svg%3E';
+  let images = Array.from({ length: 12 }, (_, index) => ({
+    id: id(30 + index), product_id: productId, image_url: artwork + '#' + index, position: index,
+  }));
+  const removed: string[] = [];
+  const reorders: any[] = [];
+  const productPath = `/api/v1/store/products/${productId}`;
+  await page.route(url => url.pathname === productPath, route => route.fulfill({ json: {
+    id: productId, store_id: id(2), product_type_id: id(3), title: 'Áo có 12 ảnh',
+    attributes: {}, version: 1, status: 'DRAFT', variants: [], images,
+  } }));
+  await page.route(url => url.pathname === `${productPath}/images/reorder`, route => {
+    const body = route.request().postDataJSON();
+    reorders.push(body);
+    images = body.image_ids.map((imageId: string, position: number) => ({ ...images.find(image => image.id === imageId)!, position }));
+    return route.fulfill({json:{product_id:productId,image_ids:body.image_ids}});
+  });
+  await page.route(url => url.pathname === `${productPath}/images/${id(31)}`, route => {
+    expect(route.request().method()).toBe('DELETE');
+    removed.push(id(31));
+    images = images.filter(image => image.id !== id(31));
+    return route.fulfill({json:{id:id(31),product_id:productId}});
+  });
+  await page.goto(`/seller/products/${productId}/edit#product-images`);
+  const panel = page.locator('#product-images');
+  await expect(panel.getByRole('button',{name:'Thêm ảnh',exact:true})).toBeInViewport();
+  await expect(panel.getByRole('img')).toHaveCount(12);
+  await expect(panel.getByRole('button',{name:/^(Đưa ảnh|Bỏ ảnh sản phẩm)/})).toHaveCount(0);
+  await page.screenshot({path:info.outputPath('image-actions-desktop.png')});
+  await panel.getByRole('button',{name:'Sắp xếp ảnh',exact:true}).click();
+  await panel.getByRole('button',{name:'Đưa ảnh 2 lên trước',exact:true}).click();
+  await expect(panel.getByRole('img',{name:'Ảnh sản phẩm 1',exact:true})).toHaveAttribute('src',artwork+'#1');
+  expect(reorders[0].expected_image_ids.slice(0,2)).toEqual([id(30),id(31)]);
+  expect(reorders[0].image_ids.slice(0,2)).toEqual([id(31),id(30)]);
+  await panel.getByRole('button',{name:'Xong sắp xếp',exact:true}).click();
+  await page.setViewportSize({width:390,height:844});
+  await panel.getByRole('button',{name:'Thêm ảnh',exact:true}).scrollIntoViewIfNeeded();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:info.outputPath('image-actions-mobile.png')});
+  const openRemoval = async () => {
+    await panel.getByRole('button',{name:'Thêm thao tác cho ảnh 1',exact:true}).click();
+    await panel.getByRole('button',{name:'Bỏ ảnh sản phẩm 1',exact:true}).click();
+  };
+  await openRemoval();
+  const confirm = page.getByRole('dialog',{name:'Bỏ ảnh sản phẩm?',exact:true});
+  expect(removed).toEqual([]);
+  await confirm.getByRole('button',{name:'Quay lại',exact:true}).click();
+  await expect(panel.getByRole('img')).toHaveCount(12);
+  await openRemoval();
+  await confirm.getByRole('button',{name:'Bỏ ảnh',exact:true}).click();
+  await expect(panel.getByRole('img')).toHaveCount(11);
+  expect(removed).toEqual([id(31)]);
+});
+
+test("bulk price shows an unsaved count and a nearby save while preserving stopped rows", async ({ page }, info) => {
+  await model(page, true);
+  const productId = id(20);
+  const variants = ["Đỏ", "Xanh", "Đen"].flatMap((color, i) => ["S", "M", "L", "XL"].map((size, j) => ({
+    id: id(60 + 4 * i + j), sku: `${i}-${j}`, price_vnd: 100000,
+    variant_values: {color,size}, status: i === 2 && j === 3 ? 'STOPPED' : 'ACTIVE', is_default: i === 0 && j === 0,
+  })));
+  let product = { id:productId, store_id:id(2), product_type_id:id(3), title:'Áo 12 phân loại',
+    status:'DRAFT', attributes:{color:'Đỏ',size:'S'}, images:[], version:3, variants };
+  const writes: any[] = [];
+  await page.route(url => url.pathname === `/api/v1/store/products/${productId}`, route => {
+    if (route.request().method() === 'PATCH') {
+      const body = route.request().postDataJSON();
+      writes.push(body);
+      product = {...product, version:4, variants:body.variants};
+    }
+    return route.fulfill({json:product});
+  });
+  await page.goto(`/seller/products/${productId}/edit#product-variants`);
+  const editor = page.getByRole('region',{name:'Chỉnh sửa biến thể',exact:true});
+  const save = editor.getByRole('button',{name:'Lưu biến thể',exact:true});
+  await expect(save).toHaveCount(0);
+  await editor.getByLabel('Giá cho các phân loại đang bán (VNĐ)',{exact:true}).fill('159000');
+  await editor.getByRole('button',{name:'Áp giá vào bản nháp',exact:true}).click();
+  await expect(editor.getByText('11 phân loại đã đổi giá · Chưa lưu',{exact:true})).toBeVisible();
+  await expect(save).toBeInViewport();
+  expect(writes).toEqual([]);
+  await page.screenshot({path:info.outputPath('bulk-price-desktop.png')});
+  await save.click();
+  await expect(editor.getByText('Đã lưu biến thể.',{exact:true})).toBeVisible();
+  await expect(save).toHaveCount(0);
+  expect(writes[0].expected_version).toBe(3);
+  expect(writes[0].variants).toHaveLength(12);
+  expect(writes[0].variants.slice(0,11).map((row: any)=>row.price_vnd)).toEqual(Array(11).fill(159000));
+  expect(writes[0].variants[11]).toMatchObject({price_vnd:100000,status:'STOPPED'});
 });
 test("permission preset is a draft until explicit save and contains only actual inventory permission", async ({
   page,
@@ -379,7 +497,7 @@ test("packing print uses order snapshots as text and does not collect money or t
   await page.goto("/seller/orders");
   await page.getByRole("button", { name: "Xem đơn", exact: true }).click();
   await page
-    .getByRole("button", { name: "In phiếu đóng gói", exact: true })
+    .getByRole("button", { name: "In phiếu", exact: true })
     .click();
   const slip = page.frameLocator('iframe[title="Bản in phiếu đóng gói"]');
   await expect(slip.locator("body")).toContainText("SKU-ĐỎ-M");

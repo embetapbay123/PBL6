@@ -52,14 +52,14 @@ test('Owner edit sample writes through the real API and keeps optimistic version
  await page.getByRole('link',{name:'Store Portal',exact:true}).click();await page.getByRole('link',{name:'Sản phẩm Store',exact:true}).click();await page.getByRole('link',{name:'Sửa sản phẩm',exact:true}).first().click();
  await expect(page.getByRole('heading',{name:'Sửa sản phẩm',exact:true})).toBeVisible();const input=page.getByLabel('Tên sản phẩm');const original=await input.inputValue();
  try{
-  await input.fill(original+' · mẫu');await page.getByRole('button',{name:'Lưu thay đổi'}).click();await expect(page.getByRole('status')).toHaveText('Đã lưu sản phẩm.');
+  await input.fill(original+' · mẫu');await page.getByRole('button',{name:'Lưu'}).click();await expect(page.getByRole('status')).toHaveText('Đã lưu sản phẩm.');
   await page.reload();await expect(input).toHaveValue(original+' · mẫu');
  }finally{
-  await input.fill(original);await page.getByRole('button',{name:'Lưu thay đổi'}).click();await expect(page.getByRole('status')).toHaveText('Đã lưu sản phẩm.');
+  await input.fill(original);await page.getByRole('button',{name:'Lưu'}).click();await expect(page.getByRole('status')).toHaveText('Đã lưu sản phẩm.');
  }
  for(const status of [409,422,501]){
   await page.route('**/api/v1/store/products/*',route=>route.fulfill({status,contentType:'application/json',body:JSON.stringify({code:'SAMPLE_ERROR',message:'Lỗi mẫu '+status,correlation_id:'form-'+status,details:[]})}));
-  await page.getByRole('button',{name:'Lưu thay đổi'}).click();await expect(page.getByRole('alert')).toContainText('Lỗi mẫu '+status);
+  await page.getByRole('button',{name:'Lưu'}).click();await expect(page.getByRole('alert')).toContainText('Lỗi mẫu '+status);
   await page.unroute('**/api/v1/store/products/*');
  }
 });

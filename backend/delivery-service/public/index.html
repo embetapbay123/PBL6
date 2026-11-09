@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Delivery · Demo giao nhận</title>
+  <style>
+    :root{font-family:system-ui,sans-serif;color:#20372f;background:#f5f7f5;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}header{border-bottom:1px solid #dce4de;background:#fff}
+    .header-inner{max-width:1120px;margin:auto;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:12px}.brand-mark{background:#245e49;color:#fff;font-weight:750;width:40px;height:40px;border-radius:10px;display:grid;place-items:center}
+    h1{font-size:19px;margin:0;letter-spacing:-.4px}.eyebrow{font-size:12px;color:#68796f;margin-top:3px}
+    main{max-width:1120px;margin:32px auto;padding:0 24px}h2{font-size:26px;margin:0 0 8px;letter-spacing:-.6px}p{line-height:1.6}.muted{color:#68796f;font-size:14px}
+    .intro{margin-bottom:24px}.intro p{margin:0}.flow{display:flex;gap:8px;align-items:center;margin:24px 0;padding:16px 20px;border:1px solid #dce4de;border-radius:10px;background:#fff;font-size:13px;flex-wrap:wrap}
+    .flow span{display:flex;gap:8px;align-items:center}.flow b{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#edf3ee;color:#315e48;font-size:12px}.flow i{font-style:normal;color:#a0afa4;padding:0 12px}
+    button,input{font:inherit}button{min-height:40px;padding:9px 14px;border:1px solid #ccd8cf;border-radius:7px;background:#fff;color:#264b39;cursor:pointer;font-size:14px;font-weight:600}
+    button.primary{background:#245e49;border-color:#245e49;color:#fff}button.secondary{border-color:transparent;background:#f0f4f1}button:disabled{opacity:.55;cursor:default}
+    button:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #71ae8d;outline-offset:3px}.header-actions,.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    a{color:#315e48;text-underline-offset:3px}.header-actions a{font-size:13px}.panel{border:1px solid #dce4de;background:#fff;border-radius:12px;overflow:hidden}
+    .toolbar{padding:20px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #e4ebe5}.toolbar strong{font-size:16px}.toolbar small{color:#68796f;margin-left:8px;font-size:13px}
+    table{width:100%;border-collapse:collapse}th{text-align:left;padding:12px 20px;color:#718077;font-size:12px;font-weight:600;background:#fafbf9}td{padding:20px;vertical-align:top;border-top:1px solid #edf0ec;font-size:14px}
+    td:first-child{width:27%}td:last-child{width:35%}.parcel-code{display:block;font-weight:650;letter-spacing:.2px;margin-bottom:4px}.recipient{font-size:13px;color:#68796f}
+    .status{display:inline-block;border-radius:6px;background:#edf3ee;color:#315e48;padding:6px 9px;font-size:12px;font-weight:650;white-space:nowrap}.status.problem{background:#fff2e0;color:#925509}.status.done{background:#e3f2e9;color:#206140}
+    .cod{font-variant-numeric:tabular-nums;font-weight:600;margin-bottom:5px}.cod-note{font-size:12px;color:#718077}details{margin-top:10px}summary{cursor:pointer;font-size:12px;color:#68796f;padding:4px 0;width:fit-content}
+    .handling-note{margin:.4rem 0 0;font-size:13px;font-weight:650;color:#925509;overflow-wrap:anywhere}
+    .details{font-size:13px;line-height:1.6;max-width:380px}.details p{margin:9px 0;overflow-wrap:anywhere}.details strong{display:block;color:#315e48;font-size:12px}.next-hint{font-size:12px;color:#718077;margin:8px 0 0}
+    .empty{text-align:center;padding:48px 20px}.empty strong{display:block;font-size:18px;margin-bottom:8px}.empty p{margin:0;color:#68796f;font-size:14px}
+    .pagination{display:flex;gap:14px;align-items:center;justify-content:center;padding:16px;border-top:1px solid #edf0ec;font-size:13px}.message{border-radius:8px;padding:12px 16px;margin:16px 0;font-size:14px}.error{color:#963b26;background:#fff0e9}.success{color:#245e49;background:#e9f3eb}.message .actions{margin-top:10px}
+    .login{max-width:390px;margin:60px auto;padding:28px}.login h2{font-size:23px}label{display:grid;gap:8px;margin:20px 0;font-size:14px}input[type=password]{width:100%;padding:11px;border:1px solid #b8cabc;border-radius:7px}.login button{width:100%}
+    dialog{width:min(430px,calc(100vw - 32px));max-height:90dvh;border:1px solid #dce4de;border-radius:12px;padding:28px;color:#20372f}dialog::backdrop{background:#18342a70}dialog h2{font-size:22px}.amount{font-size:30px;font-weight:700;letter-spacing:-.6px;margin:20px 0 8px}
+    .check{display:flex;align-items:flex-start;gap:10px;background:#f2f6f2;padding:14px;border-radius:8px;line-height:1.5}.check input{margin-top:3px;accent-color:#245e49;width:18px;height:18px;flex-shrink:0}dialog .actions{justify-content:flex-end;margin-top:24px}
+    @media(max-width:700px){.header-inner{padding:16px}.header-actions a{display:none}main{margin:24px auto;padding:0 16px}h2{font-size:24px}.flow{padding:12px;gap:12px;font-size:12px}.flow i{display:none}.flow span{width:calc(50% - 6px)}.toolbar{padding:16px}.toolbar small{display:block;margin:4px 0 0}thead{display:none}table,tbody,tr,td{display:block;width:100%}tr{padding:16px;border-top:1px solid #e4ebe5}td,td:first-child,td:last-child{width:100%;padding:0;border:0}td+td{margin-top:14px}td[data-label]::before{content:attr(data-label);display:block;font-size:11px;color:#718077;margin-bottom:6px}td:last-child .actions button.primary{flex:1}.login{margin:32px auto;padding:24px}}
+  </style>
+</head>
+<body>
+  <header><div class="header-inner">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">D</span><div><h1>Delivery</h1><div class="eyebrow">Demo giao nhận hàng</div></div></div>
+    <div class="header-actions"><a href="/" target="_blank" rel="noopener noreferrer">Mở PBL6 ↗</a><button id="logout" class="secondary" hidden>Đăng xuất</button></div>
+  </div></header>
+  <main>
+    <div id="error" class="message error" role="alert" hidden><span id="error-text"></span><div class="actions"><button id="retry" hidden>Thử lại</button><button id="reload-error">Làm mới</button></div></div>
+    <p id="notice" class="message success" role="status" hidden></p>
+    <form id="login" class="login panel" hidden>
+      <h2>Vào cổng giao nhận</h2>
+      <label>Mật khẩu điều phối<input id="password" type="password" autocomplete="current-password" required></label>
+      <button id="login-button" class="primary">Đăng nhập</button>
+    </form>
+    <section id="workspace" hidden>
+      <div class="intro"><h2>Giao nhận hàng</h2></div>
+      <div class="flow" aria-label="Luồng giao nhận"><span><b>1</b> Chờ lấy hàng</span><i aria-hidden="true">→</i><span><b>2</b> Đã lấy hàng</span><i aria-hidden="true">→</i><span><b>3</b> Đang giao</span><i aria-hidden="true">→</i><span><b>4</b> Hoàn tất</span></div>
+      <div class="panel">
+        <div class="toolbar"><div><strong>Vận đơn</strong><small id="total"></small></div><button id="refresh" class="secondary">Làm mới</button></div>
+        <table aria-label="Danh sách vận đơn"><thead><tr><th>Vận đơn / người nhận</th><th>Trạng thái</th><th>Thu hộ</th><th>Bước tiếp theo</th></tr></thead><tbody id="rows"></tbody></table>
+        <div id="empty" class="empty" hidden><strong>Chưa có vận đơn</strong><p>Tạo đơn trên PBL6, sau đó cho cửa hàng đặt lịch lấy hàng.</p></div>
+        <div id="pagination" class="pagination"><button id="previous" class="secondary">Trang trước</button><span id="page"></span><button id="next" class="secondary">Trang sau</button></div>
+      </div>
+    </section>
+    <dialog id="confirm" aria-labelledby="confirm-heading">
+      <h2 id="confirm-heading">Xác nhận giao thành công</h2><p id="confirm-recipient" class="muted"></p>
+      <p id="confirm-amount" class="amount"></p>
+      <label id="cod-label" class="check"><input id="cod" type="checkbox"><span>Đã nhận đủ tiền COD trong luồng demo.</span></label>
+      <p id="confirm-error" class="message error" role="alert" hidden></p>
+      <div class="actions"><button id="close-confirm">Quay lại</button><button id="confirm-delivery" class="primary">Xác nhận</button></div>
+    </dialog>
+  </main>
+  <script>
+    const root = location.pathname.replace(/\/ops\/?$/, '').replace(/\/$/, '');
+    const byId = id => document.getElementById(id);
+    const labels = {READY_FOR_PICKUP:'Chờ lấy hàng',PICKED_UP:'Đã lấy hàng',IN_TRANSIT:'Đang vận chuyển',OUT_FOR_DELIVERY:'Đang giao',DELIVERY_ATTEMPT_FAILED:'Giao thất bại',DELIVERED:'Đã giao',RETURNING:'Đang chuyển hoàn',RETURNED:'Đã trả về nơi gửi',CANCELLED:'Đã hủy'};
+    const nextSteps = {
+      READY_FOR_PICKUP:[['PICK_UP','Lấy hàng']], PICKED_UP:[['OUT_FOR_DELIVERY','Đi giao']],
+      IN_TRANSIT:[['OUT_FOR_DELIVERY','Đi giao']], OUT_FOR_DELIVERY:[['DELIVER','Đã giao'],['FAIL','Giao hụt']],
+      DELIVERY_ATTEMPT_FAILED:[['REDELIVER','Giao lại'],['RETURN','Chuyển hoàn']], RETURNING:[['RECEIVE_RETURN','Đã hoàn']]
+    };
+    const notes = {DELIVER:'Demo xác nhận người nhận đã nhận đủ kiện hàng.',FAIL:'Khách vắng mặt trong lần giao demo.',RETURN:'Demo chuyển hoàn sau khi giao không thành công.',RECEIVE_RETURN:'Demo xác nhận đã bàn giao kiện hoàn về nơi gửi.',REMIT_COD:'Demo xác nhận đã bàn giao đủ tiền COD.'};
+    let page = 1, total = 0, busy = false, loading = false;
+    let selected, pending, lastOpener;
+    function node(tag, text, className) {
+      const element = document.createElement(tag);
+      if (text !== undefined) element.textContent = text;
+      if (className) element.className = className;
+      return element;
+    }
+    const money = value => value.toLocaleString('vi-VN') + ' ₫';
+    function notice(text) { byId('notice').textContent = text; byId('notice').hidden = !text; }
+    function errorMessage(text) {
+      byId('error-text').textContent = text;
+      byId('error').hidden = !text;
+      byId('retry').hidden = !pending;
+    }
+    function lock(value) {
+      busy = value;
+      document.querySelectorAll('button').forEach(button => { button.disabled = value; });
+      byId('cod').disabled = value;
+      byId('previous').disabled = value || page <= 1;
+      byId('next').disabled = value || page * 20 >= total;
+      if (!value) updateConfirmation();
+    }
+    async function api(path, body) {
+      const response = await fetch(root + '/ops/api/' + path, {
+        method:body ? 'POST' : 'GET', headers:body ? {'Content-Type':'application/json'} : {},
+        ...(body ? {body:JSON.stringify(body)} : {})
+      });
+      const value = await response.json();
+      if (!response.ok) {
+        if (response.status === 401) {
+          pending = undefined;
+          byId('login').hidden = false; byId('workspace').hidden = true; byId('logout').hidden = true;
+          byId('confirm').close();
+        }
+        const error = new Error(value.message || 'Kết nối tạm gián đoạn. Thử lại bước vừa chạy.');
+        error.status = response.status;
+        throw error;
+      }
+      return value;
+    }
+    function addInfo(details, label, text) {
+      const paragraph = node('p');
+      paragraph.append(node('strong', label), document.createTextNode(text));
+      details.append(paragraph);
+    }
+    function actionButton(parcel, action, label, primary) {
+      const button = node('button', label, primary ? 'primary' : 'secondary');
+      button.disabled = busy || !!pending;
+      button.onclick = () => action === 'DELIVER' ? openConfirmation(parcel, button) : begin(parcel, action);
+      return button;
+    }
+    function renderParcel(parcel) {
+      const row = node('tr'), identity = node('td');
+      identity.append(node('span', '#' + parcel.tracking_code.slice(-8), 'parcel-code'), node('span', parcel.destination.name, 'recipient'));
+      if (parcel.handling_note) identity.append(node('p', parcel.handling_note, 'handling-note'));
+      const details = node('details'); details.append(node('summary', 'Xem thông tin'));
+      const content = node('div', undefined, 'details');
+      addInfo(content, 'Mã vận đơn', parcel.tracking_code);
+      addInfo(content, 'Lấy tại', [parcel.pickup.name,parcel.pickup.phone,parcel.pickup.address].join(' · '));
+      addInfo(content, 'Giao tới', [parcel.destination.name,parcel.destination.phone,parcel.destination.address].join(' · '));
+      addInfo(content, 'Hàng hóa', parcel.contents);
+      addInfo(content, 'Người giao', parcel.courier_name || 'Shipper demo');
+      if (parcel.note) addInfo(content, 'Ghi nhận gần nhất', parcel.note);
+      details.append(content); identity.append(details);
+      const status = node('td'); status.dataset.label = 'Trạng thái';
+      const tone = parcel.status === 'DELIVERY_ATTEMPT_FAILED' ? ' problem' : ['DELIVERED','RETURNED'].includes(parcel.status) ? ' done' : '';
+      status.append(node('span', labels[parcel.status] || parcel.status, 'status' + tone));
+      const cod = node('td'); cod.dataset.label = 'Thu hộ';
+      cod.append(node('div', parcel.cod_amount ? money(parcel.cod_amount) : 'Không thu hộ', 'cod'));
+      if (parcel.cod_amount) cod.append(node('div', parcel.remitted_at ? 'Đã nộp tiền' : parcel.collected_vnd ? 'Đã thu tiền' : 'Thu khi giao hàng', 'cod-note'));
+      const actionCell = node('td'), actions = node('div', undefined, 'actions');
+      (nextSteps[parcel.status] || []).forEach(([action,label], index) => actions.append(actionButton(parcel, action, label, index === 0)));
+      if (parcel.collected_vnd > 0 && !parcel.remitted_at) actions.append(actionButton(parcel, 'REMIT_COD', 'Nộp COD', true));
+      if (!actions.children.length) actions.append(node('span', 'Đã hoàn tất', 'muted'));
+      actionCell.append(actions);
+      if (parcel.status === 'READY_FOR_PICKUP') actionCell.append(node('p', 'Tự phân công Shipper demo khi lấy hàng.', 'next-hint'));
+      row.append(identity, status, cod, actionCell);
+      return row;
+    }
+    async function load() {
+      if (loading) return;
+      loading = true;
+      try {
+        const data = await api('parcels?page=' + page);
+        if (page > 1 && !data.items.length) { page--; loading = false; return load(); }
+        total = data.total;
+        byId('login').hidden = true; byId('workspace').hidden = false; byId('logout').hidden = false;
+        byId('rows').replaceChildren(...data.items.map(renderParcel));
+        byId('total').textContent = data.total + ' vận đơn';
+        byId('empty').hidden = data.items.length > 0; byId('pagination').hidden = data.total <= 20;
+        byId('page').textContent = 'Trang ' + page;
+        byId('previous').disabled = busy || page === 1; byId('next').disabled = busy || page * 20 >= data.total;
+        if (!pending) errorMessage('');
+      } catch (error) { errorMessage(error.status === 401 ? '' : error.message); }
+      finally { loading = false; }
+    }
+    function openConfirmation(parcel, opener) {
+      selected = parcel; lastOpener = opener;
+      byId('confirm-recipient').textContent = 'Người nhận · ' + parcel.destination.name;
+      byId('confirm-amount').textContent = parcel.cod_amount ? money(parcel.cod_amount) : 'Không thu hộ';
+      byId('cod-label').hidden = !parcel.cod_amount; byId('cod').checked = false;
+      byId('confirm-error').hidden = true; updateConfirmation(); byId('confirm').showModal();
+    }
+    function updateConfirmation() {
+      byId('confirm-delivery').disabled = busy || !!selected?.cod_amount && !byId('cod').checked;
+    }
+    async function begin(parcel, action) {
+      if (busy || pending) return;
+      notice(''); errorMessage('');
+      const steps = [];
+      if (action === 'PICK_UP' && !parcel.courier_name) steps.push({action:'ASSIGN',courier_name:'Shipper demo'});
+      steps.push({action,...(notes[action] ? {note:notes[action]} : {}),...(action === 'DELIVER' ? {collected_vnd:parcel.cod_amount} : {})});
+      pending = {parcel,steps,index:0,command:undefined};
+      await runPending();
+    }
+    async function runPending() {
+      if (busy || !pending) return;
+      lock(true);
+      let failure;
+      try {
+        while (pending.index < pending.steps.length) {
+          pending.command ??= {operation_id:crypto.randomUUID(),expected_version:pending.parcel.version,...pending.steps[pending.index]};
+          pending.parcel = await api('parcels/' + encodeURIComponent(pending.parcel.client_reference) + '/actions', pending.command);
+          pending.index++; pending.command = undefined;
+        }
+        const status = labels[pending.parcel.status] || pending.parcel.status;
+        pending = undefined; byId('confirm').close();
+        notice('Đã cập nhật: ' + status + '.');
+      } catch (error) {
+        failure = error.message;
+        if ([401,403,409,422].includes(error.status)) { pending = undefined; byId('confirm').close(); }
+        byId('confirm-error').textContent = failure; byId('confirm-error').hidden = false;
+      } finally {
+        lock(false); await load();
+        if (failure) errorMessage(pending ? 'Chưa xác nhận được kết quả. Bấm thử lại để tiếp tục đúng bước đang chờ.' : failure);
+      }
+    }
+    byId('cod').onchange = updateConfirmation;
+    byId('confirm-delivery').onclick = () => {
+      if (!selected || busy || selected.cod_amount && !byId('cod').checked) return;
+      if (pending) runPending(); else begin(selected, 'DELIVER');
+    };
+    byId('close-confirm').onclick = () => { if (!busy) byId('confirm').close(); };
+    byId('confirm').oncancel = event => { if (busy) event.preventDefault(); };
+    byId('confirm').onclose = () => { if (lastOpener?.isConnected) lastOpener.focus(); };
+    byId('retry').onclick = runPending; byId('reload-error').onclick = load;
+    byId('refresh').onclick = () => { if (!busy) load(); };
+    byId('previous').onclick = () => { if (!busy && page > 1) { page--; load(); } };
+    byId('next').onclick = () => { if (!busy) { page++; load(); } };
+    byId('login').onsubmit = async event => {
+      event.preventDefault(); if (busy) return;
+      lock(true); notice('');
+      try { await api('login', {password:byId('password').value}); byId('password').value = ''; await load(); }
+      catch (error) { errorMessage(error.message); }
+      finally { lock(false); }
+    };
+    byId('logout').onclick = async () => {
+      if (busy) return;
+      lock(true);
+      try { await api('logout', {}); pending = undefined; byId('workspace').hidden = true; byId('login').hidden = false; byId('logout').hidden = true; errorMessage(''); notice(''); }
+      catch (error) { errorMessage(error.message); }
+      finally { lock(false); }
+    };
+    const refreshTimer = setInterval(() => {
+      if (!busy && !byId('confirm').open && !byId('workspace').hidden && !document.activeElement?.closest('#rows')) load();
+    }, 10000);
+    window.addEventListener('pagehide', () => clearInterval(refreshTimer), {once:true});
+    load();
+  </script>
+</body>
+</html>

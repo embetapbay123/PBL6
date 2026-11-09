@@ -11,7 +11,7 @@ import { useAuth } from "../../api/auth-context";
 import { ErrorView, Loading } from "../../bootstrap/components";
 import { ProductReviews } from "./ProductReviews"; // 1. Nhập component đánh giá sản phẩm
 import { CustomerRecommendations } from "./CustomerRecommendations";
-import { ImageOff, ShoppingCart, Zap, Minus, Plus, Heart } from "lucide-react";
+import { ImageOff, ShoppingCart, Zap, Minus, Plus, Heart, Truck, RotateCcw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ContactStoreButton } from "./ContactStoreButton";
 import {
@@ -39,6 +39,15 @@ export function ProductDetail() {
   const customer = !!session?.context?.roles.includes("CUSTOMER");
   const navigate = useNavigate();
   const location = useLocation();
+  const returnTo =
+    (location.state as { from?: string } | null)?.from ||
+    (() => {
+      try {
+        return sessionStorage.getItem("lastMarketplaceSearch") || "/";
+      } catch {
+        return "/";
+      }
+    })();
   const cache = useQueryClient();
   const [product, setProduct] = useState<Product>();
   const [variantId, setVariantId] = useState("");
@@ -61,6 +70,7 @@ export function ProductDetail() {
     availabilityFlight = useRef(false);
   const [checkingStock, setCheckingStock] = useState(false),
     [stockError, setStockError] = useState<unknown>();
+  const [storeProductIds, setStoreProductIds] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -77,6 +87,7 @@ export function ProductDetail() {
     setSuccess(false);
     setUncertain(false);
     setFavoriteError(undefined);
+    setStoreProductIds([]);
     if (!id) {
       setLoading(false);
       return;
@@ -100,14 +111,44 @@ export function ProductDetail() {
             ? intent
             : undefined;
         const orderable = variants.filter(variantCanOrder);
+        const searchParams = new URLSearchParams(location.search);
+        const requestedVariantId =
+          searchParams.get("variant") ??
+          searchParams.get("variant_id") ??
+          (location.state as { variant_id?: string } | null)?.variant_id;
+
+        let minFilter: number | undefined;
+        let maxFilter: number | undefined;
+        try {
+          const returnUrl = new URL(returnTo, window.location.origin);
+          const minStr = returnUrl.searchParams.get("min");
+          const maxStr = returnUrl.searchParams.get("max");
+          if (minStr && !isNaN(Number(minStr))) minFilter = Number(minStr);
+          if (maxStr && !isNaN(Number(maxStr))) maxFilter = Number(maxStr);
+        } catch {
+          /* ignore */
+        }
+        const inRangeOrderable =
+          minFilter !== undefined || maxFilter !== undefined
+            ? orderable.filter(
+                (v) =>
+                  (minFilter === undefined || v.price_vnd >= minFilter) &&
+                  (maxFilter === undefined || v.price_vnd <= maxFilter),
+              )
+            : [];
+
+        const targetVariant =
+          (requestedVariantId
+            ? variants.find((v) => v.id === requestedVariantId)
+            : undefined) ??
+          inRangeOrderable.find((item) => item.is_default) ??
+          inRangeOrderable[0] ??
+          orderable.find((item) => item.is_default) ??
+          orderable[0] ??
+          variants[0];
+
         setVariantId(
-          remembered?.variant_id ??
-            (
-              orderable.find((item) => item.is_default) ??
-              orderable[0] ??
-              variants[0]
-            )?.id ??
-            "",
+          remembered?.variant_id ?? targetVariant?.id ?? "",
         );
         if (remembered) setQuantity(remembered.quantity);
       })
@@ -121,7 +162,7 @@ export function ProductDetail() {
       active = false;
       if (generation.current === current) generation.current++;
     };
-  }, [id, retry, location.state]);
+  }, [id, retry, location.state, location.search, returnTo]);
 
   const variant = product?.variants?.find((item) => item.id === variantId);
   const images = (product?.images ?? []).filter(
@@ -140,6 +181,18 @@ export function ProductDetail() {
   const definitions =
     taxonomy.data?.items.find((type) => type.id === product?.product_type_id)
       ?.attribute_definitions ?? [];
+  const formatAttributeValue = (value: unknown): string => {
+    if (value == null) return "—";
+    if (typeof value !== "object") return String(value);
+    if (Array.isArray(value)) return value.map(formatAttributeValue).join(", ");
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.label === "string" && obj.label.trim()) return obj.label;
+    if (typeof obj.name === "string" && obj.name.trim()) return obj.name;
+    if (typeof obj.value === "string" && obj.value.trim()) return obj.value;
+    return Object.entries(obj)
+      .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+      .join("; ");
+  };
   const attributeName = (key: string) =>
     definitions.find((d) => d.code === key)?.name ??
     (
@@ -264,7 +317,7 @@ export function ProductDetail() {
             onRetry={() => setRetry((value) => value + 1)}
           />
         )}
-        <Link to="/">Quay lại danh sách sản phẩm</Link>
+        <Link to={returnTo}>Quay lại kết quả</Link>
       </section>
     );
 
@@ -275,7 +328,7 @@ export function ProductDetail() {
         {productType?.category_id && (
           <>
             <span aria-hidden="true">/</span>
-            <Link to={"/?category_id=" + productType.category_id}>
+            <Link to={"/?category=" + productType.category_id}>
               {productType.name}
             </Link>
           </>
@@ -283,9 +336,6 @@ export function ProductDetail() {
         <span aria-hidden="true">/</span>
         <span aria-current="page">{product.title}</span>
       </nav>
-      <Link to="/" className="text-sm">
-        ← Tất cả sản phẩm
-      </Link>
       <div className="market-detail-columns boot-card mt-5">
         <div>
           <div className="market-detail-image">
@@ -326,62 +376,60 @@ export function ProductDetail() {
           </div>
         </div>
         <div className="product-buy-panel">
-          <span className="market-badge">
-            {product.status === "ACTIVE" ? "Đang bán" : product.status}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
+            <span className="market-badge" style={{ margin: 0 }}>
+              {product.status === "ACTIVE" ? "Đang bán" : product.status}
+            </span>
+            {product.review_summary && (
+              <a href="#reviews" className="product-rating-summary" style={{ margin: 0 }}>
+                {product.review_summary.count ? (
+                  <StarRating
+                    rating={product.review_summary.average}
+                    count={product.review_summary.count}
+                  />
+                ) : (
+                  "Chưa có đánh giá"
+                )}
+              </a>
+            )}
+            <span style={{ fontSize: "13px", color: "#64748b" }}>
+              • Đã bán {product.sold_count?.toLocaleString("vi-VN") ?? 0}
+            </span>
+          </div>
           <h1>{product.title}</h1>
-          {product.store_id && (
-            <div className="product-store-actions">
-              <StoreLabel
-                id={product.store_id}
-                prefix="Gian hàng: "
-                className="ui-button ui-button-secondary"
-              />
-              <ContactStoreButton storeId={product.store_id} product={product.id ? {id:product.id,title:product.title} : undefined} />
-            </div>
-          )}
-          {product.review_summary && (
-            <a href="#reviews" className="product-rating-summary">
-              {product.review_summary.count ? (
-                <StarRating
-                  rating={product.review_summary.average}
-                  count={product.review_summary.count}
-                />
-              ) : (
-                "Chưa có đánh giá"
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", margin: "6px 0 8px" }}>
+            {variant && (
+              <p className="market-detail-price" style={{ margin: 0 }}>
+                {variant.price_vnd.toLocaleString("vi-VN")} ₫
+              </p>
+            )}
+            <div className="product-stock-bar flex items-center gap-2 text-xs text-slate-600" role="status" style={{ margin: 0 }}>
+              <span>
+                {stock === 0
+                  ? "Hết hàng"
+                  : stock !== undefined
+                    ? "Còn " + stock.toLocaleString("vi-VN") + " sản phẩm"
+                    : "Đang kiểm tra tồn kho"}
+              </span>
+              {stock === undefined && (
+                <button
+                  type="button"
+                  className="text-xs text-indigo-600 hover:underline p-0 border-0 bg-transparent cursor-pointer"
+                  disabled={busy || checkingStock}
+                  onClick={() => void refreshAvailability()}
+                >
+                  {checkingStock ? "Đang cập nhật…" : "Làm mới"}
+                </button>
               )}
-            </a>
-          )}
-          {variant && (
-            <p className="market-detail-price">
-              {variant.price_vnd.toLocaleString("vi-VN")} ₫
-            </p>
-          )}
+            </div>
+          </div>
           {!available && stock !== 0 && (
             <p>Sản phẩm hoặc phân loại này hiện không được bán.</p>
           )}
-          <p className="product-stock-status" role="status">
-            {stock === 0
-              ? "Phân loại đã chọn hiện hết hàng. Chọn phân loại khác hoặc đọc lại sau."
-              : stock !== undefined
-                ? "Còn " + stock.toLocaleString("vi-VN") + " sản phẩm."
-                : "Chưa đọc được số lượng còn hàng."}{" "}
-            Giá và tồn được kiểm tra lại khi đặt hàng.
-          </p>
-          <button
-            type="button"
-            disabled={busy || checkingStock}
-            onClick={() => void refreshAvailability()}
-          >
-            {checkingStock
-              ? "Đang cập nhật…"
-              : "Cập nhật giá và tình trạng hàng"}
-          </button>
           {stockError !== undefined && <ErrorView error={stockError} />}
           {tooMany && stock !== 0 && (
-            <p role="alert">
-              Số lượng đã chọn vượt tồn khả dụng vừa đọc. Giảm số lượng hoặc
-              chọn phân loại khác; hệ thống giữ nguyên lựa chọn của bạn.
+            <p role="alert" className="text-xs text-rose-600 font-medium">
+              Số lượng đã chọn vượt quá số lượng còn lại trong kho.
             </p>
           )}
           <VariantPicker
@@ -397,42 +445,44 @@ export function ProductDetail() {
               <small>Mã hàng: {variant.sku}</small>
             </p>
           )}
-          <label htmlFor="purchase-quantity">Số lượng</label>
-          <div className="purchase-quantity">
-            <button
-              type="button"
-              aria-label="Giảm số lượng"
-              disabled={!available || busy || quantity <= 1}
-              onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-            >
-              <Minus size={15} />
-            </button>
-            <input
-              id="purchase-quantity"
-              type="number"
-              min={1}
-              max={stock ?? 2147483647}
-              value={quantity}
-              disabled={!available || busy}
-              onChange={(event) =>
-                setQuantity(
-                  Math.min(
-                    2147483647,
-                    Math.max(1, Number.parseInt(event.target.value, 10) || 1),
-                  ),
-                )
-              }
-            />
-            <button
-              type="button"
-              aria-label="Tăng số lượng"
-              disabled={!available || busy || quantity >= (stock ?? 2147483647)}
-              onClick={() =>
-                setQuantity((value) => Math.min(2147483647, value + 1))
-              }
-            >
-              <Plus size={15} />
-            </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "8px 0 10px" }}>
+            <label htmlFor="purchase-quantity" style={{ margin: 0, fontWeight: 500, fontSize: "13px" }}>Số lượng:</label>
+            <div className="cart-qty-control" style={{ height: "30px" }}>
+              <button
+                type="button"
+                aria-label="Giảm số lượng"
+                disabled={!available || busy || quantity <= 1}
+                onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+              >
+                −
+              </button>
+              <input
+                id="purchase-quantity"
+                type="number"
+                min={1}
+                max={stock ?? 2147483647}
+                value={quantity}
+                disabled={!available || busy}
+                onChange={(event) =>
+                  setQuantity(
+                    Math.min(
+                      2147483647,
+                      Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                    ),
+                  )
+                }
+              />
+              <button
+                type="button"
+                aria-label="Tăng số lượng"
+                disabled={!available || busy || quantity >= (stock ?? 2147483647)}
+                onClick={() =>
+                  setQuantity((value) => Math.min(2147483647, value + 1))
+                }
+              >
+                +
+              </button>
+            </div>
           </div>
           {session && (!canSubmit || !customer) && (
             <p className="purchase-hint">
@@ -513,6 +563,26 @@ export function ProductDetail() {
             </p>
           )}
           {success && <p role="status">Đã thêm sản phẩm vào giỏ hàng.</p>}
+          {product.store_id && (
+            <div className="product-store-actions mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
+              <StoreLabel
+                id={product.store_id}
+                prefix="Gian hàng: "
+                className="ui-button ui-button-secondary"
+              />
+              <ContactStoreButton storeId={product.store_id} product={product.id ? { id: product.id, title: product.title } : undefined} />
+            </div>
+          )}
+          <div className="product-policy-summary mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600 space-y-1.5">
+            <div className="flex items-center gap-2">
+              <Truck size={15} className="text-slate-500 shrink-0" />
+              <span>Giao hàng toàn quốc · Phí vận chuyển hiển thị tại bước thanh toán</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <RotateCcw size={15} className="text-slate-500 shrink-0" />
+              <span>Đổi trả linh hoạt trong 7 ngày theo chính sách gian hàng và sàn</span>
+            </div>
+          </div>
           {session?.context?.roles.includes("CUSTOMER") && (
             <div className="purchase-secondary-actions">
               <UiButton
@@ -561,9 +631,7 @@ export function ProductDetail() {
                 <div className="flex gap-3" key={key}>
                   <dt>{attributeName(key)}</dt>
                   <dd>
-                    {typeof value === "object"
-                      ? JSON.stringify(value)
-                      : String(value)}
+                    {formatAttributeValue(value)}
                   </dd>
                 </div>
               ))}
@@ -657,17 +725,24 @@ export function ProductDetail() {
 
       {/* 2. Hiển thị phần đánh giá sản phẩm (Product Reviews) */}
       {product?.id && <ProductReviews productId={product.id} />}
-      {product?.id && <CustomerRecommendations productId={product.id} />}
       {product?.store_id && product?.id && (
         <StoreProductsSection
           storeId={product.store_id}
           currentProductId={product.id}
+          returnTo={returnTo}
+          onLoadedIds={setStoreProductIds}
+        />
+      )}
+      {product?.id && (
+        <CustomerRecommendations
+          productId={product.id}
+          excludeIds={Array.from(new Set([product.id, ...storeProductIds]))}
         />
       )}
 
       <div className="mt-4 space-x-4">
         <Link to="/cart">Giỏ hàng</Link>
-        <Link to="/">Quay lại danh sách sản phẩm</Link>
+        <Link to={returnTo}>Quay lại kết quả</Link>
       </div>
     </section>
   );
@@ -676,9 +751,13 @@ export function ProductDetail() {
 function StoreProductsSection({
   storeId,
   currentProductId,
+  returnTo,
+  onLoadedIds,
 }: {
   storeId: string;
   currentProductId: string;
+  returnTo?: string;
+  onLoadedIds?: (ids: string[]) => void;
 }) {
   const products = useQuery({
     queryKey: ["store-products", storeId, "related"],
@@ -689,6 +768,14 @@ function StoreProductsSection({
         query: { page: 1, size: 6 },
       }),
   });
+  useEffect(() => {
+    if (products.data?.items) {
+      const ids = products.data.items
+        .map((p) => p.id)
+        .filter((id): id is string => typeof id === "string");
+      onLoadedIds?.(ids);
+    }
+  }, [products.data?.items, onLoadedIds]);
   const items = (products.data?.items ?? []).filter(
     (p) => p.id !== currentProductId,
   );
@@ -711,7 +798,7 @@ function StoreProductsSection({
         {items.slice(0, 4).map((p) => (
           <Link
             key={p.id}
-            to={`/products/${p.id}`}
+            to={`/products/${p.id}`} state={{ from: returnTo }}
             className="boot-card block hover:shadow-md transition"
           >
             {p.images?.[0]?.image_url ? (

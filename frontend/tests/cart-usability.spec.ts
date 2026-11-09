@@ -17,7 +17,7 @@ const user = id(1),
 const title = "Áo công sở cùng tên";
 const rowName = (color: string) => "Dòng giỏ: " + title + " · " + color;
 
-async function model(page: Page, { brokenImage = false } = {}) {
+async function model(page: Page, { brokenImage = false, singleVariant = false, loseRemoveAck = false } = {}) {
   const productData = {
     ...fixtures.getProduct.response,
     id: product,
@@ -65,6 +65,10 @@ async function model(page: Page, { brokenImage = false } = {}) {
     writes: [] as { path: string; method: string; body: any }[],
     failProduct: false,
   };
+  if (singleVariant) {
+    productData.variants.splice(1);
+    state.cart.splice(1);
+  }
   if (brokenImage) {
     productData.images = [
       {
@@ -138,6 +142,7 @@ async function model(page: Page, { brokenImage = false } = {}) {
     }
     if (row && request.method() === "DELETE") {
       state.cart = state.cart.filter((item) => item.id !== row.id);
+      if (loseRemoveAck) return route.fulfill({ status: 503, json: { code: "LOST_ACK", message: "Mất phản hồi" } });
       return route.fulfill({ json: { status: "SUCCESS" } });
     }
     if (path.startsWith("/recommendations/"))
@@ -164,6 +169,7 @@ async function model(page: Page, { brokenImage = false } = {}) {
     .getByRole("link", { name: "Giỏ hàng", exact: true })
     .click();
   await expect(page.locator(".cart-store-group")).toHaveCount(1);
+  await expect(page.getByLabel("Chọn tất cả sản phẩm của gian hàng Store Áo Việt")).toBeVisible();
   return state;
 }
 
@@ -179,7 +185,7 @@ test("UX02: keyboard users distinguish same-product variants and see line and se
   await expect(redRow).toContainText("Thành tiền dự tính: 300.000 ₫");
   await expect(blueRow).toContainText("Thành tiền dự tính: 150.000 ₫");
   const summary = page.locator(".purchase-summary");
-  await expect(summary).toContainText("Tạm tính tiền hàng: 450.000 ₫");
+  await expect(summary).toContainText("Tạm tính 450.000 ₫");
   const blueChoice = blueRow.getByRole("checkbox", {
     name: "Chọn " + title + " · Xanh / L",
     exact: true,
@@ -187,7 +193,7 @@ test("UX02: keyboard users distinguish same-product variants and see line and se
   await blueChoice.focus();
   await page.keyboard.press("Space");
   await expect(blueChoice).not.toBeChecked();
-  await expect(summary).toContainText("Tạm tính tiền hàng: 300.000 ₫");
+  await expect(summary).toContainText("Tạm tính 300.000 ₫");
   const minus = redRow.getByRole("button", {
     name: "Giảm số lượng",
     exact: true,
@@ -197,7 +203,7 @@ test("UX02: keyboard users distinguish same-product variants and see line and se
   );
   await minus.focus();
   await page.keyboard.press("Enter");
-  await expect(summary).toContainText("Tạm tính tiền hàng: 200.000 ₫");
+  await expect(summary).toContainText("Tạm tính 200.000 ₫");
   await expect(
     page.getByRole("status").filter({ hasText: "Đã cập nhật" }),
   ).toContainText("Số lượng: 2");
@@ -207,43 +213,25 @@ test("UX02: keyboard users distinguish same-product variants and see line and se
   ]);
 });
 
-test("UX02: explicit change-choice route adds the new choice, then removes only the old row and restores focus", async ({
+test("UX02: changing the variant in the cart merges the quantity and restores focus", async ({
   page,
 }) => {
   const s = await model(page),
     redRow = page.getByRole("group", { name: rowName("Đỏ / M"), exact: true });
-  await expect(redRow).toContainText(
-    "Thêm lựa chọn mới, sau đó xóa dòng cũ trong giỏ.",
-  );
-  const change = redRow.getByRole("link", {
-    name: "Chọn phân loại khác",
-    exact: true,
-  });
-  await change.focus();
-  await page.keyboard.press("Enter");
-  await expect(
-    page.getByRole("heading", { name: title, exact: true }),
-  ).toBeVisible();
+  const changeBtn = redRow.getByRole("button", { name: "Đổi phân loại", exact: true });
+  if (await changeBtn.isVisible()) await changeBtn.click();
+  await redRow.getByLabel("Đổi phân loại", { exact: true }).selectOption(blue);
   expect(s.writes.filter((call) => call.path.startsWith("/cart"))).toHaveLength(
     0,
   );
-  await page.getByRole("button", { name: "Xanh / L", exact: true }).click();
-  await page.getByLabel("Số lượng", { exact: true }).fill("2");
-  await page
-    .getByRole("button", { name: "Thêm vào giỏ hàng", exact: true })
-    .click();
-  await page
-    .locator("header")
-    .getByRole("link", { name: "Giỏ hàng", exact: true })
-    .click();
-  await expect(
-    page.getByRole("group", { name: rowName("Xanh / L"), exact: true }),
-  ).toContainText("Thành tiền dự tính: 450.000 ₫");
-  await expect(redRow).toContainText("Thành tiền dự tính: 300.000 ₫");
-  const remove = redRow.getByRole("button", { name: "Xóa", exact: true });
-  await remove.focus();
+  const blueRow = page.getByRole("group", { name: rowName("Xanh / L"), exact: true });
+  await blueRow.getByRole("checkbox").uncheck();
+  await redRow.getByRole("button", { name: "Đổi", exact: true }).focus();
   await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/cart$/);
   await expect(redRow).toHaveCount(0);
+  await expect(blueRow).toContainText("Thành tiền dự tính: 600.000 ₫");
+  await expect(blueRow.getByRole("checkbox")).toBeChecked();
   await expect(
     page.getByRole("checkbox", {
       name: "Chọn " + title + " · Xanh / L",
@@ -251,10 +239,10 @@ test("UX02: explicit change-choice route adds the new choice, then removes only 
     }),
   ).toBeFocused();
   await expect(page.locator(".purchase-summary")).toContainText(
-    "Tạm tính tiền hàng: 450.000 ₫",
+    "Tạm tính 600.000 ₫",
   );
   expect(s.cart).toEqual([
-    expect.objectContaining({ variant_id: blue, quantity: 3 }),
+    expect.objectContaining({ variant_id: blue, quantity: 4 }),
   ]);
   expect(
     s.writes
@@ -264,10 +252,32 @@ test("UX02: explicit change-choice route adds the new choice, then removes only 
     [
       "POST",
       "/cart/items",
-      { product_id: product, variant_id: blue, quantity: 2 },
+      { product_id: product, variant_id: blue, quantity: 3 },
     ],
     ["DELETE", "/cart/items/" + id(6), undefined],
   ]);
+});
+
+test("a cart row with no alternative does not offer a variant change", async ({ page }) => {
+  await model(page, { singleVariant: true });
+  await expect(page.getByRole("group", { name: rowName("Đỏ / M"), exact: true })).toBeVisible();
+  await expect(page.getByLabel("Đổi phân loại", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Trang sau", exact: true })).toHaveCount(0);
+  await expect(page.locator(".purchase-summary")).toContainText("Đã chọn 3 món");
+  await expect(page.locator(".purchase-summary")).toContainText("Tạm tính 300.000 ₫");
+});
+
+test("a lost remove response asks for readback without adding the replacement again", async ({ page }) => {
+  const s = await model(page, { loseRemoveAck: true });
+  const redRow = page.getByRole("group", { name: rowName("Đỏ / M"), exact: true });
+  await redRow.getByLabel("Đổi phân loại", { exact: true }).selectOption(blue);
+  await redRow.getByRole("button", { name: "Đổi", exact: true }).click();
+  await expect(page.getByText(/Đã thêm phân loại mới nhưng chưa xác nhận/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Thanh toán", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "Làm mới", exact: true }).click();
+  await expect(redRow).toHaveCount(0);
+  await expect(page.getByRole("group", { name: rowName("Xanh / L"), exact: true })).toContainText("600.000 ₫");
+  expect(s.writes.filter((call) => call.path.startsWith("/cart")).map((call) => call.method)).toEqual(["POST", "DELETE"]);
 });
 
 test("UX02: failed metadata read hides stale prices instead of claiming a standard choice or zero; retry is GET-only", async ({
@@ -276,7 +286,7 @@ test("UX02: failed metadata read hides stale prices instead of claiming a standa
   await page.clock.install();
   const s = await model(page);
   await expect(page.locator(".purchase-summary")).toContainText(
-    "Tạm tính tiền hàng: 450.000 ₫",
+    "Tạm tính 450.000 ₫",
   );
   await page.clock.fastForward(31000);
   s.failProduct = true;
@@ -314,7 +324,7 @@ test("UX02: failed metadata read hides stale prices instead of claiming a standa
     .getByRole("button", { name: "Đọc lại thông tin hàng", exact: true })
     .click();
   await expect(page.locator(".purchase-summary")).toContainText(
-    "Tạm tính tiền hàng: 450.000 ₫",
+    "Tạm tính 450.000 ₫",
   );
   expect(
     s.writes.filter((call) => !call.path.startsWith("/auth/")),

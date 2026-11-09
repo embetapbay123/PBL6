@@ -6,7 +6,7 @@ import { schemaErrors } from './contract-validation';
 import { ApiError } from './errors';
 
 export type InternalOperation = 'ResolveContext' | 'ResolveConversationOrder' | 'ActiveStores' | 'QuoteVariants' | 'ReserveInventory' |
-  'ConsumeReservation' | 'ReleaseReservation' | 'RestockOrder' | 'RestockReceivedItems' | 'DispatchExchangeItems' | 'VerifyReviewEligibility' |
+  'ConsumeReservation' | 'ReleaseReservation' | 'RestockOrder' | 'RestockReceivedItems' | 'DispatchExchangeItems' | 'RestockExchangeItems' | 'VerifyReviewEligibility' |
   'ResolveCheckoutContext' | 'ListLowStockVariants' | 'ResolveAiMetricsScope';
 export interface InternalTransport {
   request<T>(url:string,caller:string,key:string,correlation:string,body?:unknown,timeout?:number):Promise<T>;

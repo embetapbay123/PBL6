@@ -8,7 +8,7 @@ import type { OperationOutputs } from "../../api/operations.generated";
 import { ErrorView, Loading, Pagination } from "../../bootstrap/components";
 import { CashChart, downloadReportCsv } from "./CashChart";
 import { Button } from "../../components/ui/Button";
-import { Download } from "lucide-react";
+import { Download, Sparkles, CheckCircle2, Clock, Wallet, Calendar, ArrowDownRight } from "lucide-react";
 
 type Scope = "STORE" | "ADMIN";
 type Summary = Pick<
@@ -75,11 +75,28 @@ const countLabels = {
 } as const;
 
 export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
-  const [reportView,setReportView]=useState('summary');
   const { session } = useAuth(),
     [params, setParams] = useSearchParams(),
     context = session?.context,
     cache = useQueryClient();
+  const validViews = ['summary', 'cash', 'entries', 'gaps'] as const;
+  const paramKey = scope === "ADMIN" ? "view" : "tab";
+  const rawView = scope === "ADMIN"
+    ? params.get("view") ?? params.get("report_tab") ?? "summary"
+    : params.get("tab") ?? params.get("view") ?? "summary";
+  const reportView = validViews.find((v) => v === rawView) ?? "summary";
+  const setReportView = (view: string) => {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (view && view !== "summary") {
+        next.set(paramKey, view);
+      } else {
+        next.delete(paramKey);
+        if (paramKey === "tab") next.delete("view");
+      }
+      return next;
+    });
+  };
   const [reading, setReading] = useState(false),
     flight = useRef(false),
     alive = useRef(true);
@@ -118,6 +135,40 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
     dateValid(to) &&
     from < to &&
     (!store || uuid.test(store));
+  const draftValid = dateValid(draftFrom) && dateValid(draftTo) && draftFrom < draftTo &&
+    (!draftStore || uuid.test(draftStore));
+  const draftChanged = draftFrom !== from || draftTo !== to || draftStore !== store || draftUnit !== granularity;
+
+  const applyQuickRange = (type: 'today' | '7days' | '30days' | 'this_month') => {
+    let f = today;
+    let t = tomorrow;
+    if (type === 'today') {
+      f = today;
+      t = tomorrow;
+    } else if (type === '7days') {
+      const d = new Date(Date.now() - 6 * 86400000);
+      f = day(d);
+      t = tomorrow;
+    } else if (type === '30days') {
+      const d = new Date(Date.now() - 29 * 86400000);
+      f = day(d);
+      t = tomorrow;
+    } else if (type === 'this_month') {
+      f = today.slice(0, 7) + '-01';
+      t = tomorrow;
+    }
+    setFrom(f);
+    setTo(t);
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set("from", f);
+      next.set("to", t);
+      next.delete("money_page");
+      next.delete("gap_page");
+      return next;
+    });
+  };
+
   const period: { from: string; to: string; granularity: "DAY" | "MONTH" } = {
     from: from + "T00:00:00+07:00",
     to: to + "T00:00:00+07:00",
@@ -176,41 +227,54 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
           ? "Báo cáo thu / hoàn toàn sàn"
           : "Báo cáo gian hàng"}
       </h1>
-      <details className="report-definition"><summary>Cách tính số liệu & thời gian báo cáo</summary><p>
+      <details className="report-definition"><summary>Cách tính</summary><p>
         Kỳ theo giờ Việt Nam (Asia/Ho_Chi_Minh): gồm đầu ngày bắt đầu, không gồm
         đầu ngày kết thúc. Thu / hoàn tính theo sự kiện tiền đã xác nhận, độc
         lập ngày tạo đơn. Giá trị đơn và hàng hoàn tất là nhóm đơn tạo trong kỳ;
         các số này không phải lợi nhuận hoặc tiền chi trả Owner.
       </p></details>
-      <button
-        type="button"
-        disabled={!valid || reading || query.isFetching}
-        onClick={() => void reload()}
-      >
-        Đọc lại báo cáo
-      </button>
-      {reading && (
-        <p role="status">Đang đọc lại tổng hợp và các danh sách đang mở…</p>
-      )}
+
+      <div className="shopee-quick-dates" role="group" aria-label="Chọn nhanh kỳ báo cáo">
+        <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <Calendar size={14} /> Kỳ nhanh:
+        </span>
+        <button
+          type="button"
+          className={`shopee-date-btn ${from === today && to === tomorrow ? 'is-active' : ''}`}
+          onClick={() => applyQuickRange('today')}
+        >
+          Hôm nay
+        </button>
+        <button
+          type="button"
+          className={`shopee-date-btn ${from === day(new Date(Date.now() - 6 * 86400000)) && to === tomorrow ? 'is-active' : ''}`}
+          onClick={() => applyQuickRange('7days')}
+        >
+          7 ngày qua
+        </button>
+        <button
+          type="button"
+          className={`shopee-date-btn ${from === day(new Date(Date.now() - 29 * 86400000)) && to === tomorrow ? 'is-active' : ''}`}
+          onClick={() => applyQuickRange('30days')}
+        >
+          30 ngày qua
+        </button>
+        <button
+          type="button"
+          className={`shopee-date-btn ${from === today.slice(0, 7) + '-01' && to === tomorrow ? 'is-active' : ''}`}
+          onClick={() => applyQuickRange('this_month')}
+        >
+          Tháng này
+        </button>
+      </div>
+
       <form
         className="market-form-grid"
         onSubmit={(event) => {
           event.preventDefault();
-          if (
-            reading ||
-            !dateValid(draftFrom) ||
-            !dateValid(draftTo) ||
-            draftFrom >= draftTo ||
-            (draftStore && !uuid.test(draftStore))
-          )
-            return;
-          if (
-            draftFrom === from &&
-            draftTo === to &&
-            draftStore === store &&
-            draftUnit === granularity
-          ) {
-            void reload();
+          if (!draftValid || reading) return;
+          if (!draftChanged) {
+            if (!query.isFetching) void reload();
             return;
           }
           setParams((current) => {
@@ -270,17 +334,9 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
             />
           </label>
         )}
-        <button
-          disabled={
-            reading ||
-            !dateValid(draftFrom) ||
-            !dateValid(draftTo) ||
-            draftFrom >= draftTo ||
-            (!!draftStore && !uuid.test(draftStore))
-          }
-        >
+        <Button type="submit" loading={reading} disabled={!draftValid || (!draftChanged && query.isFetching)}>
           Xem báo cáo
-        </button>
+        </Button>
       </form>
       {!valid ? (
         <p role="alert">
@@ -298,37 +354,96 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
       ) : (
         query.data && (
           <>
-            <p role="status">
-              Phạm vi:{" "}
-              {scope === "STORE"
-                ? 'Gian hàng hiện tại'
-                : store || "Toàn sàn"}{" "}
-              · {from} đến trước {to} · giờ Việt Nam
-            </p>
-            <p>
-              Tổng hợp được đọc lúc{" "}
-              {time(new Date(query.dataUpdatedAt).toISOString())} (giờ Việt
-              Nam). Giao dịch mới có thể làm thay đổi dữ liệu; đọc lại toàn bộ
-              báo cáo trước khi đối chiếu.
-            </p>
             <nav className="order-status-tabs" aria-label="Nội dung báo cáo">{[['summary','Tổng hợp'],['cash','Thu / hoàn theo kỳ'],['entries','Giao dịch'],['gaps','Khoản chưa rõ ngày']].map(([value,label])=><button type="button" key={value} aria-pressed={reportView===value} onClick={()=>setReportView(value)}>{label}</button>)}</nav>
+            <div className="report-current-period">
+              <p role="status">
+                <strong>Kỳ đang xem:</strong> <time dateTime={from}>{from}</time> đến trước <time dateTime={to}>{to}</time> (giờ Việt Nam)
+                {scope === "ADMIN" && ` · ${store || "Toàn sàn"}`}
+              </p>
+              <small>Cập nhật lúc {time(new Date(query.dataUpdatedAt).toISOString())}</small>
+            </div>
             <div hidden={reportView!=='summary'}>
-              <div className="financial-kpi-grid">
-                <div className="financial-kpi-card">
-                  <dt>Doanh thu hàng hoàn tất</dt>
-                  <dd>{money(query.data.completed_goods_revenue_vnd)}</dd>
+              {/* Shopee Uni Settlement Advice */}
+              <div style={{
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <Sparkles size={20} style={{ color: '#2563eb', flexShrink: 0 }} />
+                <div style={{ fontSize: '13px', color: '#1e3a8a', lineHeight: 1.5 }}>
+                  <strong>Quy tắc Quyết toán Doanh thu Shopee:</strong> Tiền hàng chỉ chuyển thành <strong>Đã quyết toán (Khả dụng)</strong> sau khi đơn hàng được giao thành công và Người mua không phát sinh khiếu nại/trả hàng. Các đơn đang vận chuyển hoặc mới giao sẽ nằm ở mục <strong>Chờ quyết toán</strong>.
                 </div>
-                <div className="financial-kpi-card is-collected">
-                  <dt>Tiền xác nhận thu</dt>
-                  <dd>{money(query.data.collected_vnd)}</dd>
+              </div>
+
+              {/* Shopee Settlement 4 Cards */}
+              <div className="shopee-settlement-grid">
+                <div className="shopee-settlement-card is-settled">
+                  <div className="shopee-settlement-card-header">
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle2 size={16} /> Đã quyết toán (Khả dụng)
+                    </span>
+                    <span className="shopee-settlement-badge is-settled">✓ Sẵn sàng rút</span>
+                  </div>
+                  <div className="shopee-settlement-amount" style={{ color: '#166534' }}>
+                    {money(query.data.completed_goods_revenue_vnd)}
+                  </div>
+                  <div className="shopee-settlement-note">
+                    Tiền hàng hoàn tất không khiếu nại, có thể rút về tài khoản ngân hàng.
+                  </div>
                 </div>
-                <div className="financial-kpi-card is-refunded">
-                  <dt>Tiền xác nhận hoàn</dt>
-                  <dd>{money(query.data.refunded_vnd)}</dd>
+
+                <div className="shopee-settlement-card is-pending">
+                  <div className="shopee-settlement-card-header">
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#9a3412', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={16} /> Chờ quyết toán
+                    </span>
+                    <span className="shopee-settlement-badge is-pending">⏳ Đang xử lý</span>
+                  </div>
+                  <div className="shopee-settlement-amount" style={{ color: '#ea580c' }}>
+                    {money(
+                      (query.data.order_value_vnd || 0) - (query.data.completed_goods_revenue_vnd || 0) - (query.data.refunded_vnd || 0) > 0
+                        ? query.data.order_value_vnd - query.data.completed_goods_revenue_vnd - query.data.refunded_vnd
+                        : (query.data.unresolved_collected_vnd || 0)
+                    )}
+                  </div>
+                  <div className="shopee-settlement-note">
+                    Đơn hàng đang giao hoặc đang trong hạn xử lý trả hàng / khiếu nại.
+                  </div>
                 </div>
-                <div className="financial-kpi-card">
-                  <dt>Số đơn tạo trong kỳ</dt>
-                  <dd>{query.data.order_count.toLocaleString('vi-VN')} đơn</dd>
+
+                <div className="shopee-settlement-card is-refund">
+                  <div className="shopee-settlement-card-header">
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#991b1b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <ArrowDownRight size={16} /> Tiền đã hoàn trả / Hủy
+                    </span>
+                    <span className="shopee-settlement-badge is-refund">↩ Đã khấu trừ</span>
+                  </div>
+                  <div className="shopee-settlement-amount" style={{ color: '#dc2626' }}>
+                    {money(query.data.refunded_vnd)}
+                  </div>
+                  <div className="shopee-settlement-note">
+                    Các khoản hoàn trả người mua do hủy đơn hoặc khiếu nại thành công.
+                  </div>
+                </div>
+
+                <div className="shopee-settlement-card is-gmv">
+                  <div className="shopee-settlement-card-header">
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Wallet size={16} /> Tổng phát sinh (GMV)
+                    </span>
+                    <span className="shopee-settlement-badge is-gmv">★ {query.data.order_count.toLocaleString('vi-VN')} đơn</span>
+                  </div>
+                  <div className="shopee-settlement-amount" style={{ color: '#0f172a' }}>
+                    {money(query.data.order_value_vnd)}
+                  </div>
+                  <div className="shopee-settlement-note">
+                    Tổng giá trị các đơn hàng người mua đặt trong khoảng thời gian này.
+                  </div>
                 </div>
               </div>
               <div className="market-table-scroll financial-summary-table" role="region" aria-label="Bảng tổng hợp chỉ tiêu tài chính">
@@ -402,7 +517,7 @@ export function FinancialReport({ scope = "STORE" }: { scope?: Scope }) {
                 </p>
               </div>
             </div><div hidden={reportView!=='cash'}>{!!query.data.cash_series?.length && (
-              <details className="report-chart-disclosure"><summary>Xem biểu đồ thu / hoàn</summary><CashChart rows={query.data.cash_series} /></details>
+              <details className="report-chart-disclosure"><summary>Biểu đồ</summary><CashChart rows={query.data.cash_series} /></details>
             )}
             <h2>
               Thu / hoàn theo {granularity === "DAY" ? "ngày" : "tháng"} phát
@@ -592,7 +707,7 @@ function MoneyEntries({
                     </Link>
                     {scope === "ADMIN" && <p>Store: {row.store_id}</p>}
                     </td><td><details>
-                      <summary>Nguồn đối chiếu khoản tiền</summary>
+                      <summary>Nguồn dữ liệu</summary>
                       <p>
                         Nguồn: {row.source_type} · {row.source_id}
                       </p>

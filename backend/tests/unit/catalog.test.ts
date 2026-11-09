@@ -40,3 +40,10 @@ test('public availability zero is real while absent or invalid legacy availabili
  for(const available of [undefined,null,-1,NaN,Infinity,0.5,'4'])expect(productResponse(row,[{...variant,available_quantity:available}]).variants?.[0]).not.toHaveProperty('available_quantity');
  expect(productResponse(row,[variant]).variant_axes).toEqual([{code:'size',name:'Cỡ'}]);expect(productResponse({...row,variant_axes:undefined},[variant])).not.toHaveProperty('variant_axes');
 });
+
+test('productResponse correctly projects sold_count', () => {
+  const row = { id: 'p', store_id: 's', product_type_id: 't', title: 'A', attributes: {},
+    status: 'ACTIVE', moderation_status: 'VISIBLE', version: 0, sold_count: 42 };
+  expect(productResponse(row, []).sold_count).toBe(42);
+  expect(productResponse({ ...row, sold_count: undefined }, []).sold_count).toBe(0);
+});

@@ -208,7 +208,7 @@ async function search(page: Page, value: string) {
   }
   await input.fill(value);
   await page
-    .getByRole("button", { name: "Tìm trong toàn bộ đơn", exact: true })
+    .getByRole("button", { name: "Tìm đơn", exact: true })
     .click();
 }
 test('Seller sorts all matching orders by money and resets paging while keeping filters',async({page})=>{
@@ -254,7 +254,7 @@ test("Customer finds an old order by SKU with snapshot identity and returns from
     page.getByText("Áo Đỏ snapshot cũ", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("link", { name: "Quay lại lịch sử đơn hàng", exact: true })
+    .getByRole("link", { name: "Về đơn hàng", exact: true })
     .click();
   await expect(page).toHaveURL(/q=009264.*payment_status=UNKNOWN/);
   await expect(
@@ -299,10 +299,19 @@ test("Seller searches beyond the first page, recognizes snapshot item/recipient 
 }, info) => {
   const m = await model(page, "SELLER");
   await page.goto("/seller/orders");
+  await expect(page.getByRole("combobox", { name: "Trạng thái đơn", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Xóa bộ lọc", exact: true })).toHaveCount(0);
+  const more = page.getByText("Bộ lọc thêm", { exact: true });
+  const payment = page.getByRole("combobox", { name: "Tình trạng tiền", exact: true });
+  await expect(payment).toBeHidden();
+  await more.click();
+  await expect(payment).toBeVisible();
+  await more.click();
   await search(page, "009264");
   await page
-    .getByRole("combobox", { name: "Trạng thái đơn", exact: true })
-    .selectOption("AWAITING_PAYMENT");
+    .getByRole("button", { name: "Chờ thanh toán", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: "Xóa bộ lọc", exact: true })).toBeVisible();
   await expect(page.locator("tbody")).toContainText("Áo Đỏ snapshot cũ");
   await expect(page.locator("tbody")).toContainText("Nguyễn Người Nhận");
   await page
@@ -412,7 +421,7 @@ test("list failure and missing legacy item data are stated explicitly without cu
     "Không đọc được danh sách đơn",
   );
   await expect(
-    page.getByText("Không có đơn hàng phù hợp trong lịch sử của bạn.", {
+    page.getByText("Không có đơn hàng phù hợp.", {
       exact: true,
     }),
   ).toHaveCount(0);

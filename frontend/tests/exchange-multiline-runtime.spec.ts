@@ -37,14 +37,14 @@ test('whole-order exchange identifies each original line; order-only staff dispa
     const original=await f.own(order.id);expect(original.items).toHaveLength(2);expect(original.amounts.payable_vnd).toBe(320000);
     await f.login(buyer,f.buyer.email);await buyer.getByRole('button',{name:'Menu tài khoản',exact:true}).click();
     await buyer.getByRole('navigation',{name:'Menu tài khoản',exact:true}).getByRole('link',{name:'Đơn hàng',exact:true}).click();
-    await buyer.getByRole('searchbox',{name:'Tìm đơn theo mã, món, SKU hoặc người nhận',exact:true}).fill(order.id);await buyer.getByRole('button',{name:'Tìm trong toàn bộ đơn',exact:true}).click();
+    await buyer.getByRole('searchbox',{name:'Tìm đơn theo mã, món, SKU hoặc người nhận',exact:true}).fill(order.id);await buyer.getByRole('button',{name:'Tìm đơn',exact:true}).click();
     await buyer.getByRole('link',{name:'Xem chi tiết',exact:true}).click();
     const requestForm=buyer.getByRole('region',{name:'Đổi trả đơn hàng'});
     await expect(requestForm).toContainText('toàn bộ đơn hàng');
     await requestForm.getByLabel('Loại yêu cầu',{exact:true}).selectOption('EXCHANGE');
     await requestForm.getByLabel('Lý do đổi trả',{exact:true}).fill('Chỉ áo M bị sai cỡ. Tôi hiểu chỉ hỗ trợ đổi toàn đơn, gửi lại cả M ×1 và L ×2 để đổi L ×3.');
     await buyer.screenshot({path:info.outputPath('customer-whole-order-request.png'),fullPage:true});
-    await requestForm.getByRole('button',{name:'Gửi yêu cầu đổi trả',exact:true}).click();
+    await requestForm.getByRole('button',{name:'Gửi',exact:true}).click();
     await expect.poll(async()=>(await f.api('/me/returns?order_id='+order.id,f.buyer.access)).items.length).toBe(1);
     const request=(await f.api('/me/returns?order_id='+order.id,f.buyer.access)).items[0];expect(request.items).toHaveLength(2);
     await f.login(page,employee.email);await returnsMenu(page);
@@ -57,10 +57,10 @@ test('whole-order exchange identifies each original line; order-only staff dispa
       const group=fields.nth(i),quantity=(await group.textContent())!.includes('Phân loại: M')?1:2;
       await group.getByLabel('Thực nhận',{exact:true}).fill(String(quantity));await group.getByLabel('Bán lại được',{exact:true}).fill(String(quantity));
     }
-    await page.getByLabel('Kết quả kiểm hàng',{exact:true}).fill('Đã kiểm đủ M ×1 và L ×2, cả ba áo bán lại được.');
-    await page.getByRole('button',{name:'Xác nhận kiểm hàng thực nhận',exact:true}).click();
+    await page.getByLabel('Ghi chú kiểm hàng',{exact:true}).fill('Đã kiểm đủ M ×1 và L ×2, cả ba áo bán lại được.');
+    await page.getByRole('button',{name:'Lưu kiểm hàng',exact:true}).click();
     await expect.poll(async()=>(await f.readRequest(request.id)).inventory_status,{timeout:15000}).toBe('APPLIED');
-    await page.getByRole('button',{name:'Làm mới yêu cầu',exact:true}).click();
+    await page.getByRole('button',{name:'Làm mới',exact:true}).click();
     const selectors=page.getByRole('combobox',{name:/phân loại gửi đổi/});await expect(selectors).toHaveCount(2);
     const labels=await selectors.evaluateAll(elements=>elements.map(element=>(element as HTMLSelectElement).labels?.[0]?.textContent));
     if(legacy)expect(labels[0]).toBe(labels[1]);
@@ -77,7 +77,7 @@ test('whole-order exchange identifies each original line; order-only staff dispa
     const member=(await f.api('/store/staff',f.owner.access)).items.find((row:any)=>row.user_id===employee.user);
     await f.api('/store/staff/'+member.id,f.owner.access,'PATCH',{expected_version:member.version,permissions:[]});
     const denied=page.waitForResponse(r=>r.request().method()==='PATCH'&&new URL(r.url()).pathname==='/api/v1/store/returns/'+request.id);
-    await page.getByRole('button',{name:'Kiểm tồn và xác nhận bàn giao hàng đổi',exact:true}).click();expect((await denied).status()).toBe(403);
+    await page.getByRole('button',{name:'Chuẩn bị hàng đổi',exact:true}).click();expect((await denied).status()).toBe(403);
     let fresh=await f.readRequest(request.id);expect(fresh.exchange_status).toBe('NOT_STARTED');expect(fresh.exchange_dispatch).toBeUndefined();
     expect((await f.quantity(f.large.id)).quantity).toBe(3);
     record('REVOKED_OPEN_FORM',{status:403,request_id:request.id,exchange_status:fresh.exchange_status,no_dispatch:true});
@@ -91,7 +91,7 @@ test('whole-order exchange identifies each original line; order-only staff dispa
       if(route.request().method()!=='PATCH')return route.continue();writes.push(route.request().postDataJSON());const result=await route.fetch();expect(result.status()).toBe(200);
       return writes.length===1?route.fulfill({status:503,json:{code:'ACK_LOST',message:'Đã ghi lệnh, mất phản hồi.'}}):route.fulfill({response:result});
     });
-    await page.getByRole('button',{name:'Kiểm tồn và xác nhận bàn giao hàng đổi',exact:true}).click();
+    await page.getByRole('button',{name:'Chuẩn bị hàng đổi',exact:true}).click();
     await expect(page.getByText('Chưa rõ kết quả.',{exact:false})).toBeVisible();
     const retry=page.getByRole('button',{name:'Thử lại thao tác cũ',exact:true});await retry.click();
     expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);
@@ -100,10 +100,10 @@ test('whole-order exchange identifies each original line; order-only staff dispa
     expect(fresh.exchange_dispatch.items.every((item:any)=>item.variant_id===f.large.id)).toBe(true);
     expect(fresh.exchange_dispatch.items.reduce((sum:number,item:any)=>sum+item.quantity,0)).toBe(3);
     expect((await f.quantity(f.large.id)).quantity).toBe(0);expect((await f.quantity(f.variant.id)).quantity).toBe(10);
-    await buyer.getByRole('link',{name:'Theo dõi yêu cầu đổi trả',exact:true}).click();
-    await buyer.getByRole('button',{name:'Làm mới yêu cầu',exact:true}).click();
+    await buyer.getByRole('link',{name:'Theo dõi',exact:true}).click();
+    await buyer.getByRole('button',{name:'Làm mới',exact:true}).click();
     await expect(buyer.getByRole('region',{name:'Hàng đổi đã bàn giao'})).toContainText('Phân loại: L');
-    await buyer.getByRole('button',{name:'Xác nhận đã nhận hàng đổi',exact:true}).click();
+    await buyer.getByRole('button',{name:'Đã nhận hàng',exact:true}).click();
     await expect(buyer.getByText('Đã hoàn tất',{exact:true})).toBeVisible();
     const customer=await f.own(order.id),admin=(await f.api('/admin/returns?order_id='+order.id,f.admin)).items[0];
     expect(admin.exchange_dispatch).toEqual(fresh.exchange_dispatch);expect(customer.payment_status).toBe('SUCCEEDED');

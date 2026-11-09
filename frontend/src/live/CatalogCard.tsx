@@ -1,6 +1,6 @@
 import { StarRating } from "../components/StarRating";
 import { ProductImage } from "../components/ProductImage";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ArrowUpRight, Store } from "lucide-react";
 import { ProductCardActions } from "./ProductCardActions";
 import { StoreLabel } from "./StoreLabel";
@@ -15,9 +15,29 @@ export function CatalogCard({
   category?: string;
   edit?: boolean;
 }) {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const minRaw = searchParams.get('min');
+  const maxRaw = searchParams.get('max');
+  const minVal = minRaw !== null && minRaw !== '' && !isNaN(Number(minRaw)) ? Number(minRaw) : undefined;
+  const maxVal = maxRaw !== null && maxRaw !== '' && !isNaN(Number(maxRaw)) ? Number(maxRaw) : undefined;
+  const hasFilter = minVal !== undefined || maxVal !== undefined;
+
   const variants = product.variants?.filter((v) => v.status === "ACTIVE") ?? [];
-  const orderable = variants.filter(variantCanOrder),
-    priced = orderable.length ? orderable : variants;
+  const orderable = variants.filter(variantCanOrder);
+  const inRange = (v: (typeof variants)[number]) =>
+    (minVal === undefined || v.price_vnd >= minVal) &&
+    (maxVal === undefined || v.price_vnd <= maxVal);
+  const inRangeOrderable = hasFilter ? orderable.filter(inRange) : [];
+  const priced = inRangeOrderable.length
+    ? inRangeOrderable
+    : orderable.length
+      ? orderable
+      : variants;
+  const selectedVariant =
+    inRangeOrderable.find((v) => v.is_default) ??
+    inRangeOrderable[0] ??
+    priced[0];
   const price = priced.length
     ? Math.min(...priced.map((v) => v.price_vnd))
     : undefined;
@@ -27,7 +47,18 @@ export function CatalogCard({
   const soldOut = variants.length > 0 && orderable.length === 0;
   return (
     <article className="product-card">
-      <Link className="market-product-link" to={"/products/" + product.id}>
+      <Link
+        className="market-product-link"
+        to={
+          "/products/" +
+          product.id +
+          (selectedVariant?.id ? "?variant=" + selectedVariant.id : "")
+        }
+        state={{
+          from: location.pathname + location.search,
+          variant_id: selectedVariant?.id,
+        }}
+      >
         <div className="market-card-image">
           <ProductImage
             loading="lazy"
@@ -52,14 +83,17 @@ export function CatalogCard({
                 " ₫"
               : "Chưa có giá bán"}
           </p>
-          {!!product.review_summary?.count && (
-            <div className="catalog-rating">
+          <div className="catalog-rating flex items-center gap-1.5 flex-wrap">
+            {!!product.review_summary?.count && (
               <StarRating
                 rating={product.review_summary.average}
                 count={product.review_summary.count}
               />
-            </div>
-          )}
+            )}
+            <span className="text-xs text-slate-500">
+              {product.review_summary?.count ? '• ' : ''}Đã bán {product.sold_count ?? 0}
+            </span>
+          </div>
           <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 mt-3">
             <small className="flex items-center gap-1">
               <Store size={12} />

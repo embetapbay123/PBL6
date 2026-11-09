@@ -1,19 +1,16 @@
-import { Link, useSearchParams } from "react-router-dom";
-import { ShieldCheck, Bell, LockKeyhole, Store } from "lucide-react";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { ShieldCheck, LockKeyhole, Store } from "lucide-react";
 import { ConsentSettings } from "./ConsentSettings";
 import { CustomerSubNav } from "./CustomerSubNav";
 
 export const CustomerHubPage = () => {
-  const [params] = useSearchParams(),
-    section = ["security", "notifications", "store"].includes(
-      params.get("section") ?? "",
-    )
-      ? params.get("section")!
-      : "privacy";
+  const [params] = useSearchParams();
+  const requested = params.get("section");
+  if (requested === "notifications") return <Navigate to="/customer/notifications" replace />;
+  const section = requested === "security" || requested === "store" ? requested : "privacy";
   const sections = [
     { value: "privacy", label: "Quyền riêng tư", Icon: ShieldCheck },
     { value: "security", label: "Bảo mật", Icon: LockKeyhole },
-    { value: "notifications", label: "Thông báo", Icon: Bell },
     { value: "store", label: "Bán hàng", Icon: Store },
   ];
   return (
@@ -48,7 +45,6 @@ export const CustomerHubPage = () => {
           {section === "security" && (
             <section className="boot-card">
               <h2>Bảo mật tài khoản</h2>
-              <p>Cập nhật mật khẩu hoặc quản lý tài khoản đang đăng nhập.</p>
               <div className="ui-actions">
                 <Link
                   className="ui-button ui-button-secondary"
@@ -56,25 +52,7 @@ export const CustomerHubPage = () => {
                 >
                   Đổi mật khẩu
                 </Link>
-                <Link className="ui-button ui-button-secondary" to="/login">
-                  Quản lý đăng nhập
-                </Link>
               </div>
-            </section>
-          )}
-          {section === "notifications" && (
-            <section className="boot-card">
-              <h2>Thông báo đơn hàng</h2>
-              <p>
-                Xem cập nhật về đơn hàng, thanh toán và đổi trả; đánh dấu thông
-                báo đã đọc.
-              </p>
-              <Link
-                className="ui-button ui-button-secondary"
-                to="/customer/notifications"
-              >
-                Mở thông báo
-              </Link>
             </section>
           )}
           {section === "store" && (

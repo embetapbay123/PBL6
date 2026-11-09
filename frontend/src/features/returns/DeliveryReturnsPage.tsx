@@ -84,7 +84,12 @@ export function useCaseCommand<T extends Command>(key: string) {
           setUncertain(true);
         else {
           clear();
-          setStale(true);
+          pending.current = undefined;
+          setUncertain(false);
+          // Validation rejection is definitive: keep the draft editable and
+          // create a fresh operation ID after correction. Conflicts/auth errors
+          // still require an explicit readback; transport failures keep retry ID.
+          setStale(error.status !== 422);
         }
         throw error;
       }
@@ -197,8 +202,7 @@ export function DeliveryCaseView({
                 : "Đang chờ xử lý / đối soát"}
       </p>
       <p>
-        Không giao lại trong hồ sơ này. Khách muốn mua tiếp tạo đơn mới sau khi
-        kiểm tra thông tin.
+        Khách muốn mua lại cần tạo đơn mới.
       </p>
       {record.inspection_note && <p>Kết quả kiểm: {record.inspection_note}</p>}
       <InspectionSummary
@@ -214,7 +218,7 @@ export function DeliveryCaseView({
           Mã hồ sơ: {record.id}
         </p>
       )}
-      {record.last_error && scope === 'ADMIN' && <details><summary>Thông tin hỗ trợ kỹ thuật</summary><code>{record.last_error}</code></details>}
+      {record.last_error && scope === 'ADMIN' && <details><summary>Chi tiết lỗi</summary><code>{record.last_error}</code></details>}
       <AfterSaleHistory
         orderId={record.order_id}
         scope={scope}
@@ -251,7 +255,7 @@ export function OwnDeliveryReturn({
     <section aria-label="Giao thất bại và hoàn về">
       <DeliveryCaseView record={data.data} />
       <button onClick={() => void data.refetch()}>
-        Làm mới tình trạng hoàn về
+        Làm mới
       </button>
       <ContactStoreButton storeId={data.data.store_id} orderId={order.id} />
     </section>
@@ -325,12 +329,9 @@ export function DeliveryReturnsPage({ admin = false }: { admin?: boolean }) {
   return (
     <section>
       <h1>Giao thất bại và hoàn về</h1>
-      <div className="seller-refresh-bar"><button onClick={()=>{setPolling(true);void refresh();}} disabled={data.isFetching}>Làm mới hồ sơ</button></div>
-      <p>
-        Nhận và kiểm hàng thực tế, đối chiếu tồn / tiền rồi mới đóng hồ sơ.
-        Không dùng hủy đơn thông thường để hoàn lại toàn bộ tồn.
-      </p>
-      {data.data?.summary && <div className="delivery-return-summary" aria-label={orderId ? 'Tổng hồ sơ của đơn' : 'Tổng hồ sơ trong phạm vi hiện tại'}><div><strong>{data.data.summary.open}</strong><span>Hồ sơ chưa đóng</span></div><div><strong>{data.data.summary.awaiting_inspection}</strong><span>Chờ nhận và kiểm hàng</span></div></div>}
+      <div className="seller-refresh-bar"><button onClick={()=>{setPolling(true);void refresh();}} disabled={data.isFetching}>Làm mới</button></div>
+      {!!data.data?.total && <p>Kiểm hàng và xử lý tồn, tiền trước khi đóng hồ sơ.</p>}
+      {!!data.data?.total && data.data.summary && <div className="delivery-return-summary" aria-label={orderId ? 'Tổng hồ sơ của đơn' : 'Tổng hồ sơ trong phạm vi hiện tại'}><div><strong>{data.data.summary.open}</strong><span>Hồ sơ chưa đóng</span></div><div><strong>{data.data.summary.awaiting_inspection}</strong><span>Chờ nhận và kiểm hàng</span></div></div>}
       {data.error ? (
         <ErrorView error={data.error} onRetry={() => void data.refetch()} />
       ) : data.isPending ? (
@@ -347,10 +348,7 @@ export function DeliveryReturnsPage({ admin = false }: { admin?: boolean }) {
               <OpenCase order={order.data} refresh={refresh} />
             ))}
           {!orderId && !data.data?.items.length && (
-            <p>
-              Chưa có hồ sơ hoàn về. Mở đơn đang giao để ghi nhận giao thất bại
-              hoặc khách từ chối nhận.
-            </p>
+            <EmptyDeliveryReturns admin={admin} />
           )}
           {data.data?.items.map((row) => (
             <details
@@ -429,13 +427,26 @@ export function DeliveryReturnsPage({ admin = false }: { admin?: boolean }) {
       )}
       {!polling && (
         <p>
-          Tạm dừng cập nhật tự động. Bấm Làm mới hồ sơ để xem tiến trình mới
+          Tạm dừng cập nhật tự động. Bấm Làm mới để xem tiến trình mới
           nhất.
         </p>
       )}
     </section>
   );
 }
+
+function EmptyDeliveryReturns({ admin = false, orderId }: { admin?: boolean; orderId?: string }) {
+  const shipping = admin ? "/admin?tab=shipping" : "/seller/shipping";
+  return (
+    <div className="seller-empty-state">
+      <p>Chưa có kiện chuyển hoàn</p>
+      <Link className="ui-button ui-button-secondary" to={orderId ? `${shipping}?shipment_q=${encodeURIComponent(orderId)}` : shipping}>
+        Xem vận đơn
+      </Link>
+    </div>
+  );
+}
+
 function OpenCase({
   order,
   refresh,
@@ -448,6 +459,8 @@ function OpenCase({
       `pbl6_delivery_open_${access.userId}_${access.id}_${order.id}`,
     ),
     [reason, setReason] = useState(state.saved?.reason ?? "");
+  if (order.shipping_mode !== "LEGACY_MANUAL")
+    return <EmptyDeliveryReturns orderId={order.id} />;
   if (order.status !== "SHIPPED")
     return (
       <p>
@@ -607,9 +620,7 @@ function Inspection({
     <section>
       <h3>Biên bản thực nhận và kiểm hàng</h3>
       <p>
-        Nhập đúng số thực nhận; không mặc định hàng hoàn còn bán được. Tổng bán
-        lại + hỏng + chờ xử lý phải bằng lượng thực nhận. Chưa nhận đủ hoặc còn
-        chờ xử lý thì tiếp tục cập nhật biên bản / liên hệ hỗ trợ.
+          Ghi số thực nhận và phân loại. Chỉ hàng bán lại được mới cộng tồn.
       </p>
       <div className="inspection-totals" role="status">
         <strong>
@@ -621,8 +632,7 @@ function Inspection({
         <span>Chờ xử lý {totals.pending}</span>
         {!valid && (
           <p>
-            Kiểm tra từng dòng: tổng bán lại + hỏng + chờ xử lý phải bằng thực
-            nhận, không vượt lượng đã đặt.
+              Bán lại + hỏng + chờ kiểm phải bằng số thực nhận.
           </p>
         )}
       </div>
@@ -704,8 +714,7 @@ function Inspection({
         </label>
         {!valid && (
           <p role="alert">
-            Số thực nhận / phân loại chưa khớp hoặc vượt số đã giao. Chưa thể
-            lưu.
+              Số lượng chưa khớp hoặc vượt số đã giao.
           </p>
         )}
         <button
@@ -718,7 +727,7 @@ function Inspection({
             (!save.uncertain && (!valid || !note.trim()))
           }
         >
-          {save.uncertain ? "Thử lại biên bản cũ" : "Lưu biên bản kiểm hàng"}
+          {save.uncertain ? "Thử lại biên bản cũ" : "Lưu kiểm hàng"}
         </button>
         <CaseFeedback
           state={save}

@@ -1,6 +1,8 @@
 import { useConfirm } from "../../components/ConfirmDialog";
 import { PermissionPresets } from "./PermissionPresets";
 import { Modal } from "../../components/Modal";
+import { ActionMenu } from "../../components/ActionMenu";
+import { Button } from "../../components/ui/Button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { callOperation } from "../../api/operations";
 import { ErrorView, Loading, Pagination } from "../../bootstrap/components";
@@ -148,6 +150,8 @@ export function StaffPage() {
         setEmail("");
         setInvitePermissions([]);
         setInvitePage(1);
+        setTab("invitations");
+        setInviteOpen(false);
       },
     );
   };
@@ -162,6 +166,7 @@ export function StaffPage() {
         title: "Khóa nhân viên?",
         description: `${member.email} sẽ không thể thực hiện công việc trong Store này bằng các quyền đang được cấp. Bạn có thể mở khóa lại sau.`,
         confirmLabel: "Khóa nhân viên",
+        danger: true,
       }))
     )
       return false;
@@ -199,6 +204,12 @@ export function StaffPage() {
     <main className="boot-card">
       <SellerSubNav />
       {dialog}
+      <header className="seller-staff-heading">
+        <h1>Quản lý nhân viên Store</h1>
+        <Button aria-expanded={inviteOpen} aria-controls="staff-invite-form" disabled={locked} onClick={() => setInviteOpen(value => !value)}>
+          {inviteOpen ? "Thu gọn" : "Mời nhân viên"}
+        </Button>
+      </header>
       <nav
         className="workspace-sections"
         aria-label="Khu vực quản lý nhân viên"
@@ -230,14 +241,12 @@ export function StaffPage() {
           }}
         />
       )}
-      <h2>Quản lý nhân viên Store</h2>
       {error !== undefined && <ErrorView error={error} />}
       {loadError !== undefined && (
         <ErrorView error={loadError} onRetry={() => void load()} />
       )}
       {notice && <p role="status">{notice}</p>}
-      {tab === 'invitations' && <button type="button" aria-expanded={inviteOpen} aria-controls="staff-invite-form" disabled={locked} onClick={()=>setInviteOpen(value=>!value)}>{inviteOpen?'Thu gọn form mời':'Mời nhân viên mới'}</button>}
-      {tab === "invitations" && inviteOpen && (
+      {inviteOpen && (
         <form id="staff-invite-form" className="staff-invite-form" onSubmit={invite}>
           <h3>Mời nhân viên</h3>
           <label>
@@ -254,6 +263,7 @@ export function StaffPage() {
           </label>
           <fieldset disabled={locked}>
             <legend>Quyền được cấp</legend>
+            <StaffPermissionScope />
             <PermissionPresets
               disabled={locked}
               onChange={setInvitePermissions}
@@ -285,12 +295,8 @@ export function StaffPage() {
           {tab === "staff" && (
             <>
               <h3>Nhân viên</h3>
-              <p>
-                SELLER là nhân viên của Store này; các quyền dưới đây không cấp
-                quyền Owner hoặc quản trị toàn sàn.
-              </p>
               {staff.length === 0 ? (
-                <div className="seller-empty-state"><strong>Chưa có nhân viên ở trang này</strong><p>Mời nhân viên để cùng xử lý công việc trong Store.</p><button type="button" onClick={() => setTab('invitations')}>Mở lời mời</button></div>
+                <div className="seller-empty-state"><p>Chưa có nhân viên.</p></div>
               ) : (
                 <div className="market-table-scroll seller-staff-table-scroll">
                   <table className="seller-staff-table">
@@ -335,29 +341,26 @@ export function StaffPage() {
                             </ul>
                           </td>
                           <td style={{ textAlign: 'right' }}>
-                            <div className="ui-actions" style={{ justifyContent: 'flex-end', gap: '6px' }}>
-                              <button
-                                disabled={locked || member.status !== "ACTIVE"}
-                                onClick={() => {
-                                  setError(undefined);
-                                  setPermissionEdit(member);
-                                }}
-                              >
-                                Sửa quyền
-                              </button>
-                              <button
-                                disabled={locked}
-                                onClick={() =>
-                                  update(member, {
-                                    status:
-                                      member.status === "ACTIVE" ? "LOCKED" : "ACTIVE",
-                                  })
-                                }
-                              >
-                                {member.status === "ACTIVE"
-                                  ? "Khóa nhân viên"
-                                  : "Mở khóa"}
-                              </button>
+                            <div className="ui-actions seller-staff-actions">
+                              {member.status === "ACTIVE" ? (
+                                <>
+                                  <Button variant="secondary" disabled={locked} onClick={() => {
+                                    setError(undefined);
+                                    setPermissionEdit(member);
+                                  }}>
+                                    Sửa quyền
+                                  </Button>
+                                  <ActionMenu label={`Thêm thao tác cho ${member.email}`} triggerText="Thêm" disabled={locked}>
+                                    <Button className="staff-lock-action" variant="secondary" disabled={locked} onClick={() => void update(member, { status: "LOCKED" })}>
+                                      Khóa nhân viên
+                                    </Button>
+                                  </ActionMenu>
+                                </>
+                              ) : (
+                                <Button variant="secondary" disabled={locked} onClick={() => void update(member, { status: "ACTIVE" })}>
+                                  Mở khóa
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -366,7 +369,7 @@ export function StaffPage() {
                   </table>
                 </div>
               )}
-              <nav aria-label="Trang nhân viên">
+              {staffTotal > 20 && <nav aria-label="Trang nhân viên">
                 <Pagination
                   disabled={locked}
                   page={staffPage}
@@ -374,14 +377,14 @@ export function StaffPage() {
                   total={staffTotal}
                   onPage={setStaffPage}
                 />
-              </nav>
+              </nav>}
             </>
           )}
           {tab === "invitations" && (
             <>
               <h3>Lời mời</h3>
               {invitations.length === 0 ? (
-                <div className="seller-empty-state"><strong>Chưa có lời mời ở trang này</strong><p>Chọn Mời nhân viên mới để nhập email và cấp quyền công việc.</p></div>
+                <div className="seller-empty-state"><p>Chưa có lời mời.</p></div>
               ) : (
                 <div className="market-table-scroll seller-staff-table-scroll">
                   <table className="seller-invitations-table">
@@ -433,7 +436,7 @@ export function StaffPage() {
                   </table>
                 </div>
               )}
-              <nav aria-label="Trang lời mời">
+              {inviteTotal > 20 && <nav aria-label="Trang lời mời">
                 <Pagination
                   disabled={locked}
                   page={invitePage}
@@ -441,12 +444,21 @@ export function StaffPage() {
                   total={inviteTotal}
                   onPage={setInvitePage}
                 />
-              </nav>
+              </nav>}
             </>
           )}
         </>
       )}
     </main>
+  );
+}
+
+function StaffPermissionScope() {
+  return (
+    <details className="staff-permission-scope">
+      <summary>Phạm vi quyền</summary>
+      <p>Quyền cấp cho nhân viên chỉ áp dụng trong gian hàng này. Nhân viên không có quyền của chủ gian hàng hoặc quản trị sàn.</p>
+    </details>
   );
 }
 
@@ -469,8 +481,7 @@ function PermissionEditor({
       <h2>Sửa quyền nhân viên</h2>
       <p>{member.email}</p>
       <p>
-        Thay đổi chỉ có hiệu lực trong Store hiện hành khi bấm Lưu quyền. Bỏ
-        tick một quyền sẽ thu hồi công việc tương ứng.
+        Bỏ chọn để thu hồi quyền. Bấm Lưu quyền để áp dụng.
       </p>
       {error != null && (
         <>
@@ -483,6 +494,7 @@ function PermissionEditor({
       )}
       <fieldset disabled={busy || error != null}>
         <legend>Quyền trong Store</legend>
+        <StaffPermissionScope />
         <PermissionPresets
           disabled={busy || error != null}
           onChange={setDraft}

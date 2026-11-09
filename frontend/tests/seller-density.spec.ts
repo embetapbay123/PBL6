@@ -27,7 +27,7 @@ test('product status tabs and column sort query the full list; table scroll is b
 test('stock tabs and headers preserve URL state and rows link to actual products',async({page},info)=>{
  const {reads,products}=await setup(page);await page.goto('/seller/inventory');await expect(page.locator('tbody tr')).toHaveCount(20);
  await page.getByRole('button',{name:'Sắp xếp Có thể bán tăng dần'}).click();await expect.poll(()=>reads.some(v=>v.includes('sort=AVAILABLE_ASC'))).toBe(true);
- await page.getByRole('navigation',{name:'Lọc nhanh tồn kho'}).getByRole('button',{name:'Sắp hết (1–4)'}).click();await expect(page.locator('tbody tr')).toHaveCount(4);await expect(page).toHaveURL(/stock=LOW/);await expect(page.getByRole('link',{name:'Xem sản phẩm'}).first()).toHaveAttribute('href','/products/'+products[1].id);await page.screenshot({path:info.outputPath('inventory-1440.png')});
+ await page.getByRole('button',{name:'Sắp hết',exact:true}).click();await expect(page.locator('tbody tr')).toHaveCount(4);await expect(page).toHaveURL(/stock=LOW/);await expect(page.getByRole('link',{name:'Xem sản phẩm'}).first()).toHaveAttribute('href','/products/'+products[1].id);await page.screenshot({path:info.outputPath('inventory-1440.png')});
 });
 test('overview offers compact clickable work tiles and collapsed guides',async({page},info)=>{
  await setup(page);await page.goto('/seller');await expect(page.locator('.seller-overview-tile')).toHaveCount(3);await expect(page.locator('.seller-overview-guides details[open]')).toHaveCount(0);await page.screenshot({path:info.outputPath('overview-1440.png')});

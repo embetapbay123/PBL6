@@ -43,6 +43,8 @@ export interface IdempotencyRecordRow {
 export interface OrderTimelineRow { from_status: string | null; to_status: string; actor_user_id: string; created_at: Date | string; }
 
 export interface OrderRow {
+  shipping_mode?: 'LEGACY_MANUAL'|'GHN'|'PLATFORM';
+  shipping_delivered_at?: Date|string|null;
   return_policy_snapshot?: Record<string,unknown> | null;
   completed_at?: Date|string|null;
   status_history?: OrderTimelineRow[];
@@ -207,7 +209,8 @@ export class OrderRepository extends OwnedRepository {
          $11, $12, $13, $14, NOW()
        ) RETURNING id, purchase_group_id, customer_user_id, store_id, address_snapshot,
                    status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
-                   platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at`,
+                   platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at,
+                   shipping_mode, shipping_delivered_at, return_policy_snapshot`,
       [
         data.id,
         data.purchase_group_id,
@@ -307,7 +310,7 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<Array<OrderRow & { items: OrderItemRow[] }>> {
     const orders: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.shipping_mode, o.shipping_delivered_at, o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               (SELECT h.created_at FROM order_status_history h WHERE h.order_id=o.id AND h.to_status='COMPLETED' ORDER BY h.created_at,h.id LIMIT 1) AS completed_at,
               (SELECT jsonb_agg(jsonb_build_object('from_status',h.from_status,'to_status',h.to_status,'actor_user_id',h.actor_user_id,'created_at',h.created_at) ORDER BY h.created_at,h.id) FROM order_status_history h WHERE h.order_id=o.id) AS status_history,
@@ -362,7 +365,7 @@ export class OrderRepository extends OwnedRepository {
     const offset = (page - 1) * size;
     const orders: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.shipping_mode, o.shipping_delivered_at, o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
@@ -414,7 +417,7 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<(OrderRow & { items: OrderItemRow[] }) | undefined> {
     const [order]: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.shipping_mode, o.shipping_delivered_at, o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
@@ -459,7 +462,7 @@ export class OrderRepository extends OwnedRepository {
     const offset = (page - 1) * size;
     const orders: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.shipping_mode, o.shipping_delivered_at, o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
@@ -511,7 +514,7 @@ export class OrderRepository extends OwnedRepository {
   ): Promise<(OrderRow & { items: OrderItemRow[] }) | undefined> {
     const [order]: OrderRow[] = await this.manager.query(
       `SELECT o.id, o.purchase_group_id, o.customer_user_id, o.store_id, o.address_snapshot,
-              o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
+              o.shipping_mode, o.shipping_delivered_at, o.return_policy_snapshot, o.status, o.payment_method, o.payment_expires_at, o.goods_vnd, o.store_discount_vnd,
               o.platform_discount_vnd, o.shipping_vnd, o.payable_vnd, o.version, o.created_at,
               p.status AS payment_status,
               r.status AS refund_status
@@ -569,7 +572,8 @@ export class OrderRepository extends OwnedRepository {
        WHERE id = $2 AND version = $3
        RETURNING id, purchase_group_id, customer_user_id, store_id, address_snapshot,
                  status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
-                 platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at`,
+                 platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at,
+                 shipping_mode, shipping_delivered_at, return_policy_snapshot`,
       [data.to_status, data.order_id, data.expected_version]
     );
 
@@ -608,7 +612,8 @@ export class OrderRepository extends OwnedRepository {
        WHERE id = $1 AND version = $2
        RETURNING id, purchase_group_id, customer_user_id, store_id, address_snapshot,
                  status, payment_method, payment_expires_at, goods_vnd, store_discount_vnd,
-                 platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at`,
+                 platform_discount_vnd, shipping_vnd, payable_vnd, version, created_at,
+                 shipping_mode, shipping_delivered_at, return_policy_snapshot`,
       [orderId, expectedVersion]
     );
     return updated ?? null;

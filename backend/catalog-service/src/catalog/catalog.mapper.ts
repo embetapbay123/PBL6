@@ -9,6 +9,7 @@ import { moneyNumber } from '../../../shared/src/money';
 export function productResponse(row:any,variants:any[],images:any[]=[]):OperationOutputs['getProduct'] {
   return {id:row.id,store_id:row.store_id,product_type_id:row.product_type_id,title:row.title,
     ...(row.description==null?{}:{description:row.description}),attributes:row.attributes,status:row.status,moderation_status:row.moderation_status,version:row.version,
+    sold_count: Number(row.sold_count ?? 0),
     ...(Array.isArray(row.variant_axes)?{variant_axes:row.variant_axes}:{}),
     ...(row.review_summary?{review_summary:{count:row.review_summary.count,average:Number(row.review_summary.average)}}:{}),
     ...(row.moderation_decision?{moderation_decision:row.moderation_decision}:{}),

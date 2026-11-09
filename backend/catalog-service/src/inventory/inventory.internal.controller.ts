@@ -23,5 +23,6 @@ export class InventoryInternalController {
   // RestockOrder: chỉ hoàn kho cho reservation đã CONSUMED, một lần cho mỗi Order; guard nằm trong service.
   @Post('inventory/received-restock') @HttpCode(200) received(@Req() request:any) {return this.service.restockReceived(request.contract.body as OperationInputs['RestockReceivedItems']['body']);}
   @Post('inventory/exchange-dispatch') @HttpCode(200) exchange(@Req() request:any) {return this.service.dispatchExchange(request.contract.body as OperationInputs['DispatchExchangeItems']['body']);}
+  @Post('inventory/exchange-restock') @HttpCode(200) exchangeRestock(@Req() request:any) {return this.service.restockExchange(request.contract.body as OperationInputs['RestockExchangeItems']['body']);}
   @Post('inventory/restock') @HttpCode(200) restock(@Body() dto: RestockOrderBodyDto) {return this.service.restockOrder(dto);}
 }
