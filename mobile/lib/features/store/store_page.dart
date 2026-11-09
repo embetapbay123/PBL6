@@ -789,7 +789,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 0.54,
+                      childAspectRatio: 0.58,
                     ),
                     itemBuilder: (context, index) {
                       final item = homeProducts[index];
@@ -943,7 +943,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.54,
+                  childAspectRatio: 0.58,
                 ),
                 itemBuilder: (context, index) {
                   final item = sorted[index];
@@ -1186,8 +1186,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Image area + discount badge + favorite
-            AspectRatio(
-              aspectRatio: 0.90,
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1304,133 +1303,136 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
               ),
             ),
             // Details area with Add to Cart button
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 32,
+                    child: Text(
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                         height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          _formatPrice(priceInt),
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
-                          ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _formatPrice(priceInt),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
                         ),
-                        if (originalPriceInt != null && originalPriceInt > priceInt) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatPrice(originalPriceInt),
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 10,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
-                        const SizedBox(width: 2),
-                        Text(
-                          rating,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
+                      ),
+                      if (originalPriceInt != null && originalPriceInt > priceInt) ...[
                         const SizedBox(width: 4),
                         Text(
-                          '• Đã bán $sold',
+                          _formatPrice(originalPriceInt),
                           style: const TextStyle(
+                            color: AppColors.textMuted,
                             fontSize: 10,
-                            color: AppColors.textSecondary,
+                            decoration: TextDecoration.lineThrough,
                           ),
                         ),
                       ],
-                    ),
-                    const Spacer(),
-                    // "Thêm vào giỏ" Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: ButtonStyle(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                            if (isOutOfStock) return const Color(0xFFF3F4F6);
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return AppColors.primary;
-                            }
-                            return Colors.white;
-                          }),
-                          foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                            if (isOutOfStock) return const Color(0xFF9CA3AF);
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return Colors.white;
-                            }
-                            return const Color(0xFF374151);
-                          }),
-                          iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                            if (isOutOfStock) return const Color(0xFF9CA3AF);
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return Colors.white;
-                            }
-                            return const Color(0xFF374151);
-                          }),
-                          side: WidgetStateProperty.resolveWith<BorderSide>((states) {
-                            if (isOutOfStock) return const BorderSide(color: Color(0xFFE5E7EB));
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return const BorderSide(color: AppColors.primary);
-                            }
-                            return const BorderSide(color: Color(0xFFD1D5DB));
-                          }),
-                          padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                          ),
-                          minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
-                          shape: WidgetStatePropertyAll(
-                            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                      const SizedBox(width: 2),
+                      Text(
+                        rating,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
-                        icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                        label: Text(
-                          isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ',
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onPressed: isOutOfStock ? null : () => _quickAddToCart(item),
                       ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '• Đã bán $sold',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // "Thêm vào giỏ" Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 28,
+                    child: OutlinedButton.icon(
+                      style: ButtonStyle(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (isOutOfStock) return const Color(0xFFF3F4F6);
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return AppColors.primary;
+                          }
+                          return Colors.white;
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (isOutOfStock) return const Color(0xFF9CA3AF);
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (isOutOfStock) return const Color(0xFF9CA3AF);
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                          if (isOutOfStock) return const BorderSide(color: Color(0xFFE5E7EB));
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return const BorderSide(color: AppColors.primary);
+                          }
+                          return const BorderSide(color: Color(0xFFD1D5DB));
+                        }),
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        ),
+                        minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                      ),
+                      icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                      label: Text(
+                        isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ',
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: isOutOfStock ? null : () => _quickAddToCart(item),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
+            )
           ],
         ),
       ),

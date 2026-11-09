@@ -1708,7 +1708,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.54,
+            childAspectRatio: 0.58,
           ),
           delegate: SliverChildBuilderDelegate(
             (context, index) {
@@ -1783,8 +1783,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image & Badges
-            AspectRatio(
-              aspectRatio: 0.90,
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -1881,135 +1880,138 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
 
             // Product Details
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    Text(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  SizedBox(
+                    height: 32,
+                    child: Text(
                       title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                         height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                  ),
+                  const SizedBox(height: 3),
 
-                    // Price Row
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          '$lowestPrice ₫',
-                          style: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13.5,
-                          ),
+                  // Price Row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '$lowestPrice ₫',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            '$originalPriceInt ₫',
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 10,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    // Rating & Sold Row
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
-                        const SizedBox(width: 2),
-                        Text(
-                          ratingStr,
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          '$originalPriceInt ₫',
                           style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '• Đã bán ${_formatSalesCount(_getProductMonthlySales(product))}',
-                          style: const TextStyle(
+                            color: AppColors.textMuted,
                             fontSize: 10,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    // "Thêm vào giỏ" Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: ButtonStyle(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return AppColors.primary;
-                            }
-                            return Colors.white;
-                          }),
-                          foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return Colors.white;
-                            }
-                            return const Color(0xFF374151);
-                          }),
-                          iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return Colors.white;
-                            }
-                            return const Color(0xFF374151);
-                          }),
-                          side: WidgetStateProperty.resolveWith<BorderSide>((states) {
-                            if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                              return const BorderSide(color: AppColors.primary);
-                            }
-                            return const BorderSide(color: Color(0xFFD1D5DB));
-                          }),
-                          padding: const WidgetStatePropertyAll(
-                            EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                          ),
-                          minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
-                          shape: WidgetStatePropertyAll(
-                            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          ),
-                        ),
-                        icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                        label: const Text(
-                          'Thêm vào giỏ',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.lineThrough,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        onPressed: () => _quickAddToCart(product),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  // Rating & Sold Row
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                      const SizedBox(width: 2),
+                      Text(
+                        ratingStr,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '• Đã bán ${_formatSalesCount(_getProductMonthlySales(product))}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // "Thêm vào giỏ" Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 28,
+                    child: OutlinedButton.icon(
+                      style: ButtonStyle(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return AppColors.primary;
+                          }
+                          return Colors.white;
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return const BorderSide(color: AppColors.primary);
+                          }
+                          return const BorderSide(color: Color(0xFFD1D5DB));
+                        }),
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        ),
+                        minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                      ),
+                      icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                      label: const Text(
+                        'Thêm vào giỏ',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: () => _quickAddToCart(product),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
+            )
           ],
         ),
       ),
@@ -2555,7 +2557,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.54,
+              childAspectRatio: 0.58,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => _buildDedicatedProductGridCard(
@@ -2644,8 +2646,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Thumbnail Image with Favorite Button on Top-Right
-            AspectRatio(
-              aspectRatio: 0.90,
+            Expanded(
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -2712,125 +2713,118 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
             ),
 
             // 2. Details Column
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Tên sản phẩm
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
-                            height: 1.25,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 5),
-                        // Giá tiền (của phân loại rẻ nhất, bỏ chữ "từ" đi)
-                        Text(
-                          _formatPrice(lowestPrice),
-                          style: const TextStyle(
-                            color: Color(0xFFBA3416),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.5,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        // Số lượt bán và số sao
-                        Row(
-                          children: [
-                            const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
-                            const SizedBox(width: 2),
-                            Text(
-                              ratingStr,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1F2937),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '• Đã bán ${_formatSalesCount(salesCount)}',
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: Color(0xFF6B7280),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Tên sản phẩm
+                  SizedBox(
+                    height: 32,
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1F2937),
+                        height: 1.25,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Button thêm vào giỏ
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: ButtonStyle(
-                              backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return AppColors.primary;
-                                }
-                                return Colors.white;
-                              }),
-                              foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return Colors.white;
-                                }
-                                return const Color(0xFF374151);
-                              }),
-                              iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return Colors.white;
-                                }
-                                return const Color(0xFF374151);
-                              }),
-                              side: WidgetStateProperty.resolveWith<BorderSide>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return const BorderSide(color: AppColors.primary);
-                                }
-                                return const BorderSide(color: Color(0xFFD1D5DB));
-                              }),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              visualDensity: VisualDensity.compact,
-                              padding: const WidgetStatePropertyAll(
-                                EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                              ),
-                              minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
-                              shape: WidgetStatePropertyAll(
-                                RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              ),
-                            ),
-                            icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                            label: const Text(
-                              'Thêm vào giỏ',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            onPressed: () => _quickAddToCart(product),
-                          ),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(height: 3),
+                  // Giá tiền
+                  Text(
+                    _formatPrice(lowestPrice),
+                    style: const TextStyle(
+                      color: Color(0xFFBA3416),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Số lượt bán và số sao
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                      const SizedBox(width: 2),
+                      Text(
+                        ratingStr,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '• Đã bán ${_formatSalesCount(salesCount)}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  // Button thêm vào giỏ
+                  SizedBox(
+                    width: double.infinity,
+                    height: 28,
+                    child: OutlinedButton.icon(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return AppColors.primary;
+                          }
+                          return Colors.white;
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return const BorderSide(color: AppColors.primary);
+                          }
+                          return const BorderSide(color: Color(0xFFD1D5DB));
+                        }),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        ),
+                        minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                      ),
+                      icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                      label: const Text(
+                        'Thêm vào giỏ',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: () => _quickAddToCart(product),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            )
           ],
         ),
       ),
