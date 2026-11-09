@@ -30,6 +30,7 @@ import 'package:pbl6_mobile/features/customer/customer_settings_page.dart';
 import 'package:pbl6_mobile/features/customer/store_application_page.dart';
 import 'package:pbl6_mobile/features/customer/favorites_page.dart';
 import 'package:pbl6_mobile/features/customer/recently_viewed_page.dart';
+import 'package:pbl6_mobile/features/notifications/notifications_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
@@ -2944,5 +2945,92 @@ void main() {
       expect(find.byIcon(Icons.shopping_cart_outlined), findsWidgets);
       expect(find.byIcon(Icons.favorite_border_rounded), findsWidgets);
     });
+
+    testWidgets(
+      'NotificationsPage renders order updates fetched from server, categories, and matches design',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            customerOrdersProvider.overrideWith((ref) async => {
+              'items': [
+                {
+                  'id': 'order-101',
+                  'status': 'SHIPPED',
+                  'updated_at': '2026-11-09T08:19:00Z',
+                  'items': [
+                    {
+                      'product_id': 'prod-1',
+                      'title': 'Bột yến mạch',
+                      'image_url': 'https://example.com/yenmach.jpg',
+                    }
+                  ],
+                },
+                {
+                  'id': 'order-102',
+                  'status': 'CANCELLED',
+                  'cancellation_reason': 'Hủy tự động bởi hệ thống.',
+                  'updated_at': '2026-11-09T00:03:00Z',
+                  'items': [
+                    {
+                      'product_id': 'prod-2',
+                      'title': 'Cáp sạc',
+                      'image_url': 'https://example.com/cable.jpg',
+                    }
+                  ],
+                },
+              ],
+            }),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: NotificationsPage(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Top title and action icons
+        expect(find.text('Thông báo'), findsOneWidget);
+        expect(find.byIcon(Icons.shopping_cart_outlined), findsOneWidget);
+        expect(find.byIcon(Icons.chat_bubble_outline_rounded), findsOneWidget);
+
+        // Permission banner
+        expect(find.textContaining('Bật thông báo để nhận cập nhật thông báo đơn hàng'), findsOneWidget);
+        expect(find.text('Bật'), findsOneWidget);
+
+        // Section: Cập nhật đơn hàng from server
+        expect(find.text('Cập nhật đơn hàng'), findsOneWidget);
+        expect(find.text('Xem thêm'), findsOneWidget);
+        expect(find.text('Đang vận chuyển'), findsOneWidget);
+        expect(find.textContaining('Đơn hàng đang vận chuyển và dự kiến giao đến bạn'), findsOneWidget);
+        expect(find.text('Đã hủy đơn hàng'), findsOneWidget);
+        expect(find.textContaining('Hủy tự động bởi hệ thống.'), findsOneWidget);
+
+        // Section: Cập nhật mới nhất
+        expect(find.text('Cập nhật mới nhất'), findsOneWidget);
+        expect(find.text('Đọc Tất Cả'), findsOneWidget);
+        expect(find.text('Thông báo nổi bật'), findsOneWidget);
+        expect(find.text('Khuyến mãi'), findsOneWidget);
+        expect(find.text('Live, Video & Thưởng'), findsOneWidget);
+        expect(find.text('Thông tin Tài chính'), findsOneWidget);
+        expect(find.text('Cập nhật Sàn'), findsOneWidget);
+        expect(find.text('Không có cập nhật mới'), findsOneWidget);
+
+        // Tapping 'Đọc Tất Cả' marks read
+        await tester.tap(find.text('Đọc Tất Cả'));
+        await tester.pumpAndSettle();
+        expect(find.text('Đã đánh dấu tất cả là đã đọc.'), findsOneWidget);
+      },
+    );
   });
 }

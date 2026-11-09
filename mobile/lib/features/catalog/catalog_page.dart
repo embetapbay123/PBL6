@@ -622,13 +622,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               Tooltip(
                 message: 'Thông báo',
                 child: InkWell(
-                  onTap: () {
-                    AppNoticeDialog.show(
-                      context,
-                      message: 'Không có thông báo mới.',
-                      buttonText: 'Đã hiểu',
-                    );
-                  },
+                  onTap: () => Navigator.pushNamed(context, '/notifications'),
                   borderRadius: BorderRadius.circular(20),
                   child: const Padding(
                     padding: EdgeInsets.all(6),

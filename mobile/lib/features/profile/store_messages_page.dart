@@ -166,9 +166,7 @@ class _StoreMessagesPageState extends ConsumerState<StoreMessagesPage> {
                       const SnackBar(content: Text('Đánh giá của tôi')),
                     );
                   } else if (label == 'Thông báo') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Không có thông báo mới.')),
-                    );
+                    Navigator.pushNamed(context, '/notifications');
                   }
                 },
                 child: Container(

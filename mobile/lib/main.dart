@@ -26,6 +26,7 @@ import 'features/customer/store_application_page.dart';
 import 'features/customer/customer_settings_page.dart';
 import 'features/customer/favorites_page.dart';
 import 'features/customer/recently_viewed_page.dart';
+import 'features/notifications/notifications_page.dart';
 import 'features/chat/chat_ai_modal.dart';
 
 final apiProvider = Provider<ApiClient>((ref) => ApiClient());
@@ -470,6 +471,10 @@ class BootstrapApp extends StatelessWidget {
                 orderId: orderId,
                 initialOrder: order,
               ),
+            );
+          case '/notifications':
+            return MaterialPageRoute(
+              builder: (_) => const NotificationsPage(),
             );
           case '/chat':
             return MaterialPageRoute(

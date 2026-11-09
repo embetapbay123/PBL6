@@ -179,13 +179,7 @@ class ProfileHeaderBanner extends ConsumerWidget {
                       size: 24,
                     ),
                     tooltip: 'Thông báo',
-                    onPressed: () {
-                      AppNoticeDialog.show(
-                        context,
-                        message: 'Không có thông báo mới.',
-                        buttonText: 'Đã hiểu',
-                      );
-                    },
+                    onPressed: () => Navigator.pushNamed(context, '/notifications'),
                   ),
                 ],
               ),
