@@ -280,7 +280,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   Widget build(BuildContext context) {
     if (_loading && _product == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -298,7 +298,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
     if (_error != null && _product == null) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
@@ -479,6 +479,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             // 1. Hero Image & Gallery Thumbnails (full screen width, flush against all edges)
             _buildHeroImageGallery(),
 
+            // 2. Main Product Info Card (Price, Rating, Sold, Title, Trust Badges)
             Transform.translate(
               offset: const Offset(0, -16),
               child: Container(
@@ -487,135 +488,152 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(24),
+                    bottom: Radius.circular(16),
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 2. Price, Rating & Sold Row (directly below image, matching Image 2)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                // Price
-                Text(
-                  '$priceStr ₫',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF1F0),
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(10),
-                      right: Radius.circular(10),
+                    // Price, Rating & Sold Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        // Price
+                        Text(
+                          '$priceStr ₫',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF1F0),
+                            borderRadius: const BorderRadius.horizontal(
+                              left: Radius.circular(10),
+                              right: Radius.circular(10),
+                            ),
+                            border: Border.all(color: Colors.white, width: 1.2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(8),
+                                blurRadius: 2,
+                                offset: const Offset(0, 0.5),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'Giá Sau Voucher',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        // Star Rating & Sold count
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, color: AppColors.star, size: 16),
+                            const SizedBox(width: 2),
+                            Text(
+                              revAvg > 0 ? revAvg.toStringAsFixed(1) : '0',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1F2937),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '• Đã bán ${_formatSales(_getProductSold(product))}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    border: Border.all(color: Colors.white, width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(8),
-                        blurRadius: 2,
-                        offset: const Offset(0, 0.5),
-                      ),
-                    ],
-                  ),
-                  child: const Text(
-                    'Giá Sau Voucher',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
-                      height: 1.1,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                // Star Rating & Sold count
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.star_rounded, color: AppColors.star, size: 16),
-                    const SizedBox(width: 2),
+
+                    const SizedBox(height: 8),
+
+                    // Product Title
                     Text(
-                      revAvg > 0 ? revAvg.toStringAsFixed(1) : '0',
+                      title,
                       style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
                         color: Color(0xFF1F2937),
+                        height: 1.3,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '• Đã bán ${_formatSales(_getProductSold(product))}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
-                      ),
-                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Trust Badges
+                    _buildTrustBadgesCard(),
                   ],
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            // 3. Product Title
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1F2937),
-                height: 1.3,
               ),
             ),
 
-            const SizedBox(height: 14),
+            // Content cards on light grey background
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 7. Variant & Quantity Selection
+                  _buildVariantAndQuantityCard(variants),
 
-            // 6. Trust Badges
-            _buildTrustBadgesCard(),
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 14),
+                  // 8. Store Profile Card
+                  _buildStoreProfileCard(storeName, storeId),
 
-            // 7. Variant & Quantity Selection
-            _buildVariantAndQuantityCard(variants),
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 14),
+                  // 9. Product Specifications / Description Card
+                  _buildProductSpecsCard(desc, attributes),
 
-            // 8. Store Profile Card
-            _buildStoreProfileCard(storeName, storeId),
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 14),
+                  // 10. AI Assistant Banner
+                  _buildAiAssistantBanner(context, product),
 
-            // 9. Product Specifications / Description Card
-            _buildProductSpecsCard(desc, attributes),
+                  const SizedBox(height: 12),
 
-            const SizedBox(height: 14),
-
-            // 10. AI Assistant Banner
-            _buildAiAssistantBanner(context, product),
-
-            const SizedBox(height: 16),
-
-            // 11. Customer Reviews Section
-            _buildCustomerReviewsSection(),
-
-            const SizedBox(height: 16),
-
-            // 12. Related Products Section
-            _buildRelatedProductsSection(),
-
-            const SizedBox(height: 30),
-                    ],
+                  // 11. Customer Reviews Section
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: _buildCustomerReviewsSection(),
                   ),
-                ),
+
+                  const SizedBox(height: 16),
+
+                  // 12. Related Products Section
+                  _buildRelatedProductsSection(),
+
+                  const SizedBox(height: 30),
+                ],
               ),
+            ),
           ],
         ),
       ),
@@ -1313,9 +1331,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
               ),
             ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: Color(0xFFF3F4F6)),
-          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: Color(0xFFE5E7EB),
+            ),
+          ),
           const Text(
             'Mô tả chi tiết',
             style: TextStyle(
