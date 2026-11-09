@@ -56,7 +56,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       }
       if (mounted) {
         setState(() {
-          _order = res;
+          _order = {
+            if (widget.initialOrder != null) ...widget.initialOrder!,
+            ...res,
+          };
           _loading = false;
         });
       }

@@ -800,7 +800,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getOwnOrder(String id) async {
-    final res = await get('/me/orders/');
+    final res = await get('/me/orders/$id');
     return Map<String, dynamic>.from(res as Map);
   }
 
@@ -813,7 +813,7 @@ class ApiClient {
       'expected_version': expectedVersion,
       if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
     };
-    final res = await post('/me/orders//cancel', data: body);
+    final res = await post('/me/orders/$id/cancel', data: body);
     return (res is Map)
         ? Map<String, dynamic>.from(res)
         : {'status': 'CANCELLED'};
@@ -821,7 +821,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>?> getOrderRefund(String id) async {
     try {
-      final res = await get('/orders//refund');
+      final res = await get('/orders/$id/refund');
       if (res is Map) return Map<String, dynamic>.from(res);
       return _localRefunds[id];
     } catch (_) {
