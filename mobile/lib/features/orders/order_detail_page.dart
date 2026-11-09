@@ -752,27 +752,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  method == 'SANDBOX'
-                      ? Icons.credit_card
-                      : Icons.payments_outlined,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                const Text(
-                  'Phương thức thanh toán',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14.5,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
+            const Text(
+              'Phương thức thanh toán',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14.5,
+                color: AppColors.textPrimary,
+              ),
             ),
-            const SizedBox(height: 10),
+            const Divider(height: 18, color: Color(0xFFF1F3F5)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -2029,25 +2017,15 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: const [
-                Icon(
-                  Icons.history_rounded,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Lịch sử trạng thái',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14.5,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
+            const Text(
+              'Lịch sử trạng thái',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14.5,
+                color: AppColors.textPrimary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const Divider(height: 18, color: Color(0xFFF1F3F5)),
             ...rawHistory.map((item) {
               final map = item is Map ? item : <String, dynamic>{};
               final toStatus =
