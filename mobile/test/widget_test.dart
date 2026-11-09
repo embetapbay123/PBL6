@@ -2724,9 +2724,9 @@ void main() {
       // Slogan is removed (no empty beige banner)
       expect(find.text('Công nghệ\nkiến tạo cuộc sống tốt đẹp hơn'), findsNothing);
 
-      // Store info exists in top header
+      // Store info exists in top header and slogan intro card
       expect(find.text('TechZone Official'), findsWidgets);
-      expect(find.text('Công nghệ chính hãng'), findsNothing);
+      expect(find.text('Công nghệ chính hãng'), findsOneWidget);
       expect(find.text('4.9'), findsWidgets);
       expect(find.text('| 12,5K người theo dõi'), findsNothing);
       expect(find.text('98% phản hồi tích cực'), findsOneWidget);
