@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../orders/order_detail_page.dart';
@@ -32,6 +34,145 @@ class NotificationItem {
   });
 }
 
+class NotificationReadState {
+  final Set<String> readOrderIds;
+  final Set<String> readNotificationIds;
+  final Map<int, int> categoryBadges;
+
+  const NotificationReadState({
+    required this.readOrderIds,
+    required this.readNotificationIds,
+    required this.categoryBadges,
+  });
+
+  NotificationReadState copyWith({
+    Set<String> Function()? readOrderIds,
+    Set<String> Function()? readNotificationIds,
+    Map<int, int> Function()? categoryBadges,
+  }) {
+    return NotificationReadState(
+      readOrderIds: readOrderIds != null ? readOrderIds() : this.readOrderIds,
+      readNotificationIds: readNotificationIds != null ? readNotificationIds() : this.readNotificationIds,
+      categoryBadges: categoryBadges != null ? categoryBadges() : this.categoryBadges,
+    );
+  }
+}
+
+class NotificationStateNotifier extends StateNotifier<NotificationReadState> {
+  final FlutterSecureStorage _storage;
+
+  NotificationStateNotifier([FlutterSecureStorage? storage])
+      : _storage = storage ?? const FlutterSecureStorage(),
+        super(const NotificationReadState(
+          readOrderIds: {},
+          readNotificationIds: {},
+          categoryBadges: {0: 2, 1: 1, 2: 0, 3: 1},
+        )) {
+    _loadFromStorage();
+  }
+
+  Future<void> _loadFromStorage() async {
+    try {
+      final orderIdsStr = await _storage.read(key: 'notif_read_order_ids');
+      final notifIdsStr = await _storage.read(key: 'notif_read_notif_ids');
+      final badgesStr = await _storage.read(key: 'notif_category_badges');
+
+      Set<String> orderIds = state.readOrderIds;
+      Set<String> notifIds = state.readNotificationIds;
+      Map<int, int> badges = Map<int, int>.from(state.categoryBadges);
+
+      if (orderIdsStr != null && orderIdsStr.isNotEmpty) {
+        orderIds = (jsonDecode(orderIdsStr) as List).map((e) => e.toString()).toSet();
+      }
+      if (notifIdsStr != null && notifIdsStr.isNotEmpty) {
+        notifIds = (jsonDecode(notifIdsStr) as List).map((e) => e.toString()).toSet();
+      }
+      if (badgesStr != null && badgesStr.isNotEmpty) {
+        final decoded = jsonDecode(badgesStr) as Map;
+        badges = decoded.map((k, v) => MapEntry(int.parse(k.toString()), int.parse(v.toString())));
+      }
+
+      state = NotificationReadState(
+        readOrderIds: orderIds,
+        readNotificationIds: notifIds,
+        categoryBadges: badges,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _saveToStorage() async {
+    try {
+      await _storage.write(key: 'notif_read_order_ids', value: jsonEncode(state.readOrderIds.toList()));
+      await _storage.write(key: 'notif_read_notif_ids', value: jsonEncode(state.readNotificationIds.toList()));
+      await _storage.write(
+        key: 'notif_category_badges',
+        value: jsonEncode(state.categoryBadges.map((k, v) => MapEntry(k.toString(), v))),
+      );
+    } catch (_) {}
+  }
+
+  void markOrderAsRead(String orderId) {
+    if (orderId.isEmpty || state.readOrderIds.contains(orderId)) return;
+    final newOrderIds = Set<String>.from(state.readOrderIds)..add(orderId);
+    state = state.copyWith(readOrderIds: () => newOrderIds);
+    _saveToStorage();
+  }
+
+  void markNotificationAsRead(String id, String categoryKey) {
+    if (id.isEmpty || state.readNotificationIds.contains(id)) return;
+    final newNotifIds = Set<String>.from(state.readNotificationIds)..add(id);
+    final newBadges = Map<int, int>.from(state.categoryBadges);
+
+    if (categoryKey == 'promotions' && (newBadges[1] ?? 0) > 0) {
+      newBadges[1] = (newBadges[1]! - 1);
+    } else if (categoryKey == 'updates' && (newBadges[3] ?? 0) > 0) {
+      newBadges[3] = (newBadges[3]! - 1);
+    }
+    newBadges[0] = ((newBadges[1] ?? 0) + (newBadges[3] ?? 0)).clamp(0, 99);
+
+    state = state.copyWith(
+      readNotificationIds: () => newNotifIds,
+      categoryBadges: () => newBadges,
+    );
+    _saveToStorage();
+  }
+
+  void markCategoryRead(int categoryIndex) {
+    if ((state.categoryBadges[categoryIndex] ?? 0) == 0) return;
+    final newBadges = Map<int, int>.from(state.categoryBadges);
+    newBadges[categoryIndex] = 0;
+    if (categoryIndex == 1 || categoryIndex == 3) {
+      newBadges[0] = ((newBadges[1] ?? 0) + (newBadges[3] ?? 0)).clamp(0, 99);
+    }
+    state = state.copyWith(categoryBadges: () => newBadges);
+    _saveToStorage();
+  }
+
+  void markAllAsRead(List<dynamic> orders, Set<String> initialUnreadNotificationIds) {
+    final newOrderIds = Set<String>.from(state.readOrderIds);
+    for (final o in orders) {
+      if (o is Map) {
+        final id = o['id']?.toString();
+        if (id != null && id.isNotEmpty) newOrderIds.add(id);
+      }
+    }
+    final newNotifIds = Set<String>.from(state.readNotificationIds)..addAll(initialUnreadNotificationIds);
+    final newBadges = {0: 0, 1: 0, 2: 0, 3: 0};
+
+    state = NotificationReadState(
+      readOrderIds: newOrderIds,
+      readNotificationIds: newNotifIds,
+      categoryBadges: newBadges,
+    );
+    _saveToStorage();
+  }
+}
+
+final notificationStateProvider =
+    StateNotifierProvider<NotificationStateNotifier, NotificationReadState>((ref) {
+  return NotificationStateNotifier();
+});
+
 class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
@@ -42,27 +183,18 @@ class NotificationsPage extends ConsumerStatefulWidget {
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   bool _showBanner = true;
   int _selectedCategoryIndex = 0;
-  final Set<String> _readOrderIds = {};
-  final Set<String> _readNotificationIds = {};
-  final Set<String> _initialUnreadNotificationIds = {'promo-1', 'update-1'};
+  static const Set<String> _initialUnreadNotificationIds = {'promo-1', 'update-1'};
 
-  final Map<int, int> _categoryBadges = {
-    0: 2, // Thông báo nổi bật
-    1: 1, // Khuyến mãi
-    2: 0, // Thông tin tài chính
-    3: 1, // Cập nhật sàn
-  };
-
-  bool _isOrderUnread(Map<String, dynamic> order) {
+  bool _isOrderUnread(Map<String, dynamic> order, NotificationReadState notifState) {
     final id = order['id']?.toString() ?? '';
     if (id.isEmpty) return false;
-    if (_readOrderIds.contains(id)) return false;
+    if (notifState.readOrderIds.contains(id)) return false;
     if (order['is_read'] == true || order['read'] == true) return false;
     return true;
   }
 
-  bool _isNotificationUnread(NotificationItem item) {
-    if (_readNotificationIds.contains(item.id)) return false;
+  bool _isNotificationUnread(NotificationItem item, NotificationReadState notifState) {
+    if (notifState.readNotificationIds.contains(item.id)) return false;
     return _initialUnreadNotificationIds.contains(item.id);
   }
 
@@ -373,24 +505,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     return featured;
   }
 
-  Widget _buildNotificationItem(NotificationItem item) {
-    final isUnread = _isNotificationUnread(item);
+  Widget _buildNotificationItem(NotificationItem item, NotificationReadState notifState) {
+    final isUnread = _isNotificationUnread(item, notifState);
     return Container(
       color: isUnread ? const Color(0xFFE9ECEF) : Colors.white,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            setState(() {
-              _readNotificationIds.add(item.id);
-              if (item.categoryKey == 'promotions' && (_categoryBadges[1] ?? 0) > 0) {
-                _categoryBadges[1] = (_categoryBadges[1]! - 1);
-              } else if (item.categoryKey == 'updates' && (_categoryBadges[3] ?? 0) > 0) {
-                _categoryBadges[3] = (_categoryBadges[3]! - 1);
-              }
-              _categoryBadges[0] =
-                  ((_categoryBadges[1] ?? 0) + (_categoryBadges[3] ?? 0)).clamp(0, 99);
-            });
+            ref.read(notificationStateProvider.notifier).markNotificationAsRead(item.id, item.categoryKey);
             item.onTap?.call();
           },
           child: Padding(
@@ -485,6 +608,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   Widget build(BuildContext context) {
     final cartCount = ref.watch(cartBadgeCountProvider);
     final ordersAsync = ref.watch(customerOrdersProvider);
+    final notifState = ref.watch(notificationStateProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -663,7 +787,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                           final items = (data['items'] as List?) ?? [];
                           final unreadCount = items.where((o) {
                             if (o is! Map) return false;
-                            return _isOrderUnread(Map<String, dynamic>.from(o));
+                            return _isOrderUnread(Map<String, dynamic>.from(o), notifState);
                           }).length;
                           if (unreadCount == 0) return const SizedBox.shrink();
                           return Container(
@@ -769,7 +893,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       final directImg = firstItem?['image_url']?.toString() ??
                           firstItem?['product_image']?.toString();
 
-                      final isUnread = _isOrderUnread(order);
+                      final isUnread = _isOrderUnread(order, notifState);
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
@@ -789,11 +913,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () {
-                              setState(() {
-                                if (orderId.isNotEmpty) {
-                                  _readOrderIds.add(orderId);
-                                }
-                              });
+                              if (orderId.isNotEmpty) {
+                                ref.read(notificationStateProvider.notifier).markOrderAsRead(orderId);
+                              }
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -940,17 +1062,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                         ),
                   InkWell(
                     onTap: () {
-                      setState(() {
-                        _categoryBadges.updateAll((key, value) => 0);
-                        _readNotificationIds.addAll(_initialUnreadNotificationIds);
-                        final items = (ordersAsync.value?['items'] as List?) ?? [];
-                        for (final o in items) {
-                          if (o is Map) {
-                            final id = o['id']?.toString();
-                            if (id != null) _readOrderIds.add(id);
-                          }
-                        }
-                      });
+                      final items = (ordersAsync.value?['items'] as List?) ?? [];
+                      ref.read(notificationStateProvider.notifier).markAllAsRead(items, _initialUnreadNotificationIds);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Đã đánh dấu tất cả là đã đọc.'),
@@ -983,15 +1096,13 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                   final idx = entry.key;
                   final cat = entry.value;
                   final isSelected = _selectedCategoryIndex == idx;
-                  final badge = _categoryBadges[idx] ?? 0;
+                  final badge = notifState.categoryBadges[idx] ?? 0;
 
                   return Expanded(
                     child: InkWell(
                       onTap: () {
-                        setState(() {
-                          _selectedCategoryIndex = idx;
-                          _categoryBadges[idx] = 0;
-                        });
+                        setState(() => _selectedCategoryIndex = idx);
+                        ref.read(notificationStateProvider.notifier).markCategoryRead(idx);
                       },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1119,7 +1230,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       final item = entry.value;
                       return Column(
                         children: [
-                          _buildNotificationItem(item),
+                          _buildNotificationItem(item, notifState),
                           if (idx < currentList.length - 1)
                             const Divider(
                               height: 1,
