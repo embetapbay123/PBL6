@@ -89,20 +89,52 @@ class ProfileHeaderBanner extends ConsumerWidget {
               ),
               const SizedBox(width: 14),
 
-              // Username + Email + Badge
+              // Username + Email + Badge (with Setting & Notification aligned horizontally with Customer Name)
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      profile.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 19.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            profile.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 19.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.all(4),
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(
+                            Icons.settings_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          tooltip: 'Cài đặt',
+                          onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
+                        ),
+                        const SizedBox(width: 6),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.all(4),
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          tooltip: 'Thông báo',
+                          onPressed: () => Navigator.pushNamed(context, '/notifications'),
+                        ),
+                      ],
                     ),
                     if (profile.email.isNotEmpty && profile.email != profile.displayName) ...[
                       const SizedBox(height: 3),
@@ -155,33 +187,6 @@ class ProfileHeaderBanner extends ConsumerWidget {
                     ),
                   ],
                 ),
-              ),
-
-              // Action buttons on the right: Setting & Notification
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(
-                      Icons.settings_outlined,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    tooltip: 'Cài đặt',
-                    onPressed: () => Navigator.pushNamed(context, '/customer/settings'),
-                  ),
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    icon: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                    tooltip: 'Thông báo',
-                    onPressed: () => Navigator.pushNamed(context, '/notifications'),
-                  ),
-                ],
               ),
             ],
           ),
