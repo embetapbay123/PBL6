@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/app_theme.dart';
 import '../../main.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -144,7 +145,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEE4D2D),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
@@ -188,7 +189,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEE4D2D),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
@@ -231,11 +232,11 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     g,
                     style: TextStyle(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? const Color(0xFFEE4D2D) : const Color(0xFF1F2937),
+                      color: isSelected ? AppColors.primary : const Color(0xFF1F2937),
                     ),
                   ),
                   trailing: isSelected
-                      ? const Icon(Icons.check, color: Color(0xFFEE4D2D))
+                      ? const Icon(Icons.check, color: AppColors.primary)
                       : null,
                   onTap: () {
                     Navigator.pop(ctx);
@@ -273,8 +274,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFEE4D2D),
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
               onPrimary: Colors.white,
               onSurface: Color(0xFF1F2937),
             ),
@@ -316,7 +317,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ),
                     child: const Icon(
                       Icons.shield_outlined,
-                      color: Color(0xFFEE4D2D),
+                      color: AppColors.primary,
                       size: 24,
                     ),
                   ),
@@ -345,7 +346,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 width: double.infinity,
                 child: FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFEE4D2D),
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -390,7 +391,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEE4D2D),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () {
@@ -437,60 +438,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         actions: [
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFEE4D2D),
+              backgroundColor: AppColors.primary,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Đóng'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showConnectedAccountsSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Tài khoản liên kết',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.g_mobiledata_rounded, size: 36, color: Colors.red),
-                title: const Text('Google', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Đã liên kết với tài khoản'),
-                trailing: const Icon(Icons.check_circle, color: Colors.green),
-              ),
-              const Divider(height: 1, color: Color(0xFFF1F3F5)),
-              ListTile(
-                leading: const Icon(Icons.facebook, size: 30, color: Color(0xFF1877F2)),
-                title: const Text('Facebook', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('Chưa liên kết'),
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tính năng liên kết Facebook đang phát triển.')),
-                    );
-                  },
-                  child: const Text('Liên kết', style: TextStyle(color: Color(0xFFEE4D2D))),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -516,7 +470,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFFEE4D2D)),
+                leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
                 title: const Text('Chụp ảnh mới'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -526,7 +480,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined, color: Color(0xFFEE4D2D)),
+                leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
                 title: const Text('Chọn ảnh từ thư viện'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -536,7 +490,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.link, color: Color(0xFFEE4D2D)),
+                leading: const Icon(Icons.link, color: AppColors.primary),
                 title: const Text('Nhập URL ảnh đại diện'),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -559,7 +513,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           child: const Text('Hủy'),
                         ),
                         FilledButton(
-                          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFEE4D2D)),
+                          style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
                           onPressed: () {
                             final val = urlCtrl.text.trim();
                             Navigator.pop(dCtx);
@@ -628,13 +582,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back,
-            color: Color(0xFFEE4D2D),
+            color: AppColors.primary,
             size: 24,
           ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Sửa hồ sơ',
+          'Thông tin cá nhân',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -647,7 +601,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           children: [
             if (_busy)
               const LinearProgressIndicator(
-                color: Color(0xFFEE4D2D),
+                color: AppColors.primary,
                 backgroundColor: Color(0xFFFFF0ED),
                 minHeight: 2,
               ),
@@ -683,7 +637,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                             ? const Icon(
                                 Icons.person,
                                 size: 50,
-                                color: Color(0xFFEE4D2D),
+                                color: AppColors.primary,
                               )
                             : null,
                       ),
@@ -763,7 +717,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     value: _gender.isNotEmpty ? _gender : 'Thiết lập ngay',
                     valueColor: _gender.isNotEmpty
                         ? const Color(0xFF1F2937)
-                        : const Color(0xFFEE4D2D),
+                        : AppColors.primary,
                     onTap: _showGenderSelectionSheet,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   ),
@@ -774,7 +728,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     value: _birthDate.isNotEmpty ? _birthDate : 'Thiết lập ngay',
                     valueColor: _birthDate.isNotEmpty
                         ? const Color(0xFF1F2937)
-                        : const Color(0xFFEE4D2D),
+                        : AppColors.primary,
                     onTap: _selectBirthDate,
                   ),
                   const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
@@ -811,12 +765,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     value: _maskEmail(_email),
                     valueColor: const Color(0xFF1F2937),
                     onTap: _showEmailInfoDialog,
-                  ),
-                  const Divider(height: 1, thickness: 0.6, color: Color(0xFFF3F4F6), indent: 16, endIndent: 16),
-                  _buildProfileRow(
-                    title: 'Tài khoản liên kết',
-                    value: '',
-                    onTap: _showConnectedAccountsSheet,
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
                   ),
                 ],
@@ -864,24 +812,32 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                   color: Color(0xFF9CA3AF),
                 ),
               ],
-              const Spacer(),
-              if (value.isNotEmpty)
-                Flexible(
-                  child: Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: valueColor ?? const Color(0xFF1F2937),
-                      fontWeight: FontWeight.w400,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (value.isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          value,
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: valueColor ?? const Color(0xFF1F2937),
+                            fontWeight: FontWeight.w400,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Color(0xFF9CA3AF),
                     ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  ],
                 ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: Color(0xFF9CA3AF),
               ),
             ],
           ),
