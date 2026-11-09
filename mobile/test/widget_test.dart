@@ -2904,6 +2904,51 @@ void main() {
       final OutlinedButton buttonWidget = tester.widget(outOfStockButton);
       expect(buttonWidget.onPressed, isNull);
     });
+
+    testWidgets('StorePage search allows searching store products with OrderListPage-style search UI', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: StorePage(
+              shopName: 'TechZone Official',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap search icon in top right
+      final searchIconFinder = find.byIcon(Icons.search);
+      expect(searchIconFinder, findsOneWidget);
+      await tester.tap(searchIconFinder);
+      await tester.pumpAndSettle();
+
+      // Search TextField appears with close icon
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byIcon(Icons.close), findsOneWidget);
+
+      // Enter search query
+      await tester.enterText(find.byType(TextField), 'Tai nghe');
+      await tester.pumpAndSettle();
+
+      // Displays matching products and filters out non-matching products
+      expect(find.text('Tai nghe không dây Bluetooth chống ồn, pin lâu'), findsWidgets);
+      expect(find.text('Điện thoại thông minh màn hình AMOLED 128GB'), findsNothing);
+
+      // Tap close button resets search
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(find.text('Điện thoại thông minh màn hình AMOLED 128GB'), findsWidgets);
+    });
   });
 
   group('RecentlyViewedPage Tests', () {

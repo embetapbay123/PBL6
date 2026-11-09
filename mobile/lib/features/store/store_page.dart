@@ -38,6 +38,10 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   String _productSort = 'popular';
   final GlobalKey _featuredProductsKey = GlobalKey();
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+
   void _scrollToFeaturedProducts() {
     // 1. Collapse the outer SliverAppBar (Store header) completely
     if (_nestedScrollController.hasClients) {
@@ -144,12 +148,16 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
         setState(() {});
       }
     });
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim());
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _nestedScrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -278,6 +286,17 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
         ? storeProducts
         : (catalogProducts.isNotEmpty ? catalogProducts : _featuredProductsFallback);
 
+    final filteredDisplayProducts = _searchQuery.isEmpty
+        ? displayProducts
+        : displayProducts.where((p) {
+            final q = _searchQuery.toLowerCase();
+            final title = (p['title'] ?? p['name'] ?? '').toString().toLowerCase();
+            final desc = (p['description'] ?? '').toString().toLowerCase();
+            final sku = (p['sku'] ?? '').toString().toLowerCase();
+            final cat = _extractCategory(p).toLowerCase();
+            return title.contains(q) || desc.contains(q) || sku.contains(q) || cat.contains(q);
+          }).toList();
+
     // Calculate real stats from actual store products
     final actualProductCount = displayProducts.length;
     final formattedProductCount = (profile.productCount != '0' && profile.productCount.isNotEmpty)
@@ -392,87 +411,142 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
           final topPadding = MediaQuery.of(context).padding.top;
           return [
             SliverAppBar(
-              expandedHeight: 188 + topPadding,
+              expandedHeight: _isSearching ? (kToolbarHeight + topPadding) : (188 + topPadding),
               pinned: true,
               backgroundColor: const Color(0xFFEE4D2D),
               foregroundColor: Colors.white,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  if (_isSearching) {
+                    setState(() {
+                      _isSearching = false;
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
               ),
-              title: innerBoxIsScrolled
-                  ? Text(
-                      effectiveProfile.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
+              title: _isSearching
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                        cursorColor: Colors.white,
+                        decoration: InputDecoration(
+                          hintText: 'Tìm theo tên, shop, SKU...',
+                          hintStyle: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.75),
+                          ),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
                       ),
                     )
-                  : null,
+                  : (innerBoxIsScrolled
+                      ? Text(
+                          effectiveProfile.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        )
+                      : null),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.search, color: Colors.white),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.share_outlined, color: Colors.white),
-                  onPressed: () {},
-                ),
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                      onPressed: () => Navigator.pushNamed(context, '/cart'),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                        child: const Center(
-                          child: Text(
-                            '5',
-                            style: TextStyle(
-                              color: Color(0xFFEE4D2D),
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                if (_isSearching)
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    tooltip: 'Đóng tìm kiếm',
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = false;
+                        _searchController.clear();
+                        _searchQuery = '';
+                      });
+                    },
+                  )
+                else ...[
+                  IconButton(
+                    icon: const Icon(Icons.search, color: Colors.white),
+                    tooltip: 'Tìm kiếm',
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = true;
+                        _tabController.animateTo(1);
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined, color: Colors.white),
+                    onPressed: () {},
+                  ),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                        onPressed: () => Navigator.pushNamed(context, '/cart'),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                          child: const Center(
+                            child: Text(
+                              '5',
+                              style: TextStyle(
+                                color: Color(0xFFEE4D2D),
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFFEE4D2D),
-                        Color(0xFFFF5722),
-                      ],
+              flexibleSpace: _isSearching
+                  ? null
+                  : FlexibleSpaceBar(
+                      background: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFFEE4D2D),
+                              Color(0xFFFF5722),
+                            ],
+                          ),
+                        ),
+                        padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 8),
+                        child: StoreHeaderView(
+                          profile: effectiveProfile,
+                          isFollowing: _isFollowing,
+                          onToggleFollow: () {
+                            setState(() => _isFollowing = !_isFollowing);
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                  padding: EdgeInsets.fromLTRB(16, topPadding + 48, 16, 8),
-                  child: StoreHeaderView(
-                    profile: effectiveProfile,
-                    isFollowing: _isFollowing,
-                    onToggleFollow: () {
-                      setState(() => _isFollowing = !_isFollowing);
-                    },
-                  ),
-                ),
-              ),
             ),
           ];
         },
@@ -499,19 +573,19 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
             if (_tabController.index == 0)
               ..._buildHomeTab(
                 effectiveProfile,
-                displayProducts,
+                filteredDisplayProducts,
                 storeVouchers,
                 storeProductsAsync.isLoading,
                 storeCategories,
               )
             else if (_tabController.index == 1)
               ..._buildProductsTab(
-                displayProducts,
+                filteredDisplayProducts,
                 storeCategories,
               )
             else
               ..._buildCategoriesTab(
-                displayProducts,
+                filteredDisplayProducts,
                 storeCategories,
               ),
           ],
@@ -928,8 +1002,11 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                       Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
                       const SizedBox(height: 8),
                       Text(
-                        'Không có sản phẩm nào thuộc danh mục này',
+                        _searchQuery.isNotEmpty
+                            ? 'Không tìm thấy sản phẩm phù hợp với "$_searchQuery"'
+                            : 'Không có sản phẩm nào thuộc danh mục này',
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
