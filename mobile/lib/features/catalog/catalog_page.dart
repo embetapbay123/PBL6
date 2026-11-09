@@ -691,14 +691,14 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: (_searchFocusNode.hasFocus || _isSearchHovered)
-                        ? const Color(0xFFEE4D2D)
+                        ? AppColors.primary
                         : const Color(0xFFD1D5DB),
                     width: (_searchFocusNode.hasFocus || _isSearchHovered) ? 1.5 : 1.2,
                   ),
                   boxShadow: _searchFocusNode.hasFocus
                       ? [
                           BoxShadow(
-                            color: const Color(0xFFEE4D2D).withValues(alpha: 0.08),
+                            color: AppColors.primary.withValues(alpha: 0.08),
                             blurRadius: 6,
                             offset: const Offset(0, 1),
                           ),
@@ -714,7 +714,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         child: Icon(
                           Icons.search,
                           color: (_searchFocusNode.hasFocus || _isSearchHovered)
-                              ? const Color(0xFFEE4D2D)
+                              ? AppColors.primary
                               : const Color(0xFF9CA3AF),
                           size: 20,
                         ),
@@ -763,8 +763,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ),
                       ),
                     Material(
-                      color: const Color(0xFFEE4D2D),
+                      color: AppColors.primary,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(8),
+                        bottomLeft: Radius.circular(8),
+                      ),
+                      clipBehavior: Clip.antiAlias,
                       child: InkWell(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                        ),
                         onTap: () => _onSearch(_searchController.text),
                         child: const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16),
@@ -844,7 +853,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                     IconButton(
                       icon: const Icon(
                         Icons.arrow_back,
-                        color: Color(0xFFEE4D2D),
+                        color: AppColors.primary,
                         size: 24,
                       ),
                       onPressed: () {
@@ -862,7 +871,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: const Color(0xFFEE4D2D),
+                            color: AppColors.primary,
                             width: 1.5,
                           ),
                         ),
@@ -919,8 +928,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                 ),
                               ),
                             Material(
-                              color: const Color(0xFFEE4D2D),
+                              color: AppColors.primary,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(8),
+                                bottomLeft: Radius.circular(8),
+                              ),
+                              clipBehavior: Clip.antiAlias,
                               child: InkWell(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  bottomLeft: Radius.circular(8),
+                                ),
                                 onTap: () => _onSearch(_searchController.text),
                                 child: const Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 14),
