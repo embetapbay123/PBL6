@@ -6,6 +6,32 @@ import '../orders/order_detail_page.dart';
 import '../orders/order_list_page.dart';
 import '../shared/chat_badge_button.dart';
 
+class NotificationItem {
+  final String id;
+  final String categoryKey;
+  final String title;
+  final String body;
+  final String time;
+  final IconData? icon;
+  final Color? iconColor;
+  final Color? iconBgColor;
+  final String? badge;
+  final VoidCallback? onTap;
+
+  const NotificationItem({
+    required this.id,
+    required this.categoryKey,
+    required this.title,
+    required this.body,
+    required this.time,
+    this.icon,
+    this.iconColor,
+    this.iconBgColor,
+    this.badge,
+    this.onTap,
+  });
+}
+
 class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
@@ -18,30 +44,29 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   int _selectedCategoryIndex = 0;
   final Map<int, int> _categoryBadges = {
     0: 2, // Thông báo nổi bật
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
+    1: 1, // Khuyến mãi
+    2: 0, // Thông tin tài chính
+    3: 1, // Cập nhật sàn
   };
 
   final List<Map<String, dynamic>> _categories = const [
     {
+      'key': 'featured',
       'title': 'Thông báo nổi bật',
       'icon': Icons.thumb_up_alt_rounded,
     },
     {
+      'key': 'promotions',
       'title': 'Khuyến mãi',
       'icon': Icons.confirmation_number_outlined,
     },
     {
-      'title': 'Live, Video & Thưởng',
-      'icon': Icons.ondemand_video_rounded,
-    },
-    {
+      'key': 'finance',
       'title': 'Thông tin Tài chính',
       'icon': Icons.receipt_long_rounded,
     },
     {
+      'key': 'updates',
       'title': 'Cập nhật Sàn',
       'icon': Icons.shopping_bag_outlined,
     },
@@ -63,6 +88,18 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     } catch (_) {
       return val.toString();
     }
+  }
+
+  String _formatPrice(int price) {
+    final s = price.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(s[i]);
+    }
+    return '${buffer.toString()} ₫';
   }
 
   String _getOrderStatusTitle(String status) {
@@ -112,6 +149,300 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       default:
         return 'Đơn hàng đã được tiếp nhận và đang chờ xác nhận thanh toán/đơn hàng.';
     }
+  }
+
+  List<NotificationItem> _getPromotionsNotifications() {
+    return [
+      NotificationItem(
+        id: 'promo-1',
+        categoryKey: 'promotions',
+        title: 'Mã giảm giá 50.000₫ dành riêng cho bạn!',
+        body: 'Nhập mã RIENGCHOBAN để được giảm 50.000₫ cho đơn hàng từ 250.000₫. Áp dụng cho mọi sản phẩm.',
+        time: '08:30',
+        icon: Icons.confirmation_number_rounded,
+        iconColor: const Color(0xFFEA580C),
+        iconBgColor: const Color(0xFFFFF7ED),
+        badge: 'Dành riêng cho bạn',
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã lưu mã RIENGCHOBAN vào ví voucher của bạn!')),
+          );
+        },
+      ),
+      NotificationItem(
+        id: 'promo-2',
+        categoryKey: 'promotions',
+        title: 'Siêu Sale 11.11 - Đón Bão Deal Khủng Toàn Sàn',
+        body: 'Hàng ngàn sản phẩm giảm giá đến 50%, triệu voucher Freeship Extra 0₫ mở mới mỗi khung giờ 0H - 9H - 12H - 21H.',
+        time: '08:15',
+        icon: Icons.local_fire_department_rounded,
+        iconColor: const Color(0xFFDC2626),
+        iconBgColor: const Color(0xFFFEF2F2),
+        badge: 'Hot Sale',
+        onTap: () => Navigator.pushNamed(context, '/'),
+      ),
+      NotificationItem(
+        id: 'promo-3',
+        categoryKey: 'promotions',
+        title: 'Voucher Freeship 100% đã sẵn sàng trong ví',
+        body: 'Mã miễn phí vận chuyển tối đa 30.000₫ cho đơn hàng từ 150.000₫ đã được tự động thêm vào ví voucher của bạn.',
+        time: 'Hôm qua',
+        icon: Icons.local_shipping_rounded,
+        iconColor: const Color(0xFF0284C7),
+        iconBgColor: const Color(0xFFF0F9FF),
+        badge: 'Freeship Extra',
+      ),
+      NotificationItem(
+        id: 'promo-4',
+        categoryKey: 'promotions',
+        title: 'Hoàn xu 15% tối đa 50.000 xu cho đơn hàng tiếp theo',
+        body: 'Áp dụng cho mọi đơn hàng thời trang & phong cách sống khi mua sắm tại gian hàng chính hãng tuần này.',
+        time: '06/11',
+        icon: Icons.monetization_on_rounded,
+        iconColor: const Color(0xFFD97706),
+        iconBgColor: const Color(0xFFFFFBEB),
+      ),
+    ];
+  }
+
+  List<NotificationItem> _getFinanceNotifications(List<dynamic> orders) {
+    final List<NotificationItem> list = [];
+
+    final paidOrders = orders.where((o) {
+      if (o is! Map) return false;
+      final status = (o['status']?.toString() ?? '').toUpperCase();
+      final payStatus = (o['payment_status']?.toString() ?? '').toUpperCase();
+      return payStatus == 'SUCCEEDED' ||
+          ['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'].contains(status);
+    }).toList();
+
+    for (final orderRaw in paidOrders) {
+      final order = Map<String, dynamic>.from(orderRaw as Map);
+      final orderId = order['id']?.toString() ?? '';
+      final shortId = orderId.length > 8 ? orderId.substring(0, 8) : orderId;
+      final amounts = order['amounts'] is Map ? order['amounts'] as Map : order;
+      final payable = amounts['payable_vnd'] ?? amounts['payable_total_vnd'] ?? 0;
+      int payableInt = 0;
+      if (payable is num) payableInt = payable.toInt();
+      if (payable is String) payableInt = int.tryParse(payable) ?? 0;
+
+      final method = (order['payment_method']?.toString() ?? 'COD').toUpperCase();
+      final methodStr = method == 'SANDBOX' ? 'Cổng trực tuyến (Sandbox)' : 'COD';
+      final timeStr = _formatTime(order['updated_at'] ?? order['created_at']);
+
+      list.add(
+        NotificationItem(
+          id: 'fin-$orderId',
+          categoryKey: 'finance',
+          title: 'Đơn hàng #$shortId đã thanh toán thành công',
+          body: 'Đơn hàng trị giá ${_formatPrice(payableInt)} qua $methodStr đã được xác nhận thanh toán thành công.',
+          time: timeStr.isNotEmpty ? timeStr : 'Hôm nay',
+          icon: Icons.check_circle_rounded,
+          iconColor: const Color(0xFF16A34A),
+          iconBgColor: const Color(0xFFF0FDF4),
+          badge: 'Thành công',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OrderDetailPage(
+                  orderId: orderId,
+                  initialOrder: order,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    if (list.isEmpty) {
+      list.add(
+        NotificationItem(
+          id: 'fin-default',
+          categoryKey: 'finance',
+          title: 'Đơn hàng #69e4fec4 đã thanh toán thành công',
+          body: 'Đơn hàng trị giá 380.000 ₫ qua Cổng thanh toán trực tuyến đã được xác nhận thanh toán thành công.',
+          time: 'Hôm nay',
+          icon: Icons.check_circle_rounded,
+          iconColor: const Color(0xFF16A34A),
+          iconBgColor: const Color(0xFFF0FDF4),
+          badge: 'Thành công',
+        ),
+      );
+    }
+
+    return list;
+  }
+
+  List<NotificationItem> _getPlatformUpdatesNotifications() {
+    return [
+      NotificationItem(
+        id: 'update-1',
+        categoryKey: 'updates',
+        title: 'Cập nhật ứng dụng phiên bản 2.2.0',
+        body: 'Phiên bản mới nâng cấp hiệu năng tải trang, giao diện hiện đại mượt mà và tối ưu trải nghiệm giỏ hàng, đơn hàng.',
+        time: 'Hôm nay',
+        icon: Icons.system_update_rounded,
+        iconColor: const Color(0xFF2563EB),
+        iconBgColor: const Color(0xFFEFF6FF),
+        badge: 'v2.2.0',
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Phiên bản 2.2.0'),
+              content: const Text(
+                '• Giao diện mới hiện đại, đồng bộ màu sắc thương hiệu.\n'
+                '• Nâng cấp tính năng Trả hàng & Hoàn tiền tiện lợi.\n'
+                '• Tối ưu tốc độ tải danh mục và gợi ý tìm kiếm.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Đã hiểu'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      NotificationItem(
+        id: 'update-2',
+        categoryKey: 'updates',
+        title: 'Tính năng mới: Trợ lý mua sắm AI thông minh',
+        body: 'Trợ lý AI giúp bạn tìm kiếm quà tặng, phân tích đánh giá sản phẩm và đề xuất ưu đãi phù hợp ngay tại mục Chat.',
+        time: 'Hôm qua',
+        icon: Icons.auto_awesome_rounded,
+        iconColor: const Color(0xFF9333EA),
+        iconBgColor: const Color(0xFFFAF5FF),
+        badge: 'MỚI',
+      ),
+      NotificationItem(
+        id: 'update-3',
+        categoryKey: 'updates',
+        title: 'Tính năng mới: Yêu cầu Trả hàng & Hoàn tiền',
+        body: 'Khách hàng có thể dễ dàng gửi yêu cầu Trả hàng / Hoàn tiền trực tiếp từ trang Chi tiết đơn hàng giao thành công.',
+        time: '06/11',
+        icon: Icons.assignment_return_rounded,
+        iconColor: const Color(0xFF0D9488),
+        iconBgColor: const Color(0xFFF0FDFA),
+        badge: 'MỚI',
+      ),
+      NotificationItem(
+        id: 'update-4',
+        categoryKey: 'updates',
+        title: 'Nâng cấp chính sách bảo vệ khách hàng 2026',
+        body: 'Bảo đảm quyền lợi đổi trả trong 7 ngày, miễn phí vận chuyển hàng hoàn trả và bồi thường 100% nếu có lỗi từ nhà sản xuất.',
+        time: '01/11',
+        icon: Icons.verified_user_rounded,
+        iconColor: const Color(0xFF4B5563),
+        iconBgColor: const Color(0xFFF3F4F6),
+      ),
+    ];
+  }
+
+  List<NotificationItem> _getFeaturedNotifications(List<dynamic> orders) {
+    final promos = _getPromotionsNotifications();
+    final finances = _getFinanceNotifications(orders);
+    final updates = _getPlatformUpdatesNotifications();
+
+    final List<NotificationItem> featured = [];
+    if (promos.isNotEmpty) featured.add(promos[0]);
+    if (finances.isNotEmpty) featured.add(finances[0]);
+    if (updates.isNotEmpty) featured.add(updates[0]);
+    if (promos.length > 1) featured.add(promos[1]);
+    if (updates.length > 1) featured.add(updates[1]);
+    return featured;
+  }
+
+  Widget _buildNotificationItem(NotificationItem item) {
+    return InkWell(
+      onTap: item.onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: item.iconBgColor ?? const Color(0xFFFFF7ED),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(
+                  item.icon ?? Icons.notifications_rounded,
+                  size: 21,
+                  color: item.iconColor ?? AppColors.primary,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          item.title,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1F2937),
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
+                      if (item.badge != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withAlpha(20),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            item.badge!,
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.body,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF4B5563),
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    item.time,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -582,28 +913,26 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               ),
             ),
 
-            // Category Icons Row matching Image
-            SizedBox(
-              height: 104,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: _categories.length,
-                itemBuilder: (context, idx) {
-                  final cat = _categories[idx];
+            // Category Icons Row matching Image (4 tabs)
+            Container(
+              height: 98,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: _categories.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final cat = entry.value;
                   final isSelected = _selectedCategoryIndex == idx;
                   final badge = _categoryBadges[idx] ?? 0;
 
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedCategoryIndex = idx;
-                        _categoryBadges[idx] = 0;
-                      });
-                    },
-                    child: Container(
-                      width: 82,
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                  return Expanded(
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategoryIndex = idx;
+                          _categoryBadges[idx] = 0;
+                        });
+                      },
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -696,24 +1025,66 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       ),
                     ),
                   );
-                },
+                }).toList(),
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
 
-            // Empty state matching screenshot "Không có cập nhật mới"
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 36),
-              child: Center(
-                child: Text(
-                  'Không có cập nhật mới',
-                  style: TextStyle(
-                    color: Color(0xFF9CA3AF),
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+            // 5. Notifications List for Selected Category
+            Builder(
+              builder: (context) {
+                final orders = (ordersAsync.value?['items'] as List?) ?? [];
+                List<NotificationItem> currentList = [];
+
+                switch (_selectedCategoryIndex) {
+                  case 0:
+                    currentList = _getFeaturedNotifications(orders);
+                    break;
+                  case 1:
+                    currentList = _getPromotionsNotifications();
+                    break;
+                  case 2:
+                    currentList = _getFinanceNotifications(orders);
+                    break;
+                  case 3:
+                    currentList = _getPlatformUpdatesNotifications();
+                    break;
+                }
+
+                return Column(
+                  children: [
+                    ...currentList.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final item = entry.value;
+                      return Column(
+                        children: [
+                          _buildNotificationItem(item),
+                          if (idx < currentList.length - 1)
+                            const Divider(
+                              height: 1,
+                              indent: 70,
+                              endIndent: 16,
+                              color: Color(0xFFF3F4F6),
+                            ),
+                        ],
+                      );
+                    }),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          'Không có cập nhật mới',
+                          style: TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),

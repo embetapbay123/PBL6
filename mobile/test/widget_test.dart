@@ -3045,10 +3045,29 @@ void main() {
         expect(find.text('Đọc Tất Cả'), findsOneWidget);
         expect(find.text('Thông báo nổi bật'), findsOneWidget);
         expect(find.text('Khuyến mãi'), findsOneWidget);
-        expect(find.text('Live, Video & Thưởng'), findsOneWidget);
+        expect(find.text('Live, Video & Thưởng'), findsNothing);
         expect(find.text('Thông tin Tài chính'), findsOneWidget);
         expect(find.text('Cập nhật Sàn'), findsOneWidget);
         expect(find.text('Không có cập nhật mới'), findsOneWidget);
+
+        // Tab 0 (Thông báo nổi bật) aggregates latest promotions, finance and updates
+        expect(find.textContaining('Mã giảm giá 50.000₫ dành riêng cho bạn!'), findsOneWidget);
+        expect(find.textContaining('Cập nhật ứng dụng phiên bản 2.2.0'), findsOneWidget);
+
+        // Tab 1 (Khuyến mãi) displays vouchers and sale programs
+        await tester.tap(find.text('Khuyến mãi'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Siêu Sale 11.11 - Đón Bão Deal Khủng Toàn Sàn'), findsOneWidget);
+
+        // Tab 2 (Thông tin Tài chính) displays successfully paid orders
+        await tester.tap(find.text('Thông tin Tài chính'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('đã thanh toán thành công'), findsWidgets);
+
+        // Tab 3 (Cập nhật Sàn) displays app version and new features
+        await tester.tap(find.text('Cập nhật Sàn'));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Tính năng mới: Trợ lý mua sắm AI thông minh'), findsOneWidget);
 
         // Tapping 'Đọc Tất Cả' marks read
         await tester.tap(find.text('Đọc Tất Cả'));
