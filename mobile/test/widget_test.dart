@@ -459,7 +459,7 @@ class MockApiClient extends ApiClient {
     'purchase_group_id': 'pg-01',
     'store_id': 'store-tech',
     'store_name': 'PBL Tech Store',
-    'status': 'PENDING',
+    'status': id.contains('comp') ? 'COMPLETED' : 'PENDING',
     'version': 1,
     'payment_method': 'COD',
     'amounts': {
@@ -2369,6 +2369,30 @@ void main() {
       expect(find.text('Chi tiết thanh toán'), findsOneWidget);
       expect(find.text('380.000 đ'), findsWidgets);
       expect(find.text('Hủy đơn hàng'), findsOneWidget);
+    });
+
+    testWidgets('OrderDetailPage renders Trả hàng/Hoàn tiền, Đánh giá and Mua lại for completed orders', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: OrderDetailPage(
+              orderId: 'order-test-comp',
+              initialOrder: {
+                'id': 'order-test-comp',
+                'status': 'COMPLETED',
+                'store_name': 'PBL Tech Store',
+                'payment_method': 'COD',
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Trả hàng/Hoàn tiền'), findsOneWidget);
+      expect(find.text('Đánh giá'), findsOneWidget);
+      expect(find.text('Mua lại'), findsOneWidget);
     });
 
     testWidgets('StoreApplicationPage renders submission form and previous applications', (tester) async {

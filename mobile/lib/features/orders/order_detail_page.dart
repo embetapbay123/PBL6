@@ -6,6 +6,7 @@ import '../../core/app_theme.dart';
 import '../../main.dart';
 import '../catalog/shop_page.dart';
 import 'order_list_page.dart';
+import 'order_refund_page.dart';
 
 class OrderDetailPage extends ConsumerStatefulWidget {
   const OrderDetailPage({
@@ -1178,7 +1179,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final status = _order!['status']?.toString() ?? '';
     final isCancellable = ['CREATED', 'AWAITING_PAYMENT', 'PENDING', 'CONFIRMED']
         .contains(status.toUpperCase());
-    final isCompleted = status.toUpperCase() == 'COMPLETED';
+    final isCompleted = status.toUpperCase() == 'COMPLETED' || status.toUpperCase() == 'DELIVERED';
     final method =
         _order!['payment_method']?.toString().toUpperCase() ?? 'COD';
     final isAwaitingSandbox =
@@ -1246,24 +1247,59 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
             ],
             if (isCompleted) ...[
               OutlinedButton(
+                key: const ValueKey('detail_refund_button'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF1F2937),
+                  side: const BorderSide(color: Color(0xFFD1D5DB), width: 1.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  final orderData = _order ?? widget.initialOrder ?? {'id': widget.orderId};
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => OrderRefundPage(order: orderData),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Trả hàng/Hoàn tiền',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1F2937),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary, width: 0.8),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 14,
+                    vertical: 10,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 onPressed: _showRatingDialog,
                 child: const Text(
                   'Đánh giá',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
             ],
             FilledButton(
               style: FilledButton.styleFrom(
