@@ -491,6 +491,10 @@ class MockApiClient extends ApiClient {
 
   static final Map<String, Map<String, dynamic>> _mockRefunds = {};
 
+  MockApiClient() {
+    _mockRefunds.clear();
+  }
+
   @override
   Future<Map<String, dynamic>?> getOrderRefund(String id) async => _mockRefunds[id];
 

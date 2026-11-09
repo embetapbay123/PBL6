@@ -180,7 +180,7 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
       );
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {

@@ -1180,6 +1180,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     final isCancellable = ['CREATED', 'AWAITING_PAYMENT', 'PENDING', 'CONFIRMED']
         .contains(status.toUpperCase());
     final isCompleted = status.toUpperCase() == 'COMPLETED' || status.toUpperCase() == 'DELIVERED';
+    final refundStatus = _order!['refund_status']?.toString().toUpperCase() ?? '';
+    final hasRefund = (refundStatus.isNotEmpty && refundStatus != 'NONE') ||
+        (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0) ||
+        _order!['refund'] != null ||
+        _order!['is_refund'] == true;
     final method =
         _order!['payment_method']?.toString().toUpperCase() ?? 'COD';
     final isAwaitingSandbox =
@@ -1245,7 +1250,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               ),
               const SizedBox(width: 10),
             ],
-            if (isCompleted) ...[
+            if (isCompleted && !hasRefund) ...[
               OutlinedButton(
                 key: const ValueKey('detail_refund_button'),
                 style: OutlinedButton.styleFrom(
@@ -1259,14 +1264,18 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   final orderData = _order ?? widget.initialOrder ?? {'id': widget.orderId};
-                  Navigator.push(
+                  final res = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => OrderRefundPage(order: orderData),
                     ),
                   );
+                  if (res == true && mounted) {
+                    ref.invalidate(customerOrdersProvider);
+                    Navigator.pop(context, true);
+                  }
                 },
                 child: const Text(
                   'Trả hàng/Hoàn tiền',

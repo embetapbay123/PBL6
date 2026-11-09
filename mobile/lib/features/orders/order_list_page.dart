@@ -72,10 +72,10 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     return '${buffer.toString().split('').reversed.join('')} đ';
   }
 
-  bool _matchesOrder(Map<String, dynamic> order, String filterKey) {
+  bool _hasRefund(Map<String, dynamic> order) {
     final status = (order['status']?.toString() ?? '').toUpperCase();
     final refundStatus = (order['refund_status']?.toString() ?? '').toUpperCase();
-    final hasRefund = (refundStatus.isNotEmpty && refundStatus != 'NONE') ||
+    return (refundStatus.isNotEmpty && refundStatus != 'NONE') ||
         (order['refunded_vnd'] != null && (order['refunded_vnd'] as num) > 0) ||
         status == 'REFUNDED' ||
         status == 'RETURNED' ||
@@ -83,20 +83,25 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         status == 'REFUND_REQUESTED' ||
         order['refund'] != null ||
         order['is_refund'] == true;
+  }
+
+  bool _matchesOrder(Map<String, dynamic> order, String filterKey) {
+    final status = (order['status']?.toString() ?? '').toUpperCase();
+    final hasRefund = _hasRefund(order);
 
     switch (filterKey) {
       case 'ALL':
         return true;
       case 'PENDING':
-        return status == 'PENDING' || status == 'CREATED';
+        return (status == 'PENDING' || status == 'CREATED') && !hasRefund;
       case 'PROCESSING':
-        return status == 'PROCESSING' || status == 'CONFIRMED';
+        return (status == 'PROCESSING' || status == 'CONFIRMED') && !hasRefund;
       case 'SHIPPED':
-        return status == 'SHIPPED';
+        return status == 'SHIPPED' && !hasRefund;
       case 'COMPLETED':
-        return status == 'COMPLETED';
+        return (status == 'COMPLETED' || status == 'DELIVERED') && !hasRefund;
       case 'CANCELLED':
-        return status == 'CANCELLED';
+        return status == 'CANCELLED' && !hasRefund;
       case 'RETURN_REFUND':
         return hasRefund;
       default:
@@ -432,6 +437,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     final shortStoreId = storeId.length > 8 ? storeId.substring(0, 8) : storeId;
     final storeName = order['store_name']?.toString() ?? 'Cửa hàng $shortStoreId';
     final status = order['status']?.toString() ?? 'PENDING';
+    final hasRefund = _hasRefund(order);
     final amounts = order['amounts'] as Map?;
     final payableTotal = (amounts?['payable_vnd'] as num?)?.toInt() ?? 0;
     final items = ((order['items'] as List?) ?? [])
@@ -464,13 +470,20 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final res = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => OrderDetailPage(orderId: orderId, initialOrder: order),
               ),
             );
+            if (res == true && mounted) {
+              ref.invalidate(customerOrdersProvider);
+              final returnRefundIndex = _tabs.indexWhere((t) => t['key'] == 'RETURN_REFUND');
+              if (returnRefundIndex != -1) {
+                _tabController.animateTo(returnRefundIndex);
+              }
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(14.0),
@@ -496,50 +509,57 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                       ),
                     ),
                     const SizedBox(width: 8),
-                    InkWell(
-                      onTap: () {
-                        if (storeId.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ShopPage(shopId: storeId),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          if (storeId.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ShopPage(shopId: storeId),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(
+                          storeName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          hasRefund ? 'Yêu cầu trả hàng' : _statusDisplay(status),
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (order['refund_status'] != null &&
+                            order['refund_status'].toString().isNotEmpty &&
+                            order['refund_status'].toString().toUpperCase() != 'NONE') ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            _refundStatusBadgeText(order['refund_status'].toString()),
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                        }
-                      },
-                      child: Text(
-                        storeName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const Spacer(),
-                    Text(
-                      _statusDisplay(status),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (order['refund_status'] != null &&
-                        order['refund_status'].toString().isNotEmpty &&
-                        order['refund_status'].toString().toUpperCase() != 'NONE') ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        _refundStatusBadgeText(order['refund_status'].toString()),
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
                 const Divider(height: 18, color: Color(0xFFF1F3F5)),
@@ -703,7 +723,7 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (status.toUpperCase() == 'COMPLETED') ...[
+                    if (status.toUpperCase() == 'COMPLETED' && !hasRefund) ...[
                       OutlinedButton(
                         key: const ValueKey('refund_button'),
                         style: OutlinedButton.styleFrom(
@@ -717,13 +737,20 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          final res = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => OrderRefundPage(order: order),
                             ),
                           );
+                          if (res == true && mounted) {
+                            ref.invalidate(customerOrdersProvider);
+                            final returnRefundIndex = _tabs.indexWhere((t) => t['key'] == 'RETURN_REFUND');
+                            if (returnRefundIndex != -1) {
+                              _tabController.animateTo(returnRefundIndex);
+                            }
+                          }
                         },
                         child: const Text(
                           'Trả hàng/Hoàn tiền',
@@ -776,6 +803,32 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
                           child: const Text(
                             'Hủy đơn',
                             style: TextStyle(fontSize: 12.5),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      if (hasRefund) ...[
+                        OutlinedButton(
+                          key: const ValueKey('reorder_button'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.primary, width: 1.2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () => _handleReorder(order),
+                          child: const Text(
+                            'Mua lại',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
