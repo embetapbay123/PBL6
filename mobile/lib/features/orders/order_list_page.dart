@@ -1088,29 +1088,69 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
     final client = ref.read(apiProvider);
     final reorderedVariantIds = <String>{};
 
+    Map<String, dynamic>? currentCart;
+    try {
+      currentCart = await client.getAllCartItems();
+    } catch (_) {
+      try {
+        currentCart = await client.getCartItems();
+      } catch (_) {}
+    }
+    final existingItems = ((currentCart?['items'] as List?) ?? [])
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
     for (final it in items) {
       final variantId = (it['variant_id'] ?? it['product_variant_id'])?.toString() ?? '';
       final productId = (it['product_id'])?.toString() ?? '';
       final qty = (it['quantity'] as num?)?.toInt() ?? 1;
 
-      if (variantId.isNotEmpty && productId.isNotEmpty) {
+      // Find if this item already exists in the cart
+      Map<String, dynamic>? matchedCartItem;
+      for (final cartItem in existingItems) {
+        final cVariantId = (cartItem['variant_id'] ?? cartItem['product_variant_id'])?.toString() ?? '';
+        final cProductId = cartItem['product_id']?.toString() ?? '';
+
+        if (variantId.isNotEmpty && cVariantId.isNotEmpty && cVariantId == variantId) {
+          matchedCartItem = cartItem;
+          break;
+        }
+        if (productId.isNotEmpty && cProductId.isNotEmpty && cProductId == productId) {
+          matchedCartItem = cartItem;
+          break;
+        }
+      }
+
+      final targetKey = variantId.isNotEmpty ? variantId : productId;
+
+      if (matchedCartItem != null) {
+        final cartItemId = matchedCartItem['id']?.toString() ?? '';
+        if (cartItemId.isNotEmpty) {
+          try {
+            // Adjust quantity to be exactly the order's quantity, no cumulation
+            await client.updateCartItem(cartItemId, quantity: qty);
+            if (targetKey.isNotEmpty) reorderedVariantIds.add(targetKey);
+          } catch (_) {
+            try {
+              await client.addToCart(
+                variantId: variantId,
+                productId: productId,
+                quantity: qty,
+              );
+              if (targetKey.isNotEmpty) reorderedVariantIds.add(targetKey);
+            } catch (_) {}
+          }
+        }
+      } else {
         try {
           await client.addToCart(
             variantId: variantId,
             productId: productId,
             quantity: qty,
           );
-          reorderedVariantIds.add(variantId);
+          if (targetKey.isNotEmpty) reorderedVariantIds.add(targetKey);
         } catch (_) {}
-      } else if (productId.isNotEmpty) {
-        try {
-          await client.addToCart(
-            variantId: variantId,
-            productId: productId,
-            quantity: qty,
-          );
-        } catch (_) {}
-        reorderedVariantIds.add(productId);
       }
     }
 
