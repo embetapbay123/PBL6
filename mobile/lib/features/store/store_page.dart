@@ -31,6 +31,7 @@ typedef ShopPage = StorePage;
 
 class _StorePageState extends ConsumerState<StorePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ScrollController _nestedScrollController = ScrollController();
   bool _isFollowing = false;
   final Set<String> _savedVouchers = {};
   String? _selectedCategory;
@@ -38,6 +39,16 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   final GlobalKey _featuredProductsKey = GlobalKey();
 
   void _scrollToFeaturedProducts() {
+    // 1. Collapse the outer SliverAppBar (Store header) completely
+    if (_nestedScrollController.hasClients) {
+      _nestedScrollController.animateTo(
+        _nestedScrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+
+    // 2. Scroll the inner body ListView to the featured products section
     final targetContext = _featuredProductsKey.currentContext;
     if (targetContext != null) {
       Scrollable.ensureVisible(
@@ -138,6 +149,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
   @override
   void dispose() {
     _tabController.dispose();
+    _nestedScrollController.dispose();
     super.dispose();
   }
 
@@ -375,6 +387,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
         },
       ),
       body: NestedScrollView(
+        controller: _nestedScrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           final topPadding = MediaQuery.of(context).padding.top;
           return [
