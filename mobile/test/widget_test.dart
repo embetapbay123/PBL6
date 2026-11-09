@@ -3069,7 +3069,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.textContaining('Tính năng mới: Trợ lý mua sắm AI thông minh'), findsOneWidget);
 
-        // Tapping 'Đọc Tất Cả' marks read
+        // Verify unread orders badge starts at 2
+        expect(find.text('2'), findsWidgets);
+
+        // Tapping 'Đọc Tất Cả' marks all orders and categories as read
         await tester.tap(find.text('Đọc Tất Cả'));
         await tester.pumpAndSettle();
         expect(find.text('Đã đánh dấu tất cả là đã đọc.'), findsOneWidget);

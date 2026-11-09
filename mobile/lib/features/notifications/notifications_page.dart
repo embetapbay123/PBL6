@@ -42,12 +42,29 @@ class NotificationsPage extends ConsumerStatefulWidget {
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   bool _showBanner = true;
   int _selectedCategoryIndex = 0;
+  final Set<String> _readOrderIds = {};
+  final Set<String> _readNotificationIds = {};
+  final Set<String> _initialUnreadNotificationIds = {'promo-1', 'update-1'};
+
   final Map<int, int> _categoryBadges = {
     0: 2, // Thông báo nổi bật
     1: 1, // Khuyến mãi
     2: 0, // Thông tin tài chính
     3: 1, // Cập nhật sàn
   };
+
+  bool _isOrderUnread(Map<String, dynamic> order) {
+    final id = order['id']?.toString() ?? '';
+    if (id.isEmpty) return false;
+    if (_readOrderIds.contains(id)) return false;
+    if (order['is_read'] == true || order['read'] == true) return false;
+    return true;
+  }
+
+  bool _isNotificationUnread(NotificationItem item) {
+    if (_readNotificationIds.contains(item.id)) return false;
+    return _initialUnreadNotificationIds.contains(item.id);
+  }
 
   final List<Map<String, dynamic>> _categories = const [
     {
@@ -357,13 +374,30 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   }
 
   Widget _buildNotificationItem(NotificationItem item) {
-    return InkWell(
-      onTap: item.onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    final isUnread = _isNotificationUnread(item);
+    return Container(
+      color: isUnread ? const Color(0xFFE9ECEF) : Colors.white,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _readNotificationIds.add(item.id);
+              if (item.categoryKey == 'promotions' && (_categoryBadges[1] ?? 0) > 0) {
+                _categoryBadges[1] = (_categoryBadges[1]! - 1);
+              } else if (item.categoryKey == 'updates' && (_categoryBadges[3] ?? 0) > 0) {
+                _categoryBadges[3] = (_categoryBadges[3]! - 1);
+              }
+              _categoryBadges[0] =
+                  ((_categoryBadges[1] ?? 0) + (_categoryBadges[3] ?? 0)).clamp(0, 99);
+            });
+            item.onTap?.call();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Container(
               width: 42,
               height: 42,
@@ -442,7 +476,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           ],
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   @override
@@ -451,7 +487,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     final ordersAsync = ref.watch(customerOrdersProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -624,8 +660,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       const SizedBox(width: 6),
                       ordersAsync.when(
                         data: (data) {
-                          final count = (data['items'] as List?)?.length ?? 0;
-                          if (count == 0) return const SizedBox.shrink();
+                          final items = (data['items'] as List?) ?? [];
+                          final unreadCount = items.where((o) {
+                            if (o is! Map) return false;
+                            return _isOrderUnread(Map<String, dynamic>.from(o));
+                          }).length;
+                          if (unreadCount == 0) return const SizedBox.shrink();
                           return Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -636,7 +676,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
-                              count > 99 ? '99+' : '$count',
+                              unreadCount > 99 ? '99+' : '$unreadCount',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10.5,
@@ -729,14 +769,16 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       final directImg = firstItem?['image_url']?.toString() ??
                           firstItem?['product_image']?.toString();
 
+                      final isUnread = _isOrderUnread(order);
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isUnread ? const Color(0xFFE9ECEF) : Colors.white,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: idx == 0
-                                ? const Color(0xFFFDDCCC)
+                            color: isUnread
+                                ? const Color(0xFFD1D5DB)
                                 : const Color(0xFFE5E7EB),
                             width: 0.9,
                           ),
@@ -747,6 +789,11 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () {
+                              setState(() {
+                                if (orderId.isNotEmpty) {
+                                  _readOrderIds.add(orderId);
+                                }
+                              });
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -873,23 +920,36 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             const SizedBox(height: 6),
 
             // 4. Section: Cập nhật mới nhất
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Container(
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Cập nhật mới nhất',
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Cập nhật mới nhất',
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
                   InkWell(
                     onTap: () {
                       setState(() {
                         _categoryBadges.updateAll((key, value) => 0);
+                        _readNotificationIds.addAll(_initialUnreadNotificationIds);
+                        final items = (ordersAsync.value?['items'] as List?) ?? [];
+                        for (final o in items) {
+                          if (o is Map) {
+                            final id = o['id']?.toString();
+                            if (id != null) _readOrderIds.add(id);
+                          }
+                        }
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -1070,9 +1130,10 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                         ],
                       );
                     }),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Center(
+                    Container(
+                      color: const Color(0xFFF5F5F5),
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: const Center(
                         child: Text(
                           'Không có cập nhật mới',
                           style: TextStyle(
@@ -1086,6 +1147,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 );
               },
             ),
+          ],
+        ),
+      ),
           ],
         ),
       ),
