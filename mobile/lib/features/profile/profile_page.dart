@@ -512,20 +512,6 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const Divider(height: 1, indent: 56, endIndent: 16),
                 _buildMenuTile(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  title: 'Tin nhắn với gian hàng',
-                  subtitle: 'Trao đổi về sản phẩm, đơn hàng và hỗ trợ sau mua',
-                  badgeCount: ref.watch(storeUnreadMessagesCountProvider).value ??
-                      ((profile['unread_messages_count'] as num?)?.toInt() ??
-                          (profile['unread_count'] as num?)?.toInt() ??
-                          0),
-                  onTap: () async {
-                    await Navigator.pushNamed(context, '/store-messages');
-                    ref.invalidate(storeUnreadMessagesCountProvider);
-                  },
-                ),
-                const Divider(height: 1, indent: 56, endIndent: 16),
-                _buildMenuTile(
                   icon: Icons.location_on_outlined,
                   title: 'Địa chỉ nhận hàng',
                   subtitle: 'Sổ địa chỉ nhận hàng',

@@ -694,7 +694,7 @@ void main() {
       expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
       expect(find.text('user@example.com'), findsOneWidget);
       expect(find.text('CUSTOMER'), findsOneWidget);
-      expect(find.text('Tin nhắn với gian hàng', skipOffstage: false), findsOneWidget);
+      expect(find.text('Tin nhắn với gian hàng'), findsNothing);
       expect(find.text('Sổ địa chỉ nhận hàng', skipOffstage: false), findsOneWidget);
       expect(find.text('Đổi mật khẩu', skipOffstage: false), findsOneWidget);
       expect(find.text('Có thể bạn cũng thích', skipOffstage: false), findsOneWidget);
@@ -781,7 +781,7 @@ void main() {
       expect(find.text('Hài lòng với Shopee? Hãy đánh giá ngay!'), findsNothing);
     });
 
-    testWidgets('ProfilePage displays unread store messages count beside Tin nhắn với gian hàng', (tester) async {
+    testWidgets('ProfilePage removes Tin nhắn với gian hàng from account security section', (tester) async {
       final container = ProviderContainer(
         overrides: [
           apiProvider.overrideWithValue(MockApiClient()),
@@ -809,8 +809,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      expect(find.text('Tin nhắn với gian hàng', skipOffstage: false), findsOneWidget);
-      expect(find.text('3', skipOffstage: false), findsWidgets);
+      expect(find.text('Tin nhắn với gian hàng'), findsNothing);
+      expect(find.text('Địa chỉ nhận hàng', skipOffstage: false), findsOneWidget);
+      expect(find.text('Đổi mật khẩu', skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('StoreMessagesPage renders conversations and matching header', (tester) async {
