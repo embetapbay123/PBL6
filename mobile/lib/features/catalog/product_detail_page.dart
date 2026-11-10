@@ -1948,8 +1948,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                           // "Thêm vào giỏ" Button with orange hover state
                           SizedBox(
                             width: double.infinity,
-                            height: 28,
-                            child: OutlinedButton.icon(
+                            height: 30,
+                            child: OutlinedButton(
                               style: ButtonStyle(
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 visualDensity: VisualDensity.compact,
@@ -1965,12 +1965,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                                   }
                                   return const Color(0xFF374151);
                                 }),
-                                iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                  if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                    return Colors.white;
-                                  }
-                                  return const Color(0xFF374151);
-                                }),
                                 side: WidgetStateProperty.resolveWith<BorderSide>((states) {
                                   if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
                                     return const BorderSide(color: AppColors.primary);
@@ -1980,22 +1974,21 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                                 padding: const WidgetStatePropertyAll(
                                   EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                                 ),
-                                minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
+                                minimumSize: const WidgetStatePropertyAll(Size(0, 30)),
                                 shape: WidgetStatePropertyAll(
                                   RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                                 ),
                               ),
-                              icon: const Icon(Icons.shopping_cart_outlined, size: 13),
-                              label: const Text(
+                              onPressed: () => _quickAddToCartRelated(item),
+                              child: const Text(
                                 'Thêm vào giỏ',
                                 style: TextStyle(
-                                  fontSize: 10.5,
+                                  fontSize: 12.5,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              onPressed: () => _quickAddToCartRelated(item),
                             ),
                           ),
                         ],

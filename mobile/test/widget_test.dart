@@ -1399,7 +1399,7 @@ void main() {
         expect(find.text('Áo hoodie xám Weekend'), findsWidgets);
         expect(find.text('Thêm vào giỏ'), findsOneWidget);
 
-        // Verify 'Thêm vào giỏ' button hover states (orange background, white foreground and icon)
+        // Verify 'Thêm vào giỏ' button hover states (orange background, white foreground)
         final addToCartBtnFinder = find.widgetWithText(OutlinedButton, 'Thêm vào giỏ');
         final outlinedBtn = tester.widget<OutlinedButton>(addToCartBtnFinder);
         expect(
@@ -1408,10 +1408,6 @@ void main() {
         );
         expect(
           outlinedBtn.style?.foregroundColor?.resolve({WidgetState.hovered}),
-          Colors.white,
-        );
-        expect(
-          outlinedBtn.style?.iconColor?.resolve({WidgetState.hovered}),
           Colors.white,
         );
         expect(
@@ -2194,9 +2190,9 @@ void main() {
 
         // On VoucherSelectionPage (matching Shopee Voucher modal)
         expect(find.text('Chọn Voucher'), findsOneWidget);
-        expect(find.text('Mã Toàn Sàn & Vận Chuyển'), findsOneWidget);
+        expect(find.text('Voucher toàn sàn'), findsOneWidget);
         expect(find.textContaining('Giảm 5.000 đ'), findsOneWidget);
-        expect(find.text('Mã Giảm Giá Từ Shop'), findsOneWidget);
+        expect(find.text('Voucher từ Store'), findsOneWidget);
         expect(find.textContaining('Giảm 10.000 đ'), findsWidgets);
 
         // Tap '?' help button and verify dialog content uses AppNoticeDialog grey UI
@@ -2231,11 +2227,16 @@ void main() {
         await tester.tap(find.byKey(const Key('voucher_apply_button')));
         await tester.pumpAndSettle();
         expect(find.text('Mã giảm giá này không tồn tại hoặc đã hết lượt sử dụng'), findsOneWidget);
+        // Tap to dismiss AppNoticeDialog HUD
+        await tester.tap(find.byType(AppNoticeDialog));
+        await tester.pumpAndSettle();
+        expect(find.byType(AppNoticeDialog), findsNothing);
 
-        // Tap to select platform voucher (DEMO-SAN-5K) -> moves to Voucher đã chọn at the top
+        // Tap to select platform voucher (DEMO-SAN-5K)
         await tester.tap(find.textContaining('Giảm 5.000 đ').first);
         await tester.pumpAndSettle();
-        expect(find.text('Voucher đã chọn'), findsOneWidget);
+        expect(find.text('Voucher toàn sàn'), findsOneWidget);
+        expect(find.text('Voucher đã chọn'), findsNothing);
 
         // Dismiss snackbars before tapping bottom button
         await tester.pump(const Duration(seconds: 4));
@@ -2269,7 +2270,7 @@ void main() {
         await tester.tap(paymentDropdown);
         await tester.pumpAndSettle();
         expect(find.text('Ví số dư (500.000 đ)'), findsOneWidget);
-        expect(find.text('SANDBOX'), findsWidgets);
+        expect(find.text('SEPAY'), findsWidgets);
         expect(find.text('COD'), findsWidgets);
 
         // Verify text style of Ví số dư does not use blue Color(0xFF1890FF)
@@ -3633,7 +3634,7 @@ void main() {
       expect(find.text('389.000 đ'), findsOneWidget);
       expect(find.text('-25%'), findsOneWidget);
       expect(find.text('Thêm vào giỏ'), findsOneWidget);
-      expect(find.byIcon(Icons.shopping_cart_outlined), findsWidgets);
+      expect(find.text('Thêm vào giỏ'), findsWidgets);
       expect(find.byIcon(Icons.favorite_border_rounded), findsWidgets);
     });
 

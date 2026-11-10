@@ -129,7 +129,7 @@ class _OrderTermsPageState extends State<OrderTermsPage> {
                     step: '4',
                     title: 'Phương thức thanh toán & Đảm bảo an toàn',
                     content:
-                        '• Thanh toán khi nhận hàng (COD): Quý khách thanh toán tiền mặt trực tiếp cho nhân viên bưu tá khi nhận kiện hàng.\n• Thanh toán trực tuyến (Sandbox / Cổng thanh toán): Khoản tiền được tạm giữ an toàn trong hệ thống và chỉ được quyết toán cho Cửa hàng sau khi đơn hàng được giao thành công hoặc hết hạn khiếu nại.',
+                        '• Thanh toán khi nhận hàng (COD): Quý khách thanh toán tiền mặt trực tiếp cho nhân viên bưu tá khi nhận kiện hàng.\n• Thanh toán trực tuyến (Sepay / Cổng thanh toán): Khoản tiền được tạm giữ an toàn trong hệ thống và chỉ được quyết toán cho Cửa hàng sau khi đơn hàng được giao thành công hoặc hết hạn khiếu nại.',
                   ),
 
                   // Section 5

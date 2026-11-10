@@ -50,6 +50,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
 
     // If initial vouchers were empty, provide server active vouchers
     if (_allVouchers.isEmpty) {
+      final sIds = widget.storeNames.keys.toList();
       _allVouchers = [
         {
           'voucher': {
@@ -67,42 +68,44 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
           'reason': 'Có thể áp dụng',
           'estimated_discount_vnd': 5000,
         },
-        {
-          'voucher': {
-            'id': 'vch-b-10k',
-            'code': 'DEMO-B-10K',
-            'scope': 'STORE',
-            'store_id': widget.storeNames.keys.isNotEmpty ? widget.storeNames.keys.first : 'store-tech',
-            'store_name': widget.storeNames.values.isNotEmpty ? widget.storeNames.values.first : 'An Nhiên Studio',
-            'discount_type': 'FIXED',
-            'discount_value': 10000,
-            'min_goods_vnd': 100000,
-            'usage_limit': 50,
-            'ends_at': '2027-11-02T14:32:00.000Z',
-            'status': 'ACTIVE',
+        if (sIds.isNotEmpty || widget.storeNames.isEmpty)
+          {
+            'voucher': {
+              'id': 'vch-b-10k',
+              'code': 'DEMO-B-10K',
+              'scope': 'STORE',
+              'store_id': sIds.isNotEmpty ? sIds.first : 'store-tech',
+              'store_name': widget.storeNames.values.isNotEmpty ? widget.storeNames.values.first : 'An Nhiên Studio',
+              'discount_type': 'FIXED',
+              'discount_value': 10000,
+              'min_goods_vnd': 100000,
+              'usage_limit': 50,
+              'ends_at': '2027-11-02T14:32:00.000Z',
+              'status': 'ACTIVE',
+            },
+            'eligible': true,
+            'reason': 'Có thể áp dụng',
+            'estimated_discount_vnd': 10000,
           },
-          'eligible': true,
-          'reason': 'Có thể áp dụng',
-          'estimated_discount_vnd': 10000,
-        },
-        {
-          'voucher': {
-            'id': 'vch-mx-10k',
-            'code': 'MAY-XANH-10K',
-            'scope': 'STORE',
-            'store_id': widget.storeNames.keys.length > 1 ? widget.storeNames.keys.elementAt(1) : 'store-fashion',
-            'store_name': widget.storeNames.values.length > 1 ? widget.storeNames.values.elementAt(1) : 'Mây Xanh Living',
-            'discount_type': 'FIXED',
-            'discount_value': 10000,
-            'min_goods_vnd': 100000,
-            'usage_limit': 50,
-            'ends_at': '2027-11-02T14:32:00.000Z',
-            'status': 'ACTIVE',
+        if (sIds.length > 1)
+          {
+            'voucher': {
+              'id': 'vch-mx-10k',
+              'code': 'MAY-XANH-10K',
+              'scope': 'STORE',
+              'store_id': sIds[1],
+              'store_name': widget.storeNames[sIds[1]] ?? 'Mây Xanh Living',
+              'discount_type': 'FIXED',
+              'discount_value': 10000,
+              'min_goods_vnd': 100000,
+              'usage_limit': 50,
+              'ends_at': '2027-11-02T14:32:00.000Z',
+              'status': 'ACTIVE',
+            },
+            'eligible': true,
+            'reason': 'Có thể áp dụng',
+            'estimated_discount_vnd': 10000,
           },
-          'eligible': true,
-          'reason': 'Có thể áp dụng',
-          'estimated_discount_vnd': 10000,
-        },
       ];
     }
 
@@ -168,6 +171,45 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
     super.dispose();
   }
 
+  String _resolveStoreIdForVoucher(Map<String, dynamic> v) {
+    final vStoreId = v['store_id']?.toString() ?? '';
+    if (vStoreId.isNotEmpty && widget.storeNames.containsKey(vStoreId)) {
+      return vStoreId;
+    }
+    final vStoreName = v['store_name']?.toString() ?? '';
+    if (vStoreName.isNotEmpty) {
+      for (final entry in widget.storeNames.entries) {
+        if (entry.value.toLowerCase().trim() == vStoreName.toLowerCase().trim()) {
+          return entry.key;
+        }
+      }
+    }
+    if (widget.storeNames.isNotEmpty) {
+      return widget.storeNames.keys.first;
+    }
+    return vStoreId;
+  }
+
+  bool _isStoreInOrder(Map<String, dynamic> v) {
+    final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
+    if (scope == 'PLATFORM') return true;
+    if (widget.storeNames.isEmpty) return true;
+
+    final vStoreId = v['store_id']?.toString() ?? '';
+    if (vStoreId.isNotEmpty && widget.storeNames.containsKey(vStoreId)) {
+      return true;
+    }
+    final vStoreName = v['store_name']?.toString() ?? '';
+    if (vStoreName.isNotEmpty) {
+      for (final sName in widget.storeNames.values) {
+        if (sName.toLowerCase().trim() == vStoreName.toLowerCase().trim()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   String _formatPrice(int price) {
     final s = price.toString();
     final buffer = StringBuffer();
@@ -223,14 +265,14 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
       }
 
       final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
-      final storeId = v['store_id']?.toString() ?? '';
+      final effectiveStoreId = scope == 'PLATFORM' ? '' : _resolveStoreIdForVoucher(v);
       final matchedCode = v['code']?.toString() ?? code.toUpperCase();
 
       setState(() {
         if (scope == 'PLATFORM') {
           _selectedPlatformVoucher = matchedCode;
         } else {
-          _selectedStoreVouchers[storeId] = matchedCode;
+          _selectedStoreVouchers[effectiveStoreId] = matchedCode;
         }
       });
 
@@ -252,15 +294,20 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
 
         if (result != null && result['valid'] == true) {
           final scope = (result['scope']?.toString() ?? 'PLATFORM').toUpperCase();
-          final storeId = result['store_id']?.toString() ?? '';
+          final rawStoreId = result['store_id']?.toString() ?? '';
           final validCode = result['code']?.toString() ?? code.toUpperCase();
-          final sName = widget.storeNames[storeId] ?? 'An Nhiên Studio';
+          final effectiveStoreId = scope == 'PLATFORM'
+              ? ''
+              : (widget.storeNames.containsKey(rawStoreId)
+                  ? rawStoreId
+                  : (widget.storeNames.isNotEmpty ? widget.storeNames.keys.first : rawStoreId));
+          final sName = widget.storeNames[effectiveStoreId] ?? 'An Nhiên Studio';
 
           final newVoucherItem = {
             'voucher': {
               'code': validCode,
               'scope': scope,
-              'store_id': storeId,
+              'store_id': effectiveStoreId,
               'store_name': sName,
               'discount_type': result['discount_type'] ?? 'FIXED',
               'discount_value': result['discount_value'] ?? 10000,
@@ -279,7 +326,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
             if (scope == 'PLATFORM') {
               _selectedPlatformVoucher = validCode;
             } else {
-              _selectedStoreVouchers[storeId] = validCode;
+              _selectedStoreVouchers[effectiveStoreId] = validCode;
             }
           });
 
@@ -300,13 +347,11 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
   }
 
   void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFD32F2F),
-        duration: const Duration(seconds: 3),
-      ),
+    AppNoticeDialog.show(
+      context,
+      message: message,
+      icon: const Icon(Icons.info_outline, color: Colors.white, size: 28),
+      duration: const Duration(seconds: 3),
     );
   }
 
@@ -337,28 +382,49 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedVouchers = <Map<String, dynamic>>[];
-    final unselectedPlatformVouchers = <Map<String, dynamic>>[];
-    final unselectedStoreVouchers = <Map<String, dynamic>>[];
+    final platformVouchers = <Map<String, dynamic>>[];
+    final storeVouchers = <Map<String, dynamic>>[];
 
     for (final it in _allVouchers) {
       final v = it['voucher'] as Map<String, dynamic>? ?? {};
-      final code = v['code']?.toString() ?? '';
       final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
-      final storeId = v['store_id']?.toString() ?? '';
 
-      final isSelected = scope == 'PLATFORM'
-          ? _selectedPlatformVoucher == code
-          : _selectedStoreVouchers[storeId] == code;
-
-      if (isSelected) {
-        selectedVouchers.add(it);
-      } else if (scope == 'PLATFORM') {
-        unselectedPlatformVouchers.add(it);
+      if (scope == 'PLATFORM') {
+        platformVouchers.add(it);
       } else {
-        unselectedStoreVouchers.add(it);
+        if (_isStoreInOrder(v)) {
+          storeVouchers.add(it);
+        }
       }
     }
+
+    // Sort platform vouchers: selected one on top
+    platformVouchers.sort((a, b) {
+      final va = a['voucher'] as Map<String, dynamic>? ?? {};
+      final vb = b['voucher'] as Map<String, dynamic>? ?? {};
+      final codeA = va['code']?.toString() ?? '';
+      final codeB = vb['code']?.toString() ?? '';
+      final isSelA = _selectedPlatformVoucher == codeA;
+      final isSelB = _selectedPlatformVoucher == codeB;
+      if (isSelA && !isSelB) return -1;
+      if (!isSelA && isSelB) return 1;
+      return 0;
+    });
+
+    // Sort store vouchers: selected one on top within Store section
+    storeVouchers.sort((a, b) {
+      final va = a['voucher'] as Map<String, dynamic>? ?? {};
+      final vb = b['voucher'] as Map<String, dynamic>? ?? {};
+      final codeA = va['code']?.toString() ?? '';
+      final codeB = vb['code']?.toString() ?? '';
+      final sIdA = _resolveStoreIdForVoucher(va);
+      final sIdB = _resolveStoreIdForVoucher(vb);
+      final isSelA = _selectedStoreVouchers[sIdA] == codeA;
+      final isSelB = _selectedStoreVouchers[sIdB] == codeB;
+      if (isSelA && !isSelB) return -1;
+      if (!isSelA && isSelB) return 1;
+      return 0;
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -412,21 +478,29 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                 Expanded(
                   child: Container(
                     height: 38,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFFD9D9D9), width: 0.8),
+                      border: Border.all(color: const Color(0xFFD9D9D9), width: 1.0),
                     ),
                     child: TextField(
                       key: const Key('voucher_input_field'),
                       controller: _codeController,
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF222222)),
                       onChanged: (_) => setState(() {}),
+                      textAlignVertical: TextAlignVertical.center,
                       decoration: const InputDecoration(
+                        isDense: true,
                         hintText: 'Nhập mã voucher',
                         hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
                       ),
                     ),
                   ),
@@ -479,36 +553,15 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               children: [
-                // Section: Voucher đã chọn (hiển thị lên đầu trang voucher)
-                if (selectedVouchers.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10, top: 2),
-                    child: const Text(
-                      'Voucher đã chọn',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF222222),
-                      ),
-                    ),
-                  ),
-                  ...selectedVouchers.map((it) {
-                    final v = it['voucher'] as Map<String, dynamic>? ?? {};
-                    final isPlatform = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'PLATFORM';
-                    return _buildVoucherTicket(it, isPlatform: isPlatform);
-                  }),
-                  const SizedBox(height: 16),
-                ],
-
-                // Section 1: Mã Toàn Sàn & Vận Chuyển (Matching Image)
-                if (unselectedPlatformVouchers.isNotEmpty) ...[
+                // Section 1: Voucher toàn sàn
+                if (platformVouchers.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10, top: 4),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          'Mã Toàn Sàn & Vận Chuyển',
+                          'Voucher toàn sàn',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -525,19 +578,19 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       ],
                     ),
                   ),
-                  ...unselectedPlatformVouchers.map((it) => _buildVoucherTicket(it, isPlatform: true)),
+                  ...platformVouchers.map((it) => _buildVoucherTicket(it, isPlatform: true)),
                   const SizedBox(height: 16),
                 ],
 
-                // Section 2: Mã Giảm Giá Từ Shop (Matching Image)
-                if (unselectedStoreVouchers.isNotEmpty) ...[
+                // Section 2: Voucher từ Store
+                if (storeVouchers.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10, top: 4),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text(
-                          'Mã Giảm Giá Từ Shop',
+                          'Voucher từ Store',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -554,12 +607,12 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       ],
                     ),
                   ),
-                  ...unselectedStoreVouchers.map((it) => _buildVoucherTicket(it, isPlatform: false)),
+                  ...storeVouchers.map((it) => _buildVoucherTicket(it, isPlatform: false)),
                   const SizedBox(height: 16),
                 ],
 
-                // Empty state when server returns no vouchers AND no vouchers are selected
-                if (selectedVouchers.isEmpty && unselectedPlatformVouchers.isEmpty && unselectedStoreVouchers.isEmpty)
+                // Empty state when server returns no vouchers
+                if (platformVouchers.isEmpty && storeVouchers.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
                     child: Column(
@@ -641,8 +694,8 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
   Widget _buildVoucherTicket(Map<String, dynamic> vItem, {required bool isPlatform}) {
     final v = (vItem['voucher'] as Map<String, dynamic>?) ?? {};
     final code = v['code']?.toString() ?? 'VOUCHER';
-    final storeId = v['store_id']?.toString() ?? '';
-    final storeName = widget.storeNames[storeId] ?? v['store_name']?.toString() ?? 'An Nhiên Studio';
+    final effectiveStoreId = isPlatform ? '' : _resolveStoreIdForVoucher(v);
+    final storeName = widget.storeNames[effectiveStoreId] ?? v['store_name']?.toString() ?? 'An Nhiên Studio';
 
     final discountType = v['discount_type']?.toString().toUpperCase() ?? 'FIXED';
     final discountValue = (v['discount_value'] as num?)?.toInt() ?? 0;
@@ -656,7 +709,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
 
     final isSelected = isPlatform
         ? _selectedPlatformVoucher == code
-        : _selectedStoreVouchers[storeId] == code;
+        : _selectedStoreVouchers[effectiveStoreId] == code;
 
     String discountTitle;
     if (discountType == 'PERCENT') {
@@ -686,9 +739,9 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       _selectedPlatformVoucher = isSelected ? null : code;
                     } else {
                       if (isSelected) {
-                        _selectedStoreVouchers.remove(storeId);
+                        _selectedStoreVouchers.remove(effectiveStoreId);
                       } else {
-                        _selectedStoreVouchers[storeId] = code;
+                        _selectedStoreVouchers[effectiveStoreId] = code;
                       }
                     }
                   });
@@ -734,7 +787,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          isPlatform ? 'PBL6 VIP' : 'SHOP',
+                          isPlatform ? 'PBL6 VIP' : 'STORE',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,

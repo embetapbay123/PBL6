@@ -102,11 +102,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     setState(() => _loadingVouchers = true);
     try {
       final client = ref.read(apiProvider);
-      final storeIds = widget.initialSelectedItems
-          ?.map((e) => e['store_id']?.toString() ?? '')
-          .where((id) => id.isNotEmpty)
-          .toSet()
-          .toList();
+      final storeIds = <String>{
+        ...?widget.initialSelectedItems
+            ?.map((e) => e['store_id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty),
+        if (_quote != null && _quote!['stores'] is List)
+          ...(_quote!['stores'] as List)
+              .map((s) => s is Map ? (s['store_id']?.toString() ?? s['id']?.toString() ?? '') : '')
+              .where((id) => id.isNotEmpty),
+        ..._paymentMethods.keys.where((k) => k.isNotEmpty),
+      }.toList();
 
       final res = await client.suggestVouchers(
         cartItemIds: widget.cartItemIds,
@@ -1235,9 +1240,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       paymentSubtitle = 'Thanh toán bằng số dư tài khoản PBL6';
       paymentIcon = Icons.account_balance_wallet_outlined;
     } else if (currentPayment == 'SANDBOX') {
-      paymentTitle = 'Thanh toán trực tuyến (Sandbox)';
-      paymentSubtitle = 'Phương thức thanh toán mặc định';
-      paymentIcon = Icons.credit_card_outlined;
+      paymentTitle = 'Thanh toán qua Sepay (QR Chuyển khoản)';
+      paymentSubtitle = 'Phương thức thanh toán trực tuyến Sepay';
+      paymentIcon = Icons.qr_code_2_outlined;
     } else {
       paymentTitle = 'Thanh toán khi nhận hàng (COD)';
       paymentSubtitle = 'Thanh toán tiền mặt khi giao hàng';
@@ -1248,7 +1253,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     if (currentPayment == 'WALLET') {
       selectedPaymentLabel = 'Ví số dư (${_formatPrice(_walletBalance)})';
     } else if (currentPayment == 'SANDBOX') {
-      selectedPaymentLabel = 'SANDBOX';
+      selectedPaymentLabel = 'SEPAY';
     } else {
       selectedPaymentLabel = 'COD';
     }
@@ -1457,7 +1462,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           const Divider(height: 1, color: Color(0xFFF0F0F0)),
                           _buildPaymentDropdownOption(
                             value: 'SANDBOX',
-                            label: 'SANDBOX',
+                            label: 'SEPAY',
                             isSelected: currentPayment == 'SANDBOX',
                           ),
                           const Divider(height: 1, color: Color(0xFFF0F0F0)),
@@ -1567,11 +1572,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 const Divider(),
                 ListTile(
                   leading: const Icon(
-                    Icons.credit_card,
+                    Icons.qr_code_2,
                     color: AppColors.primary,
                   ),
-                  title: const Text('Thanh toán trực tuyến (Sandbox)'),
-                  subtitle: const Text('Thẻ nội địa, thẻ quốc tế hoặc cổng Sandbox'),
+                  title: const Text('Thanh toán trực tuyến (Sepay)'),
+                  subtitle: const Text('Quét mã QR chuyển khoản ngân hàng qua Sepay'),
                   trailing: selected == 'SANDBOX'
                       ? const Icon(Icons.check_circle, color: AppColors.primary)
                       : null,
@@ -1616,12 +1621,16 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       await _fetchSuggestedVouchers();
     }
     if (!context.mounted) return;
-    final storeIds = widget.initialSelectedItems
-            ?.map((e) => e['store_id']?.toString() ?? '')
-            .where((id) => id.isNotEmpty)
-            .toSet()
-            .toList() ??
-        _paymentMethods.keys.toList();
+    final storeIds = <String>{
+      ...?widget.initialSelectedItems
+          ?.map((e) => e['store_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty),
+      if (_quote != null && _quote!['stores'] is List)
+        ...(_quote!['stores'] as List)
+            .map((s) => s is Map ? (s['store_id']?.toString() ?? s['id']?.toString() ?? '') : '')
+            .where((id) => id.isNotEmpty),
+      ..._paymentMethods.keys.where((k) => k.isNotEmpty),
+    }.toList();
 
     final storeNames = <String, String>{};
     if (widget.initialSelectedItems != null) {
@@ -1631,6 +1640,23 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         if (sid.isNotEmpty && sname.isNotEmpty) {
           storeNames[sid] = sname;
         }
+      }
+    }
+    if (_quote != null && _quote!['stores'] is List) {
+      for (final s in (_quote!['stores'] as List)) {
+        if (s is Map) {
+          final sid = s['store_id']?.toString() ?? s['id']?.toString() ?? '';
+          final sname = s['store_name']?.toString() ?? s['name']?.toString() ?? '';
+          if (sid.isNotEmpty && sname.isNotEmpty) {
+            storeNames[sid] = sname;
+          }
+        }
+      }
+    }
+    for (final sid in storeIds) {
+      if (!storeNames.containsKey(sid) || storeNames[sid]!.isEmpty) {
+        final cached = ApiClient.getStoreNameStatic(sid);
+        storeNames[sid] = (cached != null && cached.isNotEmpty) ? cached : 'An Nhiên Studio';
       }
     }
 

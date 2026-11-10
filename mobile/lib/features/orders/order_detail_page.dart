@@ -136,7 +136,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   String _statusDescription(String status) {
     switch (status.toUpperCase()) {
       case 'AWAITING_PAYMENT':
-        return 'Đơn hàng đang chờ thanh toán trực tuyến qua cổng Sandbox.';
+        return 'Đơn hàng đang chờ thanh toán trực tuyến qua Sepay.';
       case 'CREATED':
       case 'PENDING':
         return 'Đơn hàng đã được đặt, đang chờ người bán xác nhận.';
@@ -850,7 +850,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
               children: [
                 Text(
                   method == 'SANDBOX'
-                      ? 'Thanh toán trực tuyến (Sandbox)'
+                      ? 'Thanh toán trực tuyến (Sepay)'
                       : 'Thanh toán khi nhận hàng (COD)',
                   style: const TextStyle(
                     fontSize: 13,
@@ -1303,9 +1303,9 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                icon: const Icon(Icons.credit_card, size: 16),
+                icon: const Icon(Icons.qr_code_2, size: 16),
                 label: const Text(
-                  'Thanh toán Sandbox',
+                  'Thanh toán Sepay',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 onPressed: _openSandboxPaymentDialog,
@@ -1855,7 +1855,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Chờ thanh toán Sandbox',
+                      'Chờ thanh toán Sepay',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14.5,
@@ -1932,7 +1932,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                       children: const [
                         CircularProgressIndicator(),
                         SizedBox(height: 12),
-                        Text('Đang tạo mã thanh toán Sandbox...'),
+                        Text('Đang tạo mã thanh toán Sepay...'),
                       ],
                     ),
                   );
@@ -1985,10 +1985,10 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.credit_card, color: AppColors.primary),
+                              Icon(Icons.qr_code_2, color: AppColors.primary),
                               SizedBox(width: 8),
                               Text(
-                                'Cổng Sandbox Gateway',
+                                'Cổng thanh toán Sepay',
                                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                             ],

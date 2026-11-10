@@ -926,24 +926,25 @@ class ApiClient {
           'reason': 'Có thể áp dụng',
           'estimated_discount_vnd': 10000,
         },
-        {
-          'voucher': {
-            'id': 'vch-mx-10k',
-            'code': 'MAY-XANH-10K',
-            'scope': 'STORE',
-            'store_id': sIds.length > 1 ? sIds[1] : (sIds.isNotEmpty ? sIds.first : 'store-fashion'),
-            'store_name': 'Mây Xanh Living',
-            'discount_type': 'FIXED',
-            'discount_value': 10000,
-            'min_goods_vnd': 100000,
-            'usage_limit': 50,
-            'ends_at': '2027-11-02T14:32:00.000Z',
-            'status': 'ACTIVE',
+        if (sIds.length > 1)
+          {
+            'voucher': {
+              'id': 'vch-mx-10k',
+              'code': 'MAY-XANH-10K',
+              'scope': 'STORE',
+              'store_id': sIds[1],
+              'store_name': 'Mây Xanh Living',
+              'discount_type': 'FIXED',
+              'discount_value': 10000,
+              'min_goods_vnd': 100000,
+              'usage_limit': 50,
+              'ends_at': '2027-11-02T14:32:00.000Z',
+              'status': 'ACTIVE',
+            },
+            'eligible': true,
+            'reason': 'Có thể áp dụng',
+            'estimated_discount_vnd': 10000,
           },
-          'eligible': true,
-          'reason': 'Có thể áp dụng',
-          'estimated_discount_vnd': 10000,
-        },
       ]);
     }
 
