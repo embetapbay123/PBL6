@@ -2199,7 +2199,7 @@ void main() {
         expect(find.text('Mã Giảm Giá Từ Shop'), findsOneWidget);
         expect(find.textContaining('Giảm 10.000 đ'), findsWidgets);
 
-        // Tap '?' help button and verify dialog content
+        // Tap '?' help button and verify dialog content uses AppNoticeDialog grey UI
         final helpButton = find.byKey(const Key('voucher_help_button'));
         expect(helpButton, findsOneWidget);
         await tester.tap(helpButton);
@@ -2208,8 +2208,22 @@ void main() {
           find.text('Mỗi đơn hàng có thể áp dụng 01 Voucher Vận chuyển và 01 Voucher Giảm giá từ Shop hoặc Sàn'),
           findsOneWidget,
         );
+        expect(find.byType(AppNoticeDialog), findsOneWidget);
         await tester.tap(find.text('Đã hiểu'));
         await tester.pumpAndSettle();
+        expect(find.byType(AppNoticeDialog), findsNothing);
+
+        // Tap 'Điều Kiện' on voucher and verify AppNoticeDialog grey UI
+        expect(find.text('Điều Kiện'), findsWidgets);
+        await tester.tap(find.text('Điều Kiện').first);
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Điều kiện mã'), findsOneWidget);
+        expect(find.textContaining('Đơn tối thiểu:'), findsOneWidget);
+        expect(find.byType(AppNoticeDialog), findsOneWidget);
+        // Tap to dismiss
+        await tester.tap(find.byType(AppNoticeDialog));
+        await tester.pumpAndSettle();
+        expect(find.byType(AppNoticeDialog), findsNothing);
 
         // Enter invalid voucher code and tap Áp dụng
         await tester.enterText(find.byKey(const Key('voucher_input_field')), 'RANDOM_FAKE_CODE');

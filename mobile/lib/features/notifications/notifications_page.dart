@@ -437,22 +437,14 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         iconBgColor: const Color(0xFFEFF6FF),
         badge: 'v2.2.0',
         onTap: () {
-          showDialog(
-            context: context,
-            builder: (ctx) => AlertDialog(
-              title: const Text('Phiên bản 2.2.0'),
-              content: const Text(
-                '• Giao diện mới hiện đại, đồng bộ màu sắc thương hiệu.\n'
+          AppNoticeDialog.show(
+            context,
+            title: 'Phiên bản 2.2.0',
+            message: '• Giao diện mới hiện đại, đồng bộ màu sắc thương hiệu.\n'
                 '• Nâng cấp tính năng Trả hàng & Hoàn tiền tiện lợi.\n'
                 '• Tối ưu tốc độ tải danh mục và gợi ý tìm kiếm.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Đã hiểu'),
-                ),
-              ],
-            ),
+            buttonText: 'Đã hiểu',
+            duration: const Duration(seconds: 5),
           );
         },
       ),

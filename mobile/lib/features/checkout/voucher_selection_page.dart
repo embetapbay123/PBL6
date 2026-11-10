@@ -235,13 +235,9 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
       });
 
       _codeController.clear();
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã chọn mã $matchedCode'),
-          backgroundColor: const Color(0xFFEE4D2D),
-          duration: const Duration(seconds: 2),
-        ),
+      AppNoticeDialog.show(
+        context,
+        message: 'Đã chọn mã $matchedCode',
       );
       return;
     }
@@ -288,13 +284,9 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
           });
 
           _codeController.clear();
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã áp dụng mã $validCode'),
-              backgroundColor: const Color(0xFFEE4D2D),
-              duration: const Duration(seconds: 2),
-            ),
+          AppNoticeDialog.show(
+            context,
+            message: 'Đã áp dụng mã $validCode',
           );
           return;
         }
@@ -324,57 +316,22 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
     final minGoods = (v['min_goods_vnd'] as num?)?.toInt() ?? 0;
     final endsAt = v['ends_at']?.toString();
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Điều kiện mã $code', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('• Hạn sử dụng: ${_formatVoucherDate(endsAt)}', style: const TextStyle(fontSize: 13.5)),
-            const SizedBox(height: 6),
-            Text('• Đơn tối thiểu: ${_formatPrice(minGoods)}', style: const TextStyle(fontSize: 13.5)),
-            const SizedBox(height: 6),
-            const Text('• Giới hạn 1 voucher cho mỗi loại đơn hàng hợp lệ.', style: TextStyle(fontSize: 13.5)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Đóng', style: TextStyle(color: Color(0xFFEE4D2D), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+    AppNoticeDialog.show(
+      context,
+      title: 'Điều kiện mã $code',
+      message: '• Hạn sử dụng: ${_formatVoucherDate(endsAt)}\n• Đơn tối thiểu: ${_formatPrice(minGoods)}\n• Giới hạn 1 voucher cho mỗi loại đơn hàng hợp lệ.',
+      buttonText: 'Đóng',
+      duration: const Duration(seconds: 5),
     );
   }
 
   void _showHelpDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Thông báo',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'Mỗi đơn hàng có thể áp dụng 01 Voucher Vận chuyển và 01 Voucher Giảm giá từ Shop hoặc Sàn',
-          style: TextStyle(fontSize: 14, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Đã hiểu',
-              style: TextStyle(
-                color: Color(0xFFEE4D2D),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
+    AppNoticeDialog.show(
+      context,
+      title: 'Thông báo',
+      message: 'Mỗi đơn hàng có thể áp dụng 01 Voucher Vận chuyển và 01 Voucher Giảm giá từ Shop hoặc Sàn',
+      buttonText: 'Đã hiểu',
+      duration: const Duration(seconds: 5),
     );
   }
 

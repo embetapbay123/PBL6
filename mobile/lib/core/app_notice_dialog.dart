@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 class AppNoticeDialog extends StatefulWidget {
   final String message;
+  final String? title;
   final String buttonText;
   final VoidCallback? onConfirm;
   final Widget? icon;
@@ -12,6 +13,7 @@ class AppNoticeDialog extends StatefulWidget {
   const AppNoticeDialog({
     super.key,
     required this.message,
+    this.title,
     this.buttonText = 'Đồng ý',
     this.onConfirm,
     this.icon,
@@ -22,6 +24,7 @@ class AppNoticeDialog extends StatefulWidget {
   static Future<void> show(
     BuildContext context, {
     required String message,
+    String? title,
     String buttonText = 'Đồng ý',
     VoidCallback? onConfirm,
     Widget? icon,
@@ -34,6 +37,7 @@ class AppNoticeDialog extends StatefulWidget {
       barrierColor: Colors.black.withOpacity(0.2),
       builder: (ctx) => AppNoticeDialog(
         message: message,
+        title: title,
         buttonText: buttonText,
         onConfirm: onConfirm,
         icon: icon,
@@ -102,7 +106,7 @@ class _AppNoticeDialogState extends State<AppNoticeDialog> {
                 Container(
                   constraints: const BoxConstraints(
                     minWidth: 180,
-                    maxWidth: 290,
+                    maxWidth: 310,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
                   decoration: BoxDecoration(
@@ -119,18 +123,34 @@ class _AppNoticeDialogState extends State<AppNoticeDialog> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Icon: Circular speech bubble with checkmark (matches attached image)
-                      widget.icon ?? const _SpeechBubbleCheckBadge(size: 56),
+                      // Icon: Circular speech bubble with checkmark (matches attached image) or custom/info icon
+                      widget.icon ??
+                          (widget.title != null
+                              ? const Icon(Icons.info_outline_rounded, color: Colors.white, size: 44)
+                              : const _SpeechBubbleCheckBadge(size: 56)),
                       const SizedBox(height: 14),
+                      if (widget.title != null && widget.title!.isNotEmpty) ...[
+                        Text(
+                          widget.title!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       // Message Text
                       Text(
                         widget.message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        textAlign: widget.title != null ? TextAlign.left : TextAlign.center,
+                        style: TextStyle(
+                          fontSize: widget.title != null ? 13.5 : 16,
+                          fontWeight: widget.title != null ? FontWeight.w500 : FontWeight.bold,
                           color: Colors.white,
-                          height: 1.35,
+                          height: 1.4,
                           letterSpacing: -0.2,
                         ),
                       ),
