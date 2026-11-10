@@ -826,10 +826,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                             children: [
                               // Product Thumbnail
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 child: Container(
-                                  width: 60,
-                                  height: 60,
+                                  width: 80,
+                                  height: 80,
                                   color: Colors.grey.shade100,
                                   child: imageUrl != null && imageUrl.isNotEmpty
                                       ? Image.network(
@@ -840,6 +840,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                                 child: Icon(
                                                   Icons.shopping_bag_outlined,
                                                   color: Colors.grey,
+                                                  size: 28,
                                                 ),
                                               ),
                                         )
@@ -847,11 +848,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                           child: Icon(
                                             Icons.shopping_bag_outlined,
                                             color: Colors.grey,
+                                            size: 28,
                                           ),
                                         ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 14),
                               // Title & Variant
                               Expanded(
                                 child: Column(
@@ -866,36 +868,37 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                             title,
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w600,
-                                              fontSize: 13,
+                                              fontSize: 15,
                                               color: AppColors.textPrimary,
-                                              height: 1.25,
+                                              height: 1.3,
                                             ),
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
+                                        const SizedBox(width: 10),
                                         Text(
                                           'x$qty',
                                           style: TextStyle(
-                                            fontSize: 12.5,
+                                            fontSize: 13.5,
                                             color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 6),
                                     Text(
                                       variantText.startsWith('Màu') ||
                                               variantText.startsWith('Size')
                                           ? variantText
                                           : 'Phân loại: $variantText',
                                       style: TextStyle(
-                                        fontSize: 11.5,
+                                        fontSize: 13,
                                         color: Colors.grey.shade500,
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 8),
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: Text(
@@ -904,7 +907,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                                             : _formatPrice(price * qty),
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 14,
+                                          fontSize: 16,
                                           color: AppColors.primary,
                                         ),
                                       ),
