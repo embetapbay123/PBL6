@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import 'order_success_page.dart';
+import 'voucher_selection_page.dart';
 
 class CheckoutPage extends ConsumerStatefulWidget {
   const CheckoutPage({
@@ -1417,16 +1418,39 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     );
   }
 
-  Widget _buildVoucherSection() {
-    final platformVouchers = _suggestedVouchers.where((it) {
-      final v = it['voucher'] as Map<String, dynamic>? ?? {};
-      return (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'PLATFORM';
-    }).toList();
+  Future<void> _openVoucherPage(BuildContext context) async {
+    final result = await Navigator.push<VoucherSelectionResult>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VoucherSelectionPage(
+          suggestedVouchers: _suggestedVouchers,
+          initialPlatformVoucher: _appliedPlatformVoucher,
+          initialStoreVouchers: Map<String, String>.from(_storeVouchers),
+          payableTotal: (_quote?['payable_total_vnd'] as num?)?.toInt() ?? 0,
+        ),
+      ),
+    );
 
-    final storeVouchers = _suggestedVouchers.where((it) {
-      final v = it['voucher'] as Map<String, dynamic>? ?? {};
-      return (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'STORE';
-    }).toList();
+    if (result != null && mounted) {
+      setState(() {
+        _appliedPlatformVoucher = result.platformVoucher;
+        _platformVoucherController.text = result.platformVoucher ?? '';
+        _storeVouchers.clear();
+        _storeVouchers.addAll(result.storeVouchers);
+      });
+      _fetchQuote();
+    }
+  }
+
+  Widget _buildVoucherSection() {
+    final appliedVoucherTexts = <String>[
+      if (_appliedPlatformVoucher != null && _appliedPlatformVoucher!.isNotEmpty)
+        _appliedPlatformVoucher!,
+      ..._storeVouchers.values.where((v) => v.isNotEmpty),
+    ];
+    final displayText = appliedVoucherTexts.isNotEmpty
+        ? appliedVoucherTexts.join(', ')
+        : '';
 
     return Container(
       decoration: BoxDecoration(
@@ -1456,10 +1480,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'Voucher toàn sàn PBL6',
+                    'Voucher',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 14.5,
                       color: AppColors.textPrimary,
                     ),
                   ),
@@ -1476,312 +1500,55 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ],
             ),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _platformVoucherController,
-                    decoration: const InputDecoration(
-                      hintText: 'Nhập mã giảm giá sàn (e.g. DEMO-SAN-5K)',
-                      hintStyle: TextStyle(fontSize: 12.5),
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
+            InkWell(
+              onTap: _submittingOrder ? null : () => _openVoucherPage(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('checkout_voucher_field'),
+                      controller: TextEditingController(text: displayText),
+                      readOnly: true,
+                      onTap: _submittingOrder
+                          ? null
+                          : () => _openVoucherPage(context),
+                      decoration: const InputDecoration(
+                        hintText: 'Nhập mã giảm giá',
+                        hintStyle: TextStyle(fontSize: 12.5),
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: Colors.grey,
+                        ),
                       ),
-                      border: OutlineInputBorder(),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
+                    onPressed: _submittingOrder
+                        ? null
+                        : () => _openVoucherPage(context),
+                    child: const Text('Áp dụng'),
                   ),
-                  onPressed: _submittingOrder
-                      ? null
-                      : () {
-                          setState(() {
-                            final code = _platformVoucherController.text.trim();
-                            _appliedPlatformVoucher =
-                                code.isNotEmpty ? code : null;
-                          });
-                          _fetchQuote();
-                          _fetchSuggestedVouchers();
-                        },
-                  child: const Text('Áp dụng'),
-                ),
-              ],
-            ),
-
-            if (platformVouchers.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              ...platformVouchers.map((it) => _buildVoucherCard(it)),
-            ],
-
-            if (storeVouchers.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Ưu đãi từ cửa hàng',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.5,
-                  color: AppColors.textPrimary,
-                ),
+                ],
               ),
-              const SizedBox(height: 10),
-              ...storeVouchers.map((it) => _buildVoucherCard(it)),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildVoucherCard(Map<String, dynamic> vItem) {
-    final v = (vItem['voucher'] as Map<String, dynamic>?) ?? {};
-    final code = v['code']?.toString() ?? 'VOUCHER';
-    final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
-    final isPlatform = scope == 'PLATFORM';
-    final storeId = v['store_id']?.toString() ??
-        widget.initialSelectedItems?.firstOrNull?['store_id']?.toString() ??
-        '';
-    final storeName = v['store_name']?.toString() ??
-        widget.initialSelectedItems
-            ?.firstWhere(
-              (it) => it['store_id']?.toString() == storeId,
-              orElse: () => {},
-            )['store_name']
-            ?.toString() ??
-        'Mây Xanh Living';
-
-    final discountType =
-        v['discount_type']?.toString().toUpperCase() ?? 'FIXED';
-    final discountValue = (v['discount_value'] as num?)?.toInt() ?? 0;
-    final maxDiscount = (v['max_discount_vnd'] as num?)?.toInt();
-    final minGoods = (v['min_goods_vnd'] as num?)?.toInt() ?? 0;
-    final perCustomerLimit = (v['per_customer_limit'] as num?)?.toInt() ?? 50;
-    final endsAt = v['ends_at']?.toString();
-
-    final eligible = vItem['eligible'] != false;
-    final reason = vItem['reason']?.toString() ?? '';
-    final estimatedDiscount =
-        (vItem['estimated_discount_vnd'] as num?)?.toInt() ?? 0;
-
-    final isSelected = isPlatform
-        ? _appliedPlatformVoucher == code
-        : _storeVouchers[storeId] == code;
-
-    String discountText;
-    if (discountType == 'PERCENT') {
-      discountText = '$discountValue%';
-      if (maxDiscount != null) {
-        discountText += ' · Tối đa ${_formatPrice(maxDiscount)}';
-      }
-    } else {
-      discountText = _formatPrice(discountValue);
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAFAFA),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade200, width: 0.8),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 4.5,
-                  color: isSelected ? Colors.green.shade600 : AppColors.primary,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          code,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: AppColors.textPrimary,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-
-                        if (isPlatform)
-                          Text(
-                            'Ưu đãi toàn sàn',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12.5,
-                            ),
-                          )
-                        else
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.storefront_outlined,
-                                size: 14,
-                                color: Colors.grey.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                storeName,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        const SizedBox(height: 6),
-
-                        Text(
-                          'Giảm $discountText',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 17,
-                            color: isSelected
-                                ? Colors.green.shade700
-                                : AppColors.primary,
-                          ),
-                        ),
-
-                        const SizedBox(height: 10),
-                        Divider(
-                          height: 1,
-                          color: Colors.grey.shade200,
-                        ),
-                        const SizedBox(height: 10),
-
-                        Text(
-                          'Tiền hàng từ ${_formatPrice(minGoods)} · $perCustomerLimit lượt/khách',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-
-                        Text(
-                          'Đến ${_formatVoucherDate(endsAt)}',
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 12,
-                          ),
-                        ),
-
-                        if (estimatedDiscount > 0 && isSelected) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            '✓ Đã áp dụng: Tiết kiệm ${_formatPrice(estimatedDiscount)}',
-                            style: TextStyle(
-                              color: Colors.green.shade700,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ] else if (!eligible && reason.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            reason,
-                            style: TextStyle(
-                              color: Colors.orange.shade800,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 12),
-
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: isSelected
-                              ? OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.green.shade700,
-                                    side: BorderSide(
-                                      color: Colors.green.shade600,
-                                    ),
-                                    backgroundColor: const Color(0xFFF0FFF4),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  ),
-                                  icon: const Icon(Icons.check_circle, size: 16),
-                                  label: Text(
-                                    'Bỏ chọn $code',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  onPressed: () => _toggleVoucher(vItem),
-                                )
-                              : OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: eligible
-                                        ? AppColors.textPrimary
-                                        : Colors.grey,
-                                    side: BorderSide(
-                                      color: eligible
-                                          ? Colors.grey.shade300
-                                          : Colors.grey.shade200,
-                                    ),
-                                    backgroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  ),
-                                  onPressed: eligible
-                                      ? () => _toggleVoucher(vItem)
-                                      : null,
-                                  child: Text(
-                                    eligible
-                                        ? 'Chọn $code'
-                                        : 'Chưa đủ điều kiện',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: eligible
-                                          ? AppColors.textPrimary
-                                          : Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildQuoteBreakdownSection(int payableTotal) {
     int subtotal = 0;

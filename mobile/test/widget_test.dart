@@ -2138,19 +2138,33 @@ void main() {
         expect(find.text('Nguyễn Văn A (0901234567)'), findsOneWidget);
         expect(find.text('PBL Tech Store'), findsOneWidget);
         expect(find.text('PBL Fashion Hub'), findsOneWidget);
-        expect(find.text('Voucher toàn sàn PBL6'), findsOneWidget);
-        expect(find.text('DEMO-SAN-5K'), findsOneWidget);
-        expect(find.text('Chọn DEMO-SAN-5K'), findsOneWidget);
-        expect(find.text('DEMO-B-10K'), findsOneWidget);
-        expect(find.text('Chọn DEMO-B-10K'), findsOneWidget);
-        expect(find.text('Ưu đãi từ cửa hàng'), findsOneWidget);
+        expect(find.text('Voucher'), findsOneWidget);
+        expect(find.text('Voucher toàn sàn PBL6'), findsNothing);
+        expect(find.text('DEMO-SAN-5K'), findsNothing);
 
-        // Scroll into view and tap to select DEMO-SAN-5K
-        await tester.ensureVisible(find.text('Chọn DEMO-SAN-5K'));
+        // Tap on the voucher field to open VoucherSelectionPage
+        final voucherField = find.byKey(const Key('checkout_voucher_field'));
+        await tester.ensureVisible(voucherField);
         await tester.pumpAndSettle();
-        await tester.tap(find.text('Chọn DEMO-SAN-5K'));
+        await tester.tap(voucherField);
         await tester.pumpAndSettle();
-        expect(find.text('Bỏ chọn DEMO-SAN-5K'), findsOneWidget);
+
+        // On VoucherSelectionPage (matching Image 2)
+        expect(find.text('Chọn Voucher'), findsOneWidget);
+        expect(find.text('Ưu đãi toàn sàn'), findsOneWidget);
+        expect(find.text('DEMO-SAN-5K'), findsOneWidget);
+        expect(find.text('Ưu đãi từ cửa hàng'), findsOneWidget);
+        expect(find.text('DEMO-B-10K'), findsOneWidget);
+
+        // Tap to select DEMO-SAN-5K
+        await tester.tap(find.text('DEMO-SAN-5K'));
+        await tester.pumpAndSettle();
+
+        // Tap 'Đồng ý'
+        await tester.tap(find.text('Đồng ý'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('DEMO-SAN-5K'), findsOneWidget);
 
         expect(find.text('Chi tiết báo giá'), findsOneWidget);
         expect(find.text('1250000 ₫'), findsWidgets);
