@@ -27,7 +27,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Map<String, dynamic>? _order;
   bool _loading = false;
   String? _error;
-  bool _isShipmentJourneyExpanded = true;
+  bool _isShipmentJourneyExpanded = false;
   bool _isReturnShipmentExpanded = true;
   bool _isDisputeExpanded = true;
   bool _isRequestDetailExpanded = true;
@@ -2081,21 +2081,46 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
     );
   }
 
+  String _shipmentBadgeText(String status) {
+    final upper = status.toUpperCase();
+    if (upper == 'COMPLETED' || upper == 'DELIVERED') return 'Đã giao';
+    if (upper == 'SHIPPED') return 'Đang giao';
+    if (upper == 'PROCESSING' || upper == 'CONFIRMED') return 'Đang chuẩn bị';
+    if (upper == 'CANCELLED') return 'Đã hủy';
+    return 'Đã giao';
+  }
+
+  Color _shipmentBadgeBg(String status) {
+    final upper = status.toUpperCase();
+    if (upper == 'COMPLETED' || upper == 'DELIVERED') return const Color(0xFFE6F4EA);
+    if (upper == 'SHIPPED') return const Color(0xFFE8F0FE);
+    if (upper == 'CANCELLED') return const Color(0xFFFCE8E6);
+    return const Color(0xFFE6F4EA);
+  }
+
+  Color _shipmentBadgeTextColor(String status) {
+    final upper = status.toUpperCase();
+    if (upper == 'COMPLETED' || upper == 'DELIVERED') return const Color(0xFF137333);
+    if (upper == 'SHIPPED') return const Color(0xFF1A73E8);
+    if (upper == 'CANCELLED') return const Color(0xFFD93025);
+    return const Color(0xFF137333);
+  }
+
   Widget _buildShipmentCard() {
     if (_order == null) return const SizedBox.shrink();
     final shipmentJourneyEvents = _getShipmentJourneyEvents();
     final shipment = _order!['shipment'] as Map?;
-    final trackingCode =
-        shipment?['tracking_code']?.toString() ?? _order!['tracking_code']?.toString();
+    final id = (_order!['id'] ?? '').toString();
+    final trackingCode = shipment?['tracking_code']?.toString() ??
+        _order!['tracking_code']?.toString() ??
+        'DLV-${id.replaceAll('-', '').substring(0, id.replaceAll('-', '').length.clamp(0, 24)).toUpperCase()}';
     final carrierName = shipment?['carrier_name']?.toString() ??
         _order!['carrier_name']?.toString() ??
-        'Đơn vị vận chuyển tiêu chuẩn';
+        'PBL6 Delivery';
     final shippedAt = shipment?['shipped_at'] ?? _order!['shipped_at'];
-    final note = shipment?['dispatch_note']?.toString() ??
-        shipment?['delivery_note']?.toString();
     final status = _order!['status']?.toString().toUpperCase() ?? '';
 
-    final hasShipmentInfo = trackingCode != null ||
+    final hasShipmentInfo = trackingCode.isNotEmpty ||
         shippedAt != null ||
         status == 'SHIPPED' ||
         status == 'COMPLETED';
@@ -2106,7 +2131,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200, width: 0.8),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 0.8),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withAlpha(5),
@@ -2115,56 +2140,82 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            child: Row(
               children: const [
                 Icon(
                   Icons.local_shipping_outlined,
                   size: 20,
-                  color: AppColors.primary,
+                  color: Color(0xFF0284C7),
                 ),
                 SizedBox(width: 8),
                 Text(
-                  'Thông tin vận chuyển',
+                  'Thông Tin Vận Chuyển',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
-                    color: AppColors.textPrimary,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Đơn vị vận chuyển',
-                  style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                ),
-                Text(
-                  carrierName,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            if (trackingCode != null && trackingCode.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Padding(
+            padding: const EdgeInsets.all(14.0),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 1.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Mã vận đơn',
-                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                    'Hành trình giao hàng',
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Giao hàng',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _shipmentBadgeBg(status),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          _shipmentBadgeText(status),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _shipmentBadgeTextColor(status),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   InkWell(
                     onTap: () {
                       Clipboard.setData(ClipboardData(text: trackingCode));
@@ -2175,115 +2226,76 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                         ),
                       );
                     },
-                    child: Row(
-                      children: [
-                        Text(
-                          trackingCode,
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.copy, size: 14, color: AppColors.primary),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (shippedAt != null) ...[
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Thời gian xuất kho',
-                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                  ),
-                  Text(
-                    _formatDate(shippedAt),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                  ),
-                ],
-              ),
-            ],
-            if (note != null && note.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Ghi chú giao hàng',
-                    style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
-                  ),
-                  Text(
-                    note,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
-                  ),
-                ],
-              ),
-            ],
-            const Divider(height: 18, color: Color(0xFFF1F3F5)),
-            InkWell(
-              onTap: () {
-                setState(() {
-                  _isShipmentJourneyExpanded = !_isShipmentJourneyExpanded;
-                });
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      _isShipmentJourneyExpanded
-                          ? Icons.arrow_drop_down
-                          : Icons.arrow_right,
-                      size: 20,
-                      color: AppColors.textPrimary,
-                    ),
-                    Text(
-                      'Xem hành trình (${shipmentJourneyEvents.length})',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    child: Text(
+                      '$carrierName · $trackingCode',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.grey.shade700,
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isShipmentJourneyExpanded = !_isShipmentJourneyExpanded;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _isShipmentJourneyExpanded
+                                ? Icons.arrow_drop_down
+                                : Icons.arrow_right,
+                            size: 20,
+                            color: const Color(0xFF0F172A),
+                          ),
+                          Text(
+                            'Xem hành trình (${shipmentJourneyEvents.length})',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (_isShipmentJourneyExpanded) ...[
+                    const SizedBox(height: 6),
+                    ...shipmentJourneyEvents.map((evt) => Padding(
+                          padding: const EdgeInsets.only(left: 14, bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                evt['title'] ?? '',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                evt['time'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
                   ],
-                ),
+                ],
               ),
             ),
-            if (_isShipmentJourneyExpanded) ...[
-              const SizedBox(height: 6),
-              ...shipmentJourneyEvents.map((evt) => Padding(
-                    padding: const EdgeInsets.only(left: 14, bottom: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          evt['title'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          evt['time'] ?? '',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

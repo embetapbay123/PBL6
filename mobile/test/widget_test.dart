@@ -2945,8 +2945,9 @@ void main() {
       // 1. Verify "Lịch sử trạng thái" card is removed
       expect(find.text('Lịch sử trạng thái'), findsNothing);
 
-      // 2. Verify "Thông tin vận chuyển" has "Xem hành trình"
-      expect(find.text('Thông tin vận chuyển'), findsOneWidget);
+      // 2. Verify "Thông Tin Vận Chuyển" has "Hành trình giao hàng" and "Xem hành trình"
+      expect(find.text('Thông Tin Vận Chuyển'), findsOneWidget);
+      expect(find.text('Hành trình giao hàng'), findsOneWidget);
       expect(find.textContaining('Xem hành trình'), findsWidgets);
       expect(find.text('Chờ lấy hàng'), findsWidgets);
 
