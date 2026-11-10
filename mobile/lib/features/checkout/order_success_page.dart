@@ -49,7 +49,7 @@ class OrderSuccessPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Đơn hàng của bạn đã được ghi nhận và phân chia theo từng Store tương ứng.',
+              'Đơn hàng của bạn đã được ghi nhận thành công',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
             ),
@@ -65,44 +65,20 @@ class OrderSuccessPage extends StatelessWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                           'Mã nhóm mua sắm:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        Flexible(
-                          child: Text(
-                            purchaseGroupId,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      'Tổng tiền thanh toán:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    const Divider(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Tổng tiền thanh toán:',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          '$totalVnd ₫',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      '$totalVnd ₫',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -126,10 +102,13 @@ class OrderSuccessPage extends StatelessWidget {
 
             if (orders.isNotEmpty)
               ...orders.map((o) {
-                final oId = o['id']?.toString() ?? 'N/A';
-                final storeId = o['store_id']?.toString() ?? 'N/A';
-                final status = o['status']?.toString() ?? 'PENDING';
-                final pMethod = o['payment_method']?.toString() ?? 'COD';
+                final storeName = o['store_name']?.toString() ??
+                    (o['store'] is Map ? o['store']['name']?.toString() : null) ??
+                    (o['store_id'] != null ? 'Store: ${o['store_id']}' : 'Cửa hàng');
+                final rawMethod = o['payment_method']?.toString().toUpperCase() ?? 'COD';
+                final pMethod = (rawMethod == 'SANDBOX' || rawMethod == 'SEPAY')
+                    ? 'SEPAY'
+                    : (rawMethod == 'COD' ? 'COD' : rawMethod);
                 final amounts = (o['amounts'] as Map?) ?? {};
                 final storePayable =
                     amounts['payable_vnd'] ?? amounts['total_vnd'] ?? '---';
@@ -153,47 +132,22 @@ class OrderSuccessPage extends StatelessWidget {
                               color: AppColors.primary,
                               size: 18,
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Store: $storeId',
+                                storeName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                status,
-                                style: TextStyle(
-                                  color: Colors.blue.shade800,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Mã đơn hàng: $oId',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -218,18 +172,46 @@ class OrderSuccessPage extends StatelessWidget {
             else
               ...orderIds.map((oId) {
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.receipt_long,
-                      color: AppColors.primary,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.storefront,
+                              color: AppColors.primary,
+                              size: 18,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Cửa hàng',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '$totalVnd ₫',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
-                    title: Text('Mã đơn hàng: $oId'),
-                    subtitle: const Text('Trạng thái: PENDING'),
                   ),
                 );
               }),
-
             const SizedBox(height: 24),
 
             // Action Buttons

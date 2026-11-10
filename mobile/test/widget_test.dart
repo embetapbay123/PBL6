@@ -2225,9 +2225,9 @@ void main() {
 
         expect(find.text('Đặt hàng thành công'), findsOneWidget);
         expect(find.text('Cảm ơn bạn đã đặt hàng!'), findsOneWidget);
-        expect(find.text('pg-uuid-9999'), findsOneWidget);
-        expect(find.textContaining('order-tech-1'), findsOneWidget);
-        expect(find.textContaining('order-fashion-2'), findsOneWidget);
+        expect(find.text('Đơn hàng của bạn đã được ghi nhận thành công'), findsOneWidget);
+        expect(find.textContaining('Mã nhóm mua sắm'), findsNothing);
+        expect(find.textContaining('Mã đơn hàng'), findsNothing);
         expect(find.text('Xem đơn hàng của tôi'), findsOneWidget);
       },
     );
@@ -2263,12 +2263,16 @@ void main() {
       await tester.pump();
 
       expect(find.text('Đặt hàng thành công'), findsOneWidget);
-      expect(find.text('pg-123456'), findsOneWidget);
+      expect(find.text('Đơn hàng của bạn đã được ghi nhận thành công'), findsOneWidget);
+      expect(find.textContaining('Mã nhóm mua sắm'), findsNothing);
+      expect(find.textContaining('Mã đơn hàng'), findsNothing);
       expect(find.text('750000 ₫'), findsOneWidget);
       expect(find.text('Store: store-a'), findsOneWidget);
       expect(find.text('Store: store-b'), findsOneWidget);
-      expect(find.text('CONFIRMED'), findsOneWidget);
-      expect(find.text('PENDING'), findsOneWidget);
+      expect(find.text('Hình thức: COD'), findsOneWidget);
+      expect(find.text('Hình thức: SEPAY'), findsOneWidget);
+      expect(find.text('300000 ₫'), findsOneWidget);
+      expect(find.text('450000 ₫'), findsOneWidget);
     });
   });
 
