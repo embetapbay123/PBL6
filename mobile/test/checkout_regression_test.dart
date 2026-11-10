@@ -167,11 +167,13 @@ void main() {
       await open(tester, client);
       expect(client.requests.length, 1);
       await tester.scrollUntilVisible(
-        find.text('SANDBOX'),
+        find.byKey(const Key('payment_method_dropdown')),
         250,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text('SANDBOX'));
+      await tester.tap(find.byKey(const Key('payment_method_dropdown')));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('SANDBOX').last);
       await tester.pump();
       expect(client.requests.length, 2);
       client.requests[1].complete(quote(150000));

@@ -2155,6 +2155,13 @@ void main() {
         expect(find.text('Chi tiết báo giá'), findsOneWidget);
         expect(find.text('1250000 ₫'), findsWidgets);
         expect(find.text('Đặt hàng'), findsOneWidget);
+
+        // Verify single store notice banner is removed
+        expect(find.textContaining('Đơn hàng này chỉ gồm sản phẩm của'), findsNothing);
+
+        // Verify payment method dropdown
+        expect(find.text('Chọn phương thức:'), findsOneWidget);
+        expect(find.byKey(const Key('payment_method_dropdown')), findsOneWidget);
       },
     );
 

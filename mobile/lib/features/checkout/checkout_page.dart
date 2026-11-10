@@ -434,14 +434,73 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
+    final initialItems = [
+      ...?widget.initialSelectedItems,
+      ...((ref.read(cartItemsProvider).valueOrNull?['items'] as List?)
+              ?.whereType<Map>()
+              .map((e) => Map<String, dynamic>.from(e)) ??
+          []),
+    ];
+
+    Map<String, dynamic>? findMatch(Map<String, dynamic> itemMap, int index) {
+      final cartItemId =
+          (itemMap['cart_item_id'] ?? itemMap['id'])?.toString();
+      final sku = (itemMap['sku'] ?? itemMap['variant_sku'])?.toString();
+      final variantId = itemMap['variant_id']?.toString();
+      final productId = itemMap['product_id']?.toString();
+      final title = (itemMap['title'] ?? itemMap['product_title'])?.toString();
+
+      for (final init in initialItems) {
+        if (cartItemId != null &&
+            (init['id']?.toString() == cartItemId ||
+                init['cart_item_id']?.toString() == cartItemId)) {
+          return init;
+        }
+        if (sku != null &&
+            (init['sku']?.toString() == sku ||
+                init['variant_sku']?.toString() == sku)) {
+          return init;
+        }
+        if (variantId != null && init['variant_id']?.toString() == variantId) {
+          return init;
+        }
+        if (productId != null && init['product_id']?.toString() == productId) {
+          return init;
+        }
+        if (title != null &&
+            (init['title']?.toString() == title ||
+                init['product_title']?.toString() == title)) {
+          return init;
+        }
+      }
+      if (index < initialItems.length) {
+        return initialItems[index];
+      }
+      return null;
+    }
+
+    var itemIdx = 0;
     final items = _quote == null
         ? (widget.initialSelectedItems ?? [])
         : (_quote!['stores'] as List)
               .expand(
                 (store) => (store['items'] as List? ?? []).map(
-                  (item) => {
-                    ...Map<String, dynamic>.from(item as Map),
-                    'store_id': store['store_id'],
+                  (item) {
+                    final itemMap = Map<String, dynamic>.from(item as Map);
+                    final match = findMatch(itemMap, itemIdx++);
+                    return {
+                      if (match != null) ...match,
+                      ...itemMap,
+                      'store_id': store['store_id'],
+                      if (itemMap['image_url'] == null &&
+                          match?['image_url'] != null)
+                        'image_url': match!['image_url'],
+                      if (itemMap['title'] == null && match?['title'] != null)
+                        'title': match!['title'],
+                      if (itemMap['variant_text'] == null &&
+                          match?['variant_text'] != null)
+                        'variant_text': match!['variant_text'],
+                    };
                   },
                 ),
               )
@@ -632,39 +691,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
             const SizedBox(height: 14),
 
-            // Single Vendor Notice Banner (Matching Image 4)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF0F0),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFFFD6D6), width: 1),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Color(0xFFE53935),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Đơn hàng này chỉ gồm sản phẩm của $firstStoreName.',
-                      style: const TextStyle(
-                        color: Color(0xFFD32F2F),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
             // Store Items Cards (Matching Image 4)
             ...storeGroups.keys.map((sId) {
               final sItems = storeGroups[sId]!;
@@ -741,7 +767,14 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                             (item['unit_price_vnd'] as num?)?.toInt() ??
                             (item['price_vnd'] as num?)?.toInt();
                         final qty = (item['quantity'] as num?)?.toInt() ?? 1;
-                        final imageUrl = item['image_url']?.toString();
+                        final imageUrl = item['image_url']?.toString() ??
+                            (item['images'] is List &&
+                                    (item['images'] as List).isNotEmpty
+                                ? ((item['images'] as List).first is Map
+                                    ? (item['images'] as List).first['image_url']?.toString()
+                                    : (item['images'] as List).first.toString())
+                                : null) ??
+                            item['thumbnail']?.toString();
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -1249,30 +1282,64 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
             const SizedBox(height: 10),
 
-            // Segmented switch row for easy selection & automated test clicking
+            // Dropdown selection for payment method
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Chọn phương thức:',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
                 ),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'SANDBOX', label: Text('SANDBOX')),
-                    ButtonSegment(value: 'COD', label: Text('COD')),
-                  ],
-                  selected: {currentPayment},
-                  onSelectionChanged: _submittingOrder
-                      ? null
-                      : (newSet) {
-                          setState(() {
-                            for (final sId in _paymentMethods.keys) {
-                              _paymentMethods[sId] = newSet.first;
-                            }
-                          });
-                          _fetchQuote();
-                        },
+                Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300, width: 1),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      key: const Key('payment_method_dropdown'),
+                      value: currentPayment,
+                      icon: const Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: AppColors.textPrimary,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      onChanged: _submittingOrder
+                          ? null
+                          : (newVal) {
+                              if (newVal == null) return;
+                              setState(() {
+                                for (final sId in _paymentMethods.keys) {
+                                  _paymentMethods[sId] = newVal;
+                                }
+                              });
+                              _fetchQuote();
+                            },
+                      items: const [
+                        DropdownMenuItem<String>(
+                          value: 'SANDBOX',
+                          child: Text('SANDBOX'),
+                        ),
+                        DropdownMenuItem<String>(
+                          value: 'COD',
+                          child: Text('COD'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
