@@ -2342,7 +2342,10 @@ void main() {
       expect(find.text('Đơn hàng của bạn đã được ghi nhận thành công'), findsOneWidget);
       expect(find.textContaining('Mã nhóm mua sắm'), findsNothing);
       expect(find.textContaining('Mã đơn hàng'), findsNothing);
-      expect(find.text('750.000 đ'), findsOneWidget);
+      expect(find.byKey(const Key('sepay_qr_section')), findsOneWidget);
+      expect(find.text('Thanh toán SePay QR'), findsOneWidget);
+      expect(find.text('0900000000'), findsOneWidget);
+      expect(find.text('750.000 đ'), findsWidgets);
       expect(find.text('Store: store-a'), findsOneWidget);
       expect(find.text('Store: store-b'), findsOneWidget);
       expect(find.text('Hình thức: COD'), findsOneWidget);

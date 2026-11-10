@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/app_theme.dart';
 
 class OrderSuccessPage extends StatelessWidget {
@@ -33,6 +34,28 @@ class OrderSuccessPage extends StatelessWidget {
         (orderBatch['order_ids'] as List?)?.map((e) => e.toString()).toList() ??
         [];
     final totalVnd = (orderBatch['payable_total_vnd'] as num?)?.toInt() ?? 0;
+
+    final hasSepay = orders.any((o) {
+      final raw = o['payment_method']?.toString().toUpperCase() ?? '';
+      return raw == 'SANDBOX' || raw == 'SEPAY';
+    }) ||
+    orderBatch['payment_method']?.toString().toUpperCase() == 'SANDBOX' ||
+    orderBatch['payment_method']?.toString().toUpperCase() == 'SEPAY' ||
+    (orderBatch['payment_methods'] is Map &&
+        (orderBatch['payment_methods'] as Map).values.any((m) {
+          final s = m.toString().toUpperCase();
+          return s == 'SANDBOX' || s == 'SEPAY';
+        }));
+
+    final rawRef = purchaseGroupId != 'N/A' && purchaseGroupId.isNotEmpty
+        ? purchaseGroupId.replaceAll('-', '').toUpperCase()
+        : (orders.isNotEmpty && orders.first['id'] != null
+            ? orders.first['id'].toString().replaceAll('-', '').toUpperCase()
+            : 'ORDER$totalVnd');
+    final transferCode =
+        'PBL6${rawRef.substring(0, rawRef.length > 8 ? 8 : rawRef.length)}';
+    final qrUrl = orderBatch['qr_url']?.toString() ??
+        'https://qr.sepay.vn/img?acc=0900000000&bank=MBBank&amount=$totalVnd&des=$transferCode&template=compact';
 
     return Scaffold(
       appBar: AppBar(
@@ -113,6 +136,171 @@ class OrderSuccessPage extends StatelessWidget {
                 ),
               ),
             ),
+
+            if (hasSepay) ...[
+              const SizedBox(height: 16),
+              Container(
+                key: const Key('sepay_qr_section'),
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFD6E4FF), width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withAlpha(12),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE6F7FF),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF91D5FF)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.qr_code_2, size: 18, color: Color(0xFF1890FF)),
+                          SizedBox(width: 6),
+                          Text(
+                            'Thanh toán SePay QR',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF096DD9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Quét mã QR để thanh toán',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF222222),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Sử dụng App Ngân hàng hoặc Ví điện tử quét mã VietQR',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // QR Frame
+                    Container(
+                      width: 220,
+                      height: 220,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF1890FF), width: 1.8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withAlpha(25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          qrUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (ctx, err, stack) => Image.network(
+                            'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=SEPAY_$transferCode',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.qr_code_2, size: 85, color: Color(0xFF1890FF)),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    transferCode,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Payment details
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFEEEEEE)),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildDetailRow(context, 'Ngân hàng:', 'MBBank (Quân Đội)'),
+                          const Divider(height: 14, color: Color(0xFFEBEBEB)),
+                          _buildDetailRow(
+                            context,
+                            'Số tài khoản:',
+                            '0900000000',
+                            isCopyable: true,
+                          ),
+                          const Divider(height: 14, color: Color(0xFFEBEBEB)),
+                          _buildDetailRow(context, 'Chủ tài khoản:', 'PBL6 E-COMMERCE'),
+                          const Divider(height: 14, color: Color(0xFFEBEBEB)),
+                          _buildDetailRow(
+                            context,
+                            'Số tiền:',
+                            _formatPrice(totalVnd),
+                            highlight: true,
+                          ),
+                          const Divider(height: 14, color: Color(0xFFEBEBEB)),
+                          _buildDetailRow(
+                            context,
+                            'Nội dung CK:',
+                            transferCode,
+                            isCopyable: true,
+                            highlight: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, size: 14, color: Color(0xFFFAAD14)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Hệ thống SePay tự động xác nhận đơn hàng sau 1-3 phút khi nhận đúng nội dung chuyển khoản.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 24),
 
@@ -282,6 +470,79 @@ class OrderSuccessPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  static Widget _buildDetailRow(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isCopyable = false,
+    bool highlight = false,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12.5,
+            color: Color(0xFF666666),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: highlight ? FontWeight.bold : FontWeight.w600,
+                color:
+                    highlight ? const Color(0xFFEE4D2D) : const Color(0xFF222222),
+              ),
+            ),
+            if (isCopyable) ...[
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: value));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Đã sao chép $value'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F7FF),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFF91D5FF), width: 0.5),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.copy, size: 11, color: Color(0xFF1890FF)),
+                      SizedBox(width: 2),
+                      Text(
+                        'Sao chép',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Color(0xFF1890FF),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }
