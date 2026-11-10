@@ -2212,91 +2212,308 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
         ),
         const SizedBox(height: 10),
         SizedBox(
-          height: 132,
+          height: 265,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: recentItems.length,
-            separatorBuilder: (_, index) => const SizedBox(width: 10),
+            separatorBuilder: (_, index) => const SizedBox(width: 12),
             itemBuilder: (context, idx) {
-              final prod = recentItems[idx];
-              final title = prod.title;
-              final price = prod.priceDisplay;
-              final imageUrl = prod.imageUrl;
-
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ProductDetailPage(
-                        productId: prod.id,
-                        initialProduct: prod.rawProduct,
-                      ),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: 95,
-                  decoration: AppDecorations.card(radius: 10),
-                  padding: const EdgeInsets.all(6),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          height: 56,
-                          width: double.infinity,
-                          color: const Color(0xFFF3F4F6),
-                          child: (imageUrl.isNotEmpty && imageUrl.startsWith('http'))
-                              ? Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => const Center(
-                                    child: Icon(
-                                      Icons.shopping_bag_outlined,
-                                      size: 24,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                )
-                              : const Center(
-                                  child: Icon(
-                                    Icons.shopping_bag_outlined,
-                                    size: 24,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$price ₫',
-                        style: const TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              return _buildRecentlyViewedCard(context, recentItems[idx]);
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildRecentlyViewedCard(BuildContext context, RecentlyViewedItem item) {
+    final rawProduct = item.rawProduct.isNotEmpty
+        ? Map<String, dynamic>.from(item.rawProduct)
+        : <String, dynamic>{
+            'id': item.id,
+            'title': item.title,
+            'price_vnd': item.priceVnd,
+            'image_url': item.imageUrl,
+          };
+    final id = item.id;
+    final title = item.title;
+    final lowestPrice = item.priceVnd;
+    final imageUrl = item.imageUrl;
+
+    int? discountPercent = (rawProduct['discount_percent'] as num?)?.toInt() ??
+        (rawProduct['discount'] is num ? (rawProduct['discount'] as num).toInt() : null);
+    if (discountPercent == null && rawProduct['discount'] is String) {
+      discountPercent = int.tryParse((rawProduct['discount'] as String).replaceAll(RegExp(r'[^\d]'), ''));
+    }
+    final int? originalPriceInt = (rawProduct['original_price_vnd'] as num?)?.toInt() ??
+        (rawProduct['original_price'] as num?)?.toInt();
+    final bool hasDiscount = (discountPercent != null && discountPercent > 0) ||
+        (originalPriceInt != null && originalPriceInt > lowestPrice);
+
+    final ratingNum = rawProduct['rating'] ?? rawProduct['rating_average'] ?? rawProduct['avg_rating'];
+    final ratingStr = (ratingNum is num)
+        ? (ratingNum > 0 ? ratingNum.toStringAsFixed(1) : '4.8')
+        : (ratingNum is String && double.tryParse(ratingNum) != null
+            ? (double.parse(ratingNum) > 0 ? double.parse(ratingNum).toStringAsFixed(1) : '4.8')
+            : '4.8');
+    final salesCount = _getProductMonthlySales(rawProduct);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailPage(
+              productId: id,
+              initialProduct: rawProduct,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 155,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x08000000),
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Stack
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    color: const Color(0xFFF9FAFB),
+                    child: (imageUrl.isNotEmpty && imageUrl.startsWith('http'))
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, stack) => const Center(
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 36,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 36,
+                              color: Color(0xFFCBD5E1),
+                            ),
+                          ),
+                  ),
+                  if (hasDiscount)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                        decoration: AppDecorations.discountTag,
+                        child: Text(
+                          discountPercent != null
+                              ? '-$discountPercent%'
+                              : '-${(((originalPriceInt! - lowestPrice) / originalPriceInt) * 100).round()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final isFav = ref.watch(favoritesProvider).any((f) => f.id == id);
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            ref.read(favoritesProvider.notifier).toggleFavorite(rawProduct);
+                            AppNoticeDialog.show(
+                              context,
+                              message: isFav
+                                  ? 'Đã xóa khỏi danh sách yêu thích.'
+                                  : 'Đã thêm vào danh sách yêu thích!',
+                            );
+                          },
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Icon(
+                                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: isFav ? const Color(0xFFDC2626) : const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Details
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 32,
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        height: 1.25,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        _formatPrice(lowestPrice),
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      if (originalPriceInt != null && originalPriceInt > lowestPrice) ...[
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            _formatPrice(originalPriceInt),
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded, color: AppColors.star, size: 13),
+                      const SizedBox(width: 2),
+                      Text(
+                        ratingStr,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '• Đã bán ${_formatSalesCount(salesCount)}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 28,
+                    child: OutlinedButton.icon(
+                      style: ButtonStyle(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        padding: const WidgetStatePropertyAll(
+                          EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                        ),
+                        minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
+                        shape: WidgetStatePropertyAll(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return AppColors.primary;
+                          }
+                          return Colors.white;
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        iconColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return Colors.white;
+                          }
+                          return const Color(0xFF374151);
+                        }),
+                        side: WidgetStateProperty.resolveWith<BorderSide>((states) {
+                          if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                            return const BorderSide(color: AppColors.primary);
+                          }
+                          return const BorderSide(color: Color(0xFFD1D5DB));
+                        }),
+                      ),
+                      icon: const Icon(Icons.shopping_cart_outlined, size: 13),
+                      label: const Text(
+                        'Thêm vào giỏ',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: () => _quickAddToCart(rawProduct),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
