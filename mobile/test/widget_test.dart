@@ -3715,5 +3715,40 @@ void main() {
         expect(find.text('Đã đánh dấu tất cả là đã đọc.'), findsOneWidget);
       },
     );
+
+    testWidgets('AppNoticeDialog dismisses immediately on any user touch/tap anywhere on screen', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () {
+                  AppNoticeDialog.show(
+                    context,
+                    message: 'Đã xóa khỏi danh sách yêu thích.',
+                  );
+                },
+                child: const Text('Hiện thông báo'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap button to open notice dialog
+      await tester.tap(find.text('Hiện thông báo'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Đã xóa khỏi danh sách yêu thích.'), findsOneWidget);
+
+      // Tap anywhere on screen (outside the card)
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      // Dialog is immediately dismissed
+      expect(find.text('Đã xóa khỏi danh sách yêu thích.'), findsNothing);
+    });
   });
 }

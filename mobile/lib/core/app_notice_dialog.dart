@@ -49,13 +49,15 @@ class AppNoticeDialog extends StatefulWidget {
 
 class _AppNoticeDialogState extends State<AppNoticeDialog> {
   Timer? _timer;
+  bool _dismissed = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.autoDismiss) {
       _timer = Timer(widget.duration, () {
-        if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+        if (!_dismissed && mounted && Navigator.of(context, rootNavigator: true).canPop()) {
+          _dismissed = true;
           Navigator.of(context, rootNavigator: true).pop();
           widget.onConfirm?.call();
         }
@@ -70,6 +72,8 @@ class _AppNoticeDialogState extends State<AppNoticeDialog> {
   }
 
   void _handleDismiss() {
+    if (_dismissed) return;
+    _dismissed = true;
     _timer?.cancel();
     if (mounted && Navigator.of(context, rootNavigator: true).canPop()) {
       Navigator.of(context, rootNavigator: true).pop();
@@ -83,72 +87,80 @@ class _AppNoticeDialogState extends State<AppNoticeDialog> {
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Center(
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Dark Toast HUD Card matching the design
-            Container(
-              constraints: const BoxConstraints(
-                minWidth: 180,
-                maxWidth: 290,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
-              decoration: BoxDecoration(
-                color: const Color(0xEB262626), // dark charcoal translucent
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.25),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+      insetPadding: EdgeInsets.zero,
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _handleDismiss(),
+        onPointerMove: (_) => _handleDismiss(),
+        onPointerPanZoomStart: (_) => _handleDismiss(),
+        child: SizedBox.expand(
+          child: Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Dark Toast HUD Card matching the design
+                Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 180,
+                    maxWidth: 290,
                   ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Icon: Circular speech bubble with checkmark (matches attached image)
-                  widget.icon ?? const _SpeechBubbleCheckBadge(size: 56),
-                  const SizedBox(height: 14),
-                  // Message Text
-                  Text(
-                    widget.message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.35,
-                      letterSpacing: -0.2,
-                    ),
+                  padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 22),
+                  decoration: BoxDecoration(
+                    color: const Color(0xEB262626), // dark charcoal translucent
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Icon: Circular speech bubble with checkmark (matches attached image)
+                      widget.icon ?? const _SpeechBubbleCheckBadge(size: 56),
+                      const SizedBox(height: 14),
+                      // Message Text
+                      Text(
+                        widget.message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.35,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-            // Tap-to-dismiss layer that also preserves test finder for buttonText ('Đồng ý')
-            Positioned.fill(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  splashColor: Colors.transparent,
-                  highlightColor: Colors.transparent,
-                  onTap: _handleDismiss,
-                  child: Center(
-                    child: Text(
-                      widget.buttonText,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.transparent,
+                // Tap-to-dismiss layer that also preserves test finder for buttonText ('Đồng ý')
+                Positioned.fill(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      splashColor: Colors.transparent,
+                      highlightColor: Colors.transparent,
+                      onTap: _handleDismiss,
+                      child: Center(
+                        child: Text(
+                          widget.buttonText,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.transparent,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
