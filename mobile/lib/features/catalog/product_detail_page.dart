@@ -1666,23 +1666,13 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: const [
-            Icon(
-              Icons.auto_awesome,
-              color: AppColors.primary,
-              size: 16,
-            ),
-            SizedBox(width: 6),
-            Text(
-              'Sản phẩm liên quan',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
-              ),
-            ),
-          ],
+        const Text(
+          'Sản phẩm liên quan',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F2937),
+          ),
         ),
         const SizedBox(height: 12),
         GridView.builder(
