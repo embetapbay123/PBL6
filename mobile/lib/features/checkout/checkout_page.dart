@@ -53,6 +53,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   // Wallet balance state (fetched from server)
   int _walletBalance = 500000;
   bool _loadingWallet = false;
+  bool _isPaymentDropdownOpen = false;
 
   // Suggested Vouchers State
   List<Map<String, dynamic>> _suggestedVouchers = [];
@@ -1243,6 +1244,15 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       paymentIcon = Icons.payments_outlined;
     }
 
+    final String selectedPaymentLabel;
+    if (currentPayment == 'WALLET') {
+      selectedPaymentLabel = 'Ví số dư (${_formatPrice(_walletBalance)})';
+    } else if (currentPayment == 'SANDBOX') {
+      selectedPaymentLabel = 'SANDBOX';
+    } else {
+      selectedPaymentLabel = 'COD';
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1343,85 +1353,124 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
             const SizedBox(height: 10),
 
-            // Dropdown selection for payment method (always dropped down by default)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // Dropdown selection for payment method
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: InkWell(
-                    key: const Key('payment_method_dropdown'),
-                    onTap: () {},
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Chọn phương thức:',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isPaymentDropdownOpen = !_isPaymentDropdownOpen;
+                        });
+                      },
+                      child: const Text(
+                        'Chọn phương thức:',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
-                        SizedBox(width: 4),
-                        Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      constraints: const BoxConstraints(maxWidth: 220),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade200, width: 0.8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      key: const Key('payment_method_dropdown'),
+                      onTap: () {
+                        setState(() {
+                          _isPaymentDropdownOpen = !_isPaymentDropdownOpen;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 220),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300, width: 0.8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.04),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildPaymentDropdownOption(
-                              value: 'WALLET',
-                              label: 'Ví số dư (${_formatPrice(_walletBalance)})',
-                              isSelected: currentPayment == 'WALLET',
-                              textColor: const Color(0xFF1890FF),
+                            Flexible(
+                              child: Text(
+                                selectedPaymentLabel,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF263238),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const Divider(height: 1, color: Color(0xFFF0F0F0)),
-                            _buildPaymentDropdownOption(
-                              value: 'SANDBOX',
-                              label: 'SANDBOX',
-                              isSelected: currentPayment == 'SANDBOX',
-                            ),
-                            const Divider(height: 1, color: Color(0xFFF0F0F0)),
-                            _buildPaymentDropdownOption(
-                              value: 'COD',
-                              label: 'COD',
-                              isSelected: currentPayment == 'COD',
+                            const SizedBox(width: 6),
+                            Icon(
+                              _isPaymentDropdownOpen
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
+                              size: 18,
+                              color: const Color(0xFF555555),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
+                if (_isPaymentDropdownOpen) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 220),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade200, width: 0.8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildPaymentDropdownOption(
+                            value: 'WALLET',
+                            label: 'Ví số dư (${_formatPrice(_walletBalance)})',
+                            isSelected: currentPayment == 'WALLET',
+                          ),
+                          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                          _buildPaymentDropdownOption(
+                            value: 'SANDBOX',
+                            label: 'SANDBOX',
+                            isSelected: currentPayment == 'SANDBOX',
+                          ),
+                          const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                          _buildPaymentDropdownOption(
+                            value: 'COD',
+                            label: 'COD',
+                            isSelected: currentPayment == 'COD',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -1434,19 +1483,23 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     required String value,
     required String label,
     required bool isSelected,
-    Color? textColor,
   }) {
     return InkWell(
       onTap: _submittingOrder
           ? null
           : () {
-              if (_paymentMethods.values.firstOrNull == value) return;
+              final isCurrent = _paymentMethods.values.firstOrNull == value;
               setState(() {
-                for (final sId in _paymentMethods.keys) {
-                  _paymentMethods[sId] = value;
+                if (!isCurrent) {
+                  for (final sId in _paymentMethods.keys) {
+                    _paymentMethods[sId] = value;
+                  }
                 }
+                _isPaymentDropdownOpen = false;
               });
-              _fetchQuote();
+              if (!isCurrent) {
+                _fetchQuote();
+              }
             },
       child: Container(
         color: isSelected ? const Color(0xFFEEEEEE) : Colors.transparent,
@@ -1456,7 +1509,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: textColor ?? (isSelected ? const Color(0xFF263238) : const Color(0xFF424242)),
+            color: isSelected ? const Color(0xFF263238) : const Color(0xFF424242),
           ),
         ),
       ),

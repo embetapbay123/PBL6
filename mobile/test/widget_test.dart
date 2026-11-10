@@ -2240,16 +2240,26 @@ void main() {
         // Verify single store notice banner is removed
         expect(find.textContaining('Đơn hàng này chỉ gồm sản phẩm của'), findsNothing);
 
-        // Verify payment method dropdown and wallet balance option
+        // Verify payment method dropdown and wallet balance option (collapsed by default, expands downwards on tap, neutral text style)
         expect(find.text('Chọn phương thức:'), findsOneWidget);
         final paymentDropdown = find.byKey(const Key('payment_method_dropdown'));
         expect(paymentDropdown, findsOneWidget);
         await tester.ensureVisible(paymentDropdown);
         await tester.pumpAndSettle();
+        expect(find.text('Ví số dư (500.000 đ)'), findsNothing);
+        expect(find.byIcon(Icons.keyboard_arrow_down), findsWidgets);
+
         await tester.tap(paymentDropdown);
         await tester.pumpAndSettle();
-        expect(find.text('Ví số dư (500.000 đ)'), findsWidgets);
-        await tester.tap(find.text('Ví số dư (500.000 đ)').last);
+        expect(find.text('Ví số dư (500.000 đ)'), findsOneWidget);
+        expect(find.text('SANDBOX'), findsWidgets);
+        expect(find.text('COD'), findsWidgets);
+
+        // Verify text style of Ví số dư does not use blue Color(0xFF1890FF)
+        final walletTextWidget = tester.widget<Text>(find.text('Ví số dư (500.000 đ)'));
+        expect(walletTextWidget.style?.color, isNot(equals(const Color(0xFF1890FF))));
+
+        await tester.tap(find.text('Ví số dư (500.000 đ)'));
         await tester.pumpAndSettle();
         expect(find.text('Ví số dư (500.000 đ)'), findsWidgets);
 
