@@ -924,8 +924,15 @@ class ApiClient {
 
   // --- Order Management (MOB-04) ---
   static final Map<String, Map<String, dynamic>> _localRefunds = {};
+  static final Map<String, String> _localOrderNotes = {};
 
   Map<String, dynamic>? getLocalRefund(String orderId) => _localRefunds[orderId];
+  void saveOrderNote(String key, String note) {
+    if (key.isNotEmpty && note.trim().isNotEmpty) {
+      _localOrderNotes[key] = note.trim();
+    }
+  }
+  String? getOrderNote(String key) => _localOrderNotes[key];
 
   Future<Map<String, dynamic>> listOwnOrders({
     int page = 1,
@@ -959,6 +966,10 @@ class ApiClient {
       map['refund_status'] ??= _localRefunds[id]!['status'];
       map['refunded_vnd'] ??= _localRefunds[id]!['amount_vnd'];
       map['refund'] ??= _localRefunds[id];
+    }
+    if (_localOrderNotes.containsKey(id)) {
+      map['buyer_note'] ??= _localOrderNotes[id];
+      map['note'] ??= _localOrderNotes[id];
     }
     return map;
   }

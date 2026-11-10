@@ -484,6 +484,7 @@ class MockApiClient extends ApiClient {
     'status': id.contains('comp') ? 'COMPLETED' : 'PENDING',
     'version': 1,
     'payment_method': 'COD',
+    'buyer_note': 'Giao hàng cẩn thận giúp mình nhé',
     'amounts': {
       'goods_vnd': 350000,
       'shipping_vnd': 30000,
@@ -2321,6 +2322,7 @@ void main() {
             'status': 'CONFIRMED',
             'payment_method': 'COD',
             'amounts': {'payable_vnd': 300000},
+            'buyer_note': 'Giao trong giờ hành chính',
           },
           {
             'id': 'order-2',
@@ -2350,6 +2352,8 @@ void main() {
       expect(find.text('Store: store-b'), findsOneWidget);
       expect(find.text('Hình thức: COD'), findsOneWidget);
       expect(find.text('Hình thức: SEPAY'), findsOneWidget);
+      expect(find.text('Lời nhắn cho shop: '), findsOneWidget);
+      expect(find.text('Giao trong giờ hành chính'), findsOneWidget);
       expect(find.text('300.000 đ'), findsOneWidget);
       expect(find.text('450.000 đ'), findsOneWidget);
     });
@@ -2565,6 +2569,8 @@ void main() {
       expect(find.text('Chi tiết đơn hàng'), findsOneWidget);
       expect(find.text('PBL Tech Store'), findsOneWidget);
       expect(find.text('Chuột Gaming không dây'), findsOneWidget);
+      expect(find.text('Lời nhắn cho shop: '), findsOneWidget);
+      expect(find.text('Giao hàng cẩn thận giúp mình nhé'), findsOneWidget);
       expect(find.text('Phương thức thanh toán'), findsOneWidget);
       expect(find.text('Thanh toán khi nhận hàng (COD)'), findsOneWidget);
       expect(find.text('Chi tiết thanh toán'), findsOneWidget);

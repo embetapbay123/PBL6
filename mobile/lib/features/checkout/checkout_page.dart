@@ -395,6 +395,32 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         idempotencyKey: idempotencyKey,
       );
 
+      // Save store notes and enrich result
+      final storeNotes = <String, String>{
+        for (final entry in _storeNoteControllers.entries)
+          if (entry.value.text.trim().isNotEmpty) entry.key: entry.value.text.trim(),
+      };
+      for (final entry in storeNotes.entries) {
+        client.saveOrderNote(entry.key, entry.value);
+      }
+
+      final enrichedResult = Map<String, dynamic>.from(result);
+      enrichedResult['store_notes'] = storeNotes;
+      if (enrichedResult['orders'] is List) {
+        enrichedResult['orders'] = (enrichedResult['orders'] as List).map((o) {
+          final m = Map<String, dynamic>.from(o as Map);
+          final sid = m['store_id']?.toString() ?? '';
+          final oid = m['id']?.toString() ?? '';
+          final note = storeNotes[sid] ?? '';
+          if (note.isNotEmpty) {
+            m['buyer_note'] = note;
+            m['note'] = note;
+            client.saveOrderNote(oid, note);
+          }
+          return m;
+        }).toList();
+      }
+
       // Invalidate cart to clear ordered items
       ref.invalidate(cartItemsProvider);
 
@@ -402,7 +428,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => OrderSuccessPage(orderBatch: result),
+            builder: (_) => OrderSuccessPage(orderBatch: enrichedResult),
           ),
         );
       }

@@ -742,6 +742,61 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 ),
               );
             }),
+            if ((_order!['buyer_note'] != null &&
+                    _order!['buyer_note'].toString().trim().isNotEmpty) ||
+                (_order!['note'] != null &&
+                    _order!['note'].toString().trim().isNotEmpty) ||
+                (ref.read(apiProvider).getOrderNote(_order!['id']?.toString() ?? widget.orderId) !=
+                    null &&
+                    ref
+                        .read(apiProvider)
+                        .getOrderNote(_order!['id']?.toString() ?? widget.orderId)!
+                        .trim()
+                        .isNotEmpty) ||
+                (ref.read(apiProvider).getOrderNote(_order!['store_id']?.toString() ?? '') !=
+                    null &&
+                    ref
+                        .read(apiProvider)
+                        .getOrderNote(_order!['store_id']?.toString() ?? '')!
+                        .trim()
+                        .isNotEmpty)) ...[
+              const Divider(height: 20, color: Color(0xFFF1F3F5)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 15,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Lời nhắn cho shop: ',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF666666),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      _order!['buyer_note']?.toString().trim() ??
+                          _order!['note']?.toString().trim() ??
+                          ref.read(apiProvider).getOrderNote(
+                              _order!['id']?.toString() ?? widget.orderId) ??
+                          ref.read(apiProvider).getOrderNote(
+                              _order!['store_id']?.toString() ?? '') ??
+                          '',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

@@ -381,6 +381,77 @@ class OrderSuccessPage extends StatelessWidget {
                             ),
                           ],
                         ),
+                        if (o['buyer_note'] != null &&
+                            o['buyer_note'].toString().trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.chat_bubble_outline,
+                                size: 14,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Lời nhắn cho shop: ',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: Color(0xFF666666),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  o['buyer_note'].toString().trim(),
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ] else if (orderBatch['store_notes'] is Map &&
+                            (orderBatch['store_notes'][o['store_id']?.toString()] != null &&
+                                orderBatch['store_notes'][o['store_id']?.toString()]
+                                    .toString()
+                                    .trim()
+                                    .isNotEmpty)) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.chat_bubble_outline,
+                                size: 14,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'Lời nhắn cho shop: ',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: Color(0xFF666666),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  orderBatch['store_notes'][o['store_id']?.toString()]
+                                      .toString()
+                                      .trim(),
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
