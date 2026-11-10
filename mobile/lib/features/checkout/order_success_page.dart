@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 
 class OrderSuccessPage extends StatelessWidget {
@@ -319,9 +320,26 @@ class OrderSuccessPage extends StatelessWidget {
 
             if (orders.isNotEmpty)
               ...orders.map((o) {
-                final storeName = o['store_name']?.toString() ??
+                final sid = o['store_id']?.toString() ?? '';
+                final rawStoreName = o['store_name']?.toString() ??
                     (o['store'] is Map ? o['store']['name']?.toString() : null) ??
-                    (o['store_id'] != null ? 'Store: ${o['store_id']}' : 'Cửa hàng');
+                    (orderBatch['store_names'] is Map
+                        ? orderBatch['store_names'][sid]?.toString()
+                        : null) ??
+                    ApiClient.getStoreNameStatic(sid);
+
+                final String storeName;
+                if (rawStoreName != null &&
+                    rawStoreName.isNotEmpty &&
+                    !ApiClient.isHexUuidPlaceholder(rawStoreName)) {
+                  storeName = rawStoreName.startsWith('Store:')
+                      ? rawStoreName
+                      : 'Store: $rawStoreName';
+                } else if (sid.isNotEmpty) {
+                  storeName = 'Store: $sid';
+                } else {
+                  storeName = 'Cửa hàng';
+                }
                 final rawMethod = o['payment_method']?.toString().toUpperCase() ?? 'COD';
                 final pMethod = (rawMethod == 'SANDBOX' || rawMethod == 'SEPAY')
                     ? 'SEPAY'

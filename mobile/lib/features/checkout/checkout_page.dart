@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/api_client.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import 'order_success_page.dart';
@@ -404,8 +405,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         client.saveOrderNote(entry.key, entry.value);
       }
 
+      final storeNamesMap = <String, String>{};
+      for (final item in widget.initialSelectedItems ?? <Map<String, dynamic>>[]) {
+        final sid = item['store_id']?.toString() ?? '';
+        final sname = item['store_name']?.toString() ?? '';
+        if (sid.isNotEmpty && sname.isNotEmpty && !ApiClient.isHexUuidPlaceholder(sname)) {
+          storeNamesMap[sid] = sname;
+          ApiClient.saveStoreNameStatic(sid, sname);
+        }
+      }
+
       final enrichedResult = Map<String, dynamic>.from(result);
       enrichedResult['store_notes'] = storeNotes;
+      enrichedResult['store_names'] = storeNamesMap;
       if (enrichedResult['orders'] is List) {
         enrichedResult['orders'] = (enrichedResult['orders'] as List).map((o) {
           final m = Map<String, dynamic>.from(o as Map);
@@ -416,6 +428,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             m['buyer_note'] = note;
             m['note'] = note;
             client.saveOrderNote(oid, note);
+          }
+          final sName = storeNamesMap[sid] ??
+              ApiClient.getStoreNameStatic(sid) ??
+              m['store_name']?.toString();
+          if (sName != null && sName.isNotEmpty && !ApiClient.isHexUuidPlaceholder(sName)) {
+            m['store_name'] = sName;
           }
           return m;
         }).toList();
