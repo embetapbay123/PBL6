@@ -233,51 +233,65 @@ class MockApiClient extends ApiClient {
     Map<String, String>? paymentMethods,
     Map<String, String>? storeVouchers,
     String? platformVoucherCode,
-  }) async => {
-    'quote_id': 'quote-uuid-1234',
-    'expires_at': DateTime.now()
-        .add(const Duration(minutes: 15))
-        .toIso8601String(),
-    'payable_total_vnd': 1250000,
-    'stores': [
-      {
-        'store_id': 'store-tech',
-        'amounts': {
-          'goods_vnd': 350000,
-          'shipping_vnd': 25000,
-          'store_discount_vnd': 0,
-          'platform_discount_vnd': 25000,
-          'payable_vnd': 350000,
-        },
-        'items': [
-          {
-            'product_title': 'Bàn phím cơ không dây Bluetooth',
-            'sku': 'KB-RED',
-            'unit_price_vnd': 350000,
-            'quantity': 1,
+  }) async {
+    if (platformVoucherCode != null &&
+        platformVoucherCode.isNotEmpty &&
+        platformVoucherCode != 'DEMO-SAN-5K') {
+      throw Exception('Mã voucher sàn "$platformVoucherCode" không tồn tại.');
+    }
+    if (storeVouchers != null) {
+      for (final code in storeVouchers.values) {
+        if (code.isNotEmpty && code != 'DEMO-B-10K') {
+          throw Exception('Mã voucher cửa hàng "$code" không tồn tại.');
+        }
+      }
+    }
+    return {
+      'quote_id': 'quote-uuid-1234',
+      'expires_at': DateTime.now()
+          .add(const Duration(minutes: 15))
+          .toIso8601String(),
+      'payable_total_vnd': 1250000,
+      'stores': [
+        {
+          'store_id': 'store-tech',
+          'amounts': {
+            'goods_vnd': 350000,
+            'shipping_vnd': 25000,
+            'store_discount_vnd': 0,
+            'platform_discount_vnd': 25000,
+            'payable_vnd': 350000,
           },
-        ],
-      },
-      {
-        'store_id': 'store-fashion',
-        'amounts': {
-          'goods_vnd': 900000,
-          'shipping_vnd': 30000,
-          'store_discount_vnd': 30000,
-          'platform_discount_vnd': 0,
-          'payable_vnd': 900000,
+          'items': [
+            {
+              'product_title': 'Bàn phím cơ không dây Bluetooth',
+              'sku': 'KB-RED',
+              'unit_price_vnd': 350000,
+              'quantity': 1,
+            },
+          ],
         },
-        'items': [
-          {
-            'product_title': 'Áo hoodie Unisex',
-            'sku': 'HOODIE-BLACK-L',
-            'unit_price_vnd': 450000,
-            'quantity': 2,
+        {
+          'store_id': 'store-fashion',
+          'amounts': {
+            'goods_vnd': 900000,
+            'shipping_vnd': 30000,
+            'store_discount_vnd': 30000,
+            'platform_discount_vnd': 0,
+            'payable_vnd': 900000,
           },
-        ],
-      },
-    ],
-  };
+          'items': [
+            {
+              'product_title': 'Áo hoodie Unisex',
+              'sku': 'HOODIE-BLACK-L',
+              'unit_price_vnd': 450000,
+              'quantity': 2,
+            },
+          ],
+        },
+      ],
+    };
+  }
 
   @override
   Future<Map<String, dynamic>> confirmCheckout({
@@ -2161,10 +2175,11 @@ void main() {
         expect(find.text('Voucher toàn sàn PBL6'), findsNothing);
         expect(find.text('DEMO-SAN-5K'), findsNothing);
 
-        // Tap on the voucher field to open VoucherSelectionPage
+        // Tap on the voucher field to open VoucherSelectionPage (verify > is removed)
         final voucherField = find.byKey(const Key('checkout_voucher_field'));
         await tester.ensureVisible(voucherField);
         await tester.pumpAndSettle();
+        expect(find.descendant(of: voucherField, matching: find.byIcon(Icons.arrow_forward_ios)), findsNothing);
         await tester.tap(voucherField);
         await tester.pumpAndSettle();
 
@@ -2175,8 +2190,20 @@ void main() {
         expect(find.text('Ưu đãi từ cửa hàng'), findsOneWidget);
         expect(find.text('DEMO-B-10K'), findsOneWidget);
 
-        // Tap to select DEMO-SAN-5K
+        // Enter invalid voucher code and tap Áp dụng
+        await tester.enterText(find.byKey(const Key('voucher_input_field')), 'RANDOM_FAKE_CODE');
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('voucher_apply_button')));
+        await tester.pumpAndSettle();
+        expect(find.text('Mã giảm giá này không tồn tại hoặc đã hết lượt sử dụng'), findsOneWidget);
+
+        // Tap to select DEMO-SAN-5K -> moves to Voucher đã chọn at the top
         await tester.tap(find.text('DEMO-SAN-5K'));
+        await tester.pumpAndSettle();
+        expect(find.text('Voucher đã chọn'), findsOneWidget);
+
+        // Dismiss snackbars before tapping bottom button
+        await tester.pump(const Duration(seconds: 4));
         await tester.pumpAndSettle();
 
         // Tap 'Đồng ý'

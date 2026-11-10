@@ -301,6 +301,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             _warningMessage =
                 'Giá hoặc tồn kho sản phẩm vừa có thay đổi. Vui lòng kiểm tra lại trước khi chốt đơn!';
           }
+          if (errText.contains('VOUCHER') || errText.contains('voucher') || errText.contains('không tồn tại')) {
+            _appliedPlatformVoucher = null;
+            _platformVoucherController.clear();
+            _storeVouchers.clear();
+          }
           _quoteError = errText;
         });
       }
@@ -1395,6 +1400,13 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       await _fetchSuggestedVouchers();
     }
     if (!context.mounted) return;
+    final storeIds = widget.initialSelectedItems
+            ?.map((e) => e['store_id']?.toString() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toSet()
+            .toList() ??
+        _paymentMethods.keys.toList();
+
     final result = await Navigator.push<VoucherSelectionResult>(
       context,
       MaterialPageRoute(
@@ -1403,6 +1415,55 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           initialPlatformVoucher: _appliedPlatformVoucher,
           initialStoreVouchers: Map<String, String>.from(_storeVouchers),
           payableTotal: (_quote?['payable_total_vnd'] as num?)?.toInt() ?? 0,
+          onValidateCode: (code) async {
+            final client = ref.read(apiProvider);
+            final addressId = _selectedAddress?['id']?.toString() ?? '';
+            // 1. Test platform voucher
+            try {
+              final res = await client.quoteCheckout(
+                cartItemIds: widget.cartItemIds,
+                addressId: addressId,
+                paymentMethods: Map<String, String>.from(_paymentMethods),
+                storeVouchers: Map<String, String>.from(_storeVouchers),
+                platformVoucherCode: code,
+              );
+              int platDiscount = 0;
+              if (res['stores'] is List) {
+                for (final s in (res['stores'] as List)) {
+                  platDiscount += (s['platform_discount_vnd'] as num?)?.toInt() ??
+                      (s['amounts']?['platform_discount_vnd'] as num?)?.toInt() ?? 0;
+                }
+              }
+              return {
+                'valid': true,
+                'code': code.toUpperCase(),
+                'scope': 'PLATFORM',
+                'discount_value': platDiscount,
+              };
+            } catch (_) {
+              // 2. Try as store voucher for each store
+              for (final sId in storeIds) {
+                try {
+                  final testStoreVouchers = Map<String, String>.from(_storeVouchers);
+                  testStoreVouchers[sId] = code;
+                  final res = await client.quoteCheckout(
+                    cartItemIds: widget.cartItemIds,
+                    addressId: addressId,
+                    paymentMethods: Map<String, String>.from(_paymentMethods),
+                    storeVouchers: testStoreVouchers,
+                    platformVoucherCode: _appliedPlatformVoucher,
+                  );
+                  return {
+                    'valid': true,
+                    'code': code.toUpperCase(),
+                    'scope': 'STORE',
+                    'store_id': sId,
+                  };
+                } catch (_) {}
+              }
+              return null;
+            }
+          },
         ),
       ),
     );
@@ -1498,11 +1559,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           vertical: 10,
                         ),
                         border: OutlineInputBorder(),
-                        suffixIcon: Icon(
-                          Icons.arrow_forward_ios,
-                          size: 14,
-                          color: Colors.grey,
-                        ),
                       ),
                     ),
                   ),

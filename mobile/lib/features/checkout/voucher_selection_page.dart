@@ -18,12 +18,14 @@ class VoucherSelectionPage extends StatefulWidget {
     this.initialPlatformVoucher,
     required this.initialStoreVouchers,
     required this.payableTotal,
+    this.onValidateCode,
   });
 
   final List<Map<String, dynamic>> suggestedVouchers;
   final String? initialPlatformVoucher;
   final Map<String, String> initialStoreVouchers;
   final int payableTotal;
+  final Future<Map<String, dynamic>?> Function(String code)? onValidateCode;
 
   @override
   State<VoucherSelectionPage> createState() => _VoucherSelectionPageState();
@@ -33,6 +35,8 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
   late final TextEditingController _codeController;
   String? _selectedPlatformVoucher;
   late final Map<String, String> _selectedStoreVouchers;
+  late List<Map<String, dynamic>> _allVouchers;
+  bool _isValidatingCode = false;
 
   @override
   void initState() {
@@ -40,6 +44,58 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
     _codeController = TextEditingController();
     _selectedPlatformVoucher = widget.initialPlatformVoucher;
     _selectedStoreVouchers = Map<String, String>.from(widget.initialStoreVouchers);
+    _allVouchers = List<Map<String, dynamic>>.from(widget.suggestedVouchers);
+
+    // Ensure initially selected platform voucher has representation in _allVouchers
+    if (_selectedPlatformVoucher != null && _selectedPlatformVoucher!.isNotEmpty) {
+      final exists = _allVouchers.any((it) {
+        final v = it['voucher'] as Map<String, dynamic>? ?? {};
+        return v['code']?.toString().toUpperCase() == _selectedPlatformVoucher!.toUpperCase();
+      });
+      if (!exists) {
+        _allVouchers.insert(0, {
+          'voucher': {
+            'code': _selectedPlatformVoucher!,
+            'scope': 'PLATFORM',
+            'discount_type': 'FIXED',
+            'discount_value': 0,
+            'min_goods_vnd': 0,
+            'ends_at': '2027-12-31T23:59:59Z',
+            'status': 'ACTIVE',
+          },
+          'eligible': true,
+          'reason': 'Đã chọn',
+          'estimated_discount_vnd': 0,
+        });
+      }
+    }
+
+    // Ensure initially selected store vouchers have representation in _allVouchers
+    _selectedStoreVouchers.forEach((storeId, storeCode) {
+      if (storeCode.isNotEmpty) {
+        final exists = _allVouchers.any((it) {
+          final v = it['voucher'] as Map<String, dynamic>? ?? {};
+          return v['code']?.toString().toUpperCase() == storeCode.toUpperCase();
+        });
+        if (!exists) {
+          _allVouchers.insert(0, {
+            'voucher': {
+              'code': storeCode,
+              'scope': 'STORE',
+              'store_id': storeId,
+              'discount_type': 'FIXED',
+              'discount_value': 0,
+              'min_goods_vnd': 0,
+              'ends_at': '2027-12-31T23:59:59Z',
+              'status': 'ACTIVE',
+            },
+            'eligible': true,
+            'reason': 'Đã chọn',
+            'estimated_discount_vnd': 0,
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -70,13 +126,13 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
     return '$day.$month.$year';
   }
 
-  void _applyTypedCode() {
+  Future<void> _applyTypedCode() async {
     final code = _codeController.text.trim();
-    if (code.isEmpty) return;
+    if (code.isEmpty || _isValidatingCode) return;
 
-    // Check if code matches any suggested voucher
+    // 1. Check if code matches any voucher in _allVouchers
     Map<String, dynamic>? match;
-    for (final item in widget.suggestedVouchers) {
+    for (final item in _allVouchers) {
       final v = item['voucher'] as Map<String, dynamic>? ?? {};
       if (v['code']?.toString().toUpperCase() == code.toUpperCase()) {
         match = item;
@@ -86,50 +142,141 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
 
     if (match != null) {
       final v = match['voucher'] as Map<String, dynamic>? ?? {};
+      final endsAt = v['ends_at']?.toString();
+      final isExpired = endsAt != null && DateTime.tryParse(endsAt)?.isBefore(DateTime.now()) == true;
+      final status = v['status']?.toString().toUpperCase();
+      final isInactive = status != null && status != 'ACTIVE';
+      final usageLimit = (v['usage_limit'] as num?)?.toInt();
+      final usedCount = (v['used_count'] as num?)?.toInt() ?? (v['usage_count'] as num?)?.toInt();
+      final isOutOfQuota = usageLimit != null && usedCount != null && usedCount >= usageLimit;
+
+      final reason = (match['reason']?.toString() ?? '').toLowerCase();
+      final reasonInvalid = reason.contains('hết lượt') ||
+          reason.contains('hết hạn') ||
+          reason.contains('không còn hoạt động') ||
+          reason.contains('không tồn tại');
+
+      if (isExpired || isInactive || isOutOfQuota || reasonInvalid) {
+        _showErrorMessage('Mã giảm giá này không tồn tại hoặc đã hết lượt sử dụng');
+        return;
+      }
+
       final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
       final storeId = v['store_id']?.toString() ?? '';
+      final matchedCode = v['code']?.toString() ?? code.toUpperCase();
 
       setState(() {
         if (scope == 'PLATFORM') {
-          _selectedPlatformVoucher = v['code']?.toString();
+          _selectedPlatformVoucher = matchedCode;
         } else {
-          _selectedStoreVouchers[storeId] = v['code']?.toString() ?? '';
+          _selectedStoreVouchers[storeId] = matchedCode;
         }
       });
 
+      _codeController.clear();
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã chọn mã ${v['code']}'),
+          content: Text('Đã chọn mã $matchedCode'),
           backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 2),
         ),
       );
-    } else {
-      // Treat as manual platform voucher
-      setState(() {
-        _selectedPlatformVoucher = code.toUpperCase();
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã áp dụng mã $code'),
-          backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      return;
     }
+
+    // 2. Not in _allVouchers: validate with server if validator is provided
+    if (widget.onValidateCode != null) {
+      setState(() => _isValidatingCode = true);
+      try {
+        final result = await widget.onValidateCode!(code);
+        if (!mounted) return;
+        setState(() => _isValidatingCode = false);
+
+        if (result != null && result['valid'] == true) {
+          final scope = (result['scope']?.toString() ?? 'PLATFORM').toUpperCase();
+          final storeId = result['store_id']?.toString() ?? '';
+          final validCode = result['code']?.toString() ?? code.toUpperCase();
+
+          final newVoucherItem = {
+            'voucher': {
+              'code': validCode,
+              'scope': scope,
+              'store_id': storeId,
+              'discount_type': result['discount_type'] ?? 'FIXED',
+              'discount_value': result['discount_value'] ?? 0,
+              'min_goods_vnd': result['min_goods_vnd'] ?? 0,
+              'ends_at': result['ends_at'] ?? '2027-12-31T23:59:59Z',
+              'status': 'ACTIVE',
+            },
+            'eligible': true,
+            'reason': 'Có thể áp dụng',
+            'estimated_discount_vnd': result['discount_value'] ?? 0,
+          };
+
+          setState(() {
+            _allVouchers.insert(0, newVoucherItem);
+            if (scope == 'PLATFORM') {
+              _selectedPlatformVoucher = validCode;
+            } else {
+              _selectedStoreVouchers[storeId] = validCode;
+            }
+          });
+
+          _codeController.clear();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã áp dụng mã $validCode'),
+              backgroundColor: AppColors.primary,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
+      } catch (_) {
+        if (mounted) setState(() => _isValidatingCode = false);
+      }
+    }
+
+    // 3. Voucher does not exist or expired or out of quota
+    _showErrorMessage('Mã giảm giá này không tồn tại hoặc đã hết lượt sử dụng');
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFD32F2F),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final platformVouchers = widget.suggestedVouchers.where((it) {
-      final v = it['voucher'] as Map<String, dynamic>? ?? {};
-      return (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'PLATFORM';
-    }).toList();
+    final selectedVouchers = <Map<String, dynamic>>[];
+    final unselectedPlatformVouchers = <Map<String, dynamic>>[];
+    final unselectedStoreVouchers = <Map<String, dynamic>>[];
 
-    final storeVouchers = widget.suggestedVouchers.where((it) {
+    for (final it in _allVouchers) {
       final v = it['voucher'] as Map<String, dynamic>? ?? {};
-      return (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'STORE';
-    }).toList();
+      final code = v['code']?.toString() ?? '';
+      final scope = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase();
+      final storeId = v['store_id']?.toString() ?? '';
+
+      final isSelected = scope == 'PLATFORM'
+          ? _selectedPlatformVoucher == code
+          : _selectedStoreVouchers[storeId] == code;
+
+      if (isSelected) {
+        selectedVouchers.add(it);
+      } else if (scope == 'PLATFORM') {
+        unselectedPlatformVouchers.add(it);
+      } else {
+        unselectedStoreVouchers.add(it);
+      }
+    }
 
     final selectedCount = (_selectedPlatformVoucher != null && _selectedPlatformVoucher!.isNotEmpty ? 1 : 0) +
         _selectedStoreVouchers.values.where((v) => v.isNotEmpty).length;
@@ -181,6 +328,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       border: Border.all(color: Colors.grey.shade300, width: 0.8),
                     ),
                     child: TextField(
+                      key: const Key('voucher_input_field'),
                       controller: _codeController,
                       style: const TextStyle(fontSize: 13),
                       onChanged: (_) => setState(() {}),
@@ -197,8 +345,9 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                 SizedBox(
                   height: 40,
                   child: FilledButton(
+                    key: const Key('voucher_apply_button'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: _codeController.text.trim().isNotEmpty
+                      backgroundColor: (_codeController.text.trim().isNotEmpty && !_isValidatingCode)
                           ? AppColors.primary
                           : Colors.grey.shade400,
                       shape: RoundedRectangleBorder(
@@ -206,13 +355,22 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
-                    onPressed: _codeController.text.trim().isNotEmpty
+                    onPressed: (_codeController.text.trim().isNotEmpty && !_isValidatingCode)
                         ? _applyTypedCode
                         : null,
-                    child: const Text(
-                      'Áp dụng',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
+                    child: _isValidatingCode
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Áp dụng',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
               ],
@@ -224,8 +382,29 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 12),
               children: [
-                // Section 1: Ưu đãi toàn sàn (Matching Image 2)
-                if (platformVouchers.isNotEmpty) ...[
+                // Section: Voucher đã chọn (Hiển thị lên đầu trang voucher)
+                if (selectedVouchers.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+                    child: const Text(
+                      'Voucher đã chọn',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  ...selectedVouchers.map((it) {
+                    final v = it['voucher'] as Map<String, dynamic>? ?? {};
+                    final isPlatform = (v['scope']?.toString() ?? 'PLATFORM').toUpperCase() == 'PLATFORM';
+                    return _buildVoucherTicket(it, isPlatform: isPlatform);
+                  }),
+                  const SizedBox(height: 12),
+                ],
+
+                // Section 1: Ưu đãi toàn sàn
+                if (unselectedPlatformVouchers.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
                     child: const Text(
@@ -237,12 +416,12 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       ),
                     ),
                   ),
-                  ...platformVouchers.map((it) => _buildVoucherTicket(it, isPlatform: true)),
+                  ...unselectedPlatformVouchers.map((it) => _buildVoucherTicket(it, isPlatform: true)),
                   const SizedBox(height: 12),
                 ],
 
-                // Section 2: Ưu đãi từ cửa hàng (Matching Image 2)
-                if (storeVouchers.isNotEmpty) ...[
+                // Section 2: Ưu đãi từ cửa hàng
+                if (unselectedStoreVouchers.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
                     child: const Text(
@@ -254,12 +433,12 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       ),
                     ),
                   ),
-                  ...storeVouchers.map((it) => _buildVoucherTicket(it, isPlatform: false)),
+                  ...unselectedStoreVouchers.map((it) => _buildVoucherTicket(it, isPlatform: false)),
                   const SizedBox(height: 16),
                 ],
 
-                // Empty state when server returns no vouchers
-                if (platformVouchers.isEmpty && storeVouchers.isEmpty)
+                // Empty state when server returns no vouchers AND no vouchers are selected
+                if (selectedVouchers.isEmpty && unselectedPlatformVouchers.isEmpty && unselectedStoreVouchers.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
                     child: Column(
@@ -344,6 +523,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                       ),
                       onPressed: () {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
                         Navigator.pop(
                           context,
                           VoucherSelectionResult(
