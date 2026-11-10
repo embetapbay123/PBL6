@@ -2227,6 +2227,9 @@ void main() {
         await tester.pump(const Duration(seconds: 4));
         await tester.pumpAndSettle();
 
+        // Verify TRỞ LẠI button is removed
+        expect(find.text('TRỞ LẠI'), findsNothing);
+
         // Tap 'ĐỒNG Ý'
         await tester.tap(find.text('ĐỒNG Ý'));
         await tester.pumpAndSettle();

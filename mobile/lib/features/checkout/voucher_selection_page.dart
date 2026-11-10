@@ -634,7 +634,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
             ),
           ),
 
-          // Bottom Bar (Matching Image with TRỞ LẠI and ĐỒNG Ý buttons)
+          // Bottom Bar (Only ĐỒNG Ý button)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -643,66 +643,36 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
             ),
             child: SafeArea(
               top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    height: 40,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFD9D9D9), width: 1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFEE4D2D),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    Navigator.pop(
+                      context,
+                      VoucherSelectionResult(
+                        platformVoucher: _selectedPlatformVoucher,
+                        storeVouchers: _selectedStoreVouchers,
                       ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        Navigator.pop(context);
-                      },
-                      child: const Text(
-                        'TRỞ LẠI',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF555555),
-                        ),
-                      ),
+                    );
+                  },
+                  child: const Text(
+                    'ĐỒNG Ý',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    height: 40,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFEE4D2D),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        elevation: 0,
-                      ),
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        Navigator.pop(
-                          context,
-                          VoucherSelectionResult(
-                            platformVoucher: _selectedPlatformVoucher,
-                            storeVouchers: _selectedStoreVouchers,
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'ĐỒNG Ý',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
