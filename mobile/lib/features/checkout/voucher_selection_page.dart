@@ -353,22 +353,25 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hỗ trợ Voucher', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('• Mã Toàn Sàn & Vận Chuyển: Áp dụng trên toàn bộ sản phẩm hợp lệ tại hệ thống PBL6.', style: TextStyle(fontSize: 13.5)),
-            SizedBox(height: 8),
-            Text('• Mã Giảm Giá Từ Shop: Do chính cửa hàng phát hành, chỉ áp dụng cho sản phẩm của cửa hàng đó.', style: TextStyle(fontSize: 13.5)),
-            SizedBox(height: 8),
-            Text('• Bạn có thể áp dụng đồng thời 1 Mã Toàn Sàn và 1 Mã của mỗi Shop trong cùng 1 đơn hàng.', style: TextStyle(fontSize: 13.5)),
-          ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text(
+          'Thông báo',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Mỗi đơn hàng có thể áp dụng 01 Voucher Vận chuyển và 01 Voucher Giảm giá từ Shop hoặc Sàn',
+          style: TextStyle(fontSize: 14, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Đã hiểu', style: TextStyle(color: Color(0xFFEE4D2D), fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Đã hiểu',
+              style: TextStyle(
+                color: Color(0xFFEE4D2D),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -404,7 +407,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          'Chọn Shopee Voucher',
+          'Chọn Voucher',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
@@ -424,15 +427,12 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
           ),
         ),
         actions: [
-          TextButton.icon(
+          IconButton(
+            key: const Key('voucher_help_button'),
+            icon: const Icon(Icons.help_outline, size: 20, color: Color(0xFF757575)),
             onPressed: _showHelpDialog,
-            icon: const Text(
-              'Hỗ Trợ',
-              style: TextStyle(fontSize: 13, color: Color(0xFF757575), fontWeight: FontWeight.w500),
-            ),
-            label: const Icon(Icons.help_outline, size: 17, color: Color(0xFF757575)),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -466,7 +466,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                       style: const TextStyle(fontSize: 13),
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
-                        hintText: 'Mã Shopee Voucher',
+                        hintText: 'Nhập mã voucher',
                         hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 9),
                         border: InputBorder.none,

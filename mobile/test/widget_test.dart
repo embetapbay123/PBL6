@@ -2186,11 +2186,23 @@ void main() {
         await tester.pumpAndSettle();
 
         // On VoucherSelectionPage (matching Shopee Voucher modal)
-        expect(find.textContaining('Chọn'), findsWidgets);
+        expect(find.text('Chọn Voucher'), findsOneWidget);
         expect(find.text('Mã Toàn Sàn & Vận Chuyển'), findsOneWidget);
         expect(find.textContaining('Giảm 5.000 đ'), findsOneWidget);
         expect(find.text('Mã Giảm Giá Từ Shop'), findsOneWidget);
         expect(find.textContaining('Giảm 10.000 đ'), findsWidgets);
+
+        // Tap '?' help button and verify dialog content
+        final helpButton = find.byKey(const Key('voucher_help_button'));
+        expect(helpButton, findsOneWidget);
+        await tester.tap(helpButton);
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Mỗi đơn hàng có thể áp dụng 01 Voucher Vận chuyển và 01 Voucher Giảm giá từ Shop hoặc Sàn'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Đã hiểu'));
+        await tester.pumpAndSettle();
 
         // Enter invalid voucher code and tap Áp dụng
         await tester.enterText(find.byKey(const Key('voucher_input_field')), 'RANDOM_FAKE_CODE');
