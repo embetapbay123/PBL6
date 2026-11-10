@@ -60,22 +60,20 @@ class OrderSuccessPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          key: const Key('order_success_cart_button'),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          tooltip: 'Quay lại',
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/cart',
+              (route) => false,
+            );
+          },
+        ),
         title: const Text('Đặt hàng thành công'),
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            key: const Key('order_success_cart_button'),
-            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-            tooltip: 'Giỏ hàng',
-            onPressed: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/cart',
-                (route) => false,
-              );
-            },
-          ),
-        ],
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
