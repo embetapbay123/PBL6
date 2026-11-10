@@ -1894,7 +1894,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       lowestPrice ??= 100000;
     }
 
-    final originalPriceInt = (lowestPrice * 1.25).round();
+    int? discountPercent = (product['discount_percent'] as num?)?.toInt() ??
+        (product['discount'] is num ? (product['discount'] as num).toInt() : null);
+    if (discountPercent == null && product['discount'] is String) {
+      discountPercent = int.tryParse((product['discount'] as String).replaceAll(RegExp(r'[^\d]'), ''));
+    }
+    final int? originalPriceInt = (product['original_price_vnd'] as num?)?.toInt() ??
+        (product['original_price'] as num?)?.toInt();
+    final bool hasDiscount = (discountPercent != null && discountPercent > 0) ||
+        (originalPriceInt != null && originalPriceInt > lowestPrice);
 
     final images = product['images'] as List?;
     final imageUrl = (images != null && images.isNotEmpty)
@@ -1953,23 +1961,26 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                             ),
                           ),
                   ),
-                  // Discount Badge Top-Left
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                      decoration: AppDecorations.discountTag,
-                      child: const Text(
-                        '-25%',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
+                  // Discount Badge Top-Left (only if item has real discount from server)
+                  if (hasDiscount)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                        decoration: AppDecorations.discountTag,
+                        child: Text(
+                          discountPercent != null
+                              ? '-$discountPercent%'
+                              : '-${(((originalPriceInt! - lowestPrice) / originalPriceInt) * 100).round()}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   // Favorite Heart Button Top-Right
                   Positioned(
                     top: 2,
@@ -2060,19 +2071,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           fontSize: 13.5,
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          '$originalPriceInt ₫',
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 10,
-                            decoration: TextDecoration.lineThrough,
+                      if (originalPriceInt != null && originalPriceInt > lowestPrice) ...[
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            '$originalPriceInt ₫',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 2),

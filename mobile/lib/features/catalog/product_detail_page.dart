@@ -1727,7 +1727,15 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               pPriceInt ??= 100000;
             }
 
-            final pOriginalPriceInt = (pPriceInt * 1.25).round();
+            int? pDiscountPercent = (item['discount_percent'] as num?)?.toInt() ??
+                (item['discount'] is num ? (item['discount'] as num).toInt() : null);
+            if (pDiscountPercent == null && item['discount'] is String) {
+              pDiscountPercent = int.tryParse((item['discount'] as String).replaceAll(RegExp(r'[^\d]'), ''));
+            }
+            final int? pOriginalPriceInt = (item['original_price_vnd'] as num?)?.toInt() ??
+                (item['original_price'] as num?)?.toInt();
+            final bool pHasDiscount = (pDiscountPercent != null && pDiscountPercent > 0) ||
+                (pOriginalPriceInt != null && pOriginalPriceInt > pPriceInt);
 
             // Rating
             final revSummary = (item['review_summary'] is Map) ? (item['review_summary'] as Map) : null;
@@ -1792,26 +1800,29 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                                       child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 36),
                                     ),
                             ),
-                            // Discount Badge (-25%)
-                            Positioned(
-                              top: 8,
-                              left: 8,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  '-25%',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                            // Discount Badge (only if product has real discount from server)
+                            if (pHasDiscount)
+                              Positioned(
+                                top: 8,
+                                left: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    pDiscountPercent != null
+                                        ? '-$pDiscountPercent%'
+                                        : '-${(((pOriginalPriceInt! - pPriceInt) / pOriginalPriceInt) * 100).round()}%',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
                             // Favorite Heart Button
                             Positioned(
                               top: 4,
@@ -1895,7 +1906,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                                   fontSize: 13.5,
                                 ),
                               ),
-                              if (pOriginalPriceInt > pPriceInt) ...[
+                              if (pOriginalPriceInt != null && pOriginalPriceInt > pPriceInt) ...[
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(

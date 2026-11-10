@@ -593,9 +593,17 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
     final id = item.id;
     final title = item.title;
     final lowestPrice = item.priceVnd;
-    final originalPriceInt = (lowestPrice * 1.25).round();
-    final imageUrl = item.imageUrl;
     final rawProduct = item.rawProduct;
+    int? discountPercent = (rawProduct['discount_percent'] as num?)?.toInt() ??
+        (rawProduct['discount'] is num ? (rawProduct['discount'] as num).toInt() : null);
+    if (discountPercent == null && rawProduct['discount'] is String) {
+      discountPercent = int.tryParse((rawProduct['discount'] as String).replaceAll(RegExp(r'[^\d]'), ''));
+    }
+    final int? originalPriceInt = (rawProduct['original_price_vnd'] as num?)?.toInt() ??
+        (rawProduct['original_price'] as num?)?.toInt();
+    final bool hasDiscount = (discountPercent != null && discountPercent > 0) ||
+        (originalPriceInt != null && originalPriceInt > lowestPrice);
+    final imageUrl = item.imageUrl;
 
     // Rating
     final rawRating = rawProduct['rating'] ?? rawProduct['rating_average'] ?? rawProduct['avg_rating'];
@@ -663,26 +671,29 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
                               child: Icon(Icons.shopping_bag_outlined, color: Colors.grey, size: 36),
                             ),
                     ),
-                    // Discount Badge (-25%)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          '-25%',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                    // Discount Badge (only if product has real discount from server)
+                    if (hasDiscount)
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            discountPercent != null
+                                ? '-$discountPercent%'
+                                : '-${(((originalPriceInt! - lowestPrice) / originalPriceInt) * 100).round()}%',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                     // Favorite Heart Button
                     Positioned(
                       top: 4,
@@ -775,7 +786,7 @@ class _RecentlyViewedPageState extends ConsumerState<RecentlyViewedPage> {
                           fontSize: 13.5,
                         ),
                       ),
-                      if (originalPriceInt > lowestPrice) ...[
+                      if (originalPriceInt != null && originalPriceInt > lowestPrice) ...[
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
