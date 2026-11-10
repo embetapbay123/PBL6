@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Patch, Body, Param, Req, UseGuards } from '@nestjs/common';
-import { AuthGuard, Roles } from '../../../shared/src/auth';
+import { AuthGuard, Roles, Public } from '../../../shared/src/auth';
 import {
   CreateStoreVoucherBodyDto,
   UpdateStoreVoucherBodyDto,
@@ -13,6 +13,31 @@ import { VoucherService } from './voucher.service';
 @UseGuards(AuthGuard)
 export class VoucherController {
   private readonly service = new VoucherService();
+
+  // --- Public / Customer Store Vouchers ---
+  @Get('stores/:id/vouchers')
+  @Public()
+  listPublicStoreVouchers(@Param('id') storeId: string) {
+    return this.service.listActiveStoreVouchers(storeId);
+  }
+
+  // --- Public / Customer All Active Vouchers ---
+  @Get('vouchers')
+  @Public()
+  listActiveVouchers(@Req() req: any) {
+    const storeId = req.query?.store_id;
+    if (storeId) {
+      return this.service.listActiveStoreVouchers(storeId);
+    }
+    return this.service.listActivePlatformVouchers();
+  }
+
+  // --- Public / Customer Voucher Suggestions ---
+  @Post('vouchers/suggestions')
+  @Public()
+  suggestVouchers(@Body() body: any) {
+    return this.service.suggestVouchers(body);
+  }
 
   // --- Customer Voucher Validation ---
   @Post('vouchers/validate')

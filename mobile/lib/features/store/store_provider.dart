@@ -44,20 +44,6 @@ final storeVouchersListProvider = FutureProvider.family<List<StoreVoucherItem>, 
         return items.map((e) => StoreVoucherItem.fromJson(e)).toList();
       }
     } catch (_) {}
-    // Default fallback vouchers
-    return const [
-      StoreVoucherItem(
-        id: 'VOUCHER_50K',
-        title: 'Giảm 50K',
-        condition: 'Đơn từ 500.000 đ',
-        expiry: 'HSD: 31/12/2026',
-      ),
-      StoreVoucherItem(
-        id: 'VOUCHER_FREESHIP',
-        title: 'Freeship',
-        condition: 'Đơn từ 300.000 đ',
-        expiry: 'HSD: 31/12/2026',
-      ),
-    ];
+    return const [];
   },
 );

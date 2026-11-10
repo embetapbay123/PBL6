@@ -185,18 +185,63 @@ class StoreVoucherItem {
     this.minOrderVnd = 500000,
   });
 
+  static String _formatNum(int n) {
+    final s = n.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i > 0) buffer.write('.');
+    }
+    return buffer.toString().split('').reversed.join('');
+  }
+
   factory StoreVoucherItem.fromJson(Map<String, dynamic> json) {
-    final title = json['title']?.toString() ?? json['name']?.toString() ?? 'Giảm 50K';
-    final condition = json['condition']?.toString() ?? 'Đơn từ 500.000 đ';
-    final expiry = json['expiry']?.toString() ?? 'HSD: 31/12/2026';
+    final discountType = json['discount_type']?.toString().toUpperCase() ?? 'FIXED';
+    final discountVal = json['discount_value'] is num
+        ? (json['discount_value'] as num).toInt()
+        : (json['discount_vnd'] is num ? (json['discount_vnd'] as num).toInt() : 0);
+    final minGoods = json['min_goods_vnd'] is num
+        ? (json['min_goods_vnd'] as num).toInt()
+        : (json['min_order_vnd'] is num ? (json['min_order_vnd'] as num).toInt() : 0);
+
+    String title = json['title']?.toString() ?? json['name']?.toString() ?? '';
+    if (title.isEmpty) {
+      if (discountType == 'PERCENT') {
+        title = 'Giảm $discountVal%';
+      } else if (discountVal > 0) {
+        title = 'Giảm ${_formatNum(discountVal)} đ';
+      } else {
+        title = 'Ưu đãi cửa hàng';
+      }
+    }
+
+    String condition = json['condition']?.toString() ?? '';
+    if (condition.isEmpty) {
+      condition = minGoods > 0 ? 'Đơn từ ${_formatNum(minGoods)} đ' : 'Cho mọi đơn hàng';
+    }
+
+    String expiry = json['expiry']?.toString() ?? '';
+    if (expiry.isEmpty && json['ends_at'] != null) {
+      final dt = DateTime.tryParse(json['ends_at'].toString())?.toLocal();
+      if (dt != null) {
+        final d = dt.day.toString().padLeft(2, '0');
+        final m = dt.month.toString().padLeft(2, '0');
+        final y = dt.year.toString();
+        expiry = 'HSD: $d/$m/$y';
+      }
+    }
+    if (expiry.isEmpty) expiry = 'HSD: 31/12/2026';
+
     return StoreVoucherItem(
-      id: json['id']?.toString() ?? '',
+      id: json['id']?.toString() ?? json['code']?.toString() ?? '',
       title: title,
       condition: condition,
       expiry: expiry,
       code: json['code']?.toString(),
-      discountVnd: json['discount_vnd'] is num ? (json['discount_vnd'] as num).toInt() : 50000,
-      minOrderVnd: json['min_order_vnd'] is num ? (json['min_order_vnd'] as num).toInt() : 500000,
+      discountVnd: discountVal,
+      minOrderVnd: minGoods,
     );
   }
 }

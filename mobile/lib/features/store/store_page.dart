@@ -249,20 +249,7 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
         );
 
     final storeProducts = storeProductsAsync.value ?? [];
-    final storeVouchers = storeVouchersAsync.value ?? const [
-      StoreVoucherItem(
-        id: 'VOUCHER_50K',
-        title: 'Giảm 50K',
-        condition: 'Đơn từ 500.000 đ',
-        expiry: 'HSD: 31/12/2026',
-      ),
-      StoreVoucherItem(
-        id: 'VOUCHER_FREESHIP',
-        title: 'Freeship',
-        condition: 'Đơn từ 300.000 đ',
-        expiry: 'HSD: 31/12/2026',
-      ),
-    ];
+    final storeVouchers = storeVouchersAsync.value ?? const [];
 
     // Find products belonging to this store from catalog if API storeProducts is empty
     final catalogAsync = ref.watch(catalogProductsProvider(''));

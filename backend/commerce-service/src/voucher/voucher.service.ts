@@ -477,5 +477,52 @@ export class VoucherService {
     const repo = new VoucherRepository(manager);
     return repo.releaseVoucherReservations(purchaseGroupId);
   }
+
+  // ================= PUBLIC / CUSTOMER VOUCHERS =================
+  async listActiveStoreVouchers(storeId: string): Promise<any[]> {
+    if (!UUID_REGEX.test(storeId)) return [];
+    const rows = await database.manager.query(
+      `SELECT id, code, scope, store_id, owner_user_id, discount_type, discount_value, max_discount_vnd, min_goods_vnd, starts_at, ends_at, usage_limit, per_customer_limit, status, version
+       FROM voucher
+       WHERE scope = 'STORE' AND store_id = $1 AND status = 'ACTIVE' AND starts_at <= now() AND ends_at > now()
+       ORDER BY created_at DESC`,
+      [storeId]
+    );
+    return rows.map(voucherResponse);
+  }
+
+  async listActivePlatformVouchers(): Promise<any[]> {
+    const rows = await database.manager.query(
+      `SELECT id, code, scope, store_id, owner_user_id, discount_type, discount_value, max_discount_vnd, min_goods_vnd, starts_at, ends_at, usage_limit, per_customer_limit, status, version
+       FROM voucher
+       WHERE scope = 'PLATFORM' AND status = 'ACTIVE' AND starts_at <= now() AND ends_at > now()
+       ORDER BY created_at DESC`
+    );
+    return rows.map(voucherResponse);
+  }
+
+  async suggestVouchers(body: any): Promise<{ items: any[] }> {
+    const storeIds: string[] = Array.isArray(body?.store_ids) ? [...body.store_ids] : [];
+    if (body?.payment_methods && typeof body.payment_methods === 'object') {
+      for (const k of Object.keys(body.payment_methods)) {
+        if (!storeIds.includes(k) && UUID_REGEX.test(k)) storeIds.push(k);
+      }
+    }
+    const platformVouchers = await this.listActivePlatformVouchers();
+    const storeVouchers: any[] = [];
+    for (const sid of storeIds) {
+      const svs = await this.listActiveStoreVouchers(sid);
+      storeVouchers.push(...svs);
+    }
+    const all = [...platformVouchers, ...storeVouchers];
+    return {
+      items: all.map(v => ({
+        voucher: v,
+        eligible: true,
+        reason: 'Có thể áp dụng',
+        estimated_discount_vnd: v.discount_value,
+      })),
+    };
+  }
 }
 

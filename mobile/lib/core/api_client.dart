@@ -541,6 +541,32 @@ class ApiClient {
             .toList();
       }
     } catch (_) {}
+    try {
+      final res = await get('/vouchers', query: {'store_id': storeId});
+      if (res is List) {
+        return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (res is Map && res['items'] is List) {
+        return (res['items'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> getPlatformVouchers() async {
+    try {
+      final res = await get('/vouchers', query: {'scope': 'PLATFORM'});
+      if (res is List) {
+        return res.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      if (res is Map && res['items'] is List) {
+        return (res['items'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+      }
+    } catch (_) {}
     return [];
   }
 
@@ -758,6 +784,7 @@ class ApiClient {
     required Map<String, String> paymentMethods,
     String? platformVoucherCode,
     Map<String, String>? storeVouchers,
+    List<String>? storeIds,
   }) async {
     final body = <String, dynamic>{
       'cart_item_ids': cartItemIds,
@@ -767,9 +794,48 @@ class ApiClient {
         'platform_voucher_code': platformVoucherCode,
       if (storeVouchers != null && storeVouchers.isNotEmpty)
         'store_vouchers': storeVouchers,
+      if (storeIds != null && storeIds.isNotEmpty)
+        'store_ids': storeIds,
     };
-    final res = await post('/vouchers/suggestions', data: body);
-    return (res is Map) ? Map<String, dynamic>.from(res) : {};
+    try {
+      final res = await post('/vouchers/suggestions', data: body);
+      if (res is Map && res['items'] is List && (res['items'] as List).isNotEmpty) {
+        return Map<String, dynamic>.from(res);
+      }
+    } catch (_) {}
+
+    // Fallback: fetch active vouchers directly from server GET /vouchers
+    final items = <Map<String, dynamic>>[];
+    try {
+      final pList = await getPlatformVouchers();
+      for (final v in pList) {
+        items.add({
+          'voucher': v,
+          'eligible': true,
+          'reason': 'Có thể áp dụng',
+          'estimated_discount_vnd': v['discount_value'] ?? 0,
+        });
+      }
+    } catch (_) {}
+
+    final sIds = (storeIds != null && storeIds.isNotEmpty)
+        ? storeIds
+        : paymentMethods.keys.toList();
+    for (final sId in sIds) {
+      try {
+        final sList = await getStoreVouchers(sId);
+        for (final v in sList) {
+          items.add({
+            'voucher': v,
+            'eligible': true,
+            'reason': 'Có thể áp dụng',
+            'estimated_discount_vnd': v['discount_value'] ?? 0,
+          });
+        }
+      } catch (_) {}
+    }
+
+    return {'items': items};
   }
 
   // --- Order Management (MOB-04) ---

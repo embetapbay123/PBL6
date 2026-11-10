@@ -89,84 +89,40 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _fetchSuggestedVouchers() async {
-    if (_selectedAddress == null || widget.cartItemIds.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _suggestedVouchers = _buildFallbackVouchers();
-        });
-      }
-      return;
-    }
     setState(() => _loadingVouchers = true);
     try {
       final client = ref.read(apiProvider);
+      final storeIds = widget.initialSelectedItems
+          ?.map((e) => e['store_id']?.toString() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
+
       final res = await client.suggestVouchers(
         cartItemIds: widget.cartItemIds,
-        addressId: _selectedAddress!['id']?.toString() ?? '',
+        addressId: _selectedAddress?['id']?.toString() ?? '',
         paymentMethods: Map<String, String>.from(_paymentMethods),
         platformVoucherCode: _appliedPlatformVoucher,
         storeVouchers: Map<String, String>.from(_storeVouchers),
+        storeIds: storeIds,
       );
       final items = (res['items'] as List?)
           ?.map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
       if (mounted) {
         setState(() {
-          _suggestedVouchers = (items != null && items.isNotEmpty)
-              ? items
-              : _buildFallbackVouchers();
+          _suggestedVouchers = items ?? [];
           _loadingVouchers = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _suggestedVouchers = _buildFallbackVouchers();
+          _suggestedVouchers = [];
           _loadingVouchers = false;
         });
       }
     }
-  }
-
-  List<Map<String, dynamic>> _buildFallbackVouchers() {
-    final storeId = widget.initialSelectedItems?.firstOrNull?['store_id']?.toString() ?? 'store-b';
-    final storeName = widget.initialSelectedItems?.firstOrNull?['store_name']?.toString() ?? 'Mây Xanh Living';
-    return [
-      {
-        'voucher': {
-          'id': 'vch-san-5k',
-          'code': 'DEMO-SAN-5K',
-          'scope': 'PLATFORM',
-          'discount_type': 'FIXED',
-          'discount_value': 5000,
-          'min_goods_vnd': 100000,
-          'ends_at': '2027-11-02T14:32:00.000Z',
-          'per_customer_limit': 50,
-          'status': 'ACTIVE',
-        },
-        'eligible': true,
-        'reason': 'Có thể áp dụng',
-        'estimated_discount_vnd': 5000,
-      },
-      {
-        'voucher': {
-          'id': 'vch-b-10k',
-          'code': 'DEMO-B-10K',
-          'scope': 'STORE',
-          'store_id': storeId,
-          'store_name': storeName,
-          'discount_type': 'FIXED',
-          'discount_value': 10000,
-          'min_goods_vnd': 200000,
-          'ends_at': '2027-11-02T14:32:00.000Z',
-          'per_customer_limit': 10,
-          'status': 'ACTIVE',
-        },
-        'eligible': true,
-        'reason': 'Có thể áp dụng',
-        'estimated_discount_vnd': 10000,
-      },
-    ];
   }
 
   void _toggleVoucher(Map<String, dynamic> vItem) {
@@ -1435,6 +1391,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   }
 
   Future<void> _openVoucherPage(BuildContext context) async {
+    if (_suggestedVouchers.isEmpty && !_loadingVouchers) {
+      await _fetchSuggestedVouchers();
+    }
+    if (!context.mounted) return;
     final result = await Navigator.push<VoucherSelectionResult>(
       context,
       MaterialPageRoute(

@@ -329,6 +329,7 @@ class MockApiClient extends ApiClient {
     required Map<String, String> paymentMethods,
     String? platformVoucherCode,
     Map<String, String>? storeVouchers,
+    List<String>? storeIds,
   }) async => {
     'items': [
       {

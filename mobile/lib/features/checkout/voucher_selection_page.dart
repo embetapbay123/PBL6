@@ -257,6 +257,36 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                   ...storeVouchers.map((it) => _buildVoucherTicket(it, isPlatform: false)),
                   const SizedBox(height: 16),
                 ],
+
+                // Empty state when server returns no vouchers
+                if (platformVouchers.isEmpty && storeVouchers.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.confirmation_number_outlined, size: 56, color: Colors.grey.shade400),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Chưa có mã giảm giá nào trên hệ thống',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Bạn có thể nhập trực tiếp mã ưu đãi vào ô bên trên để áp dụng',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
