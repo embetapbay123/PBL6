@@ -1,3 +1,4 @@
+import 'search_history_provider.dart';
 import 'recently_viewed_provider.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -77,6 +78,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   void _onSearch(String val) {
     final trimmed = val.trim();
     if (trimmed.isNotEmpty) {
+      ref.read(searchHistoryProvider.notifier).addSearch(trimmed);
       _searchHistory.remove(trimmed);
       _searchHistory.insert(0, trimmed);
     }
@@ -822,7 +824,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     }
 
     final cartItems = (cartAsync.value?['items'] as List?) ?? [];
-    final suggestedProducts = _getSuggestedProducts(allProducts, cartItems);
+    final searchHistory = ref.watch(searchHistoryProvider);
+    final effectiveHistory = searchHistory.isNotEmpty ? searchHistory : _searchHistory;
+    final suggestedProducts = _getSuggestedProducts(allProducts, cartItems, effectiveHistory);
 
     return PopScope(
       canPop: false,
@@ -888,6 +892,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                   controller: _searchController,
                                   autofocus: true,
                                   textInputAction: TextInputAction.search,
+                                  onChanged: (_) => setState(() {}),
                                   onSubmitted: _onSearch,
                                   decoration: const InputDecoration(
                                     hintText: 'Bạn đang tìm sản phẩm gì?',
@@ -973,7 +978,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _buildSearchTagsSection(allProducts),
+                    _buildSearchTagsSection(allProducts, effectiveHistory),
                     const SizedBox(height: 12),
                     const Text(
                       'Gợi ý tìm kiếm',
@@ -996,13 +1001,22 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
-  Widget _buildSearchTagsSection(List<Map<String, dynamic>> products) {
-    final tags = products
-        .map((p) => (p['title'] ?? p['name'])?.toString().trim() ?? '')
-        .where((name) => name.isNotEmpty)
-        .toSet()
-        .take(10)
-        .toList();
+  Widget _buildSearchTagsSection(
+    List<Map<String, dynamic>> products,
+    List<String> searchHistory,
+  ) {
+    final bool hasHistory = searchHistory.isNotEmpty;
+    final List<String> tags;
+    if (hasHistory) {
+      tags = searchHistory.take(10).toList();
+    } else {
+      tags = products
+          .map((p) => (p['title'] ?? p['name'])?.toString().trim() ?? '')
+          .where((name) => name.isNotEmpty)
+          .toSet()
+          .take(10)
+          .toList();
+    }
 
     if (tags.isEmpty) {
       return const SizedBox.shrink();
@@ -1010,33 +1024,93 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
     return Padding(
       padding: const EdgeInsets.only(top: 4, bottom: 8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: tags.map((tag) {
-          return InkWell(
-            onTap: () {
-              _searchController.text = tag;
-              _onSearch(tag);
-            },
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                tag,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: Color(0xFF374151),
-                  fontWeight: FontWeight.w400,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasHistory) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Lịch sử tìm kiếm',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                  ),
                 ),
-              ),
+                InkWell(
+                  onTap: () {
+                    ref.read(searchHistoryProvider.notifier).clearHistory();
+                    setState(() {
+                      _searchHistory.clear();
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        }).toList(),
+            const SizedBox(height: 8),
+          ],
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: tags.map((tag) {
+              return InkWell(
+                onTap: () {
+                  _searchController.text = tag;
+                  _onSearch(tag);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tag,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF374151),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      if (hasHistory) ...[
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            ref.read(searchHistoryProvider.notifier).removeSearch(tag);
+                            setState(() {
+                              _searchHistory.remove(tag);
+                            });
+                          },
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -1044,8 +1118,9 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   List<Map<String, dynamic>> _getSuggestedProducts(
     List<Map<String, dynamic>> allProducts,
     List<dynamic> cartItems,
+    List<String> searchHistory,
   ) {
-    final bool hasSearchHistory = _searchHistory.isNotEmpty;
+    final bool hasSearchHistory = searchHistory.isNotEmpty;
     final bool hasCartItems = cartItems.isNotEmpty;
     final bool hasRecentInteractions = _recentlyInteractedProductIds.isNotEmpty;
 
@@ -1090,7 +1165,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     }
 
     // 3. Sản phẩm liên quan đến từ khóa tìm kiếm gần đây
-    for (final query in _searchHistory) {
+    for (final query in searchHistory) {
       final qLower = query.toLowerCase();
       for (final prod in allProducts) {
         final pId = prod['id']?.toString() ?? '';

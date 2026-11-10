@@ -1029,6 +1029,74 @@ void main() {
     );
 
     testWidgets(
+      'CatalogPage search bar displays user search history when searched before, and only displays products when never searched',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final container = ProviderContainer(
+          overrides: [
+            apiProvider.overrideWithValue(MockApiClient()),
+            catalogProductsProvider.overrideWith(
+              (ref, query) async => {
+                'items': [
+                  {
+                    'id': 'prod-01',
+                    'title': 'Pate Snappy Tom 400g',
+                    'price_vnd': 45000,
+                    'monthly_sales': 2500,
+                  },
+                ],
+                'total': 1,
+              },
+            ),
+            categoriesProvider.overrideWith((ref) async => []),
+            cartItemsProvider.overrideWith((ref) async => {'items': []}),
+          ],
+        );
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(home: CatalogPage()),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Initial state: never searched -> product tags shown, no 'Lịch sử tìm kiếm'
+        final searchBar = find.widgetWithText(TextField, 'Bạn đang tìm sản phẩm gì?');
+        await tester.tap(searchBar);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Lịch sử tìm kiếm'), findsNothing);
+        expect(find.text('Pate Snappy Tom 400g'), findsWidgets);
+
+        // 2. Perform a search for 'áo hoodie'
+        await tester.enterText(find.byType(TextField), 'áo hoodie');
+        await tester.testTextInput.receiveAction(TextInputAction.search);
+        await tester.pumpAndSettle();
+
+        // 3. Tap search bar again to open suggestions: now has search history!
+        final activeSearchBar = find.byType(TextField);
+        await tester.tap(activeSearchBar);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Lịch sử tìm kiếm'), findsOneWidget);
+        expect(find.descendant(of: find.byType(Wrap), matching: find.text('áo hoodie')), findsOneWidget);
+        expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+
+        // 4. Tap delete icon to clear history -> reverts back to products tags
+        await tester.tap(find.byIcon(Icons.delete_outline_rounded));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Lịch sử tìm kiếm'), findsNothing);
+        expect(find.text('Pate Snappy Tom 400g'), findsWidgets);
+      },
+    );
+
+    testWidgets(
       'HeroBannerCarousel in lib/features/banner renders both fashion and home banners with swipeable carousel',
       (tester) async {
         await tester.pumpWidget(
