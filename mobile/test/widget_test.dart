@@ -2767,6 +2767,134 @@ void main() {
       expect(find.text('Quần jean Slimfit'), findsNothing);
     });
 
+    testWidgets('OrderRefundPage displays x/y đã chọn with total units and updates on stepper and checkbox', (tester) async {
+      final orderWithMultipleUnits = {
+        'id': 'order-units-test-01',
+        'status': 'COMPLETED',
+        'store_name': 'PBL Fashion Hub',
+        'items': [
+          {
+            'id': 'oi-multi-qty-01',
+            'product_title': 'Áo thun Everyday cổ tròn',
+            'sku': 'size: S, color: Xanh dương',
+            'price_vnd': 149000,
+            'quantity': 3,
+          },
+        ],
+      };
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: MaterialApp(
+            home: OrderRefundPage(order: orderWithMultipleUnits),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Initially all 3 units selected
+      expect(find.text('3/3 đã chọn'), findsOneWidget);
+
+      // Tap minus button
+      await tester.tap(find.byIcon(Icons.remove));
+      await tester.pumpAndSettle();
+      expect(find.text('2/3 đã chọn'), findsOneWidget);
+
+      // Tap minus button again
+      await tester.tap(find.byIcon(Icons.remove));
+      await tester.pumpAndSettle();
+      expect(find.text('1/3 đã chọn'), findsOneWidget);
+
+      // Uncheck checkbox
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      expect(find.text('0/3 đã chọn'), findsOneWidget);
+    });
+
+    testWidgets('OrderListPage splits single-item order with quantity > 1 into 2 separate cards when partially refunded', (tester) async {
+      final mock = MockApiClient();
+      final singleItemOrder = {
+        'id': 'order-single-item-qty-3',
+        'purchase_group_id': 'pg-single-3',
+        'store_id': 'store-tea',
+        'store_name': 'Ấm Trà Quán',
+        'status': 'COMPLETED',
+        'version': 1,
+        'payment_method': 'COD',
+        'amounts': {'payable_vnd': 300000},
+        'items': [
+          {
+            'id': 'oi-tea-01',
+            'order_id': 'order-single-item-qty-3',
+            'product_id': 'prod-tea',
+            'product_title': 'Ấm trà kim loại hình học',
+            'sku': 'MX-TP01-001',
+            'price_vnd': 100000,
+            'quantity': 3,
+          },
+        ],
+      };
+
+      // Request refund of 1 unit out of 3
+      await mock.requestOrderRefund(
+        orderId: 'order-single-item-qty-3',
+        reason: 'Không đúng mô tả',
+        amountVnd: 100000,
+        items: [
+          {'order_item_id': 'oi-tea-01', 'quantity': 1},
+        ],
+      );
+
+      // 1. Verify in 'Hoàn thành' tab (initialIndex: 4) shows remaining 2 units (200.000 đ)
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(mock),
+            customerOrdersProvider.overrideWith((ref) async => {
+              'items': [singleItemOrder],
+              'total': 1,
+            }),
+          ],
+          child: const MaterialApp(
+            home: OrderListPage(
+              key: ValueKey('order-single-split-tab-4'),
+              initialIndex: 4,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
+      expect(find.text('Thành tiền (2 sản phẩm): '), findsOneWidget);
+      expect(find.text('200.000 đ'), findsOneWidget);
+
+      // 2. Verify in 'Trả hàng/Hoàn tiền' tab (initialIndex: 6) shows refunded 1 unit (100.000 đ)
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(mock),
+            customerOrdersProvider.overrideWith((ref) async => {
+              'items': [singleItemOrder],
+              'total': 1,
+            }),
+          ],
+          child: const MaterialApp(
+            home: OrderListPage(
+              key: ValueKey('order-single-split-tab-6'),
+              initialIndex: 6,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ấm trà kim loại hình học'), findsOneWidget);
+      expect(find.text('Thành tiền (1 sản phẩm): '), findsOneWidget);
+      expect(find.text('100.000 đ'), findsWidgets);
+    });
+
     testWidgets('OrderDetailPage removes Lịch sử trạng thái, adds Xem hành trình in Thông tin vận chuyển, and renders Đổi trả và hoàn tiền section with 4 parts', (tester) async {
       final mock = MockApiClient();
       await mock.requestOrderRefund(

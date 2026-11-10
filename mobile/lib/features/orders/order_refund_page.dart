@@ -204,6 +204,18 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
     final storeName = order['store_name']?.toString() ?? 'Gian hàng đối tác';
     final items = _getItems();
     final totalRefund = _calculateTotalRefund();
+    final totalUnits = items.fold<int>(
+      0,
+      (sum, it) => sum + ((it['quantity'] as num?)?.toInt() ?? 1),
+    );
+    int selectedUnits = 0;
+    for (int i = 0; i < items.length; i++) {
+      final it = items[i];
+      final itemId = (it['id'] ?? 'item_$i').toString();
+      if (_selectedItemIds.contains(itemId)) {
+        selectedUnits += (_itemQuantities[itemId] ?? 1);
+      }
+    }
     final address = (order['address'] as Map?) ??
         (order['shipping_address'] as Map?) ??
         (order['address_snapshot'] as Map?);
@@ -422,7 +434,7 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
                         ),
                       ),
                       Text(
-                        '${_selectedItemIds.length}/${items.length} đã chọn',
+                        '$selectedUnits/$totalUnits đã chọn',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -554,6 +566,7 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
                                                 ? () {
                                                     setState(() {
                                                       _itemQuantities[itemId] = selectedQty - 1;
+                                                      _selectedItemIds.add(itemId);
                                                     });
                                                   }
                                                 : null,
@@ -577,6 +590,7 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
                                                 ? () {
                                                     setState(() {
                                                       _itemQuantities[itemId] = selectedQty + 1;
+                                                      _selectedItemIds.add(itemId);
                                                     });
                                                   }
                                                 : null,

@@ -71,9 +71,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       }
       if (mounted) {
         setState(() {
+          final isSplit = widget.initialOrder?['is_split'] == true;
           _order = {
             if (widget.initialOrder != null) ...widget.initialOrder!,
             ...res,
+            if (isSplit && widget.initialOrder != null) ...{
+              'items': widget.initialOrder!['items'],
+              'amounts': widget.initialOrder!['amounts'],
+              if (widget.initialOrder!['payable_vnd'] != null)
+                'payable_vnd': widget.initialOrder!['payable_vnd'],
+              'status': widget.initialOrder!['status'],
+              'is_refund': widget.initialOrder!['is_refund'],
+              'refund_status': widget.initialOrder!['refund_status'],
+            },
           };
           _loading = false;
         });
