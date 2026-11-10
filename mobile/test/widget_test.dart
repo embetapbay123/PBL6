@@ -2171,6 +2171,8 @@ void main() {
         expect(find.text('Nguyễn Văn A (0901234567)'), findsOneWidget);
         expect(find.text('PBL Tech Store'), findsOneWidget);
         expect(find.text('PBL Fashion Hub'), findsOneWidget);
+        // Verify each store has its own "Lời nhắn cho cửa hàng" field
+        expect(find.text('Lời nhắn cho cửa hàng'), findsNWidgets(2));
         expect(find.text('Voucher'), findsOneWidget);
         expect(find.text('Voucher toàn sàn PBL6'), findsNothing);
         expect(find.text('DEMO-SAN-5K'), findsNothing);

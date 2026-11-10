@@ -39,8 +39,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   final _platformVoucherController = TextEditingController();
   String? _appliedPlatformVoucher;
 
-  // Order notes controller
-  final _noteController = TextEditingController();
+  // Order notes per store
+  final Map<String, TextEditingController> _storeNoteControllers = {};
+
+  TextEditingController _getStoreNoteController(String storeId) {
+    return _storeNoteControllers.putIfAbsent(storeId, () => TextEditingController());
+  }
 
   // Terms and conditions
   bool _agreedTerms = true;
@@ -169,7 +173,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   void dispose() {
     _quoteTimer?.cancel();
     _platformVoucherController.dispose();
-    _noteController.dispose();
+    for (final c in _storeNoteControllers.values) {
+      c.dispose();
+    }
     for (final c in _storeVoucherControllers.values) {
       c.dispose();
     }
@@ -836,86 +842,66 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           ),
                         );
                       }),
+
+                      const Divider(height: 20, color: Color(0xFFF1F3F5)),
+
+                      // Store-specific note for this shop
+                      const Text(
+                        'Lời nhắn cho cửa hàng',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey.shade300, width: 0.8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.chat_bubble_outline,
+                              size: 18,
+                              color: Colors.grey.shade500,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _getStoreNoteController(sId),
+                                key: Key('store_note_field_$sId'),
+                                style: const TextStyle(fontSize: 13),
+                                decoration: const InputDecoration(
+                                  hintText: 'Nhập lời nhắn (không bắt buộc)',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                  filled: false,
+                                  fillColor: Colors.transparent,
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
+                                  isDense: true,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
               );
             }),
-
-            // Card 3: Lời nhắn cho cửa hàng (Matching Image 4)
-            Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade200, width: 0.8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(5),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(14.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Lời nhắn cho cửa hàng',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14.5,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.grey.shade300, width: 0.8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 18,
-                            color: Colors.grey.shade500,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _noteController,
-                              style: const TextStyle(fontSize: 13),
-                              decoration: const InputDecoration(
-                                hintText: 'Nhập lời nhắn (không bắt buộc)',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 13,
-                                ),
-                                filled: false,
-                                fillColor: Colors.transparent,
-                                border: InputBorder.none,
-                                enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none,
-                                disabledBorder: InputBorder.none,
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
             // Card 4: Phương thức thanh toán (Matching Image 4)
             _buildPaymentMethodSection(),
