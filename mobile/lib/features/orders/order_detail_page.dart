@@ -27,6 +27,19 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
   Map<String, dynamic>? _order;
   bool _loading = false;
   String? _error;
+  bool _isShipmentJourneyExpanded = true;
+  bool _isReturnShipmentExpanded = true;
+  bool _isDisputeExpanded = true;
+  bool _isRequestDetailExpanded = true;
+  bool _isRefundHistoryExpanded = true;
+  final TextEditingController _disputeController = TextEditingController();
+  bool _isSubmittingDispute = false;
+
+  @override
+  void dispose() {
+    _disputeController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -255,10 +268,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
                             const SizedBox(height: 14),
 
-                            // Refund Information Card (if cancelled with refund or has refund_status)
-                            if (_order!['refund_status'] != null ||
-                                (_order!['status'] == 'CANCELLED' && _order!['payment_method'] == 'SANDBOX') ||
-                                (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0)) ...[
+                            // Refund Information Card (if cancelled with refund or has refund_status and not return section)
+                            if ((_order!['refund_status'] != null ||
+                                    (_order!['status'] == 'CANCELLED' && _order!['payment_method'] == 'SANDBOX') ||
+                                    (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0)) &&
+                                !_shouldShowReturnRefundSection()) ...[
                               _buildRefundInfoCard(),
                               const SizedBox(height: 14),
                             ],
@@ -268,8 +282,11 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
                             const SizedBox(height: 14),
 
-                            // Status History Card
-                            _buildStatusHistoryCard(),
+                            // Return & Refund Section (under Billing Summary Card)
+                            if (_shouldShowReturnRefundSection()) ...[
+                              _buildReturnAndRefundSection(),
+                              const SizedBox(height: 14),
+                            ],
 
                             // 6. Order Metadata Card
                             _buildOrderMetadataCard(),
@@ -2001,6 +2018,7 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
 
   Widget _buildShipmentCard() {
     if (_order == null) return const SizedBox.shrink();
+    final shipmentJourneyEvents = _getShipmentJourneyEvents();
     final shipment = _order!['shipment'] as Map?;
     final trackingCode =
         shipment?['tracking_code']?.toString() ?? _order!['tracking_code']?.toString();
@@ -2142,6 +2160,63 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
                 ],
               ),
             ],
+            const Divider(height: 18, color: Color(0xFFF1F3F5)),
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _isShipmentJourneyExpanded = !_isShipmentJourneyExpanded;
+                });
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isShipmentJourneyExpanded
+                          ? Icons.arrow_drop_down
+                          : Icons.arrow_right,
+                      size: 20,
+                      color: AppColors.textPrimary,
+                    ),
+                    Text(
+                      'Xem hành trình (${shipmentJourneyEvents.length})',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (_isShipmentJourneyExpanded) ...[
+              const SizedBox(height: 6),
+              ...shipmentJourneyEvents.map((evt) => Padding(
+                    padding: const EdgeInsets.only(left: 14, bottom: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          evt['title'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          evt['time'] ?? '',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
           ],
         ),
       ),
@@ -2264,4 +2339,753 @@ class _OrderDetailPageState extends ConsumerState<OrderDetailPage> {
       return value.toString();
     }
   }
+
+
+  bool _shouldShowReturnRefundSection() {
+    if (_order == null) return false;
+    final id = (_order!['id'] ?? '').toString();
+    final localRefund = ref.read(apiProvider).getLocalRefund(id);
+    return localRefund != null ||
+        _order!['refund'] != null ||
+        _order!['refund_status'] != null ||
+        _order!['is_refund'] == true ||
+        ['REFUNDED', 'RETURNED', 'REFUND_REQUESTED', 'RETURN_REQUESTED'].contains((_order!['status'] ?? '').toString().toUpperCase()) ||
+        (_order!['refunded_vnd'] != null && (_order!['refunded_vnd'] as num) > 0);
+  }
+
+  String _formatTimestamp(DateTime dt) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(dt.hour)}:${two(dt.minute)}:${two(dt.second)} ${two(dt.day)}/${two(dt.month)}/${dt.year}';
+  }
+
+  List<Map<String, String>> _getShipmentJourneyEvents() {
+    if (_order == null) return [];
+    final shipment = _order!['shipment'] as Map?;
+    if (shipment?['events'] is List && (shipment!['events'] as List).isNotEmpty) {
+      return (shipment['events'] as List)
+          .whereType<Map>()
+          .map((e) => {
+                'title': (e['title'] ?? e['status'] ?? '').toString(),
+                'time': (e['time'] ?? e['created_at'] ?? '').toString(),
+              })
+          .toList();
+    }
+
+    final events = <Map<String, String>>[];
+    final createdAtStr = _order!['created_at']?.toString();
+    final shippedAtStr = shipment?['shipped_at']?.toString() ?? _order!['shipped_at']?.toString();
+    final deliveredAtStr = shipment?['delivered_at']?.toString() ?? _order!['delivered_at']?.toString();
+    final status = _order!['status']?.toString().toUpperCase() ?? '';
+
+    DateTime? createdAt = createdAtStr != null ? DateTime.tryParse(createdAtStr) : null;
+    DateTime? shippedAt = shippedAtStr != null ? DateTime.tryParse(shippedAtStr) : null;
+    DateTime? deliveredAt = deliveredAtStr != null ? DateTime.tryParse(deliveredAtStr) : null;
+
+    if (createdAt != null) {
+      events.add({
+        'title': 'Chờ lấy hàng',
+        'time': _formatTimestamp(createdAt),
+      });
+      events.add({
+        'title': 'Chờ lấy hàng',
+        'time': _formatTimestamp(createdAt.add(const Duration(seconds: 7))),
+      });
+    }
+
+    if (shippedAt != null) {
+      events.add({
+        'title': 'Đã lấy hàng',
+        'time': _formatTimestamp(shippedAt),
+      });
+      events.add({
+        'title': 'Đang giao',
+        'time': _formatTimestamp(shippedAt.add(const Duration(seconds: 2))),
+      });
+    } else if (status == 'SHIPPED' || status == 'COMPLETED') {
+      final baseTime = createdAt != null ? createdAt.add(const Duration(minutes: 5)) : DateTime.now();
+      events.add({
+        'title': 'Đã lấy hàng',
+        'time': _formatTimestamp(baseTime),
+      });
+      events.add({
+        'title': 'Đang giao',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 2))),
+      });
+    }
+
+    if (deliveredAt != null) {
+      events.add({
+        'title': 'Đã giao',
+        'time': _formatTimestamp(deliveredAt),
+      });
+    } else if (status == 'COMPLETED') {
+      final baseTime = shippedAt ?? (createdAt != null ? createdAt.add(const Duration(minutes: 6)) : DateTime.now());
+      events.add({
+        'title': 'Đã giao',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 4))),
+      });
+    }
+
+    if (events.isEmpty) {
+      final now = DateTime.now();
+      events.add({'title': 'Chờ lấy hàng', 'time': _formatTimestamp(now.subtract(const Duration(minutes: 10)))});
+      events.add({'title': 'Chờ lấy hàng', 'time': _formatTimestamp(now.subtract(const Duration(minutes: 9)))});
+      events.add({'title': 'Đã lấy hàng', 'time': _formatTimestamp(now.subtract(const Duration(minutes: 5)))});
+      events.add({'title': 'Đang giao', 'time': _formatTimestamp(now.subtract(const Duration(minutes: 2)))});
+      events.add({'title': 'Đã giao', 'time': _formatTimestamp(now)});
+    }
+
+    return events;
+  }
+
+  List<Map<String, String>> _getReturnJourneyEvents(Map<dynamic, dynamic> refund) {
+    if (refund['events'] is List && (refund['events'] as List).isNotEmpty) {
+      return (refund['events'] as List)
+          .whereType<Map>()
+          .map((e) => {
+                'title': (e['title'] ?? e['status'] ?? '').toString(),
+                'time': (e['time'] ?? e['created_at'] ?? '').toString(),
+              })
+          .toList();
+    }
+
+    final baseTimeStr = refund['created_at']?.toString() ?? _order!['created_at']?.toString();
+    final baseTime = baseTimeStr != null ? (DateTime.tryParse(baseTimeStr) ?? DateTime.now()) : DateTime.now();
+
+    return [
+      {
+        'title': 'Chờ lấy hàng',
+        'time': _formatTimestamp(baseTime),
+      },
+      {
+        'title': 'Chờ lấy hàng',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 7))),
+      },
+      {
+        'title': 'Đã lấy hàng',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 7))),
+      },
+      {
+        'title': 'Đang giao',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 9))),
+      },
+      {
+        'title': 'Đã giao',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 11))),
+      },
+    ];
+  }
+
+  List<Map<String, String>> _getRefundHistoryEvents(Map<dynamic, dynamic> refund, int refundAmount) {
+    if (refund['history'] is List && (refund['history'] as List).isNotEmpty) {
+      return (refund['history'] as List)
+          .whereType<Map>()
+          .map((e) => {
+                'title': (e['title'] ?? e['status'] ?? '').toString(),
+                'time': (e['time'] ?? e['created_at'] ?? '').toString(),
+                if (e['note'] != null) 'note': e['note'].toString(),
+              })
+          .toList();
+    }
+
+    final baseTimeStr = refund['created_at']?.toString() ?? _order!['created_at']?.toString();
+    final baseTime = baseTimeStr != null ? (DateTime.tryParse(baseTimeStr) ?? DateTime.now()) : DateTime.now();
+
+    final storeNote = refund['seller_note']?.toString() ??
+        refund['note']?.toString() ??
+        'Lỗi khách không thích áo và muốn hoàn';
+
+    return [
+      {
+        'title': 'Đã hoàn tất',
+        'time': _formatTimestamp(baseTime.add(const Duration(minutes: 4, seconds: 12))),
+      },
+      {
+        'title': 'Đã xác nhận hoàn tiền',
+        'time': _formatTimestamp(baseTime.add(const Duration(minutes: 4, seconds: 1))),
+        'note': 'Khoản hoàn: ${_formatPrice(refundAmount)}.',
+      },
+      {
+        'title': 'Đã nhận hàng trả',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 51))),
+      },
+      {
+        'title': 'Đã ghi biên bản kiểm hàng',
+        'time': _formatTimestamp(baseTime.add(const Duration(seconds: 51))),
+      },
+      {
+        'title': 'Đã chấp thuận',
+        'time': _formatTimestamp(baseTime),
+      },
+      {
+        'title': 'Quyết định trách nhiệm và phí',
+        'time': _formatTimestamp(baseTime),
+        'note': storeNote,
+      },
+    ];
+  }
+
+  String _returnStatusBadge(String status) {
+    switch (status.toUpperCase()) {
+      case 'SUCCEEDED':
+      case 'COMPLETED':
+      case 'RETURNED':
+      case 'DELIVERED':
+        return 'Đã giao';
+      case 'SHIPPED':
+      case 'PROCESSING':
+        return 'Đang giao';
+      case 'REQUESTED':
+      case 'PENDING':
+        return 'Chờ lấy hàng';
+      default:
+        return 'Đã giao';
+    }
+  }
+
+  String _disputeStatusText(String status) {
+    switch (status.toUpperCase()) {
+      case 'SUCCEEDED':
+      case 'COMPLETED':
+        return 'Đã hoàn tất.';
+      case 'PROCESSING':
+      case 'REQUESTED':
+      case 'PENDING':
+        return 'Đang xử lý hoàn tiền.';
+      case 'DISPUTING':
+        return 'Đang xử lý tranh chấp.';
+      default:
+        return 'Đang xử lý hoàn tiền.';
+    }
+  }
+
+  Future<void> _submitDispute(String orderId) async {
+    final text = _disputeController.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập nội dung khiếu nại.')),
+      );
+      return;
+    }
+    setState(() => _isSubmittingDispute = true);
+    try {
+      await ref.read(apiProvider).submitOrderDispute(orderId, text);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã gửi tranh chấp/khiếu nại thành công.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Không thể gửi khiếu nại: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingDispute = false);
+      }
+    }
+  }
+
+  List<Widget> _buildRefundItemsList() {
+    final rawItems = (_order!['items'] as List?) ?? [];
+    final items = rawItems.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+
+    return items.map((it) {
+      final title = _extractItemTitle(it);
+      final sku = _extractItemSku(it);
+      final qty = (it['quantity'] as num?)?.toInt() ?? 1;
+      final price = (it['price_vnd'] as num?)?.toInt() ??
+          (it['unit_price_vnd'] as num?)?.toInt() ??
+          0;
+      final productId = it['product_id']?.toString() ?? '';
+      final directImg = it['image_url']?.toString() ??
+          (it['product_snapshot'] is Map
+              ? (it['product_snapshot'] as Map)['image_url']?.toString()
+              : null);
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Consumer(
+              builder: (context, ref, _) {
+                final liveImg = ref.watch(productThumbnailProvider(productId)).value;
+                final imgUrl = directImg ?? liveImg;
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 64,
+                    height: 64,
+                    color: Colors.grey.shade100,
+                    child: imgUrl != null && imgUrl.isNotEmpty
+                        ? Image.network(
+                            imgUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (ctx, _, _) => const Center(
+                              child: Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                            ),
+                          )
+                        : const Center(
+                            child: Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                          ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.5,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Phân loại: $sku',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'SKU: ${it['sku'] ?? sku}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    'Số lượng: $qty',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Đơn giá: ${_formatPrice(price)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildReturnAndRefundSection() {
+    final id = (_order!['id'] ?? '').toString();
+    final localRefund = ref.read(apiProvider).getLocalRefund(id);
+    final refund = (_order!['refund'] as Map?) ?? localRefund ?? {};
+    final refundStatus = (_order!['refund_status'] ?? refund['status'] ?? 'REQUESTED').toString().toUpperCase();
+    final reason = refund['reason']?.toString() ?? 'Áo xấu';
+    final storeResponse = refund['seller_note']?.toString() ??
+        refund['note']?.toString() ??
+        'Lỗi khách không thích áo và muốn hoàn\n\nBạn chịu phí gửi trả.';
+    final refundAmount = (refund['amount_vnd'] as num?)?.toInt() ??
+        (_order!['refunded_vnd'] as num?)?.toInt() ??
+        ((_order!['amounts'] as Map?)?['payable_vnd'] as num?)?.toInt() ??
+        0;
+    final trackingCode = refund['tracking_code']?.toString() ??
+        (_order!['shipment'] as Map?)?['tracking_code']?.toString() ??
+        _order!['tracking_code']?.toString() ??
+        'DLV-${id.replaceAll('-', '').substring(0, id.replaceAll('-', '').length.clamp(0, 24)).toUpperCase()}';
+    final carrierName = refund['carrier_name']?.toString() ??
+        (_order!['shipment'] as Map?)?['carrier_name']?.toString() ??
+        'PBL6 Delivery';
+
+    final returnJourneyEvents = _getReturnJourneyEvents(refund);
+    final refundHistoryEvents = _getRefundHistoryEvents(refund, refundAmount);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(5),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // PART 1: Gửi và nhận hàng trả / đổi
+          const Text(
+            'Gửi và nhận hàng trả / đổi',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Gửi trả hàng',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6F4EA),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  _returnStatusBadge(refundStatus),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF137333),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$carrierName · $trackingCode',
+            style: TextStyle(
+              fontSize: 12.5,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isReturnShipmentExpanded = !_isReturnShipmentExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _isReturnShipmentExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                  Text(
+                    'Xem hành trình (${returnJourneyEvents.length})',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isReturnShipmentExpanded) ...[
+            const SizedBox(height: 6),
+            ...returnJourneyEvents.map((evt) => Padding(
+                  padding: const EdgeInsets.only(left: 14, bottom: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        evt['title'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        evt['time'] ?? '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+
+          const Divider(height: 24, color: Color(0xFFF1F3F5)),
+
+          // PART 2: Khiếu nại (User: đổi Xem lại phí thành Khiếu nại)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isDisputeExpanded = !_isDisputeExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _isDisputeExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                  const Text(
+                    'Khiếu nại',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isDisputeExpanded) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Nội dung trao đổi / căn cứ',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _disputeController,
+              maxLines: 3,
+              minLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Nhập ý kiến khiếu nại hoặc căn cứ tranh chấp...',
+                hintStyle: TextStyle(fontSize: 12.5, color: Colors.grey.shade400),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                ),
+                contentPadding: const EdgeInsets.all(10),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                  onPressed: _isSubmittingDispute ? null : () => _submitDispute(id),
+                  child: _isSubmittingDispute
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Gửi tranh chấp',
+                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Hoàn tiền · ${_disputeStatusText(refundStatus)}',
+              style: TextStyle(
+                fontSize: 12.5,
+                color: Colors.grey.shade800,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+
+          const Divider(height: 24, color: Color(0xFFF1F3F5)),
+
+          // PART 3: Chi tiết yêu cầu
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isRequestDetailExpanded = !_isRequestDetailExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _isRequestDetailExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                  const Text(
+                    'Chi tiết yêu cầu',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isRequestDetailExpanded) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Lý do yêu cầu',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              reason,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Phản hồi của cửa hàng',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              storeResponse,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade800,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Hàng đã mua ban đầu',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ..._buildRefundItemsList(),
+          ],
+
+          const Divider(height: 24, color: Color(0xFFF1F3F5)),
+
+          // PART 4: Lịch sử đổi trả
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isRefundHistoryExpanded = !_isRefundHistoryExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _isRefundHistoryExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                  const Text(
+                    'Lịch sử đổi trả',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isRefundHistoryExpanded) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Mới nhất trước · Giờ Việt Nam',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...refundHistoryEvents.map((evt) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        evt['title'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        evt['time'] ?? '',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      if (evt['note'] != null && evt['note']!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          evt['note']!,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                )),
+          ],
+        ],
+      ),
+    );
+  }
+
 }

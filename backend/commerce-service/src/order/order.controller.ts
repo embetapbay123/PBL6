@@ -69,6 +69,13 @@ export class OrderController {
     return this.service.cancelOwnOrder(id, dto, req.auth, req.correlationId);
   }
 
+  @Post('me/orders/:id/dispute')
+  @HttpCode(200)
+  @Roles('CUSTOMER')
+  disputeOwnOrder(@Param('id') id: string, @Body() dto: any, @Req() req: any) {
+    return this.service.disputeOwnOrder(id, dto?.content ?? '', req.auth, req.correlationId);
+  }
+
   @Get('store/orders')
   @Roles('SELLER', 'STORE_OWNER')
   listStoreOrders(

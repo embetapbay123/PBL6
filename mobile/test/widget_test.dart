@@ -33,6 +33,7 @@ import 'package:pbl6_mobile/features/customer/recently_viewed_page.dart';
 import 'package:pbl6_mobile/features/notifications/notifications_page.dart';
 import 'package:pbl6_mobile/features/orders/order_list_page.dart';
 import 'package:pbl6_mobile/features/orders/order_detail_page.dart';
+import 'package:pbl6_mobile/features/orders/order_refund_page.dart';
 import 'package:pbl6_mobile/features/shared/recommendations_section.dart';
 import 'package:pbl6_mobile/features/catalog/shop_page.dart';
 import 'package:pbl6_mobile/features/store/store_provider.dart';
@@ -492,6 +493,21 @@ class MockApiClient extends ApiClient {
 
   static final Map<String, Map<String, dynamic>> _mockRefunds = {};
 
+  @override
+  Map<String, dynamic>? getLocalRefund(String orderId) => _mockRefunds[orderId];
+
+  @override
+  Future<Map<String, dynamic>> submitOrderDispute(String orderId, String content) async {
+    final refund = _mockRefunds[orderId] ??= {
+      'order_id': orderId,
+      'status': 'DISPUTING',
+      'created_at': DateTime.now().toIso8601String(),
+    };
+    refund['dispute_content'] = content;
+    refund['status'] = 'DISPUTING';
+    return refund;
+  }
+
   MockApiClient() {
     _mockRefunds.clear();
   }
@@ -512,6 +528,8 @@ class MockApiClient extends ApiClient {
       'order_id': orderId,
       'reason': reason,
       'amount_vnd': amountVnd,
+      if (items != null) 'items': items,
+      if (note != null && note.isNotEmpty) 'note': note,
     };
     return _mockRefunds[orderId]!;
   }
@@ -2522,6 +2540,238 @@ void main() {
       await tester.tap(find.text('Mua lại'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Giỏ hàng'), findsWidgets);
+    });
+
+    testWidgets('OrderRefundPage renders 4-step progress stepper, subtext, and shipping address card at top', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [apiProvider.overrideWithValue(MockApiClient())],
+          child: const MaterialApp(
+            home: OrderRefundPage(
+              order: {
+                'id': 'order-test-comp',
+                'status': 'COMPLETED',
+                'store_name': 'PBL Fashion Hub',
+                'shipping_address': {
+                  'recipient_name': '[DEMO] Nguyễn Minh An',
+                  'phone': '0900000000',
+                  'line1': '123 Đường Minh Họa, cổng B (dữ liệu kiểm thử)',
+                  'ward': 'Phường A',
+                  'district': 'Quận B',
+                  'city': 'Huế',
+                },
+                'items': [
+                  {
+                    'id': 'oi-01',
+                    'product_title': 'Áo hoodie xám Weekend',
+                    'price_vnd': 389000,
+                    'quantity': 1,
+                  },
+                ],
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify 4-step progress header
+      expect(find.text('Đơn đã đặt'), findsOneWidget);
+      expect(find.text('Đã xác nhận'), findsOneWidget);
+      expect(find.text('Đang giao hàng'), findsOneWidget);
+      expect(find.text('Hoàn tất'), findsOneWidget);
+      expect(find.text('Đã hoàn tất. Bạn có thể đánh giá hoặc yêu cầu đổi trả.'), findsOneWidget);
+
+      // Verify shipping address card
+      expect(find.text('Địa Chỉ Nhận Hàng'), findsOneWidget);
+      expect(find.text('[DEMO] Nguyễn Minh An'), findsOneWidget);
+      expect(find.text('0900000000'), findsOneWidget);
+      expect(find.textContaining('123 Đường Minh Họa'), findsOneWidget);
+    });
+
+    testWidgets('OrderListPage splits multi-item order with partial refund into 2 separate cards (Trả hàng/Hoàn tiền and Hoàn thành)', (tester) async {
+      final mock = MockApiClient();
+      // Multi-item order: item 1 refunded, item 2 completed
+      final partialOrder = {
+        'id': 'order-multi-item-99',
+        'purchase_group_id': 'pg-99',
+        'store_id': 'store-fashion',
+        'store_name': 'PBL Fashion Hub',
+        'status': 'COMPLETED',
+        'version': 1,
+        'payment_method': 'COD',
+        'amounts': {'payable_vnd': 739000},
+        'items': [
+          {
+            'id': 'oi-refund-01',
+            'order_id': 'order-multi-item-99',
+            'product_id': 'prod-01',
+            'product_title': 'Áo hoodie xám Weekend',
+            'sku': 'AN-HD01-002',
+            'price_vnd': 389000,
+            'quantity': 1,
+          },
+          {
+            'id': 'oi-keep-02',
+            'order_id': 'order-multi-item-99',
+            'product_id': 'prod-02',
+            'product_title': 'Quần jean Slimfit',
+            'sku': 'JEAN-SLIM-01',
+            'price_vnd': 350000,
+            'quantity': 1,
+          },
+        ],
+      };
+
+      // Set partial refund for only oi-refund-01
+      await mock.requestOrderRefund(
+        orderId: 'order-multi-item-99',
+        reason: 'Áo xấu',
+        amountVnd: 389000,
+        items: [
+          {'order_item_id': 'oi-refund-01', 'quantity': 1},
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(mock),
+            customerOrdersProvider.overrideWith((ref) async => {
+              'items': [partialOrder],
+              'total': 1,
+            }),
+          ],
+          child: const MaterialApp(home: OrderListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // On 'Tất cả' tab, both split cards appear under the same order ID
+      expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+      expect(find.text('Quần jean Slimfit'), findsOneWidget);
+
+      // Verify in 'Hoàn thành' tab (initialIndex: 4)
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(mock),
+            customerOrdersProvider.overrideWith((ref) async => {
+              'items': [partialOrder],
+              'total': 1,
+            }),
+          ],
+          child: const MaterialApp(
+            home: OrderListPage(
+              key: ValueKey('order-list-tab-4'),
+              initialIndex: 4,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Quần jean Slimfit'), findsOneWidget);
+      expect(find.text('Áo hoodie xám Weekend'), findsNothing);
+
+      // Verify in 'Trả hàng/Hoàn tiền' tab (initialIndex: 6)
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(mock),
+            customerOrdersProvider.overrideWith((ref) async => {
+              'items': [partialOrder],
+              'total': 1,
+            }),
+          ],
+          child: const MaterialApp(
+            home: OrderListPage(
+              key: ValueKey('order-list-tab-6'),
+              initialIndex: 6,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+      expect(find.text('Quần jean Slimfit'), findsNothing);
+    });
+
+    testWidgets('OrderDetailPage removes Lịch sử trạng thái, adds Xem hành trình in Thông tin vận chuyển, and renders Đổi trả và hoàn tiền section with 4 parts', (tester) async {
+      final mock = MockApiClient();
+      await mock.requestOrderRefund(
+        orderId: 'order-detail-refund-01',
+        reason: 'Áo xấu',
+        amountVnd: 389000,
+        note: 'Lỗi khách không thích áo và muốn hoàn\n\nBạn chịu phí gửi trả.',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            apiProvider.overrideWithValue(mock),
+          ],
+          child: MaterialApp(
+            home: OrderDetailPage(
+              orderId: 'order-detail-refund-01',
+              initialOrder: {
+                'id': 'order-detail-refund-01',
+                'status': 'COMPLETED',
+                'refund_status': 'SUCCEEDED',
+                'store_name': 'PBL Fashion Hub',
+                'payment_method': 'COD',
+                'created_at': '2026-11-10T07:44:03Z',
+                'tracking_code': 'DLV-3328A32381714E38A6EA66BE981E7EC9',
+                'carrier_name': 'PBL6 Delivery',
+                'amounts': {
+                  'goods_vnd': 389000,
+                  'shipping_vnd': 15000,
+                  'payable_vnd': 404000,
+                },
+                'items': [
+                  {
+                    'id': 'it-01',
+                    'product_title': 'Áo hoodie xám Weekend',
+                    'sku': 'AN-HD01-002',
+                    'quantity': 1,
+                    'price_vnd': 389000,
+                  },
+                ],
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verify "Lịch sử trạng thái" card is removed
+      expect(find.text('Lịch sử trạng thái'), findsNothing);
+
+      // 2. Verify "Thông tin vận chuyển" has "Xem hành trình"
+      expect(find.text('Thông tin vận chuyển'), findsOneWidget);
+      expect(find.textContaining('Xem hành trình'), findsWidgets);
+      expect(find.text('Chờ lấy hàng'), findsWidgets);
+
+      // 3. Verify "Đổi trả và hoàn tiền" section
+      expect(find.text('Gửi và nhận hàng trả / đổi'), findsOneWidget);
+      expect(find.text('Gửi trả hàng'), findsOneWidget);
+      expect(find.text('Khiếu nại'), findsOneWidget);
+      expect(find.text('Nội dung trao đổi / căn cứ'), findsOneWidget);
+      expect(find.text('Gửi tranh chấp'), findsOneWidget);
+      expect(find.text('Chi tiết yêu cầu'), findsOneWidget);
+      expect(find.text('Lý do yêu cầu'), findsOneWidget);
+      expect(find.text('Áo xấu'), findsOneWidget);
+      expect(find.text('Phản hồi của cửa hàng'), findsOneWidget);
+      expect(find.text('Hàng đã mua ban đầu'), findsOneWidget);
+      expect(find.text('Lịch sử đổi trả'), findsOneWidget);
+      expect(find.text('Mới nhất trước · Giờ Việt Nam'), findsOneWidget);
+
+      // Test submitting a dispute
+      await tester.ensureVisible(find.byType(TextField).first);
+      await tester.enterText(find.byType(TextField).first, 'Yêu cầu xem lại phí vận chuyển hoàn.');
+      await tester.ensureVisible(find.text('Gửi tranh chấp'));
+      await tester.tap(find.text('Gửi tranh chấp'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đã gửi tranh chấp/khiếu nại thành công.'), findsOneWidget);
     });
 
     testWidgets('StoreApplicationPage renders submission form and previous applications', (tester) async {

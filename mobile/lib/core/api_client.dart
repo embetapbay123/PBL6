@@ -841,6 +841,8 @@ class ApiClient {
   // --- Order Management (MOB-04) ---
   static final Map<String, Map<String, dynamic>> _localRefunds = {};
 
+  Map<String, dynamic>? getLocalRefund(String orderId) => _localRefunds[orderId];
+
   Future<Map<String, dynamic>> listOwnOrders({
     int page = 1,
     int size = 50,
@@ -855,6 +857,7 @@ class ApiClient {
           if (id != null && _localRefunds.containsKey(id)) {
             m['refund_status'] ??= _localRefunds[id]!['status'];
             m['refunded_vnd'] ??= _localRefunds[id]!['amount_vnd'];
+            m['refund'] ??= _localRefunds[id];
           }
           return m;
         }
@@ -866,8 +869,14 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getOwnOrder(String id) async {
-    final res = await get('/me/orders/$id');
-    return Map<String, dynamic>.from(res as Map);
+    final res = await get('/me/orders/');
+    final map = Map<String, dynamic>.from(res as Map);
+    if (_localRefunds.containsKey(id)) {
+      map['refund_status'] ??= _localRefunds[id]!['status'];
+      map['refunded_vnd'] ??= _localRefunds[id]!['amount_vnd'];
+      map['refund'] ??= _localRefunds[id];
+    }
+    return map;
   }
 
   Future<Map<String, dynamic>> cancelOwnOrder(
@@ -879,7 +888,7 @@ class ApiClient {
       'expected_version': expectedVersion,
       if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
     };
-    final res = await post('/me/orders/$id/cancel', data: body);
+    final res = await post('/me/orders//cancel', data: body);
     return (res is Map)
         ? Map<String, dynamic>.from(res)
         : {'status': 'CANCELLED'};
@@ -887,8 +896,17 @@ class ApiClient {
 
   Future<Map<String, dynamic>?> getOrderRefund(String id) async {
     try {
-      final res = await get('/orders/$id/refund');
-      if (res is Map) return Map<String, dynamic>.from(res);
+      final res = await get('/orders//refund');
+      if (res is Map) {
+        final map = Map<String, dynamic>.from(res);
+        if (_localRefunds.containsKey(id)) {
+          _localRefunds[id]!.forEach((k, v) {
+            map.putIfAbsent(k, () => v);
+          });
+        }
+        _localRefunds[id] = map;
+        return map;
+      }
       return _localRefunds[id];
     } catch (_) {
       return _localRefunds[id];
@@ -907,6 +925,8 @@ class ApiClient {
       'order_id': orderId,
       'reason': reason,
       'amount_vnd': amountVnd,
+      if (items != null) 'items': items,
+      if (note != null && note.isNotEmpty) 'note': note,
       'created_at': DateTime.now().toIso8601String(),
     };
     try {
@@ -917,17 +937,40 @@ class ApiClient {
       if (items != null) body['items'] = items;
       if (note != null && note.isNotEmpty) body['note'] = note;
       final res = await post(
-        '/orders/$orderId/refund',
+        '/orders//refund',
         data: body,
       );
       if (res is Map) {
         final map = Map<String, dynamic>.from(res);
+        if (items != null) map.putIfAbsent('items', () => items);
+        if (note != null && note.isNotEmpty) map.putIfAbsent('note', () => note);
         _localRefunds[orderId] = map;
         return map;
       }
       return {'status': 'PENDING'};
     } catch (_) {
       return _localRefunds[orderId]!;
+    }
+  }
+
+  Future<Map<String, dynamic>> submitOrderDispute(String orderId, String content) async {
+    final refund = _localRefunds[orderId] ??= {
+      'order_id': orderId,
+      'status': 'DISPUTING',
+      'created_at': DateTime.now().toIso8601String(),
+    };
+    refund['dispute_content'] = content;
+    refund['status'] = 'DISPUTING';
+    try {
+      final res = await post('/me/orders//dispute', data: {'content': content});
+      if (res is Map) {
+        final map = Map<String, dynamic>.from(res);
+        _localRefunds[orderId] = map;
+        return map;
+      }
+      return refund;
+    } catch (_) {
+      return refund;
     }
   }
 

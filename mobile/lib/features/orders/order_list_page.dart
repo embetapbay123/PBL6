@@ -85,6 +85,121 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         order['is_refund'] == true;
   }
 
+  List<Map<String, dynamic>> _processOrdersWithSplits(
+    List<Map<String, dynamic>> orders,
+    dynamic apiClient,
+  ) {
+    final List<Map<String, dynamic>> result = [];
+
+    for (final order in orders) {
+      final orderId = (order['id'] ?? '').toString();
+      final itemsRaw = (order['items'] as List?) ?? [];
+      final items = itemsRaw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+
+      final localRefund = apiClient.getLocalRefund(orderId);
+      final refundObj = (order['refund'] as Map?) ?? localRefund;
+
+      final refundedItemIds = <String>{};
+      if (refundObj != null && refundObj['items'] is List) {
+        for (final it in (refundObj['items'] as List)) {
+          if (it is Map) {
+            final id = (it['order_item_id'] ?? it['id'] ?? it['variant_id'])?.toString();
+            if (id != null) refundedItemIds.add(id);
+          }
+        }
+      }
+      for (int i = 0; i < items.length; i++) {
+        final it = items[i];
+        final id = (it['id'] ?? 'item_$i').toString();
+        final varId = it['variant_id']?.toString();
+        if (it['refund_status'] != null ||
+            it['is_refunded'] == true ||
+            it['is_refund'] == true) {
+          refundedItemIds.add(id);
+          if (varId != null) refundedItemIds.add(varId);
+        }
+      }
+
+      // If order has multiple items and only a subset is refunded:
+      final isPartialRefund = items.length > 1 &&
+          refundedItemIds.isNotEmpty &&
+          refundedItemIds.length < items.length;
+
+      if (isPartialRefund) {
+        final refundedItems = <Map<String, dynamic>>[];
+        final remainingItems = <Map<String, dynamic>>[];
+
+        for (int i = 0; i < items.length; i++) {
+          final it = items[i];
+          final id = (it['id'] ?? 'item_$i').toString();
+          final varId = it['variant_id']?.toString();
+          if (refundedItemIds.contains(id) || (varId != null && refundedItemIds.contains(varId))) {
+            refundedItems.add(it);
+          } else {
+            remainingItems.add(it);
+          }
+        }
+
+        if (refundedItems.isNotEmpty && remainingItems.isNotEmpty) {
+          // 1. Don chua cac san pham tra hang/hoan tien dua ve muc Tra hang/Hoan tien
+          final refundEntry = Map<String, dynamic>.from(order);
+          refundEntry['items'] = refundedItems;
+          refundEntry['is_refund'] = true;
+          refundEntry['refund_status'] =
+              refundObj?['status'] ?? order['refund_status'] ?? 'REQUESTED';
+          refundEntry['status'] = 'REFUND_REQUESTED';
+          int refundTotal = 0;
+          for (final it in refundedItems) {
+            final price = (it['price_vnd'] as num?)?.toInt() ??
+                (it['unit_price_vnd'] as num?)?.toInt() ??
+                0;
+            final qty = (it['quantity'] as num?)?.toInt() ?? 1;
+            refundTotal += price * qty;
+          }
+          final existingAmounts = order['amounts'] as Map?;
+          refundEntry['amounts'] = {
+            ...?existingAmounts,
+            'payable_vnd': refundTotal,
+          };
+          refundEntry['refunded_vnd'] = refundTotal;
+
+          // 2. Don chua cac san pham con lai o muc Hoan thanh
+          final completedEntry = Map<String, dynamic>.from(order);
+          completedEntry['items'] = remainingItems;
+          completedEntry['is_refund'] = false;
+          completedEntry['refund_status'] = null;
+          completedEntry['status'] = 'COMPLETED';
+          int completedTotal = 0;
+          for (final it in remainingItems) {
+            final price = (it['price_vnd'] as num?)?.toInt() ??
+                (it['unit_price_vnd'] as num?)?.toInt() ??
+                0;
+            final qty = (it['quantity'] as num?)?.toInt() ?? 1;
+            completedTotal += price * qty;
+          }
+          completedEntry['amounts'] = {
+            ...?existingAmounts,
+            'payable_vnd': completedTotal,
+          };
+          completedEntry.remove('refunded_vnd');
+          completedEntry.remove('refund');
+
+          result.add(refundEntry);
+          result.add(completedEntry);
+          continue;
+        }
+      }
+
+      result.add(order);
+    }
+
+    return result;
+  }
+
+
   bool _matchesOrder(Map<String, dynamic> order, String filterKey) {
     final status = (order['status']?.toString() ?? '').toUpperCase();
     final hasRefund = _hasRefund(order);
@@ -321,9 +436,10 @@ class _OrderListPageState extends ConsumerState<OrderListPage>
         ),
         data: (data) {
           final rawItems = (data['items'] as List?) ?? [];
-          final allOrders = rawItems
+          final allRawOrders = rawItems
               .map((e) => Map<String, dynamic>.from(e as Map))
               .toList();
+          final allOrders = _processOrdersWithSplits(allRawOrders, ref.read(apiProvider));
 
           return TabBarView(
             controller: _tabController,

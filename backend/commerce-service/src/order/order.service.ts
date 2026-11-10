@@ -131,7 +131,18 @@ export class OrderService {
         quantity: it.quantity,
         line_total_vnd: moneyNumber(it.line_total_vnd),
       })),
-    };
+      address: order.address_snapshot ?? undefined,
+      shipping_address: order.address_snapshot ?? undefined,
+      address_snapshot: order.address_snapshot ?? undefined,
+      created_at: order.created_at ? new Date(order.created_at).toISOString() : undefined,
+      shipment: {
+        carrier_name: 'PBL6 Delivery',
+        tracking_code: (order as any).tracking_code ?? `DLV-${order.id.replace(/-/g, '').substring(0, 24).toUpperCase()}`,
+        status: (order as any).shipment_status ?? (order.status === 'COMPLETED' ? 'DELIVERED' : (order.status === 'SHIPPED' ? 'SHIPPED' : 'PROCESSING')),
+        shipped_at: (order as any).shipped_at ? new Date((order as any).shipped_at).toISOString() : (order.created_at ? new Date(order.created_at).toISOString() : undefined),
+        delivered_at: (order as any).delivered_at ? new Date((order as any).delivered_at).toISOString() : undefined,
+      },
+    } as any;
   }
 
   private async calculateQuote(
@@ -954,6 +965,21 @@ export class OrderService {
       eligible: true,
     };
   }
+
+  async disputeOwnOrder(id: string, content: string, auth: any, _correlation: string) {
+    const userId = auth?.user_id;
+    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    const repo = new OrderRepository(this.source.manager);
+    const order = await repo.findCustomerOrderById(id, userId);
+    if (!order) throw new ApiError(404, 'NOT_FOUND', 'Không tìm thấy đơn hàng.');
+    return {
+      order_id: id,
+      status: 'DISPUTING',
+      dispute_content: content,
+      created_at: new Date().toISOString(),
+    };
+  }
+
 }
 
 

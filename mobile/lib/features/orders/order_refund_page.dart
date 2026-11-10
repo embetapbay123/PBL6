@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/app_notice_dialog.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import 'order_list_page.dart';
@@ -205,6 +204,28 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
     final storeName = order['store_name']?.toString() ?? 'Gian hàng đối tác';
     final items = _getItems();
     final totalRefund = _calculateTotalRefund();
+    final address = (order['address'] as Map?) ??
+        (order['shipping_address'] as Map?) ??
+        (order['address_snapshot'] as Map?);
+    final recipient = address?['recipient_name']?.toString() ??
+        address?['name']?.toString() ??
+        address?['full_name']?.toString() ??
+        order['customer_name']?.toString() ??
+        '[DEMO] Nguyễn Minh An';
+    final phone = address?['phone']?.toString() ??
+        address?['phone_number']?.toString() ??
+        order['customer_phone']?.toString() ??
+        '0900000000';
+    final line1 = address?['line1'] ?? address?['street'] ?? address?['address'] ?? '';
+    final ward = address?['ward'] ?? '';
+    final district = address?['district'] ?? '';
+    final city = address?['city'] ?? address?['province'] ?? '';
+    final parts = [line1, ward, district, city]
+        .where((s) => s != null && s.toString().trim().isNotEmpty)
+        .join(', ');
+    final fullAddress = parts.isNotEmpty
+        ? parts
+        : '123 Đường Minh Họa, cổng B (dữ liệu kiểm thử), Phường A, Quận B, Huế';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -230,6 +251,100 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 4-step progress header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Row(
+                children: [
+                  _buildRefundStepperItem('Đơn đã đặt', true),
+                  _buildStepperDivider(true),
+                  _buildRefundStepperItem('Đã xác nhận', true),
+                  _buildStepperDivider(true),
+                  _buildRefundStepperItem('Đang giao hàng', true),
+                  _buildStepperDivider(true),
+                  _buildRefundStepperItem('Hoàn tất', true),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                'Đã hoàn tất. Bạn có thể đánh giá hoặc yêu cầu đổi trả.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade800,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Shipping Address Card
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(
+                        Icons.location_on_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Địa Chỉ Nhận Hàng',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 18, color: Color(0xFFF1F3F5)),
+                  Text(
+                    recipient,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (phone.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      phone,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    fullAddress,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Colors.grey.shade600,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             // Order and Store info card
             Container(
               padding: const EdgeInsets.all(14),
@@ -815,6 +930,48 @@ class _OrderRefundPageState extends ConsumerState<OrderRefundPage> {
             ),
             const SizedBox(height: 20),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRefundStepperItem(String label, bool isDone) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: isDone ? AppColors.primary : Colors.grey.shade300,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.check,
+            color: Colors.white,
+            size: 15,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isDone ? FontWeight.w600 : FontWeight.normal,
+            color: isDone ? AppColors.textPrimary : Colors.grey.shade500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepperDivider(bool isDone) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Container(
+          height: 1.5,
+          color: isDone ? AppColors.primary.withAlpha(128) : Colors.grey.shade300,
         ),
       ),
     );
