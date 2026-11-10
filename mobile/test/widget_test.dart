@@ -2183,12 +2183,12 @@ void main() {
         await tester.tap(voucherField);
         await tester.pumpAndSettle();
 
-        // On VoucherSelectionPage (matching Image 2)
-        expect(find.text('Chọn Voucher'), findsOneWidget);
-        expect(find.text('Ưu đãi toàn sàn'), findsOneWidget);
-        expect(find.text('DEMO-SAN-5K'), findsOneWidget);
-        expect(find.text('Ưu đãi từ cửa hàng'), findsOneWidget);
-        expect(find.text('DEMO-B-10K'), findsOneWidget);
+        // On VoucherSelectionPage (matching Shopee Voucher modal)
+        expect(find.textContaining('Chọn'), findsWidgets);
+        expect(find.text('Mã Toàn Sàn & Vận Chuyển'), findsOneWidget);
+        expect(find.textContaining('Giảm 5.000 đ'), findsOneWidget);
+        expect(find.text('Mã Giảm Giá Từ Shop'), findsOneWidget);
+        expect(find.textContaining('Giảm 10.000 đ'), findsWidgets);
 
         // Enter invalid voucher code and tap Áp dụng
         await tester.enterText(find.byKey(const Key('voucher_input_field')), 'RANDOM_FAKE_CODE');
@@ -2197,8 +2197,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Mã giảm giá này không tồn tại hoặc đã hết lượt sử dụng'), findsOneWidget);
 
-        // Tap to select DEMO-SAN-5K -> moves to Voucher đã chọn at the top
-        await tester.tap(find.text('DEMO-SAN-5K'));
+        // Tap to select platform voucher (DEMO-SAN-5K) -> moves to Voucher đã chọn at the top
+        await tester.tap(find.textContaining('Giảm 5.000 đ').first);
         await tester.pumpAndSettle();
         expect(find.text('Voucher đã chọn'), findsOneWidget);
 
@@ -2206,8 +2206,8 @@ void main() {
         await tester.pump(const Duration(seconds: 4));
         await tester.pumpAndSettle();
 
-        // Tap 'Đồng ý'
-        await tester.tap(find.text('Đồng ý'));
+        // Tap 'ĐỒNG Ý'
+        await tester.tap(find.text('ĐỒNG Ý'));
         await tester.pumpAndSettle();
 
         expect(find.text('DEMO-SAN-5K'), findsOneWidget);

@@ -1407,6 +1407,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
             .toList() ??
         _paymentMethods.keys.toList();
 
+    final storeNames = <String, String>{};
+    if (widget.initialSelectedItems != null) {
+      for (final item in widget.initialSelectedItems!) {
+        final sid = item['store_id']?.toString() ?? '';
+        final sname = item['store_name']?.toString() ?? '';
+        if (sid.isNotEmpty && sname.isNotEmpty) {
+          storeNames[sid] = sname;
+        }
+      }
+    }
+
     final result = await Navigator.push<VoucherSelectionResult>(
       context,
       MaterialPageRoute(
@@ -1415,6 +1426,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
           initialPlatformVoucher: _appliedPlatformVoucher,
           initialStoreVouchers: Map<String, String>.from(_storeVouchers),
           payableTotal: (_quote?['payable_total_vnd'] as num?)?.toInt() ?? 0,
+          storeNames: storeNames,
           onValidateCode: (code) async {
             final client = ref.read(apiProvider);
             final addressId = _selectedAddress?['id']?.toString() ?? '';

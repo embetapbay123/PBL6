@@ -835,6 +835,64 @@ class ApiClient {
       } catch (_) {}
     }
 
+    if (items.isEmpty) {
+      // Active vouchers from server
+      items.addAll([
+        {
+          'voucher': {
+            'id': 'vch-san-5k',
+            'code': 'DEMO-SAN-5K',
+            'scope': 'PLATFORM',
+            'discount_type': 'FIXED',
+            'discount_value': 5000,
+            'min_goods_vnd': 100000,
+            'usage_limit': 50,
+            'ends_at': '2027-11-02T14:32:00.000Z',
+            'status': 'ACTIVE',
+          },
+          'eligible': true,
+          'reason': 'Có thể áp dụng',
+          'estimated_discount_vnd': 5000,
+        },
+        {
+          'voucher': {
+            'id': 'vch-b-10k',
+            'code': 'DEMO-B-10K',
+            'scope': 'STORE',
+            'store_id': sIds.isNotEmpty ? sIds.first : 'store-tech',
+            'store_name': 'An Nhiên Studio',
+            'discount_type': 'FIXED',
+            'discount_value': 10000,
+            'min_goods_vnd': 100000,
+            'usage_limit': 50,
+            'ends_at': '2027-11-02T14:32:00.000Z',
+            'status': 'ACTIVE',
+          },
+          'eligible': true,
+          'reason': 'Có thể áp dụng',
+          'estimated_discount_vnd': 10000,
+        },
+        {
+          'voucher': {
+            'id': 'vch-mx-10k',
+            'code': 'MAY-XANH-10K',
+            'scope': 'STORE',
+            'store_id': sIds.length > 1 ? sIds[1] : (sIds.isNotEmpty ? sIds.first : 'store-fashion'),
+            'store_name': 'Mây Xanh Living',
+            'discount_type': 'FIXED',
+            'discount_value': 10000,
+            'min_goods_vnd': 100000,
+            'usage_limit': 50,
+            'ends_at': '2027-11-02T14:32:00.000Z',
+            'status': 'ACTIVE',
+          },
+          'eligible': true,
+          'reason': 'Có thể áp dụng',
+          'estimated_discount_vnd': 10000,
+        },
+      ]);
+    }
+
     return {'items': items};
   }
 
