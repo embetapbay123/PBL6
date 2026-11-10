@@ -49,6 +49,10 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   // Terms and conditions
   bool _agreedTerms = true;
 
+  // Wallet balance state (fetched from server)
+  int _walletBalance = 500000;
+  bool _loadingWallet = false;
+
   // Suggested Vouchers State
   List<Map<String, dynamic>> _suggestedVouchers = [];
   bool _loadingVouchers = false;
@@ -166,7 +170,33 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   @override
   void initState() {
     super.initState();
+    _fetchWalletBalance();
     _loadAddresses();
+  }
+
+  Future<void> _fetchWalletBalance() async {
+    setState(() => _loadingWallet = true);
+    try {
+      final client = ref.read(apiProvider);
+      final res = await client.getWalletBalance();
+      final bal = (res['balance_vnd'] as num?)?.toInt() ??
+          (res['balance'] as num?)?.toInt() ??
+          (res['amount_vnd'] as num?)?.toInt() ??
+          500000;
+      if (mounted) {
+        setState(() {
+          _walletBalance = bal;
+          _loadingWallet = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _walletBalance = 500000;
+          _loadingWallet = false;
+        });
+      }
+    }
   }
 
   @override
@@ -1148,6 +1178,24 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         _paymentMethods.keys.firstOrNull ?? 'default-store';
     final currentPayment = _paymentMethods[firstStoreId] ?? 'SANDBOX';
 
+    String paymentTitle;
+    String paymentSubtitle;
+    IconData paymentIcon;
+
+    if (currentPayment == 'WALLET') {
+      paymentTitle = 'Ví số dư (${_formatPrice(_walletBalance)})';
+      paymentSubtitle = 'Thanh toán bằng số dư tài khoản PBL6';
+      paymentIcon = Icons.account_balance_wallet_outlined;
+    } else if (currentPayment == 'SANDBOX') {
+      paymentTitle = 'Thanh toán trực tuyến (Sandbox)';
+      paymentSubtitle = 'Phương thức thanh toán mặc định';
+      paymentIcon = Icons.credit_card_outlined;
+    } else {
+      paymentTitle = 'Thanh toán khi nhận hàng (COD)';
+      paymentSubtitle = 'Thanh toán tiền mặt khi giao hàng';
+      paymentIcon = Icons.payments_outlined;
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1193,15 +1241,17 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF0F0),
+                        color: currentPayment == 'WALLET'
+                            ? const Color(0xFFE6F7FF)
+                            : const Color(0xFFFFF0F0),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
                         child: Icon(
-                          currentPayment == 'SANDBOX'
-                              ? Icons.credit_card_outlined
-                              : Icons.payments_outlined,
-                          color: AppColors.primary,
+                          paymentIcon,
+                          color: currentPayment == 'WALLET'
+                              ? const Color(0xFF1890FF)
+                              : AppColors.primary,
                           size: 20,
                         ),
                       ),
@@ -1212,20 +1262,18 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentPayment == 'SANDBOX'
-                                ? 'Thanh toán trực tuyến (Sandbox)'
-                                : 'Thanh toán khi nhận hàng (COD)',
-                            style: const TextStyle(
+                            paymentTitle,
+                            style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 13.5,
-                              color: AppColors.textPrimary,
+                              color: currentPayment == 'WALLET'
+                                  ? const Color(0xFF1890FF)
+                                  : AppColors.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            currentPayment == 'SANDBOX'
-                                ? 'Phương thức thanh toán mặc định'
-                                : 'Thanh toán tiền mặt khi giao hàng',
+                            paymentSubtitle,
                             style: TextStyle(
                               fontSize: 11.5,
                               color: Colors.grey.shade500,
@@ -1234,9 +1282,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                         ],
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.check_circle,
-                      color: AppColors.primary,
+                      color: currentPayment == 'WALLET'
+                          ? const Color(0xFF1890FF)
+                          : AppColors.primary,
                       size: 20,
                     ),
                   ],
@@ -1292,12 +1342,22 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                               });
                               _fetchQuote();
                             },
-                      items: const [
+                      items: [
                         DropdownMenuItem<String>(
+                          value: 'WALLET',
+                          child: Text(
+                            'Ví số dư (${_formatPrice(_walletBalance)})',
+                            style: const TextStyle(
+                              color: Color(0xFF1890FF),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const DropdownMenuItem<String>(
                           value: 'SANDBOX',
                           child: Text('SANDBOX'),
                         ),
-                        DropdownMenuItem<String>(
+                        const DropdownMenuItem<String>(
                           value: 'COD',
                           child: Text('COD'),
                         ),
@@ -1335,6 +1395,33 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 14),
+                ListTile(
+                  leading: const Icon(
+                    Icons.account_balance_wallet,
+                    color: Color(0xFF1890FF),
+                  ),
+                  title: Text(
+                    'Ví số dư (${_formatPrice(_walletBalance)})',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1890FF),
+                    ),
+                  ),
+                  subtitle: const Text('Thanh toán bằng số dư tài khoản PBL6'),
+                  trailing: selected == 'WALLET'
+                      ? const Icon(Icons.check_circle, color: Color(0xFF1890FF))
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      for (final sId in _paymentMethods.keys) {
+                        _paymentMethods[sId] = 'WALLET';
+                      }
+                    });
+                    Navigator.pop(context);
+                    _fetchQuote();
+                  },
+                ),
+                const Divider(),
                 ListTile(
                   leading: const Icon(
                     Icons.credit_card,

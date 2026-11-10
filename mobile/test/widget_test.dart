@@ -227,6 +227,12 @@ class MockApiClient extends ApiClient {
   ];
 
   @override
+  Future<Map<String, dynamic>> getWalletBalance() async => {
+    'balance_vnd': 500000,
+    'currency': 'VND',
+  };
+
+  @override
   Future<Map<String, dynamic>> quoteCheckout({
     required List<String> cartItemIds,
     required String addressId,
@@ -2233,9 +2239,18 @@ void main() {
         // Verify single store notice banner is removed
         expect(find.textContaining('Đơn hàng này chỉ gồm sản phẩm của'), findsNothing);
 
-        // Verify payment method dropdown
+        // Verify payment method dropdown and wallet balance option
         expect(find.text('Chọn phương thức:'), findsOneWidget);
-        expect(find.byKey(const Key('payment_method_dropdown')), findsOneWidget);
+        final paymentDropdown = find.byKey(const Key('payment_method_dropdown'));
+        expect(paymentDropdown, findsOneWidget);
+        await tester.ensureVisible(paymentDropdown);
+        await tester.pumpAndSettle();
+        await tester.tap(paymentDropdown);
+        await tester.pumpAndSettle();
+        expect(find.text('Ví số dư (500.000 đ)'), findsWidgets);
+        await tester.tap(find.text('Ví số dư (500.000 đ)').last);
+        await tester.pumpAndSettle();
+        expect(find.text('Ví số dư (500.000 đ)'), findsWidgets);
 
         // Tap Điều khoản đặt hàng opens OrderTermsPage
         await tester.ensureVisible(find.text('Điều khoản đặt hàng'));

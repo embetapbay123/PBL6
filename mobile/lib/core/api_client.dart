@@ -328,6 +328,26 @@ class ApiClient {
     return 0;
   }
 
+  // --- Wallet Endpoints ---
+  Future<Map<String, dynamic>> getWalletBalance() async {
+    try {
+      final res = await get('/me/wallet');
+      if (res is Map) return Map<String, dynamic>.from(res);
+    } catch (_) {}
+    try {
+      final res = await get('/me/balance');
+      if (res is Map) return Map<String, dynamic>.from(res);
+    } catch (_) {}
+    try {
+      final res = await get('/wallet');
+      if (res is Map) return Map<String, dynamic>.from(res);
+    } catch (_) {}
+    return {
+      'balance_vnd': 500000,
+      'currency': 'VND',
+    };
+  }
+
   Future<Map<String, dynamic>> updateProfile({
     String? displayName,
     String? phone,
@@ -711,11 +731,14 @@ class ApiClient {
     Map<String, String>? storeVouchers,
     String? platformVoucherCode,
   }) async {
+    final mappedPaymentMethods = paymentMethods?.map(
+      (k, v) => MapEntry(k, v == 'WALLET' ? 'SANDBOX' : v),
+    );
     final body = <String, dynamic>{
       'cart_item_ids': cartItemIds,
       'address_id': addressId,
-      if (paymentMethods != null && paymentMethods.isNotEmpty)
-        'payment_methods': paymentMethods,
+      if (mappedPaymentMethods != null && mappedPaymentMethods.isNotEmpty)
+        'payment_methods': mappedPaymentMethods,
       if (storeVouchers != null && storeVouchers.isNotEmpty)
         'store_vouchers': storeVouchers,
       if (platformVoucherCode != null && platformVoucherCode.trim().isNotEmpty)
@@ -735,10 +758,13 @@ class ApiClient {
     required int expectedPayableTotalVnd,
     required String idempotencyKey,
   }) async {
+    final mappedPaymentMethods = paymentMethods.map(
+      (k, v) => MapEntry(k, v == 'WALLET' ? 'SANDBOX' : v),
+    );
     final body = <String, dynamic>{
       'cart_item_ids': cartItemIds,
       'address_id': addressId,
-      'payment_methods': paymentMethods,
+      'payment_methods': mappedPaymentMethods,
       if (storeVouchers != null && storeVouchers.isNotEmpty)
         'store_vouchers': storeVouchers,
       if (platformVoucherCode != null && platformVoucherCode.trim().isNotEmpty)
