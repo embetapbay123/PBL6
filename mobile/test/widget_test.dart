@@ -702,7 +702,7 @@ void main() {
       expect(find.text('Sổ địa chỉ nhận hàng', skipOffstage: false), findsOneWidget);
       expect(find.text('Đổi mật khẩu', skipOffstage: false), findsOneWidget);
       expect(find.text('Có thể bạn cũng thích', skipOffstage: false), findsOneWidget);
-      expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
+      expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsWidgets);
       expect(find.text('Đăng xuất'), findsNothing);
     });
 
@@ -944,7 +944,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final searchField = find.widgetWithText(TextField, 'Bạn đang tìm sản phẩm gì?');
+        final searchField = find.byType(TextField);
         expect(searchField, findsOneWidget);
 
         // Tap into search field to focus
@@ -1006,7 +1006,7 @@ void main() {
         expect(find.text('Gợi ý tìm kiếm'), findsNothing);
 
         // Tap search bar to open suggestions
-        final searchBar = find.widgetWithText(TextField, 'Bạn đang tìm sản phẩm gì?');
+        final searchBar = find.byType(TextField);
         await tester.tap(searchBar);
         await tester.pumpAndSettle();
 
@@ -1066,7 +1066,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // 1. Initial state: never searched -> product tags shown, no 'Lịch sử tìm kiếm'
-        final searchBar = find.widgetWithText(TextField, 'Bạn đang tìm sản phẩm gì?');
+        final searchBar = find.byType(TextField);
         await tester.tap(searchBar);
         await tester.pumpAndSettle();
 
@@ -1188,7 +1188,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Sách & Văn phòng phẩm', skipOffstage: false), findsOneWidget);
 
-        expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsOneWidget);
+        expect(find.text('Áo thun thể thao Dry-Fit', skipOffstage: false), findsWidgets);
         expect(find.text('250000 ₫', skipOffstage: false), findsOneWidget);
       },
     );
@@ -1232,7 +1232,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Sổ tay ghi chép Daily Notes'), findsOneWidget);
+      expect(find.text('Sổ tay ghi chép Daily Notes'), findsWidgets);
 
       final cardHeartFinder = find.descendant(
         of: find.byType(CustomScrollView),
@@ -1356,7 +1356,7 @@ void main() {
         expect(find.text('KHÁM PHÁ CÙNG PBL6'), findsNothing);
         expect(find.text('Trang chủ'), findsOneWidget);
         expect(find.text('Bộ lọc'), findsOneWidget);
-        expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+        expect(find.text('Áo hoodie xám Weekend'), findsWidgets);
         expect(find.text('Thêm vào giỏ'), findsOneWidget);
 
         // Verify 'Thêm vào giỏ' button hover states (orange background, white foreground and icon)
@@ -1410,7 +1410,7 @@ void main() {
         await tester.enterText(find.byType(TextField).first, 'hoodie');
         await tester.tap(find.text('Tìm kiếm'));
         await tester.pumpAndSettle();
-        expect(find.text('Áo hoodie xám Weekend'), findsOneWidget);
+        expect(find.text('Áo hoodie xám Weekend'), findsWidgets);
 
         // Tap back button next to search bar -> routes back to Explore
         expect(find.byIcon(Icons.arrow_back), findsOneWidget);
@@ -1529,7 +1529,7 @@ void main() {
 
         // By default 'Bán chạy' (highest monthly sales) is first
         final titlesBefore = tester
-            .widgetList<Text>(find.byType(Text))
+            .widgetList<Text>(find.descendant(of: find.byType(SliverGrid), matching: find.byType(Text)))
             .map((t) => t.data)
             .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
             .toList();
@@ -1540,7 +1540,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final titlesNewest = tester
-            .widgetList<Text>(find.byType(Text))
+            .widgetList<Text>(find.descendant(of: find.byType(SliverGrid), matching: find.byType(Text)))
             .map((t) => t.data)
             .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
             .toList();
@@ -1572,7 +1572,7 @@ void main() {
         await tester.pumpAndSettle();
 
         final titlesPriceAsc = tester
-            .widgetList<Text>(find.byType(Text))
+            .widgetList<Text>(find.descendant(of: find.byType(SliverGrid), matching: find.byType(Text)))
             .map((t) => t.data)
             .where((t) => t != null && t.startsWith('Sản phẩm ') && t != 'Sản phẩm dành cho bạn')
             .toList();
@@ -1620,7 +1620,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Available product is shown
-      expect(find.text('Sản phẩm có sẵn', skipOffstage: false), findsOneWidget);
+      expect(find.text('Sản phẩm có sẵn', skipOffstage: false), findsWidgets);
       // Out-of-stock product is NOT shown
       expect(find.text('Sản phẩm đã bán hết', skipOffstage: false), findsNothing);
     });

@@ -289,6 +289,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final categoriesAsync = ref.watch(categoriesProvider);
     final cartCount = ref.watch(cartBadgeCountProvider);
     final cartAsync = ref.watch(cartItemsProvider);
+    final searchHint = _getBestSellingProductName(productsAsync);
     final isSearchMode = _searchQuery.isNotEmpty ||
         _selectedCategory != null ||
         _forceSearchMode ||
@@ -335,7 +336,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ? [
                   // Top Bar & Navbar & Search Bar
                   SliverToBoxAdapter(
-                    child: _buildWebTopSection(context, cartCount, isSearchMode: true),
+                    child: _buildWebTopSection(context, cartCount, isSearchMode: true, searchHint: searchHint),
                   ),
 
                   // Dedicated Search & Category View Header (Breadcrumb, Title, Counter, Toolbar, Active Tags)
@@ -353,7 +354,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               : [
                   // Top Bar & Navbar & Search Bar
                   SliverToBoxAdapter(
-                    child: _buildWebTopSection(context, cartCount, isSearchMode: false),
+                    child: _buildWebTopSection(context, cartCount, isSearchMode: false, searchHint: searchHint),
                   ),
 
                   // Hero Banner ("TỪ NHỮNG ĐIỀU GIẢN ĐƠN ...")
@@ -515,8 +516,43 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     );
   }
 
+  String _getBestSellingProductName(AsyncValue<Map<String, dynamic>> productsAsync) {
+    final allProducts = <Map<String, dynamic>>[];
+    final pData = productsAsync.value;
+    if (pData != null && pData['items'] is List) {
+      for (final item in (pData['items'] as List)) {
+        if (item is Map<String, dynamic> && !isProductOutOfStock(item)) {
+          allProducts.add(item);
+        }
+      }
+    }
+    if (allProducts.isEmpty) {
+      final fallback = buildFallbackProducts()['items'] as List;
+      for (final item in fallback) {
+        if (item is Map<String, dynamic> && !isProductOutOfStock(item)) {
+          allProducts.add(item);
+        }
+      }
+    }
+    if (allProducts.isEmpty) return 'Bạn đang tìm sản phẩm gì?';
+
+    final sorted = List<Map<String, dynamic>>.from(allProducts);
+    sorted.sort((a, b) => _getProductMonthlySales(b).compareTo(_getProductMonthlySales(a)));
+    final top = sorted.first;
+    final title = (top['title'] ?? top['name'])?.toString().trim();
+    if (title != null && title.isNotEmpty) {
+      return title;
+    }
+    return 'Bạn đang tìm sản phẩm gì?';
+  }
+
   /// Web-like top section: Announcement Bar + Brand Navbar + Search Bar
-  Widget _buildWebTopSection(BuildContext context, int cartCount, {bool isSearchMode = false}) {
+  Widget _buildWebTopSection(
+    BuildContext context,
+    int cartCount, {
+    bool isSearchMode = false,
+    String searchHint = 'Bạn đang tìm sản phẩm gì?',
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -725,10 +761,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           onTap: () {
                             setState(() => _isSearchSuggesting = true);
                           },
-                          onSubmitted: _onSearch,
-                          decoration: const InputDecoration(
-                            hintText: 'Bạn đang tìm sản phẩm gì?',
-                            hintStyle: TextStyle(
+                          onSubmitted: (val) {
+                            final trimmed = val.trim();
+                            if (trimmed.isEmpty && searchHint != 'Bạn đang tìm sản phẩm gì?') {
+                              _searchController.text = searchHint;
+                              _onSearch(searchHint);
+                            } else {
+                              _onSearch(val);
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText: searchHint,
+                            hintStyle: const TextStyle(
                               color: Color(0xFF9CA3AF),
                               fontSize: 13.5,
                             ),
@@ -770,7 +814,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           topLeft: Radius.circular(8),
                           bottomLeft: Radius.circular(8),
                         ),
-                        onTap: () => _onSearch(_searchController.text),
+                        onTap: () {
+                          final query = _searchController.text.trim();
+                          if (query.isEmpty && searchHint != 'Bạn đang tìm sản phẩm gì?') {
+                            _searchController.text = searchHint;
+                            _onSearch(searchHint);
+                          } else {
+                            _onSearch(_searchController.text);
+                          }
+                        },
                         child: const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16),
                           child: Center(
@@ -827,6 +879,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     final searchHistory = ref.watch(searchHistoryProvider);
     final effectiveHistory = searchHistory.isNotEmpty ? searchHistory : _searchHistory;
     final suggestedProducts = _getSuggestedProducts(allProducts, cartItems, effectiveHistory);
+    final searchHint = _getBestSellingProductName(productsAsync);
 
     return PopScope(
       canPop: false,
@@ -893,10 +946,18 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                   autofocus: true,
                                   textInputAction: TextInputAction.search,
                                   onChanged: (_) => setState(() {}),
-                                  onSubmitted: _onSearch,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Bạn đang tìm sản phẩm gì?',
-                                    hintStyle: TextStyle(
+                                  onSubmitted: (val) {
+                                    final trimmed = val.trim();
+                                    if (trimmed.isEmpty && searchHint != 'Bạn đang tìm sản phẩm gì?') {
+                                      _searchController.text = searchHint;
+                                      _onSearch(searchHint);
+                                    } else {
+                                      _onSearch(val);
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: searchHint,
+                                    hintStyle: const TextStyle(
                                       color: Color(0xFF9CA3AF),
                                       fontSize: 13.5,
                                     ),
@@ -938,7 +999,15 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                   topLeft: Radius.circular(8),
                                   bottomLeft: Radius.circular(8),
                                 ),
-                                onTap: () => _onSearch(_searchController.text),
+                                onTap: () {
+                                  final query = _searchController.text.trim();
+                                  if (query.isEmpty && searchHint != 'Bạn đang tìm sản phẩm gì?') {
+                                    _searchController.text = searchHint;
+                                    _onSearch(searchHint);
+                                  } else {
+                                    _onSearch(_searchController.text);
+                                  }
+                                },
                                 child: const Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 14),
                                   child: Center(
