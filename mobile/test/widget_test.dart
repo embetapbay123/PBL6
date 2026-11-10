@@ -3528,9 +3528,22 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Label is "Đã xem" (not "Đã xem gần đây"), "Đã lưu" is present
+      // Label is "Đã xem" (not "Đã xem gần đây"), "Đã lưu" and "Ví số dư" are present
       expect(find.text('Đã xem'), findsOneWidget);
       expect(find.text('Đã lưu'), findsOneWidget);
+      expect(find.text('Ví số dư'), findsOneWidget);
+      expect(find.text('500.000 đ'), findsWidgets);
+
+      // Tapping "Ví số dư" opens wallet bottom sheet
+      await tester.tap(find.text('Ví số dư'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ví số dư PBL6'), findsOneWidget);
+      expect(find.text('Số dư khả dụng'), findsOneWidget);
+      expect(find.text('Nạp nhanh số dư (Demo Sandbox)'), findsOneWidget);
+      expect(find.text('+50.000 đ'), findsOneWidget);
+      await tester.tap(find.text('Đóng'));
+      await tester.pumpAndSettle();
+
       // Removed items
       expect(find.text('Lịch sử tìm kiếm'), findsNothing);
       expect(find.text('Lịch sử Chat AI'), findsNothing);

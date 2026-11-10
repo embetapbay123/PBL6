@@ -329,6 +329,13 @@ class ApiClient {
   }
 
   // --- Wallet Endpoints ---
+  int _localWalletBalance = 500000;
+  int get localWalletBalance => _localWalletBalance;
+
+  void topUpWallet(int amount) {
+    _localWalletBalance += amount;
+  }
+
   Future<Map<String, dynamic>> getWalletBalance() async {
     try {
       final res = await get('/me/wallet');
@@ -343,7 +350,7 @@ class ApiClient {
       if (res is Map) return Map<String, dynamic>.from(res);
     } catch (_) {}
     return {
-      'balance_vnd': 500000,
+      'balance_vnd': _localWalletBalance,
       'currency': 'VND',
     };
   }

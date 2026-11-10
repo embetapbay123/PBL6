@@ -319,6 +319,10 @@ final addressListProvider = FutureProvider<List<Map<String, dynamic>>>((
   return await ref.read(apiProvider).getAddresses();
 });
 
+final walletBalanceProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  return await ref.read(apiProvider).getWalletBalance();
+});
+
 void main() => runApp(const ProviderScope(child: SessionBootstrap()));
 
 class SessionBootstrap extends ConsumerStatefulWidget {

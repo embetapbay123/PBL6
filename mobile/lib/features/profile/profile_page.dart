@@ -121,7 +121,7 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // 3. Section "Hoạt động mua sắm" (2x2 Grid)
-                _buildShoppingActivitiesSection(context),
+                _buildShoppingActivitiesSection(context, ref),
                 const SizedBox(height: 16),
 
                 // 4. Section "Tài khoản và bảo mật"
@@ -364,8 +364,28 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
+  static String _formatPrice(num price) {
+    final str = price.toInt().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(str[i]);
+    }
+    return '${buffer.toString()} đ';
+  }
+
   /// 3. Lưới 2x2 "Hoạt động mua sắm"
-  Widget _buildShoppingActivitiesSection(BuildContext context) {
+  Widget _buildShoppingActivitiesSection(BuildContext context, WidgetRef ref) {
+    final walletAsync = ref.watch(walletBalanceProvider);
+    final walletData = walletAsync.value;
+    final balance = (walletData?['balance_vnd'] as num?)?.toInt() ??
+        (walletData?['balance'] as num?)?.toInt() ??
+        (walletData?['amount_vnd'] as num?)?.toInt() ??
+        500000;
+    final balanceStr = _formatPrice(balance);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -399,7 +419,182 @@ class ProfilePage extends ConsumerWidget {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActivityCard(
+                context,
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'Ví số dư',
+                subtitle: balanceStr,
+                onTap: () => _showWalletBottomSheet(context, ref, balance),
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: SizedBox(),
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  void _showWalletBottomSheet(BuildContext context, WidgetRef ref, int currentBalance) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final client = ref.read(apiProvider);
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF0F0),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Ví số dư PBL6',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withAlpha(200),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Số dư khả dụng',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _formatPrice(currentBalance),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Dùng để thanh toán đơn hàng & nhận tiền hoàn đổi trả.',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Nạp nhanh số dư (Demo Sandbox)',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [50000, 100000, 200000, 500000].map((amount) {
+                  return ActionChip(
+                    backgroundColor: const Color(0xFFFFF0F0),
+                    side: BorderSide(color: AppColors.primary.withAlpha(60)),
+                    label: Text(
+                      '+${_formatPrice(amount)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    onPressed: () {
+                      client.topUpWallet(amount);
+                      ref.invalidate(walletBalanceProvider);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Đã nạp thành công ${_formatPrice(amount)} vào ví số dư!'),
+                          backgroundColor: Colors.green.shade700,
+                        ),
+                      );
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Đóng'),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -407,6 +602,7 @@ class ProfilePage extends ConsumerWidget {
     BuildContext context, {
     required IconData icon,
     required String title,
+    String? subtitle,
     required VoidCallback onTap,
   }) {
     return Container(
@@ -438,15 +634,34 @@ class ProfilePage extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subtitle != null && subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 const Icon(
