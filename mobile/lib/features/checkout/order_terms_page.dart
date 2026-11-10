@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 
-class OrderTermsPage extends StatelessWidget {
-  const OrderTermsPage({super.key});
+class OrderTermsPage extends StatefulWidget {
+  final bool initialAgreed;
+
+  const OrderTermsPage({
+    super.key,
+    this.initialAgreed = false,
+  });
+
+  @override
+  State<OrderTermsPage> createState() => _OrderTermsPageState();
+}
+
+class _OrderTermsPageState extends State<OrderTermsPage> {
+  late bool _agreed;
+
+  @override
+  void initState() {
+    super.initState();
+    _agreed = widget.initialAgreed;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +55,7 @@ class OrderTermsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Summary Card
+                  // Top Summary Card - No icon
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16.0),
@@ -56,44 +74,24 @@ class OrderTermsPage extends StatelessWidget {
                         width: 1,
                       ),
                     ),
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.gavel_rounded,
-                            color: AppColors.primary,
-                            size: 24,
+                        const Text(
+                          'Điều khoản & Quy định Mua sắm',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Điều khoản & Quy định Mua sắm',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Áp dụng cho mọi giao dịch đặt hàng trên nền tảng PBL6. Cập nhật lần cuối: 10/11/2026.',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: Colors.grey.shade700,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 6),
+                        Text(
+                          'Áp dụng cho mọi giao dịch đặt hàng trên nền tảng PBL6. Cập nhật lần cuối: 10/11/2026.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.grey.shade700,
+                            height: 1.35,
                           ),
                         ),
                       ],
@@ -166,13 +164,53 @@ class OrderTermsPage extends StatelessWidget {
                         'Thông tin cá nhân và dữ liệu thanh toán của quý khách được bảo mật tuyệt đối theo tiêu chuẩn mã hóa dữ liệu. Nếu có bất kỳ thắc mắc hoặc sự cố phát sinh, vui lòng liên hệ Trung tâm Trợ giúp PBL6 hoặc chat trực tiếp với Cửa hàng để được hỗ trợ kịp thời.',
                   ),
 
+                  const SizedBox(height: 8),
+
+                  // Checkbox Tôi đã hiểu và đồng ý
+                  InkWell(
+                    onTap: () => setState(() => _agreed = !_agreed),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _agreed,
+                              activeColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              onChanged: (val) {
+                                setState(() => _agreed = val ?? false);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Tôi đã hiểu và đồng ý',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 16),
                 ],
               ),
             ),
           ),
 
-          // Bottom Bar
+          // Bottom Bar - Button Xác nhận
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -197,9 +235,20 @@ class OrderTermsPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () => Navigator.pop(context, true),
+                  onPressed: () {
+                    if (!_agreed) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Vui lòng chọn "Tôi đã hiểu và đồng ý" trước khi xác nhận.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      return;
+                    }
+                    Navigator.pop(context, true);
+                  },
                   child: const Text(
-                    'Tôi đã hiểu và đồng ý',
+                    'Xác nhận',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,

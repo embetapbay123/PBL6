@@ -2260,11 +2260,17 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Điều khoản & Quy định Mua sắm'), findsOneWidget);
+        expect(find.byIcon(Icons.gavel_rounded), findsNothing);
         expect(find.text('Báo giá & Thời hạn giữ giá (Quote Expiry)'), findsOneWidget);
         expect(find.text('Tôi đã hiểu và đồng ý'), findsOneWidget);
+        expect(find.text('Xác nhận'), findsOneWidget);
 
-        // Tap Tôi đã hiểu và đồng ý returns to CheckoutPage
+        // Scroll to checkbox, tap to agree, then tap Xác nhận returns to CheckoutPage
+        await tester.ensureVisible(find.text('Tôi đã hiểu và đồng ý'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Tôi đã hiểu và đồng ý'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Xác nhận'));
         await tester.pumpAndSettle();
         expect(find.text('Chi tiết báo giá'), findsOneWidget);
       },
