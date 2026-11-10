@@ -1295,7 +1295,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: Color(0xFFE5E7EB),
+            ),
+          ),
           if (attributes.isNotEmpty)
             ...attributes.entries.map((e) {
               final keyLabel = _formatAttributeKey(e.key.toString());
