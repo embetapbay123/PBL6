@@ -28,6 +28,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _suggestionFocusNode = FocusNode();
   bool _isSearchHovered = false;
   bool _isSearchSuggesting = false;
   final List<String> _searchHistory = [];
@@ -49,12 +50,36 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
     _scrollController = ScrollController();
     _searchFocusNode.addListener(() {
       if (_searchFocusNode.hasFocus && !_isSearchSuggesting) {
-        setState(() {
-          _isSearchSuggesting = true;
-        });
+        _openSearchSuggestions();
       } else if (mounted) {
         setState(() {});
       }
+    });
+  }
+
+  void _openSearchSuggestions() {
+    if (_isSearchSuggesting) return;
+    _searchFocusNode.unfocus();
+    if (_searchController.text.isNotEmpty) {
+      _searchController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _searchController.text.length),
+      );
+    }
+    setState(() {
+      _isSearchSuggesting = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _isSearchSuggesting) {
+        _suggestionFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _closeSearchSuggestions() {
+    _suggestionFocusNode.unfocus();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _isSearchSuggesting = false;
     });
   }
 
@@ -68,6 +93,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   @override
   void dispose() {
     _searchFocusNode.dispose();
+    _suggestionFocusNode.dispose();
     _searchController.dispose();
     _scrollController.dispose();
     _minPriceController.dispose();
@@ -82,6 +108,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       _searchHistory.remove(trimmed);
       _searchHistory.insert(0, trimmed);
     }
+    _suggestionFocusNode.unfocus();
     _searchFocusNode.unfocus();
     setState(() {
       _searchQuery = trimmed;
@@ -257,6 +284,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
   }
 
   void _resetToExplore() {
+    _suggestionFocusNode.unfocus();
     _searchFocusNode.unfocus();
     setState(() {
       _searchController.clear();
@@ -711,10 +739,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                   onEnter: (_) => setState(() => _isSearchHovered = true),
                   onExit: (_) => setState(() => _isSearchHovered = false),
                   child: GestureDetector(
-                    onTap: () {
-                      setState(() => _isSearchSuggesting = true);
-                      _searchFocusNode.requestFocus();
-                    },
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _openSearchSuggestions,
                     child: Container(
                 height: 40,
                 clipBehavior: Clip.antiAlias,
@@ -758,9 +784,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         child: TextField(
                           focusNode: _searchFocusNode,
                           controller: _searchController,
-                          onTap: () {
-                            setState(() => _isSearchSuggesting = true);
-                          },
+                          onTap: _openSearchSuggestions,
                           onSubmitted: (val) {
                             final trimmed = val.trim();
                             if (trimmed.isEmpty && searchHint != 'Bạn đang tìm sản phẩm gì?') {
@@ -885,10 +909,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        _searchFocusNode.unfocus();
-        setState(() {
-          _isSearchSuggesting = false;
-        });
+        _closeSearchSuggestions();
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -907,44 +928,42 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         color: AppColors.primary,
                         size: 24,
                       ),
-                      onPressed: () {
-                        _searchFocusNode.unfocus();
-                        setState(() {
-                          _isSearchSuggesting = false;
-                        });
-                      },
+                      onPressed: _closeSearchSuggestions,
                     ),
                     Expanded(
-                      child: Container(
-                        height: 40,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColors.primary,
-                            width: 1.5,
-                          ),
-                        ),
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const Center(
-                              child: Icon(
-                                Icons.camera_alt_outlined,
-                                size: 20,
-                                color: Color(0xFF888888),
-                              ),
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _suggestionFocusNode.requestFocus(),
+                        child: Container(
+                          height: 40,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 1.5,
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Center(
-                                child: TextField(
-                                  focusNode: _searchFocusNode,
-                                  controller: _searchController,
-                                  autofocus: true,
-                                  textInputAction: TextInputAction.search,
+                          ),
+                          padding: const EdgeInsets.only(left: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Center(
+                                child: Icon(
+                                  Icons.camera_alt_outlined,
+                                  size: 20,
+                                  color: Color(0xFF888888),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Center(
+                                  child: TextField(
+                                    focusNode: _suggestionFocusNode,
+                                    controller: _searchController,
+                                    autofocus: true,
+                                    textInputAction: TextInputAction.search,
                                   onChanged: (_) => setState(() {}),
                                   onSubmitted: (val) {
                                     final trimmed = val.trim();
@@ -1038,7 +1057,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                         ),
                       ),
                     ),
-                  ],
+                  ),
+                ],
                 ),
               ),
 
