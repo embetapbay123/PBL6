@@ -2274,12 +2274,15 @@ void main() {
         expect(find.text('Báo giá & Thời hạn giữ giá (Quote Expiry)'), findsOneWidget);
         expect(find.text('Tôi đã hiểu và đồng ý'), findsOneWidget);
         expect(find.text('Xác nhận'), findsOneWidget);
+        // Verify Xác nhận button is disabled when checkbox is not checked
+        expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Xác nhận')).onPressed, isNull);
 
-        // Scroll to checkbox, tap to agree, then tap Xác nhận returns to CheckoutPage
+        // Scroll to checkbox, tap to agree, then verify button is enabled and tap Xác nhận returns to CheckoutPage
         await tester.ensureVisible(find.text('Tôi đã hiểu và đồng ý'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Tôi đã hiểu và đồng ý'));
         await tester.pumpAndSettle();
+        expect(tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Xác nhận')).onPressed, isNotNull);
         await tester.tap(find.text('Xác nhận'));
         await tester.pumpAndSettle();
         expect(find.text('Chi tiết báo giá'), findsOneWidget);

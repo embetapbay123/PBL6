@@ -231,22 +231,15 @@ class _OrderTermsPageState extends State<OrderTermsPage> {
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                    disabledForegroundColor: Colors.grey.shade500,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {
-                    if (!_agreed) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Vui lòng chọn "Tôi đã hiểu và đồng ý" trước khi xác nhận.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.pop(context, true);
-                  },
+                  onPressed: _agreed
+                      ? () => Navigator.pop(context, true)
+                      : null,
                   child: const Text(
                     'Xác nhận',
                     style: TextStyle(
