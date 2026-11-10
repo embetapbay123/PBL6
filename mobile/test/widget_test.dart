@@ -2176,6 +2176,21 @@ void main() {
         // Verify payment method dropdown
         expect(find.text('Chọn phương thức:'), findsOneWidget);
         expect(find.byKey(const Key('payment_method_dropdown')), findsOneWidget);
+
+        // Tap Điều khoản đặt hàng opens OrderTermsPage
+        await tester.ensureVisible(find.text('Điều khoản đặt hàng'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Điều khoản đặt hàng'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Điều khoản & Quy định Mua sắm'), findsOneWidget);
+        expect(find.text('Báo giá & Thời hạn giữ giá (Quote Expiry)'), findsOneWidget);
+        expect(find.text('Tôi đã hiểu và đồng ý'), findsOneWidget);
+
+        // Tap Tôi đã hiểu và đồng ý returns to CheckoutPage
+        await tester.tap(find.text('Tôi đã hiểu và đồng ý'));
+        await tester.pumpAndSettle();
+        expect(find.text('Chi tiết báo giá'), findsOneWidget);
       },
     );
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/app_theme.dart';
 import '../../main.dart';
 import 'order_success_page.dart';
+import 'order_terms_page.dart';
 import 'voucher_selection_page.dart';
 
 class CheckoutPage extends ConsumerStatefulWidget {
@@ -984,29 +985,44 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   },
                 ),
                 Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() => _agreedTerms = !_agreedTerms);
-                    },
-                    child: RichText(
-                      text: const TextSpan(
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
-                        ),
-                        children: [
-                          TextSpan(text: 'Tôi đồng ý với '),
-                          TextSpan(
-                            text: 'Điều khoản đặt hàng',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              decoration: TextDecoration.underline,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          setState(() => _agreedTerms = !_agreedTerms);
+                        },
+                        child: const Text(
+                          'Tôi đồng ý với ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textPrimary,
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () async {
+                          final agreed = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const OrderTermsPage(),
+                            ),
+                          );
+                          if (agreed == true && mounted) {
+                            setState(() => _agreedTerms = true);
+                          }
+                        },
+                        child: const Text(
+                          'Điều khoản đặt hàng',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.primary,
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
