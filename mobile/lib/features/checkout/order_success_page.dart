@@ -5,6 +5,21 @@ class OrderSuccessPage extends StatelessWidget {
   const OrderSuccessPage({super.key, required this.orderBatch});
   final Map<String, dynamic> orderBatch;
 
+  static String _formatPrice(dynamic price) {
+    if (price == null || price == '---') return '---';
+    final numVal = (price is num) ? price.toInt() : int.tryParse(price.toString());
+    if (numVal == null) return '$price đ';
+    final s = numVal.toString();
+    final buffer = StringBuffer();
+    int count = 0;
+    for (int i = s.length - 1; i >= 0; i--) {
+      buffer.write(s[i]);
+      count++;
+      if (count % 3 == 0 && i > 0) buffer.write('.');
+    }
+    return '${buffer.toString().split('').reversed.join('')} đ';
+  }
+
   @override
   Widget build(BuildContext context) {
     final purchaseGroupId =
@@ -23,6 +38,20 @@ class OrderSuccessPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Đặt hàng thành công'),
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            key: const Key('order_success_cart_button'),
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            tooltip: 'Giỏ hàng',
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/cart',
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -73,7 +102,7 @@ class OrderSuccessPage extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      '$totalVnd ₫',
+                      _formatPrice(totalVnd),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -156,7 +185,7 @@ class OrderSuccessPage extends StatelessWidget {
                               style: const TextStyle(fontSize: 13),
                             ),
                             Text(
-                              '$storePayable ₫',
+                              _formatPrice(storePayable),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -201,7 +230,7 @@ class OrderSuccessPage extends StatelessWidget {
                           ],
                         ),
                         Text(
-                          '$totalVnd ₫',
+                          _formatPrice(totalVnd),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,

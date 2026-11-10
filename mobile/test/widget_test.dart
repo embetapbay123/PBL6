@@ -2264,16 +2264,17 @@ void main() {
       await tester.pump();
 
       expect(find.text('Đặt hàng thành công'), findsOneWidget);
+      expect(find.byKey(const Key('order_success_cart_button')), findsOneWidget);
       expect(find.text('Đơn hàng của bạn đã được ghi nhận thành công'), findsOneWidget);
       expect(find.textContaining('Mã nhóm mua sắm'), findsNothing);
       expect(find.textContaining('Mã đơn hàng'), findsNothing);
-      expect(find.text('750000 ₫'), findsOneWidget);
+      expect(find.text('750.000 đ'), findsOneWidget);
       expect(find.text('Store: store-a'), findsOneWidget);
       expect(find.text('Store: store-b'), findsOneWidget);
       expect(find.text('Hình thức: COD'), findsOneWidget);
       expect(find.text('Hình thức: SEPAY'), findsOneWidget);
-      expect(find.text('300000 ₫'), findsOneWidget);
-      expect(find.text('450000 ₫'), findsOneWidget);
+      expect(find.text('300.000 đ'), findsOneWidget);
+      expect(find.text('450.000 đ'), findsOneWidget);
     });
   });
 
