@@ -417,25 +417,45 @@ class _StorePageState extends ConsumerState<StorePage> with SingleTickerProvider
                 },
               ),
               title: _isSearching
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                  ? Container(
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 2,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
                       child: TextField(
                         controller: _searchController,
                         autofocus: true,
                         style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
+                          fontSize: 14.5,
+                          color: Color(0xFF1F2937),
+                          fontWeight: FontWeight.w500,
                         ),
-                        cursorColor: Colors.white,
-                        decoration: InputDecoration(
+                        cursorColor: const Color(0xFFEE4D2D),
+                        decoration: const InputDecoration(
                           hintText: 'Tìm theo tên, shop, SKU...',
                           hintStyle: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.75),
+                            fontSize: 13.5,
+                            color: Color(0xFF9CA3AF),
                           ),
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          filled: false,
+                          fillColor: Colors.transparent,
+                          contentPadding: EdgeInsets.zero,
                         ),
                       ),
                     )
