@@ -1253,7 +1253,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     if (currentPayment == 'WALLET') {
       selectedPaymentLabel = 'Ví số dư (${_formatPrice(_walletBalance)})';
     } else if (currentPayment == 'SANDBOX') {
-      selectedPaymentLabel = 'SEPAY';
+      selectedPaymentLabel = 'Sepay';
     } else {
       selectedPaymentLabel = 'COD';
     }
@@ -1462,7 +1462,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           const Divider(height: 1, color: Color(0xFFF0F0F0)),
                           _buildPaymentDropdownOption(
                             value: 'SANDBOX',
-                            label: 'SEPAY',
+                            label: 'Sepay',
                             isSelected: currentPayment == 'SANDBOX',
                           ),
                           const Divider(height: 1, color: Color(0xFFF0F0F0)),

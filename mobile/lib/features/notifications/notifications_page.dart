@@ -376,7 +376,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       if (payable is String) payableInt = int.tryParse(payable) ?? 0;
 
       final method = (order['payment_method']?.toString() ?? 'COD').toUpperCase();
-      final methodStr = method == 'SANDBOX' ? 'Cổng trực tuyến (Sandbox)' : 'COD';
+      final methodStr = method == 'SANDBOX' ? 'Cổng trực tuyến (Sepay)' : 'COD';
       final timeStr = _formatTime(order['updated_at'] ?? order['created_at']);
 
       list.add(

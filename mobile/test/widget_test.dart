@@ -2270,7 +2270,7 @@ void main() {
         await tester.tap(paymentDropdown);
         await tester.pumpAndSettle();
         expect(find.text('Ví số dư (500.000 đ)'), findsOneWidget);
-        expect(find.text('SEPAY'), findsWidgets);
+        expect(find.text('Sepay'), findsWidgets);
         expect(find.text('COD'), findsWidgets);
 
         // Verify text style of Ví số dư does not use blue Color(0xFF1890FF)
@@ -3570,7 +3570,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Ví số dư PBL6'), findsOneWidget);
       expect(find.text('Số dư khả dụng'), findsOneWidget);
-      expect(find.text('Nạp nhanh số dư (Demo Sandbox)'), findsOneWidget);
+      expect(find.text('Nạp nhanh số dư (Demo Sepay)'), findsOneWidget);
       expect(find.text('+50.000 đ'), findsOneWidget);
       await tester.tap(find.text('Đóng'));
       await tester.pumpAndSettle();

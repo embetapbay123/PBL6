@@ -541,7 +541,7 @@ class ProfilePage extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Nạp nhanh số dư (Demo Sandbox)',
+                'Nạp nhanh số dư (Demo Sepay)',
                 style: TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.bold,
