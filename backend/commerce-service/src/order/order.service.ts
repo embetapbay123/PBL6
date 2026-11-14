@@ -284,7 +284,7 @@ export class OrderService {
         let calculatedDiscount = 0;
         if (voucher.discount_type === 'PERCENT') {
           calculatedDiscount = moneyNumber(BigInt(storeCalc.goods_vnd)*BigInt(voucher.discount_value)/100n);
-          if (voucher.max_discount_vnd) {
+          if (voucher.max_discount_vnd !== undefined && voucher.max_discount_vnd !== null) {
             calculatedDiscount = Math.min(calculatedDiscount, moneyNumber(voucher.max_discount_vnd));
           }
         } else {
@@ -334,7 +334,7 @@ export class OrderService {
       let totalPlatformDiscountVnd = 0;
       if (voucher.discount_type === 'PERCENT') {
         totalPlatformDiscountVnd = moneyNumber(BigInt(totalNetGoodsVnd)*BigInt(voucher.discount_value)/100n);
-        if (voucher.max_discount_vnd) {
+        if (voucher.max_discount_vnd !== undefined && voucher.max_discount_vnd !== null) {
           totalPlatformDiscountVnd = Math.min(totalPlatformDiscountVnd, moneyNumber(voucher.max_discount_vnd));
         }
       } else {
@@ -974,6 +974,3 @@ export class OrderService {
     };
   }
 }
-
-
-

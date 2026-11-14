@@ -94,7 +94,7 @@ export function OrderItemIdentity({
             ? "Thiếu phân loại. Xác nhận với khách trước khi lấy hàng."
             : "Phân loại tiêu chuẩn"}
       </p>
-      {text(item.sku_snapshot) && (
+      {scope !== 'CUSTOMER' && text(item.sku_snapshot) && (
         <p>
           {snapshotKind === "EXCHANGE"
             ? "SKU hàng đổi"

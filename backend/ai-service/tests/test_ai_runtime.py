@@ -32,6 +32,56 @@ class Catalog:
 
 def service(engine,catalog=None):return ChatRuntime(engine,catalog or Catalog(),CatalogSelector(provider='none'))
 
+
+def test_delete_chat_history_is_owned_removes_messages_and_never_refunds_usage(engine):
+    s=service(engine);user,other=str(uuid.uuid4()),str(uuid.uuid4())
+    own=s.create(user,'delete-test');foreign=s.create(other,'delete-test');guest=s.create(None,'delete-test')
+    with engine.begin() as db:
+        for session in (own,foreign,guest):
+            db.execute(text("INSERT INTO chat_message(session_id,role,content) VALUES(:id,'USER','private fixture')"),{'id':session['id']})
+        before=db.execute(text('SELECT sum(requests) FROM ai_usage_budget')).scalar_one()
+    with pytest.raises(InternalError) as rejected:s.delete(other,own['id'])
+    assert rejected.value.status==404
+    assert s.delete(user,own['id'])=={'deleted_count':1}
+    with pytest.raises(InternalError):s.load(own['id'],user,None)
+    with engine.connect() as db:
+        assert db.execute(text('SELECT count(*) FROM chat_message')).scalar_one()==2
+        assert db.execute(text('SELECT sum(requests) FROM ai_usage_budget')).scalar_one()==before
+    assert s.list(other,{})['total']==1
+    assert s.load(guest['id'],None,guest['anonymous_key'])
+
+
+def test_delete_all_covers_every_page_and_cannot_resurrect_a_deleted_session(engine):
+    s=service(engine);user,other=str(uuid.uuid4()),str(uuid.uuid4())
+    sessions=[s.create(user,'delete-all') for _ in range(25)]
+    foreign=s.create(other,'delete-all')
+    assert len(s.list(user,{'page':1,'size':20})['items'])==20
+    assert s.delete(user)=={'deleted_count':25}
+    assert s.list(user,{})['total']==0
+    assert s.delete(user)=={'deleted_count':0}
+    with pytest.raises(InternalError) as stale:
+        s.save(sessions[0]['id'],0,'late reply',{},None,1,[])
+    assert stale.value.status==409
+    assert s.list(other,{})['items'][0]['id']==foreign['id']
+
+
+def test_delete_chat_http_auth_scope_and_validation(engine,monkeypatch):
+    user,other=str(uuid.uuid4()),str(uuid.uuid4());s=service(engine);session=s.create(user,'http-delete')
+    class Limiter:
+        async def eval(self,*args):return 1
+    async def resolve(self,operation,body,correlation):
+        return {'user_id':other if body['token']=='other' else user,'roles':['SELLER'] if body['token']=='seller' else ['CUSTOMER']}
+    monkeypatch.setattr(main,'engine',engine);monkeypatch.setattr(main,'limiter',Limiter())
+    monkeypatch.setattr(main.InternalClient,'call',resolve)
+    client=TestClient(main.app);url='/api/v1/me/chat/sessions/'+session['id']
+    assert client.delete(url).status_code==401
+    assert client.delete(url,headers={'Authorization':'Bearer seller'}).status_code==403
+    assert client.delete(url,headers={'Authorization':'Bearer other'}).status_code==404
+    assert client.delete('/api/v1/me/chat/sessions/not-a-uuid',headers={'Authorization':'Bearer own'}).status_code==422
+    response=client.delete(url,headers={'Authorization':'Bearer own'})
+    assert response.status_code==200 and response.json()=={'deleted_count':1}
+    assert client.delete('/api/v1/me/chat/sessions',headers={'Authorization':'Bearer own'}).json()=={'deleted_count':0}
+
 def test_guest_secret_only_returned_once_and_other_session_rejected(engine):
     s=service(engine);created=s.create(None,'127.0.0.1')
     key=created['anonymous_key'];assert len(key)==64
@@ -223,7 +273,7 @@ def test_real_http_guest_guard_precedes_dto_and_customer_scope(engine,monkeypatc
     assert history.status_code==200 and history.json()['items'][0]['messages']['total']==0
 
 def test_generated_explanation_is_discarded_after_source_change(engine):
-    from app.chat.provider import Selection
+    from app.chat.provider import Selection, PROMPT_VERSION
     c=Catalog()
     class Selector:
         async def select(self,q,products,*args):
@@ -236,7 +286,7 @@ def test_generated_explanation_is_discarded_after_source_change(engine):
     assert not schema_errors(response,OPERATIONS['sendChatMessage']['responses']['200'])
     with engine.connect() as db:
         row=db.execute(text('SELECT model_name,prompt_version,fallback_reason,thinking_mode FROM ai_request_trace')).one()
-        assert tuple(row)==('test-model','catalog-answer-v4','CATALOG_CHANGED','disabled')
+        assert tuple(row)==('test-model',PROMPT_VERSION,'CATALOG_CHANGED','disabled')
 
 
 def test_generated_answer_matches_public_response_contract(engine):

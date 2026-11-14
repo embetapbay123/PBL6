@@ -1943,8 +1943,40 @@
   background: rgba(255, 255, 255, 0.4) !important;
 }
 
-
-
-
-
-
+/* Purchase actions retain their own space instead of sharing it with chat. */
+.cart-summary-purchase { display: flex; align-items: center; gap: 24px; margin-left: auto; min-width: 0; }
+.cart-summary-total { min-width: 0; text-align: right; }
+.cart-summary-amount { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.shopee-cart-total-price { white-space: nowrap; }
+.cart-summary-note { margin: 4px 0 0; color: #64748b; font-size: 12px; }
+.cart-stock-notice { margin: 5px 0 0; font-size: 12px; color: #a33b19; }
+.live-market .live-content .cart-voucher-trigger { display: inline-flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-left: auto; padding: 4px; min-height: 36px; font-size: 12px; background: transparent; border: 0; color: #334155; }
+.cart-voucher-trigger:focus-visible { outline: 2px solid #c2410c; outline-offset: 3px; }
+.shopee-ticket-card:focus-visible { outline: 2px solid #c2410c; outline-offset: 3px; }
+.live-market .live-content button.shopee-ticket-card { display: flex; width: 100%; padding: 0; text-align: left; color: inherit; background: #fff; font-weight: 400; cursor: pointer; }
+.order-item-quantity { display: block; margin-bottom: 4px; color: #64748b; font-weight: 400; }
+.live-market .order-status-tabs a.order-returns-tab { display: inline-flex; align-items: center; padding: 12px 14px; color: #475569; font-size: 14px; font-weight: 500; border: 0; border-bottom: 2px solid transparent; background: transparent; box-shadow: none; border-radius: 0; white-space: nowrap; }
+@media (max-width: 767px) {
+  .live-market .cart-page { padding-bottom: 20px; }
+  .live-market .shopee-cart-sticky-bar { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); overflow: visible; }
+  .live-market .shopee-cart-sticky-main-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px; }
+  .live-market .shopee-cart-sticky-voucher-row { padding: 8px 12px; }
+  .live-market .shopee-cart-sticky-actions { gap: 12px !important; flex-wrap: wrap; }
+  .live-market .cart-summary-purchase { display: grid; grid-template-columns: minmax(0, 1fr) auto; width: 100%; margin: 0; gap: 12px; align-items: center; }
+  .live-market .cart-summary-total { text-align: left; }
+  .live-market .cart-summary-amount { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .live-market .shopee-cart-total-price { font-size: 20px; line-height: 1.3; }
+  .live-market .cart-summary-note { font-size: 11px; line-height: 1.5; }
+  .live-market .shopee-cart-checkout-btn { min-width: 0; max-width: 100%; padding: 0 16px; white-space: nowrap; }
+  .live-market .chat-center-purchase .shopee-chat-dock { display: none !important; }
+  .live-market .shopee-noti-row { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; padding: 14px 12px; }
+  .live-market .shopee-noti-row > :first-child { width: 42px; height: 42px; }
+  .live-market .shopee-noti-row > :last-child { grid-column: 2; justify-self: start; padding-top: 0; }
+  .live-market .order-history-total-row { flex-wrap: wrap; gap: 8px; }
+  .live-market .order-status-tabs { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; }
+  .live-market .order-status-tabs > button, .live-market .order-status-tabs > a { flex: 0 0 auto; white-space: nowrap; }
+}
+@media (max-width: 399px) {
+  .live-market .cart-summary-purchase { grid-template-columns: minmax(0, 1fr); }
+  .live-market .shopee-cart-checkout-btn { width: 100%; }
+}

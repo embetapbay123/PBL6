@@ -185,6 +185,9 @@ export function OrderHistoryPage() {
               </Empty>
             )}
             {query.data.items.map((order) => {
+              const quantities = (order.items ?? []).map(item => item.quantity);
+              const totalQuantity = quantities.length && quantities.every(quantity => typeof quantity === 'number' && Number.isSafeInteger(quantity) && quantity > 0)
+                ? quantities.reduce<number>((total, quantity) => total + (quantity as number), 0) : undefined;
               const isDelivered = order.status === "COMPLETED" || Boolean(order.shipping_delivered_at);
               const isShipping = order.status === "SHIPPED" && !order.shipping_delivered_at;
 
@@ -193,7 +196,6 @@ export function OrderHistoryPage() {
                   {/* Shopee-style Card Header */}
                   <div className="order-history-header">
                     <div className="order-header-store-section">
-                      <span className="order-store-badge">Yêu thích</span>
                       <OrderStoreLabel id={order.store_id} compact />
                       <ContactStoreButton storeId={order.store_id} orderId={order.id} compact />
                       <Link
@@ -244,7 +246,7 @@ export function OrderHistoryPage() {
 
                   {/* Total Payment Row (Shopee Typography) */}
                   <div className="order-history-total-row">
-                    <span className="order-total-label">Thành tiền:</span>
+                    <span className="order-total-label">Tổng thanh toán{totalQuantity === undefined ? '' : ` (${totalQuantity} sản phẩm)`}:</span>
                     <span className="order-total-price-highlight">
                       {order.amounts.payable_vnd.toLocaleString("vi-VN")}
                       <span className="order-currency">₫</span>

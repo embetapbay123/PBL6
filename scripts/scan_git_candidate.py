@@ -1,11 +1,47 @@
 """Check candidate text for local secret values without printing those values."""
 import argparse
+import io
 import json
 from pathlib import Path
 import re
 import subprocess
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+
+TOKEN_PATTERNS = {
+    'openai_api_key': r'\bsk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{24,}',
+    'github_token': r'\b(?:gh[pousr]_[A-Za-z0-9]{25,}|github_pat_[A-Za-z0-9_]{35,})',
+    'aws_access_key': r'\b(?:AKIA|ASIA)[A-Z0-9]{16}\b',
+    'slack_token': r'\bxox[baprs]-[A-Za-z0-9-]{20,}',
+    'jwt': r'\beyJ[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}\.[A-Za-z0-9_-]{12,}',
+    'private_key_material': r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----\s+[A-Za-z0-9+/=\s]{80,}',
+}
+
+
+def inspect_text(text, values=()):
+    kinds = [kind for kind, pattern in TOKEN_PATTERNS.items() if re.search(pattern, text)]
+    if any(value in text for value in values):
+        kinds.append('local_environment_secret')
+    return kinds
+
+
+def text_parts(name, raw):
+    if Path(name).suffix.lower() in ('.docx', '.xlsx', '.pptx'):
+        with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+            total = 0
+            for item in archive.infolist():
+                if not item.filename.endswith(('.xml', '.rels', '.json', '.txt')):
+                    continue
+                total += item.file_size
+                if total > 30_000_000 or item.file_size > 10_000_000:
+                    raise ValueError('Archive text exceeds safe inspection size')
+                yield name + '!' + item.filename, archive.read(item).decode('utf-8', errors='replace')
+    else:
+        try:
+            yield name, raw.decode('utf-8')
+        except UnicodeDecodeError:
+            return
 
 
 def main():
@@ -35,16 +71,15 @@ def main():
             if not file.is_file():
                 continue
             raw = file.read_bytes()
+        if Path(name).name == '.env' or (Path(name).name.startswith('.env.') and not name.endswith('.env.example')):
+            hits.append({'file': name, 'kind': 'private_environment_file'})
         try:
-            text = raw.decode('utf-8')
-        except UnicodeDecodeError:
-            continue
-        count += 1
-        if any(value in text for value in values):
-            hits.append({'file': name, 'kind': 'local_environment_secret'})
-        if re.search(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----\s+[A-Za-z0-9+/=\s]{80,}', text):
-            hits.append({'file': name, 'kind': 'private_key_material'})
-    report = {'status': 'FAIL' if hits else 'PASS', 'staged': args.staged, 'text_files_checked': count, 'secrets_checked_only_in_memory': len(set(values)), 'matches': hits, 'secret_values_not_recorded': True, 'limits': 'Exact local secret values and private-key material; not a general vulnerability or all historical Git audit.'}
+            for part_name, text in text_parts(name, raw):
+                count += 1
+                hits.extend({'file': part_name, 'kind': kind} for kind in inspect_text(text, values))
+        except (ValueError, zipfile.BadZipFile):
+            hits.append({'file': name, 'kind': 'uninspectable_document_archive'})
+    report = {'status': 'FAIL' if hits else 'PASS', 'staged': args.staged, 'text_files_checked': count, 'secrets_checked_only_in_memory': len(set(values)), 'matches': hits, 'secret_values_not_recorded': True, 'limits': 'Known token patterns, exact local secrets and Office XML; not proof of absence of every secret, screenshot OCR, a vulnerability audit or a full historical Git audit.'}
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'status': report['status'], 'text_files_checked': count, 'matches': hits}))

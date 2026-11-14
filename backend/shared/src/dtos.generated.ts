@@ -436,6 +436,9 @@ export class ListStoreProductsQueryDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 200}}}).value)
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 200},false),defaultMessage:()=> 'Invalid contract field'}})
   "q"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "enum": ["title", "price_asc", "price_desc", "rating"], "default": "title"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["title", "price_asc", "price_desc", "rating"], "default": "title"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "sort": "title" | "price_asc" | "price_desc" | "rating" = "title";
 }
 export class ListStoreProductsHeadersDto {
 }
@@ -1361,6 +1364,12 @@ export class ListOwnChatSessionsQueryDto {
   "message_size": number = 20;
 }
 export class ListOwnChatSessionsHeadersDto {
+}
+export class DeleteOwnChatHistoryPathDto {
+}
+export class DeleteOwnChatHistoryQueryDto {
+}
+export class DeleteOwnChatHistoryHeadersDto {
 }
 export class GetForYouPathDto {
 }
@@ -3201,6 +3210,116 @@ export class GetStorePickupStatusQueryDto {
 }
 export class GetStorePickupStatusHeadersDto {
 }
+export class GetTryOnCapabilitiesPathDto {
+}
+export class GetTryOnCapabilitiesQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "product_id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "variant_id"!: string;
+}
+export class GetTryOnCapabilitiesHeadersDto {
+}
+export class UploadTryOnPhotoBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "binary", "description": "One static JPEG/PNG/WebP, max 8 MiB; server decodes and strips metadata."},true),defaultMessage:()=> 'Invalid contract field'}})
+  "photo"!: string;
+}
+export class UploadTryOnPhotoPathDto {
+}
+export class UploadTryOnPhotoQueryDto {
+}
+export class UploadTryOnPhotoHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 128, "writeOnly": true}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 128, "writeOnly": true},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-try-on-demo-password"?: string;
+}
+export class CreateTryOnJobBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "photo_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "product_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "variant_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 100},true),defaultMessage:()=> 'Invalid contract field'}})
+  "consent_version"!: string;
+}
+export class CreateTryOnJobPathDto {
+}
+export class CreateTryOnJobQueryDto {
+}
+export class CreateTryOnJobHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "idempotency-key"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 128, "writeOnly": true}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 128, "writeOnly": true},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-try-on-demo-password"?: string;
+}
+export class ListTryOnJobsPathDto {
+}
+export class ListTryOnJobsQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "product_id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "variant_id"!: string;
+}
+export class ListTryOnJobsHeadersDto {
+}
+export class GetTryOnJobPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetTryOnJobQueryDto {
+}
+export class GetTryOnJobHeadersDto {
+}
+export class DeleteTryOnJobPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class DeleteTryOnJobQueryDto {
+}
+export class DeleteTryOnJobHeadersDto {
+}
+export class DeleteTryOnPhotoPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class DeleteTryOnPhotoQueryDto {
+}
+export class DeleteTryOnPhotoHeadersDto {
+}
+export class GetTryOnResultPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetTryOnResultQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "integer", "minimum": 1}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expires"!: number;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "signature"!: string;
+}
+export class GetTryOnResultHeadersDto {
+}
+export class DeleteOwnChatSessionPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class DeleteOwnChatSessionQueryDto {
+}
+export class DeleteOwnChatSessionHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3550,6 +3669,7 @@ export const runtimeDtos = {
   createChatSession: {body: CreateChatSessionBodyDto, path: CreateChatSessionPathDto, query: CreateChatSessionQueryDto, headers: CreateChatSessionHeadersDto},
   sendChatMessage: {body: SendChatMessageBodyDto, path: SendChatMessagePathDto, query: SendChatMessageQueryDto, headers: SendChatMessageHeadersDto},
   listOwnChatSessions: {body: undefined, path: ListOwnChatSessionsPathDto, query: ListOwnChatSessionsQueryDto, headers: ListOwnChatSessionsHeadersDto},
+  deleteOwnChatHistory: {body: undefined, path: DeleteOwnChatHistoryPathDto, query: DeleteOwnChatHistoryQueryDto, headers: DeleteOwnChatHistoryHeadersDto},
   getForYou: {body: undefined, path: GetForYouPathDto, query: GetForYouQueryDto, headers: GetForYouHeadersDto},
   getRelatedProducts: {body: undefined, path: GetRelatedProductsPathDto, query: GetRelatedProductsQueryDto, headers: GetRelatedProductsHeadersDto},
   updateStaff: {body: UpdateStaffBodyDto, path: UpdateStaffPathDto, query: UpdateStaffQueryDto, headers: UpdateStaffHeadersDto},
@@ -3653,6 +3773,15 @@ export const runtimeDtos = {
   requestPlatformReturnPickup: {body: RequestPlatformReturnPickupBodyDto, path: RequestPlatformReturnPickupPathDto, query: RequestPlatformReturnPickupQueryDto, headers: RequestPlatformReturnPickupHeadersDto},
   deliveryCallback: {body: DeliveryCallbackBodyDto, path: DeliveryCallbackPathDto, query: DeliveryCallbackQueryDto, headers: DeliveryCallbackHeadersDto},
   getStorePickupStatus: {body: undefined, path: GetStorePickupStatusPathDto, query: GetStorePickupStatusQueryDto, headers: GetStorePickupStatusHeadersDto},
+  getTryOnCapabilities: {body: undefined, path: GetTryOnCapabilitiesPathDto, query: GetTryOnCapabilitiesQueryDto, headers: GetTryOnCapabilitiesHeadersDto},
+  uploadTryOnPhoto: {body: UploadTryOnPhotoBodyDto, path: UploadTryOnPhotoPathDto, query: UploadTryOnPhotoQueryDto, headers: UploadTryOnPhotoHeadersDto},
+  createTryOnJob: {body: CreateTryOnJobBodyDto, path: CreateTryOnJobPathDto, query: CreateTryOnJobQueryDto, headers: CreateTryOnJobHeadersDto},
+  listTryOnJobs: {body: undefined, path: ListTryOnJobsPathDto, query: ListTryOnJobsQueryDto, headers: ListTryOnJobsHeadersDto},
+  getTryOnJob: {body: undefined, path: GetTryOnJobPathDto, query: GetTryOnJobQueryDto, headers: GetTryOnJobHeadersDto},
+  deleteTryOnJob: {body: undefined, path: DeleteTryOnJobPathDto, query: DeleteTryOnJobQueryDto, headers: DeleteTryOnJobHeadersDto},
+  deleteTryOnPhoto: {body: undefined, path: DeleteTryOnPhotoPathDto, query: DeleteTryOnPhotoQueryDto, headers: DeleteTryOnPhotoHeadersDto},
+  getTryOnResult: {body: undefined, path: GetTryOnResultPathDto, query: GetTryOnResultQueryDto, headers: GetTryOnResultHeadersDto},
+  deleteOwnChatSession: {body: undefined, path: DeleteOwnChatSessionPathDto, query: DeleteOwnChatSessionQueryDto, headers: DeleteOwnChatSessionHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

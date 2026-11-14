@@ -31,7 +31,7 @@ export interface OperationInputs {
   listProductTypes: {body?: undefined; path: {}; query: {"page"?: number; "size"?: number}; headers: {} & Record<string, unknown>};
   listProducts: {body?: undefined; path: {}; query: {"page"?: number; "size"?: number; "q"?: string; "category_id"?: string; "product_type_id"?: string; "sort"?: "title" | "price_asc" | "price_desc"; "min_price_vnd"?: number; "max_price_vnd"?: number; "ids"?: string}; headers: {} & Record<string, unknown>};
   getProduct: {body?: undefined; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
-  listStoreProducts: {body?: undefined; path: {"id": string}; query: {"page"?: number; "size"?: number; "q"?: string}; headers: {} & Record<string, unknown>};
+  listStoreProducts: {body?: undefined; path: {"id": string}; query: {"page"?: number; "size"?: number; "q"?: string; "sort"?: "title" | "price_asc" | "price_desc" | "rating"}; headers: {} & Record<string, unknown>};
   listOwnStoreProducts: {body?: undefined; path: {}; query: {"page"?: number; "size"?: number; "q"?: string; "status"?: "DRAFT" | "ACTIVE" | "STOPPED"; "sort"?: "NAME_ASC" | "NAME_DESC" | "PRICE_ASC" | "PRICE_DESC"}; headers: {"x-store-context"?: string} & Record<string, unknown>};
   createProduct: {body: {"product_type_id": string; "title": string; "description"?: string; "attributes": {} & Record<string, unknown>; "variants"?: Array<{"id"?: string; "sku": string; "price_vnd": number; "variant_values": {} & Record<string, unknown>; "is_default"?: boolean; "status"?: string; "available_quantity"?: number}>; "status"?: "DRAFT" | "ACTIVE" | "STOPPED"}; path: {}; query: {}; headers: {"x-store-context"?: string} & Record<string, unknown>};
   updateProduct: {body: {"product_type_id"?: string; "title"?: string; "description"?: string; "attributes"?: {} & Record<string, unknown>; "variants"?: Array<{"id"?: string; "sku": string; "price_vnd": number; "variant_values": {} & Record<string, unknown>; "is_default"?: boolean; "status"?: string; "available_quantity"?: number}>; "status"?: "DRAFT" | "ACTIVE" | "STOPPED"; "expected_version": number}; path: {"id": string}; query: {}; headers: {"x-store-context"?: string} & Record<string, unknown>};
@@ -84,6 +84,7 @@ export interface OperationInputs {
   createChatSession: {body: {"first_message"?: string}; path: {}; query: {}; headers: {} & Record<string, unknown>};
   sendChatMessage: {body: {"content": string}; path: {"id": string}; query: {}; headers: {"x-chat-key"?: string} & Record<string, unknown>};
   listOwnChatSessions: {body?: undefined; path: {}; query: {"page"?: number; "size"?: number; "session_id"?: string; "message_page"?: number; "message_size"?: number}; headers: {} & Record<string, unknown>};
+  deleteOwnChatHistory: {body?: undefined; path: {}; query: {}; headers: {} & Record<string, unknown>};
   getForYou: {body?: undefined; path: {}; query: {}; headers: {} & Record<string, unknown>};
   getRelatedProducts: {body?: undefined; path: {"id": string}; query: {"page"?: number; "size"?: number}; headers: {} & Record<string, unknown>};
   updateStaff: {body: {"status"?: "ACTIVE" | "LOCKED"; "permissions"?: Array<string>; "expected_version": number}; path: {"id": string}; query: {}; headers: {"x-store-context"?: string} & Record<string, unknown>};
@@ -187,6 +188,15 @@ export interface OperationInputs {
   requestPlatformReturnPickup: {body: {"operation_id": string; "expected_version": number}; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
   deliveryCallback: {body: {"event_id": string; "parcel": {} & Record<string, unknown>}; path: {}; query: {}; headers: {} & Record<string, unknown>};
   getStorePickupStatus: {body?: undefined; path: {}; query: {}; headers: {} & Record<string, unknown>};
+  getTryOnCapabilities: {body?: undefined; path: {}; query: {"product_id": string; "variant_id": string}; headers: {} & Record<string, unknown>};
+  uploadTryOnPhoto: {body: {"photo": string}; path: {}; query: {}; headers: {"x-try-on-demo-password"?: string} & Record<string, unknown>};
+  createTryOnJob: {body: {"photo_id": string; "product_id": string; "variant_id": string; "consent_version": string}; path: {}; query: {}; headers: {"idempotency-key": string; "x-try-on-demo-password"?: string} & Record<string, unknown>};
+  listTryOnJobs: {body?: undefined; path: {}; query: {"product_id": string; "variant_id": string}; headers: {} & Record<string, unknown>};
+  getTryOnJob: {body?: undefined; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
+  deleteTryOnJob: {body?: undefined; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
+  deleteTryOnPhoto: {body?: undefined; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
+  getTryOnResult: {body?: undefined; path: {"id": string}; query: {"expires": number; "signature": string}; headers: {} & Record<string, unknown>};
+  deleteOwnChatSession: {body?: undefined; path: {"id": string}; query: {}; headers: {} & Record<string, unknown>};
   ResolveContext: {body: {"token": string}; path: {}; query: {}; headers: {"x-correlation-id"?: string} & Record<string, unknown>};
   ActiveStores: {body?: undefined; path: {}; query: {"size"?: number; "after"?: string}; headers: {"x-correlation-id"?: string} & Record<string, unknown>};
   QuoteVariants: {body: {"items": Array<{"variant_id": string; "store_id": string; "quantity": number}>}; path: {}; query: {}; headers: {"x-correlation-id"?: string} & Record<string, unknown>};
@@ -288,6 +298,7 @@ export interface OperationOutputs {
   createChatSession: {"id": string; "user_id"?: string; "anonymous_key"?: string; "created_at": string; "messages"?: {"items": Array<{"session_id"?: string; "content": string; "product_cards"?: Array<{"product_id": string; "current_price_vnd": number; "status": string}>; "fallback"?: boolean; "mode"?: "mock" | "real"; "id"?: string; "role"?: "ASSISTANT" | "USER" | "SYSTEM"; "fallback_reason"?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED" | "MODEL_GENERATED" | "CATALOG_CHANGED"}>; "total": number; "page": number; "size": number}};
   sendChatMessage: {"session_id"?: string; "content": string; "product_cards"?: Array<{"product_id": string; "current_price_vnd": number; "status": string}>; "fallback"?: boolean; "mode"?: "mock" | "real"; "id"?: string; "role"?: "ASSISTANT" | "USER" | "SYSTEM"; "fallback_reason"?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED" | "MODEL_GENERATED" | "CATALOG_CHANGED"};
   listOwnChatSessions: {"items": Array<{"id": string; "user_id"?: string; "anonymous_key"?: string; "created_at": string; "messages"?: {"items": Array<{"session_id"?: string; "content": string; "product_cards"?: Array<{"product_id": string; "current_price_vnd": number; "status": string}>; "fallback"?: boolean; "mode"?: "mock" | "real"; "id"?: string; "role"?: "ASSISTANT" | "USER" | "SYSTEM"; "fallback_reason"?: "PROVIDER_NOT_CONFIGURED" | "PROVIDER_UNAVAILABLE" | "PROVIDER_INVALID_RESPONSE" | "NO_MATCH" | "MODEL_SELECTED" | "MODEL_GENERATED" | "CATALOG_CHANGED"}>; "total": number; "page": number; "size": number}}>; "total": number; "page": number; "size": number};
+  deleteOwnChatHistory: {"deleted_count": number};
   getForYou: {"model_version"?: string; "source": "MODEL" | "BASELINE" | "FALLBACK"; "product_ids": Array<string>; "recently_viewed_product_ids": Array<string>; "mode"?: "mock" | "real"; "evaluation_status"?: "NOT_RUN" | "RUNNING" | "COMPLETED" | "FAILED"};
   getRelatedProducts: {"items": Array<{"id"?: string; "store_id"?: string; "product_type_id": string; "title": string; "description"?: string | null; "attributes": {} & Record<string, unknown>; "variants"?: Array<{"id"?: string; "sku": string; "price_vnd": number; "variant_values": {} & Record<string, unknown>; "is_default"?: boolean; "status"?: string; "available_quantity"?: number}>; "images"?: Array<{"id": string; "product_id": string; "image_url": string; "position"?: number; "variant_id"?: string}>; "status"?: "DRAFT" | "ACTIVE" | "STOPPED"; "moderation_status"?: "VISIBLE" | "HIDDEN"; "version"?: number; "variant_axes"?: Array<{"code": string; "name": string}>; "moderation_decision"?: {"status": "VISIBLE" | "HIDDEN"; "reason": string; "decided_at": string}; "review_summary"?: {"count": number; "average": number}; "sold_count"?: number}>; "total": number; "page": number; "size": number};
   updateStaff: {"id": string; "store_id": string; "user_id": string; "email": string; "role": "SELLER"; "status": "ACTIVE" | "LOCKED"; "permissions": Array<"product.store.read_write" | "inventory.store.read_adjust" | "order.store.read_status_cancel" | "cod.store.collect">; "version": number};
@@ -391,6 +402,15 @@ export interface OperationOutputs {
   requestPlatformReturnPickup: {"id": string; "order_id": string; "store_id": string; "return_request_id"?: string; "leg": "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN"; "provider": "GHN" | "EXTERNAL" | "PLATFORM"; "status": string; "tracking_code"?: string; "created_at": string; "expected_delivery_at"?: string; "picked_up_at"?: string; "delivered_at"?: string; "version": number; "events": Array<{"status": string; "occurred_at": string; "source": "CARRIER" | "MANUAL"}>};
   deliveryCallback: {"accepted": boolean};
   getStorePickupStatus: {"configured": boolean};
+  getTryOnCapabilities: {"enabled": boolean; "message"?: string; "demo_password_required": boolean; "quota": {"remaining": number; "limit": number; "reset_at": string}; "consent_version": string; "privacy": {"provider_label": "OpenAI"; "retention_hours": number}};
+  uploadTryOnPhoto: {"id": string; "expires_at": string};
+  createTryOnJob: {"id": string; "product_id": string; "variant_id": string; "idempotency_key": string; "status": "QUEUED" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "CANCELLED"; "expires_at": string; "result_url"?: string; "message"?: string};
+  listTryOnJobs: {"items": Array<{"id": string; "product_id": string; "variant_id": string; "idempotency_key": string; "status": "QUEUED" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "CANCELLED"; "expires_at": string; "result_url"?: string; "message"?: string}>};
+  getTryOnJob: {"id": string; "product_id": string; "variant_id": string; "idempotency_key": string; "status": "QUEUED" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "CANCELLED"; "expires_at": string; "result_url"?: string; "message"?: string};
+  deleteTryOnJob: undefined;
+  deleteTryOnPhoto: undefined;
+  getTryOnResult: undefined;
+  deleteOwnChatSession: {"deleted_count": number};
   ResolveContext: {"user_id": string; "roles": Array<"CUSTOMER" | "SELLER" | "STORE_OWNER" | "ADMIN">; "role_permissions": Array<string>; "store_membership"?: {"store_id"?: string; "role"?: "SELLER" | "OWNER"; "status"?: string; "permissions"?: Array<string>}; "token_version": number};
   ActiveStores: {"ids": Array<string>; "next_after"?: string | null};
   QuoteVariants: {"items": Array<{"variant_id": string; "store_id": string; "quantity": number; "price_vnd": number; "available_quantity": number; "version": number}>};

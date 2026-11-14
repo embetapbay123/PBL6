@@ -376,15 +376,51 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
   const [selectedMethods, setSelectedMethods] = useState<
     Record<string, "COD" | "SANDBOX">
   >(draft?.methods ?? {});
-  const [voucherDraft, setVoucherDraft] = useState<Record<string, string>>(
-    draft?.voucherDraft ?? {},
-  );
-  const [platformDraft, setPlatformDraft] = useState(
-    draft?.platformDraft ?? "",
-  );
+  const incomingVouchers = (() => {
+    const locV = (location.state as any)?.vouchers;
+    if (
+      locV &&
+      (locV.platform_voucher_code ||
+        (locV.store_vouchers && Object.keys(locV.store_vouchers).length > 0))
+    ) {
+      return locV;
+    }
+    try {
+      const stored = sessionStorage.getItem("pbl6_cart_vouchers_" + userId);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [voucherDraft, setVoucherDraft] = useState<Record<string, string>>(() => {
+    if (draft?.voucherDraft && Object.keys(draft.voucherDraft).length > 0)
+      return draft.voucherDraft;
+    return incomingVouchers?.store_vouchers ?? {};
+  });
+  const [platformDraft, setPlatformDraft] = useState<string>(() => {
+    if (draft?.platformDraft) return draft.platformDraft;
+    return incomingVouchers?.platform_voucher_code ?? "";
+  });
   const [vouchers, setVouchers] = useState<
     Pick<ConfirmPayload, "platform_voucher_code" | "store_vouchers">
-  >(draft?.vouchers ?? {});
+  >(() => {
+    if (
+      draft?.vouchers &&
+      (draft.vouchers.platform_voucher_code ||
+        (draft.vouchers.store_vouchers &&
+          Object.keys(draft.vouchers.store_vouchers).length > 0))
+    ) {
+      return draft.vouchers;
+    }
+    const cleanStore = incomingVouchers?.store_vouchers ?? {};
+    return {
+      ...(incomingVouchers?.platform_voucher_code
+        ? { platform_voucher_code: incomingVouchers.platform_voucher_code }
+        : {}),
+      ...(Object.keys(cleanStore).length > 0 ? { store_vouchers: cleanStore } : {}),
+    };
+  });
   const [createdOrders, setCreatedOrders] = useState<
     OperationOutputs["confirmCheckout"]["orders"]
   >(savedResult?.orders ?? []);
@@ -1178,18 +1214,16 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
                 <VoucherPicker
                   storeIds={storeGroups.map(([id]) => id)}
                   onClose={() => setPickerOpen(false)}
-                  onPick={(id, code) => {
-                    if (id) {
-                      const nextStoreDraft = {
-                        ...voucherDraft,
-                        [id]: code,
-                      };
-                      setVoucherDraft(nextStoreDraft);
-                      void applyVouchers(platformDraft, nextStoreDraft);
-                    } else {
-                      setPlatformDraft(code);
-                      void applyVouchers(code, voucherDraft);
-                    }
+                  initialVouchers={{
+                    platform_voucher_code: platformDraft,
+                    store_vouchers: voucherDraft,
+                  }}
+                  onPick={(picked) => {
+                    const nextPlatform = picked.platform_voucher_code ?? "";
+                    const nextStore = picked.store_vouchers ?? {};
+                    setPlatformDraft(nextPlatform);
+                    setVoucherDraft(nextStore);
+                    void applyVouchers(nextPlatform, nextStore);
                   }}
                 />
               )}

@@ -1,0 +1,119 @@
+{
+  "$comment": "CẤU HÌNH TRUNG TÂM CHO TOÀN BỘ BỘ KIỂM THỬ. Xem tester/HUONG_DAN_DOI_CAU_HINH.md trước khi sửa.",
+  "version": 2,
+  "activeTarget": "demo",
+  "targets": {
+    "demo": {
+      "label": "Server demo Internet (demo.congnguyen.me)",
+      "webBaseUrl": "https://demo.congnguyen.me",
+      "apiBaseUrl": "https://demo.congnguyen.me/api/v1",
+      "origin": "https://demo.congnguyen.me",
+      "k6BaseUrl": "https://demo.congnguyen.me"
+    },
+    "local": {
+      "label": "Máy local (Docker Compose, cổng 8080)",
+      "webBaseUrl": "http://localhost:8080",
+      "apiBaseUrl": "http://localhost:8080/api/v1",
+      "origin": "https://demo.congnguyen.me",
+      "k6BaseUrl": "http://host.docker.internal:8080"
+    }
+  },
+  "http": {
+    "timeoutMs": 15000,
+    "retries": 1,
+    "testTimeoutMs": 60000
+  },
+  "accounts": {
+    "customer": {
+      "label": "Khách hàng A",
+      "email": "customer.a@pbl6.test",
+      "demoAccount": "customerA",
+      "password": "",
+      "passwordEnv": "SEED_PASSWORD",
+      "passwordFile": "infrastructure/.env"
+    },
+    "customerB": {
+      "label": "Khách hàng B",
+      "email": "customer.b@pbl6.test",
+      "demoAccount": "customerB",
+      "password": "",
+      "passwordEnv": "SEED_PASSWORD",
+      "passwordFile": "infrastructure/.env"
+    },
+    "owner": {
+      "label": "Chủ cửa hàng A",
+      "email": "owner.a@pbl6.test",
+      "demoAccount": "ownerA",
+      "password": "",
+      "passwordEnv": "SEED_PASSWORD",
+      "passwordFile": "infrastructure/.env"
+    },
+    "staff": {
+      "label": "Nhân viên bán hàng A",
+      "email": "seller.a@pbl6.test",
+      "demoAccount": "staffA",
+      "password": "",
+      "passwordEnv": "SEED_PASSWORD",
+      "passwordFile": "infrastructure/.env"
+    },
+    "admin": {
+      "label": "Quản trị viên",
+      "email": "admin@pbl6.test",
+      "demoAccount": "admin",
+      "password": "",
+      "passwordEnv": "SEED_PASSWORD",
+      "passwordFile": "infrastructure/.env"
+    }
+  },
+  "unit": {
+    "suiteFiles": [
+      "tests/unit/auth.guard.test.ts",
+      "tests/unit/auth.service.test.ts",
+      "tests/unit/audit-log.test.ts",
+      "tests/unit/cart.test.ts",
+      "tests/unit/security.test.ts",
+      "tests/unit/order.test.ts",
+      "tests/unit/voucher.test.ts",
+      "tests/unit/shipping.test.ts",
+      "tests/unit/inventory-reservation.test.ts",
+      "tests/unit/reviews.test.ts",
+      "tests/unit/search.test.ts",
+      "tests/unit/checkout-source.test.ts",
+      "tests/unit/logout-session.test.ts",
+      "tests/unit/rate-budget.test.ts"
+    ]
+  },
+  "api": {
+    "maxResponseMs": 3000
+  },
+  "web": {
+    "headed": true,
+    "slowMoMs": 1200,
+    "stepDelayMs": 700,
+    "timeoutMs": 90000,
+    "viewport": { "width": 1440, "height": 900 },
+    "mobileViewport": { "width": 390, "height": 844 }
+  },
+  "load": {
+    "activeScenario": "smoke",
+    "dockerImage": "grafana/k6:0.57.0",
+    "scenarios": {
+      "smoke": { "vus": 20, "duration": "15s" },
+      "load": { "vus": 100, "duration": "30s" },
+      "stress": { "vus": 250, "duration": "60s" }
+    },
+    "thresholds": {
+      "httpReqFailedRate": 0.01,
+      "p95Ms": 2000,
+      "checksRate": 0.99
+    }
+  },
+  "security": {
+    "maxResponseMs": 3000,
+    "oversizeKb": 2048
+  },
+  "reports": {
+    "directory": "reports",
+    "openAfterRun": true
+  }
+}

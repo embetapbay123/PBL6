@@ -419,6 +419,11 @@
     "path": "/me/chat/sessions",
     "internal": false
   },
+  "deleteOwnChatHistory": {
+    "method": "DELETE",
+    "path": "/me/chat/sessions",
+    "internal": false
+  },
   "getForYou": {
     "method": "GET",
     "path": "/recommendations/for-you",
@@ -932,6 +937,51 @@
   "getStorePickupStatus": {
     "method": "GET",
     "path": "/store/shipping/pickup-status",
+    "internal": false
+  },
+  "getTryOnCapabilities": {
+    "method": "GET",
+    "path": "/ai/try-on/capabilities",
+    "internal": false
+  },
+  "uploadTryOnPhoto": {
+    "method": "POST",
+    "path": "/ai/try-on/photos",
+    "internal": false
+  },
+  "createTryOnJob": {
+    "method": "POST",
+    "path": "/ai/try-on/jobs",
+    "internal": false
+  },
+  "listTryOnJobs": {
+    "method": "GET",
+    "path": "/ai/try-on/jobs",
+    "internal": false
+  },
+  "getTryOnJob": {
+    "method": "GET",
+    "path": "/ai/try-on/jobs/{id}",
+    "internal": false
+  },
+  "deleteTryOnJob": {
+    "method": "DELETE",
+    "path": "/ai/try-on/jobs/{id}",
+    "internal": false
+  },
+  "deleteTryOnPhoto": {
+    "method": "DELETE",
+    "path": "/ai/try-on/photos/{id}",
+    "internal": false
+  },
+  "getTryOnResult": {
+    "method": "GET",
+    "path": "/ai/try-on/results/{id}",
+    "internal": false
+  },
+  "deleteOwnChatSession": {
+    "method": "DELETE",
+    "path": "/me/chat/sessions/{id}",
     "internal": false
   },
   "ResolveContext": {

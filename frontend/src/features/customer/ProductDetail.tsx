@@ -2,7 +2,7 @@ import { Button as UiButton } from "../../components/ui/Button";
 import { StarRating } from "../../components/StarRating";
 import { ProductImage } from "../../components/ProductImage";
 import { useFavorite } from "./favorite-state";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { callOperation } from "../../api/operations";
 import type { OperationOutputs } from "../../api/operations.generated";
@@ -11,7 +11,9 @@ import { useAuth } from "../../api/auth-context";
 import { ErrorView, Loading } from "../../bootstrap/components";
 import { ProductReviews } from "./ProductReviews"; // 1. Nhập component đánh giá sản phẩm
 import { CustomerRecommendations } from "./CustomerRecommendations";
-import { ImageOff, ShoppingCart, Zap, Minus, Plus, Heart, Truck, RotateCcw } from "lucide-react";
+import { ArrowUpRight, Shirt, ImageOff, ShoppingCart, Zap, Minus, Plus, Heart, Truck, RotateCcw } from "lucide-react";
+import "../../components/customer/virtual-try-on.css";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { ContactStoreButton } from "./ContactStoreButton";
 import {
@@ -32,6 +34,7 @@ import { Modal } from "../../components/Modal";
 import { useQuery } from "@tanstack/react-query";
 
 type Product = OperationOutputs["getProduct"];
+const VirtualTryOnModal = lazy(() => import("../../components/customer/VirtualTryOnModal"));
 
 export function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -64,6 +67,7 @@ export function ProductDetail() {
   const [retry, setRetry] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
   const [zoom, setZoom] = useState(false);
+  const [tryOnOpen, setTryOnOpen] = useState(false);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const inFlight = useRef(false);
   const generation = useRef(0),
@@ -71,6 +75,7 @@ export function ProductDetail() {
   const [checkingStock, setCheckingStock] = useState(false),
     [stockError, setStockError] = useState<unknown>();
   const [storeProductIds, setStoreProductIds] = useState<string[]>([]);
+
 
   useEffect(() => {
     let active = true;
@@ -83,6 +88,7 @@ export function ProductDetail() {
     setVariantId("");
     setQuantity(1);
     setImageIndex(0);
+    setTryOnOpen(false);
     setError(undefined);
     setSuccess(false);
     setUncertain(false);
@@ -177,6 +183,9 @@ export function ProductDetail() {
   });
   const productType = taxonomy.data?.items.find(
     (type) => type.id === product?.product_type_id,
+  );
+  const tryOnCategory = /\b(ao|quan|shirt|pants|jeans|hoodie|trousers|jacket)\b/.test(
+    `${productType?.name ?? ""} ${product?.title ?? ""}`.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(),
   );
   const definitions =
     taxonomy.data?.items.find((type) => type.id === product?.product_type_id)
@@ -418,7 +427,7 @@ export function ProductDetail() {
                   disabled={busy || checkingStock}
                   onClick={() => void refreshAvailability()}
                 >
-                  {checkingStock ? "Đang cập nhật…" : "Làm mới"}
+                  {checkingStock ? "Đang cập nhật…" : "Kiểm tra"}
                 </button>
               )}
             </div>
@@ -442,8 +451,14 @@ export function ProductDetail() {
           {variant && (
             <p className="product-selection-summary">
               Đã chọn: <strong>{variantLabel(variant.variant_values)}</strong>
-              <small>Mã hàng: {variant.sku}</small>
             </p>
+          )}
+          {tryOnCategory && product.status === "ACTIVE" && variant?.status === "ACTIVE" && (
+            <button type="button" className="product-try-on-entry" onClick={() => setTryOnOpen(true)}>
+              <Shirt size={22} aria-hidden="true" />
+              <span><strong>Thử với ảnh của bạn</strong><small>Xem cách phối trước khi chọn mua</small></span>
+              <ArrowUpRight size={17} aria-hidden="true" />
+            </button>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "8px 0 10px" }}>
             <label htmlFor="purchase-quantity" style={{ margin: 0, fontWeight: 500, fontSize: "13px" }}>Số lượng:</label>
@@ -584,7 +599,7 @@ export function ProductDetail() {
             </div>
           </div>
           {session?.context?.roles.includes("CUSTOMER") && (
-            <div className="purchase-secondary-actions">
+            <div className="purchase-secondary-actions flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
               <UiButton
                 variant="secondary"
                 type="button"
@@ -599,7 +614,7 @@ export function ProductDetail() {
                     ? "Đang lưu…"
                     : "Lưu yêu thích"}
               </UiButton>{" "}
-              <Link to="/customer/favorites">Xem danh sách yêu thích</Link>
+              <Link to="/customer/favorites" className="text-slate-500 hover:underline">Mục đã lưu →</Link>
             </div>
           )}
           {(favoriteError ?? favorite.error) != null && (
@@ -639,6 +654,18 @@ export function ProductDetail() {
           </div>
         </section>
       </div>
+      {tryOnOpen && (
+        <Suspense fallback={null}>
+          <VirtualTryOnModal
+            key={`${session?.context?.user_id ?? "guest"}:${session?.context?.token_version ?? ""}:${session?.context?.roles.join(",") ?? ""}:${product.id}:${variant?.id}`}
+            product={product}
+            selectedVariant={variant}
+            onClose={() => setTryOnOpen(false)}
+            canAddToCart={canSubmit && !busy && !uncertain && customer}
+            onAddToCart={() => { setTryOnOpen(false); void add(); }}
+          />
+        </Suspense>
+      )}
       {zoom && (
         <Modal
           label={"Ảnh sản phẩm " + product.title}

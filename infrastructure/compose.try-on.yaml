@@ -1,0 +1,39 @@
+# Targeted M4 rollout; merge with the server's existing compose.yaml.
+x-try-on-runtime: &try-on-runtime
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  TRY_ON_ENABLED: ${TRY_ON_ENABLED:-0}
+  TRY_ON_DEMO_MODE: ${TRY_ON_DEMO_MODE:-0}
+  TRY_ON_DEMO_PASSWORD_HASH: ${TRY_ON_DEMO_PASSWORD_HASH:-}
+  TRY_ON_SIGNING_KEY: ${TRY_ON_SIGNING_KEY:-}
+  TRY_ON_STORAGE_DIR: /var/lib/pbl6/try-on
+  TRY_ON_IMAGE_HOSTS: ${TRY_ON_IMAGE_HOSTS:-demo.congnguyen.me}
+  TRY_ON_MEDIA_ORIGIN: http://web:3000
+  TRY_ON_DAILY_BUDGET_MICRO_USD: ${TRY_ON_DAILY_BUDGET_MICRO_USD:-1000000}
+  TRY_ON_MONTHLY_BUDGET_MICRO_USD: ${TRY_ON_MONTHLY_BUDGET_MICRO_USD:-10000000}
+  TRY_ON_RESERVATION_MICRO_USD: ${TRY_ON_RESERVATION_MICRO_USD:-250000}
+  TRY_ON_USER_DAILY_LIMIT: ${TRY_ON_USER_DAILY_LIMIT:-3}
+  TRY_ON_DAILY_REQUEST_LIMIT: ${TRY_ON_DAILY_REQUEST_LIMIT:-50}
+  TRY_ON_MONTHLY_REQUEST_LIMIT: ${TRY_ON_MONTHLY_REQUEST_LIMIT:-500}
+  TRY_ON_IP_DAILY_LIMIT: ${TRY_ON_IP_DAILY_LIMIT:-30}
+  TRY_ON_CONCURRENCY: ${TRY_ON_CONCURRENCY:-2}
+  TRY_ON_RETENTION_HOURS: ${TRY_ON_RETENTION_HOURS:-24}
+  TRY_ON_TIMEOUT_SECONDS: ${TRY_ON_TIMEOUT_SECONDS:-120}
+services:
+  m4:
+    image: pbl6-demo-try-on:latest
+    environment: *try-on-runtime
+    volumes: [tryondata:/var/lib/pbl6/try-on]
+  worker-try-on:
+    image: pbl6-demo-try-on:latest
+    # Deployment copies only the existing M4 database connection into this private file.
+    # Imported/demo databases may have different names from the local default.
+    env_file:
+      - path: ./secrets/try-on-worker.env
+        required: false
+    environment: *try-on-runtime
+    command: [python, -m, app.try_on.worker]
+    volumes: [tryondata:/var/lib/pbl6/try-on]
+    depends_on: {postgres: {condition: service_healthy}}
+    restart: unless-stopped
+volumes:
+  tryondata:

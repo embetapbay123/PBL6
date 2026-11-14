@@ -7,6 +7,7 @@ import type {OperationInputs} from '../../api/operations.generated';
 import {ErrorView,Loading} from '../../bootstrap/components';
 import {useCommand} from '../../live/useLiveData';
 import type {ReturnRequest} from './ReturnRequestView';
+
 type Confirmation=OperationInputs['confirmCodRefund']['body'];
 export function CodRefundForm({request,deliveryCase=false}:{request:Pick<ReturnRequest,'order_id'|'version'>;deliveryCase?:boolean}) {
   const {session}=useAuth(),member=session?.context?.store_membership,cache=useQueryClient(),command=useCommand();
@@ -16,6 +17,18 @@ export function CodRefundForm({request,deliveryCase=false}:{request:Pick<ReturnR
   const pending=useRef<Confirmation|undefined>(saved),[uncertain,setUncertain]=useState(!!saved),[stale,setStale]=useState(false),[reference,setReference]=useState(saved?.receipt_reference??''),[recipient,setRecipient]=useState(saved?.recipient_name??''),[attested,setAttested]=useState(!!saved),[time,setTime]=useState('');
   const order=useQuery({queryKey:['cod-refund-order',request.order_id],enabled:owner,queryFn:()=>callOperation('getStoreOrder',{path:{id:request.order_id}})});
   const clear=()=>{try{sessionStorage.removeItem(key);}catch{/* keep memory */}};
+  const handleAutoFillWallet = () => {
+    const amount = order.data?.amounts.payable_vnd ?? 0;
+    const buyerName = (order.data?.address_snapshot as any)?.recipient_name || 'Khách hàng';
+    const cleanId = request.order_id.slice(0, 8).toUpperCase();
+    const refCode = 'WALLET-REFUND-' + cleanId;
+    const now = new Date();
+    const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+    setReference(refCode);
+    setRecipient(buyerName);
+    setTime(localIso);
+    setAttested(true);
+  };
   async function submit(event:FormEvent) {
     event.preventDefault();if(!owner||(!pending.current&&(!order.data||!attested||!time||!reference.trim()||!recipient.trim())))return;
     await command.run(async()=>{
@@ -36,6 +49,15 @@ export function CodRefundForm({request,deliveryCase=false}:{request:Pick<ReturnR
   return <form onSubmit={submit} className="boot-card"><h3>Xác nhận hoàn COD thủ công</h3>
     <p>Xác nhận sau khi đã hoàn đủ tiền, gồm phí giao ban đầu. Xử lý phí trả riêng. Kiểm tra giao dịch tại ngân hàng.</p>
     {order.isPending?<Loading/>:order.error?<ErrorView error={order.error} onRetry={()=>void order.refetch()}/>:<p>Đơn {request.order_id} · Khoản cần đối chiếu: {order.data?.amounts.payable_vnd.toLocaleString('vi-VN')} ₫ · Thanh toán: {order.data?.payment_status}</p>}
+    <div className="p-3 my-2 bg-purple-50 border border-purple-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div>
+        <span className="text-xs font-bold text-purple-900 block">⚡ Hoàn tự động vào Ví số dư của khách:</span>
+        <span className="text-[11px] text-purple-700">Tự động cộng {order.data?.amounts.payable_vnd.toLocaleString('vi-VN')} ₫ vào Ví điện tử khách hàng và điền mã đối soát.</span>
+      </div>
+      <button type="button" disabled={command.busy||uncertain||stale||!order.data} onClick={handleAutoFillWallet} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-bold cursor-pointer transition border-0 shrink-0 shadow-xs disabled:opacity-50">
+        Cộng ví & Điền tự động
+      </button>
+    </div>
     <fieldset disabled={command.busy||uncertain||stale}><label>Mã biên nhận<input required maxLength={200} value={reference} onChange={e=>setReference(e.target.value)}/></label><label>Người nhận tiền hoàn<input required maxLength={200} value={recipient} onChange={e=>setRecipient(e.target.value)}/></label><label>Thời điểm hoàn (giờ trên thiết bị)<input required type="datetime-local" step={1} value={time} onChange={e=>setTime(e.target.value)}/></label><label><input type="checkbox" required checked={attested} onChange={e=>setAttested(e.target.checked)}/>Tôi xác nhận người nhận đã nhận đủ khoản hoàn của chính đơn này.</label></fieldset>
     {saved&&uncertain&&<p>Biên nhận đang đối chiếu: {saved.receipt_reference}; thời điểm {new Date(saved.refunded_at).toLocaleString('vi-VN')}.</p>}
     {uncertain&&<p role="status">Chưa rõ kết quả. Thử lại giữ nguyên biên nhận và operation ID; không hoàn tiền lần nữa.</p>}

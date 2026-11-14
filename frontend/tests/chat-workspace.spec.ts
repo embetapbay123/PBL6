@@ -9,7 +9,7 @@ const fixtures = JSON.parse(
 const user = "c5000000-0000-4000-8000-000000000001",
   first = "c5000000-0000-4000-8000-000000000002",
   second = "c5000000-0000-4000-8000-000000000003";
-async function setup(page: Page) {
+async function setup(page: Page, {emptyStore = false} = {}) {
   const sends: { id: string; content: string }[] = [];
   const sessions = [
     { id: first, created_at: "2026-11-02T12:30:00Z" },
@@ -93,7 +93,7 @@ async function setup(page: Page) {
     if (path === "/me/conversations")
       return route.fulfill({
         json: {
-          items: [
+          items: emptyStore ? [] : [
             {
               id: first,
               store_id: user,
@@ -113,7 +113,7 @@ async function setup(page: Page) {
           ],
           page: 1,
           size: 20,
-          total: 2,
+          total: emptyStore ? 0 : 2,
         },
       });
     if (path.includes("/conversations/") && path.endsWith("/messages")) {
@@ -163,9 +163,7 @@ async function setup(page: Page) {
 test.use({ viewport: { width: 1440, height: 900 } });
 
 test('empty Store chat presents one action in the inbox and chat dialog', async ({page}, info) => {
-  await setup(page);
-  await page.route(url => url.pathname === '/api/v1/me/conversations', route =>
-    route.fulfill({json:{items:[],total:0,page:1,size:20}}));
+  await setup(page, {emptyStore:true});
   const dialog=page.getByRole('dialog',{name:'Trung tâm chat'});
   await dialog.getByRole('tab',{name:'Gian hàng',exact:true}).click();
   await expect(dialog.getByRole('heading',{name:'Chưa có hội thoại',exact:true})).toBeVisible();
@@ -241,9 +239,7 @@ test("long AI history opens at the latest page and new answers stay visible afte
     .getByRole("button", { name: /#0002/ })
     .click();
   await expect(dialog.getByRole("log")).toContainText("Tin trong phiên dài 43");
-  await expect(dialog.locator(".boot-pagination").last()).toContainText(
-    "Trang 3",
-  );
+  await expect(dialog.locator(".chat-numbered-pagination").last().getByRole('button',{name:'3',exact:true})).toHaveAttribute('aria-current','page');
   await dialog
     .getByRole("button", { name: "Trang trước", exact: true })
     .click();
@@ -258,9 +254,7 @@ test("long AI history opens at the latest page and new answers stay visible afte
     .getByRole("button", { name: "Gửi câu hỏi", exact: true })
     .click();
   await expect(dialog.getByRole("log")).toContainText("Câu trả lời mới nhất");
-  await expect(dialog.locator(".boot-pagination").last()).toContainText(
-    "Trang 3 · 46",
-  );
+  await expect(dialog.locator(".chat-numbered-pagination").last().getByRole('button',{name:'3',exact:true})).toHaveAttribute('aria-current','page');
   await expect(dialog.getByRole("log")).not.toContainText("Tìm áo làm quà");
 });
 test("AI history selection sends to the chosen session and a new session clears the selection", async ({
@@ -306,14 +300,14 @@ test("AI history selection sends to the chosen session and a new session clears 
     dialog.getByRole("textbox", { name: "Câu hỏi", exact: true }),
   ).toBeFocused();
   await dialog
-    .getByRole("button", { name: "Mở rộng chat", exact: true })
+    .getByRole("button", { name: "Mở rộng kích thước", exact: true })
     .click();
   await expect(
     dialog.getByRole("textbox", { name: "Câu hỏi", exact: true }),
   ).toHaveValue("Tôi muốn tìm quà tặng");
   await expect(dialog).toHaveClass(/chat-dialog-expanded/);
   await dialog
-    .getByRole("button", { name: "Thu gọn chat", exact: true })
+    .getByRole("button", { name: "Thu gọn kích thước", exact: true })
     .click();
 });
 test("Store chat keeps both panes visible and the composer reachable on desktop", async ({
@@ -334,10 +328,10 @@ test("Store chat keeps both panes visible and the composer reachable on desktop"
   await expect(composer).toBeVisible();
   await composer.press("Enter");
   await expect(composer).toHaveValue("");
-  await dialog.getByRole("button", { name: "Mở rộng chat", exact: true }).click();
+  await dialog.getByRole("button", { name: "Mở rộng kích thước", exact: true }).click();
   await expect(dialog).toHaveClass(/chat-dialog-expanded/);
   await expect(page).not.toHaveURL(/customer\/messages/);
-  await dialog.getByRole("button", { name: "Thu gọn chat", exact: true }).click();
+  await dialog.getByRole("button", { name: "Thu gọn kích thước", exact: true }).click();
   await dialog.getByRole("button", { name: "Thu nhỏ chat", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await page.getByRole("button", { name: "Khôi phục chat", exact: true }).click();

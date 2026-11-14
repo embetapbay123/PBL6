@@ -1467,7 +1467,11 @@ export interface paths {
         get: operations["listOwnChatSessions"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete owned AI chat history
+         * @description Permanently deletes stored sessions and messages belonging to the authenticated Customer. Does not call a model or reset provider usage budgets.
+         */
+        delete: operations["deleteOwnChatHistory"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2955,6 +2959,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/notifications/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Xem lịch sử sự kiện của nhóm thông báo
+         * @description Xem lịch sử các sự kiện cập nhật của một nhóm thông báo đơn hàng.
+         */
+        get: operations["listNotificationGroupHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/notifications/read-group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Đánh dấu đã đọc toàn bộ nhóm thông báo đến mốc thời gian
+         * @description Đánh dấu đã đọc các sự kiện trong cùng một nhóm thông báo đơn hàng.
+         */
+        post: operations["markNotificationGroupRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/shipping/connection": {
         parameters: {
             query?: never;
@@ -3255,7 +3299,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Signed callback from delivery provider */
+        /** deliveryCallback */
         post: operations["deliveryCallback"];
         delete?: never;
         options?: never;
@@ -3263,18 +3307,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/me/notifications/group": {
+    "/store/shipping/pickup-status": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Xem lịch sử sự kiện của nhóm thông báo
-         * @description Xem lịch sử các sự kiện cập nhật của một nhóm thông báo đơn hàng.
-         */
-        get: operations["listNotificationGroupHistory"];
+        /** getStorePickupStatus */
+        get: operations["getStorePickupStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3283,7 +3324,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/me/notifications/read-group": {
+    "/ai/try-on/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getTryOnCapabilities
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
+         */
+        get: operations["getTryOnCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/try-on/photos": {
         parameters: {
             query?: never;
             header?: never;
@@ -3293,11 +3354,119 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Đánh dấu đã đọc toàn bộ nhóm thông báo đến mốc thời gian
-         * @description Đánh dấu đã đọc các sự kiện trong cùng một nhóm thông báo đơn hàng.
+         * uploadTryOnPhoto
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
          */
-        post: operations["markNotificationGroupRead"];
+        post: operations["uploadTryOnPhoto"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/try-on/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * listTryOnJobs
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
+         */
+        get: operations["listTryOnJobs"];
+        put?: never;
+        /**
+         * createTryOnJob
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
+         */
+        post: operations["createTryOnJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/try-on/jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getTryOnJob
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
+         */
+        get: operations["getTryOnJob"];
+        put?: never;
+        post?: never;
+        /**
+         * deleteTryOnJob
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
+         */
+        delete: operations["deleteTryOnJob"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/try-on/photos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * deleteTryOnPhoto
+         * @description Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.
+         */
+        delete: operations["deleteTryOnPhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ai/try-on/results/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * getTryOnResult
+         * @description Signed result expires within five minutes and is revoked by deletion.
+         */
+        get: operations["getTryOnResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/chat/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete owned AI chat history
+         * @description Permanently deletes stored sessions and messages belonging to the authenticated Customer. Does not call a model or reset provider usage budgets.
+         */
+        delete: operations["deleteOwnChatSession"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3642,6 +3811,8 @@ export interface components {
                 count: number;
                 average: number;
             };
+            /** @description Tổng số lượng đã bán của sản phẩm. */
+            sold_count?: number;
         };
         InventoryAdjustment: {
             /** Format: uuid */
@@ -5159,234 +5330,68 @@ export interface components {
             archived: boolean;
             unread_count: number;
         };
-        ShippingAddress: {
-            recipient_name: string;
-            phone: string;
-            line1: string;
-            ward: string;
-            district?: string;
-            city: string;
-            new_address?: boolean;
-        };
-        ShippingPickup: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            store_id: string;
-            name: string;
-            shop_id?: number;
-            /** @enum {string} */
-            environment: "staging" | "production";
-            address: components["schemas"]["ShippingAddress"];
+        TryOnCapabilities: {
             enabled: boolean;
-            version: number;
-            /** @enum {string} */
-            provider?: "GHN" | "PLATFORM";
-        };
-        SaveShippingPickup: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            store_id: string;
-            name: string;
-            shop_id: number;
-            /** @enum {string} */
-            environment: "staging" | "production";
-            address: components["schemas"]["ShippingAddress"];
-            enabled: boolean;
-            expected_version: number;
-        };
-        ShippingConnection: {
-            /** @enum {string} */
-            provider: "GHN";
-            /** @enum {string} */
-            environment: "staging" | "production";
-            configured: boolean;
-            booking_enabled: boolean;
-            cod_verification_enabled: boolean;
-        };
-        ShippingShipment: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            order_id: string;
-            /** Format: uuid */
-            store_id: string;
-            /** Format: uuid */
-            return_request_id?: string;
-            /** @enum {string} */
-            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
-            /** @enum {string} */
-            provider: "GHN" | "EXTERNAL" | "PLATFORM";
-            status: string;
-            tracking_code?: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expected_delivery_at?: string;
-            /** Format: date-time */
-            picked_up_at?: string;
-            /** Format: date-time */
-            delivered_at?: string;
-            version: number;
-            events: {
-                status: string;
+            message?: string;
+            demo_password_required: boolean;
+            quota: {
+                remaining: number;
+                limit: number;
                 /** Format: date-time */
-                occurred_at: string;
+                reset_at: string;
+            };
+            consent_version: string;
+            privacy: {
                 /** @enum {string} */
-                source: "CARRIER" | "MANUAL";
-            }[];
+                provider_label: "OpenAI";
+                retention_hours: number;
+            };
         };
-        ShippingShipmentStaff: {
+        TryOnJob: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
-            order_id: string;
-            /** Format: uuid */
-            store_id: string;
-            /** Format: uuid */
-            return_request_id?: string;
-            /** @enum {string} */
-            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
-            /** @enum {string} */
-            provider: "GHN" | "EXTERNAL" | "PLATFORM";
-            status: string;
-            tracking_code?: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expected_delivery_at?: string;
-            /** Format: date-time */
-            picked_up_at?: string;
-            /** Format: date-time */
-            delivered_at?: string;
-            version: number;
-            events: {
-                status: string;
-                /** Format: date-time */
-                occurred_at: string;
-                /** @enum {string} */
-                source: "CARRIER" | "MANUAL";
-            }[];
-            last_error?: string;
-            provider_status?: string;
-            cod_vnd: number;
-            actual_fee_vnd?: number;
-            /** Format: date-time */
-            cod_collected_at?: string;
-            /** Format: date-time */
-            cod_remitted_at?: string;
-            /** @enum {string} */
-            pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
-            /** @enum {string} */
-            pending_command_status?: "PENDING" | "UNKNOWN";
-            /** @enum {string} */
-            environment: "staging" | "production";
-            label_available: boolean;
-            exchange_items?: {
-                /** Format: uuid */
-                variant_id: string;
-                name: string;
-                quantity: number;
-            }[];
-            /** @enum {string} */
-            exchange_receipt_status?: "PENDING" | "APPLIED";
-            courier_name?: string;
-            delivery_note?: string;
-            pickup_label?: string;
-            destination_label?: string;
-        };
-        BookShipment: {
-            /** Format: uuid */
-            operation_id: string;
-            expected_order_version: number;
-            /** Format: uuid */
-            pickup_location_id: string;
-            /** Format: uuid */
-            return_request_id?: string;
-            weight: number;
-            length: number;
-            width: number;
-            height: number;
-            note?: string;
-        };
-        ShippingCommand: {
-            /** Format: uuid */
-            operation_id: string;
-            expected_version: number;
-            /** @enum {string} */
-            kind: "CANCEL" | "REDELIVER" | "RETURN";
-        };
-        ShippingCodEvidence: {
-            /** Format: uuid */
-            operation_id: string;
-            expected_version: number;
-            amount_vnd: number;
-            reference: string;
-        };
-        ExternalReturnShipment: {
-            /** Format: uuid */
-            operation_id: string;
-            expected_version: number;
-            tracking_code: string;
-            carrier_name: string;
-        };
-        ShippingPage: {
-            items: components["schemas"]["ShippingShipmentStaff"][];
-            page: number;
-            size: number;
-            total: number;
-        };
-        ShippingTimeline: {
-            /** @enum {string} */
-            mode: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
-            items: components["schemas"]["ShippingShipment"][];
-        };
-        ShippingStoreTimeline: {
-            /** @enum {string} */
-            mode: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
-            items: components["schemas"]["ShippingShipmentStaff"][];
-            locations: components["schemas"]["ShippingPickup"][];
-            booking_enabled: boolean;
-        };
-        ExchangeReceiptLine: {
+            product_id: string;
             /** Format: uuid */
             variant_id: string;
-            received_quantity: number;
-            resellable_quantity: number;
-            damaged_quantity: number;
-        };
-        InspectExchangeReturn: {
             /** Format: uuid */
-            operation_id: string;
-            expected_version: number;
-            note: string;
-            lines: components["schemas"]["ExchangeReceiptLine"][];
+            idempotency_key: string;
+            /** @enum {string} */
+            status: "QUEUED" | "PROCESSING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "CANCELLED";
+            /** Format: date-time */
+            expires_at: string;
+            result_url?: string;
+            message?: string;
         };
-        SavePlatformPickup: {
+        TryOnJobList: {
+            items: components["schemas"]["TryOnJob"][];
+        };
+        TryOnCreate: {
+            /** Format: uuid */
+            photo_id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            variant_id: string;
+            consent_version: string;
+        };
+        TryOnPhotoUpload: {
+            /**
+             * Format: binary
+             * @description One static JPEG/PNG/WebP, max 8 MiB; server decodes and strips metadata.
+             */
+            photo: string;
+        };
+        TryOnPhoto: {
             /** Format: uuid */
             id: string;
-            /** Format: uuid */
-            store_id: string;
-            name: string;
-            address: components["schemas"]["ShippingAddress"];
-            enabled: boolean;
-            expected_version: number;
+            /** Format: date-time */
+            expires_at: string;
         };
-        PlatformDeliveryAction: {
-            /** Format: uuid */
-            operation_id: string;
-            expected_version: number;
-            /** @enum {string} */
-            action: "ASSIGN" | "PICK_UP" | "TRANSIT" | "OUT_FOR_DELIVERY" | "DELIVER" | "FAIL" | "REDELIVER" | "RETURN" | "RECEIVE_RETURN" | "CANCEL" | "REMIT_COD";
-            courier_name?: string;
-            note?: string;
-            collected_vnd?: number;
-        };
-        RequestPlatformPickup: {
-            /** Format: uuid */
-            operation_id: string;
-            expected_version: number;
+        /** Format: binary */
+        TryOnImage: string;
+        ChatHistoryDeleted: {
+            deleted_count: number;
         };
     };
     responses: never;
@@ -8367,6 +8372,9 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                q?: string;
+                /** @description Sort the entire Store before pagination. Price uses the lowest currently purchasable variant, falling back to active variants. Rating uses visible reviews; ties use Product ID. */
+                sort?: "title" | "price_asc" | "price_desc" | "rating";
             };
             header?: never;
             path: {
@@ -13638,6 +13646,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageChatSessions"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteOwnChatHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owned history removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatHistoryDeleted"];
                 };
             };
             /** @description Malformed request */
@@ -21334,516 +21434,6 @@ export interface operations {
             };
         };
     };
-    getShippingConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingConnection"];
-                };
-            };
-        };
-    };
-    listShippingLocations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        items: components["schemas"]["ShippingPickup"][];
-                    };
-                };
-            };
-        };
-    };
-    saveShippingLocation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveShippingPickup"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingPickup"];
-                };
-            };
-        };
-    };
-    storeShippingShipments: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-                status?: string;
-                order_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingPage"];
-                };
-            };
-        };
-    };
-    storeShippingCommand: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ShippingCommand"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipmentStaff"];
-                };
-            };
-        };
-    };
-    storeShippingLabel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** Format: uri */
-                        url: string;
-                    };
-                };
-            };
-        };
-    };
-    adminShippingShipments: {
-        parameters: {
-            query?: {
-                page?: number;
-                size?: number;
-                status?: string;
-                order_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingPage"];
-                };
-            };
-        };
-    };
-    adminShippingCommand: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ShippingCommand"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipmentStaff"];
-                };
-            };
-        };
-    };
-    adminShippingLabel: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** Format: uri */
-                        url: string;
-                    };
-                };
-            };
-        };
-    };
-    getStoreShipping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingStoreTimeline"];
-                };
-            };
-        };
-    };
-    bookStoreShipment: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BookShipment"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipmentStaff"];
-                };
-            };
-        };
-    };
-    getOwnShipping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingTimeline"];
-                };
-            };
-        };
-    };
-    confirmShippingCod: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ShippingCodEvidence"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipmentStaff"];
-                };
-            };
-        };
-    };
-    registerReturnShipping: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExternalReturnShipment"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipment"];
-                };
-            };
-        };
-    };
-    ghnCallback: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    ShopID: number;
-                    /** Format: date-time */
-                    Time: string;
-                    OrderCode: string;
-                    ClientOrderCode?: string;
-                    Type: string;
-                    Status?: string;
-                } & {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        accepted: boolean;
-                    };
-                };
-            };
-        };
-    };
-    storeInspectExchangeReturn: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InspectExchangeReturn"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipmentStaff"];
-                };
-            };
-        };
-    };
-    adminInspectExchangeReturn: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InspectExchangeReturn"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipmentStaff"];
-                };
-            };
-        };
-    };
-    savePlatformPickup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SavePlatformPickup"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingPickup"];
-                };
-            };
-        };
-    };
-    requestPlatformReturnPickup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RequestPlatformPickup"];
-            };
-        };
-        responses: {
-            /** @description Success */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShippingShipment"];
-                };
-            };
-        };
-    };
-    deliveryCallback: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** Format: uuid */
-                    event_id: string;
-                    parcel: {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-        };
-        responses: {
-            /** @description Accepted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        accepted: boolean;
-                    };
-                };
-            };
-        };
-    };
     listNotificationGroupHistory: {
         parameters: {
             query: {
@@ -21984,6 +21574,2301 @@ export interface operations {
             };
             /** @description Validation failure */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getShippingConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        provider: "GHN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        configured: boolean;
+                        booking_enabled: boolean;
+                        cod_verification_enabled: boolean;
+                    };
+                };
+            };
+        };
+    };
+    listShippingLocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            store_id: string;
+                            name: string;
+                            shop_id?: number;
+                            /** @enum {string} */
+                            environment: "staging" | "production";
+                            address: {
+                                recipient_name: string;
+                                phone: string;
+                                line1: string;
+                                ward: string;
+                                district?: string;
+                                city: string;
+                                new_address?: boolean;
+                            };
+                            enabled: boolean;
+                            version: number;
+                            /** @enum {string} */
+                            provider?: "GHN" | "PLATFORM";
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    saveShippingLocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    store_id: string;
+                    name: string;
+                    shop_id: number;
+                    /** @enum {string} */
+                    environment: "staging" | "production";
+                    address: {
+                        recipient_name: string;
+                        phone: string;
+                        line1: string;
+                        ward: string;
+                        district?: string;
+                        city: string;
+                        new_address?: boolean;
+                    };
+                    enabled: boolean;
+                    expected_version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        name: string;
+                        shop_id?: number;
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        address: {
+                            recipient_name: string;
+                            phone: string;
+                            line1: string;
+                            ward: string;
+                            district?: string;
+                            city: string;
+                            new_address?: boolean;
+                        };
+                        enabled: boolean;
+                        version: number;
+                        /** @enum {string} */
+                        provider?: "GHN" | "PLATFORM";
+                    };
+                };
+            };
+        };
+    };
+    storeShippingShipments: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: string;
+                order_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            order_id: string;
+                            /** Format: uuid */
+                            store_id: string;
+                            /** Format: uuid */
+                            return_request_id?: string;
+                            /** @enum {string} */
+                            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                            /** @enum {string} */
+                            provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                            status: string;
+                            tracking_code?: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            expected_delivery_at?: string;
+                            /** Format: date-time */
+                            picked_up_at?: string;
+                            /** Format: date-time */
+                            delivered_at?: string;
+                            version: number;
+                            events: {
+                                status: string;
+                                /** Format: date-time */
+                                occurred_at: string;
+                                /** @enum {string} */
+                                source: "CARRIER" | "MANUAL";
+                            }[];
+                            last_error?: string;
+                            provider_status?: string;
+                            cod_vnd: number;
+                            actual_fee_vnd?: number;
+                            /** Format: date-time */
+                            cod_collected_at?: string;
+                            /** Format: date-time */
+                            cod_remitted_at?: string;
+                            /** @enum {string} */
+                            pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                            /** @enum {string} */
+                            pending_command_status?: "PENDING" | "UNKNOWN";
+                            /** @enum {string} */
+                            environment: "staging" | "production";
+                            label_available: boolean;
+                            exchange_items?: {
+                                /** Format: uuid */
+                                variant_id: string;
+                                name: string;
+                                quantity: number;
+                            }[];
+                            /** @enum {string} */
+                            exchange_receipt_status?: "PENDING" | "APPLIED";
+                            courier_name?: string;
+                            delivery_note?: string;
+                            pickup_label?: string;
+                            destination_label?: string;
+                        }[];
+                        page: number;
+                        size: number;
+                        total: number;
+                    };
+                };
+            };
+        };
+    };
+    storeShippingCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                    /** @enum {string} */
+                    kind: "CANCEL" | "REDELIVER" | "RETURN";
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                        last_error?: string;
+                        provider_status?: string;
+                        cod_vnd: number;
+                        actual_fee_vnd?: number;
+                        /** Format: date-time */
+                        cod_collected_at?: string;
+                        /** Format: date-time */
+                        cod_remitted_at?: string;
+                        /** @enum {string} */
+                        pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                        /** @enum {string} */
+                        pending_command_status?: "PENDING" | "UNKNOWN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        label_available: boolean;
+                        exchange_items?: {
+                            /** Format: uuid */
+                            variant_id: string;
+                            name: string;
+                            quantity: number;
+                        }[];
+                        /** @enum {string} */
+                        exchange_receipt_status?: "PENDING" | "APPLIED";
+                        courier_name?: string;
+                        delivery_note?: string;
+                        pickup_label?: string;
+                        destination_label?: string;
+                    };
+                };
+            };
+        };
+    };
+    storeShippingLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url: string;
+                    };
+                };
+            };
+        };
+    };
+    adminShippingShipments: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: string;
+                order_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            order_id: string;
+                            /** Format: uuid */
+                            store_id: string;
+                            /** Format: uuid */
+                            return_request_id?: string;
+                            /** @enum {string} */
+                            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                            /** @enum {string} */
+                            provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                            status: string;
+                            tracking_code?: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            expected_delivery_at?: string;
+                            /** Format: date-time */
+                            picked_up_at?: string;
+                            /** Format: date-time */
+                            delivered_at?: string;
+                            version: number;
+                            events: {
+                                status: string;
+                                /** Format: date-time */
+                                occurred_at: string;
+                                /** @enum {string} */
+                                source: "CARRIER" | "MANUAL";
+                            }[];
+                            last_error?: string;
+                            provider_status?: string;
+                            cod_vnd: number;
+                            actual_fee_vnd?: number;
+                            /** Format: date-time */
+                            cod_collected_at?: string;
+                            /** Format: date-time */
+                            cod_remitted_at?: string;
+                            /** @enum {string} */
+                            pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                            /** @enum {string} */
+                            pending_command_status?: "PENDING" | "UNKNOWN";
+                            /** @enum {string} */
+                            environment: "staging" | "production";
+                            label_available: boolean;
+                            exchange_items?: {
+                                /** Format: uuid */
+                                variant_id: string;
+                                name: string;
+                                quantity: number;
+                            }[];
+                            /** @enum {string} */
+                            exchange_receipt_status?: "PENDING" | "APPLIED";
+                            courier_name?: string;
+                            delivery_note?: string;
+                            pickup_label?: string;
+                            destination_label?: string;
+                        }[];
+                        page: number;
+                        size: number;
+                        total: number;
+                    };
+                };
+            };
+        };
+    };
+    adminShippingCommand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                    /** @enum {string} */
+                    kind: "CANCEL" | "REDELIVER" | "RETURN";
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                        last_error?: string;
+                        provider_status?: string;
+                        cod_vnd: number;
+                        actual_fee_vnd?: number;
+                        /** Format: date-time */
+                        cod_collected_at?: string;
+                        /** Format: date-time */
+                        cod_remitted_at?: string;
+                        /** @enum {string} */
+                        pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                        /** @enum {string} */
+                        pending_command_status?: "PENDING" | "UNKNOWN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        label_available: boolean;
+                        exchange_items?: {
+                            /** Format: uuid */
+                            variant_id: string;
+                            name: string;
+                            quantity: number;
+                        }[];
+                        /** @enum {string} */
+                        exchange_receipt_status?: "PENDING" | "APPLIED";
+                        courier_name?: string;
+                        delivery_note?: string;
+                        pickup_label?: string;
+                        destination_label?: string;
+                    };
+                };
+            };
+        };
+    };
+    adminShippingLabel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uri */
+                        url: string;
+                    };
+                };
+            };
+        };
+    };
+    getStoreShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            order_id: string;
+                            /** Format: uuid */
+                            store_id: string;
+                            /** Format: uuid */
+                            return_request_id?: string;
+                            /** @enum {string} */
+                            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                            /** @enum {string} */
+                            provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                            status: string;
+                            tracking_code?: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            expected_delivery_at?: string;
+                            /** Format: date-time */
+                            picked_up_at?: string;
+                            /** Format: date-time */
+                            delivered_at?: string;
+                            version: number;
+                            events: {
+                                status: string;
+                                /** Format: date-time */
+                                occurred_at: string;
+                                /** @enum {string} */
+                                source: "CARRIER" | "MANUAL";
+                            }[];
+                            last_error?: string;
+                            provider_status?: string;
+                            cod_vnd: number;
+                            actual_fee_vnd?: number;
+                            /** Format: date-time */
+                            cod_collected_at?: string;
+                            /** Format: date-time */
+                            cod_remitted_at?: string;
+                            /** @enum {string} */
+                            pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                            /** @enum {string} */
+                            pending_command_status?: "PENDING" | "UNKNOWN";
+                            /** @enum {string} */
+                            environment: "staging" | "production";
+                            label_available: boolean;
+                            exchange_items?: {
+                                /** Format: uuid */
+                                variant_id: string;
+                                name: string;
+                                quantity: number;
+                            }[];
+                            /** @enum {string} */
+                            exchange_receipt_status?: "PENDING" | "APPLIED";
+                            courier_name?: string;
+                            delivery_note?: string;
+                            pickup_label?: string;
+                            destination_label?: string;
+                        }[];
+                        locations: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            store_id: string;
+                            name: string;
+                            shop_id?: number;
+                            /** @enum {string} */
+                            environment: "staging" | "production";
+                            address: {
+                                recipient_name: string;
+                                phone: string;
+                                line1: string;
+                                ward: string;
+                                district?: string;
+                                city: string;
+                                new_address?: boolean;
+                            };
+                            enabled: boolean;
+                            version: number;
+                            /** @enum {string} */
+                            provider?: "GHN" | "PLATFORM";
+                        }[];
+                        booking_enabled: boolean;
+                    };
+                };
+            };
+        };
+    };
+    bookStoreShipment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_order_version: number;
+                    /** Format: uuid */
+                    pickup_location_id: string;
+                    /** Format: uuid */
+                    return_request_id?: string;
+                    weight: number;
+                    length: number;
+                    width: number;
+                    height: number;
+                    note?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                        last_error?: string;
+                        provider_status?: string;
+                        cod_vnd: number;
+                        actual_fee_vnd?: number;
+                        /** Format: date-time */
+                        cod_collected_at?: string;
+                        /** Format: date-time */
+                        cod_remitted_at?: string;
+                        /** @enum {string} */
+                        pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                        /** @enum {string} */
+                        pending_command_status?: "PENDING" | "UNKNOWN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        label_available: boolean;
+                        exchange_items?: {
+                            /** Format: uuid */
+                            variant_id: string;
+                            name: string;
+                            quantity: number;
+                        }[];
+                        /** @enum {string} */
+                        exchange_receipt_status?: "PENDING" | "APPLIED";
+                        courier_name?: string;
+                        delivery_note?: string;
+                        pickup_label?: string;
+                        destination_label?: string;
+                    };
+                };
+            };
+        };
+    };
+    getOwnShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        mode: "LEGACY_MANUAL" | "GHN" | "PLATFORM";
+                        items: {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            order_id: string;
+                            /** Format: uuid */
+                            store_id: string;
+                            /** Format: uuid */
+                            return_request_id?: string;
+                            /** @enum {string} */
+                            leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                            /** @enum {string} */
+                            provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                            status: string;
+                            tracking_code?: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date-time */
+                            expected_delivery_at?: string;
+                            /** Format: date-time */
+                            picked_up_at?: string;
+                            /** Format: date-time */
+                            delivered_at?: string;
+                            version: number;
+                            events: {
+                                status: string;
+                                /** Format: date-time */
+                                occurred_at: string;
+                                /** @enum {string} */
+                                source: "CARRIER" | "MANUAL";
+                            }[];
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    confirmShippingCod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                    amount_vnd: number;
+                    reference: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                        last_error?: string;
+                        provider_status?: string;
+                        cod_vnd: number;
+                        actual_fee_vnd?: number;
+                        /** Format: date-time */
+                        cod_collected_at?: string;
+                        /** Format: date-time */
+                        cod_remitted_at?: string;
+                        /** @enum {string} */
+                        pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                        /** @enum {string} */
+                        pending_command_status?: "PENDING" | "UNKNOWN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        label_available: boolean;
+                        exchange_items?: {
+                            /** Format: uuid */
+                            variant_id: string;
+                            name: string;
+                            quantity: number;
+                        }[];
+                        /** @enum {string} */
+                        exchange_receipt_status?: "PENDING" | "APPLIED";
+                        courier_name?: string;
+                        delivery_note?: string;
+                        pickup_label?: string;
+                        destination_label?: string;
+                    };
+                };
+            };
+        };
+    };
+    registerReturnShipping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                    tracking_code: string;
+                    carrier_name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    ghnCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    ShopID: number;
+                    /** Format: date-time */
+                    Time: string;
+                    OrderCode: string;
+                    ClientOrderCode?: string;
+                    Type: string;
+                    Status?: string;
+                } & {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    storeInspectExchangeReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                    note: string;
+                    lines: {
+                        /** Format: uuid */
+                        variant_id: string;
+                        received_quantity: number;
+                        resellable_quantity: number;
+                        damaged_quantity: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                        last_error?: string;
+                        provider_status?: string;
+                        cod_vnd: number;
+                        actual_fee_vnd?: number;
+                        /** Format: date-time */
+                        cod_collected_at?: string;
+                        /** Format: date-time */
+                        cod_remitted_at?: string;
+                        /** @enum {string} */
+                        pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                        /** @enum {string} */
+                        pending_command_status?: "PENDING" | "UNKNOWN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        label_available: boolean;
+                        exchange_items?: {
+                            /** Format: uuid */
+                            variant_id: string;
+                            name: string;
+                            quantity: number;
+                        }[];
+                        /** @enum {string} */
+                        exchange_receipt_status?: "PENDING" | "APPLIED";
+                        courier_name?: string;
+                        delivery_note?: string;
+                        pickup_label?: string;
+                        destination_label?: string;
+                    };
+                };
+            };
+        };
+    };
+    adminInspectExchangeReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                    note: string;
+                    lines: {
+                        /** Format: uuid */
+                        variant_id: string;
+                        received_quantity: number;
+                        resellable_quantity: number;
+                        damaged_quantity: number;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                        last_error?: string;
+                        provider_status?: string;
+                        cod_vnd: number;
+                        actual_fee_vnd?: number;
+                        /** Format: date-time */
+                        cod_collected_at?: string;
+                        /** Format: date-time */
+                        cod_remitted_at?: string;
+                        /** @enum {string} */
+                        pending_command?: "CREATE" | "CANCEL" | "REDELIVER" | "RETURN";
+                        /** @enum {string} */
+                        pending_command_status?: "PENDING" | "UNKNOWN";
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        label_available: boolean;
+                        exchange_items?: {
+                            /** Format: uuid */
+                            variant_id: string;
+                            name: string;
+                            quantity: number;
+                        }[];
+                        /** @enum {string} */
+                        exchange_receipt_status?: "PENDING" | "APPLIED";
+                        courier_name?: string;
+                        delivery_note?: string;
+                        pickup_label?: string;
+                        destination_label?: string;
+                    };
+                };
+            };
+        };
+    };
+    savePlatformPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    store_id: string;
+                    name: string;
+                    address: {
+                        recipient_name: string;
+                        phone: string;
+                        line1: string;
+                        ward: string;
+                        district?: string;
+                        city: string;
+                        new_address?: boolean;
+                    };
+                    enabled: boolean;
+                    expected_version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        name: string;
+                        shop_id?: number;
+                        /** @enum {string} */
+                        environment: "staging" | "production";
+                        address: {
+                            recipient_name: string;
+                            phone: string;
+                            line1: string;
+                            ward: string;
+                            district?: string;
+                            city: string;
+                            new_address?: boolean;
+                        };
+                        enabled: boolean;
+                        version: number;
+                        /** @enum {string} */
+                        provider?: "GHN" | "PLATFORM";
+                    };
+                };
+            };
+        };
+    };
+    requestPlatformReturnPickup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    operation_id: string;
+                    expected_version: number;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        id: string;
+                        /** Format: uuid */
+                        order_id: string;
+                        /** Format: uuid */
+                        store_id: string;
+                        /** Format: uuid */
+                        return_request_id?: string;
+                        /** @enum {string} */
+                        leg: "OUTBOUND" | "EXCHANGE_OUTBOUND" | "CUSTOMER_RETURN";
+                        /** @enum {string} */
+                        provider: "GHN" | "EXTERNAL" | "PLATFORM";
+                        status: string;
+                        tracking_code?: string;
+                        /** Format: date-time */
+                        created_at: string;
+                        /** Format: date-time */
+                        expected_delivery_at?: string;
+                        /** Format: date-time */
+                        picked_up_at?: string;
+                        /** Format: date-time */
+                        delivered_at?: string;
+                        version: number;
+                        events: {
+                            status: string;
+                            /** Format: date-time */
+                            occurred_at: string;
+                            /** @enum {string} */
+                            source: "CARRIER" | "MANUAL";
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    deliveryCallback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    event_id: string;
+                    parcel: {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        accepted: boolean;
+                    };
+                };
+            };
+        };
+    };
+    getStorePickupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        configured: boolean;
+                    };
+                };
+            };
+        };
+    };
+    getTryOnCapabilities: {
+        parameters: {
+            query: {
+                product_id: string;
+                variant_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryOnCapabilities"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    uploadTryOnPhoto: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required when capabilities.demo_password_required is true. Never persisted or included in job payloads. */
+                "X-Try-On-Demo-Password"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["TryOnPhotoUpload"];
+            };
+        };
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryOnPhoto"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listTryOnJobs: {
+        parameters: {
+            query: {
+                product_id: string;
+                variant_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryOnJobList"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createTryOnJob: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                /** @description Required when capabilities.demo_password_required is true. Never persisted or included in job payloads. */
+                "X-Try-On-Demo-Password"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TryOnCreate"];
+            };
+        };
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryOnJob"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getTryOnJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryOnJob"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteTryOnJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteTryOnPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getTryOnResult: {
+        parameters: {
+            query: {
+                expires: number;
+                signature: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted/status only; no fabricated image or quota. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": components["schemas"]["TryOnImage"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rejected or unavailable; no automatic paid retry. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteOwnChatSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owned history removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatHistoryDeleted"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
                 headers: {
                     [name: string]: unknown;
                 };

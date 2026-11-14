@@ -1,0 +1,1292 @@
+{
+  "dataset": "marketplace-distinct-2026-v1",
+  "categories": [
+    "Thời trang",
+    "Túi & phụ kiện",
+    "Chăm sóc cá nhân",
+    "Nhà cửa & đời sống",
+    "Góc làm việc"
+  ],
+  "products": [
+    {
+      "key": "AN-01",
+      "storeKey": "AN",
+      "title": "Quần jeans trẻ em xanh denim",
+      "category": "Thời trang",
+      "product_type": "Trang phục trẻ em",
+      "price_vnd": 289000,
+      "color": "Xanh denim",
+      "material": "Vải may mặc",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Quần jeans trẻ em xanh denim. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "childrens-fashion-jeans"
+      ],
+      "sizes": [
+        "100",
+        "110",
+        "120"
+      ]
+    },
+    {
+      "key": "AN-02",
+      "storeKey": "AN",
+      "title": "Áo khoác denim cổ bẻ",
+      "category": "Thời trang",
+      "product_type": "Áo & áo khoác",
+      "price_vnd": 649000,
+      "color": "Xanh denim",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Áo khoác denim cổ bẻ. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "man-unbuttoning-jean-jacket"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "key": "AN-03",
+      "storeKey": "AN",
+      "title": "Sơ mi caro đỏ đen",
+      "category": "Thời trang",
+      "product_type": "Áo & áo khoác",
+      "price_vnd": 329000,
+      "color": "Đỏ đen",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Sơ mi caro đỏ đen. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "red-plaid-shirt"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "key": "AN-04",
+      "storeKey": "AN",
+      "title": "Áo dài tay đen cổ tròn",
+      "category": "Thời trang",
+      "product_type": "Áo & áo khoác",
+      "price_vnd": 229000,
+      "color": "Đen",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Áo dài tay đen cổ tròn. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "long-sleeved-back-shirt"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "key": "AN-05",
+      "storeKey": "AN",
+      "title": "Áo khoác gió navy khóa kéo",
+      "category": "Thời trang",
+      "product_type": "Áo & áo khoác",
+      "price_vnd": 559000,
+      "color": "Xanh navy",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Áo khoác gió navy khóa kéo. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "navy-blue-zip-up-jacket"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "key": "AN-06",
+      "storeKey": "AN",
+      "title": "Áo măng tô be dáng dài",
+      "category": "Thời trang",
+      "product_type": "Áo & áo khoác",
+      "price_vnd": 1190000,
+      "color": "Be",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Áo măng tô be dáng dài. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "man-poses-in-light-colored-overcoat"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "key": "AN-07",
+      "storeKey": "AN",
+      "title": "Quần short đi biển xanh ngọc",
+      "category": "Thời trang",
+      "product_type": "Quần short",
+      "price_vnd": 249000,
+      "color": "Xanh ngọc",
+      "material": "Vải dệt nhẹ",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Quần short đi biển xanh ngọc. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "swim-shorts"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L",
+        "XL"
+      ]
+    },
+    {
+      "key": "AN-08",
+      "storeKey": "AN",
+      "title": "Mũ lưỡi trai vàng mustard",
+      "category": "Túi & phụ kiện",
+      "product_type": "Phụ kiện thời trang",
+      "price_vnd": 189000,
+      "color": "Vàng mustard",
+      "material": "Vải dệt",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Mũ lưỡi trai vàng mustard. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "tan-colored-hat-on-monochrome-background"
+      ]
+    },
+    {
+      "key": "AN-09",
+      "storeKey": "AN",
+      "title": "Giày thể thao đen viền trắng",
+      "category": "Thời trang",
+      "product_type": "Giày dép",
+      "price_vnd": 599000,
+      "color": "Đen trắng",
+      "material": "Thân giày phối đế cao su",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Giày thể thao đen viền trắng. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "pair-of-black-and-white-sneakers"
+      ],
+      "sizes": [
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    {
+      "key": "AN-10",
+      "storeKey": "AN",
+      "title": "Giày skate xanh navy đế bằng",
+      "category": "Thời trang",
+      "product_type": "Giày dép",
+      "price_vnd": 629000,
+      "color": "Xanh navy",
+      "material": "Thân giày phối đế cao su",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Giày skate xanh navy đế bằng. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "pair-of-navy-blue-skate-shoes"
+      ],
+      "sizes": [
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    {
+      "key": "AN-11",
+      "storeKey": "AN",
+      "title": "Giày trekking cổ cao nâu",
+      "category": "Thời trang",
+      "product_type": "Giày dép",
+      "price_vnd": 1290000,
+      "color": "Nâu",
+      "material": "Thân giày phối đế cao su",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Giày trekking cổ cao nâu. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "rugged-hiking-boots-stood-on-rocks"
+      ],
+      "sizes": [
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    {
+      "key": "AN-12",
+      "storeKey": "AN",
+      "title": "Giày cao cổ đỏ có đèn",
+      "category": "Thời trang",
+      "product_type": "Giày dép",
+      "price_vnd": 749000,
+      "color": "Đỏ",
+      "material": "Thân giày phối đế cao su",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Giày cao cổ đỏ có đèn. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "red-led-high-top-sneakers"
+      ],
+      "sizes": [
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43"
+      ]
+    },
+    {
+      "key": "NEP-01",
+      "storeKey": "NEP",
+      "title": "Đầm đen ánh kim dự tiệc",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 799000,
+      "color": "Đen ánh kim",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đầm đen ánh kim dự tiệc. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "shiny-black-cocktail-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-02",
+      "storeKey": "NEP",
+      "title": "Đầm chấm bi dáng xòe",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 459000,
+      "color": "Chấm bi",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đầm chấm bi dáng xòe. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "polka-dot-summer-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-03",
+      "storeKey": "NEP",
+      "title": "Váy quả cherry cho bé",
+      "category": "Thời trang",
+      "product_type": "Trang phục trẻ em",
+      "price_vnd": 249000,
+      "color": "Họa tiết cherry",
+      "material": "Vải may mặc",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Váy quả cherry cho bé. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "toddler-cherry-dress"
+      ],
+      "sizes": [
+        "100",
+        "110",
+        "120"
+      ]
+    },
+    {
+      "key": "NEP-04",
+      "storeKey": "NEP",
+      "title": "Đầm đỏ trễ vai",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 699000,
+      "color": "Đỏ",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đầm đỏ trễ vai. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "off-shoulder-red-cocktail-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-05",
+      "storeKey": "NEP",
+      "title": "Đầm xanh trễ vai",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 599000,
+      "color": "Xanh lá",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đầm xanh trễ vai. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "off-shoulder-green-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-06",
+      "storeKey": "NEP",
+      "title": "Váy navy chấm bi trắng",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 449000,
+      "color": "Xanh navy trắng",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Váy navy chấm bi trắng. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "navy-and-white-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-07",
+      "storeKey": "NEP",
+      "title": "Khăn choàng phối xám cam đào",
+      "category": "Túi & phụ kiện",
+      "product_type": "Phụ kiện thời trang",
+      "price_vnd": 189000,
+      "color": "Xám cam đào",
+      "material": "Vải dệt",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Khăn choàng phối xám cam đào. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "grey-and-peach-scarf-product"
+      ]
+    },
+    {
+      "key": "NEP-08",
+      "storeKey": "NEP",
+      "title": "Váy boho dáng thoải mái",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 529000,
+      "color": "Họa tiết boho",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Váy boho dáng thoải mái. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "womens-boho-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-09",
+      "storeKey": "NEP",
+      "title": "Đầm hoa đi dạo",
+      "category": "Thời trang",
+      "product_type": "Váy & đầm",
+      "price_vnd": 489000,
+      "color": "Họa tiết hoa",
+      "material": "Vải dệt may",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đầm hoa đi dạo. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "floral-sun-dress"
+      ],
+      "sizes": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "key": "NEP-10",
+      "storeKey": "NEP",
+      "title": "Váy sọc cho bé gái",
+      "category": "Thời trang",
+      "product_type": "Trang phục trẻ em",
+      "price_vnd": 279000,
+      "color": "Sọc",
+      "material": "Vải may mặc",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Váy sọc cho bé gái. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "girls-striped-dress"
+      ],
+      "sizes": [
+        "100",
+        "110",
+        "120"
+      ]
+    },
+    {
+      "key": "NEP-11",
+      "storeKey": "NEP",
+      "title": "Áo khoác da cho bé",
+      "category": "Thời trang",
+      "product_type": "Trang phục trẻ em",
+      "price_vnd": 449000,
+      "color": "Đen",
+      "material": "Vải may mặc",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Áo khoác da cho bé. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "kids-leather-jacket"
+      ],
+      "sizes": [
+        "100",
+        "110",
+        "120"
+      ]
+    },
+    {
+      "key": "NEP-12",
+      "storeKey": "NEP",
+      "title": "Giày mềm hình tim cho bé",
+      "category": "Thời trang",
+      "product_type": "Giày cho bé",
+      "price_vnd": 189000,
+      "color": "Trung tính",
+      "material": "Vải mềm",
+      "dimensions": "Chọn cỡ phù hợp",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Giày mềm hình tim cho bé. Phù hợp phối đồ và sử dụng hằng ngày. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "baby-shoes"
+      ],
+      "sizes": [
+        "18",
+        "19",
+        "20"
+      ]
+    },
+    {
+      "key": "MX-01",
+      "storeKey": "MX",
+      "title": "Bộ cọ trang điểm cán gọn",
+      "category": "Chăm sóc cá nhân",
+      "product_type": "Chăm sóc cá nhân",
+      "price_vnd": 179000,
+      "color": "Trung tính",
+      "material": "Theo thông tin trên bao bì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bộ cọ trang điểm cán gọn. Phù hợp góc chăm sóc cá nhân. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "makeup-brushes-on-marble"
+      ]
+    },
+    {
+      "key": "MX-02",
+      "storeKey": "MX",
+      "title": "Bộ bàn chải cán tre",
+      "category": "Chăm sóc cá nhân",
+      "product_type": "Chăm sóc cá nhân",
+      "price_vnd": 69000,
+      "color": "Tre tự nhiên",
+      "material": "Theo thông tin trên bao bì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bộ bàn chải cán tre. Phù hợp góc chăm sóc cá nhân. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "wooden-toothbrushes-lined-on-bright-pink-background"
+      ]
+    },
+    {
+      "key": "MX-03",
+      "storeKey": "MX",
+      "title": "Son dưỡng dạng thỏi",
+      "category": "Chăm sóc cá nhân",
+      "product_type": "Chăm sóc cá nhân",
+      "price_vnd": 79000,
+      "color": "Trung tính",
+      "material": "Theo thông tin trên bao bì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Son dưỡng dạng thỏi. Phù hợp góc chăm sóc cá nhân. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "tube-of-lip-balm"
+      ]
+    },
+    {
+      "key": "MX-04",
+      "storeKey": "MX",
+      "title": "Mặt nạ than hoạt tính dạng hũ",
+      "category": "Chăm sóc cá nhân",
+      "product_type": "Chăm sóc cá nhân",
+      "price_vnd": 139000,
+      "color": "Đen",
+      "material": "Theo thông tin trên bao bì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Mặt nạ than hoạt tính dạng hũ. Phù hợp góc chăm sóc cá nhân. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "jar-of-activated-charcoal-facemask"
+      ]
+    },
+    {
+      "key": "MX-05",
+      "storeKey": "MX",
+      "title": "Dầu dưỡng râu lọ nhỏ giọt",
+      "category": "Chăm sóc cá nhân",
+      "product_type": "Chăm sóc cá nhân",
+      "price_vnd": 159000,
+      "color": "Hổ phách",
+      "material": "Theo thông tin trên bao bì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Dầu dưỡng râu lọ nhỏ giọt. Phù hợp góc chăm sóc cá nhân. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "beard-oil-product-photo"
+      ]
+    },
+    {
+      "key": "MX-06",
+      "storeKey": "MX",
+      "title": "Viên tạo bọt bồn tắm xanh trắng",
+      "category": "Chăm sóc cá nhân",
+      "product_type": "Chăm sóc cá nhân",
+      "price_vnd": 99000,
+      "color": "Xanh trắng",
+      "material": "Theo thông tin trên bao bì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Viên tạo bọt bồn tắm xanh trắng. Phù hợp góc chăm sóc cá nhân. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "blue-and-white-bath-bombs"
+      ]
+    },
+    {
+      "key": "MX-07",
+      "storeKey": "MX",
+      "title": "Bình nhấn đựng xà phòng trắng",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Đồ dùng nhà tắm",
+      "price_vnd": 129000,
+      "color": "Trắng",
+      "material": "Vật liệu gia dụng",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bình nhấn đựng xà phòng trắng. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "white-pump-bottle-sits-on-a-white-porcelain-sink"
+      ]
+    },
+    {
+      "key": "MX-08",
+      "storeKey": "MX",
+      "title": "Kẹp giữ cà chua khi thái",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Dụng cụ nhà bếp",
+      "price_vnd": 119000,
+      "color": "Trung tính",
+      "material": "Theo từng dụng cụ",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Kẹp giữ cà chua khi thái. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "vegetable-slicer-in-kitchen"
+      ]
+    },
+    {
+      "key": "MX-09",
+      "storeKey": "MX",
+      "title": "Dụng cụ cắt dưa hấu inox",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Dụng cụ nhà bếp",
+      "price_vnd": 59000,
+      "color": "Inox",
+      "material": "Theo từng dụng cụ",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Dụng cụ cắt dưa hấu inox. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "watermelon-scooper"
+      ]
+    },
+    {
+      "key": "MX-10",
+      "storeKey": "MX",
+      "title": "Bình pha cà phê French press",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Dụng cụ nhà bếp",
+      "price_vnd": 289000,
+      "color": "Thủy tinh",
+      "material": "Theo từng dụng cụ",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bình pha cà phê French press. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "mug-of-coffee-and-a-french-press-on-a-window-sill"
+      ]
+    },
+    {
+      "key": "MX-11",
+      "storeKey": "MX",
+      "title": "Tô gỗ trộn rau",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Dụng cụ nhà bếp",
+      "price_vnd": 219000,
+      "color": "Gỗ tự nhiên",
+      "material": "Theo từng dụng cụ",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Tô gỗ trộn rau. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "knife-scraped-kale-into-wooden-bowl"
+      ]
+    },
+    {
+      "key": "MX-12",
+      "storeKey": "MX",
+      "title": "Dụng cụ bào tỏi cầm tay",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Dụng cụ nhà bếp",
+      "price_vnd": 79000,
+      "color": "Trung tính",
+      "material": "Theo từng dụng cụ",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Dụng cụ bào tỏi cầm tay. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "garlic-grater-kitchen-tool"
+      ]
+    },
+    {
+      "key": "GOC-01",
+      "storeKey": "GOC",
+      "title": "Nến đậu nành hũ nhỏ",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Trang trí & lưu trữ",
+      "price_vnd": 129000,
+      "color": "Trắng",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Nến đậu nành hũ nhỏ. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "mini-soy-candle"
+      ]
+    },
+    {
+      "key": "GOC-02",
+      "storeKey": "GOC",
+      "title": "Bình thủy tinh cắm cành dáng cao",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Trang trí & lưu trữ",
+      "price_vnd": 249000,
+      "color": "Trung tính",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bình thủy tinh cắm cành dáng cao. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "flower-buds-on-a-branch-sit-in-a-jug-of-water"
+      ]
+    },
+    {
+      "key": "GOC-03",
+      "storeKey": "GOC",
+      "title": "Đồ treo trang trí phòng em bé",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Trang trí & lưu trữ",
+      "price_vnd": 219000,
+      "color": "Tự nhiên",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đồ treo trang trí phòng em bé. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "handmade-baby-nursery-mobile"
+      ]
+    },
+    {
+      "key": "GOC-04",
+      "storeKey": "GOC",
+      "title": "Đèn bàn tông đồng",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Đèn trang trí",
+      "price_vnd": 689000,
+      "color": "Đồng",
+      "material": "Kim loại",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đèn bàn tông đồng. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "copper-light-in-bedroom"
+      ]
+    },
+    {
+      "key": "GOC-05",
+      "storeKey": "GOC",
+      "title": "Bàn đầu giường gỗ tròn",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Nội thất",
+      "price_vnd": 1490000,
+      "color": "Gỗ tự nhiên",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bàn đầu giường gỗ tròn. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "teak-headboard-table"
+      ]
+    },
+    {
+      "key": "GOC-06",
+      "storeKey": "GOC",
+      "title": "Ghế ban công tựa thoải mái",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Nội thất",
+      "price_vnd": 1290000,
+      "color": "Trung tính",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ghế ban công tựa thoải mái. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "patio-chair-on-balcony"
+      ]
+    },
+    {
+      "key": "GOC-07",
+      "storeKey": "GOC",
+      "title": "Ghế tựa gỗ tối giản",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Nội thất",
+      "price_vnd": 1690000,
+      "color": "Gỗ tự nhiên",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ghế tựa gỗ tối giản. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "bare-stony-room-with-two-wooden-benches-and-coffee-tables"
+      ]
+    },
+    {
+      "key": "GOC-08",
+      "storeKey": "GOC",
+      "title": "Sofa xám ba chỗ",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Nội thất",
+      "price_vnd": 6490000,
+      "color": "Xám",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Sofa xám ba chỗ. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "large-grey-sofa-by-brick-wall"
+      ]
+    },
+    {
+      "key": "GOC-09",
+      "storeKey": "GOC",
+      "title": "Ghế bành hồng phấn phòng khách",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Nội thất",
+      "price_vnd": 5990000,
+      "color": "Hồng phấn",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ghế bành hồng phấn phòng khách. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "blush-coloured-couch-with-blankets"
+      ]
+    },
+    {
+      "key": "GOC-10",
+      "storeKey": "GOC",
+      "title": "Gối tựa vàng mustard",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Trang trí & lưu trữ",
+      "price_vnd": 169000,
+      "color": "Vàng mustard",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Gối tựa vàng mustard. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "yellow-pillow-bedside-table"
+      ]
+    },
+    {
+      "key": "GOC-11",
+      "storeKey": "GOC",
+      "title": "Bàn làm việc góc sáng",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Nội thất",
+      "price_vnd": 1890000,
+      "color": "Trắng",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bàn làm việc góc sáng. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "photo-of-a-desk-and-white-corner-seating-area"
+      ]
+    },
+    {
+      "key": "GOC-12",
+      "storeKey": "GOC",
+      "title": "Giỏ picnic đan có quai",
+      "category": "Nhà cửa & đời sống",
+      "product_type": "Trang trí & lưu trữ",
+      "price_vnd": 459000,
+      "color": "Mây tự nhiên",
+      "material": "Theo từng thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Giỏ picnic đan có quai. Phù hợp bố trí không gian sinh hoạt. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "wicker-picnic-basket-with-stemless-wine-glasses"
+      ]
+    },
+    {
+      "key": "MOC-01",
+      "storeKey": "MOC",
+      "title": "Micro thu âm để bàn màu đen",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 749000,
+      "color": "Đen",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Micro thu âm để bàn màu đen. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "black-microphone-against-orange-photo"
+      ]
+    },
+    {
+      "key": "MOC-02",
+      "storeKey": "MOC",
+      "title": "Máy ảnh DSLR cho góc sáng tạo",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 5490000,
+      "color": "Đen",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Máy ảnh DSLR cho góc sáng tạo. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "product-photography-camera"
+      ]
+    },
+    {
+      "key": "MOC-03",
+      "storeKey": "MOC",
+      "title": "Máy ảnh mirrorless màu đen",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 4290000,
+      "color": "Đen",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Máy ảnh mirrorless màu đen. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "vintage-film-camera-on-grey-background"
+      ]
+    },
+    {
+      "key": "MOC-04",
+      "storeKey": "MOC",
+      "title": "Laptop mỏng cho bàn làm việc",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 11990000,
+      "color": "Bạc",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Laptop mỏng cho bàn làm việc. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "macbook-air-on-desk"
+      ]
+    },
+    {
+      "key": "MOC-05",
+      "storeKey": "MOC",
+      "title": "Máy tính bảng xám tiện mang theo",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 3990000,
+      "color": "Xám",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Máy tính bảng xám tiện mang theo. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "tablet-coffee"
+      ]
+    },
+    {
+      "key": "MOC-06",
+      "storeKey": "MOC",
+      "title": "Ống kính rời cho máy ảnh",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 1890000,
+      "color": "Đen",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ống kính rời cho máy ảnh. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "lenses-lattes"
+      ]
+    },
+    {
+      "key": "MOC-07",
+      "storeKey": "MOC",
+      "title": "Loa di động vàng nhỏ gọn",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 299000,
+      "color": "Vàng",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Loa di động vàng nhỏ gọn. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "yellow-portable-speaker"
+      ]
+    },
+    {
+      "key": "MOC-08",
+      "storeKey": "MOC",
+      "title": "Cáp sạc Lightning bọc dù trắng",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 119000,
+      "color": "Trắng",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Cáp sạc Lightning bọc dù trắng. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "white-braided-iphone-cable"
+      ]
+    },
+    {
+      "key": "MOC-09",
+      "storeKey": "MOC",
+      "title": "Củ sạc USB trắng",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 159000,
+      "color": "Trắng",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Củ sạc USB trắng. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "white-phone-charger-on-yellow"
+      ]
+    },
+    {
+      "key": "MOC-10",
+      "storeKey": "MOC",
+      "title": "Ốp điện thoại họa tiết hoa",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 99000,
+      "color": "Họa tiết hoa",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ốp điện thoại họa tiết hoa. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "floral-iphone-cases"
+      ]
+    },
+    {
+      "key": "MOC-11",
+      "storeKey": "MOC",
+      "title": "Chân máy cho góc quay tại nhà",
+      "category": "Góc làm việc",
+      "product_type": "Thiết bị & phụ kiện",
+      "price_vnd": 499000,
+      "color": "Đen",
+      "material": "Vật liệu điện tử và phụ kiện",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Chân máy cho góc quay tại nhà. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "in-home-camera-set-up"
+      ]
+    },
+    {
+      "key": "MOC-12",
+      "storeKey": "MOC",
+      "title": "Bút chì thân đen",
+      "category": "Góc làm việc",
+      "product_type": "Văn phòng phẩm",
+      "price_vnd": 15000,
+      "color": "Đen",
+      "material": "Gỗ và ruột chì",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bút chì thân đen. Phù hợp sắp xếp góc học tập và làm việc. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "hand-holding-black-pencil-on-red-background"
+      ]
+    },
+    {
+      "key": "NHE-01",
+      "storeKey": "NHE",
+      "title": "Đồng hồ mặt tre dây da",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 549000,
+      "color": "Gỗ da nâu",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đồng hồ mặt tre dây da. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "modern-bamboo-wristwatch"
+      ]
+    },
+    {
+      "key": "NHE-02",
+      "storeKey": "NHE",
+      "title": "Đồng hồ analog vân đá",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 629000,
+      "color": "Vân đá",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đồng hồ analog vân đá. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "stone-finish-analogue-watch"
+      ]
+    },
+    {
+      "key": "NHE-03",
+      "storeKey": "NHE",
+      "title": "Vòng đeo tay theo dõi vận động đen",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 399000,
+      "color": "Đen",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Vòng đeo tay theo dõi vận động đen. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "black-mi-band-smartwatch"
+      ]
+    },
+    {
+      "key": "NHE-04",
+      "storeKey": "NHE",
+      "title": "Kính mát gọng kim loại bạc",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 249000,
+      "color": "Bạc",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Kính mát gọng kim loại bạc. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "pair-of-silver-framed-sunglasses-on-a-stone-surface"
+      ]
+    },
+    {
+      "key": "NHE-05",
+      "storeKey": "NHE",
+      "title": "Kính mát gọng hồng phấn",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 219000,
+      "color": "Hồng phấn",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Kính mát gọng hồng phấn. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "bold-white-framed-sunglasses-on-white-background"
+      ]
+    },
+    {
+      "key": "NHE-06",
+      "storeKey": "NHE",
+      "title": "Dây chuyền mặt hạc origami",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 189000,
+      "color": "Bạc",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Dây chuyền mặt hạc origami. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "origami-crane-necklace"
+      ]
+    },
+    {
+      "key": "NHE-07",
+      "storeKey": "NHE",
+      "title": "Bông tai họa tiết voi",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 139000,
+      "color": "Trung tính",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Bông tai họa tiết voi. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "elephant-earrings"
+      ]
+    },
+    {
+      "key": "NHE-08",
+      "storeKey": "NHE",
+      "title": "Vòng tay boho dạng bangle",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 169000,
+      "color": "Trung tính",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Vòng tay boho dạng bangle. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "boho-bangle-bracelet"
+      ]
+    },
+    {
+      "key": "NHE-09",
+      "storeKey": "NHE",
+      "title": "Ghim cài áo phong cách punk",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 59000,
+      "color": "Nhiều màu",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ghim cài áo phong cách punk. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "punk-enamel-pin"
+      ]
+    },
+    {
+      "key": "NHE-10",
+      "storeKey": "NHE",
+      "title": "Túi nâu phối chi tiết đen",
+      "category": "Túi & phụ kiện",
+      "product_type": "Túi & ví",
+      "price_vnd": 549000,
+      "color": "Nâu đen",
+      "material": "Vật liệu tổng hợp",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Túi nâu phối chi tiết đen. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "brown-purse-with-black-detail"
+      ]
+    },
+    {
+      "key": "NHE-11",
+      "storeKey": "NHE",
+      "title": "Ví nhỏ hình quả chanh",
+      "category": "Túi & phụ kiện",
+      "product_type": "Túi & ví",
+      "price_vnd": 229000,
+      "color": "Vàng chanh",
+      "material": "Vật liệu tổng hợp",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Ví nhỏ hình quả chanh. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "lemon-purse"
+      ]
+    },
+    {
+      "key": "NHE-12",
+      "storeKey": "NHE",
+      "title": "Đồng hồ quả quýt bỏ túi",
+      "category": "Túi & phụ kiện",
+      "product_type": "Trang sức & phụ kiện",
+      "price_vnd": 459000,
+      "color": "Bạc",
+      "material": "Tùy thiết kế",
+      "dimensions": "Mẫu tiêu chuẩn",
+      "care": "Giữ khô, vệ sinh theo hướng dẫn của từng sản phẩm.",
+      "description": "Đồng hồ quả quýt bỏ túi. Phù hợp làm điểm nhấn cho trang phục. Ảnh minh họa mẫu; thông số và giá trong gian hàng phục vụ bản demo.",
+      "photos": [
+        "a-pocket-watch-laying-on-a-black-and-orange-background"
+      ]
+    }
+  ]
+}

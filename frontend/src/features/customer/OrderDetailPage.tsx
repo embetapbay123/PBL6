@@ -305,7 +305,6 @@ function Detail({ id }: { id?: string }) {
             <div className="order-detail-items-card">
               <div className="order-history-header">
                 <div className="order-header-store-section">
-                  <span className="order-store-badge">Yêu thích</span>
                   <OrderStoreLabel id={data.store_id} compact />
                   <ContactStoreButton storeId={data.store_id} orderId={data.id} compact />
                   <Link
@@ -536,9 +535,6 @@ function Detail({ id }: { id?: string }) {
                 <form onSubmit={submitItemReview} className="space-y-4 my-2">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
                     <strong className="block text-xs text-slate-800">{String(reviewingItem.title_snapshot ?? "")}</strong>
-                    {reviewingItem.sku_snapshot ? (
-                      <span className="text-[11px] text-slate-500">Mã SKU: {String(reviewingItem.sku_snapshot)}</span>
-                    ) : null}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-2">Chất lượng sản phẩm:</label>

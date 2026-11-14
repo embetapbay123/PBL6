@@ -141,7 +141,7 @@ export function OrderStatusTabs({
     <nav className="order-status-tabs" aria-label="Lọc nhanh trạng thái đơn">
       {tabs.map(([value, label]) => (
         <Fragment key={value}>
-        {returns && value === "CANCELLED" && <Link to="/customer/returns">Đổi trả</Link>}
+        {returns && value === "CANCELLED" && <Link className="order-returns-tab" to="/customer/returns">Đổi trả</Link>}
         <button
           type="button"
           key={value}
@@ -333,11 +333,9 @@ export function OrderListIdentity({
                   )}
                   <div className="min-w-0 flex-1">
                     <strong className="block text-sm text-slate-900 line-clamp-1">{title}</strong>
-                    {currentImages && typeof item.product_id==='string' && currentImages.has(item.product_id) && typeof snapshot.image_url!=='string' && <small className="order-current-image-note">Ảnh hiện tại của sản phẩm</small>}
-                    <div className="text-xs text-slate-500 mt-0.5">
+                    <div className="order-item-variant text-xs text-slate-500 mt-0.5">
                       <span>Phân loại: {values || (typeof snapshot.variant_title === "string" ? snapshot.variant_title : "Tiêu chuẩn")}</span>
-                      <span className="mx-1.5">·</span>
-                      <span className="font-medium text-slate-700">x{typeof item.quantity === "number" ? item.quantity : 1}</span>
+                      {!showPrice && <span className="font-medium text-slate-700"> · x{typeof item.quantity === "number" ? item.quantity : 1}</span>}
                       {!compact && typeof item.sku_snapshot === "string" && (
                         <> · SKU {item.sku_snapshot}</>
                       )}
@@ -346,6 +344,7 @@ export function OrderListIdentity({
                 </div>
                 {showPrice && unitPrice !== undefined && (
                   <div className="order-card-item-price text-right text-xs shrink-0 pl-3">
+                    <span className="order-item-quantity">x{typeof item.quantity === 'number' ? item.quantity : 1}</span>
                     <span className="font-semibold text-slate-800">
                       {unitPrice.toLocaleString("vi-VN")} ₫
                     </span>

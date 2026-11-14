@@ -389,7 +389,7 @@ function Market() {
   const account =
     (location.pathname.startsWith("/customer/") &&
       !location.pathname.startsWith("/customer/messages")) ||
-    location.pathname === "/profile";
+    location.pathname === "/profile" || location.pathname === "/change-password";
   const can = (code: string) =>
     owner || !!membership?.permissions?.includes(code);
   const unreadMessages=useQuery({queryKey:['store-unread',session?.context?.user_id,membership?.store_id],enabled:portal==='seller'&&membership?.status==='ACTIVE'&&!!membership.store_id&&can('order.store.read_status_cancel'),queryFn:()=>callOperation('listStoreConversations',{query:{page:1,size:1}}),refetchInterval:15000,refetchIntervalInBackground:false,retry:false});

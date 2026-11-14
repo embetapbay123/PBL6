@@ -1,6 +1,6 @@
 param(
     [switch]$PackageOnly,
-    [string]$Password = $(if ($env:DEPLOY_PASSWORD) { $env:DEPLOY_PASSWORD } else { '1' })
+    [string]$Password = $env:DEPLOY_PASSWORD
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,7 +33,8 @@ try {
 
     if ($Password) {
         $askpass = Join-Path $temp.FullName 'askpass.cmd'
-        [IO.File]::WriteAllText($askpass, "@echo $Password`r`n", [Text.Encoding]::ASCII)
+        $env:PBL6_SSH_PASSWORD = $Password
+        [IO.File]::WriteAllText($askpass, '@powershell.exe -NoLogo -NoProfile -NonInteractive -Command "[Console]::Write([Environment]::GetEnvironmentVariable(''PBL6_SSH_PASSWORD''))"' + "`r`n", [Text.Encoding]::ASCII)
         $env:SSH_ASKPASS = $askpass
         $env:SSH_ASKPASS_REQUIRE = 'force'
         $env:DISPLAY = ':0'
@@ -50,6 +51,7 @@ try {
     Write-Host 'Demo web deployed and verified at https://demo.congnguyen.me/'
 }
 finally {
+    Remove-Item Env:PBL6_SSH_PASSWORD -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $archive, $list -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $temp.FullName -Recurse -Force -ErrorAction SilentlyContinue
 }

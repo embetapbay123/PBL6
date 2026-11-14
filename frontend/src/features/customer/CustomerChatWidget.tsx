@@ -24,6 +24,8 @@ import type { OperationOutputs } from "../../api/operations.generated";
 import {
   createChatSession,
   listOwnChatSessions,
+  deleteOwnChatSession,
+  deleteOwnChatHistory,
   sendChatMessage,
 } from "../../api/recommendationsChat";
 import { ErrorView, Loading } from "../../bootstrap/components";
@@ -251,42 +253,39 @@ export function AiChatPanel({ active }: { active: boolean }) {
     setDraft("");
     setError(undefined);
   }
-  const userStorageKey = "pbl6_deleted_ai_sessions_" + (session?.context?.user_id ?? "guest");
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => {
+  async function removeHistory(sessionId?: string) {
+    if (!customer || flight.current) return;
+    const confirmation = sessionId ? 'Xóa cuộc trò chuyện này? Không thể khôi phục.' : 'Xóa toàn bộ lịch sử AI của tài khoản? Không thể khôi phục.';
+    if (!window.confirm(confirmation)) return;
+    flight.current = true;
+    setBusy(true);
+    setError(undefined);
     try {
-      const stored = localStorage.getItem(userStorageKey);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
+      try {
+        if (sessionId) await deleteOwnChatSession(sessionId);
+        else await deleteOwnChatHistory();
+      } catch (cause) {
+        if (!(sessionId && cause instanceof ApiError && cause.status === 404)) throw cause;
+      }
+      if (!alive.current) return;
+      if (!sessionId || current?.id === sessionId) newSession();
+      setTitles(previous => {
+        if (!sessionId) return {};
+        const next = { ...previous }; delete next[sessionId]; return next;
+      });
+      setHistory(undefined);
+      setPage(sessionId && history?.items.length === 1 ? Math.max(1, page - 1) : sessionId ? page : 1);
+      setReload(value => value + 1);
+    } catch (cause) {
+      if (alive.current) setError(cause);
+    } finally {
+      flight.current = false;
+      if (alive.current) setBusy(false);
     }
-  });
-
-  function deleteSession(sessionId: string) {
-    if (!window.confirm("Bạn có chắc chắn muốn xóa phiên chat này không?")) return;
-    const next = new Set(deletedIds);
-    next.add(sessionId);
-    setDeletedIds(next);
-    try {
-      localStorage.setItem(userStorageKey, JSON.stringify([...next]));
-    } catch {}
-    if (!current || current.id === sessionId) {
-      newSession();
-    }
-    setReload((n) => n + 1);
   }
-
-  function clearAllSessions() {
-    if (!history?.items.length) return;
-    if (!window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử các phiên chat với AI không?")) return;
-    const next = new Set([...deletedIds, ...history.items.map((s) => s.id)]);
-    setDeletedIds(next);
-    try {
-      localStorage.setItem(userStorageKey, JSON.stringify([...next]));
-    } catch {}
-    newSession();
-  }
-
-  const visibleSessions = history?.items.filter((s) => !deletedIds.has(s.id)) ?? [];
+  const deleteSession = (sessionId: string) => { void removeHistory(sessionId); };
+  const clearAllSessions = () => { void removeHistory(); };
+  const visibleSessions = history?.items ?? [];
 
   return (
     <div
@@ -298,7 +297,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
         <section className="chat-sidebar" aria-label="Lịch sử chat">
           <div className="chat-sidebar-heading">
             <h3>Lịch sử của bạn</h3>
-            <span>{visibleSessions.length}</span>
+            <span>{history?.total ?? '—'}</span>
           </div>
           <button
             type="button"
@@ -350,6 +349,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
                     className="chat-session-delete-btn"
                     title="Xóa phiên chat"
                     aria-label="Xóa phiên chat"
+                    disabled={busy}
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteSession(s.id);
@@ -370,11 +370,12 @@ export function AiChatPanel({ active }: { active: boolean }) {
             />
           )}
 
-          {visibleSessions.length > 1 && (
+          {!!history && history.total > 1 && (
             <button
               type="button"
               className="chat-clear-all-sessions-btn"
               onClick={clearAllSessions}
+              disabled={busy}
               title="Xóa tất cả lịch sử chat"
             >
               <Trash2 size={13} />

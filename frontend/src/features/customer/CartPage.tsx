@@ -14,8 +14,8 @@ import { Button as UiButton } from "../../components/ui/Button";
 import { clearBuyNow, checkoutState, variantLabel } from "./checkout-intent";
 import { formatMoney } from "../../live/useLiveData";
 import { ContactStoreButton } from "./ContactStoreButton";
-import { VoucherPicker } from "./VoucherPicker";
-import { Ticket, Truck } from "lucide-react";
+import { VoucherPicker, type SelectedVouchers } from "./VoucherPicker";
+import { Ticket } from "lucide-react";
 
 interface CartItem {
   id: string;
@@ -59,9 +59,7 @@ async function fetchAllCartItems(
 
 const describe = (error: unknown): string => {
   if (error instanceof ApiError) {
-    return error.correlationId
-      ? `${error.message} (${error.correlationId})`
-      : error.message;
+    return error.message;
   }
   if (error instanceof Error && error.message) return error.message;
   return "Đã xảy ra lỗi không xác định.";
@@ -115,7 +113,7 @@ function CartVariantPicker({ item, variants, disabled, onChange }: {
           <option value="">Chọn phân loại khác</option>
           {alternatives.map((variant) => (
             <option value={variant.id} key={variant.id}>
-              {variantLabel(variant.variant_values, variant.sku)} · {variant.price_vnd.toLocaleString("vi-VN")} ₫
+              {variantLabel(variant.variant_values)} · {variant.price_vnd.toLocaleString("vi-VN")} ₫
             </option>
           ))}
         </select>
@@ -136,12 +134,14 @@ function CartVariantPicker({ item, variants, disabled, onChange }: {
 
 function QuantityInput({
   quantity,
+  maximum,
   disabled,
   onChangeQuantity,
   onDirectQuantity,
   detailsId,
 }: {
   quantity: number;
+  maximum: number;
   disabled: boolean;
   onChangeQuantity: (delta: number) => void;
   onDirectQuantity: (qty: number) => void;
@@ -154,12 +154,11 @@ function QuantityInput({
   }, [quantity]);
 
   const commit = () => {
-    const parsed = parseInt(val, 10);
-    if (!isNaN(parsed) && parsed >= 1 && parsed !== quantity) {
+    const parsed = Number(val);
+    if (Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= maximum && parsed !== quantity) {
       onDirectQuantity(parsed);
-    } else {
-      setVal(String(quantity));
     }
+    setVal(String(quantity));
   };
 
   return (
@@ -176,9 +175,9 @@ function QuantityInput({
       <input
         type="number"
         min={1}
-        max={999}
+        max={Math.max(1, maximum)}
         value={val}
-        disabled={disabled}
+        disabled={disabled || maximum === 0}
         aria-label="Số lượng sản phẩm"
         aria-describedby={detailsId}
         onChange={(e) => setVal(e.target.value)}
@@ -194,7 +193,7 @@ function QuantityInput({
         aria-label="Tăng số lượng"
         aria-describedby={detailsId}
         onClick={() => onChangeQuantity(1)}
-        disabled={disabled}
+        disabled={disabled || quantity >= maximum}
       >
         +
       </button>
@@ -236,7 +235,6 @@ function StoreGroupHeader({
         onChange={() => toggleStore(storeId)}
         className="shopee-cart-checkbox"
       />
-      <span className="order-store-badge">Yêu thích</span>
       <StoreLabel
         id={storeId}
         iconSize={15}
@@ -268,6 +266,25 @@ export const CartPage: React.FC = () => {
   const [needsReconcile, setNeedsReconcile] = useState(false);
   const [notice, setNotice] = useState("");
   const [voucherModalOpen, setVoucherModalOpen] = useState(false);
+  const [pickedVouchers, setPickedVouchers] = useState<SelectedVouchers>(() => {
+    if (!userId) return {};
+    try {
+      return JSON.parse(sessionStorage.getItem("pbl6_cart_vouchers_" + userId) || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  const handleVoucherPick = (v: SelectedVouchers) => {
+    setPickedVouchers(v);
+    if (userId) {
+      try {
+        sessionStorage.setItem("pbl6_cart_vouchers_" + userId, JSON.stringify(v));
+      } catch {
+        /* storage optional */
+      }
+    }
+  };
 
   useEffect(() => {
     if (focusAfterRemove.current === undefined) return;
@@ -339,7 +356,7 @@ export const CartPage: React.FC = () => {
 
   const changeQuantity = async (item: CartItem, delta: number) => {
     const quantity = item.quantity + delta;
-    if (quantity < 1 || mutationInFlight.current || needsReconcile) return;
+    if (quantity < 1 || quantity > maximumFor(item) || mutationInFlight.current || needsReconcile) return;
     mutationInFlight.current = true;
     setBusyId(item.id);
     setActionError(null);
@@ -355,6 +372,7 @@ export const CartPage: React.FC = () => {
       setNotice(`Đã cập nhật ${itemLabel(item)}. Số lượng: ${quantity}.`);
     } catch (error) {
       setActionError(describe(error));
+      if (error instanceof ApiError && error.status === 409) void batch.refetch();
       if (
         !(error instanceof ApiError) ||
         error.status === 0 ||
@@ -370,7 +388,7 @@ export const CartPage: React.FC = () => {
 
   const setDirectQuantity = async (item: CartItem, newQty: number) => {
     const quantity = Math.max(1, Math.min(999, Math.floor(newQty)));
-    if (quantity === item.quantity || isNaN(quantity) || mutationInFlight.current || needsReconcile) return;
+    if (quantity === item.quantity || !Number.isSafeInteger(newQty) || newQty < 1 || newQty > maximumFor(item) || mutationInFlight.current || needsReconcile) return;
     mutationInFlight.current = true;
     setBusyId(item.id);
     setActionError(null);
@@ -386,6 +404,7 @@ export const CartPage: React.FC = () => {
       setNotice(`Đã cập nhật ${itemLabel(item)}. Số lượng: ${quantity}.`);
     } catch (error) {
       setActionError(describe(error));
+      if (error instanceof ApiError && error.status === 409) void batch.refetch();
       if (
         !(error instanceof ApiError) ||
         error.status === 0 ||
@@ -457,41 +476,40 @@ export const CartPage: React.FC = () => {
     }
   };
 
-  const removeItem = async (item: CartItem) => {
-    if (mutationInFlight.current || needsReconcile) return;
+  const removeItems = async (targets: CartItem[]) => {
+    if (!targets.length || mutationInFlight.current || needsReconcile) return;
     mutationInFlight.current = true;
-    setBusyId(item.id);
+    setBusyId(targets.length === 1 ? targets[0].id : 'bulk');
     setActionError(null);
+    setNotice('');
+    const removed = new Set<string>();
     try {
-      await callOperation("removeCartItem", { path: { id: item.id } });
-      const remaining = (items ?? []).filter((i) => i.id !== item.id),
-        index = (items ?? []).findIndex((i) => i.id === item.id);
-      focusAfterRemove.current =
-        remaining[Math.min(index, remaining.length - 1)]?.id ?? null;
-      setItems((prev) => prev && prev.filter((i) => i.id !== item.id));
-      setNotice(
-        `Đã xóa ${itemLabel(item)} khỏi giỏ. Bạn có thể chọn lại tại trang sản phẩm.`,
-      );
-      setSelected((prev) => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
-      await cache.invalidateQueries({ queryKey: ["cart-summary"] });
+      for (const item of targets) {
+        try {
+          await callOperation("removeCartItem", { path: { id: item.id } });
+        } catch (error) {
+          if (!(error instanceof ApiError && error.status === 404)) throw error;
+        }
+        removed.add(item.id);
+      }
+      setNotice(targets.length === 1 ? `Đã xóa ${itemLabel(targets[0])} khỏi giỏ.` : `Đã xóa ${removed.size} dòng khỏi giỏ.`);
     } catch (error) {
-      setActionError(describe(error));
-      if (
-        !(error instanceof ApiError) ||
-        error.status === 0 ||
-        error.status === 408 ||
-        error.status >= 500
-      )
-        setNeedsReconcile(true);
+      setActionError(`${removed.size ? `Đã xóa ${removed.size}/${targets.length} dòng. ` : ''}${describe(error)}`);
+      if (isUncertainMutation(error)) setNeedsReconcile(true);
     } finally {
+      if (removed.size) {
+        const remaining = (items ?? []).filter(item => !removed.has(item.id));
+        const index = (items ?? []).findIndex(item => item.id === targets[0].id);
+        focusAfterRemove.current = remaining[Math.min(index, remaining.length - 1)]?.id ?? null;
+        setItems(previous => previous && previous.filter(item => !removed.has(item.id)));
+        setSelected(previous => new Set([...previous].filter(id => !removed.has(id))));
+      }
+      void cache.invalidateQueries({ queryKey: ["cart-summary"] });
       mutationInFlight.current = false;
       setBusyId(null);
     }
   };
+  const removeItem = (item: CartItem) => removeItems([item]);
 
   const toggleItem = (id: string) => {
     setSelected((prev) => {
@@ -530,7 +548,7 @@ export const CartPage: React.FC = () => {
   };
 
   const goCheckout = () => {
-    if (!userId || mutationInFlight.current || needsReconcile || loading)
+    if (!userId || mutationInFlight.current || needsReconcile || loading || selectionUnavailable || subtotal === null || !Number.isSafeInteger(subtotal))
       return;
     const cartItemIds = Array.from(selected);
     if (cartItemIds.length === 0) return;
@@ -543,7 +561,19 @@ export const CartPage: React.FC = () => {
         /* storage can be unavailable */
       }
     }
-    navigate("/checkout", { state: checkoutState(userId, { cartItemIds }) });
+    if (userId) {
+      try {
+        sessionStorage.setItem("pbl6_cart_vouchers_" + userId, JSON.stringify(pickedVouchers));
+      } catch {
+        /* storage optional */
+      }
+    }
+    navigate("/checkout", {
+      state: {
+        ...checkoutState(userId, { cartItemIds }),
+        vouchers: pickedVouchers,
+      },
+    });
   };
 
   const selectedQuantity = (items ?? [])
@@ -556,6 +586,8 @@ export const CartPage: React.FC = () => {
     batch.error
       ? undefined
       : batch.data?.find((product) => product.id === item.product_id);
+  const maximumFor = (item: CartItem) => Math.max(0, Math.min(999,
+    productFor(item)?.variants?.find(variant => variant.id === item.variant_id)?.available_quantity ?? 999));
   const pages = Math.max(1, Math.ceil((items?.length ?? 0) / 25));
   useEffect(() => {
     if (cartPage > pages) setCartPage(pages);
@@ -567,6 +599,10 @@ export const CartPage: React.FC = () => {
     return `${product?.title ?? "Sản phẩm mã " + shortId(item.product_id)} · ${variant ? variantLabel(variant.variant_values) : "Phân loại mã " + shortId(item.variant_id)}`;
   }
   const selectedRows = (items ?? []).filter((item) => selected.has(item.id));
+  const selectionUnavailable = batch.isPending || !!batch.error || selectedRows.some(item => {
+    const product = productFor(item), variant = product?.variants?.find(value => value.id === item.variant_id);
+    return !product || !variant || product.status !== 'ACTIVE' || (!!variant.status && variant.status !== 'ACTIVE') || item.quantity > maximumFor(item);
+  });
   const values = selectedRows.map(
     (item) =>
       productFor(item)?.variants?.find((v) => v.id === item.variant_id)
@@ -751,6 +787,9 @@ export const CartPage: React.FC = () => {
                                     disabled={busyId !== null || needsReconcile}
                                     onChange={(variantId) => void changeVariant(item, variantId)}
                                   />
+                                  {variant?.available_quantity !== undefined && variant.available_quantity <= 3 && (
+                                    <p className="cart-stock-notice" role="status">{variant.available_quantity === 0 ? 'Phân loại này đã hết hàng.' : `Chỉ còn ${variant.available_quantity} sản phẩm.`}</p>
+                                  )}
                                 </div>
                               </div>
 
@@ -766,7 +805,8 @@ export const CartPage: React.FC = () => {
                               <div className="sm:col-span-2 flex sm:justify-center my-1 sm:my-0">
                                 <QuantityInput
                                   quantity={item.quantity}
-                                  disabled={busyId !== null || needsReconcile}
+                                  maximum={maximumFor(item)}
+                                  disabled={busyId !== null || needsReconcile || !variant || !!batch.error || batch.isFetching}
                                   onChangeQuantity={(delta) => void changeQuantity(item, delta)}
                                   onDirectQuantity={(qty) => void setDirectQuantity(item, qty)}
                                   detailsId={"cart-details-" + item.id}
@@ -805,10 +845,6 @@ export const CartPage: React.FC = () => {
                           Xem thêm voucher &gt;
                         </Link>
                       </div>
-                      <div className="flex items-center gap-1.5 text-emerald-700">
-                        <Truck size={14} />
-                        <span>Miễn phí vận chuyển cho đơn hàng</span>
-                      </div>
                     </div>
                   </section>
                 );
@@ -829,17 +865,44 @@ export const CartPage: React.FC = () => {
           <div className="shopee-cart-sticky-bar">
             {/* Top Voucher Sub-row */}
             <div className="shopee-cart-sticky-voucher-row">
-              <div
-                className="flex items-center gap-2 text-xs text-slate-700 ml-auto cursor-pointer group"
+              <button
+                type="button"
+                className="cart-voucher-trigger"
+                aria-haspopup="dialog"
+                aria-expanded={voucherModalOpen}
                 onClick={() => setVoucherModalOpen(true)}
               >
                 <Ticket size={15} className="text-[#ee4d2d]" />
-                <span className="font-semibold text-slate-800">Shopee Voucher</span>
+                <span className="font-semibold text-slate-800">Mã giảm giá</span>
                 <span className="text-slate-300">|</span>
-                <span className="text-xs text-[#2563eb] group-hover:underline">
-                  Chọn hoặc nhập mã &gt;
-                </span>
-              </div>
+                {(() => {
+                  const voucherCount =
+                    (pickedVouchers.platform_voucher_code ? 1 : 0) +
+                    Object.keys(pickedVouchers.store_vouchers ?? {}).filter(
+                      (k) => !!pickedVouchers.store_vouchers?.[k],
+                    ).length;
+                  if (voucherCount > 0) {
+                    const codes = [
+                      pickedVouchers.platform_voucher_code
+                        ? `Sàn: ${pickedVouchers.platform_voucher_code}`
+                        : "",
+                      ...Object.values(pickedVouchers.store_vouchers ?? {}),
+                    ]
+                      .filter(Boolean)
+                      .join(", ");
+                    return (
+                      <span className="text-xs font-semibold text-emerald-700 group-hover:underline">
+                        Đã chọn {voucherCount} mã ({codes}) &gt;
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-xs text-[#2563eb] group-hover:underline">
+                      Chọn hoặc nhập mã &gt;
+                    </span>
+                  );
+                })()}
+              </button>
             </div>
 
             {/* Main Action Bar */}
@@ -860,13 +923,7 @@ export const CartPage: React.FC = () => {
                     <span className="shopee-cart-divider">|</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        for (const item of items) {
-                          if (selected.has(item.id)) {
-                            void removeItem(item);
-                          }
-                        }
-                      }}
+                      onClick={() => void removeItems(items.filter(item => selected.has(item.id)))}
                       disabled={busyId !== null || needsReconcile}
                       className="shopee-cart-clear-btn"
                     >
@@ -876,22 +933,22 @@ export const CartPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-6 ml-auto">
-                <div className="text-right">
-                  <div className="flex items-baseline gap-2 justify-end">
+              <div className="cart-summary-purchase">
+                <div className="cart-summary-total">
+                  <div className="cart-summary-amount">
                     <span className="text-sm text-slate-700">
-                      Tổng thanh toán ({selectedQuantity.toLocaleString("vi-VN")} sản phẩm):
+                      Tạm tính ({selectedQuantity.toLocaleString("vi-VN")} sản phẩm):
                     </span>
                     <span className="shopee-cart-total-price">
                       {subtotal !== null && Number.isSafeInteger(subtotal)
                         ? subtotal.toLocaleString("vi-VN") + " ₫"
                         : batch.isFetching
                           ? "..."
-                          : "0 ₫"}
+                          : "Chưa có giá"}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 m-0">
-                    Tiết kiệm &amp; ưu đãi áp dụng tại bước thanh toán
+                  <p className="cart-summary-note">
+                    Phí giao hàng và ưu đãi được xác nhận khi thanh toán.
                   </p>
                 </div>
 
@@ -903,10 +960,10 @@ export const CartPage: React.FC = () => {
                     selected.size === 0 ||
                     busyId !== null ||
                     needsReconcile ||
-                    loading
+                    loading || selectionUnavailable || subtotal === null || !Number.isSafeInteger(subtotal)
                   }
                 >
-                  Mua Hàng
+                  Thanh toán
                 </button>
               </div>
             </div>
@@ -916,10 +973,9 @@ export const CartPage: React.FC = () => {
           {voucherModalOpen && (
             <VoucherPicker
               storeIds={Array.from(new Set(items.map((it) => it.store_id)))}
+              initialVouchers={pickedVouchers}
               onClose={() => setVoucherModalOpen(false)}
-              onPick={(storeId, code) => {
-                alert(`Đã chọn voucher: ${code}. Bạn có thể kiểm tra chiết khấu tại bước thanh toán.`);
-              }}
+              onPick={handleVoucherPick}
             />
           )}
         </div>

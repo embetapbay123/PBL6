@@ -1992,5 +1992,126 @@
     "roles": [
       "CUSTOMER"
     ]
+  },
+  {
+    "method": "GET",
+    "path": "/ai/try-on/capabilities",
+    "operation_id": "getTryOnCapabilities",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/ai/try-on/photos",
+    "operation_id": "uploadTryOnPhoto",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/ai/try-on/jobs",
+    "operation_id": "createTryOnJob",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/ai/try-on/jobs",
+    "operation_id": "listTryOnJobs",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/ai/try-on/jobs/{id}",
+    "operation_id": "getTryOnJob",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/ai/try-on/jobs/{id}",
+    "operation_id": "deleteTryOnJob",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/ai/try-on/photos/{id}",
+    "operation_id": "deleteTryOnPhoto",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/ai/try-on/results/{id}",
+    "operation_id": "getTryOnResult",
+    "service": "M4",
+    "module": "try_on",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "GUEST",
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/chat/sessions/{id}",
+    "operation_id": "deleteOwnChatSession",
+    "service": "M4",
+    "module": "chat",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/chat/sessions",
+    "operation_id": "deleteOwnChatHistory",
+    "service": "M4",
+    "module": "chat",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
   }
 ]

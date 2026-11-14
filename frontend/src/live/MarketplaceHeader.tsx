@@ -292,6 +292,7 @@ export function MarketplaceHeader() {
                       {customer && (
                         <>
                           <Link to="/customer/orders">Đơn hàng</Link>
+                          <Link to="/customer/wallet">Ví số dư</Link>
                           <Link to="/customer/favorites">Yêu thích</Link>
                           <Link to="/customer/addresses">Sổ địa chỉ</Link>
                         </>

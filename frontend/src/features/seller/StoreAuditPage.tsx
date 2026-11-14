@@ -247,10 +247,8 @@ export function StoreAuditPage() {
   return (
     <section>
       <h1>Nhật ký Store</h1>
-      <p>
-        Chỉ các sự kiện gắn chắc chắn với Store hiện hành. Bản đọc đã lược dữ
-        liệu nhạy cảm; hồ sơ cũ thiếu liên kết cần Admin đối chiếu bằng mã truy
-        vết. Tên tài khoản là nhãn hiện tại, ID giữ để truy lại người thao tác.
+      <p className="text-xs text-slate-500 mb-2">
+        Lịch sử ghi nhận các thao tác quản lý sản phẩm, đơn hàng, kho và nhân viên của gian hàng theo thời gian thực.
       </p>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', margin: '8px 0 12px' }}>
         <SourceNavigation

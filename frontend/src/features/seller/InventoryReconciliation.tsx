@@ -75,11 +75,10 @@ export function InventoryReconciliation({ variantId }: { variantId?: string }) {
       className="boot-card mt-4"
       aria-label="Đối chiếu kho theo kỳ"
     >
-      <h2>Đối chiếu tồn thương mại theo kỳ</h2>
-      <p>
-        Tồn thương mại và lượng giữ được đối chiếu riêng. Hủy khi mới giữ khác
-        với hoàn kho sau khi đã trừ. Không dùng số này làm số đếm vật lý.
-      </p>
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <h2 className="text-base font-bold text-slate-800 m-0">Đối chiếu tồn kho theo kỳ</h2>
+        <span className="text-xs text-slate-500">Theo dõi biến động xuất nhập tồn và lượng hàng đã giữ chỗ</span>
+      </div>
       {!variantId ? (
         <p>Trong bảng tồn, mở Thêm → Đối chiếu kỳ ở phân loại cần kiểm tra.</p>
       ) : (

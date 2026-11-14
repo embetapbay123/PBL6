@@ -132,8 +132,8 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Giá trị đơn hàng tối thiểu không được âm.');
     }
 
-    if (input.max_discount_vnd !== undefined && input.max_discount_vnd !== null && input.max_discount_vnd < 0) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'Mức giảm tối đa không được âm.');
+    if (input.max_discount_vnd !== undefined && input.max_discount_vnd !== null && input.max_discount_vnd <= 0) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mức giảm tối đa phải lớn hơn 0.');
     }
 
     return this.write(async manager => {
@@ -297,8 +297,8 @@ export class VoucherService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'Giá trị đơn hàng tối thiểu không được âm.');
     }
 
-    if (input.max_discount_vnd !== undefined && input.max_discount_vnd !== null && input.max_discount_vnd < 0) {
-      throw new ApiError(422, 'VALIDATION_FAILED', 'Mức giảm tối đa không được âm.');
+    if (input.max_discount_vnd !== undefined && input.max_discount_vnd !== null && input.max_discount_vnd <= 0) {
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Mức giảm tối đa phải lớn hơn 0.');
     }
 
     return this.write(async manager => {
@@ -497,4 +497,3 @@ export class VoucherService {
     return repo.releaseVoucherReservations(purchaseGroupId);
   }
 }
-

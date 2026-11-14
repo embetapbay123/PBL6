@@ -18,6 +18,8 @@ export function StorePage() {
   const location = useLocation();
 
   const storeQuery = params.get("q") ?? "";
+  const rawSort = params.get("sort");
+  const sortBy = rawSort === "price_asc" || rawSort === "price_desc" || rawSort === "rating" ? rawSort : "default";
   const rawPage = Number(params.get("page"));
   const page =
     Number.isSafeInteger(rawPage) && rawPage >= 1 && rawPage <= 1000000
@@ -46,16 +48,17 @@ export function StorePage() {
   });
 
   const products = useQuery({
-    queryKey: ["public-store-products", id, page, storeQuery],
-    queryFn: () =>
+    queryKey: ["public-store-products", id, page, storeQuery, sortBy],
+    queryFn: ({signal}) =>
       callOperation("listStoreProducts", {
         path: { id: id! },
         query: {
           page,
           size: 20,
+          sort: sortBy === "default" ? "title" : sortBy,
           ...(storeQuery.trim() ? { q: storeQuery.trim() } : {}),
         },
-      }),
+      }, {signal}),
     enabled: !!id,
   });
 
@@ -65,7 +68,15 @@ export function StorePage() {
     queryFn: () => callOperation("listAvailableVouchers", { query: { store_ids: id! } }),
   });
 
-  const [sortBy, setSortBy] = useState<"default" | "price_asc" | "price_desc" | "rating">("default");
+  const setSortBy = (sort: "default" | "price_asc" | "price_desc" | "rating") => {
+    setParams(current => {
+      const next = new URLSearchParams(current);
+      next.delete("page");
+      if (sort === "default") next.delete("sort");
+      else next.set("sort", sort);
+      return next;
+    });
+  };
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const handleCopyCode = (code: string) => {
@@ -113,25 +124,7 @@ export function StorePage() {
     });
   };
 
-  const rawItems = products.data?.items ?? [];
-  const items = [...rawItems].sort((a, b) => {
-    if (sortBy === "price_asc") {
-      const minA = Math.min(...(a.variants?.map((v) => v.price_vnd) ?? [0]));
-      const minB = Math.min(...(b.variants?.map((v) => v.price_vnd) ?? [0]));
-      return minA - minB;
-    }
-    if (sortBy === "price_desc") {
-      const maxA = Math.max(...(a.variants?.map((v) => v.price_vnd) ?? [0]));
-      const maxB = Math.max(...(b.variants?.map((v) => v.price_vnd) ?? [0]));
-      return maxB - maxA;
-    }
-    if (sortBy === "rating") {
-      const rA = a.review_summary?.average ?? 0;
-      const rB = b.review_summary?.average ?? 0;
-      return rB - rA;
-    }
-    return 0;
-  });
+  const items = products.data?.items ?? [];
 
   return (
     <section className="new-store-page">
@@ -290,6 +283,7 @@ export function StorePage() {
               type="button"
               className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition ${sortBy === "default" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
               onClick={() => setSortBy("default")}
+              aria-pressed={sortBy === "default"}
             >
               Mặc định
             </button>
@@ -297,6 +291,7 @@ export function StorePage() {
               type="button"
               className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition ${sortBy === "rating" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
               onClick={() => setSortBy("rating")}
+              aria-pressed={sortBy === "rating"}
             >
               Đánh giá cao
             </button>
@@ -304,6 +299,7 @@ export function StorePage() {
               type="button"
               className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition ${sortBy === "price_asc" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
               onClick={() => setSortBy("price_asc")}
+              aria-pressed={sortBy === "price_asc"}
             >
               Giá thấp đến cao
             </button>
@@ -311,6 +307,7 @@ export function StorePage() {
               type="button"
               className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition ${sortBy === "price_desc" ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"}`}
               onClick={() => setSortBy("price_desc")}
+              aria-pressed={sortBy === "price_desc"}
             >
               Giá cao đến thấp
             </button>

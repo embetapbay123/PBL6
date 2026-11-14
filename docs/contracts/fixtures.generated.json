@@ -726,7 +726,8 @@
       "query": {
         "page": 1,
         "size": 20,
-        "q": "fixture-value"
+        "q": "fixture-value",
+        "sort": "title"
       },
       "headers": {}
     },
@@ -2243,6 +2244,19 @@
       "total": 0,
       "page": 1,
       "size": 1
+    },
+    "status": 200
+  },
+  "deleteOwnChatHistory": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "deleted_count": 0
     },
     "status": 200
   },
@@ -5351,6 +5365,172 @@
     },
     "response": {
       "configured": false
+    },
+    "status": 200
+  },
+  "getTryOnCapabilities": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "product_id": "11111111-1111-4111-8111-111111111111",
+        "variant_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "headers": {}
+    },
+    "response": {
+      "enabled": false,
+      "message": "fixture-value",
+      "demo_password_required": false,
+      "quota": {
+        "remaining": 0,
+        "limit": 1,
+        "reset_at": "2026-10-02T00:00:00Z"
+      },
+      "consent_version": "fixture-value",
+      "privacy": {
+        "provider_label": "OpenAI",
+        "retention_hours": 1
+      }
+    },
+    "status": 200
+  },
+  "uploadTryOnPhoto": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "photo": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "expires_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 201
+  },
+  "createTryOnJob": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "photo_id": "11111111-1111-4111-8111-111111111111",
+        "product_id": "11111111-1111-4111-8111-111111111111",
+        "variant_id": "11111111-1111-4111-8111-111111111111",
+        "consent_version": "fixture-value"
+      },
+      "path": {},
+      "query": {},
+      "headers": {
+        "idempotency-key": "11111111-1111-4111-8111-111111111111"
+      }
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "idempotency_key": "11111111-1111-4111-8111-111111111111",
+      "status": "QUEUED",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "result_url": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 202
+  },
+  "listTryOnJobs": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {
+        "product_id": "11111111-1111-4111-8111-111111111111",
+        "variant_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "headers": {}
+    },
+    "response": {
+      "items": []
+    },
+    "status": 200
+  },
+  "getTryOnJob": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "product_id": "11111111-1111-4111-8111-111111111111",
+      "variant_id": "11111111-1111-4111-8111-111111111111",
+      "idempotency_key": "11111111-1111-4111-8111-111111111111",
+      "status": "QUEUED",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "result_url": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 200
+  },
+  "deleteTryOnJob": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {},
+    "status": 204
+  },
+  "deleteTryOnPhoto": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {},
+    "status": 204
+  },
+  "getTryOnResult": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {
+        "expires": 1,
+        "signature": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "headers": {}
+    },
+    "response": {},
+    "status": 200
+  },
+  "deleteOwnChatSession": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "deleted_count": 0
     },
     "status": 200
   },

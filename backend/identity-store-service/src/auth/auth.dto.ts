@@ -11,7 +11,7 @@ export class RefreshDto {
 }
 export class RegisterDto {
   @IsEmail() @Length(1, 254) email!: string;
-  @IsString() @Length(1, 72)
+  @IsString() @Length(8, 72)
   @ValidateBy({name:'bcryptByteLimit',validator:{validate:value=>typeof value==='string' && Buffer.byteLength(value,'utf8')<=72,defaultMessage:()=> 'Mật khẩu vượt giới hạn 72 byte UTF-8.'}})
   password!: string;
   @IsOptional() @IsString() @Length(1, 200) display_name?: string;

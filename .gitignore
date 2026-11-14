@@ -20,3 +20,16 @@ mobile/android/local.properties
 **/playwright-report/
 *.log
 ~$*
+
+tester/reports/
+tester/config/server.config.local.json
+
+# Local investigation, runtime evidence, and machine recovery data.
+.local/
+_acl_recovery/
+outputs/
+docs/kiem-thu/minh-chung/
+# Ad-hoc administrative helpers are kept local; reviewed deployment tools live in scripts/.
+scripts/run-remote-cmd.ps1
+scripts/sql.ps1
+scripts/server-logs.ps1

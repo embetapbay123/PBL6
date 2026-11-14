@@ -44,7 +44,9 @@ async def lifespan(app):
     if os.environ['AI_MODE']=='real':
         from .chat.provider import CatalogSelector
         CatalogSelector() # Fail startup for invalid provider configuration.
-    engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1),pool_size=5,max_overflow=0)
+    from .try_on.config import Settings
+    Settings.load() # Reject malformed limits; absent key/budgets simply disable generation.
+    engine=create_engine(os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1),pool_size=5,max_overflow=0,hide_parameters=True)
     with engine.connect() as db: db.execute(text('SELECT 1'))
     limiter=Redis.from_url(os.environ['REDIS_URL'],socket_timeout=1,socket_connect_timeout=1)
     http_client=httpx.AsyncClient(timeout=1,follow_redirects=False,limits=httpx.Limits(max_connections=50,max_keepalive_connections=20))
@@ -111,7 +113,7 @@ def live(): return {'status':'alive','service':'M4'}
 def ready():
     if engine is None: raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Database chưa sẵn sàng.')
     with engine.connect() as db:
-        expected='008_chat_thinking_trace.sql' if os.getenv('AI_MODE')=='real' else '001_initial.sql'
+        expected='009_virtual_try_on.sql'
         row=db.execute(text('SELECT version FROM schema_migration WHERE version=:version'),{'version':expected}).first()
         if not row: raise ApiError(503,'SCHEMA_NOT_READY','Chưa chạy migration.')
     return {'status':'ready','service':'M4','mode':os.getenv('AI_MODE','mock')}
@@ -138,6 +140,12 @@ def register(record):
             query={key:request.query_params.getlist(key) if len(request.query_params.getlist(key))>1 else value for key,value in request.query_params.items()}
             request.state.contract=validate_operation(op,body=payload,path=request.path_params,query=query,headers=dict(request.headers))
         except (ValueError,ValidationError): raise ApiError(422,'VALIDATION_FAILED','Dữ liệu không hợp lệ.')
+        if op in ('deleteOwnChatSession','deleteOwnChatHistory'):
+            if engine is None:raise ApiError(503,'DEPENDENCY_UNAVAILABLE','Chưa thể xóa lịch sử. Vui lòng thử lại.')
+            try:
+                service=ChatRuntime(engine,None,CatalogSelector(provider='none'))
+                return await run_in_threadpool(service.delete,identity['user_id'],request.path_params.get('id'))
+            except InternalError as error:raise ApiError(error.status,error.code,error.message)
         if os.getenv('AI_MODE')=='real' and op in ('createChatSession','listOwnChatSessions','sendChatMessage'):
             from fastapi.responses import JSONResponse
             service=ChatRuntime(engine,live_catalog(),CatalogSelector(http_client=http_client))
@@ -185,4 +193,7 @@ def register(record):
     app.add_api_route('/api/v1'+record['path'],endpoint,methods=[record['method']],name=record['operation_id'])
 
 for record in json.loads(contract_file.read_text(encoding='utf-8')):
-    if record['service']=='M4': register(record)
+    if record['service']=='M4' and record['module']!='try_on': register(record)
+
+from .try_on.routes import install as install_try_on
+install_try_on(app,lambda:engine,lambda:http_client,context,live_catalog,lambda:limiter)

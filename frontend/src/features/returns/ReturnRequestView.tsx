@@ -205,7 +205,7 @@ export function ReturnRequestView({
           <p role="status">
             Lần đổi cũ chưa lưu tên và phân loại hàng đã bàn giao.{" "}
             {customer
-              ? "Hãy kiểm tra hàng đã nhận hoặc hỏi cửa hàng trước khi xác nhận."
+              ? "Hãy kiểm tra kiện hàng đổi hoặc liên hệ cửa hàng để hỗ trợ."
               : "Cần đối chiếu tham chiếu giao hàng với cửa hàng trước khi xác nhận; không dùng phân loại ban đầu để suy hàng đổi."}
           </p>
         )}
@@ -216,10 +216,10 @@ export function ReturnRequestView({
       {customer && children}
       {customer && request.type === "REFUND" && (
         <p role="status"><strong>Hoàn tiền</strong> · <span>{request.amount_vnd === 0
-          ? "Không có khoản cần hoàn"
+          ? "Đơn 0đ không phát sinh khoản hoàn (Áp dụng ưu đãi 100%)"
           : request.refund_status
             ? refundStatusLabel(request.refund_status)
-            : "Chưa có xác nhận hoàn tiền."}</span></p>
+            : "Đang xử lý hoàn tiền."}</span></p>
       )}
       {customer ? (
         <details>
@@ -291,7 +291,7 @@ export function ReturnRequestView({
                 <th scope="row" style={{ background: '#f8fafc', color: '#475569', fontWeight: 600 }}>Trạng thái hoàn tiền</th>
                 <td>
                   {request.amount_vnd === 0 ? (
-                    <span className="market-badge">{customer ? "Đơn 0đ không phát sinh khoản hoàn." : "Đơn 0đ không có khoản đã thu cần hoàn. Hoàn tất kiểm hàng và đối chiếu kho; không ghi giao dịch hoàn tiền giả."}</span>
+                    <span className="market-badge">{customer ? "Đơn 0đ không phát sinh khoản hoàn." : "Đơn 0đ: Không phát sinh khoản tiền thu cần hoàn trả."}</span>
                   ) : request.refund_status === "SUCCEEDED" ? (
                     <span className="market-badge is-success">Đã xác nhận hoàn tiền.</span>
                   ) : request.refund_status ? (

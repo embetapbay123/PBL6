@@ -8,22 +8,31 @@ import { HelpCircle, Ticket, Truck } from "lucide-react";
 
 const money = (n: number) => n.toLocaleString("vi-VN") + " ₫";
 
+export interface SelectedVouchers {
+  platform_voucher_code?: string;
+  store_vouchers?: Record<string, string>; // store_id -> voucher_code
+}
+
 export function VoucherPicker({
   storeIds,
   onPick,
   onClose,
-  initialCode,
+  initialVouchers,
 }: {
   storeIds: string[];
-  onPick: (storeId: string | undefined, code: string) => void;
+  onPick: (vouchers: SelectedVouchers) => void;
   onClose: () => void;
-  initialCode?: string;
+  initialVouchers?: SelectedVouchers;
 }) {
   const [page, setPage] = useState(1);
   const [inputCode, setInputCode] = useState("");
-  const [selectedCode, setSelectedCode] = useState<string>(initialCode ?? "");
-  const [selectedStoreId, setSelectedStoreId] = useState<string | undefined>();
-  const [inputError, setInputError] = useState<string | null>(null);
+  const [selectedPlatformCode, setSelectedPlatformCode] = useState<string>(
+    initialVouchers?.platform_voucher_code ?? ""
+  );
+  const [selectedStoreVouchers, setSelectedStoreVouchers] = useState<Record<string, string>>(
+    initialVouchers?.store_vouchers ? { ...initialVouchers.store_vouchers } : {}
+  );
+  const [inputNotice, setInputNotice] = useState<string | null>(null);
 
   const ids = [...storeIds].sort().join(",");
   const list = useQuery({
@@ -37,32 +46,69 @@ export function VoucherPicker({
   const handleApplyInput = () => {
     const trimmed = inputCode.trim().toUpperCase();
     if (!trimmed) return;
-    setSelectedCode(trimmed);
-    setSelectedStoreId(undefined);
-    setInputError(null);
+    const match = list.data?.items.find((item) => item.code.toUpperCase() === trimmed);
+    if (match) {
+      if (match.scope === "PLATFORM") {
+        setSelectedPlatformCode(match.code);
+        setInputNotice(`Đã chọn mã toàn sàn: ${match.code}`);
+      } else if (match.scope === "STORE" && match.store_id) {
+        setSelectedStoreVouchers((prev) => ({
+          ...prev,
+          [match.store_id!]: match.code,
+        }));
+        setInputNotice(`Đã chọn mã gian hàng: ${match.code}`);
+      }
+    } else {
+      // Cho phép áp mã chưa có trong trang hiển thị như mã toàn sàn
+      setSelectedPlatformCode(trimmed);
+      setInputNotice(`Đã chọn mã: ${trimmed}`);
+    }
+    setInputCode("");
   };
 
   const handleConfirm = () => {
-    if (selectedCode) {
-      onPick(selectedStoreId, selectedCode);
+    const cleanStoreVouchers: Record<string, string> = {};
+    for (const [sId, code] of Object.entries(selectedStoreVouchers)) {
+      if (code && code.trim()) {
+        cleanStoreVouchers[sId] = code.trim();
+      }
     }
+    onPick({
+      platform_voucher_code: selectedPlatformCode.trim() || undefined,
+      store_vouchers: Object.keys(cleanStoreVouchers).length > 0 ? cleanStoreVouchers : undefined,
+    });
     onClose();
   };
 
   const platformVouchers = list.data?.items.filter((v) => v.scope === "PLATFORM") ?? [];
   const storeVouchers = list.data?.items.filter((v) => v.scope === "STORE") ?? [];
 
+  // Group store vouchers by store_id
+  const storeVouchersByStore = storeVouchers.reduce<Record<string, typeof storeVouchers>>((acc, v) => {
+    const sId = v.store_id || "unknown";
+    if (!acc[sId]) acc[sId] = [];
+    acc[sId].push(v);
+    return acc;
+  }, {});
+
+  const totalSelectedCount =
+    (selectedPlatformCode ? 1 : 0) + Object.keys(selectedStoreVouchers).filter((k) => !!selectedStoreVouchers[k]).length;
+
   return (
-    <Modal label="Chọn Shopee Voucher" onClose={onClose}>
+    <Modal label="Chọn mã giảm giá" onClose={onClose}>
       <div className="shopee-voucher-dialog">
         {/* Modal Header */}
         <header className="shopee-voucher-header">
-          <h2 className="shopee-voucher-title">Chọn Shopee Voucher</h2>
+          <h2 className="shopee-voucher-title">Chọn mã giảm giá</h2>
           <button
             type="button"
             className="shopee-voucher-help-btn"
             title="Hỗ trợ thông tin mã giảm giá"
-            onClick={() => alert("Mỗi đơn hàng có thể áp dụng 01 Voucher Vận chuyển và 01 Voucher Giảm giá từ Shop hoặc Sàn.")}
+            onClick={() =>
+              alert(
+                "Bạn có thể chọn cùng lúc: 01 Voucher Toàn Sàn (hoặc Miễn Phí Vận Chuyển) + 01 Voucher cho mỗi Gian Hàng trong đơn!"
+              )
+            }
           >
             <span>Hỗ Trợ</span>
             <HelpCircle size={15} />
@@ -78,11 +124,12 @@ export function VoucherPicker({
             <input
               id="shopee-voucher-code-input"
               type="text"
-              placeholder="Mã Shopee Voucher"
+              placeholder="Nhập mã voucher (Sàn hoặc Shop)"
               value={inputCode}
+              maxLength={50}
               onChange={(e) => {
                 setInputCode(e.target.value);
-                setInputError(null);
+                setInputNotice(null);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
@@ -98,13 +145,13 @@ export function VoucherPicker({
               onClick={handleApplyInput}
               className="shopee-voucher-apply-btn"
             >
-              ÁP DỤNG
+              Chọn mã
             </button>
           </div>
         </div>
 
-        {inputError && (
-          <p className="text-xs text-rose-600 px-4 py-1">{inputError}</p>
+        {inputNotice && (
+          <p className="text-xs text-emerald-700 px-4 py-1 m-0 font-medium">{inputNotice}</p>
         )}
 
         {/* Scrollable Voucher List Body */}
@@ -125,27 +172,31 @@ export function VoucherPicker({
               {platformVouchers.length > 0 && (
                 <div className="shopee-voucher-section">
                   <div className="shopee-voucher-section-title-wrap">
-                    <h3 className="shopee-voucher-section-title">Mã Toàn Sàn &amp; Vận Chuyển</h3>
-                    <span className="shopee-voucher-section-subtitle">Có thể chọn 1 Voucher</span>
+                    <h3 className="shopee-voucher-section-title">Mã toàn sàn</h3>
+                    <span className="shopee-voucher-section-subtitle">
+                      {selectedPlatformCode ? `Đã chọn: ${selectedPlatformCode}` : "Có thể chọn 1 Voucher"}
+                    </span>
                   </div>
 
                   <div className="shopee-voucher-cards-list">
                     {platformVouchers.map((v) => {
-                      const isSelected = selectedCode === v.code;
+                      const isSelected = selectedPlatformCode === v.code;
                       const isPercent = v.discount_type === "PERCENT";
                       return (
-                        <div
+                        <button
+                          type="button"
+                          aria-label={'Mã ' + v.code}
+                          aria-pressed={isSelected}
                           key={v.id ?? v.code}
                           className={`shopee-ticket-card ${isSelected ? "is-selected" : ""}`}
                           onClick={() => {
-                            setSelectedCode(isSelected ? "" : v.code);
-                            setSelectedStoreId(undefined);
+                            setSelectedPlatformCode(isSelected ? "" : v.code);
                           }}
                         >
                           {/* Left Teal Badge */}
                           <div className="shopee-ticket-left is-teal">
                             <Truck size={22} className="mb-1" />
-                            <span className="shopee-ticket-badge-title">PBL6 VIP</span>
+                            <span className="shopee-ticket-badge-title">PBL6</span>
                             <span className="shopee-ticket-badge-sub">TOÀN SÀN</span>
                           </div>
 
@@ -164,17 +215,16 @@ export function VoucherPicker({
 
                             <div className="flex items-center justify-between gap-2 mt-2">
                               <span className="shopee-ticket-exp">
-                                HSD: {new Date(v.ends_at).toLocaleDateString("vi-VN")}
-                                <span className="shopee-ticket-terms">Điều Kiện</span>
+                                Mã: <strong>{v.code}</strong> · HSD: {new Date(v.ends_at).toLocaleDateString("vi-VN")}
                               </span>
 
-                              {/* Radio Indicator */}
+                              {/* Radio / Checkbox Indicator */}
                               <div className="shopee-ticket-radio">
                                 <span className={`shopee-radio-circle ${isSelected ? "is-checked" : ""}`} />
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -182,69 +232,90 @@ export function VoucherPicker({
               )}
 
               {/* Section 2: Store Discount Vouchers */}
-              {storeVouchers.length > 0 && (
+              {Object.keys(storeVouchersByStore).length > 0 && (
                 <div className="shopee-voucher-section">
                   <div className="shopee-voucher-section-title-wrap">
                     <h3 className="shopee-voucher-section-title">Mã Giảm Giá Từ Shop</h3>
-                    <span className="shopee-voucher-section-subtitle">Có thể chọn 1 Voucher</span>
+                    <span className="shopee-voucher-section-subtitle">
+                      Mỗi gian hàng có thể áp dụng 1 voucher
+                    </span>
                   </div>
 
-                  <div className="shopee-voucher-cards-list">
-                    {storeVouchers.map((v) => {
-                      const isSelected = selectedCode === v.code;
-                      const isPercent = v.discount_type === "PERCENT";
-                      return (
-                        <div
-                          key={v.id ?? v.code}
-                          className={`shopee-ticket-card ${isSelected ? "is-selected" : ""}`}
-                          onClick={() => {
-                            setSelectedCode(isSelected ? "" : v.code);
-                            setSelectedStoreId(v.store_id);
-                          }}
-                        >
-                          {/* Left Orange Badge */}
-                          <div className="shopee-ticket-left is-orange">
-                            <Ticket size={22} className="mb-1" />
-                            <span className="shopee-ticket-badge-title">SHOP</span>
-                            <span className="shopee-ticket-badge-sub">VOUCHER</span>
-                          </div>
-
-                          {/* Right Content */}
-                          <div className="shopee-ticket-right">
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <h4 className="shopee-ticket-title">
-                                  Giảm {isPercent ? `${v.discount_value}%` : money(v.discount_value)}
-                                  {v.max_discount_vnd ? ` tối đa ${money(v.max_discount_vnd)}` : ""}
-                                  {` cho đơn từ ${money(v.min_goods_vnd ?? 0)}`}
-                                </h4>
-                                {v.store_id && (
-                                  <div className="text-[11px] text-slate-500 mt-0.5">
-                                    <StoreLabel id={v.store_id} />
-                                  </div>
-                                )}
-                              </div>
-                              {v.per_customer_limit && (
-                                <span className="shopee-ticket-count-badge">x{v.per_customer_limit}</span>
-                              )}
-                            </div>
-
-                            <div className="flex items-center justify-between gap-2 mt-2">
-                              <span className="shopee-ticket-exp">
-                                HSD: {new Date(v.ends_at).toLocaleDateString("vi-VN")}
-                                <span className="shopee-ticket-terms">Điều Kiện</span>
-                              </span>
-
-                              {/* Radio Indicator */}
-                              <div className="shopee-ticket-radio">
-                                <span className={`shopee-radio-circle ${isSelected ? "is-checked" : ""}`} />
-                              </div>
-                            </div>
-                          </div>
+                  {Object.entries(storeVouchersByStore).map(([storeId, vList]) => {
+                    const currentStorePicked = selectedStoreVouchers[storeId];
+                    return (
+                      <div key={storeId} className="mb-4">
+                        <div className="text-xs font-semibold text-slate-700 mb-2 flex items-center justify-between">
+                          <span>
+                            Gian hàng: <StoreLabel id={storeId} />
+                          </span>
+                          {currentStorePicked && (
+                            <span className="text-emerald-700">Đã chọn: {currentStorePicked}</span>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
+                        <div className="shopee-voucher-cards-list">
+                          {vList.map((v) => {
+                            const isSelected = selectedStoreVouchers[storeId] === v.code;
+                            const isPercent = v.discount_type === "PERCENT";
+                            return (
+                              <button
+                                type="button"
+                                aria-label={'Mã ' + v.code}
+                                aria-pressed={isSelected}
+                                key={v.id ?? v.code}
+                                className={`shopee-ticket-card ${isSelected ? "is-selected" : ""}`}
+                                onClick={() => {
+                                  setSelectedStoreVouchers((prev) => {
+                                    const next = { ...prev };
+                                    if (next[storeId] === v.code) {
+                                      delete next[storeId];
+                                    } else {
+                                      next[storeId] = v.code;
+                                    }
+                                    return next;
+                                  });
+                                }}
+                              >
+                                {/* Left Orange Badge */}
+                                <div className="shopee-ticket-left is-orange">
+                                  <Ticket size={22} className="mb-1" />
+                                  <span className="shopee-ticket-badge-title">SHOP</span>
+                                  <span className="shopee-ticket-badge-sub">VOUCHER</span>
+                                </div>
+
+                                {/* Right Content */}
+                                <div className="shopee-ticket-right">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <h4 className="shopee-ticket-title">
+                                        Giảm {isPercent ? `${v.discount_value}%` : money(v.discount_value)}
+                                        {v.max_discount_vnd ? ` tối đa ${money(v.max_discount_vnd)}` : ""}
+                                        {` cho đơn từ ${money(v.min_goods_vnd ?? 0)}`}
+                                      </h4>
+                                    </div>
+                                    {v.per_customer_limit && (
+                                      <span className="shopee-ticket-count-badge">x{v.per_customer_limit}</span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center justify-between gap-2 mt-2">
+                                    <span className="shopee-ticket-exp">
+                                      Mã: <strong>{v.code}</strong> · HSD: {new Date(v.ends_at).toLocaleDateString("vi-VN")}
+                                    </span>
+
+                                    {/* Radio / Checkbox Indicator */}
+                                    <div className="shopee-ticket-radio">
+                                      <span className={`shopee-radio-circle ${isSelected ? "is-checked" : ""}`} />
+                                    </div>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -264,6 +335,19 @@ export function VoucherPicker({
 
         {/* Modal Footer */}
         <footer className="shopee-voucher-footer">
+          <div className="text-xs text-slate-600 mr-auto">
+            {totalSelectedCount > 0 ? (
+              <span>
+                Đã chọn <strong>{totalSelectedCount}</strong> voucher
+                {selectedPlatformCode ? ` (Sàn: ${selectedPlatformCode})` : ""}
+                {Object.keys(selectedStoreVouchers).length > 0
+                  ? ` (Shop: ${Object.values(selectedStoreVouchers).join(", ")})`
+                  : ""}
+              </span>
+            ) : (
+              <span>Chưa chọn voucher nào</span>
+            )}
+          </div>
           <button
             type="button"
             className="shopee-voucher-btn-cancel"
@@ -276,7 +360,7 @@ export function VoucherPicker({
             className="shopee-voucher-btn-confirm"
             onClick={handleConfirm}
           >
-            ĐỒNG Ý
+            Áp dụng
           </button>
         </footer>
       </div>

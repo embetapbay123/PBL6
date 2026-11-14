@@ -98,7 +98,10 @@ const restore=():Promise<AuthTokens>=>{
 };
 export async function request<T>(path:string,options:RequestInit={},retry=true):Promise<T> {
   const generation=epoch,scope=sessionScope(session),authRequest=path.startsWith('/auth/');
-  const headers=new Headers(options.headers);headers.set('Content-Type','application/json');
+  const headers=new Headers(options.headers);
+  // The browser supplies the multipart boundary for authenticated photo uploads.
+  if(options.body instanceof FormData)headers.delete('Content-Type');
+  else headers.set('Content-Type','application/json');
   const store=session?.context?.store_membership?.store_id;
   if(/^\/store(?:\/|\?|$)/.test(path)&&store){
     const supplied=headers.get('X-Store-Context');

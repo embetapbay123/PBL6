@@ -71,8 +71,7 @@ export function CartProduct({
                 quotedLine?.variant_values ?? variant?.variant_values,
                 quotedLine?.variant_title ?? "Phân loại tiêu chuẩn",
               )
-            : "Chưa tải phân loại"}{" "}
-          · {quotedLine?.sku ?? variant?.sku ?? "Chưa tải SKU"}
+            : "Chưa tải phân loại"}
         </p>
         {!hideInlinePrices && (
           <div className="flex flex-wrap items-baseline gap-x-3 text-xs mt-1">

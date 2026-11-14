@@ -219,8 +219,7 @@ function ProductDecision({
             </span>
           </div>
           <p className="text-xs text-slate-500 my-0.5">
-            Mã sản phẩm: <code>{product.id}</code> · Trạng thái bán: {product.status} · Kiểm duyệt:{" "}
-            {visible ? "Được hiển thị" : "Bị ẩn"}
+            Mã sản phẩm: <code>{product.id ? product.id.slice(-8).toUpperCase() : "—"}</code> · Trạng thái bán: <span className="font-medium text-slate-700">{product.status === "ACTIVE" ? "Đang bán" : product.status}</span>
           </p>
           <AdminStoreIdentity id={product.store_id} parties={parties} />
         </div>

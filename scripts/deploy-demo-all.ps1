@@ -1,15 +1,19 @@
 param(
-    [string]$Password = $(if ($env:DEPLOY_PASSWORD) { $env:DEPLOY_PASSWORD } else { '1' })
+    [string]$Password = $env:DEPLOY_PASSWORD
 )
+if (-not $Password) { throw 'Set DEPLOY_PASSWORD explicitly for this legacy helper.' }
+
 
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 $server = 'realkhoa@alpine.khoav4.com'
 $sshOptions = @('-o', 'StrictHostKeyChecking=accept-new', '-o', 'ConnectTimeout=15')
 
-$temp = [IO.Path]::GetTempPath()
+$expectedTemp = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ("pbl6-all-" + [Guid]::NewGuid().ToString("N"))))
+$temp = (New-Item -ItemType Directory -Path $expectedTemp).FullName
 $askpass = Join-Path $temp 'askpass.cmd'
-[IO.File]::WriteAllText($askpass, "@echo $Password`r`n", [Text.Encoding]::ASCII)
+$env:PBL6_SSH_PASSWORD = $Password
+[IO.File]::WriteAllText($askpass, '@powershell.exe -NoLogo -NoProfile -NonInteractive -Command "[Console]::Write([Environment]::GetEnvironmentVariable(''PBL6_SSH_PASSWORD''))"' + "`r`n", [Text.Encoding]::ASCII)
 $env:SSH_ASKPASS = $askpass
 $env:SSH_ASKPASS_REQUIRE = 'force'
 $env:DISPLAY = ':0'
@@ -28,6 +32,7 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Packaging backend failed.' }
     }
     finally {
+    Remove-Item Env:PBL6_SSH_PASSWORD -ErrorAction SilentlyContinue
         Pop-Location
     }
 
@@ -43,6 +48,10 @@ try {
     $rebuildCmd = "cd ~/pbl6-demo && docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml build m1 m2 && docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml up -d --no-deps m1 m2"
     & ssh.exe -p 2122 @sshOptions $server $rebuildCmd
     if ($LASTEXITCODE -ne 0) { throw 'Rebuilding m1/m2 failed.' }
+
+    Write-Host '5b. Running database migrations on demo server...'
+    $migrateCmd = "cd ~/pbl6-demo && docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml exec -e MIGRATE_SERVICES=M1 -T m1 node dist/shared/src/migrate.js && docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml exec -e MIGRATE_SERVICES=M2 -T m2 node dist/shared/src/migrate.js"
+    & ssh.exe -p 2122 @sshOptions $server $migrateCmd
 
     Write-Host '6. Verifying search API on demo server...'
     Start-Sleep -Seconds 5
@@ -68,4 +77,6 @@ finally {
     Remove-Item -LiteralPath $askpass -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $tarFile -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath (Join-Path $repo 'backend-update.tar.gz') -ErrorAction SilentlyContinue
+    if ([IO.Path]::GetFullPath($temp) -ne $expectedTemp) { throw 'Unexpected deployment temporary directory.' }
+    Remove-Item -LiteralPath $expectedTemp -Recurse -Force -ErrorAction SilentlyContinue
 }

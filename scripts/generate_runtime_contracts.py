@@ -41,7 +41,8 @@ def main():
                 if 'operationId' not in operation:
                     continue
                 name = operation['operationId']
-                body = operation.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema')
+                content = operation.get('requestBody', {}).get('content', {})
+                body = content.get('application/json', content.get('multipart/form-data', {})).get('schema')
                 record = dict(method=method.upper(), route=path, internal=doc == 'internal-api',
                               service=operation['x-service-owner'], status=operation['x-implementation-status'],
                               body_required=operation.get('requestBody', {}).get('required', False),

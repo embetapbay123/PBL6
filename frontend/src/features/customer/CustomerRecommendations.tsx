@@ -1,15 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import {
-  getCustomerRecommendations,
-  getRelatedProducts,
-} from "../../api/recommendationsChat";
 import { callOperation } from "../../api/operations";
 import { ApiError } from "../../api/client";
-import type { OperationOutputs } from "../../api/operations.generated";
 import { useAuth } from "../../api/auth-context";
 import { ErrorView, Loading, Pagination } from "../../bootstrap/components";
 import { CatalogCard } from "../../live/CatalogCard";
+import { useProductBatch } from "./useProductBatch";
 
 export function CustomerRecommendations({
   productId,
@@ -27,7 +24,6 @@ export function CustomerRecommendations({
     ? session.context.user_id
     : undefined;
   if (!productId && !customer) return null;
-  const excludeKey = (excludeIds ?? []).slice().sort().join(",");
   return (
     <Recommendations
       key={
@@ -35,11 +31,10 @@ export function CustomerRecommendations({
         ":" +
         (customer ?? "guest") +
         ":" +
-        excludeKey +
-        ":" +
         (compact ? "compact" : "full")
       }
       productId={productId}
+      customer={customer}
       excludeIds={excludeIds}
       compact={compact}
       limit={limit}
@@ -49,101 +44,68 @@ export function CustomerRecommendations({
 
 function Recommendations({
   productId,
+  customer,
   excludeIds,
   compact = false,
   limit,
 }: {
   productId?: string;
+  customer?: string;
   excludeIds?: string[];
   compact?: boolean;
   limit?: number;
 }) {
-  const [products, setProducts] = useState<OperationOutputs["getProduct"][]>([]),
-    [recent, setRecent] = useState<OperationOutputs["getProduct"][]>([]),
-    [error, setError] = useState<unknown>(),
-    [loading, setLoading] = useState(true),
-    [source, setSource] = useState(""),
-    [page, setPage] = useState(1),
-    [total, setTotal] = useState(0),
-    [retry, setRetry] = useState(0),
+  const [page, setPage] = useState(1),
     [expandForYou, setExpandForYou] = useState(false),
     [expandRecent, setExpandRecent] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(undefined);
-    setProducts([]);
-    (async () => {
-      if (productId) {
-        const result = await getRelatedProducts(productId, page);
-        if (
-          !Array.isArray(result?.items) ||
-          !Number.isSafeInteger(result.total)
-        )
-          throw new ApiError(
-            503,
-            "INVALID_RECOMMENDATION_RESPONSE",
-            "Chưa tải được gợi ý sản phẩm. Bạn vẫn có thể chọn và mua sản phẩm đang xem."
-          );
-        if (active) {
-          const filtered = excludeIds?.length
-            ? result.items.filter((p) => !p.id || !excludeIds.includes(p.id))
-            : result.items;
-          setProducts(filtered);
-          setTotal(result.total);
-        }
-      } else {
-        const result = await getCustomerRecommendations();
-        const excluded = new Set(excludeIds ?? []);
-        // Exclude results already shown in main search/catalog
-        const forYouIds = result.product_ids.filter((id) => !excluded.has(id));
-        // Exclude both main results and items already in forYou from recently viewed
-        const forYouSet = new Set(forYouIds);
-        const recentIds = result.recently_viewed_product_ids.filter(
-          (id) => !excluded.has(id) && !forYouSet.has(id)
-        );
-
-        const ids = [...new Set([...forYouIds, ...recentIds])];
-        const values = await Promise.all(
-          ids.map(async (id) => {
-            try {
-              return await callOperation("getProduct", { path: { id } });
-            } catch (e) {
-              if (e instanceof ApiError && e.status === 404) return undefined;
-              throw e;
-            }
-          })
-        );
-        if (active) {
-          const byId = new Map(
-            values
-              .filter(
-                (v): v is OperationOutputs["getProduct"] =>
-                  !!v && v.status === "ACTIVE" && !!v.id
-              )
-              .map((v) => [v.id!, v])
-          );
-          setProducts(
-            forYouIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []))
-          );
-          setRecent(
-            recentIds.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : []))
-          );
-          setSource(result.source);
-        }
-      }
-    })()
-      .catch((e) => {
-        if (active) setError(e);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [productId, page, retry]);
+  const personal = useQuery({
+    queryKey: ["customer-recommendations", customer],
+    enabled: !productId && !!customer,
+    staleTime: 30000,
+    // Read consent again after leaving this view instead of retaining a private feed.
+    gcTime: 0,
+    retry: false,
+    queryFn: async ({signal}) => {
+      const result = await callOperation("getForYou", {}, {signal});
+      if (!Array.isArray(result?.product_ids) || !Array.isArray(result.recently_viewed_product_ids) ||
+          ![...result.product_ids, ...result.recently_viewed_product_ids].every(id => typeof id === "string"))
+        throw new ApiError(503, "INVALID_RECOMMENDATION_RESPONSE", "Chưa tải được gợi ý sản phẩm. Bạn vẫn có thể chọn và mua sản phẩm đang xem.");
+      return result;
+    },
+  });
+  const related = useQuery({
+    queryKey: ["related-products", productId, page],
+    enabled: !!productId,
+    staleTime: 30000,
+    retry: false,
+    queryFn: async ({signal}) => {
+      const result = await callOperation("getRelatedProducts", {path:{id:productId!},query:{page,size:4}}, {signal});
+      if (!Array.isArray(result?.items) || !Number.isSafeInteger(result.total))
+        throw new ApiError(503, "INVALID_RECOMMENDATION_RESPONSE", "Chưa tải được gợi ý sản phẩm. Bạn vẫn có thể chọn và mua sản phẩm đang xem.");
+      return result;
+    },
+  });
+  // Exclusion changes only the displayed IDs, never the personal feed request.
+  const excluded = new Set(excludeIds ?? []);
+  const forYouIds = (personal.data?.product_ids ?? []).filter(id => !excluded.has(id));
+  const forYouSet = new Set(forYouIds);
+  const recentIds = (personal.data?.recently_viewed_product_ids ?? []).filter(id => !excluded.has(id) && !forYouSet.has(id));
+  const ids = productId ? [] : [...new Set([...forYouIds, ...recentIds])];
+  // One bounded list request replaces the previous parallel detail requests.
+  const batch = useProductBatch(ids);
+  const byId = new Map((batch.data ?? []).filter(p => p.status === "ACTIVE" && !!p.id).map(p => [p.id!, p]));
+  const products = productId
+    ? (related.data?.items ?? []).filter(p => !p.id || !excluded.has(p.id))
+    : forYouIds.flatMap(id => byId.has(id) ? [byId.get(id)!] : []);
+  const recent = recentIds.flatMap(id => byId.has(id) ? [byId.get(id)!] : []);
+  const total = related.data?.total ?? 0;
+  const loading = productId ? related.isPending : personal.isPending || (ids.length > 0 && batch.isPending);
+  const error = productId ? related.error : personal.error ?? (ids.length > 0 ? batch.error : null);
+  const retry = () => {
+    if (productId) void related.refetch();
+    else if (personal.error) void personal.refetch();
+    else if (ids.length) void batch.refetch();
+  };
 
   const maxItems = limit ?? (compact ? 4 : undefined);
   const displayedProducts =
@@ -171,7 +133,7 @@ function Recommendations({
           {loading ? (
             <Loading />
           ) : error ? (
-            <ErrorView error={error} onRetry={() => setRetry((n) => n + 1)} />
+            <ErrorView error={error} onRetry={retry} />
           ) : (
             <>
               {!products.length && <p>Chưa có gợi ý phù hợp.</p>}

@@ -15,6 +15,8 @@ pytestmark=pytest.mark.skipif(not os.getenv('M4_DATABASE_URL'),reason='Requires 
 
 @pytest.fixture
 def engine():
+    if not os.getenv('M4_DATABASE_URL'):
+        pytest.skip('Requires an explicitly configured PostgreSQL test service')
     url=os.environ['M4_DATABASE_URL'].replace('postgresql://','postgresql+psycopg://',1)
     root=create_engine(url);schema='test_consent_'+uuid.uuid4().hex
     with root.begin() as db:

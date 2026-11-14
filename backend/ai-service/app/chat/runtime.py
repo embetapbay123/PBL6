@@ -66,6 +66,18 @@ class ChatRuntime:
                 items[0]['messages']={'items':[{'id':str(m['id']),'session_id':str(m['session_id']),'role':m['role'],'content':m['content']} for m in messages],'total':count,'page':mp,'size':ms}
         return {'items':items,'total':total,'page':page,'size':size}
 
+    def delete(self,user,id=None):
+        if not user:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
+        with self.engine.begin() as db:
+            # Lock the same parent rows used by save(), then remove children first (the FK is restrictive).
+            rows=db.execute(text('SELECT id FROM chat_session WHERE user_id=:user'+(' AND id=:id' if id else '')+' ORDER BY id FOR UPDATE'),{'user':user,'id':id}).all()
+            if id and not rows:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
+            ids=[str(row[0]) for row in rows]
+            if ids:
+                db.execute(text('DELETE FROM chat_message WHERE session_id=ANY(CAST(:ids AS uuid[]))'),{'ids':ids})
+                db.execute(text('DELETE FROM chat_session WHERE user_id=:user AND id=ANY(CAST(:ids AS uuid[]))'),{'user':user,'ids':ids})
+            return {'deleted_count':len(ids)}
+
     def save(self,id,version,question,response,selection,elapsed,stores,estimated=0):
         with self.engine.begin() as db:
             changed=db.execute(text("UPDATE chat_session SET version=version+1 WHERE id=:s AND version=:v AND status='ACTIVE' AND created_at>now()-interval '30 days' RETURNING id"),{'s':id,'v':version}).first()

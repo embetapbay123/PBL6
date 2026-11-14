@@ -11,3 +11,9 @@ infrastructure/secrets
 infrastructure/.env
 artifacts
 docs_old
+.local
+_acl_recovery
+outputs
+docs/kiem-thu/minh-chung
+tester/reports
+tester/config/server.config.local.json

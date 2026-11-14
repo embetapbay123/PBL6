@@ -3790,6 +3790,16 @@
           "q": {
             "type": "string",
             "maxLength": 200
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "title",
+              "price_asc",
+              "price_desc",
+              "rating"
+            ],
+            "default": "title"
           }
         },
         "required": [],
@@ -14352,6 +14362,49 @@
             "size"
           ],
           "additionalProperties": false
+        }
+      }
+    },
+    "deleteOwnChatHistory": {
+      "method": "DELETE",
+      "route": "/me/chat/sessions",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deleted_count"
+          ],
+          "properties": {
+            "deleted_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       }
     },
@@ -34717,6 +34770,687 @@
             "configured"
           ],
           "additionalProperties": false
+        }
+      }
+    },
+    "getTryOnCapabilities": {
+      "method": "GET",
+      "route": "/ai/try-on/capabilities",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "product_id",
+          "variant_id"
+        ],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "demo_password_required": {
+              "type": "boolean"
+            },
+            "quota": {
+              "type": "object",
+              "properties": {
+                "remaining": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 20
+                },
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20
+                },
+                "reset_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "remaining",
+                "limit",
+                "reset_at"
+              ],
+              "additionalProperties": false
+            },
+            "consent_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "privacy": {
+              "type": "object",
+              "properties": {
+                "provider_label": {
+                  "type": "string",
+                  "enum": [
+                    "OpenAI"
+                  ]
+                },
+                "retention_hours": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 24
+                }
+              },
+              "required": [
+                "provider_label",
+                "retention_hours"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "enabled",
+            "demo_password_required",
+            "quota",
+            "consent_version",
+            "privacy"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "uploadTryOnPhoto": {
+      "method": "POST",
+      "route": "/ai/try-on/photos",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "photo": {
+            "type": "string",
+            "format": "binary",
+            "description": "One static JPEG/PNG/WebP, max 8 MiB; server decodes and strips metadata."
+          }
+        },
+        "required": [
+          "photo"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-try-on-demo-password": {
+            "type": "string",
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "id",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "createTryOnJob": {
+      "method": "POST",
+      "route": "/ai/try-on/jobs",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "properties": {
+          "photo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "consent_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "photo_id",
+          "product_id",
+          "variant_id",
+          "consent_version"
+        ],
+        "additionalProperties": false
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "idempotency-key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "x-try-on-demo-password": {
+            "type": "string",
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "idempotency-key"
+        ],
+        "additionalProperties": true
+      },
+      "responses": {
+        "202": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "variant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "idempotency_key": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "PROCESSING",
+                "SUCCEEDED",
+                "FAILED",
+                "UNKNOWN",
+                "CANCELLED"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "result_url": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "id",
+            "product_id",
+            "variant_id",
+            "idempotency_key",
+            "status",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "listTryOnJobs": {
+      "method": "GET",
+      "route": "/ai/try-on/jobs",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "product_id",
+          "variant_id"
+        ],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "variant_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "QUEUED",
+                      "PROCESSING",
+                      "SUCCEEDED",
+                      "FAILED",
+                      "UNKNOWN",
+                      "CANCELLED"
+                    ]
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "result_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "id",
+                  "product_id",
+                  "variant_id",
+                  "idempotency_key",
+                  "status",
+                  "expires_at"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 20
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "getTryOnJob": {
+      "method": "GET",
+      "route": "/ai/try-on/jobs/{id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "variant_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "idempotency_key": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "PROCESSING",
+                "SUCCEEDED",
+                "FAILED",
+                "UNKNOWN",
+                "CANCELLED"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "result_url": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "id",
+            "product_id",
+            "variant_id",
+            "idempotency_key",
+            "status",
+            "expires_at"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "deleteTryOnJob": {
+      "method": "DELETE",
+      "route": "/ai/try-on/jobs/{id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "204": {}
+      }
+    },
+    "deleteTryOnPhoto": {
+      "method": "DELETE",
+      "route": "/ai/try-on/photos/{id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "204": {}
+      }
+    },
+    "getTryOnResult": {
+      "method": "GET",
+      "route": "/ai/try-on/results/{id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "expires": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "signature": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "required": [
+          "expires",
+          "signature"
+        ],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {}
+      }
+    },
+    "deleteOwnChatSession": {
+      "method": "DELETE",
+      "route": "/me/chat/sessions/{id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deleted_count"
+          ],
+          "properties": {
+            "deleted_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
         }
       }
     },

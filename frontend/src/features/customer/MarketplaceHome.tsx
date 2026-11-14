@@ -30,6 +30,7 @@ const collectionPhotos: Record<string, string> = {
   "Túi & phụ kiện": "black-fashion-backpack",
   "Nhà cửa & đời sống": "plants-and-table-decorations",
   "Góc làm việc": "a-minimal-yet-cosy-workspace",
+  "Chăm sóc cá nhân": "makeup-brushes-on-marble",
 };
 const mobileCatalog = "(max-width: 1023px)";
 const priceValue = (value: string | null) =>

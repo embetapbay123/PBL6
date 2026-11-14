@@ -140,7 +140,7 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-:where(.live-content, .market-native-dialog) button {
+:where(.live-content, .market-native-dialog) button:not([class]) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -157,7 +157,7 @@
   cursor: pointer;
   margin: 0;
 }
-.live-content button:hover:not(:disabled) {
+.live-content button:not([class]):hover:not(:disabled) {
   filter: brightness(0.94);
 }
 .live-content .boot-card {
@@ -3172,7 +3172,7 @@ workspaces retain table density. */
 
 .discovery-category-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 16px;
 }
 

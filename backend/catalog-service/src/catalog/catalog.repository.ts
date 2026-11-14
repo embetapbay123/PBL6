@@ -11,7 +11,7 @@ export interface ProductQuery {
   q?: string;
   category_id?: string;
   product_type_id?: string;
-  sort?: 'title' | 'price_asc' | 'price_desc';
+  sort?: 'title' | 'price_asc' | 'price_desc' | 'rating';
   ids?: string;
   min_price_vnd?: number;
   max_price_vnd?: number;
@@ -71,6 +71,7 @@ export class CatalogRepository extends OwnedRepository {
     const hasSearch=Boolean(query.q && query.q.trim());
     const order=query.sort==='price_asc' ? 'min_price ASC NULLS LAST, p.id'
       : query.sort==='price_desc' ? 'min_price DESC NULLS LAST, p.id'
+      : query.sort==='rating' ? 'average_rating DESC NULLS LAST, p.id'
       : (hasSearch && rawPattern) ? `CASE WHEN marketplace_search(p.title) ~ ('\\m' || $2) THEN 0 ELSE 1 END, p.title ASC, p.id`
       : 'p.title ASC, p.id';
 
@@ -80,7 +81,7 @@ export class CatalogRepository extends OwnedRepository {
       ? `(SELECT min(v.price_vnd) FROM product_variant v JOIN inventory fi ON fi.variant_id=v.id AND fi.store_id=v.store_id WHERE ${inStockPrices.join(' AND ')})`
       : `coalesce((SELECT min(v.price_vnd) FROM product_variant v JOIN inventory fi ON fi.variant_id=v.id AND fi.store_id=v.store_id WHERE ${inStockPrices.join(' AND ')}), (SELECT min(v.price_vnd) FROM product_variant v WHERE v.product_id=p.id AND v.status='ACTIVE'))`;
     const rows=await this.manager.query(
-      `SELECT ${PRODUCT_COLUMNS}, ${minPriceSql} AS min_price
+      `SELECT ${PRODUCT_COLUMNS}, ${minPriceSql} AS min_price${query.sort==='rating' ? ", (SELECT avg(r.rating) FROM review r WHERE r.product_id=p.id AND r.status='VISIBLE') AS average_rating" : ''}
          FROM product p JOIN product_type pt ON pt.id=p.product_type_id
         WHERE ${where} ORDER BY ${order} LIMIT $${filters.length+1} OFFSET $${filters.length+2}`,
       [...filters,query.size,(query.page-1)*query.size]);

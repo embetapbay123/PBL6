@@ -4204,6 +4204,22 @@
               "type": "string",
               "maxLength": 200
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "Sort the entire Store before pagination. Price uses the lowest currently purchasable variant, falling back to active variants. Rating uses visible reviews; ties use Product ID.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "title",
+                "price_asc",
+                "price_desc",
+                "rating"
+              ],
+              "default": "title"
+            }
           }
         ],
         "responses": {
@@ -12023,6 +12039,120 @@
         "x-module": "chat",
         "x-member-owner": "Công",
         "x-implementation-status": "IMPLEMENTED_SAMPLE"
+      },
+      "delete": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "deleteOwnChatHistory",
+        "summary": "Delete owned AI chat history",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Owned history removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryDeleted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "description": "Permanently deletes stored sessions and messages belonging to the authenticated Customer. Does not call a model or reset provider usage budgets.",
+        "x-service-owner": "M4",
+        "x-module": "chat",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
       }
     },
     "/recommendations/for-you": {
@@ -27982,6 +28112,1269 @@
           }
         }
       }
+    },
+    "/ai/try-on/capabilities": {
+      "get": {
+        "operationId": "getTryOnCapabilities",
+        "tags": [
+          "AI"
+        ],
+        "summary": "getTryOnCapabilities",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variant_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted/status only; no fabricated image or quota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryOnCapabilities"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL."
+      }
+    },
+    "/ai/try-on/photos": {
+      "post": {
+        "operationId": "uploadTryOnPhoto",
+        "tags": [
+          "AI"
+        ],
+        "summary": "uploadTryOnPhoto",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Try-On-Demo-Password",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "writeOnly": true
+            },
+            "description": "Required when capabilities.demo_password_required is true. Never persisted or included in job payloads."
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Accepted/status only; no fabricated image or quota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryOnPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TryOnPhotoUpload"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/try-on/jobs": {
+      "post": {
+        "operationId": "createTryOnJob",
+        "tags": [
+          "AI"
+        ],
+        "summary": "createTryOnJob",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Try-On-Demo-Password",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "writeOnly": true
+            },
+            "description": "Required when capabilities.demo_password_required is true. Never persisted or included in job payloads."
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted/status only; no fabricated image or quota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryOnJob"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryOnCreate"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listTryOnJobs",
+        "tags": [
+          "AI"
+        ],
+        "summary": "listTryOnJobs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variant_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted/status only; no fabricated image or quota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryOnJobList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL."
+      }
+    },
+    "/ai/try-on/jobs/{id}": {
+      "get": {
+        "operationId": "getTryOnJob",
+        "tags": [
+          "AI"
+        ],
+        "summary": "getTryOnJob",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted/status only; no fabricated image or quota.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryOnJob"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL."
+      },
+      "delete": {
+        "operationId": "deleteTryOnJob",
+        "tags": [
+          "AI"
+        ],
+        "summary": "deleteTryOnJob",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Accepted/status only; no fabricated image or quota."
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL."
+      }
+    },
+    "/ai/try-on/photos/{id}": {
+      "delete": {
+        "operationId": "deleteTryOnPhoto",
+        "tags": [
+          "AI"
+        ],
+        "summary": "deleteTryOnPhoto",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Accepted/status only; no fabricated image or quota."
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Verified Customer only. Quota, budget and idempotency are enforced by M4 PostgreSQL."
+      }
+    },
+    "/ai/try-on/results/{id}": {
+      "get": {
+        "operationId": "getTryOnResult",
+        "tags": [
+          "AI"
+        ],
+        "summary": "getTryOnResult",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expires",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "signature",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$",
+              "example": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Accepted/status only; no fabricated image or quota.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryOnImage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Rejected or unavailable; no automatic paid retry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [],
+        "x-required-roles": [
+          "GUEST",
+          "CUSTOMER"
+        ],
+        "x-data-scope": "SHORT_LIVED_SIGNED_RESULT",
+        "x-service-owner": "M4",
+        "x-module": "try_on",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "description": "Signed result expires within five minutes and is revoked by deletion."
+      }
+    },
+    "/me/chat/sessions/{id}": {
+      "delete": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "deleteOwnChatSession",
+        "summary": "Delete owned AI chat history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owned history removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryDeleted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "description": "Permanently deletes stored sessions and messages belonging to the authenticated Customer. Does not call a model or reset provider usage budgets.",
+        "x-service-owner": "M4",
+        "x-module": "chat",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
+      }
     }
   },
   "components": {
@@ -35029,6 +36422,227 @@
           "unread_count"
         ],
         "additionalProperties": false
+      },
+      "TryOnCapabilities": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "demo_password_required": {
+            "type": "boolean"
+          },
+          "quota": {
+            "type": "object",
+            "properties": {
+              "remaining": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 20
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              },
+              "reset_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "remaining",
+              "limit",
+              "reset_at"
+            ],
+            "additionalProperties": false
+          },
+          "consent_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "privacy": {
+            "type": "object",
+            "properties": {
+              "provider_label": {
+                "type": "string",
+                "enum": [
+                  "OpenAI"
+                ]
+              },
+              "retention_hours": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 24
+              }
+            },
+            "required": [
+              "provider_label",
+              "retention_hours"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "enabled",
+          "demo_password_required",
+          "quota",
+          "consent_version",
+          "privacy"
+        ],
+        "additionalProperties": false
+      },
+      "TryOnJob": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "idempotency_key": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROCESSING",
+              "SUCCEEDED",
+              "FAILED",
+              "UNKNOWN",
+              "CANCELLED"
+            ]
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "result_url": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "id",
+          "product_id",
+          "variant_id",
+          "idempotency_key",
+          "status",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "TryOnJobList": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TryOnJob"
+            },
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "TryOnCreate": {
+        "type": "object",
+        "properties": {
+          "photo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variant_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "consent_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "photo_id",
+          "product_id",
+          "variant_id",
+          "consent_version"
+        ],
+        "additionalProperties": false
+      },
+      "TryOnPhotoUpload": {
+        "type": "object",
+        "properties": {
+          "photo": {
+            "type": "string",
+            "format": "binary",
+            "description": "One static JPEG/PNG/WebP, max 8 MiB; server decodes and strips metadata."
+          }
+        },
+        "required": [
+          "photo"
+        ],
+        "additionalProperties": false
+      },
+      "TryOnPhoto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "expires_at"
+        ],
+        "additionalProperties": false
+      },
+      "TryOnImage": {
+        "type": "string",
+        "format": "binary"
+      },
+      "ChatHistoryDeleted": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deleted_count"
+        ],
+        "properties": {
+          "deleted_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
       }
     }
   }

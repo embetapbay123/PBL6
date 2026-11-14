@@ -63,7 +63,13 @@ export function ProductCardActions({product}:{product:OperationOutputs['getProdu
  return <>
   <div className="product-card-actions"><UiButton variant="secondary" className="product-add-button" type="submit" disabled={!canBuy||busy||uncertain||!permitted} onClick={purchase}><ShoppingCart size={16}/>{busy?'Đang thêm…':added?'Thêm lần nữa':variants.length>1?'Chọn phân loại':'Thêm vào giỏ'}</UiButton><UiButton variant="icon" type="submit" aria-label={(saved?'Bỏ yêu thích ':'Yêu thích ')+product.title} aria-pressed={favoriteState.ready?saved:undefined} disabled={saving||favoriteState.busy||!permitted||favoriteState.loading||!favoriteState.ready} onClick={()=>void favorite()}><Heart size={18} fill={saved?'currentColor':'none'}/></UiButton></div>
   {added&&<p role="status" className="product-card-feedback"><Check size={14}/>Đã thêm vào giỏ. <Link to="/cart">Xem giỏ hàng</Link></p>}
-  {(error??favoriteState.error)!=null&&!choose&&<ErrorView error={error??favoriteState.error} onRetry={()=>void favoriteState.retry()}/>}{uncertain&&<p className="product-card-feedback">Kiểm tra <Link to="/cart">giỏ hàng</Link> trước khi thêm lại.</p>}
+  {error instanceof ApiError && (error.code==='INSUFFICIENT_STOCK'||error.status===409) ? (
+    <p role="alert" className="product-card-feedback" style={{color:'#b45309',background:'#fffbeb',border:'1px solid #fde68a',padding:'6px 10px',borderRadius:'4px',fontSize:'12px',marginTop:'6px'}}>
+      Đã có số lượng tối đa trong <Link to="/cart" style={{textDecoration:'underline',fontWeight:600}}>giỏ hàng</Link>.
+    </p>
+  ) : (error??favoriteState.error)!=null&&!choose&&(
+    <ErrorView error={error??favoriteState.error} onRetry={()=>void favoriteState.retry()}/>
+  )}{uncertain&&<p className="product-card-feedback">Kiểm tra <Link to="/cart">giỏ hàng</Link> trước khi thêm lại.</p>}
   {choose&&<Modal label={'Chọn phân loại '+product.title} onClose={()=>setChoose(false)} busy={busy}>
     <h2>Chọn phân loại</h2>
     <p style={{margin:'4px 0 14px',color:'#666'}}>{product.title}</p>

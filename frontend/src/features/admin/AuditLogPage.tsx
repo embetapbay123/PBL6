@@ -157,10 +157,8 @@ export function AuditLogPage() {
   return (
     <section>
       <h2>Nhật ký quản trị</h2>
-      <p>
-        Nhãn, email và trạng thái tài khoản là dữ liệu hiện tại, không phải hồ
-        sơ tại thời điểm thao tác. ID không phân giải được vẫn giữ nguyên; lịch
-        sử thiếu người thực hiện không được gán thành Hệ thống.
+      <p className="text-xs text-slate-500 mb-2">
+        Nhật ký hệ thống ghi nhận các tác vụ quản trị, thay đổi trạng thái và biến động số liệu theo thời gian thực.
       </p>
       <SourceNavigation
         value={source}
@@ -291,11 +289,12 @@ export function AuditLogPage() {
           Xóa tất cả bộ lọc
         </UiButton>
       </form>
-      <p>
-        Khoảng thời gian gồm mốc bắt đầu và không gồm mốc kết thúc. Log cũ chưa
-        có căn cứ Store vẫn tra được theo đối tượng; không tự gán theo
-        membership hiện tại.
-      </p>
+      <details className="text-xs text-slate-400 my-2">
+        <summary className="cursor-pointer">Quy tắc đối soát nhật ký</summary>
+        <p className="mt-1 text-slate-500">
+          Khoảng thời gian tính từ mốc bắt đầu đến trước mốc kết thúc. Nhật ký lịch sử bảo toàn đối tượng gốc theo thời điểm ghi nhận.
+        </p>
+      </details>
       <button disabled={query.isFetching} onClick={refresh}>
         Đọc lại nhật ký
       </button>

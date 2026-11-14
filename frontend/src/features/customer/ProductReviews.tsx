@@ -184,7 +184,7 @@ function ReviewsInner({
       setBlocked(false);
       setRetryCreate(false);
       setLatestSaved(undefined);
-      setNotice("Đã lưu đánh giá qua API.");
+      setNotice("Đã gửi đánh giá thành công.");
       setReload((n) => n + 1);
     } catch (e) {
       setError(e);
@@ -235,7 +235,7 @@ function ReviewsInner({
       );
       if (!current) {
         setNotice(
-          "Chưa thấy đánh giá của mục này; chưa kết luận lần gửi trước thất bại. Có thể đọc lại hoặc thử gửi lại đúng nội dung đã giữ.",
+          "Chưa ghi nhận đánh giá của mục này. Bạn có thể kiểm tra lại hoặc thử gửi lại.",
         );
         setRetryCreate(!attempt.reviewId);
         return;
@@ -248,13 +248,13 @@ function ReviewsInner({
       if (reviewMatches(current, attempt.rating, attempt.body)) {
         setLatestSaved(undefined);
         setNotice(
-          "Đã đối chiếu đúng nội dung trên đánh giá sở hữu. Không gửi lại thao tác cũ.",
+          "Đánh giá đã được lưu chính xác. Cảm ơn bạn!",
         );
         setReload((n) => n + 1);
       } else {
         setLatestSaved(current);
         setNotice(
-          "Đã đọc bản mới. Bản nháp được giữ; xem nội dung đã lưu rồi xác nhận lưu nếu muốn thay đổi.",
+          "Nội dung đánh giá mới nhất đã được cập nhật.",
         );
       }
     } catch (e) {
@@ -308,7 +308,7 @@ function ReviewsInner({
       {blocked && (
         <>
           <p>
-            Bản nháp vẫn được giữ. Kiểm tra đánh giá đã lưu trước khi gửi lại.
+            Đang có thay đổi chưa đồng bộ. Vui lòng bấm kiểm tra hoặc thử lại để hoàn tất.
           </p>
           <button
             type="button"

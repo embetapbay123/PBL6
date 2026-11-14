@@ -60,9 +60,9 @@ function dateValid(value: string) {
 }
 const sources: Record<string, string> = {
   OWNER_ATTESTED:
-    "Thời điểm biên nhận do Owner xác nhận thủ công; không phải ngân hàng kiểm chứng",
+    "Thời điểm biên nhận do Owner xác nhận",
   SYSTEM_RECEIVED:
-    "Thời điểm hệ thống tiếp nhận; chưa có timestamp giao dịch được provider xác minh",
+    "Thời điểm hệ thống tiếp nhận",
   SYSTEM_CONFIRMED: "Thời điểm hệ thống xác nhận giao dịch",
 };
 const countLabels = {

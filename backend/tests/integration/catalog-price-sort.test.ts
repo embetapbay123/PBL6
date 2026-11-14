@@ -77,4 +77,22 @@ suite('S01: catalog price sort synchronizes with in-stock variants and filter ra
     expect(res.total).toBe(4);
     expect(res.items.map(p=>p.id)).toEqual([prodD,prodB,prodA,prodC]);
   });
+
+  test('both price directions sort the whole result before splitting pages',async()=>{
+    for(const [sort,expected] of [['price_asc',[prodD,prodB,prodA,prodC]],['price_desc',[prodC,prodA,prodB,prodD]]] as const){
+      const first=await repo.page([store],{page:1,size:2,sort}),second=await repo.page([store],{page:2,size:2,sort});
+      expect([...first.items,...second.items].map(p=>p.id)).toEqual(expected);
+      expect(first.total).toBe(4);expect(second.total).toBe(4);
+    }
+  });
+
+  test('rating sorts visible reviews across pages with stable ties and unrated last',async()=>{
+    for(const [product,rating,status] of [[prodA,4,'VISIBLE'],[prodB,5,'VISIBLE'],[prodC,5,'VISIBLE'],[prodD,5,'HIDDEN']] as const)
+      await db.query('INSERT INTO review(product_id,order_item_id,customer_user_id,rating,status,updated_at) VALUES($1,$2,$3,$4,$5,now())',[product,randomUUID(),randomUUID(),rating,status]);
+    const expected=[...[prodB,prodC].sort(),prodA,prodD];
+    const first=await repo.page([store],{page:1,size:2,sort:'rating'}),second=await repo.page([store],{page:2,size:2,sort:'rating'});
+    expect([...first.items,...second.items].map(p=>p.id)).toEqual(expected);
+    expect((await repo.page([store],{page:1,size:2,sort:'rating'})).items.map(p=>p.id)).toEqual(expected.slice(0,2));
+    expect(first.items.every(p=>p.review_summary?.average===5)).toBe(true);
+  });
 });
