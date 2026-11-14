@@ -8,7 +8,7 @@ Cập nhật ngày 15/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-do
 | 1. Hoàn thiện UI/copy | Đã triển khai, có bằng chứng UI | Chi tiết bên dưới. |
 | 2. Voucher tốt nhất | Đã triển khai và nghiệm thu | B01: 447 unit, 28 PostgreSQL integration, 22 UI và public quote/đơn COD qua. [Chi tiết](bug-docx-vouchers-2026-11-15.md). |
 | 3. Tìm hội thoại | Đã triển khai và nghiệm thu | M3/M4 + FE, public 25 hội thoại/25 phiên và xóa theo sở hữu qua. [Chi tiết](bug-docx-chat-search-2026-11-15.md). |
-| 4. Media chat | Đang thực hiện | Khảo sát upload/private storage và adapter có ảnh, giới hạn tiền. Chưa có upload mới. |
+| 4. Media chat | Đã xong chat gian hàng; AI còn thực hiện | M3 upload/private storage, ảnh/video và public playback qua; [bằng chứng](bug-docx-store-chat-media-2026-11-15.md). Chưa bật đính kèm AI. |
 | 5. Nội dung gian hàng | Chưa thực hiện | CMS banner/campaign và nguồn nhóm sản phẩm. |
 | 6. Nghiệm thu toàn bộ | Chưa hoàn tất | Có kiểm tra và triển khai riêng từng đợt; không tính là đã đóng cả 33 nhóm. |
 
@@ -39,4 +39,4 @@ Chứng cứ đặt tại `C:/PBL6/outputs/bug-ui-phase1-2026-11-14/`: `before/r
 
 ## Bước đang làm
 
-Đợt 2 và 3 đã triển khai, có báo cáo riêng. Đang thực hiện đợt 4: upload ảnh/video có quyền truy cập, xử lý file có giới hạn và adapter đọc ảnh/frame thật. Chat hiện cấu hình provider OpenAI-compatible ngoài OpenAI, model deepseek-v4.1-flash; không coi chuỗi Markdown URL là khả năng đọc ảnh. Chưa bật media mới hoặc tăng ngân sách. Đợt 5 CMS gian hàng và nghiệm thu toàn bộ vẫn còn.
+Đợt 2, 3 và phần 4A/4B chat gian hàng đã triển khai, có báo cáo riêng. Tiếp tục 4C: asset/lifecycle riêng M4, adapter đọc ảnh/frame thật và giữ tiền chung với thử đồ. Chat chữ hiện dùng provider OpenAI-compatible ngoài OpenAI, model deepseek-v4.1-flash; nút đính kèm AI chưa bật. Không tăng ngân sách. Đợt 5 CMS gian hàng và nghiệm thu toàn bộ vẫn còn.

@@ -1,4 +1,4 @@
-import { validateOperation, operationContracts } from '../../shared/src/request-contract';
+import { validateOperation, operationContracts, RequestContractInterceptor } from '../../shared/src/request-contract';
 import { schemaErrors } from '../../shared/src/contract-validation';
 import { validateBusinessEvent } from '../../shared/src/event-contracts';
 import { internalRequest } from '../../shared/src/http-client';
@@ -11,8 +11,8 @@ import { validateSync } from 'class-validator';
 const fixtures=require('../../shared/src/fixtures.generated.json');
 const events=require('../../shared/src/event-fixtures.generated.json');
 test('every operation has executable DTO validation and valid request/response fixtures',()=>{
-  expect(Object.keys(operationContracts)).toHaveLength(213);
-  expect(Object.values(operationContracts).filter(r=>!r.internal)).toHaveLength(198);
+  expect(Object.keys(operationContracts)).toHaveLength(225);
+  expect(Object.values(operationContracts).filter(r=>!r.internal)).toHaveLength(210);
   expect(Object.keys(fixtures).sort()).toEqual(Object.keys(operationContracts).sort());
   for(const [id,f] of Object.entries(fixtures) as [any,any][]) {
     expect(()=>validateOperation(id,f.request)).not.toThrow();
@@ -38,6 +38,15 @@ test('strict body, nested arrays, maps, UUID, nullability and query defaults',()
   const reserve=JSON.parse(JSON.stringify(fixtures.ReserveInventory.request));
   reserve.body.items[0].quantity='1';
   expect(()=>validateOperation('ReserveInventory',reserve)).toThrow();
+});
+test('HEAD follows the GET contract instead of skipping private media path and query validation',()=>{
+ const previous=process.env.SERVICE_ID;process.env.SERVICE_ID='M3';
+ try{
+  const request:any={method:'HEAD',route:{path:'/api/v1/me/conversations/:id/attachments/:attachment_id/content'},params:{id:'11111111-1111-4111-8111-111111111111',attachment_id:'22222222-2222-4222-8222-222222222222'},query:{},headers:{}};
+  const context={switchToHttp:()=>({getRequest:()=>request})} as any,next={handle:jest.fn()};
+  new RequestContractInterceptor().intercept(context,next as any);expect(request.contract.query).toEqual({preview:false});expect(next.handle).toHaveBeenCalledTimes(1);
+  request.params.attachment_id='not-a-uuid';expect(()=>new RequestContractInterceptor().intercept(context,next as any)).toThrow();expect(next.handle).toHaveBeenCalledTimes(1);
+ }finally{if(previous===undefined)delete process.env.SERVICE_ID;else process.env.SERVICE_ID=previous;}
 });
 test('generated query DTOs work with Nest transformation and keep defaults',()=>{
   const query=plainToInstance(ListProductsQueryDto,{page:'2'});

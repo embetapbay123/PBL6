@@ -1845,12 +1845,14 @@ export class ListOwnConversationMessagesQueryDto {
 export class ListOwnConversationMessagesHeadersDto {
 }
 export class SendOwnConversationMessageBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 0, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
   "content"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
   "client_message_id"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "order_id"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},false),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_ids"?: Array<string>;
 }
 export class SendOwnConversationMessagePathDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -1880,12 +1882,14 @@ export class ListStoreConversationMessagesHeadersDto {
   "x-store-context"?: string;
 }
 export class SendStoreConversationMessageBodyDto {
-  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 0, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
   "content"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
   "client_message_id"!: string;
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "order_id"?: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},false),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_ids"?: Array<string>;
 }
 export class SendStoreConversationMessagePathDto {
   @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
@@ -3334,6 +3338,188 @@ export class SuggestCheckoutVouchersQueryDto {
 }
 export class SuggestCheckoutVouchersHeadersDto {
 }
+export class GetOwnConversationMediaCapabilitiesPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetOwnConversationMediaCapabilitiesQueryDto {
+}
+export class GetOwnConversationMediaCapabilitiesHeadersDto {
+}
+export class CreateOwnConversationAttachmentBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "client_upload_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["IMAGE", "VIDEO"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "IMAGE" | "VIDEO";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 20971520},true),defaultMessage:()=> 'Invalid contract field'}})
+  "size_bytes"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "minLength": 64, "maxLength": 64, "example": "0000000000000000000000000000000000000000000000000000000000000000"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "sha256"!: string;
+}
+export class CreateOwnConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class CreateOwnConversationAttachmentQueryDto {
+}
+export class CreateOwnConversationAttachmentHeadersDto {
+}
+export class UploadOwnConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class UploadOwnConversationAttachmentQueryDto {
+}
+export class UploadOwnConversationAttachmentHeadersDto {
+}
+export class ReadOwnConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class ReadOwnConversationAttachmentQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "boolean", "default": false}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean", "default": false},false),defaultMessage:()=> 'Invalid contract field'}})
+  "preview": boolean = false;
+}
+export class ReadOwnConversationAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "range"?: string;
+}
+export class GetOwnConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class GetOwnConversationAttachmentQueryDto {
+}
+export class GetOwnConversationAttachmentHeadersDto {
+}
+export class DeleteOwnConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class DeleteOwnConversationAttachmentQueryDto {
+}
+export class DeleteOwnConversationAttachmentHeadersDto {
+}
+export class GetStoreConversationMediaCapabilitiesPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetStoreConversationMediaCapabilitiesQueryDto {
+}
+export class GetStoreConversationMediaCapabilitiesHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class CreateStoreConversationAttachmentBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "client_upload_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["IMAGE", "VIDEO"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "IMAGE" | "VIDEO";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 20971520},true),defaultMessage:()=> 'Invalid contract field'}})
+  "size_bytes"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "minLength": 64, "maxLength": 64, "example": "0000000000000000000000000000000000000000000000000000000000000000"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "sha256"!: string;
+}
+export class CreateStoreConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class CreateStoreConversationAttachmentQueryDto {
+}
+export class CreateStoreConversationAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class UploadStoreConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class UploadStoreConversationAttachmentQueryDto {
+}
+export class UploadStoreConversationAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class ReadStoreConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class ReadStoreConversationAttachmentQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "boolean", "default": false}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean", "default": false},false),defaultMessage:()=> 'Invalid contract field'}})
+  "preview": boolean = false;
+}
+export class ReadStoreConversationAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "range"?: string;
+}
+export class GetStoreConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class GetStoreConversationAttachmentQueryDto {
+}
+export class GetStoreConversationAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class DeleteStoreConversationAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class DeleteStoreConversationAttachmentQueryDto {
+}
+export class DeleteStoreConversationAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3797,6 +3983,18 @@ export const runtimeDtos = {
   getTryOnResult: {body: undefined, path: GetTryOnResultPathDto, query: GetTryOnResultQueryDto, headers: GetTryOnResultHeadersDto},
   deleteOwnChatSession: {body: undefined, path: DeleteOwnChatSessionPathDto, query: DeleteOwnChatSessionQueryDto, headers: DeleteOwnChatSessionHeadersDto},
   suggestCheckoutVouchers: {body: SuggestCheckoutVouchersBodyDto, path: SuggestCheckoutVouchersPathDto, query: SuggestCheckoutVouchersQueryDto, headers: SuggestCheckoutVouchersHeadersDto},
+  getOwnConversationMediaCapabilities: {body: undefined, path: GetOwnConversationMediaCapabilitiesPathDto, query: GetOwnConversationMediaCapabilitiesQueryDto, headers: GetOwnConversationMediaCapabilitiesHeadersDto},
+  createOwnConversationAttachment: {body: CreateOwnConversationAttachmentBodyDto, path: CreateOwnConversationAttachmentPathDto, query: CreateOwnConversationAttachmentQueryDto, headers: CreateOwnConversationAttachmentHeadersDto},
+  uploadOwnConversationAttachment: {body: undefined, path: UploadOwnConversationAttachmentPathDto, query: UploadOwnConversationAttachmentQueryDto, headers: UploadOwnConversationAttachmentHeadersDto},
+  readOwnConversationAttachment: {body: undefined, path: ReadOwnConversationAttachmentPathDto, query: ReadOwnConversationAttachmentQueryDto, headers: ReadOwnConversationAttachmentHeadersDto},
+  getOwnConversationAttachment: {body: undefined, path: GetOwnConversationAttachmentPathDto, query: GetOwnConversationAttachmentQueryDto, headers: GetOwnConversationAttachmentHeadersDto},
+  deleteOwnConversationAttachment: {body: undefined, path: DeleteOwnConversationAttachmentPathDto, query: DeleteOwnConversationAttachmentQueryDto, headers: DeleteOwnConversationAttachmentHeadersDto},
+  getStoreConversationMediaCapabilities: {body: undefined, path: GetStoreConversationMediaCapabilitiesPathDto, query: GetStoreConversationMediaCapabilitiesQueryDto, headers: GetStoreConversationMediaCapabilitiesHeadersDto},
+  createStoreConversationAttachment: {body: CreateStoreConversationAttachmentBodyDto, path: CreateStoreConversationAttachmentPathDto, query: CreateStoreConversationAttachmentQueryDto, headers: CreateStoreConversationAttachmentHeadersDto},
+  uploadStoreConversationAttachment: {body: undefined, path: UploadStoreConversationAttachmentPathDto, query: UploadStoreConversationAttachmentQueryDto, headers: UploadStoreConversationAttachmentHeadersDto},
+  readStoreConversationAttachment: {body: undefined, path: ReadStoreConversationAttachmentPathDto, query: ReadStoreConversationAttachmentQueryDto, headers: ReadStoreConversationAttachmentHeadersDto},
+  getStoreConversationAttachment: {body: undefined, path: GetStoreConversationAttachmentPathDto, query: GetStoreConversationAttachmentQueryDto, headers: GetStoreConversationAttachmentHeadersDto},
+  deleteStoreConversationAttachment: {body: undefined, path: DeleteStoreConversationAttachmentPathDto, query: DeleteStoreConversationAttachmentQueryDto, headers: DeleteStoreConversationAttachmentHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

@@ -114,10 +114,12 @@ services:
     command: [node, dist/commerce-service/src/main.js]
   m3:
     <<: *node
+    image: pbl6-identity:local
+    build: {context: .., dockerfile: backend/Dockerfile, args: {INSTALL_CHAT_MEDIA: '1'}}
     # Match the Linux owner of the mode-0600 private-key bind mount.
     user: '${LOCAL_UID:-1000}:${LOCAL_GID:-1000}'
-    environment: {<<: *app-env, SERVICE_ID: M3, PORT: '3103', M3_DATABASE_URL: 'postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3', JWT_PRIVATE_KEY_FILE: /run/secrets/jwt-private.pem, EMAIL_ADAPTER: '${EMAIL_ADAPTER:-smtp}', SMTP_HOST: '${SMTP_HOST:-}', SMTP_PORT: '${SMTP_PORT:-465}', SMTP_USER: '${SMTP_USER:-}', SMTP_PASSWORD: '${SMTP_PASSWORD:-}', SMTP_FROM: '${SMTP_FROM:-}'}
-    volumes: [./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro, ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro]
+    environment: {<<: *app-env, SERVICE_ID: M3, PORT: '3103', M3_DATABASE_URL: 'postgresql://m3:${M3_DB_PASSWORD}@postgres:5432/m3', JWT_PRIVATE_KEY_FILE: /run/secrets/jwt-private.pem, EMAIL_ADAPTER: '${EMAIL_ADAPTER:-smtp}', SMTP_HOST: '${SMTP_HOST:-}', SMTP_PORT: '${SMTP_PORT:-465}', SMTP_USER: '${SMTP_USER:-}', SMTP_PASSWORD: '${SMTP_PASSWORD:-}', SMTP_FROM: '${SMTP_FROM:-}', CHAT_MEDIA_ENABLED: '${CHAT_MEDIA_ENABLED:-0}', CHAT_MEDIA_STORAGE_DIR: /var/lib/pbl6/chat-media}
+    volumes: [./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro, ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro, chatmedia:/var/lib/pbl6/chat-media]
     command: [node, dist/identity-store-service/src/main.js]
   m4:
     build: {context: .., dockerfile: backend/ai-service/Dockerfile}
@@ -203,6 +205,7 @@ services:
     restart: 'no'
     command: [node, dist/shared/src/migrate.js]
 volumes:
+  chatmedia:
   tryondata:
   deliverydata:
   pgdata:

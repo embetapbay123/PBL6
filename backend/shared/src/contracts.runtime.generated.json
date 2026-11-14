@@ -17812,6 +17812,88 @@
                   "order_id": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "attachments": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "kind",
+                        "status",
+                        "expected_bytes"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "IMAGE",
+                            "VIDEO"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "UPLOADING",
+                            "PROCESSING",
+                            "READY",
+                            "REJECTED",
+                            "DELETED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "expected_bytes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 20971520
+                        },
+                        "stored_bytes": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 20971520
+                        },
+                        "width": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 8192
+                        },
+                        "height": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 8192
+                        },
+                        "duration_ms": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 30000
+                        },
+                        "content_type": {
+                          "type": "string",
+                          "enum": [
+                            "image/webp",
+                            "video/mp4"
+                          ]
+                        },
+                        "expires_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "error_code": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "message": {
+                          "type": "string",
+                          "maxLength": 300
+                        }
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -17920,7 +18002,7 @@
         "properties": {
           "content": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 0,
             "maxLength": 2000
           },
           "client_message_id": {
@@ -17930,13 +18012,23 @@
           "order_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "attachment_ids": {
+            "type": "array",
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": [
           "content",
           "client_message_id"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Content may be empty only when attachment_ids contains READY uploads owned by this sender in this conversation. At most three images or one video; no mixed kinds. Replays must preserve all content, order and attachment IDs."
       },
       "callers": [],
       "path": {
@@ -17994,6 +18086,88 @@
             "order_id": {
               "type": "string",
               "format": "uuid"
+            },
+            "attachments": {
+              "type": "array",
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "status",
+                  "expected_bytes"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "IMAGE",
+                      "VIDEO"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "UPLOADING",
+                      "PROCESSING",
+                      "READY",
+                      "REJECTED",
+                      "DELETED",
+                      "EXPIRED"
+                    ]
+                  },
+                  "expected_bytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20971520
+                  },
+                  "stored_bytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 20971520
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "duration_ms": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30000
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "enum": [
+                      "image/webp",
+                      "video/mp4"
+                    ]
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "error_code": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
             }
           },
           "required": [
@@ -18094,6 +18268,88 @@
                   "order_id": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "attachments": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "kind",
+                        "status",
+                        "expected_bytes"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "IMAGE",
+                            "VIDEO"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "UPLOADING",
+                            "PROCESSING",
+                            "READY",
+                            "REJECTED",
+                            "DELETED",
+                            "EXPIRED"
+                          ]
+                        },
+                        "expected_bytes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 20971520
+                        },
+                        "stored_bytes": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 20971520
+                        },
+                        "width": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 8192
+                        },
+                        "height": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 8192
+                        },
+                        "duration_ms": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 30000
+                        },
+                        "content_type": {
+                          "type": "string",
+                          "enum": [
+                            "image/webp",
+                            "video/mp4"
+                          ]
+                        },
+                        "expires_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "error_code": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "message": {
+                          "type": "string",
+                          "maxLength": 300
+                        }
+                      }
+                    }
                   }
                 },
                 "required": [
@@ -18202,7 +18458,7 @@
         "properties": {
           "content": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 0,
             "maxLength": 2000
           },
           "client_message_id": {
@@ -18212,13 +18468,23 @@
           "order_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "attachment_ids": {
+            "type": "array",
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         },
         "required": [
           "content",
           "client_message_id"
         ],
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Content may be empty only when attachment_ids contains READY uploads owned by this sender in this conversation. At most three images or one video; no mixed kinds. Replays must preserve all content, order and attachment IDs."
       },
       "callers": [],
       "path": {
@@ -18281,6 +18547,88 @@
             "order_id": {
               "type": "string",
               "format": "uuid"
+            },
+            "attachments": {
+              "type": "array",
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "status",
+                  "expected_bytes"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "IMAGE",
+                      "VIDEO"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "UPLOADING",
+                      "PROCESSING",
+                      "READY",
+                      "REJECTED",
+                      "DELETED",
+                      "EXPIRED"
+                    ]
+                  },
+                  "expected_bytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20971520
+                  },
+                  "stored_bytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 20971520
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "duration_ms": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30000
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "enum": [
+                      "image/webp",
+                      "video/mp4"
+                    ]
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "error_code": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
             }
           },
           "required": [
@@ -35924,6 +36272,1315 @@
                 "expires_at"
               ],
               "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
+    "getOwnConversationMediaCapabilities": {
+      "method": "GET",
+      "route": "/me/conversations/{id}/attachments/capabilities",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "images_per_message",
+            "image_max_bytes",
+            "video_max_bytes",
+            "video_max_duration_seconds"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "images_per_message": {
+              "type": "integer",
+              "enum": [
+                3
+              ]
+            },
+            "image_max_bytes": {
+              "type": "integer",
+              "enum": [
+                5242880
+              ]
+            },
+            "video_max_bytes": {
+              "type": "integer",
+              "enum": [
+                20971520
+              ]
+            },
+            "video_max_duration_seconds": {
+              "type": "integer",
+              "enum": [
+                30
+              ]
+            }
+          }
+        }
+      }
+    },
+    "createOwnConversationAttachment": {
+      "method": "POST",
+      "route": "/me/conversations/{id}/attachments",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_upload_id",
+          "kind",
+          "size_bytes",
+          "sha256"
+        ],
+        "properties": {
+          "client_upload_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20971520
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "minLength": 64,
+            "maxLength": 64,
+            "example": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        }
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "uploadOwnConversationAttachment": {
+      "method": "PUT",
+      "route": "/me/conversations/{id}/attachments/{attachment_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "readOwnConversationAttachment": {
+      "method": "GET",
+      "route": "/me/conversations/{id}/attachments/{attachment_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "preview": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {},
+        "206": {}
+      }
+    },
+    "getOwnConversationAttachment": {
+      "method": "GET",
+      "route": "/me/conversations/{id}/attachments/{attachment_id}",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "deleteOwnConversationAttachment": {
+      "method": "DELETE",
+      "route": "/me/conversations/{id}/attachments/{attachment_id}",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "getStoreConversationMediaCapabilities": {
+      "method": "GET",
+      "route": "/store/conversations/{id}/attachments/capabilities",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "images_per_message",
+            "image_max_bytes",
+            "video_max_bytes",
+            "video_max_duration_seconds"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "images_per_message": {
+              "type": "integer",
+              "enum": [
+                3
+              ]
+            },
+            "image_max_bytes": {
+              "type": "integer",
+              "enum": [
+                5242880
+              ]
+            },
+            "video_max_bytes": {
+              "type": "integer",
+              "enum": [
+                20971520
+              ]
+            },
+            "video_max_duration_seconds": {
+              "type": "integer",
+              "enum": [
+                30
+              ]
+            }
+          }
+        }
+      }
+    },
+    "createStoreConversationAttachment": {
+      "method": "POST",
+      "route": "/store/conversations/{id}/attachments",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_upload_id",
+          "kind",
+          "size_bytes",
+          "sha256"
+        ],
+        "properties": {
+          "client_upload_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20971520
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "minLength": 64,
+            "maxLength": 64,
+            "example": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        }
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "uploadStoreConversationAttachment": {
+      "method": "PUT",
+      "route": "/store/conversations/{id}/attachments/{attachment_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "readStoreConversationAttachment": {
+      "method": "GET",
+      "route": "/store/conversations/{id}/attachments/{attachment_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "preview": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "range": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {},
+        "206": {}
+      }
+    },
+    "getStoreConversationAttachment": {
+      "method": "GET",
+      "route": "/store/conversations/{id}/attachments/{attachment_id}",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "deleteStoreConversationAttachment": {
+      "method": "DELETE",
+      "route": "/store/conversations/{id}/attachments/{attachment_id}",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
             }
           }
         }

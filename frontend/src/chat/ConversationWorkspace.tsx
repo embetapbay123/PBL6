@@ -21,6 +21,8 @@ import {
 } from "./ChatPrimitives";
 
 import { useChat, conversationEntry } from "./ChatProvider";
+import {mediaCapabilities} from './chat-media';
+import {ChatAttachmentView,ChatUploadTray} from './ChatMedia';
 
 type Scope = "CUSTOMER" | "STORE";
 export function MessagesWorkspace({
@@ -81,6 +83,8 @@ export function MessagesWorkspace({
     entry = conversationEntry(chat.entries, scope, id),
     { draft, busy, error, notice, pending, order } = entry;
   const setDraft = (draft: string) => chat.patch(scope + ":" + id, { draft });
+  const uploads=chat.uploads.entries[conversationKey]??[];
+  const capability=useQuery({queryKey:['chat-media-capabilities',scope,id],enabled:allowed&&active&&!!id,retry:false,staleTime:60000,queryFn:({signal})=>mediaCapabilities(scope,id!,signal)});
   const base = scope === "CUSTOMER" ? "/customer/messages" : "/seller/messages";
   const threads = useQuery({
     queryKey: ["conversations", scope, listPage, search, showArchived],
@@ -418,6 +422,7 @@ export function MessagesWorkspace({
                         </span>
                         <div className="chat-bubble">
                           <ChatMessageContent content={message.content} />
+                          {!!message.attachments?.length&&<div className="chat-private-media-list">{message.attachments.map(asset=><ChatAttachmentView key={asset.id} scope={scope} id={id!} asset={asset}/>)}</div>}
                           {message.order_id && (
                             <div className="message-order-actions">
                               <Link
@@ -502,12 +507,14 @@ export function MessagesWorkspace({
                 onChange={setDraft}
                 onSubmit={send}
                 busy={busy}
+                hasAttachments={!!uploads.length}
+                mediaSlot={(capability.data?.enabled||uploads.length>0)&&<ChatUploadTray items={uploads} locked={busy||!!pending||!!messages.error||messages.isLoading} onSelect={files=>{try{chat.uploads.select(scope,id!,files);chat.patch(conversationKey,{error:undefined});}catch(error){chat.patch(conversationKey,{error});}}} onRemove={item=>{void chat.uploads.remove(scope,id!,item).catch(error=>chat.patch(conversationKey,{error}));}} onRetry={item=>void chat.uploads.retry(scope,id!,item)}/>}
                 retry={!!pending}
                 locked={!!pending || !!messages.error || messages.isLoading}
                 disabled={
                   !!messages.error ||
                   messages.isLoading ||
-                  (!pending && !draft.trim())
+                  (!pending && ((!draft.trim()&&!uploads.length)||uploads.some(item=>item.stage!=='READY')))
                 }
                 buttonText={
                   busy ? "Đang gửi…" : pending ? "Thử gửi" : "Gửi"

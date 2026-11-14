@@ -6,6 +6,7 @@ import { database } from '../../../shared/src/database';
 import { ApiError } from '../../../shared/src/errors';
 import type { EntityManager } from 'typeorm';
 import {searchPattern} from '../../../shared/src/search';
+import {attachmentDto,type ChatAttachmentRow} from './media.service';
 
 type Side='CUSTOMER'|'STORE';
 type Context={user_id:string;access_token?:string;store_membership?:{store_id:string;role:string;status?:string;permissions?:string[]}};
@@ -15,6 +16,12 @@ const message=(row:any)=>({id:row.id,conversation_id:row.conversation_id,sender_
 type OrderContext=OperationOutputs['ResolveConversationOrder'];
 export class MessagingService {
   constructor(private readonly source:DataSource=database,private readonly orderLookup?:(id:string,context:Context,side:Side,correlation:string)=>Promise<OrderContext>){}
+  private async messages(manager:EntityManager,records:any[]){
+    const ids=records.flatMap(row=>row.attachment_ids??[]);
+    if(!ids.length)return records.map(message);
+    const assets:ChatAttachmentRow[]=await manager.query('SELECT * FROM chat_attachment WHERE id=ANY($1::uuid[]) AND message_id=ANY($2::uuid[])',[ids,records.map(row=>row.id)]);
+    return records.map(row=>({...message(row),attachments:(row.attachment_ids??[]).map((id:string)=>assets.find(asset=>asset.id===id&&asset.message_id===row.id)).filter((asset:ChatAttachmentRow|undefined):asset is ChatAttachmentRow=>!!asset).map(attachmentDto)}));
+  }
   private checkedOrder(id:string,order:OrderContext){if(order.order_id!==id)throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Kết quả đối chiếu không khớp đơn đã yêu cầu.');return order;}
   private async order(id:string,context:Context,side:Side,correlation:string):Promise<OrderContext>{
     if(this.orderLookup)return this.checkedOrder(id,await this.orderLookup(id,context,side,correlation));
@@ -59,7 +66,7 @@ export class MessagingService {
     const args=[owner,pattern??null,side==='STORE'?archived:null];
     const [count]=await this.source.manager.query('SELECT count(*)::int AS total'+joins+' WHERE '+where,args);
     const rows=await this.source.manager.query(`SELECT c.id,c.store_id,s.name AS store_name,coalesce(p.display_name,'Khách hàng') AS customer_name,c.updated_at,
-      (SELECT content FROM store_message WHERE conversation_id=c.id ORDER BY store_sequence DESC LIMIT 1) AS last_message,
+      (SELECT coalesce(nullif(content,''),'Đã gửi tệp đính kèm') FROM store_message WHERE conversation_id=c.id ORDER BY store_sequence DESC LIMIT 1) AS last_message,
       (SELECT order_id FROM store_message WHERE conversation_id=c.id AND order_id IS NOT NULL ORDER BY store_sequence DESC LIMIT 1) AS last_order_id,
       (SELECT left(substr(split_part(content,E'\\n',1),11),200) FROM store_message WHERE conversation_id=c.id AND sender_side='CUSTOMER' AND content LIKE 'Sản phẩm: %' ORDER BY store_sequence DESC LIMIT 1) AS last_product_mention,
       c.store_archived_at,(SELECT count(*)::int FROM store_message m WHERE m.conversation_id=c.id AND m.sender_side='CUSTOMER' AND m.store_sequence>c.store_read_sequence) AS unread_count
@@ -96,12 +103,13 @@ export class MessagingService {
       FROM store_conversation c JOIN store s ON s.id=c.store_id LEFT JOIN customer_profile p ON p.user_id=c.customer_user_id WHERE c.id=$1`,[id]);
     this.authorize(thread,context,side);
     const [count]=await this.source.manager.query('SELECT count(*)::int AS total FROM store_message WHERE conversation_id=$1',[id]);
-    const rows=await this.source.manager.query('SELECT id,conversation_id,sender_side,content,created_at,order_id FROM store_message WHERE conversation_id=$1 ORDER BY store_sequence DESC LIMIT $2 OFFSET $3',[id,size,(page-1)*size]);
-    return {conversation_id:id,conversation:{id:thread.id,store_id:thread.store_id,store_name:thread.store_name,customer_name:thread.customer_name,updated_at:timestamp(thread.updated_at)},items:rows.map(message),total:count.total,page,size};
+    const rows=await this.source.manager.query('SELECT id,conversation_id,sender_side,content,created_at,order_id,attachment_ids FROM store_message WHERE conversation_id=$1 ORDER BY store_sequence DESC LIMIT $2 OFFSET $3',[id,size,(page-1)*size]);
+    return {conversation_id:id,conversation:{id:thread.id,store_id:thread.store_id,store_name:thread.store_name,customer_name:thread.customer_name,updated_at:timestamp(thread.updated_at)},items:await this.messages(this.source.manager,rows),total:count.total,page,size};
   }
-  async send(id:string,input:{content:string;client_message_id:string;order_id?:string},context:Context,side:Side,correlation=''):Promise<OperationOutputs['sendOwnConversationMessage']> {
+  async send(id:string,input:{content:string;client_message_id:string;order_id?:string;attachment_ids?:string[]},context:Context,side:Side,correlation=''):Promise<OperationOutputs['sendOwnConversationMessage']> {
     const content=input.content.trim();
-    if(!content || content.length>2000)throw new ApiError(422,'VALIDATION_FAILED','Tin nhắn cần có từ 1 đến 2000 ký tự.');
+    const attachments=input.attachment_ids??[];
+    if((!content&&!attachments.length)||content.length>2000||attachments.length>3||new Set(attachments).size!==attachments.length)throw new ApiError(422,'VALIDATION_FAILED','Nhập tin nhắn hoặc chọn tối đa 3 ảnh hay 1 video.');
     let order:OrderContext|undefined;
     if(input.order_id){
       const [thread]=await this.source.manager.query('SELECT customer_user_id,store_id FROM store_conversation WHERE id=$1',[id]);
@@ -112,14 +120,20 @@ export class MessagingService {
       this.authorize(thread,context,side);if(order)this.matchesOrder(order,thread);
       const [existing]=await manager.query('SELECT * FROM store_message WHERE conversation_id=$1 AND sender_side=$2 AND client_message_id=$3',[id,side,input.client_message_id]);
       if(existing){
-        if(existing.content!==content || existing.sender_user_id!==context.user_id||(existing.order_id??null)!==(input.order_id??null))throw new ApiError(409,'MESSAGE_KEY_CONFLICT','Mã gửi tin đã được dùng cho nội dung khác.');
-        return message(existing);
+        if(existing.content!==content || existing.sender_user_id!==context.user_id||(existing.order_id??null)!==(input.order_id??null)||JSON.stringify(existing.attachment_ids??[])!==JSON.stringify(attachments))throw new ApiError(409,'MESSAGE_KEY_CONFLICT','Mã gửi tin đã được dùng cho nội dung khác.');
+        return (await this.messages(manager,[existing]))[0];
       }
       const [store]=await manager.query("SELECT id FROM store WHERE id=$1 AND status='ACTIVE'",[thread.store_id]);
       if(!store)throw new ApiError(409,'STORE_UNAVAILABLE','Gian hàng hiện không nhận tin nhắn.');
-      const [row]=input.order_id?await manager.query('INSERT INTO store_message(conversation_id,sender_user_id,sender_side,client_message_id,content,order_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[id,context.user_id,side,input.client_message_id,content,input.order_id]):await manager.query('INSERT INTO store_message(conversation_id,sender_user_id,sender_side,client_message_id,content) VALUES($1,$2,$3,$4,$5) RETURNING *',[id,context.user_id,side,input.client_message_id,content]);
+      if(attachments.length){
+        const assets:ChatAttachmentRow[]=await manager.query('SELECT * FROM chat_attachment WHERE id=ANY($1::uuid[]) ORDER BY id FOR UPDATE',[attachments]);
+        if(assets.length!==attachments.length||assets.some(asset=>asset.conversation_id!==id||asset.owner_user_id!==context.user_id||asset.status!=='READY'||asset.message_id||!asset.expires_at||new Date(asset.expires_at).getTime()<=Date.now()))throw new ApiError(409,'CHAT_ATTACHMENT_NOT_READY','Tệp chưa sẵn sàng hoặc không còn thuộc bản nháp này. Hãy chọn lại tệp.');
+        if(assets.some(asset=>asset.kind==='VIDEO')&&(assets.length!==1||assets[0].kind!=='VIDEO'))throw new ApiError(422,'CHAT_ATTACHMENT_COMBINATION','Mỗi tin chỉ gửi tối đa 3 ảnh hoặc 1 video.');
+      }
+      const [row]=await manager.query('INSERT INTO store_message(conversation_id,sender_user_id,sender_side,client_message_id,content,order_id,attachment_ids) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *',[id,context.user_id,side,input.client_message_id,content,input.order_id??null,attachments]);
+      if(attachments.length)await manager.query('UPDATE chat_attachment SET message_id=$2,expires_at=NULL,updated_at=now(),version=version+1 WHERE id=ANY($1::uuid[])',[attachments,row.id]);
       await manager.query('UPDATE store_conversation SET updated_at=now() WHERE id=$1',[id]);
-      return message(row);
+      return (await this.messages(manager,[row]))[0];
     });
   }
 }

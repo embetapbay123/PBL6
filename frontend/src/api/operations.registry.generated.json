@@ -989,6 +989,66 @@
     "path": "/checkout/voucher-suggestions",
     "internal": false
   },
+  "getOwnConversationMediaCapabilities": {
+    "method": "GET",
+    "path": "/me/conversations/{id}/attachments/capabilities",
+    "internal": false
+  },
+  "createOwnConversationAttachment": {
+    "method": "POST",
+    "path": "/me/conversations/{id}/attachments",
+    "internal": false
+  },
+  "uploadOwnConversationAttachment": {
+    "method": "PUT",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}/content",
+    "internal": false
+  },
+  "readOwnConversationAttachment": {
+    "method": "GET",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}/content",
+    "internal": false
+  },
+  "getOwnConversationAttachment": {
+    "method": "GET",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}",
+    "internal": false
+  },
+  "deleteOwnConversationAttachment": {
+    "method": "DELETE",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}",
+    "internal": false
+  },
+  "getStoreConversationMediaCapabilities": {
+    "method": "GET",
+    "path": "/store/conversations/{id}/attachments/capabilities",
+    "internal": false
+  },
+  "createStoreConversationAttachment": {
+    "method": "POST",
+    "path": "/store/conversations/{id}/attachments",
+    "internal": false
+  },
+  "uploadStoreConversationAttachment": {
+    "method": "PUT",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}/content",
+    "internal": false
+  },
+  "readStoreConversationAttachment": {
+    "method": "GET",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}/content",
+    "internal": false
+  },
+  "getStoreConversationAttachment": {
+    "method": "GET",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}",
+    "internal": false
+  },
+  "deleteStoreConversationAttachment": {
+    "method": "DELETE",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",

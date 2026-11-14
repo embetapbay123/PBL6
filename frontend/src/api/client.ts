@@ -96,11 +96,13 @@ const restore=():Promise<AuthTokens>=>{
     .finally(()=>{if(refreshing===flight)refreshing=undefined;});
   refreshing=flight;return flight.promise;
 };
-export async function request<T>(path:string,options:RequestInit={},retry=true):Promise<T> {
+type TransportOptions=RequestInit&{binaryResponse?:boolean;onUploadProgress?:(percent:number)=>void};
+export async function request<T>(path:string,options:TransportOptions={},retry=true):Promise<T> {
   const generation=epoch,scope=sessionScope(session),authRequest=path.startsWith('/auth/');
   const headers=new Headers(options.headers);
   // The browser supplies the multipart boundary for authenticated photo uploads.
   if(options.body instanceof FormData)headers.delete('Content-Type');
+  else if(options.body instanceof Blob)headers.set('Content-Type','application/octet-stream');
   else headers.set('Content-Type','application/json');
   const store=session?.context?.store_membership?.store_id;
   if(/^\/store(?:\/|\?|$)/.test(path)&&store){
@@ -117,11 +119,24 @@ export async function request<T>(path:string,options:RequestInit={},retry=true):
   // Model generation can use the server's 30s provider deadline plus Catalog work.
   // Keep ordinary API calls short; an AI turn must survive that bounded deadline.
   const aiTurn=options.method==='POST'&&/^\/chat\/sessions\/[^/?]+\/messages(?:\?|$)/.test(path);
-  const timer=setTimeout(abort,aiTurn?35000:7000);
+  const timer=setTimeout(abort,options.body instanceof Blob?120000:options.binaryResponse?30000:aiTurn?35000:7000);
   let response:Response,data:any;
   try {
-    response=await fetch(base+path,{...options,headers,credentials:'include',signal:controller.signal});
-    data=await response.json().catch(error=>{if(controller.signal.aborted)throw error;return {};});
+    if(options.body instanceof Blob&&options.onUploadProgress){
+      response=await new Promise<Response>((resolve,reject)=>{
+        const xhr=new XMLHttpRequest(),cancel=()=>xhr.abort();
+        xhr.open(options.method??'PUT',base+path);xhr.withCredentials=true;xhr.responseType='blob';
+        headers.forEach((value,key)=>xhr.setRequestHeader(key,value));
+        xhr.upload.onprogress=event=>{if(event.lengthComputable)options.onUploadProgress?.(Math.round(event.loaded/event.total*100));};
+        const cleanup=()=>controller.signal.removeEventListener('abort',cancel);
+        xhr.onerror=xhr.onabort=()=>{cleanup();reject(new Error('Upload interrupted'));};
+        xhr.onload=()=>{cleanup();resolve(new Response(xhr.response,{status:xhr.status,headers:{'Content-Type':xhr.getResponseHeader('Content-Type')??'application/json'}}));};
+        controller.signal.addEventListener('abort',cancel,{once:true});
+        if(controller.signal.aborted){cleanup();reject(new Error('Upload interrupted'));return;}
+        xhr.send(options.body as Blob);
+      });
+    }else response=await fetch(base+path,{...options,headers,credentials:'include',signal:controller.signal});
+    data=options.binaryResponse&&response.ok?await response.blob():await response.json().catch(error=>{if(controller.signal.aborted)throw error;return {};});
   }
   catch {if(generation!==epoch)throw changed();throw new ApiError(0,'NETWORK_ERROR','Không kết nối được API.');}
   finally {clearTimeout(timer);requests.delete(controller);cookieReads.delete(controller);options.signal?.removeEventListener('abort',abort);}

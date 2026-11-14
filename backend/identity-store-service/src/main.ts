@@ -11,7 +11,8 @@ import { StaffSkeletonController } from './staff/staff.skeleton.controller';
 import { AdministrationSkeletonController } from './administration/administration.skeleton.controller';
 import { AuthController } from './auth/auth.controller';
 import { MessagingController } from './messaging/messaging.controller';
-bootstrap('M3',[auditLogController('M3'),storeAuditController('M3'),AuditActorsController,MessagingController,ContextInternalController,AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StoreInternalController,StaffSkeletonController,AdministrationSkeletonController]).catch((error: unknown)=>{
+import { OwnChatMediaController,StoreChatMediaController } from './messaging/media.controller';
+bootstrap('M3',[auditLogController('M3'),storeAuditController('M3'),AuditActorsController,MessagingController,OwnChatMediaController,StoreChatMediaController,ContextInternalController,AuthController,AuthSkeletonController,ProfileSkeletonController,StoreSkeletonController,StoreInternalController,StaffSkeletonController,AdministrationSkeletonController]).catch((error: unknown)=>{
   const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   console.error(`Startup failed: ${detail}`);
   process.exit(1);

@@ -2125,5 +2125,155 @@
     "roles": [
       "CUSTOMER"
     ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/conversations/{id}/attachments/capabilities",
+    "operation_id": "getOwnConversationMediaCapabilities",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/me/conversations/{id}/attachments",
+    "operation_id": "createOwnConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}/content",
+    "operation_id": "uploadOwnConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}",
+    "operation_id": "getOwnConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}/content",
+    "operation_id": "readOwnConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/me/conversations/{id}/attachments/{attachment_id}",
+    "operation_id": "deleteOwnConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/conversations/{id}/attachments/capabilities",
+    "operation_id": "getStoreConversationMediaCapabilities",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/conversations/{id}/attachments",
+    "operation_id": "createStoreConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}/content",
+    "operation_id": "uploadStoreConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}",
+    "operation_id": "getStoreConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}/content",
+    "operation_id": "readStoreConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/store/conversations/{id}/attachments/{attachment_id}",
+    "operation_id": "deleteStoreConversationAttachment",
+    "service": "M3",
+    "module": "messaging",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER",
+      "SELLER"
+    ]
   }
 ]

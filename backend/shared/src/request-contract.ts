@@ -35,10 +35,11 @@ export function validateHttpRequest(id: OperationId, request: any) {
 export class RequestContractInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler) {
     const request = context.switchToHttp().getRequest();
+    const method = request.method === 'HEAD' ? 'GET' : request.method;
     const route = request.route?.path?.replace(/:([a-zA-Z_]+)/g, '{$1}');
     const id = (Object.keys(operationContracts) as OperationId[]).find(key => {
       const r = operationContracts[key];
-      return r.service === process.env.SERVICE_ID && r.method === request.method &&
+      return r.service === process.env.SERVICE_ID && r.method === method &&
         (r.internal ? r.route : '/api/v1' + r.route) === route;
     });
     // Raw callback authentication belongs before body validation in its controller.

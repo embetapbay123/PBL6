@@ -1,14 +1,12 @@
-import { useId, useState, type FormEvent } from "react";
+import { useId, type FormEvent } from "react";
 import {
   ArrowUp,
   LoaderCircle,
   MessageSquare,
-  X,
-  Play,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Pagination } from "../bootstrap/components";
+
 
 export function ChatAvatar({
   name,
@@ -128,129 +126,27 @@ export function ChatPages({
   );
 }
 
-export interface MediaAttachment {
-  type: "image" | "video";
-  url: string;
-  name?: string;
+/** Only server-owned attachments are rendered as media. Text never fetches arbitrary URLs. */
+export function ChatMessageContent({content}:{content:string}) {
+  return content ? <div className="chat-message-content"><p className="chat-text-line whitespace-pre-wrap">{content}</p></div> : null;
 }
 
-/** Rich content renderer supporting text, images with lightbox, and embedded videos */
-export function ChatMessageContent({ content }: { content: string }) {
-  const [activeMedia, setActiveMedia] = useState<MediaAttachment | null>(null);
-
-  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
-  const videoRegex = /\[video:([^\]]+)\]/g;
-
-  const images: string[] = [];
-  const videos: string[] = [];
-
-  let text = content
-    .replace(imageRegex, (_, __, url) => {
-      images.push(url);
-      return "";
-    })
-    .replace(videoRegex, (_, url) => {
-      videos.push(url);
-      return "";
-    })
-    .trim();
-
-  return (
-    <div className="chat-message-content">
-      {text && <p className="chat-text-line whitespace-pre-wrap">{text}</p>}
-
-      {images.length > 0 && (
-        <div className="chat-media-images-grid">
-          {images.map((url, i) => (
-            <div
-              key={i}
-              className="chat-media-img-card"
-              onClick={() => setActiveMedia({ type: "image", url })}
-              title="Nhấp để xem ảnh lớn"
-            >
-              <img
-                src={url}
-                alt="Ảnh đính kèm"
-                className="chat-media-img"
-                loading="lazy"
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {videos.length > 0 && (
-        <div className="chat-media-videos-grid">
-          {videos.map((url, i) => (
-            <div key={i} className="chat-media-video-card">
-              <video
-                src={url}
-                controls
-                preload="metadata"
-                className="chat-media-video"
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Lightbox Modal */}
-      {activeMedia && (
-        <div
-          className="chat-lightbox-backdrop"
-          onClick={() => setActiveMedia(null)}
-          role="dialog"
-          aria-label="Xem media phóng to"
-        >
-          <div
-            className="chat-lightbox-container"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="chat-lightbox-close"
-              onClick={() => setActiveMedia(null)}
-              aria-label="Đóng"
-            >
-              <X size={20} />
-            </button>
-            {activeMedia.type === "image" ? (
-              <img
-                src={activeMedia.url}
-                alt="Phóng to"
-                className="chat-lightbox-image"
-              />
-            ) : (
-              <video
-                src={activeMedia.url}
-                controls
-                autoPlay
-                className="chat-lightbox-video-player"
-              />
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Helper to compress image down to max dimensions as a lightweight base64 string */
 export function ChatComposer({
-  label, draft, onChange, onSubmit, busy, locked = false, retry = false, disabled = false, buttonText, placeholder,
+  label, draft, onChange, onSubmit, busy, locked = false, retry = false, disabled = false, hasAttachments = false, mediaSlot, buttonText, placeholder,
 }: {
   label: string; draft: string; onChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void; busy: boolean; locked?: boolean; retry?: boolean; disabled?: boolean;
-  buttonText: string; placeholder: string;
+  buttonText: string; placeholder: string; hasAttachments?: boolean; mediaSlot?: import("react").ReactNode;
 }) {
   const inputId = useId(), limitId = useId();
   const tooLong = draft.length > 2000;
-  const cannotSend = busy || (locked && !retry) || disabled || tooLong || !draft.trim();
+  const cannotSend = busy || (locked && !retry) || disabled || tooLong || (!draft.trim() && !hasAttachments);
   return (
     <form className="chat-composer" onSubmit={event => {
       if (cannotSend) { event.preventDefault(); return; }
       onSubmit(event);
     }}>
+      {mediaSlot}
       <div className="chat-composer-box">
         <label className="chat-sr-only" htmlFor={inputId}>{label}</label>
         <textarea id={inputId} rows={2} maxLength={2000} value={draft} placeholder={placeholder}
@@ -267,7 +163,7 @@ export function ChatComposer({
         </button>
       </div>
       {tooLong && <p id={limitId} role="alert">Tin nhắn tối đa 2.000 ký tự.</p>}
-      <div className="chat-composer-toolbar"><small>Chỉ hỗ trợ tin nhắn văn bản.</small><span>{draft.length}/2000</span></div>
+      <div className="chat-composer-toolbar">{!mediaSlot && <small>Chỉ hỗ trợ tin nhắn văn bản.</small>}<span>{draft.length}/2000</span></div>
     </form>
   );
 }

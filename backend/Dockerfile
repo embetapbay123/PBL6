@@ -5,6 +5,8 @@ RUN npm ci --no-audit --no-fund
 COPY backend/ ./
 RUN npm run build
 FROM node:22.15.1-bookworm-slim
+ARG INSTALL_CHAT_MEDIA=0
+RUN if [ "$INSTALL_CHAT_MEDIA" = "1" ]; then apt-get update && apt-get install -y --no-install-recommends ffmpeg util-linux && rm -rf /var/lib/apt/lists/*; fi
 WORKDIR /app/backend
 ENV NODE_ENV=development
 COPY --from=build /app/backend/node_modules ./node_modules
