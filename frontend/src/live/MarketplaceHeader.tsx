@@ -115,7 +115,8 @@ export function MarketplaceHeader() {
   useEffect(() => {
     setMenu(false);
     setMobile(false);
-    setSearch(new URLSearchParams(location.search).get("q") ?? "");
+    const catalogRoute=location.pathname==='/' || /^\/stores\/[^/]+$/.test(location.pathname);
+    setSearch(catalogRoute ? new URLSearchParams(location.search).get("q") ?? "" : "");
   }, [location.pathname, location.search]);
   useEffect(() => {
     if (!menu) return;

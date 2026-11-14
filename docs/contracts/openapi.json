@@ -11931,6 +11931,16 @@
               "maximum": 100,
               "default": 20
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Search stored message content within owned, retained AI sessions before pagination. Does not call a model. Ignored when session_id selects a specific owned history."
           }
         ],
         "responses": {
@@ -15123,6 +15133,16 @@
               "maximum": 100,
               "default": 20
             }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "description": "Search Store name or stored message content, within owned conversations, before pagination. Vietnamese accents are folded; LIKE metacharacters are literal."
           }
         ],
         "responses": {
@@ -15405,7 +15425,7 @@
               "type": "string",
               "maxLength": 200
             },
-            "description": "Search customer name or email within the current Store."
+            "description": "Search customer name/email or stored message content within the current Store, before pagination. Vietnamese accents are folded; LIKE metacharacters are literal."
           },
           {
             "name": "archived",
@@ -31633,6 +31653,11 @@
           },
           "messages": {
             "$ref": "#/components/schemas/PageChatMessages"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 140,
+            "description": "Stored first Customer message excerpt, redacted, for history list display. No model generation."
           }
         },
         "required": [

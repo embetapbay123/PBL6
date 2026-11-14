@@ -97,16 +97,20 @@ export function ContactStoreButton({
 
   if (compact) {
     return (
+      <div className="order-chat-contact">
       <button
         type="button"
         className={className || "order-header-chat-btn"}
         disabled={busy}
         onClick={() => void start()}
         title="Chat với gian hàng"
+        aria-label={busy ? 'Đang mở tin nhắn' : 'Nhắn tin'}
       >
         <MessageCircle size={13} className="text-[#ee4d2d]" />
         <span>{busy ? "..." : "Chat"}</span>
       </button>
+      {error !== undefined && <ErrorView error={error} />}
+      </div>
     );
   }
 

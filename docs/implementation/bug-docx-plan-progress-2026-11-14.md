@@ -6,9 +6,9 @@ Cập nhật ngày 15/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-do
 |---|---|---|
 | 0. Baseline và đối chiếu | Đã khởi tạo | Dùng bảng B01–B33 của plan; chụp bản public trước sửa. Chưa tuyên bố nghiệm thu lại mọi nhóm trong tài liệu gốc. |
 | 1. Hoàn thiện UI/copy | Đã triển khai, có bằng chứng UI | Chi tiết bên dưới. |
-| 2. Voucher tốt nhất | Đang thực hiện | Bộ tối ưu và phép tính VND dùng chung có test; chưa có API/FE và chưa deploy BE cho phần này. |
-| 3. Tìm hội thoại | Đang thực hiện | Đối chiếu query/phân quyền M3/M4 và FE; chưa triển khai. |
-| 4. Media chat | Chưa thực hiện | Upload, quyền truy cập, lưu trữ, adapter AI. |
+| 2. Voucher tốt nhất | Đã triển khai và nghiệm thu | B01: 447 unit, 28 PostgreSQL integration, 22 UI và public quote/đơn COD qua. [Chi tiết](bug-docx-vouchers-2026-11-15.md). |
+| 3. Tìm hội thoại | Đã triển khai và nghiệm thu | M3/M4 + FE, public 25 hội thoại/25 phiên và xóa theo sở hữu qua. [Chi tiết](bug-docx-chat-search-2026-11-15.md). |
+| 4. Media chat | Đang thực hiện | Khảo sát upload/private storage và adapter có ảnh, giới hạn tiền. Chưa có upload mới. |
 | 5. Nội dung gian hàng | Chưa thực hiện | CMS banner/campaign và nguồn nhóm sản phẩm. |
 | 6. Nghiệm thu toàn bộ | Chưa hoàn tất | Có kiểm tra và triển khai riêng từng đợt; không tính là đã đóng cả 33 nhóm. |
 
@@ -39,4 +39,4 @@ Chứng cứ đặt tại `C:/PBL6/outputs/bug-ui-phase1-2026-11-14/`: `before/r
 
 ## Bước đang làm
 
-Đợt 2 đã hoàn tất; xem [báo cáo voucher](bug-docx-vouchers-2026-11-15.md). Đang thực hiện đợt 3: tìm hội thoại Customer và phiên AI trên dữ liệu sở hữu, trước phân trang, không gọi model để tìm kiếm. Media chat và nội dung gian hàng vẫn chưa triển khai.
+Đợt 2 và 3 đã triển khai, có báo cáo riêng. Đang thực hiện đợt 4: upload ảnh/video có quyền truy cập, xử lý file có giới hạn và adapter đọc ảnh/frame thật. Chat hiện cấu hình provider OpenAI-compatible ngoài OpenAI, model deepseek-v4.1-flash; không coi chuỗi Markdown URL là khả năng đọc ảnh. Chưa bật media mới hoặc tăng ngân sách. Đợt 5 CMS gian hàng và nghiệm thu toàn bộ vẫn còn.

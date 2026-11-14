@@ -1,4 +1,4 @@
-import asyncio, hashlib, secrets, json, time, uuid, hmac
+import asyncio, hashlib, secrets, json, time, uuid, hmac, unicodedata
 from dataclasses import replace
 from sqlalchemy import text
 from starlette.concurrency import run_in_threadpool
@@ -8,6 +8,11 @@ from .provider import CatalogSelector, compose, PROMPT_VERSION,request_estimate,
 from .retrieval import retrieve,contextual_question
 
 def digest(value):return hashlib.sha256(value.encode()).hexdigest()
+
+def history_search_pattern(value):
+    value=unicodedata.normalize('NFD',str(value or '').strip().lower()).replace('đ','d')
+    value=''.join(c for c in value if not '\u0300'<=c<='\u036f')
+    return '%'+value.replace('\\','\\\\').replace('%','\\%').replace('_','\\_')+'%' if value else None
 
 class ChatRuntime:
     def __init__(self,engine,catalog,selector=None):
@@ -51,13 +56,16 @@ class ChatRuntime:
 
     def list(self,user,query):
         page,size=query.get('page',1),query.get('size',20);id=query.get('session_id')
-        params={'u':user,'s':id,'offset':(page-1)*size,'size':size}
-        condition="user_id=:u AND created_at>now()-interval '30 days'"+(' AND id=:s' if id else '')
+        pattern=history_search_pattern(query.get('q')) if not id else None
+        params={'u':user,'s':id,'offset':(page-1)*size,'size':size,'q':pattern}
+        condition="s.user_id=:u AND s.created_at>now()-interval '30 days'"+(' AND s.id=:s' if id else '')
+        if pattern:
+            condition+=r" AND EXISTS(SELECT 1 FROM chat_message m WHERE m.session_id=s.id AND translate(regexp_replace(lower(normalize(m.content,NFD)),U&'[\0300-\036f]','','g'),'đ','d') LIKE :q)"
         with self.engine.connect() as db:
-            total=db.execute(text('SELECT count(*) FROM chat_session WHERE '+condition),params).scalar_one()
+            total=db.execute(text('SELECT count(*) FROM chat_session s WHERE '+condition),params).scalar_one()
             if id and not total:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
-            rows=db.execute(text('SELECT id,user_id,created_at FROM chat_session WHERE '+condition+' ORDER BY created_at DESC,id DESC LIMIT :size OFFSET :offset'),params).mappings().all()
-            items=[{'id':str(r['id']),'user_id':str(r['user_id']),'created_at':r['created_at'].isoformat()} for r in rows]
+            rows=db.execute(text("SELECT s.id,s.user_id,s.created_at,(SELECT left(content,200) FROM chat_message WHERE session_id=s.id AND role='USER' ORDER BY created_at,id LIMIT 1) AS title FROM chat_session s WHERE "+condition+' ORDER BY s.created_at DESC,s.id DESC LIMIT :size OFFSET :offset'),params).mappings().all()
+            items=[{'id':str(r['id']),'user_id':str(r['user_id']),'created_at':r['created_at'].isoformat(),**({'title':redact(r['title'],120)[:140]} if r['title'] else {})} for r in rows]
             if id and items:
                 mp,ms=query.get('message_page',1),query.get('message_size',20)
                 count=db.execute(text('SELECT count(*) FROM chat_message WHERE session_id=:s'),params).scalar_one()

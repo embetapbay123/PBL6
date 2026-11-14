@@ -237,15 +237,15 @@ export function ChatMessageContent({ content }: { content: string }) {
 
 /** Helper to compress image down to max dimensions as a lightweight base64 string */
 export function ChatComposer({
-  label, draft, onChange, onSubmit, busy, locked = false, disabled = false, buttonText, placeholder,
+  label, draft, onChange, onSubmit, busy, locked = false, retry = false, disabled = false, buttonText, placeholder,
 }: {
   label: string; draft: string; onChange: (value: string) => void;
-  onSubmit: (event: FormEvent) => void; busy: boolean; locked?: boolean; disabled?: boolean;
+  onSubmit: (event: FormEvent) => void; busy: boolean; locked?: boolean; retry?: boolean; disabled?: boolean;
   buttonText: string; placeholder: string;
 }) {
   const inputId = useId(), limitId = useId();
   const tooLong = draft.length > 2000;
-  const cannotSend = busy || locked || disabled || tooLong || !draft.trim();
+  const cannotSend = busy || (locked && !retry) || disabled || tooLong || !draft.trim();
   return (
     <form className="chat-composer" onSubmit={event => {
       if (cannotSend) { event.preventDefault(); return; }

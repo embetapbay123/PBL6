@@ -253,7 +253,7 @@ test("failed restore enables Guest chat and shows the signed-out Store channel",
 }) => {
   const s = await routes(page, { delayRestore: true });
   await context.addCookies([
-    { name: "pbl6_csrf", value: "fixture", url: "http://127.0.0.1:3112" },
+    { name: "pbl6_csrf", value: "fixture", url: process.env.WEB_TEST_URL ?? 'http://localhost:8080' },
   ]);
   await page.goto("/");
   await expect.poll(() => !!s.restore()).toBe(true);

@@ -1,6 +1,7 @@
 import {
   type FormEvent,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -71,8 +72,20 @@ export function AiChatPanel({ active }: { active: boolean }) {
     [messageTotal, setMessageTotal] = useState(0),
     [reload, setReload] = useState(0),
     [historyError, setHistoryError] = useState<unknown>();
+  const [historyMutationError,setHistoryMutationError]=useState<unknown>();
   const [titles, setTitles] = useState<Record<string, string>>({}),
     [showLatest, setShowLatest] = useState(false);
+  const [historyOpen,setHistoryOpen]=useState(false);
+  const historyId=useId(),searchInput=useRef<HTMLInputElement>(null),historyTrigger=useRef<HTMLButtonElement>(null);
+  useEffect(()=>{if(historyOpen&&matchMedia('(max-width:767px)').matches)searchInput.current?.focus();},[historyOpen]);
+  const closeHistory=()=>{setHistoryOpen(false);requestAnimationFrame(()=>historyTrigger.current?.focus());};
+  const searchKey='pbl6_ai_history_search_'+session?.context?.user_id;
+  const [searchDraft,setSearchDraft]=useState(()=>{try{return sessionStorage.getItem(searchKey)?.slice(0,200)??'';}catch{return '';}});
+  const [search,setSearch]=useState(searchDraft.trim());
+  useEffect(()=>{
+    const timer=setTimeout(()=>{const value=searchDraft.trim();if(value!==search){setPage(1);setSearch(value);}try{if(value)sessionStorage.setItem(searchKey,value);else sessionStorage.removeItem(searchKey);}catch{/* Optional preference storage. */}},300);
+    return()=>clearTimeout(timer);
+  },[searchDraft,search,searchKey]);
   const alive = useRef(true),
     flight = useRef(false),
     log = useRef<HTMLDivElement>(null),
@@ -87,8 +100,10 @@ export function AiChatPanel({ active }: { active: boolean }) {
   useEffect(() => {
     if (!customer || !active) return;
     let current = true;
+    const controller=new AbortController();
+    setHistory(undefined);
     setHistoryError(undefined);
-    listOwnChatSessions({ page, size: 20 })
+    listOwnChatSessions({ page, size: 20, ...(search?{q:search}:{}) },{signal:controller.signal})
       .then((v) => {
         if (current) setHistory(v);
       })
@@ -97,8 +112,9 @@ export function AiChatPanel({ active }: { active: boolean }) {
       });
     return () => {
       current = false;
+      controller.abort();
     };
-  }, [customer, active, page, reload]);
+  }, [customer, active, page, reload, search]);
   useLayoutEffect(() => {
     const element = log.current,
       key = current?.id + ":" + messagePage;
@@ -163,6 +179,8 @@ export function AiChatPanel({ active }: { active: boolean }) {
         setMessages(selected.messages?.items ?? []);
         setMessagePage(targetPage);
         setMessageTotal(selected.messages?.total ?? 0);
+        setHistoryOpen(false);
+        if(matchMedia('(max-width:767px)').matches)requestAnimationFrame(()=>log.current?.focus());
         if (p === undefined || p === 1) {
           if (first) setTitles((t) => ({ ...t, [id]: first.content }));
         }
@@ -260,6 +278,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
     flight.current = true;
     setBusy(true);
     setError(undefined);
+    setHistoryMutationError(undefined);
     try {
       try {
         if (sessionId) await deleteOwnChatSession(sessionId);
@@ -277,7 +296,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
       setPage(sessionId && history?.items.length === 1 ? Math.max(1, page - 1) : sessionId ? page : 1);
       setReload(value => value + 1);
     } catch (cause) {
-      if (alive.current) setError(cause);
+      if (alive.current) setHistoryMutationError(cause);
     } finally {
       flight.current = false;
       if (alive.current) setBusy(false);
@@ -292,22 +311,29 @@ export function AiChatPanel({ active }: { active: boolean }) {
       className={
         "ai-chat-panel chat-shell" + (!customer ? " chat-shell-guest" : "")
       }
+      data-history-open={historyOpen}
     >
       {customer && (
-        <section className="chat-sidebar" aria-label="Lịch sử chat">
+        <section id={historyId} className="chat-sidebar" aria-label="Lịch sử chat">
           <div className="chat-sidebar-heading">
             <h3>Lịch sử của bạn</h3>
             <span>{history?.total ?? '—'}</span>
+            <button type="button" className="ai-history-close" onClick={closeHistory}>Quay lại chat AI</button>
           </div>
           <button
             type="button"
             className="chat-new-session"
             disabled={busy}
-            onClick={newSession}
+            onClick={()=>{newSession();closeHistory();}}
           >
             <Plus size={16} />
             Phiên mới
           </button>
+          <div className="chat-contact-search">
+            <label htmlFor="ai-history-search">Tìm lịch sử AI</label>
+            <div><input ref={searchInput} id="ai-history-search" type="search" maxLength={200} value={searchDraft} onChange={event=>setSearchDraft(event.target.value)} placeholder="Nội dung đã trò chuyện"/>{searchDraft&&<button type="button" onClick={()=>{setSearchDraft('');setSearch('');setPage(1);}}>Xóa lọc</button>}</div>
+          </div>
+          {historyMutationError!==undefined&&<div className="history-action-error"><ErrorView error={historyMutationError}/><button type="button" disabled={busy} onClick={()=>{setHistoryMutationError(undefined);setReload(n=>n+1);}}>Đọc lại lịch sử</button></div>}
           <div className="chat-thread-list">
             {historyError ? (
               <ErrorView
@@ -319,8 +345,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
             ) : !visibleSessions.length ? (
               <div className="chat-sidebar-empty">
                 <MessageSquare size={24} />
-                <p>Chưa có phiên chat.</p>
-                <small>Các cuộc trò chuyện sẽ xuất hiện ở đây.</small>
+                <p>{search?'Không tìm thấy phiên phù hợp.':'Chưa có phiên chat.'}</p>
               </div>
             ) : (
               visibleSessions.map((s) => (
@@ -337,7 +362,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
                   >
                     <MessageSquare size={16} />
                     <span>
-                      <strong>{titles[s.id] ?? "Tư vấn mua sắm"}</strong>
+                      <strong>{s.title ?? titles[s.id] ?? "Tư vấn mua sắm"}</strong>
                       <small>
                         {chatDate(s.created_at, true)} · #
                         {s.id.slice(-4).toUpperCase()}
@@ -370,7 +395,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
             />
           )}
 
-          {!!history && history.total > 1 && (
+          {!!history && (history.total > 1 || !!search) && (
             <button
               type="button"
               className="chat-clear-all-sessions-btn"
@@ -385,12 +410,14 @@ export function AiChatPanel({ active }: { active: boolean }) {
         </section>
       )}
       <div className="chat-thread">
+        {historyMutationError!==undefined&&<div className="history-action-error"><ErrorView error={historyMutationError}/><button type="button" disabled={busy} onClick={()=>{setHistoryMutationError(undefined);setReload(n=>n+1);}}>Đọc lại lịch sử</button></div>}
         <header className="chat-thread-header">
           <ChatAvatar ai />
           <div className="flex-1 min-w-0">
             <h2>Trợ lý mua sắm</h2>
             <p>Tìm sản phẩm theo nhu cầu của bạn</p>
           </div>
+          {customer&&<button ref={historyTrigger} type="button" className="ai-history-toggle" aria-label="Lịch sử chat AI" aria-expanded={historyOpen} aria-controls={historyId} onClick={()=>setHistoryOpen(true)}>Lịch sử</button>}
           {(current || messages.length > 0) && (
             <button
               type="button"

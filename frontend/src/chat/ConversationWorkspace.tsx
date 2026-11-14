@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../api/auth-context";
@@ -45,12 +45,32 @@ export function MessagesWorkspace({
         member.status === "ACTIVE" &&
         (member.role === "OWNER" ||
           !!member.permissions?.includes("order.store.read_status_cancel"));
-  const [listPage, setListPage] = useState(1),
-    [searchDraft,setSearchDraft]=useState(''),[search,setSearch]=useState(''),
+  const [urlParams,setUrlParams]=useSearchParams();
+  const searchInputId=useId();
+  const routeSearch=compact?'':(urlParams.get('q')??'').slice(0,200);
+  const routePage=compact?1:Math.max(1,Math.min(1000000,Math.floor(Number(urlParams.get('page'))||1)));
+  const [listPage, setListPage] = useState(routePage),
+    [searchDraft,setSearchDraft]=useState(routeSearch),[search,setSearch]=useState(routeSearch),
     [compactArchived,setCompactArchived]=useState(false),[archiveBusy,setArchiveBusy]=useState(false),[archiveBlocked,setArchiveBlocked]=useState(false),[archiveError,setArchiveError]=useState<unknown>(),[readError,setReadError]=useState<unknown>(),[readRetry,setReadRetry]=useState(0),[visible,setVisible]=useState(()=>document.visibilityState==='visible'),
     [messagePages, setMessagePages] = useState<Record<string, number>>({});
   const cache=useQueryClient(),navigate=useNavigate(),marked=useRef('');
-  const [urlParams,setUrlParams]=useSearchParams();
+  useEffect(()=>{
+    if(compact)return;
+    setSearch(routeSearch);setSearchDraft(routeSearch);setListPage(routePage);
+  },[compact,routeSearch,routePage]);
+  function applySearch(value:string){
+    const q=value.trim();setSearch(q);setListPage(1);
+    if(!compact)setUrlParams(previous=>{const next=new URLSearchParams(previous);if(q)next.set('q',q);else next.delete('q');next.delete('page');return next;},{replace:true});
+  }
+  useEffect(()=>{
+    if(searchDraft.trim()===search)return;
+    const timer=setTimeout(()=>applySearch(searchDraft),300);
+    return()=>clearTimeout(timer);
+  },[searchDraft,search,compact,setUrlParams]);
+  function changeListPage(page:number){
+    setListPage(page);
+    if(!compact)setUrlParams(previous=>{const next=new URLSearchParams(previous);if(page>1)next.set('page',String(page));else next.delete('page');return next;});
+  }
   const showArchived=scope==='STORE' && (compact ? compactArchived : urlParams.get('archived')==='true');
   useEffect(()=>{const update=()=>setVisible(document.visibilityState==='visible');document.addEventListener('visibilitychange',update);return()=>document.removeEventListener('visibilitychange',update);},[]);
   const conversationKey = scope + ":" + id,
@@ -66,14 +86,14 @@ export function MessagesWorkspace({
     queryKey: ["conversations", scope, listPage, search, showArchived],
     enabled: allowed && active,
     refetchInterval: active ? 10000 : false,
-    queryFn: () =>
+    queryFn: ({signal}) =>
       scope === "CUSTOMER"
         ? callOperation("listOwnConversations", {
-            query: { page: listPage, size: 20 },
-          })
+            query: { page: listPage, size: 20, ...(search?{q:search}:{}) },
+          }, {signal})
         : callOperation("listStoreConversations", {
             query: { page: listPage, size: 20, ...(search?{q:search}:{}),...(showArchived?{archived:true}:{}) },
-          }),
+          }, {signal}),
   });
   const messages = useQuery({
     queryKey: ["conversation-messages", scope, id, messagePage],
@@ -171,7 +191,7 @@ export function MessagesWorkspace({
       : selected.customer_name
     : (rememberedName ?? "Hội thoại");
   const selectedThread=threads.data?.items.find(thread=>thread.id===id);
-  const standalone = scope === "CUSTOMER" && !id && (!threads.data || threads.data.total === 0);
+  const standalone = scope === "CUSTOMER" && !id && !search && !searchDraft.trim() && (!threads.data || threads.data.total === 0);
   async function archiveThread(){
     if(!id||!selectedThread||archiveBusy||archiveBlocked)return;setArchiveBusy(true);setArchiveError(undefined);
     try{await callOperation('archiveStoreConversation',{path:{id},body:{archived:!selectedThread.archived}});await Promise.all([cache.invalidateQueries({queryKey:['conversations','STORE']}),cache.invalidateQueries({queryKey:['store-unread']})]);onSelect?onSelect(''):navigate(base);}
@@ -222,7 +242,10 @@ export function MessagesWorkspace({
             <h2>Hội thoại</h2>
             <span>{threads.data?.total ?? "—"}</span>
           </div>
-          {scope==='STORE'&&<form className="chat-contact-search" onSubmit={event=>{event.preventDefault();setListPage(1);setSearch(searchDraft.trim());}}><label htmlFor="chat-customer-search">Tìm khách hàng</label><div><input id="chat-customer-search" type="search" maxLength={200} value={searchDraft} onChange={event=>setSearchDraft(event.target.value)} placeholder="Tên hoặc email khách"/><button type="submit">Tìm</button></div></form>}
+          <form className="chat-contact-search" onSubmit={event=>{event.preventDefault();applySearch(searchDraft);}}>
+            <label htmlFor={searchInputId}>{scope==='STORE'?'Tìm khách hàng':'Tìm hội thoại'}</label>
+            <div><input id={searchInputId} type="search" maxLength={200} value={searchDraft} onChange={event=>setSearchDraft(event.target.value)} placeholder={scope==='STORE'?'Tên, email hoặc tin nhắn':'Tên gian hàng hoặc tin nhắn'}/><button type="submit">Tìm</button>{searchDraft&&<button type="button" onClick={()=>{setSearchDraft('');applySearch('');}}>Xóa lọc</button>}</div>
+          </form>
           {scope==='STORE'&&threads.data?.unread_total!==undefined&&<button type="button" className="chat-archive-toggle" aria-pressed={showArchived} onClick={()=>{setListPage(1);if(compact){setCompactArchived(value=>!value);onSelect?.('');return;}const next=new URLSearchParams(urlParams);if(showArchived)next.delete('archived');else next.set('archived','true');setUrlParams(next);}}>{showArchived?'Xem hội thoại đang hoạt động':'Xem hội thoại đã lưu trữ'}</button>}
           <div className="chat-thread-list">
             {threads.isLoading && <Loading />}
@@ -236,7 +259,7 @@ export function MessagesWorkspace({
               (!threads.data.items.length ? (
                 <div className="chat-sidebar-empty">
                   <MessageSquare size={24} />
-                  <p>{search?'Không tìm thấy khách hàng phù hợp.':'Chưa có hội thoại.'}</p>
+                  <p>{search?'Không tìm thấy hội thoại phù hợp.':'Chưa có hội thoại.'}</p>
                 </div>
               ) : (
                 <nav aria-label="Hội thoại">
@@ -256,7 +279,7 @@ export function MessagesWorkspace({
                             setMessagePage(1);
                           }
                         }}
-                        to={base + "/" + thread.id + (showArchived ? "?archived=true" : "")}
+                        to={base + "/" + thread.id + (compact ? '' : urlParams.toString() ? '?'+urlParams.toString() : '')}
                         aria-current={thread.id === id ? "page" : undefined}
                       >
                         <ChatAvatar name={title} />
@@ -294,7 +317,7 @@ export function MessagesWorkspace({
               page={listPage}
               size={threads.data.size}
               total={threads.data.total}
-              onPage={setListPage}
+              onPage={changeListPage}
             />
           )}
           {scope === "STORE" && <p className="chat-sidebar-note">Hội thoại trong phạm vi Store hiện tại.</p>}
@@ -475,10 +498,11 @@ export function MessagesWorkspace({
               )}
               <ChatComposer
                 label="Nội dung tin nhắn"
-                draft={draft}
+                draft={pending?.content ?? draft}
                 onChange={setDraft}
                 onSubmit={send}
                 busy={busy}
+                retry={!!pending}
                 locked={!!pending || !!messages.error || messages.isLoading}
                 disabled={
                   !!messages.error ||

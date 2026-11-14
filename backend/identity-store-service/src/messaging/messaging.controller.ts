@@ -8,7 +8,7 @@ export class MessagingController {
   @Post('me/conversations') @Roles('CUSTOMER')
   start(@Req() request:any){return this.service.start(request.contract.body.store_id,request.auth,request.contract.body.order_id,request.correlationId);}
   @Get('me/conversations') @Roles('CUSTOMER')
-  ownList(@Req() request:any){const {page,size}=request.contract.query;return this.service.list(request.auth,'CUSTOMER',page,size);}
+  ownList(@Req() request:any){const {page,size,q}=request.contract.query;return this.service.list(request.auth,'CUSTOMER',page,size,q);}
   @Get('store/conversations') @Roles('STORE_OWNER','SELLER')
   storeList(@Req() request:any){const {page,size,q,archived}=request.contract.query;return this.service.list(request.auth,'STORE',page,size,q,archived);}
   @Post('store/conversations/:id/read') @HttpCode(200) @Roles('STORE_OWNER','SELLER')

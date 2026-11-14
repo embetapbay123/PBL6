@@ -296,7 +296,7 @@ export function ChatCenter() {
           aria-labelledby="chat-tab-ai"
           hidden={ui.tab !== "ai"}
         >
-          <AiChatPanel active={open && visible && ui.tab === "ai"} />
+          <AiChatPanel key={session?.context?.user_id ?? 'guest'} active={open && visible && ui.tab === "ai"} />
         </section>
         <section
           role="tabpanel"

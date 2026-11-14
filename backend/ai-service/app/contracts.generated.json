@@ -13997,6 +13997,11 @@
                 "size"
               ],
               "additionalProperties": false
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 140,
+              "description": "Stored first Customer message excerpt, redacted, for history list display. No model generation."
             }
           },
           "required": [
@@ -14188,6 +14193,10 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "q": {
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [],
@@ -14332,6 +14341,11 @@
                       "size"
                     ],
                     "additionalProperties": false
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 140,
+                    "description": "Stored first Customer message excerpt, redacted, for history list display. No model generation."
                   }
                 },
                 "required": [
@@ -17342,6 +17356,10 @@
             "minimum": 1,
             "maximum": 100,
             "default": 20
+          },
+          "q": {
+            "type": "string",
+            "maxLength": 200
           }
         },
         "required": [],

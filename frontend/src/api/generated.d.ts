@@ -4078,6 +4078,8 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             messages?: components["schemas"]["PageChatMessages"];
+            /** @description Stored first Customer message excerpt, redacted, for history list display. No model generation. */
+            title?: string;
         };
         Category: {
             /** Format: uuid */
@@ -13707,6 +13709,8 @@ export interface operations {
                 session_id?: string;
                 message_page?: number;
                 message_size?: number;
+                /** @description Search stored message content within owned, retained AI sessions before pagination. Does not call a model. Ignored when session_id selects a specific owned history. */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -15993,6 +15997,8 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
+                /** @description Search Store name or stored message content, within owned conversations, before pagination. Vietnamese accents are folded; LIKE metacharacters are literal. */
+                q?: string;
             };
             header?: never;
             path?: never;
@@ -16184,7 +16190,7 @@ export interface operations {
             query?: {
                 page?: number;
                 size?: number;
-                /** @description Search customer name or email within the current Store. */
+                /** @description Search customer name/email or stored message content within the current Store, before pagination. Vietnamese accents are folded; LIKE metacharacters are literal. */
                 q?: string;
                 /** @description Show archived Store conversations instead of active conversations. */
                 archived?: boolean;

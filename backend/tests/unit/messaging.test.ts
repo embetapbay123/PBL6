@@ -14,6 +14,16 @@ test('Store customer search is scoped before pagination and escapes LIKE input',
   expect(mockQuery.mock.calls[1][1]).toEqual(['store','%nguyen an%',false,20,20]);
   expect(result.unread_total).toBe(2);
 });
+test('Customer search uses Store names and historical content without reading another Customer scope',async()=>{
+ mockQuery.mockResolvedValueOnce([{total:0}]).mockResolvedValueOnce([]);
+ const result=await new MessagingService().list(customer,'CUSTOMER',2,20,'Giày 20%_');
+ expect(result).toMatchObject({total:0,page:2,items:[]});
+ expect(mockQuery.mock.calls[0][0]).toContain('c.customer_user_id=$1');
+ expect(mockQuery.mock.calls[0][0]).toContain('marketplace_search(s.name)');
+ expect(mockQuery.mock.calls[0][0]).toContain('search_message.conversation_id=c.id');
+ expect(mockQuery.mock.calls[1][1]).toEqual(['buyer','%giay 20\\%\\_%',null,20,20]);
+ expect(mockQuery.mock.calls).toHaveLength(2);
+});
 test('mark read checks Store and message identity, advancing only the confirmed sequence',async()=>{
  mockQuery.mockResolvedValueOnce([{id:'thread'}]).mockResolvedValueOnce([{store_sequence:'7'}]).mockResolvedValueOnce([]).mockResolvedValueOnce([{id:'thread',store_archived_at:null,unread_count:1}]);
  const result=await new MessagingService().markRead('thread','seen',owner);

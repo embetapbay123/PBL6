@@ -49,8 +49,12 @@ export class MessagingService {
   }
   async list(context:Context,side:Side,page=1,size=20,q?:string,archived=false):Promise<OperationOutputs['listOwnConversations']> {
     const field=side==='CUSTOMER'?'customer_user_id':'store_id',owner=side==='CUSTOMER'?context.user_id:this.store(context);
-    const pattern=side==='STORE'?searchPattern(q):undefined;
-    const where=`c.${field}=$1 AND ($2::text IS NULL OR marketplace_search(concat_ws(' ',p.display_name,u.email)) LIKE $2) AND ($3::boolean IS NULL OR (c.store_archived_at IS NOT NULL)=$3)`;
+    const pattern=searchPattern(q);
+    const name=side==='CUSTOMER'?'s.name':"concat_ws(' ',p.display_name,u.email)";
+    const where=`c.${field}=$1 AND ($2::text IS NULL OR marketplace_search(${name}) LIKE $2
+      OR EXISTS(SELECT 1 FROM store_message search_message WHERE search_message.conversation_id=c.id
+        AND marketplace_search(search_message.content) LIKE $2))
+      AND ($3::boolean IS NULL OR (c.store_archived_at IS NOT NULL)=$3)`;
     const joins=' FROM store_conversation c JOIN store s ON s.id=c.store_id LEFT JOIN customer_profile p ON p.user_id=c.customer_user_id LEFT JOIN "user" u ON u.id=c.customer_user_id';
     const args=[owner,pattern??null,side==='STORE'?archived:null];
     const [count]=await this.source.manager.query('SELECT count(*)::int AS total'+joins+' WHERE '+where,args);
