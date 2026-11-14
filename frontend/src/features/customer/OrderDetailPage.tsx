@@ -269,24 +269,25 @@ function Detail({ id }: { id?: string }) {
             <OrderProgressTracker order={data} />
 
             {/* Warnings or Next Step hints */}
-            <OrderNextStep order={data} />
+            {(["PREPARING", "RECOVERING", "AWAITING_PAYMENT"].includes(data.status)
+              || ["UNKNOWN", "RECOVERING", "PREPARING"].includes(data.payment_status ?? "")) && <OrderNextStep order={data} />}
 
             {/* Logistics & Address Info Card (2 columns on desktop) */}
             <div className="order-detail-info-grid">
               <div className="order-detail-info-card">
                 <div className="order-detail-card-header">
                   <MapPin size={16} className="text-[#ee4d2d]" />
-                  <h3>Địa Chỉ Nhận Hàng</h3>
+                  <h3>Địa chỉ nhận hàng</h3>
                 </div>
                 <div className="order-detail-address-body">
-                  <OrderDeliveryAddress order={data} />
+                  <OrderDeliveryAddress order={data} showHeading={false} />
                 </div>
               </div>
 
               <div className="order-detail-info-card">
                 <div className="order-detail-card-header">
                   <Truck size={16} className="text-[#0284c7]" />
-                  <h3>Thông Tin Vận Chuyển</h3>
+                  <h3>Thông tin vận chuyển</h3>
                 </div>
                 <div className="order-detail-shipping-body">
                   {['GHN','PLATFORM'].includes(data.shipping_mode ?? '') ? (

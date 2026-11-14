@@ -512,15 +512,10 @@ export const AddressPage: React.FC = () => {
               <div className="shopee-address-main">
                 <div className="shopee-address-user-line">
                   <span className="shopee-address-name">{addr.name}</span>
-                  <span className="shopee-address-divider">|</span>
+                  <span className="shopee-address-divider" aria-hidden="true">|</span>
                   <span className="shopee-address-phone">{addr.phone}</span>
                 </div>
                 <p className="shopee-address-detail">{addr.detail}</p>
-                {addr.isDefault && (
-                  <div className="shopee-address-badge-row">
-                    <span className="shopee-default-badge">Mặc định</span>
-                  </div>
-                )}
               </div>
               <div className="shopee-address-side-actions">
                 <div className="shopee-address-text-actions">
@@ -544,6 +539,7 @@ export const AddressPage: React.FC = () => {
                   )}
                 </div>
                 <div className="shopee-address-btn-actions">
+                  {addr.isDefault && <span className="shopee-default-badge">Mặc định</span>}
                   {returnTo && userId && !locked && (
                     <Link
                       to={returnTo}

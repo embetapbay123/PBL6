@@ -127,7 +127,7 @@ export function OrderHistoryPage() {
           <input
             type="search"
             maxLength={200}
-            placeholder="Bạn có thể tìm kiếm theo tên Shop, ID đơn hàng hoặc Tên Sản phẩm"
+            placeholder="Tìm theo gian hàng, mã đơn hoặc sản phẩm"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -188,8 +188,6 @@ export function OrderHistoryPage() {
               const quantities = (order.items ?? []).map(item => item.quantity);
               const totalQuantity = quantities.length && quantities.every(quantity => typeof quantity === 'number' && Number.isSafeInteger(quantity) && quantity > 0)
                 ? quantities.reduce<number>((total, quantity) => total + (quantity as number), 0) : undefined;
-              const isDelivered = order.status === "COMPLETED" || Boolean(order.shipping_delivered_at);
-              const isShipping = order.status === "SHIPPED" && !order.shipping_delivered_at;
 
               return (
                 <article className="boot-card order-history-card" key={order.id}>
@@ -203,7 +201,7 @@ export function OrderHistoryPage() {
                         className="order-view-store-link"
                       >
                         <Store size={13} />
-                        <span>Xem Shop</span>
+                        <span>Xem gian hàng</span>
                       </Link>
                       <span className="text-slate-300">·</span>
                       <Link
@@ -216,17 +214,6 @@ export function OrderHistoryPage() {
                     </div>
 
                     <div className="order-header-status-section">
-                      {isDelivered ? (
-                        <span className="order-delivery-milestone is-delivered">
-                          <Truck size={14} /> Giao hàng thành công ⓘ
-                          <span className="text-slate-300 ml-1.5 mr-0.5">·</span>
-                        </span>
-                      ) : isShipping ? (
-                        <span className="order-delivery-milestone is-shipping">
-                          <Truck size={14} /> ĐVVC lấy hàng thành công ⓘ
-                          <span className="text-slate-300 ml-1.5 mr-0.5">·</span>
-                        </span>
-                      ) : null}
                       <span
                         className={`order-status-tag status-${order.status.toLowerCase()}`}
                       >

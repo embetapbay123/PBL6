@@ -39,7 +39,8 @@ test('Store sort resets page, keeps search, persists in URL and uses server orde
  await page.getByRole('button',{name:'Giá thấp đến cao',exact:true}).click();
  await expect(page).toHaveURL(/sort=price_asc/);expect(new URL(page.url()).searchParams.has('page')).toBe(false);expect(new URL(page.url()).searchParams.get('q')).toBe('Áo');
  await expect(page.locator('.market-product-grid .product-card').first()).toContainText('Áo 21');
- expect(calls.store.at(-1)?.searchParams.get('sort')).toBe('price_asc');
+ // Page 2 already contains Áo 21; wait for the new request instead of accepting stale DOM.
+ await expect.poll(()=>calls.store.at(-1)?.searchParams.get('sort')).toBe('price_asc');
  await page.getByRole('button',{name:'2',exact:true}).click();await expect(page.locator('.market-product-grid .product-card')).toHaveCount(1);await expect(page.locator('.market-product-grid')).toContainText('Áo 20');
  await page.reload();await expect(page.getByRole('button',{name:'Giá thấp đến cao',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.locator('.market-product-grid')).toContainText('Áo 20');
  await page.getByRole('button',{name:'Đánh giá cao',exact:true}).click();await expect(page.locator('.market-product-grid .product-card').first()).toContainText('Áo 21');

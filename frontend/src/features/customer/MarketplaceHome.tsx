@@ -274,12 +274,10 @@ export function MarketplaceHome() {
               : (selectedCategory ?? "Khám phá sản phẩm")}
           </Heading>
           {!filtered && <p>Những lựa chọn cho tủ đồ, góc nhà và ngày làm việc.</p>}
+          {filtered && products.data && !products.error && (
+            <p className="catalog-result-count" aria-live="polite">{products.data.total.toLocaleString("vi-VN")} sản phẩm</p>
+          )}
         </div>
-        {products.data && !products.error && (
-          <span className="catalog-total">
-            {products.data.total.toLocaleString("vi-VN")} <small>sản phẩm</small>
-          </span>
-        )}
       </header>
       <div className="catalog-layout">
         <aside
@@ -342,7 +340,7 @@ export function MarketplaceHome() {
                 value={sort}
                 onChange={(event) => update({ sort: event.target.value })}
               >
-                <option value="title">{query ? "Liên quan nhất" : "Tên sản phẩm"}</option>
+                <option value="title">Mặc định</option>
                 <option value="price_asc">Giá tăng dần</option>
                 <option value="price_desc">Giá giảm dần</option>
               </select>

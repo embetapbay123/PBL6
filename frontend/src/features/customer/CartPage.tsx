@@ -72,45 +72,55 @@ function CartVariantPicker({ item, variants, disabled, onChange }: {
   item: CartItem;
   variants?: Variant[];
   disabled: boolean;
-  onChange: (variantId: string) => void;
+  onChange: (variantId: string) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState("");
+  const trigger = useRef<HTMLButtonElement>(null);
+  const select = useRef<HTMLSelectElement>(null);
+  useEffect(() => { if (open) select.current?.focus(); }, [open]);
+  const current = variants?.find(variant => variant.id === item.variant_id);
+  const label = current ? variantLabel(current.variant_values) : "Chưa tải phân loại";
   const alternatives = variants?.filter((variant) => variant.id
     && variant.id !== item.variant_id
     && (!variant.status || variant.status === "ACTIVE")
     && (variant.available_quantity === undefined || variant.available_quantity >= item.quantity));
-  if (!alternatives?.length) return null;
+  if (!alternatives?.length) return <p className="text-xs text-slate-500 m-0">{label}</p>;
   const value = alternatives.some((variant) => variant.id === choice) ? choice : "";
 
   if (!open) {
     return (
-      <div className="cart-variant-toggle mt-1">
+      <div className="cart-variant-toggle">
         <button
+          ref={trigger}
           type="button"
-          className="text-xs text-blue-600 hover:underline cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1"
+          className="cart-variant-trigger"
           disabled={disabled}
+          aria-label={`Đổi phân loại: ${label}`}
+          aria-expanded={false}
+          aria-controls={`cart-variant-form-${item.id}`}
           onClick={() => setOpen(true)}
         >
-          Đổi phân loại
+          {label} <span aria-hidden="true">⌄</span>
         </button>
       </div>
     );
   }
 
   return (
-    <form className="flex flex-wrap items-center gap-2 mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded text-xs" onSubmit={(event) => {
+    <form id={`cart-variant-form-${item.id}`} aria-label={`Đổi phân loại: ${label}`} className="cart-variant-form" onKeyDown={(event) => {
+      if (event.key === "Escape" && !disabled) { event.preventDefault(); setOpen(false); setChoice(""); requestAnimationFrame(() => trigger.current?.focus()); }
+    }} onSubmit={async (event) => {
       event.preventDefault();
-      if (value) {
-        onChange(value);
+      if (value && !disabled && await onChange(value)) {
         setChoice("");
         setOpen(false);
       }
     }}>
       <div className="min-w-0 max-w-full">
         <label htmlFor={`cart-variant-${item.id}`} className="sr-only">Đổi phân loại</label>
-        <select id={`cart-variant-${item.id}`} aria-label="Đổi phân loại" className="block max-w-full text-xs p-1 border rounded bg-white" value={value} disabled={disabled} onChange={(event) => setChoice(event.target.value)}>
-          <option value="">Chọn phân loại khác</option>
+        <select ref={select} id={`cart-variant-${item.id}`} aria-label="Đổi phân loại" className="block max-w-full text-xs p-1 border rounded bg-white" value={value} disabled={disabled} onChange={(event) => setChoice(event.target.value)}>
+          <option value="">Chọn mẫu</option>
           {alternatives.map((variant) => (
             <option value={variant.id} key={variant.id}>
               {variantLabel(variant.variant_values)} · {variant.price_vnd.toLocaleString("vi-VN")} ₫
@@ -122,8 +132,9 @@ function CartVariantPicker({ item, variants, disabled, onChange }: {
         <UiButton type="submit" size="sm" variant="secondary" disabled={disabled || !value}>Đổi</UiButton>
         <button
           type="button"
+          disabled={disabled}
           className="text-xs text-slate-500 hover:underline px-1 py-0.5"
-          onClick={() => { setOpen(false); setChoice(""); }}
+          onClick={() => { setOpen(false); setChoice(""); requestAnimationFrame(() => trigger.current?.focus()); }}
         >
           Hủy
         </button>
@@ -419,7 +430,7 @@ export const CartPage: React.FC = () => {
   };
 
   const changeVariant = async (item: CartItem, variantId: string) => {
-    if (!items || mutationInFlight.current || needsReconcile) return;
+    if (!items || mutationInFlight.current || needsReconcile) return false;
     mutationInFlight.current = true;
     setBusyId(item.id);
     setActionError(null);
@@ -447,7 +458,10 @@ export const CartPage: React.FC = () => {
         setActionError(replacement
           ? "Đã thêm phân loại mới nhưng chưa xác nhận xóa được dòng cũ. Kiểm tra cả hai dòng sau khi làm mới giỏ."
           : "Chưa rõ kết quả đổi phân loại. Kiểm tra giỏ trước khi đổi lại.");
-      } else setActionError(describe(error));
+      } else {
+        setActionError(describe(error));
+        if (error instanceof ApiError && error.status === 409) void batch.refetch();
+      }
     } finally {
       if (replacement) {
         const line = replacement;
@@ -474,6 +488,7 @@ export const CartPage: React.FC = () => {
       mutationInFlight.current = false;
       setBusyId(null);
     }
+    return removed;
   };
 
   const removeItems = async (targets: CartItem[]) => {
@@ -779,14 +794,14 @@ export const CartPage: React.FC = () => {
                                       variantId={item.variant_id}
                                       quantity={item.quantity}
                                       hideInlinePrices
+                                      variantControl={<CartVariantPicker
+                                        item={item}
+                                        variants={prod?.variants}
+                                        disabled={busyId !== null || needsReconcile || batch.isFetching}
+                                        onChange={(variantId) => changeVariant(item, variantId)}
+                                      />}
                                     />
                                   </div>
-                                  <CartVariantPicker
-                                    item={item}
-                                    variants={prod?.variants}
-                                    disabled={busyId !== null || needsReconcile}
-                                    onChange={(variantId) => void changeVariant(item, variantId)}
-                                  />
                                   {variant?.available_quantity !== undefined && variant.available_quantity <= 3 && (
                                     <p className="cart-stock-notice" role="status">{variant.available_quantity === 0 ? 'Phân loại này đã hết hàng.' : `Chỉ còn ${variant.available_quantity} sản phẩm.`}</p>
                                   )}

@@ -5,6 +5,7 @@ import { ProductImage } from "../components/ProductImage";
 import { callOperation } from "../api/operations";
 import { formatMoney } from "./useLiveData";
 import { variantLabel } from "../features/customer/checkout-intent";
+import type { ReactNode } from "react";
 
 /** Public product metadata enriches a cart row; checkout always uses the server quote. */
 export function CartProduct({
@@ -17,6 +18,7 @@ export function CartProduct({
   metadataLoading = false,
   metadataError,
   hideInlinePrices = false,
+  variantControl,
 }: {
   metadata?: OperationOutputs["getProduct"];
   metadataProvided?: boolean;
@@ -26,6 +28,7 @@ export function CartProduct({
   variantId: string;
   quantity?: number;
   hideInlinePrices?: boolean;
+  variantControl?: ReactNode;
   quotedLine?: {
     product_title?: string;
     variant_title?: string;
@@ -65,14 +68,14 @@ export function CartProduct({
         <Link to={"/products/" + productId} className="font-medium text-sm text-slate-900 hover:underline line-clamp-1">
           {quotedLine?.product_title ?? data?.title ?? "Xem sản phẩm"}
         </Link>
-        <p className="text-xs text-slate-500 m-0">
+        {variantControl ?? <p className="text-xs text-slate-500 m-0">
           {quotedLine || variant
             ? variantLabel(
                 quotedLine?.variant_values ?? variant?.variant_values,
                 quotedLine?.variant_title ?? "Phân loại tiêu chuẩn",
               )
             : "Chưa tải phân loại"}
-        </p>
+        </p>}
         {!hideInlinePrices && (
           <div className="flex flex-wrap items-baseline gap-x-3 text-xs mt-1">
             {(quotedLine || variant) && (

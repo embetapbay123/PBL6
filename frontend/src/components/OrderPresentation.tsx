@@ -124,9 +124,11 @@ export function OrderItemIdentity({
 export function OrderDeliveryAddress({
   order,
   scope = "CUSTOMER",
+  showHeading = true,
 }: {
   order: Order;
   scope?: "CUSTOMER" | "STORE" | "ADMIN";
+  showHeading?: boolean;
 }) {
   const address = record(order.address_snapshot),
     name = text(address.recipient_name),
@@ -136,7 +138,7 @@ export function OrderDeliveryAddress({
     .filter(Boolean);
   return (
     <section aria-label="Địa chỉ giao hàng đã chốt">
-      <h3>Địa chỉ nhận hàng</h3>
+      {showHeading && <h3>Địa chỉ nhận hàng</h3>}
       {name && phone && parts.length ? (
         <address style={{ fontStyle: "normal", overflowWrap: "anywhere" }}>
           {name}

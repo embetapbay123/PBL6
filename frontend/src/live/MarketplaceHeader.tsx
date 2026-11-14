@@ -276,9 +276,7 @@ export function MarketplaceHeader() {
                   className="account-dropdown"
                   aria-label="Menu tài khoản"
                 >
-                  <strong>
-                    {session ? "Tài khoản của bạn" : "Chào mừng đến PBL6"}
-                  </strong>
+                  {!session && <strong>Chào mừng đến PBL6</strong>}
                   {!session ? (
                     <>
                       <Link to="/login" data-testid="account-link">
@@ -292,7 +290,6 @@ export function MarketplaceHeader() {
                       {customer && (
                         <>
                           <Link to="/customer/orders">Đơn hàng</Link>
-                          <Link to="/customer/wallet">Ví số dư</Link>
                           <Link to="/customer/favorites">Yêu thích</Link>
                           <Link to="/customer/addresses">Sổ địa chỉ</Link>
                         </>
@@ -344,7 +341,6 @@ export function MarketplaceHeader() {
             </NavLink>
             <Link to="/#danh-muc">Danh mục ngành hàng</Link>
             <Link to="/customer/favorites">Sản phẩm đã lưu</Link>
-            <Link to="/customer/messages">Tin nhắn</Link>
             <div className="market-portal-links">
               {admin && (
                 <Link to="/admin">

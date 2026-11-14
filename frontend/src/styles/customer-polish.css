@@ -557,10 +557,12 @@
 }
 .shopee-address-main {
   flex: 1;
-  min-width: 260px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .shopee-address-user-line {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
   margin-bottom: 6px;
@@ -627,10 +629,14 @@
   color: #1d4ed8;
 }
 .shopee-text-action-btn.is-delete {
-  color: #dc2626;
+  color: #fff;
+  background: #b91c1c;
+  padding: 6px 10px;
+  border-radius: 4px;
 }
 .shopee-text-action-btn.is-delete:hover:not(:disabled) {
-  color: #b91c1c;
+  color: #fff;
+  background: #991b1b;
 }
 .shopee-address-btn-actions {
   display: flex;
@@ -1979,4 +1985,35 @@
 @media (max-width: 399px) {
   .live-market .cart-summary-purchase { grid-template-columns: minmax(0, 1fr); }
   .live-market .shopee-cart-checkout-btn { width: 100%; }
+}
+
+/* In-row product choices share the product identity rather than the thumbnail edge. */
+.live-market .live-content .cart-variant-trigger {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+  min-height: 32px; padding: 2px 0; border: 0; background: transparent;
+  color: #475569; font-size: 12px; font-weight: 400; text-align: left;
+  overflow-wrap: anywhere;
+}
+.cart-variant-trigger:focus-visible { outline: 2px solid #c2410c; outline-offset: 3px; }
+.cart-variant-form { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; padding: 8px; margin-top: 4px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; }
+.cart-variant-form > div { min-width: 0; max-width: 100%; }
+.cart-variant-form select { width: 100%; min-height: 34px; }
+.account-additional-links { margin-top: 24px; }
+.account-additional-links > summary { cursor: pointer; color: #475569; padding: 12px 0; font-weight: 600; }
+.live-market .catalog-heading .catalog-result-count { display: block; margin-top: 8px; font-size: 13px; color: #64748b; }
+@media (max-width: 767px) {
+  .shopee-address-card { flex-wrap: wrap; gap: 12px; }
+  .shopee-address-main { flex-basis: 100%; }
+  .shopee-address-side-actions { width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+  .shopee-address-btn-actions { flex-wrap: wrap; }
+}
+
+.account-sidebar-more { flex-shrink: 0; }
+.account-sidebar-more > summary { padding: 12px; min-height: 44px; white-space: nowrap; cursor: pointer; font-size: 14px; border-radius: 4px; }
+.account-sidebar-extra-links { margin: 0 0 8px 10px; border-left: 1px solid #e2e8f0; }
+.account-sidebar-more > summary:focus-visible { outline: 2px solid #c2410c; outline-offset: -2px; }
+@media (max-width: 1023px) {
+  .account-sidebar:has(.account-sidebar-more[open]) { flex-wrap: wrap; overflow: visible; }
+  .account-sidebar-more[open] { flex-basis: 100%; white-space: normal; }
+  .account-sidebar-extra-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
 }

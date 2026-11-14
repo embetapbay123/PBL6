@@ -768,7 +768,6 @@ export function ProductDetail() {
       )}
 
       <div className="mt-4 space-x-4">
-        <Link to="/cart">Giỏ hàng</Link>
         <Link to={returnTo}>Quay lại kết quả</Link>
       </div>
     </section>

@@ -157,6 +157,14 @@ function Profile() {
     ],
     ["/change-password", "Đổi mật khẩu", "Cập nhật mật khẩu đăng nhập", Key],
   ] as const;
+  const additionalPaths = new Set(['/customer/messages', '/customer/notifications', '/customer/returns', '/customer/invitations', '/customer/store-applications']);
+  const shortcut = ([path, label, description, Icon]: (typeof personalLinks)[number]) => (
+    <Link to={path} key={path}>
+      <span><Icon size={22} /></span>
+      <div><strong>{label}</strong><small>{description}</small></div>
+      <span className="account-shortcut-arrow" aria-hidden="true">→</span>
+    </Link>
+  );
   return (
     <section className="account-hub">
       <div className="seller-products-toolbar">
@@ -212,26 +220,16 @@ function Profile() {
             </span>
           </div>
           <div className="account-shortcut-grid">
-            {personalLinks
-              .filter(
-                ([path]) =>
-                  !session ||
-                  roles.includes("CUSTOMER") ||
-                  path === "/change-password",
-              )
-              .map(([path, label, description, Icon]) => (
-                <Link to={path} key={path}>
-                  <span>
-                    <Icon size={22} />
-                  </span>
-                  <div>
-                    <strong>{label}</strong>
-                    <small>{description}</small>
-                  </div>
-                  <span className="account-shortcut-arrow">→</span>
-                </Link>
-              ))}
+            {personalLinks.filter(([path]) => !additionalPaths.has(path) && (roles.includes('CUSTOMER') || path === '/change-password')).map(shortcut)}
           </div>
+          {roles.includes('CUSTOMER') && (
+            <details className="account-additional-links">
+              <summary>Hoạt động khác</summary>
+              <div className="account-shortcut-grid">
+                {personalLinks.filter(([path]) => additionalPaths.has(path)).map(shortcut)}
+              </div>
+            </details>
+          )}
           {(isMerchant || isAdmin) && (
             <div className="account-portals">
               {isMerchant && (
@@ -536,8 +534,6 @@ function Market() {
               ["/customer/orders", "Đơn hàng"],
               ["/customer/favorites", "Yêu thích"],
               ["/customer/addresses", "Sổ địa chỉ"],
-              ["/customer/invitations", "Lời mời Store"],
-              ["/customer/store-applications", "Mở gian hàng"],
               ["/customer/settings", "Cài đặt"],
               ["/change-password", "Đổi mật khẩu"],
             ]
@@ -553,6 +549,25 @@ function Market() {
                   {label}
                 </NavLink>
               ))}
+            {roles.includes("CUSTOMER") && (
+              <details key={location.pathname} className="account-sidebar-more" onKeyDown={event => {
+                if (event.key === "Escape") {
+                  event.currentTarget.open = false;
+                  event.currentTarget.querySelector("summary")?.focus();
+                }
+              }}>
+                <summary>Thêm</summary>
+                <nav className="account-sidebar-extra-links" aria-label="Hoạt động tài khoản khác">
+                  {[
+                    ["/customer/messages", "Tin nhắn"],
+                    ["/customer/notifications", "Thông báo"],
+                    ["/customer/returns", "Đổi trả"],
+                    ["/customer/invitations", "Lời mời gian hàng"],
+                    ["/customer/store-applications", "Mở gian hàng"],
+                  ].map(([path, label]) => <NavLink to={path} key={path}>{label}</NavLink>)}
+                </nav>
+              </details>
+            )}
           </aside>
         )}
         <main id="main-content" className="live-content min-w-0" tabIndex={-1}>
