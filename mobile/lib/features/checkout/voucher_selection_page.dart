@@ -35,6 +35,7 @@ class VoucherSelectionPage extends StatefulWidget {
 
 class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
   late final TextEditingController _codeController;
+  late final FocusNode _codeFocusNode;
   String? _selectedPlatformVoucher;
   late final Map<String, String> _selectedStoreVouchers;
   late List<Map<String, dynamic>> _allVouchers;
@@ -44,6 +45,10 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
   void initState() {
     super.initState();
     _codeController = TextEditingController();
+    _codeFocusNode = FocusNode();
+    _codeFocusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
     _selectedPlatformVoucher = widget.initialPlatformVoucher;
     _selectedStoreVouchers = Map<String, String>.from(widget.initialStoreVouchers);
     _allVouchers = List<Map<String, dynamic>>.from(widget.suggestedVouchers);
@@ -167,6 +172,7 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
 
   @override
   void dispose() {
+    _codeFocusNode.dispose();
     _codeController.dispose();
     super.dispose();
   }
@@ -482,25 +488,47 @@ class _VoucherSelectionPageState extends State<VoucherSelectionPage> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFFD9D9D9), width: 1.0),
+                      border: Border.all(
+                        color: _codeFocusNode.hasFocus ? const Color(0xFFEE4D2D) : const Color(0xFFD9D9D9),
+                        width: 1.0,
+                      ),
                     ),
-                    child: TextField(
-                      key: const Key('voucher_input_field'),
-                      controller: _codeController,
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF222222)),
-                      onChanged: (_) => setState(() {}),
-                      textAlignVertical: TextAlignVertical.center,
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        hintText: 'Nhập mã voucher',
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        inputDecorationTheme: const InputDecorationTheme(
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          filled: false,
+                          fillColor: Colors.transparent,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        ),
+                      ),
+                      child: TextField(
+                        key: const Key('voucher_input_field'),
+                        controller: _codeController,
+                        focusNode: _codeFocusNode,
+                        cursorColor: const Color(0xFFEE4D2D),
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF222222)),
+                        onChanged: (_) => setState(() {}),
+                        textAlignVertical: TextAlignVertical.center,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          hintText: 'Nhập mã voucher',
+                          hintStyle: TextStyle(fontSize: 13, color: Color(0xFFBBBBBB)),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          filled: false,
+                          fillColor: Colors.transparent,
+                        ),
                       ),
                     ),
                   ),
