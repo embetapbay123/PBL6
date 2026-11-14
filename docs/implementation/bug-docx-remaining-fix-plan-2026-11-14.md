@@ -2,7 +2,7 @@
 
 Ngày lập: 14/11/2026. Trạng thái: **kế hoạch**, chưa phải xác nhận triển khai hoặc nghiệm thu các mục bên dưới.
 
-Cập nhật thực hiện: đợt UI đầu đã được triển khai; các đợt sau chưa hoàn tất. Xem [bảng tiến độ và mức bằng chứng](bug-docx-plan-progress-2026-11-14.md).
+Cập nhật thực hiện: đợt UI đầu và voucher đã được triển khai; đang thực hiện tìm hội thoại. Xem [bảng tiến độ và mức bằng chứng](bug-docx-plan-progress-2026-11-14.md).
 
 ## Mục tiêu và baseline
 

@@ -29375,6 +29375,132 @@
         "x-member-owner": "Công",
         "x-implementation-status": "IMPLEMENTED"
       }
+    },
+    "/checkout/voucher-suggestions": {
+      "post": {
+        "tags": [
+          "Checkout"
+        ],
+        "operationId": "suggestCheckoutVouchers",
+        "summary": "Suggest or validate vouchers for selected checkout items",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current suggestion or validated manual selection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoucherSuggestion"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoucherSuggestionRequest"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "OWN_USER",
+        "description": "Uses current owned CART or BUY_NOW items and server-side quota-eligible candidates. AUTO minimizes goods payable (shipping is independent of vouchers). LIMITED never asserts optimality. MANUAL resolves codes regardless of list pagination and validates the whole selection. No voucher reservation is created. Address and payment methods must be supplied together to include a canonical checkout quote; otherwise totals exclude shipping.",
+        "x-service-owner": "M2",
+        "x-module": "order",
+        "x-member-owner": "Hoa",
+        "x-implementation-status": "IMPLEMENTED"
+      }
     }
   },
   "components": {
@@ -36641,6 +36767,205 @@
           "deleted_count": {
             "type": "integer",
             "minimum": 0
+          }
+        }
+      },
+      "CartVoucherSuggestionRequest": {
+        "type": "object",
+        "properties": {
+          "cart_item_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 100
+          },
+          "address_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_methods": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "x-key-format": "uuid"
+          },
+          "platform_voucher_code": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "store_vouchers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "x-key-format": "uuid"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "CART"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "AUTO",
+              "MANUAL"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "MANUAL only: resolve a code in its actual scope and replace that scope in the supplied selection."
+          }
+        },
+        "required": [
+          "cart_item_ids",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "BuyNowVoucherSuggestionRequest": {
+        "type": "object",
+        "properties": {
+          "address_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "payment_methods": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "SANDBOX",
+                "COD"
+              ]
+            },
+            "x-key-format": "uuid"
+          },
+          "platform_voucher_code": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "store_vouchers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "x-key-format": "uuid"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "BUY_NOW"
+            ]
+          },
+          "buy_now": {
+            "$ref": "#/components/schemas/BuyNowSelection"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "AUTO",
+              "MANUAL"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "MANUAL only: resolve a code in its actual scope and replace that scope in the supplied selection."
+          }
+        },
+        "required": [
+          "source",
+          "buy_now",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "VoucherSuggestionRequest": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/CartVoucherSuggestionRequest"
+          },
+          {
+            "$ref": "#/components/schemas/BuyNowVoucherSuggestionRequest"
+          }
+        ]
+      },
+      "VoucherSelection": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "store_vouchers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "x-key-format": "uuid"
+          },
+          "platform_voucher_code": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "VoucherSuggestion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "selected",
+          "goods_total_vnd",
+          "discount_total_vnd",
+          "net_goods_total_vnd",
+          "optimality"
+        ],
+        "properties": {
+          "selected": {
+            "$ref": "#/components/schemas/VoucherSelection"
+          },
+          "goods_total_vnd": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "discount_total_vnd": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "net_goods_total_vnd": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "optimality": {
+            "type": "string",
+            "enum": [
+              "OPTIMAL",
+              "LIMITED",
+              "MANUAL"
+            ]
+          },
+          "quote": {
+            "$ref": "#/components/schemas/CheckoutQuote"
           }
         }
       }

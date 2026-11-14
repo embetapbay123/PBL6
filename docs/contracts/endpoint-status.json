@@ -2113,5 +2113,17 @@
     "roles": [
       "CUSTOMER"
     ]
+  },
+  {
+    "method": "POST",
+    "path": "/checkout/voucher-suggestions",
+    "operation_id": "suggestCheckoutVouchers",
+    "service": "M2",
+    "module": "order",
+    "owner": "Hoa",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
   }
 ]

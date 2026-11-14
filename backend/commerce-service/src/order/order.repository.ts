@@ -658,6 +658,26 @@ export class OrderRepository extends OwnedRepository {
     ) SELECT COUNT(*)::int AS total,COUNT(*) FILTER(WHERE customer_user_id=$2)::int AS customer FROM used`,[voucher.id,userId]);
     return Number(c?.total ?? 0)<voucher.usage_limit && Number(c?.customer ?? 0)<voucher.per_customer_limit;
   }
+
+  async findVoucherByCode(code: string): Promise<VoucherCheckoutRow | undefined> {
+    const [row] = await this.manager.query('SELECT * FROM voucher WHERE upper(code)=upper($1)', [code.trim()]);
+    return row;
+  }
+
+  async suggestionCandidates(storeIds: string[], userId: string, limit = 501): Promise<VoucherCheckoutRow[]> {
+    // Same usage accounting as voucherAvailable: one purchase group consumes one use,
+    // including live reservations. This read never reserves or consumes a voucher.
+    return this.manager.query(`SELECT v.* FROM voucher v
+      WHERE v.status='ACTIVE' AND v.starts_at<=now() AND v.ends_at>now()
+        AND (v.scope='PLATFORM' OR (v.scope='STORE' AND v.store_id=ANY($1::uuid[])))
+        AND EXISTS (SELECT 1 FROM (
+          SELECT count(*) AS total, count(*) FILTER(WHERE customer_user_id=$2) AS customer
+          FROM (SELECT purchase_group_id,customer_user_id FROM voucher_redemption WHERE voucher_id=v.id
+            UNION SELECT purchase_group_id,customer_user_id FROM voucher_reservation
+              WHERE voucher_id=v.id AND status IN ('ACTIVE','RESERVED') AND expires_at>now()) used
+        ) counts WHERE counts.total<v.usage_limit AND counts.customer<v.per_customer_limit)
+      ORDER BY v.code, v.id LIMIT $3`, [storeIds, userId, limit]);
+  }
 }
 
 

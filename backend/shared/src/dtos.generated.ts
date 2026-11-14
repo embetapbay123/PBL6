@@ -3320,6 +3320,14 @@ export class DeleteOwnChatSessionQueryDto {
 }
 export class DeleteOwnChatSessionHeadersDto {
 }
+export class SuggestCheckoutVouchersBodyDto {
+}
+export class SuggestCheckoutVouchersPathDto {
+}
+export class SuggestCheckoutVouchersQueryDto {
+}
+export class SuggestCheckoutVouchersHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3782,6 +3790,7 @@ export const runtimeDtos = {
   deleteTryOnPhoto: {body: undefined, path: DeleteTryOnPhotoPathDto, query: DeleteTryOnPhotoQueryDto, headers: DeleteTryOnPhotoHeadersDto},
   getTryOnResult: {body: undefined, path: GetTryOnResultPathDto, query: GetTryOnResultQueryDto, headers: GetTryOnResultHeadersDto},
   deleteOwnChatSession: {body: undefined, path: DeleteOwnChatSessionPathDto, query: DeleteOwnChatSessionQueryDto, headers: DeleteOwnChatSessionHeadersDto},
+  suggestCheckoutVouchers: {body: SuggestCheckoutVouchersBodyDto, path: SuggestCheckoutVouchersPathDto, query: SuggestCheckoutVouchersQueryDto, headers: SuggestCheckoutVouchersHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

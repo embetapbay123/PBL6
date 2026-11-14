@@ -1,13 +1,13 @@
 # Tiến độ thực hiện plan bug.docx
 
-Ngày 14/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-docx-plan`, nhánh `codex/bug-docx-follow-through`. Tách từ `6c364af` để giữ nguyên WIP ví của workspace chính.
+Cập nhật ngày 15/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-docx-plan`, nhánh `codex/bug-docx-follow-through`. Tách từ `6c364af` để giữ nguyên WIP ví của workspace chính.
 
 | Đợt | Trạng thái | Kết quả |
 |---|---|---|
 | 0. Baseline và đối chiếu | Đã khởi tạo | Dùng bảng B01–B33 của plan; chụp bản public trước sửa. Chưa tuyên bố nghiệm thu lại mọi nhóm trong tài liệu gốc. |
 | 1. Hoàn thiện UI/copy | Đã triển khai, có bằng chứng UI | Chi tiết bên dưới. |
 | 2. Voucher tốt nhất | Đang thực hiện | Bộ tối ưu và phép tính VND dùng chung có test; chưa có API/FE và chưa deploy BE cho phần này. |
-| 3. Tìm hội thoại | Chưa thực hiện | M3/M4 + FE. |
+| 3. Tìm hội thoại | Đang thực hiện | Đối chiếu query/phân quyền M3/M4 và FE; chưa triển khai. |
 | 4. Media chat | Chưa thực hiện | Upload, quyền truy cập, lưu trữ, adapter AI. |
 | 5. Nội dung gian hàng | Chưa thực hiện | CMS banner/campaign và nguồn nhóm sản phẩm. |
 | 6. Nghiệm thu toàn bộ | Chưa hoàn tất | Có kiểm tra và triển khai riêng từng đợt; không tính là đã đóng cả 33 nhóm. |
@@ -39,4 +39,4 @@ Chứng cứ đặt tại `C:/PBL6/outputs/bug-ui-phase1-2026-11-14/`: `before/r
 
 ## Bước đang làm
 
-Đợt 2 dùng tổng tiền hàng sau giảm Store để xét ngưỡng mã sàn. Bộ tối ưu giữ các mức giảm có thể đạt, không loại mức giảm nhỏ hơn vì có thể cần giữ ngưỡng. Có giới hạn công việc; hết giới hạn phải ghi LIMITED thay vì công bố “tốt nhất”. Sáu test qua, gồm đối chiếu vét cạn trên 80 bộ nhỏ, cap 0 và biên thời gian tới mili giây. Phần này chưa được nối vào quote/API/UI, chưa được nghiệm thu hoặc triển khai.
+Đợt 2 đã hoàn tất; xem [báo cáo voucher](bug-docx-vouchers-2026-11-15.md). Đang thực hiện đợt 3: tìm hội thoại Customer và phiên AI trên dữ liệu sở hữu, trước phân trang, không gọi model để tìm kiếm. Media chat và nội dung gian hàng vẫn chưa triển khai.

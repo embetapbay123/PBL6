@@ -984,6 +984,11 @@
     "path": "/me/chat/sessions/{id}",
     "internal": false
   },
+  "suggestCheckoutVouchers": {
+    "method": "POST",
+    "path": "/checkout/voucher-suggestions",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",

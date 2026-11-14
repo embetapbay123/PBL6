@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
 import { Modal } from "../../components/Modal";
 import { ErrorView, Loading, Pagination } from "../../bootstrap/components";
 import { StoreLabel } from "../../live/StoreLabel";
-import { HelpCircle, Ticket, Truck } from "lucide-react";
+import { Ticket } from "lucide-react";
+import type {OperationInputs, OperationOutputs} from "../../api/operations.generated";
 
 const money = (n: number) => n.toLocaleString("vi-VN") + " ₫";
 
@@ -18,11 +19,13 @@ export function VoucherPicker({
   onPick,
   onClose,
   initialVouchers,
+  selection,
 }: {
   storeIds: string[];
-  onPick: (vouchers: SelectedVouchers) => void;
+  onPick: (vouchers: SelectedVouchers, result: OperationOutputs['suggestCheckoutVouchers']) => void | boolean | Promise<void | boolean>;
   onClose: () => void;
   initialVouchers?: SelectedVouchers;
+  selection: OperationInputs['suggestCheckoutVouchers']['body'];
 }) {
   const [page, setPage] = useState(1);
   const [inputCode, setInputCode] = useState("");
@@ -30,9 +33,56 @@ export function VoucherPicker({
     initialVouchers?.platform_voucher_code ?? ""
   );
   const [selectedStoreVouchers, setSelectedStoreVouchers] = useState<Record<string, string>>(
-    initialVouchers?.store_vouchers ? { ...initialVouchers.store_vouchers } : {}
+    Object.fromEntries(Object.entries(initialVouchers?.store_vouchers ?? {}).filter(([id]) => storeIds.includes(id)))
   );
   const [inputNotice, setInputNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [resolvedContext, setResolvedContext] = useState('');
+  const [result, setResult] = useState<OperationOutputs['suggestCheckoutVouchers'] | null>(null);
+  const currentSelection = {platform_voucher_code: selectedPlatformCode || undefined, store_vouchers: selectedStoreVouchers};
+  const chosen = useRef(currentSelection);
+  chosen.current = currentSelection;
+  const dirty = useRef(Boolean(selectedPlatformCode || Object.keys(selectedStoreVouchers).length));
+  const {mode: _mode, code: _code, store_vouchers: _stores, platform_voucher_code: _platform, ...baseSelection} = selection;
+  const contextKey = JSON.stringify(baseSelection);
+  const latestContext = useRef(contextKey);
+  latestContext.current = contextKey;
+  const flight = useRef<AbortController | null>(null);
+  const lastRequest = useRef<{mode: 'AUTO' | 'MANUAL'; vouchers: SelectedVouchers; code?: string}>({mode: 'AUTO', vouchers: {}});
+  const run = useCallback(async (mode: 'AUTO' | 'MANUAL', vouchers: SelectedVouchers, code?: string) => {
+    lastRequest.current = {mode, vouchers, code};
+    flight.current?.abort();
+    const controller = new AbortController();
+    flight.current = controller;
+    setPending(true);
+    setError(null);
+    setResult(null);
+    try {
+      const response = await callOperation('suggestCheckoutVouchers', {
+        body: {...JSON.parse(contextKey), ...vouchers, mode, ...(code ? {code} : {})},
+      }, {signal: controller.signal});
+      if (controller.signal.aborted || latestContext.current !== contextKey) return null;
+      setSelectedPlatformCode(response.selected.platform_voucher_code ?? '');
+      setSelectedStoreVouchers(response.selected.store_vouchers ?? {});
+      chosen.current = {platform_voucher_code: response.selected.platform_voucher_code, store_vouchers: response.selected.store_vouchers ?? {}};
+      setResult(response);
+      setResolvedContext(contextKey);
+      return response;
+    } catch (cause) {
+      if (!controller.signal.aborted && latestContext.current === contextKey)
+        setError(cause instanceof Error ? cause.message : 'Chưa kiểm tra được mã. Hãy thử lại.');
+      return null;
+    } finally {
+      if (flight.current === controller) setPending(false);
+    }
+  }, [contextKey]);
+
+  useEffect(() => {
+    void run(dirty.current ? 'MANUAL' : 'AUTO', dirty.current ? chosen.current : {});
+    return () => flight.current?.abort();
+  }, [run]);
 
   const ids = [...storeIds].sort().join(",");
   const list = useQuery({
@@ -43,41 +93,28 @@ export function VoucherPicker({
       }),
   });
 
-  const handleApplyInput = () => {
+  const handleApplyInput = async () => {
     const trimmed = inputCode.trim().toUpperCase();
     if (!trimmed) return;
-    const match = list.data?.items.find((item) => item.code.toUpperCase() === trimmed);
-    if (match) {
-      if (match.scope === "PLATFORM") {
-        setSelectedPlatformCode(match.code);
-        setInputNotice(`Đã chọn mã toàn sàn: ${match.code}`);
-      } else if (match.scope === "STORE" && match.store_id) {
-        setSelectedStoreVouchers((prev) => ({
-          ...prev,
-          [match.store_id!]: match.code,
-        }));
-        setInputNotice(`Đã chọn mã gian hàng: ${match.code}`);
-      }
-    } else {
-      // Cho phép áp mã chưa có trong trang hiển thị như mã toàn sàn
-      setSelectedPlatformCode(trimmed);
-      setInputNotice(`Đã chọn mã: ${trimmed}`);
+    dirty.current = true;
+    const response = await run('MANUAL', chosen.current, trimmed);
+    if (response) {
+      setInputCode('');
+      setInputNotice(`Đã chọn mã ${trimmed}.`);
     }
-    setInputCode("");
   };
 
-  const handleConfirm = () => {
-    const cleanStoreVouchers: Record<string, string> = {};
-    for (const [sId, code] of Object.entries(selectedStoreVouchers)) {
-      if (code && code.trim()) {
-        cleanStoreVouchers[sId] = code.trim();
+  const handleConfirm = async () => {
+    if (pending || committing) return;
+    setCommitting(true);
+    try {
+      const response = await run('MANUAL', chosen.current);
+      if (response && latestContext.current === contextKey) {
+        const accepted = await onPick(response.selected, response);
+        if (accepted !== false) onClose();
+        else setError('Thông tin đặt hàng vừa thay đổi. Kiểm tra lại rồi áp dụng mã lần nữa.');
       }
-    }
-    onPick({
-      platform_voucher_code: selectedPlatformCode.trim() || undefined,
-      store_vouchers: Object.keys(cleanStoreVouchers).length > 0 ? cleanStoreVouchers : undefined,
-    });
-    onClose();
+    } finally {setCommitting(false);}
   };
 
   const platformVouchers = list.data?.items.filter((v) => v.scope === "PLATFORM") ?? [];
@@ -96,43 +133,32 @@ export function VoucherPicker({
 
   return (
     <Modal label="Chọn mã giảm giá" onClose={onClose}>
-      <div className="shopee-voucher-dialog">
+      <div className="shopee-voucher-dialog" aria-busy={pending || committing}>
         {/* Modal Header */}
         <header className="shopee-voucher-header">
           <h2 className="shopee-voucher-title">Chọn mã giảm giá</h2>
-          <button
-            type="button"
-            className="shopee-voucher-help-btn"
-            title="Hỗ trợ thông tin mã giảm giá"
-            onClick={() =>
-              alert(
-                "Bạn có thể chọn cùng lúc: 01 Voucher Toàn Sàn (hoặc Miễn Phí Vận Chuyển) + 01 Voucher cho mỗi Gian Hàng trong đơn!"
-              )
-            }
-          >
-            <span>Hỗ Trợ</span>
-            <HelpCircle size={15} />
-          </button>
+          <button type="button" className="shopee-voucher-apply-btn" disabled={pending || committing}
+            onClick={() => {dirty.current = true; void run('AUTO', {});}}>Tự chọn lại</button>
         </header>
 
         {/* Voucher Input Bar */}
         <div className="shopee-voucher-input-bar">
           <label htmlFor="shopee-voucher-code-input" className="shopee-voucher-input-label">
-            Mã Voucher
+            Mã giảm giá
           </label>
           <div className="shopee-voucher-input-wrap">
             <input
               id="shopee-voucher-code-input"
               type="text"
-              placeholder="Nhập mã voucher (Sàn hoặc Shop)"
+              placeholder="Nhập mã giảm giá"
               value={inputCode}
-              maxLength={50}
+              maxLength={200}
               onChange={(e) => {
                 setInputCode(e.target.value);
                 setInputNotice(null);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !pending) {
                   e.preventDefault();
                   handleApplyInput();
                 }
@@ -141,7 +167,7 @@ export function VoucherPicker({
             />
             <button
               type="button"
-              disabled={!inputCode.trim()}
+              disabled={!inputCode.trim() || pending || committing}
               onClick={handleApplyInput}
               className="shopee-voucher-apply-btn"
             >
@@ -151,8 +177,17 @@ export function VoucherPicker({
         </div>
 
         {inputNotice && (
-          <p className="text-xs text-emerald-700 px-4 py-1 m-0 font-medium">{inputNotice}</p>
+          <p role="status" className="text-xs text-emerald-700 px-4 py-1 m-0 font-medium">{inputNotice}</p>
         )}
+        <div className="voucher-suggestion-summary" aria-live="polite" aria-busy={pending}>
+          {pending ? <p>Đang tính ưu đãi…</p> : result && resolvedContext === contextKey && <>
+            <p><strong>{result.optimality === 'OPTIMAL' ? 'Ưu đãi tốt nhất' : result.optimality === 'LIMITED' ? 'Gợi ý ưu đãi' : 'Ưu đãi đã chọn'}</strong> · Tiết kiệm {money(result.discount_total_vnd)}</p>
+            <p>{result.quote ? 'Tổng thanh toán' : 'Tiền hàng sau giảm'}: <strong>{money(result.quote?.payable_total_vnd ?? result.net_goods_total_vnd)}</strong>{!result.quote && ' (chưa gồm phí giao hàng)'}</p>
+          </>}
+          {error && <p role="alert">{error} <button type="button" disabled={pending || committing} onClick={() => {const retry = lastRequest.current; void run(retry.mode, retry.vouchers, retry.code);}}>Thử lại</button></p>}
+          <button type="button" disabled={pending || committing} onClick={() => {dirty.current = true; setInputNotice(null); void run('MANUAL', {});}}>Bỏ tất cả</button>
+          <details><summary>Điều kiện áp dụng</summary><p>Tối đa một mã sàn và một mã mỗi gian hàng. Mã sàn tính trên tiền hàng sau giảm của gian hàng. Lượt dùng được kiểm tra lại khi đặt hàng.</p></details>
+        </div>
 
         {/* Scrollable Voucher List Body */}
         <div className="shopee-voucher-body">
@@ -189,15 +224,14 @@ export function VoucherPicker({
                           aria-pressed={isSelected}
                           key={v.id ?? v.code}
                           className={`shopee-ticket-card ${isSelected ? "is-selected" : ""}`}
-                          onClick={() => {
-                            setSelectedPlatformCode(isSelected ? "" : v.code);
-                          }}
+                          disabled={pending || committing}
+                          onClick={() => {dirty.current = true; setInputNotice(null); void run('MANUAL', {...chosen.current, platform_voucher_code: isSelected ? undefined : v.code});}}
                         >
                           {/* Left Teal Badge */}
                           <div className="shopee-ticket-left is-teal">
-                            <Truck size={22} className="mb-1" />
+                            <Ticket size={22} className="mb-1" />
                             <span className="shopee-ticket-badge-title">PBL6</span>
-                            <span className="shopee-ticket-badge-sub">TOÀN SÀN</span>
+                              <span className="shopee-ticket-badge-sub">TOÀN SÀN</span>
                           </div>
 
                           {/* Right Content */}
@@ -205,7 +239,7 @@ export function VoucherPicker({
                             <div className="flex items-start justify-between gap-2">
                               <h4 className="shopee-ticket-title">
                                 Giảm {isPercent ? `${v.discount_value}%` : money(v.discount_value)}
-                                {v.max_discount_vnd ? ` tối đa ${money(v.max_discount_vnd)}` : ""}
+                                {v.max_discount_vnd != null ? ` tối đa ${money(v.max_discount_vnd)}` : ""}
                                 {` cho đơn từ ${money(v.min_goods_vnd ?? 0)}`}
                               </h4>
                               {v.per_customer_limit && (
@@ -235,7 +269,7 @@ export function VoucherPicker({
               {Object.keys(storeVouchersByStore).length > 0 && (
                 <div className="shopee-voucher-section">
                   <div className="shopee-voucher-section-title-wrap">
-                    <h3 className="shopee-voucher-section-title">Mã Giảm Giá Từ Shop</h3>
+                    <h3 className="shopee-voucher-section-title">Mã gian hàng</h3>
                     <span className="shopee-voucher-section-subtitle">
                       Mỗi gian hàng có thể áp dụng 1 voucher
                     </span>
@@ -264,16 +298,12 @@ export function VoucherPicker({
                                 aria-pressed={isSelected}
                                 key={v.id ?? v.code}
                                 className={`shopee-ticket-card ${isSelected ? "is-selected" : ""}`}
+                                disabled={pending || committing}
                                 onClick={() => {
-                                  setSelectedStoreVouchers((prev) => {
-                                    const next = { ...prev };
-                                    if (next[storeId] === v.code) {
-                                      delete next[storeId];
-                                    } else {
-                                      next[storeId] = v.code;
-                                    }
-                                    return next;
-                                  });
+                                  dirty.current = true; setInputNotice(null);
+                                  const next = {...chosen.current.store_vouchers};
+                                  if (isSelected) delete next[storeId]; else next[storeId] = v.code;
+                                  void run('MANUAL', {...chosen.current, store_vouchers: next});
                                 }}
                               >
                                 {/* Left Orange Badge */}
@@ -289,7 +319,7 @@ export function VoucherPicker({
                                     <div>
                                       <h4 className="shopee-ticket-title">
                                         Giảm {isPercent ? `${v.discount_value}%` : money(v.discount_value)}
-                                        {v.max_discount_vnd ? ` tối đa ${money(v.max_discount_vnd)}` : ""}
+                                        {v.max_discount_vnd != null ? ` tối đa ${money(v.max_discount_vnd)}` : ""}
                                         {` cho đơn từ ${money(v.min_goods_vnd ?? 0)}`}
                                       </h4>
                                     </div>
@@ -358,6 +388,7 @@ export function VoucherPicker({
           <button
             type="button"
             className="shopee-voucher-btn-confirm"
+            disabled={pending || committing || !result || resolvedContext !== contextKey || Boolean(error)}
             onClick={handleConfirm}
           >
             Áp dụng

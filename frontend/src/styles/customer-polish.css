@@ -2009,6 +2009,33 @@
 }
 
 .account-sidebar-more { flex-shrink: 0; }
+.voucher-suggestion-summary { padding: 12px 20px; border-block: 1px solid #e2e8f0; background: #f8fafc; font-size: 13px; overflow-wrap: anywhere; }
+.voucher-suggestion-summary p { margin: 0 0 6px; }
+.voucher-suggestion-summary [role="alert"] { color: #b91c1c; }
+.voucher-suggestion-summary button { min-height: 36px; padding: 4px 8px; color: #9a3412; text-decoration: underline; }
+.voucher-suggestion-summary details { margin-top: 8px; color: #475569; }
+.voucher-suggestion-summary summary { cursor: pointer; }
+.shopee-voucher-dialog button:disabled { opacity: .55; cursor: not-allowed; }
+.market-native-dialog:has(.shopee-voucher-dialog) { width: min(580px, calc(100vw - 24px)); padding: 0; max-height: calc(100dvh - 24px); overflow: auto; }
+.shopee-voucher-dialog { max-height: none; overflow: visible; }
+.shopee-voucher-header { gap: 12px; }
+.shopee-voucher-input-wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; min-width: 0; }
+.market-native-dialog .shopee-voucher-text-input { width: 100%; min-width: 0; }
+.shopee-voucher-body { min-height: 100px; overflow: visible; max-height: none; }
+.voucher-suggestion-summary button { background: transparent; border: 0; box-shadow: none; color: #9a3412; font-size: 13px; font-weight: 500; }
+@media (max-width: 580px) {
+  .shopee-voucher-header, .shopee-voucher-body, .shopee-voucher-footer, .shopee-voucher-input-bar, .voucher-suggestion-summary { padding: 12px; }
+  .shopee-voucher-title { font-size: 16px; }
+  .shopee-voucher-input-bar { display: block; }
+  .shopee-voucher-input-label { display: block; margin-bottom: 8px; }
+  .market-native-dialog .shopee-voucher-text-input { font-size: 16px; }
+  .shopee-voucher-footer { flex-wrap: wrap; }
+  .shopee-voucher-footer > div { flex-basis: 100%; overflow-wrap: anywhere; }
+  .shopee-voucher-footer > button { flex: 1; min-width: 0 !important; }
+  .shopee-voucher-section-title-wrap { flex-wrap: wrap; gap: 4px; }
+  .shopee-ticket-left { width: 64px; min-width: 64px; }
+  .shopee-ticket-right { min-width: 0; overflow-wrap: anywhere; }
+}
 .account-sidebar-more > summary { padding: 12px; min-height: 44px; white-space: nowrap; cursor: pointer; font-size: 14px; border-radius: 4px; }
 .account-sidebar-extra-links { margin: 0 0 8px 10px; border-left: 1px solid #e2e8f0; }
 .account-sidebar-more > summary:focus-visible { outline: 2px solid #c2410c; outline-offset: -2px; }

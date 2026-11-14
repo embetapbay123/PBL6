@@ -373,6 +373,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quotedInput, setQuotedInput] = useState("");
+  const acceptedVoucherQuote = useRef<{fingerprint: string; quote: Quote} | null>(null);
   const [selectedMethods, setSelectedMethods] = useState<
     Record<string, "COD" | "SANDBOX">
   >(draft?.methods ?? {});
@@ -608,6 +609,15 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
 
   useEffect(() => {
     if (hasAttempt || created || items.length === 0 || !addressId) return;
+    if (acceptedVoucherQuote.current?.fingerprint === inputFingerprint) {
+      setQuote(acceptedVoucherQuote.current.quote);
+      setQuotedInput(inputFingerprint);
+      setQuoteError(null);
+      setQuoting(false);
+      acceptedVoucherQuote.current = null;
+      return;
+    }
+    acceptedVoucherQuote.current = null;
     let cancelled = false;
     setQuote(null);
     setQuoteError(null);
@@ -744,7 +754,7 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
     targetPlatformCode: string,
     targetStoreDraft: Record<string, string>,
   ) => {
-    if (submitting || quoting || voucherFlight.current) return;
+    if (submitting || quoting || voucherFlight.current) return false;
     voucherFlight.current = true;
     setValidatingVouchers(true);
     setQuoteError(null);
@@ -778,12 +788,14 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
         setQuoteError(
           "Thông tin đặt hàng vừa thay đổi. Kiểm tra lại rồi áp dụng mã lần nữa.",
         );
-        return;
+        return false;
       }
       setVouchers(voucherPayload);
       setQuoteTick((n) => n + 1);
+      return true;
     } catch (error) {
       setQuoteError(describe(error));
+      return false;
     } finally {
       voucherFlight.current = false;
       setValidatingVouchers(false);
@@ -1213,17 +1225,24 @@ const CheckoutInner: React.FC<InnerProps> = ({ userId }) => {
               {pickerOpen && !attempt && (
                 <VoucherPicker
                   storeIds={storeGroups.map(([id]) => id)}
+                  selection={{...quoteInput, mode: 'AUTO'}}
                   onClose={() => setPickerOpen(false)}
                   initialVouchers={{
                     platform_voucher_code: platformDraft,
                     store_vouchers: voucherDraft,
                   }}
-                  onPick={(picked) => {
+                  onPick={(picked, result) => {
+                    if (latestInput.current !== inputFingerprint || submitting || quoting || !result.quote) return false;
                     const nextPlatform = picked.platform_voucher_code ?? "";
                     const nextStore = picked.store_vouchers ?? {};
+                    const {platform_voucher_code: _platform, store_vouchers: _stores, ...base} = quoteInput;
+                    const nextInput = {...base, ...picked};
+                    acceptedVoucherQuote.current = {fingerprint: JSON.stringify(nextInput), quote: result.quote};
                     setPlatformDraft(nextPlatform);
                     setVoucherDraft(nextStore);
-                    void applyVouchers(nextPlatform, nextStore);
+                    setVouchers(picked);
+                    setQuoteTick(n => n + 1);
+                    return true;
                   }}
                 />
               )}

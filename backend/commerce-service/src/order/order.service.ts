@@ -22,6 +22,7 @@ import { QuoteStore, RedisQuoteStore } from './quote-store';
 import { emitEvent } from '../../../shared/src/events';
 import { audit } from '../../../shared/src/audit';
 import { VoucherRepository } from '../voucher/voucher.repository';
+import { bestVoucherSelection, voucherDiscount, type VoucherSelection } from '../voucher/voucher-pricing';
 import { OrderRepository, OrderRow, OrderItemRow } from './order.repository';
 import type { OperationOutputs, OperationInputs } from '../../../shared/src/operations.generated';
 
@@ -246,10 +247,20 @@ export class OrderService {
       storeCalc.goods_vnd = moneyNumber(BigInt(storeCalc.goods_vnd)+BigInt(lineTotalVnd));
     }
 
+    return this.applyVoucherSelection(Array.from(storeMap.values()), userId, storeVouchersInput, platformVoucherCodeInput, orderRepo);
+  }
+
+  private async applyVoucherSelection(storeList: StoreCalculation[], userId: string,
+    storeVouchersInput: Record<string,string> | undefined, platformVoucherCodeInput: string | undefined,
+    orderRepo: OrderRepository) {
     const now = new Date();
+    if (Object.keys(storeVouchersInput ?? {}).some(id => !storeList.some(store => store.store_id === id)))
+      throw new ApiError(422, 'VOUCHER_STORE_NOT_SELECTED', 'Mã gian hàng không thuộc các món đang chọn.');
 
     // Store vouchers
-    for (const storeCalc of storeMap.values()) {
+    for (const storeCalc of storeList) {
+      storeCalc.platform_discount_vnd = 0;
+      storeCalc.voucher_id = undefined;
       const storeVoucherCode = storeVouchersInput?.[storeCalc.store_id];
       if (storeVoucherCode) {
         const voucher = await orderRepo.findStoreVoucherByCode(storeVoucherCode, storeCalc.store_id);
@@ -265,7 +276,7 @@ export class OrderService {
         }
         const startsAt = new Date(voucher.starts_at);
         const endsAt = new Date(voucher.ends_at);
-        if (now < startsAt || now > endsAt) {
+        if (now < startsAt || now >= endsAt) {
           throw new ApiError(422, 'VOUCHER_EXPIRED', `Voucher cửa hàng "${storeVoucherCode}" đã hết hạn hoặc chưa có hiệu lực.`);
         }
         if (!(await orderRepo.voucherAvailable(voucher,userId))) {
@@ -281,17 +292,7 @@ export class OrderService {
           );
         }
 
-        let calculatedDiscount = 0;
-        if (voucher.discount_type === 'PERCENT') {
-          calculatedDiscount = moneyNumber(BigInt(storeCalc.goods_vnd)*BigInt(voucher.discount_value)/100n);
-          if (voucher.max_discount_vnd !== undefined && voucher.max_discount_vnd !== null) {
-            calculatedDiscount = Math.min(calculatedDiscount, moneyNumber(voucher.max_discount_vnd));
-          }
-        } else {
-          calculatedDiscount = moneyNumber(voucher.discount_value);
-        }
-
-        storeCalc.store_discount_vnd = Math.min(storeCalc.goods_vnd, Math.max(0, calculatedDiscount));
+        storeCalc.store_discount_vnd = voucherDiscount(voucher, storeCalc.goods_vnd);
         storeCalc.voucher_id = voucher.id;
       } else {
         storeCalc.store_discount_vnd = 0;
@@ -301,7 +302,6 @@ export class OrderService {
     }
 
     // Platform voucher
-    const storeList = Array.from(storeMap.values());
     const totalNetGoodsVnd = moneyNumber(storeList.reduce((acc,s)=>acc+BigInt(s.net_goods_vnd),0n));
     let platformVoucherId: string | undefined;
 
@@ -315,7 +315,7 @@ export class OrderService {
       }
       const startsAt = new Date(voucher.starts_at);
       const endsAt = new Date(voucher.ends_at);
-      if (now < startsAt || now > endsAt) {
+      if (now < startsAt || now >= endsAt) {
         throw new ApiError(422, 'VOUCHER_EXPIRED', `Voucher sàn "${platformVoucherCodeInput}" đã hết hạn hoặc chưa có hiệu lực.`);
       }
       if (!(await orderRepo.voucherAvailable(voucher,userId))) {
@@ -331,16 +331,7 @@ export class OrderService {
         );
       }
 
-      let totalPlatformDiscountVnd = 0;
-      if (voucher.discount_type === 'PERCENT') {
-        totalPlatformDiscountVnd = moneyNumber(BigInt(totalNetGoodsVnd)*BigInt(voucher.discount_value)/100n);
-        if (voucher.max_discount_vnd !== undefined && voucher.max_discount_vnd !== null) {
-          totalPlatformDiscountVnd = Math.min(totalPlatformDiscountVnd, moneyNumber(voucher.max_discount_vnd));
-        }
-      } else {
-        totalPlatformDiscountVnd = moneyNumber(voucher.discount_value);
-      }
-      totalPlatformDiscountVnd = Math.min(totalNetGoodsVnd, Math.max(0, totalPlatformDiscountVnd));
+      const totalPlatformDiscountVnd = voucherDiscount(voucher, totalNetGoodsVnd);
 
       platformVoucherId = voucher.id;
 
@@ -388,7 +379,7 @@ export class OrderService {
     return { storeList, totalPayableVnd, platformVoucherId };
   }
 
-  private validateSelection(input:OperationInputs['quoteCheckout']['body']) {
+  private validateSelection(input:OperationInputs['quoteCheckout']['body'] | OperationInputs['suggestCheckoutVouchers']['body']) {
     if(input?.source==='BUY_NOW'){
       const line=input.buy_now;
       if('cart_item_ids' in input||!line||!UUID_REGEX.test(line.product_id)||!UUID_REGEX.test(line.variant_id)||!Number.isSafeInteger(line.quantity)||line.quantity<1||line.quantity>2147483647)
@@ -403,7 +394,8 @@ export class OrderService {
     input: OperationInputs['quoteCheckout']['body'],
     auth: any,
     correlation: string,
-    orderRepo: OrderRepository
+    orderRepo: OrderRepository,
+    calculated?: Awaited<ReturnType<OrderService['calculateQuote']>>
   ): Promise<{
     storeList: StoreCalculation[];
     context: any;
@@ -423,7 +415,7 @@ export class OrderService {
       throw new ApiError(422, 'VALIDATION_FAILED', 'address_id không hợp lệ.');
     }
 
-    const { storeList, platformVoucherId } = await this.calculateQuote(
+    const { storeList, platformVoucherId } = calculated ?? await this.calculateQuote(
       cartItemIds,
       userId,
       input.store_vouchers,
@@ -490,23 +482,81 @@ export class OrderService {
     return { storeList, context, payable, platformVoucherId, snapshotHash,legacySnapshotHash };
   }
 
+  async suggestCheckoutVouchers(input: OperationInputs['suggestCheckoutVouchers']['body'], auth: any,
+    correlation: string): Promise<OperationOutputs['suggestCheckoutVouchers']> {
+    const userId = auth?.user_id;
+    if (!userId) throw new ApiError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập.');
+    this.validateSelection(input);
+    if (!['AUTO', 'MANUAL'].includes(input.mode) || (input.mode === 'AUTO' && input.code !== undefined))
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Chế độ chọn voucher không hợp lệ.');
+    if (Boolean(input.address_id) !== Boolean(input.payment_methods))
+      throw new ApiError(422, 'VALIDATION_FAILED', 'Cần đủ địa chỉ và phương thức thanh toán để tính tổng đơn.');
+
+    const repo = new OrderRepository(this.source.manager);
+    const base = await this.calculateQuote(input.source === 'BUY_NOW' ? [] : input.cart_item_ids,
+      userId, undefined, undefined, correlation, repo, input.source === 'BUY_NOW' ? input.buy_now : undefined);
+    let selected: VoucherSelection = {};
+    let optimality: OperationOutputs['suggestCheckoutVouchers']['optimality'] = 'MANUAL';
+    if (input.mode === 'AUTO') {
+      const candidates = await repo.suggestionCandidates(base.storeList.map(store => store.store_id), userId);
+      const suggestion = bestVoucherSelection(base.storeList, candidates.slice(0, 500), {candidatesComplete: candidates.length <= 500});
+      selected = suggestion.selected;
+      optimality = suggestion.optimality;
+    } else {
+      const stores = Object.fromEntries(Object.entries(input.store_vouchers ?? {})
+        .map(([id, code]) => [id, code.trim()]).filter(([, code]) => code));
+      const platform = input.platform_voucher_code?.trim();
+      selected = {...(Object.keys(stores).length ? {store_vouchers: stores} : {}),
+        ...(platform ? {platform_voucher_code: platform} : {})};
+      if (input.code !== undefined) {
+        const voucher = await repo.findVoucherByCode(input.code);
+        if (!voucher) throw new ApiError(422, 'VOUCHER_INVALID', 'Mã giảm giá không tồn tại.');
+        if (voucher.scope === 'PLATFORM') selected.platform_voucher_code = voucher.code;
+        else if (voucher.scope === 'STORE' && voucher.store_id && base.storeList.some(store => store.store_id === voucher.store_id))
+          selected.store_vouchers = {...selected.store_vouchers, [voucher.store_id]: voucher.code};
+        else throw new ApiError(422, 'VOUCHER_STORE_NOT_SELECTED', 'Mã không thuộc gian hàng của các món đang chọn.');
+      }
+    }
+    // Recheck current eligibility, quotas and thresholds using the exact quote path. No
+    // per-combination catalog calls or quota reservations are made by the optimizer.
+    const calculated = await this.applyVoucherSelection(base.storeList, userId, selected.store_vouchers,
+      selected.platform_voucher_code, repo);
+    const goods = moneyNumber(calculated.storeList.reduce((sum, store) => sum + BigInt(store.goods_vnd), 0n));
+    const netGoods = moneyNumber(calculated.storeList.reduce((sum, store) => sum + BigInt(store.net_goods_vnd) - BigInt(store.platform_discount_vnd), 0n));
+    let quote: OperationOutputs['quoteCheckout'] | undefined;
+    if (input.address_id && input.payment_methods) {
+      const {mode: _mode, code: _code, store_vouchers: _stores, platform_voucher_code: _platform, ...selection} = input;
+      const quoteInput = {...selection, ...selected} as OperationInputs['quoteCheckout']['body'];
+      const validated = await this.revalidateQuote(quoteInput, auth, correlation, repo, calculated);
+      quote = await this.persistQuote(quoteInput, userId, validated);
+    }
+    return {selected, goods_total_vnd: goods, discount_total_vnd: goods - netGoods,
+      net_goods_total_vnd: netGoods, optimality, ...(quote ? {quote} : {})};
+  }
+
   async quoteCheckout(
     input: OperationInputs['quoteCheckout']['body'],
     auth: any,
     correlation: string
   ): Promise<OperationOutputs['quoteCheckout']> {
     const orderRepo = new OrderRepository(this.source.manager);
-    const { storeList, payable, snapshotHash, context } = await this.revalidateQuote(
+    const validated = await this.revalidateQuote(
       input,
       auth,
       correlation,
       orderRepo
     );
+    return this.persistQuote(input, auth.user_id, validated);
+  }
+
+  private async persistQuote(input: OperationInputs['quoteCheckout']['body'], userId: string,
+    {storeList, payable, snapshotHash, context}: Awaited<ReturnType<OrderService['revalidateQuote']>>
+  ): Promise<OperationOutputs['quoteCheckout']> {
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
     const quoteId = randomUUID();
     await this.quoteStore.put(quoteId, {
-      user_id: auth.user_id,
+      user_id: userId,
       request_hash: fingerprint(this.quoteInput(input)),
       snapshot_hash: snapshotHash,
       snapshot_version: 2,

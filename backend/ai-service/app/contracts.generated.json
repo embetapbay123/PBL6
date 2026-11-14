@@ -35454,6 +35454,463 @@
         }
       }
     },
+    "suggestCheckoutVouchers": {
+      "method": "POST",
+      "route": "/checkout/voucher-suggestions",
+      "internal": false,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "cart_item_ids": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "maxItems": 100
+              },
+              "address_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "payment_methods": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "enum": [
+                    "SANDBOX",
+                    "COD"
+                  ]
+                },
+                "x-key-format": "uuid"
+              },
+              "platform_voucher_code": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "store_vouchers": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "x-key-format": "uuid"
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "CART"
+                ]
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "AUTO",
+                  "MANUAL"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "MANUAL only: resolve a code in its actual scope and replace that scope in the supplied selection."
+              }
+            },
+            "required": [
+              "cart_item_ids",
+              "mode"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "address_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "payment_methods": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "enum": [
+                    "SANDBOX",
+                    "COD"
+                  ]
+                },
+                "x-key-format": "uuid"
+              },
+              "platform_voucher_code": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "store_vouchers": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "x-key-format": "uuid"
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "BUY_NOW"
+                ]
+              },
+              "buy_now": {
+                "type": "object",
+                "properties": {
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "variant_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2147483647
+                  }
+                },
+                "required": [
+                  "product_id",
+                  "variant_id",
+                  "quantity"
+                ],
+                "additionalProperties": false
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "AUTO",
+                  "MANUAL"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "MANUAL only: resolve a code in its actual scope and replace that scope in the supplied selection."
+              }
+            },
+            "required": [
+              "source",
+              "buy_now",
+              "mode"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "selected",
+            "goods_total_vnd",
+            "discount_total_vnd",
+            "net_goods_total_vnd",
+            "optimality"
+          ],
+          "properties": {
+            "selected": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "store_vouchers": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "x-key-format": "uuid"
+                },
+                "platform_voucher_code": {
+                  "type": "string",
+                  "maxLength": 200
+                }
+              }
+            },
+            "goods_total_vnd": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "discount_total_vnd": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "net_goods_total_vnd": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "optimality": {
+              "type": "string",
+              "enum": [
+                "OPTIMAL",
+                "LIMITED",
+                "MANUAL"
+              ]
+            },
+            "quote": {
+              "type": "object",
+              "properties": {
+                "quote_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "stores": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "amounts": {
+                        "type": "object",
+                        "properties": {
+                          "goods_vnd": {
+                            "type": "integer",
+                            "format": "int64",
+                            "maximum": 9007199254740991
+                          },
+                          "store_discount_vnd": {
+                            "type": "integer",
+                            "format": "int64",
+                            "maximum": 9007199254740991
+                          },
+                          "platform_discount_vnd": {
+                            "type": "integer",
+                            "format": "int64",
+                            "maximum": 9007199254740991
+                          },
+                          "shipping_vnd": {
+                            "type": "integer",
+                            "format": "int64",
+                            "maximum": 9007199254740991
+                          },
+                          "payable_vnd": {
+                            "type": "integer",
+                            "format": "int64",
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "goods_vnd",
+                          "store_discount_vnd",
+                          "platform_discount_vnd",
+                          "shipping_vnd",
+                          "payable_vnd"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_title": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "variant_title": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "quantity": {
+                              "type": "integer",
+                              "minimum": 1
+                            },
+                            "unit_price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "line_total_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "product_id",
+                            "variant_id",
+                            "quantity",
+                            "unit_price_vnd",
+                            "line_total_vnd"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "return_policy_snapshot": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "version",
+                          "window_hours",
+                          "full_refund_includes_original_shipping",
+                          "fault_fee_rule",
+                          "return_address"
+                        ],
+                        "properties": {
+                          "version": {
+                            "type": "string",
+                            "enum": [
+                              "PLATFORM_2026_10_30"
+                            ]
+                          },
+                          "window_hours": {
+                            "type": "integer",
+                            "enum": [
+                              168
+                            ]
+                          },
+                          "full_refund_includes_original_shipping": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "fault_fee_rule": {
+                            "type": "string",
+                            "enum": [
+                              "STORE_IF_STORE_FAULT_CUSTOMER_IF_CHANGE_OF_MIND_ADMIN_IF_DISPUTED"
+                            ]
+                          },
+                          "return_address": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "recipient_name",
+                              "phone",
+                              "line1",
+                              "ward",
+                              "district",
+                              "city"
+                            ],
+                            "properties": {
+                              "recipient_name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "phone": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 30
+                              },
+                              "line1": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "ward": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "district": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              },
+                              "city": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 200
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "store_id",
+                      "amounts",
+                      "items"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 100
+                },
+                "payable_total_vnd": {
+                  "type": "integer",
+                  "format": "int64",
+                  "maximum": 9007199254740991
+                },
+                "expires_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "quote_id",
+                "stores",
+                "payable_total_vnd",
+                "expires_at"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    },
     "ResolveContext": {
       "method": "POST",
       "route": "/internal/context",

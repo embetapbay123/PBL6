@@ -3472,6 +3472,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/checkout/voucher-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest or validate vouchers for selected checkout items
+         * @description Uses current owned CART or BUY_NOW items and server-side quota-eligible candidates. AUTO minimizes goods payable (shipping is independent of vouchers). LIMITED never asserts optimality. MANUAL resolves codes regardless of list pagination and validates the whole selection. No voucher reservation is created. Address and payment methods must be supplied together to include a canonical checkout quote; otherwise totals exclude shipping.
+         */
+        post: operations["suggestCheckoutVouchers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5392,6 +5412,61 @@ export interface components {
         TryOnImage: string;
         ChatHistoryDeleted: {
             deleted_count: number;
+        };
+        CartVoucherSuggestionRequest: {
+            cart_item_ids: string[];
+            /** Format: uuid */
+            address_id?: string;
+            payment_methods?: {
+                [key: string]: "SANDBOX" | "COD";
+            };
+            platform_voucher_code?: string;
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            source?: "CART";
+            /** @enum {string} */
+            mode: "AUTO" | "MANUAL";
+            /** @description MANUAL only: resolve a code in its actual scope and replace that scope in the supplied selection. */
+            code?: string;
+        };
+        BuyNowVoucherSuggestionRequest: {
+            /** Format: uuid */
+            address_id?: string;
+            payment_methods?: {
+                [key: string]: "SANDBOX" | "COD";
+            };
+            platform_voucher_code?: string;
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            /** @enum {string} */
+            source: "BUY_NOW";
+            buy_now: components["schemas"]["BuyNowSelection"];
+            /** @enum {string} */
+            mode: "AUTO" | "MANUAL";
+            /** @description MANUAL only: resolve a code in its actual scope and replace that scope in the supplied selection. */
+            code?: string;
+        };
+        VoucherSuggestionRequest: components["schemas"]["CartVoucherSuggestionRequest"] | components["schemas"]["BuyNowVoucherSuggestionRequest"];
+        VoucherSelection: {
+            store_vouchers?: {
+                [key: string]: string;
+            };
+            platform_voucher_code?: string;
+        };
+        VoucherSuggestion: {
+            selected: components["schemas"]["VoucherSelection"];
+            /** Format: int64 */
+            goods_total_vnd: number;
+            /** Format: int64 */
+            discount_total_vnd: number;
+            /** Format: int64 */
+            net_goods_total_vnd: number;
+            /** @enum {string} */
+            optimality: "OPTIMAL" | "LIMITED" | "MANUAL";
+            quote?: components["schemas"]["CheckoutQuote"];
         };
     };
     responses: never;
@@ -23802,6 +23877,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ChatHistoryDeleted"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not found or outside scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description State/version/idempotency conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Validation failure */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description FEATURE_NOT_IMPLEMENTED: skeleton only */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    suggestCheckoutVouchers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoucherSuggestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Current suggestion or validated manual selection */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoucherSuggestion"];
                 };
             };
             /** @description Malformed request */

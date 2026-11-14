@@ -885,6 +885,7 @@ export const CartPage: React.FC = () => {
                 className="cart-voucher-trigger"
                 aria-haspopup="dialog"
                 aria-expanded={voucherModalOpen}
+                disabled={!selectedRows.length || loading || selectionUnavailable || needsReconcile || busyId !== null}
                 onClick={() => setVoucherModalOpen(true)}
               >
                 <Ticket size={15} className="text-[#ee4d2d]" />
@@ -987,7 +988,8 @@ export const CartPage: React.FC = () => {
           {/* Shopee-style Voucher Modal */}
           {voucherModalOpen && (
             <VoucherPicker
-              storeIds={Array.from(new Set(items.map((it) => it.store_id)))}
+              storeIds={Array.from(new Set(selectedRows.map((it) => it.store_id)))}
+              selection={{mode: 'AUTO', cart_item_ids: selectedRows.map(item => item.id)}}
               initialVouchers={pickedVouchers}
               onClose={() => setVoucherModalOpen(false)}
               onPick={handleVoucherPick}

@@ -16,6 +16,13 @@ export class OrderController {
   private readonly service = new OrderService();
   private readonly commitments=new StockCommitmentsService();
 
+  @Post('checkout/voucher-suggestions')
+  @HttpCode(200)
+  @Roles('CUSTOMER')
+  suggestCheckoutVouchers(@Body() dto: OperationInputs['suggestCheckoutVouchers']['body'], @Req() req: any) {
+    return this.service.suggestCheckoutVouchers(dto, req.auth, req.correlationId);
+  }
+
   @Get('store/stock-commitments')
   @Roles('SELLER','STORE_OWNER')
   listStockCommitments(@Req() req:any){return this.commitments.list(req.contract.query,req.auth);}
