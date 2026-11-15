@@ -1,4 +1,4 @@
-import json, os, time, uuid, logging
+import json, os, time, uuid, logging, asyncio
 from pathlib import Path
 from contextlib import asynccontextmanager
 import httpx
@@ -29,6 +29,7 @@ engine = None
 limiter = None
 http_client = None
 catalog_admission = None
+chat_media = None
 
 def live_catalog():return LiveCatalog(http_client=http_client,admission=catalog_admission) if http_client else LiveCatalog()
 
@@ -37,7 +38,7 @@ class ApiError(Exception):
 
 @asynccontextmanager
 async def lifespan(app):
-    global engine, limiter,http_client,catalog_admission
+    global engine, limiter,http_client,catalog_admission,chat_media
     required=['M4_DATABASE_URL','IDENTITY_URL','CATALOG_URL','M4_INTERNAL_KEY','AI_MODE','REDIS_URL']
     if any(not os.getenv(key) for key in required): raise RuntimeError('Missing AI configuration')
     if os.environ['AI_MODE'] not in ('mock','real'): raise RuntimeError('Unsupported AI_MODE')
@@ -51,8 +52,17 @@ async def lifespan(app):
     limiter=Redis.from_url(os.environ['REDIS_URL'],socket_timeout=1,socket_connect_timeout=1)
     http_client=httpx.AsyncClient(timeout=1,follow_redirects=False,limits=httpx.Limits(max_connections=50,max_keepalive_connections=20))
     catalog_admission=CatalogAdmission()
+    from .chat.media_service import AiChatMedia
+    if os.getenv('AI_CHAT_MEDIA_ENABLED','0') not in ('0','1') or os.getenv('AI_CHAT_MEDIA_ENABLED','0')=='1' and os.environ['AI_MODE']!='real':raise RuntimeError('Invalid AI chat media mode')
+    chat_media=AiChatMedia(engine,live_catalog())
+    await run_in_threadpool(chat_media.initialize)
+    media_task=asyncio.create_task(chat_media.run())
     try:yield
     finally:
+        media_task.cancel()
+        try:await media_task
+        except asyncio.CancelledError:pass
+        chat_media=None
         await http_client.aclose()
         http_client=None
         catalog_admission=None
@@ -193,7 +203,9 @@ def register(record):
     app.add_api_route('/api/v1'+record['path'],endpoint,methods=[record['method']],name=record['operation_id'])
 
 for record in json.loads(contract_file.read_text(encoding='utf-8')):
-    if record['service']=='M4' and record['module']!='try_on': register(record)
+    if record['service']=='M4' and record['module'] not in ('try_on','chat_media'): register(record)
 
 from .try_on.routes import install as install_try_on
 install_try_on(app,lambda:engine,lambda:http_client,context,live_catalog,lambda:limiter)
+from .chat.media_routes import install as install_chat_media
+install_chat_media(app,lambda:chat_media,context,lambda:limiter,api_error)

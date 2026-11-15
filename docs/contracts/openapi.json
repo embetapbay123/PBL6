@@ -31265,6 +31265,1123 @@
         "x-member-owner": "Trí",
         "x-implementation-status": "IMPLEMENTED"
       }
+    },
+    "/chat/media-capabilities": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "getAiChatMediaCapabilities",
+        "summary": "getAiChatMediaCapabilities",
+        "parameters": [],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiChatMediaCapabilities"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/chat/sessions/{id}/attachments": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "createAiChatAttachment",
+        "summary": "createAiChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAttachment"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatAttachmentCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions/{id}/attachments/{attachment_id}/content": {
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "uploadAiChatAttachment",
+        "summary": "uploadAiChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAttachment"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "readAiChatAttachment",
+        "summary": "readAiChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Range",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "preview",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/chat/sessions/{id}/attachments/{attachment_id}": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "getAiChatAttachment",
+        "summary": "getAiChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAttachment"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
+      },
+      "delete": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "deleteAiChatAttachment",
+        "summary": "deleteAiChatAttachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAttachment"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
+      }
+    },
+    "/chat/sessions/{id}/media-messages": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "createAiChatMediaTurn",
+        "summary": "createAiChatMediaTurn",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Try-On-Demo-Password",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMediaTurn"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMediaTurnCreate"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat/sessions/{id}/media-messages/{client_message_id}": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "getAiChatMediaTurn",
+        "summary": "getAiChatMediaTurn",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "client_message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found or outside scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State/version/idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "FEATURE_NOT_IMPLEMENTED: skeleton only",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Private AI-chat media",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMediaTurn"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {}
+        ],
+        "x-required-roles": [
+          "CUSTOMER"
+        ],
+        "x-data-scope": "PUBLIC_OR_OWN_SESSION",
+        "description": "Customer-only AI-chat media. Private assets belong to one session; no arbitrary URLs. A paid media turn is idempotent and queued under the shared try-on monetary guard. Reading an attempt never calls a provider.",
+        "x-service-owner": "M4",
+        "x-module": "chat_media",
+        "x-member-owner": "Công",
+        "x-implementation-status": "IMPLEMENTED"
+      }
     }
   },
   "components": {
@@ -32853,6 +33970,20 @@
               "MODEL_SELECTED",
               "MODEL_GENERATED",
               "CATALOG_CHANGED"
+            ]
+          },
+          "attachments": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "$ref": "#/components/schemas/ChatAttachment"
+            }
+          },
+          "media_analysis": {
+            "type": "string",
+            "enum": [
+              "IMAGES",
+              "VIDEO_FRAMES"
             ]
           }
         },
@@ -38905,6 +40036,198 @@
             "enum": [
               30
             ]
+          }
+        }
+      },
+      "AiChatMediaCapabilities": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "enabled",
+          "images_per_message",
+          "image_max_bytes",
+          "video_max_bytes",
+          "video_max_duration_seconds",
+          "demo_password_required",
+          "remaining",
+          "limit",
+          "provider_label",
+          "retention_days",
+          "video_max_frames",
+          "audio_supported",
+          "consent_version"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "images_per_message": {
+            "type": "integer",
+            "enum": [
+              3
+            ]
+          },
+          "image_max_bytes": {
+            "type": "integer",
+            "enum": [
+              5242880
+            ]
+          },
+          "video_max_bytes": {
+            "type": "integer",
+            "enum": [
+              20971520
+            ]
+          },
+          "video_max_duration_seconds": {
+            "type": "integer",
+            "enum": [
+              30
+            ]
+          },
+          "demo_password_required": {
+            "type": "boolean"
+          },
+          "remaining": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          "limit": {
+            "type": "integer",
+            "enum": [
+              3
+            ]
+          },
+          "provider_label": {
+            "type": "string",
+            "enum": [
+              "OpenAI"
+            ]
+          },
+          "retention_days": {
+            "type": "integer",
+            "enum": [
+              30
+            ]
+          },
+          "video_max_frames": {
+            "type": "integer",
+            "enum": [
+              8
+            ]
+          },
+          "audio_supported": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "consent_version": {
+            "type": "string",
+            "enum": [
+              "chat-media-openai-v1"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "pending_turn": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "session_id",
+              "client_message_id"
+            ],
+            "properties": {
+              "session_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "client_message_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
+      "ChatMediaTurnCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_message_id",
+          "content",
+          "attachment_ids",
+          "consent_version"
+        ],
+        "properties": {
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 2000
+          },
+          "attachment_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "consent_version": {
+            "type": "string",
+            "enum": [
+              "chat-media-openai-v1"
+            ]
+          }
+        }
+      },
+      "ChatMediaTurn": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "client_message_id",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "QUEUED",
+              "PROCESSING",
+              "SUCCEEDED",
+              "FAILED",
+              "UNKNOWN",
+              "CANCELLED"
+            ]
+          },
+          "assistant": {
+            "$ref": "#/components/schemas/ChatMessage"
+          },
+          "error_code": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 400
           }
         }
       }

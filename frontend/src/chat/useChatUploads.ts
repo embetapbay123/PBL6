@@ -40,5 +40,6 @@ export function useChatUploads(){
   if(item.asset)await request(attachmentPath(scope,id,item.asset.id),{method:'DELETE'});
  }
  function accepted(scope:ChatScope,id:string){const key=scope+':'+id;(current.current[key]??[]).forEach(item=>{controllers.current.get(item.key)?.abort();URL.revokeObjectURL(item.url);});publish(key,[]);}
- return {entries,current,select,remove,retry:upload,accepted};
+ function discard(scope:ChatScope,id:string){const items=current.current[scope+':'+id]??[];accepted(scope,id);return Promise.allSettled(items.filter(item=>item.asset).map(item=>request(attachmentPath(scope,id,item.asset!.id),{method:'DELETE'})));}
+ return {entries,current,select,remove,retry:upload,accepted,discard};
 }

@@ -2,8 +2,8 @@ import {ApiError,request} from '../api/client';
 import type {components} from '../api/generated';
 export type ChatAttachment=components['schemas']['ChatAttachment'];
 export type ChatMediaCapabilities=components['schemas']['ChatMediaCapabilities'];
-export type ChatScope='CUSTOMER'|'STORE';
-export const attachmentPath=(scope:ChatScope,id:string,asset?:string)=>`/${scope==='CUSTOMER'?'me':'store'}/conversations/${encodeURIComponent(id)}/attachments${asset?'/'+encodeURIComponent(asset):''}`;
+export type ChatScope='CUSTOMER'|'STORE'|'AI';
+export const attachmentPath=(scope:ChatScope,id:string,asset?:string)=>`${scope==='AI'?'/chat/sessions':'/'+(scope==='CUSTOMER'?'me':'store')+'/conversations'}/${encodeURIComponent(id)}/attachments${asset?'/'+encodeURIComponent(asset):''}`;
 export const mediaCapabilities=(scope:ChatScope,id:string,signal?:AbortSignal)=>request<ChatMediaCapabilities>(attachmentPath(scope,id)+'/capabilities',{signal});
 export const readChatMedia=(scope:ChatScope,id:string,asset:string,signal:AbortSignal)=>request<Blob>(attachmentPath(scope,id,asset)+'/content',{signal,binaryResponse:true});
 export function checkChatFiles(files:File[],current:{kind:'IMAGE'|'VIDEO'}[]){

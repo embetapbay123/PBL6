@@ -66,6 +66,10 @@ def test_delete_all_covers_every_page_and_cannot_resurrect_a_deleted_session(eng
 
 
 def test_delete_chat_http_auth_scope_and_validation(engine,monkeypatch):
+    # ResolveContext is mocked below; the test must not depend on or receive
+    # production internal credentials just to construct that client.
+    monkeypatch.setenv('M4_INTERNAL_KEY','isolated-http-test-key')
+    monkeypatch.setenv('IDENTITY_URL','http://identity.test')
     user,other=str(uuid.uuid4()),str(uuid.uuid4());s=service(engine);session=s.create(user,'http-delete')
     class Limiter:
         async def eval(self,*args):return 1

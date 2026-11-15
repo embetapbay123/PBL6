@@ -30,6 +30,7 @@ def engine():
         db.execute(text('CREATE SCHEMA ' + schema))
         db.execute(text('SET LOCAL search_path TO ' + schema + ',public'))
         db.exec_driver_sql((Path(__file__).resolve().parents[1] / 'migrations/009_virtual_try_on.sql').read_text())
+        db.exec_driver_sql((Path(__file__).resolve().parents[1] / 'migrations/010_shared_paid_ai_budget.sql').read_text())
     scoped = create_engine(url, connect_args={'options': '-csearch_path=' + schema + ',public'}, hide_parameters=True)
     try: yield scoped
     finally:

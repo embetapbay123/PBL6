@@ -3520,6 +3520,119 @@ export class DeleteStoreConversationAttachmentHeadersDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
   "x-store-context"?: string;
 }
+export class GetAiChatMediaCapabilitiesPathDto {
+}
+export class GetAiChatMediaCapabilitiesQueryDto {
+}
+export class GetAiChatMediaCapabilitiesHeadersDto {
+}
+export class CreateAiChatAttachmentBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "client_upload_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["IMAGE", "VIDEO"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "kind"!: "IMAGE" | "VIDEO";
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 20971520},true),defaultMessage:()=> 'Invalid contract field'}})
+  "size_bytes"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "minLength": 64, "maxLength": 64, "example": "0000000000000000000000000000000000000000000000000000000000000000"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "sha256"!: string;
+}
+export class CreateAiChatAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class CreateAiChatAttachmentQueryDto {
+}
+export class CreateAiChatAttachmentHeadersDto {
+}
+export class UploadAiChatAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class UploadAiChatAttachmentQueryDto {
+}
+export class UploadAiChatAttachmentHeadersDto {
+}
+export class ReadAiChatAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class ReadAiChatAttachmentQueryDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "boolean", "default": false}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean", "default": false},false),defaultMessage:()=> 'Invalid contract field'}})
+  "preview": boolean = false;
+}
+export class ReadAiChatAttachmentHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 100}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 100},false),defaultMessage:()=> 'Invalid contract field'}})
+  "range"?: string;
+}
+export class GetAiChatAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class GetAiChatAttachmentQueryDto {
+}
+export class GetAiChatAttachmentHeadersDto {
+}
+export class DeleteAiChatAttachmentPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_id"!: string;
+}
+export class DeleteAiChatAttachmentQueryDto {
+}
+export class DeleteAiChatAttachmentHeadersDto {
+}
+export class CreateAiChatMediaTurnBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "client_message_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 0, "maxLength": 2000},true),defaultMessage:()=> 'Invalid contract field'}})
+  "content"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},true),defaultMessage:()=> 'Invalid contract field'}})
+  "attachment_ids"!: Array<string>;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "enum": ["chat-media-openai-v1"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "consent_version"!: "chat-media-openai-v1";
+}
+export class CreateAiChatMediaTurnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class CreateAiChatMediaTurnQueryDto {
+}
+export class CreateAiChatMediaTurnHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 128}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 128},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-try-on-demo-password"?: string;
+}
+export class GetAiChatMediaTurnPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "client_message_id"!: string;
+}
+export class GetAiChatMediaTurnQueryDto {
+}
+export class GetAiChatMediaTurnHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3995,6 +4108,14 @@ export const runtimeDtos = {
   readStoreConversationAttachment: {body: undefined, path: ReadStoreConversationAttachmentPathDto, query: ReadStoreConversationAttachmentQueryDto, headers: ReadStoreConversationAttachmentHeadersDto},
   getStoreConversationAttachment: {body: undefined, path: GetStoreConversationAttachmentPathDto, query: GetStoreConversationAttachmentQueryDto, headers: GetStoreConversationAttachmentHeadersDto},
   deleteStoreConversationAttachment: {body: undefined, path: DeleteStoreConversationAttachmentPathDto, query: DeleteStoreConversationAttachmentQueryDto, headers: DeleteStoreConversationAttachmentHeadersDto},
+  getAiChatMediaCapabilities: {body: undefined, path: GetAiChatMediaCapabilitiesPathDto, query: GetAiChatMediaCapabilitiesQueryDto, headers: GetAiChatMediaCapabilitiesHeadersDto},
+  createAiChatAttachment: {body: CreateAiChatAttachmentBodyDto, path: CreateAiChatAttachmentPathDto, query: CreateAiChatAttachmentQueryDto, headers: CreateAiChatAttachmentHeadersDto},
+  uploadAiChatAttachment: {body: undefined, path: UploadAiChatAttachmentPathDto, query: UploadAiChatAttachmentQueryDto, headers: UploadAiChatAttachmentHeadersDto},
+  readAiChatAttachment: {body: undefined, path: ReadAiChatAttachmentPathDto, query: ReadAiChatAttachmentQueryDto, headers: ReadAiChatAttachmentHeadersDto},
+  getAiChatAttachment: {body: undefined, path: GetAiChatAttachmentPathDto, query: GetAiChatAttachmentQueryDto, headers: GetAiChatAttachmentHeadersDto},
+  deleteAiChatAttachment: {body: undefined, path: DeleteAiChatAttachmentPathDto, query: DeleteAiChatAttachmentQueryDto, headers: DeleteAiChatAttachmentHeadersDto},
+  createAiChatMediaTurn: {body: CreateAiChatMediaTurnBodyDto, path: CreateAiChatMediaTurnPathDto, query: CreateAiChatMediaTurnQueryDto, headers: CreateAiChatMediaTurnHeadersDto},
+  getAiChatMediaTurn: {body: undefined, path: GetAiChatMediaTurnPathDto, query: GetAiChatMediaTurnQueryDto, headers: GetAiChatMediaTurnHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},

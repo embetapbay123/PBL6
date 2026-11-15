@@ -13966,6 +13966,95 @@
                           "MODEL_GENERATED",
                           "CATALOG_CHANGED"
                         ]
+                      },
+                      "attachments": {
+                        "type": "array",
+                        "maxItems": 3,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "kind",
+                            "status",
+                            "expected_bytes"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "IMAGE",
+                                "VIDEO"
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "UPLOADING",
+                                "PROCESSING",
+                                "READY",
+                                "REJECTED",
+                                "DELETED",
+                                "EXPIRED"
+                              ]
+                            },
+                            "expected_bytes": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 20971520
+                            },
+                            "stored_bytes": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 20971520
+                            },
+                            "width": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 8192
+                            },
+                            "height": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 8192
+                            },
+                            "duration_ms": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 30000
+                            },
+                            "content_type": {
+                              "type": "string",
+                              "enum": [
+                                "image/webp",
+                                "video/mp4"
+                              ]
+                            },
+                            "expires_at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "error_code": {
+                              "type": "string",
+                              "maxLength": 100
+                            },
+                            "message": {
+                              "type": "string",
+                              "maxLength": 300
+                            }
+                          }
+                        }
+                      },
+                      "media_analysis": {
+                        "type": "string",
+                        "enum": [
+                          "IMAGES",
+                          "VIDEO_FRAMES"
+                        ]
                       }
                     },
                     "required": [
@@ -14139,6 +14228,95 @@
                 "MODEL_GENERATED",
                 "CATALOG_CHANGED"
               ]
+            },
+            "attachments": {
+              "type": "array",
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "kind",
+                  "status",
+                  "expected_bytes"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "IMAGE",
+                      "VIDEO"
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "UPLOADING",
+                      "PROCESSING",
+                      "READY",
+                      "REJECTED",
+                      "DELETED",
+                      "EXPIRED"
+                    ]
+                  },
+                  "expected_bytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 20971520
+                  },
+                  "stored_bytes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 20971520
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8192
+                  },
+                  "duration_ms": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30000
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "enum": [
+                      "image/webp",
+                      "video/mp4"
+                    ]
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "error_code": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 300
+                  }
+                }
+              }
+            },
+            "media_analysis": {
+              "type": "string",
+              "enum": [
+                "IMAGES",
+                "VIDEO_FRAMES"
+              ]
             }
           },
           "required": [
@@ -14309,6 +14487,95 @@
                                 "MODEL_SELECTED",
                                 "MODEL_GENERATED",
                                 "CATALOG_CHANGED"
+                              ]
+                            },
+                            "attachments": {
+                              "type": "array",
+                              "maxItems": 3,
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "id",
+                                  "kind",
+                                  "status",
+                                  "expected_bytes"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "IMAGE",
+                                      "VIDEO"
+                                    ]
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "enum": [
+                                      "UPLOADING",
+                                      "PROCESSING",
+                                      "READY",
+                                      "REJECTED",
+                                      "DELETED",
+                                      "EXPIRED"
+                                    ]
+                                  },
+                                  "expected_bytes": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 20971520
+                                  },
+                                  "stored_bytes": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 20971520
+                                  },
+                                  "width": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 8192
+                                  },
+                                  "height": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 8192
+                                  },
+                                  "duration_ms": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "maximum": 30000
+                                  },
+                                  "content_type": {
+                                    "type": "string",
+                                    "enum": [
+                                      "image/webp",
+                                      "video/mp4"
+                                    ]
+                                  },
+                                  "expires_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "error_code": {
+                                    "type": "string",
+                                    "maxLength": 100
+                                  },
+                                  "message": {
+                                    "type": "string",
+                                    "maxLength": 300
+                                  }
+                                }
+                              }
+                            },
+                            "media_analysis": {
+                              "type": "string",
+                              "enum": [
+                                "IMAGES",
+                                "VIDEO_FRAMES"
                               ]
                             }
                           },
@@ -37581,6 +37848,1245 @@
             "message": {
               "type": "string",
               "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "getAiChatMediaCapabilities": {
+      "method": "GET",
+      "route": "/chat/media-capabilities",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "enabled",
+            "images_per_message",
+            "image_max_bytes",
+            "video_max_bytes",
+            "video_max_duration_seconds",
+            "demo_password_required",
+            "remaining",
+            "limit",
+            "provider_label",
+            "retention_days",
+            "video_max_frames",
+            "audio_supported",
+            "consent_version"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "images_per_message": {
+              "type": "integer",
+              "enum": [
+                3
+              ]
+            },
+            "image_max_bytes": {
+              "type": "integer",
+              "enum": [
+                5242880
+              ]
+            },
+            "video_max_bytes": {
+              "type": "integer",
+              "enum": [
+                20971520
+              ]
+            },
+            "video_max_duration_seconds": {
+              "type": "integer",
+              "enum": [
+                30
+              ]
+            },
+            "demo_password_required": {
+              "type": "boolean"
+            },
+            "remaining": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "limit": {
+              "type": "integer",
+              "enum": [
+                3
+              ]
+            },
+            "provider_label": {
+              "type": "string",
+              "enum": [
+                "OpenAI"
+              ]
+            },
+            "retention_days": {
+              "type": "integer",
+              "enum": [
+                30
+              ]
+            },
+            "video_max_frames": {
+              "type": "integer",
+              "enum": [
+                8
+              ]
+            },
+            "audio_supported": {
+              "type": "boolean",
+              "enum": [
+                false
+              ]
+            },
+            "consent_version": {
+              "type": "string",
+              "enum": [
+                "chat-media-openai-v1"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "pending_turn": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "session_id",
+                "client_message_id"
+              ],
+              "properties": {
+                "session_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "client_message_id": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "createAiChatAttachment": {
+      "method": "POST",
+      "route": "/chat/sessions/{id}/attachments",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_upload_id",
+          "kind",
+          "size_bytes",
+          "sha256"
+        ],
+        "properties": {
+          "client_upload_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20971520
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "minLength": 64,
+            "maxLength": 64,
+            "example": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        }
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "uploadAiChatAttachment": {
+      "method": "PUT",
+      "route": "/chat/sessions/{id}/attachments/{attachment_id}/content",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "readAiChatAttachment": {
+      "method": "GET",
+      "route": "/chat/sessions/{id}/attachments/{attachment_id}/content",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "preview": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "string",
+            "maxLength": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {},
+        "206": {}
+      }
+    },
+    "getAiChatAttachment": {
+      "method": "GET",
+      "route": "/chat/sessions/{id}/attachments/{attachment_id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "deleteAiChatAttachment": {
+      "method": "DELETE",
+      "route": "/chat/sessions/{id}/attachments/{attachment_id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "attachment_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "kind",
+            "status",
+            "expected_bytes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "IMAGE",
+                "VIDEO"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "REJECTED",
+                "DELETED",
+                "EXPIRED"
+              ]
+            },
+            "expected_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20971520
+            },
+            "stored_bytes": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20971520
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 8192
+            },
+            "duration_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30000
+            },
+            "content_type": {
+              "type": "string",
+              "enum": [
+                "image/webp",
+                "video/mp4"
+              ]
+            },
+            "expires_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 300
+            }
+          }
+        }
+      }
+    },
+    "createAiChatMediaTurn": {
+      "method": "POST",
+      "route": "/chat/sessions/{id}/media-messages",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "client_message_id",
+          "content",
+          "attachment_ids",
+          "consent_version"
+        ],
+        "properties": {
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 2000
+          },
+          "attachment_ids": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "consent_version": {
+            "type": "string",
+            "enum": [
+              "chat-media-openai-v1"
+            ]
+          }
+        }
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-try-on-demo-password": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "202": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "client_message_id",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "client_message_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "PROCESSING",
+                "SUCCEEDED",
+                "FAILED",
+                "UNKNOWN",
+                "CANCELLED"
+              ]
+            },
+            "assistant": {
+              "type": "object",
+              "properties": {
+                "session_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "content": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "product_cards": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "product_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "current_price_vnd": {
+                        "type": "integer",
+                        "format": "int64",
+                        "maximum": 9007199254740991
+                      },
+                      "status": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "product_id",
+                      "current_price_vnd",
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 100
+                },
+                "fallback": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "mock",
+                    "real"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "ASSISTANT",
+                    "USER",
+                    "SYSTEM"
+                  ]
+                },
+                "fallback_reason": {
+                  "type": "string",
+                  "enum": [
+                    "PROVIDER_NOT_CONFIGURED",
+                    "PROVIDER_UNAVAILABLE",
+                    "PROVIDER_INVALID_RESPONSE",
+                    "NO_MATCH",
+                    "MODEL_SELECTED",
+                    "MODEL_GENERATED",
+                    "CATALOG_CHANGED"
+                  ]
+                },
+                "attachments": {
+                  "type": "array",
+                  "maxItems": 3,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "kind",
+                      "status",
+                      "expected_bytes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "IMAGE",
+                          "VIDEO"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "UPLOADING",
+                          "PROCESSING",
+                          "READY",
+                          "REJECTED",
+                          "DELETED",
+                          "EXPIRED"
+                        ]
+                      },
+                      "expected_bytes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20971520
+                      },
+                      "stored_bytes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20971520
+                      },
+                      "width": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 8192
+                      },
+                      "height": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 8192
+                      },
+                      "duration_ms": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 30000
+                      },
+                      "content_type": {
+                        "type": "string",
+                        "enum": [
+                          "image/webp",
+                          "video/mp4"
+                        ]
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "error_code": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "message": {
+                        "type": "string",
+                        "maxLength": 300
+                      }
+                    }
+                  }
+                },
+                "media_analysis": {
+                  "type": "string",
+                  "enum": [
+                    "IMAGES",
+                    "VIDEO_FRAMES"
+                  ]
+                }
+              },
+              "required": [
+                "content"
+              ],
+              "additionalProperties": false
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 400
+            }
+          }
+        }
+      }
+    },
+    "getAiChatMediaTurn": {
+      "method": "GET",
+      "route": "/chat/sessions/{id}/media-messages/{client_message_id}",
+      "internal": false,
+      "service": "M4",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "client_message_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "client_message_id",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "client_message_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "QUEUED",
+                "PROCESSING",
+                "SUCCEEDED",
+                "FAILED",
+                "UNKNOWN",
+                "CANCELLED"
+              ]
+            },
+            "assistant": {
+              "type": "object",
+              "properties": {
+                "session_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "content": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "product_cards": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "product_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "current_price_vnd": {
+                        "type": "integer",
+                        "format": "int64",
+                        "maximum": 9007199254740991
+                      },
+                      "status": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "product_id",
+                      "current_price_vnd",
+                      "status"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "maxItems": 100
+                },
+                "fallback": {
+                  "type": "boolean"
+                },
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "mock",
+                    "real"
+                  ]
+                },
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "ASSISTANT",
+                    "USER",
+                    "SYSTEM"
+                  ]
+                },
+                "fallback_reason": {
+                  "type": "string",
+                  "enum": [
+                    "PROVIDER_NOT_CONFIGURED",
+                    "PROVIDER_UNAVAILABLE",
+                    "PROVIDER_INVALID_RESPONSE",
+                    "NO_MATCH",
+                    "MODEL_SELECTED",
+                    "MODEL_GENERATED",
+                    "CATALOG_CHANGED"
+                  ]
+                },
+                "attachments": {
+                  "type": "array",
+                  "maxItems": 3,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "kind",
+                      "status",
+                      "expected_bytes"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "IMAGE",
+                          "VIDEO"
+                        ]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "UPLOADING",
+                          "PROCESSING",
+                          "READY",
+                          "REJECTED",
+                          "DELETED",
+                          "EXPIRED"
+                        ]
+                      },
+                      "expected_bytes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20971520
+                      },
+                      "stored_bytes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20971520
+                      },
+                      "width": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 8192
+                      },
+                      "height": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 8192
+                      },
+                      "duration_ms": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 30000
+                      },
+                      "content_type": {
+                        "type": "string",
+                        "enum": [
+                          "image/webp",
+                          "video/mp4"
+                        ]
+                      },
+                      "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "error_code": {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      "message": {
+                        "type": "string",
+                        "maxLength": 300
+                      }
+                    }
+                  }
+                },
+                "media_analysis": {
+                  "type": "string",
+                  "enum": [
+                    "IMAGES",
+                    "VIDEO_FRAMES"
+                  ]
+                }
+              },
+              "required": [
+                "content"
+              ],
+              "additionalProperties": false
+            },
+            "error_code": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "message": {
+              "type": "string",
+              "maxLength": 400
             }
           }
         }

@@ -1049,6 +1049,46 @@
     "path": "/store/conversations/{id}/attachments/{attachment_id}",
     "internal": false
   },
+  "getAiChatMediaCapabilities": {
+    "method": "GET",
+    "path": "/chat/media-capabilities",
+    "internal": false
+  },
+  "createAiChatAttachment": {
+    "method": "POST",
+    "path": "/chat/sessions/{id}/attachments",
+    "internal": false
+  },
+  "uploadAiChatAttachment": {
+    "method": "PUT",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}/content",
+    "internal": false
+  },
+  "readAiChatAttachment": {
+    "method": "GET",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}/content",
+    "internal": false
+  },
+  "getAiChatAttachment": {
+    "method": "GET",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}",
+    "internal": false
+  },
+  "deleteAiChatAttachment": {
+    "method": "DELETE",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}",
+    "internal": false
+  },
+  "createAiChatMediaTurn": {
+    "method": "POST",
+    "path": "/chat/sessions/{id}/media-messages",
+    "internal": false
+  },
+  "getAiChatMediaTurn": {
+    "method": "GET",
+    "path": "/chat/sessions/{id}/media-messages/{client_message_id}",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",

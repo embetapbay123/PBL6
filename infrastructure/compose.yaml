@@ -123,8 +123,8 @@ services:
     command: [node, dist/identity-store-service/src/main.js]
   m4:
     build: {context: .., dockerfile: backend/ai-service/Dockerfile}
-    environment: {<<: [*app-env, *try-on-env], SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}', CHAT_API_KEY: '${CHAT_API_KEY:-}', CHAT_THINKING: '${CHAT_THINKING:-auto}', CHAT_RESPONSE_FORMAT: '${CHAT_RESPONSE_FORMAT:-json_object}', CHAT_TIMEOUT_SECONDS: '${CHAT_TIMEOUT_SECONDS:-2}', CHAT_DAILY_REQUEST_LIMIT: '${CHAT_DAILY_REQUEST_LIMIT:-100}', CHAT_DAILY_TOKEN_LIMIT: '${CHAT_DAILY_TOKEN_LIMIT:-100000}'}
-    volumes: [tryondata:/var/lib/pbl6/try-on]
+    environment: {<<: [*app-env, *try-on-env], SERVICE_ID: M4, M4_DATABASE_URL: 'postgresql://m4:${M4_DB_PASSWORD}@postgres:5432/m4', AI_MODE: '${AI_MODE}', CHAT_PROVIDER: '${CHAT_PROVIDER:-none}', CHAT_MODEL_URL: '${CHAT_MODEL_URL:-}', CHAT_MODEL: '${CHAT_MODEL:-}', CHAT_API_KEY: '${CHAT_API_KEY:-}', CHAT_THINKING: '${CHAT_THINKING:-auto}', CHAT_RESPONSE_FORMAT: '${CHAT_RESPONSE_FORMAT:-json_object}', CHAT_TIMEOUT_SECONDS: '${CHAT_TIMEOUT_SECONDS:-2}', CHAT_DAILY_REQUEST_LIMIT: '${CHAT_DAILY_REQUEST_LIMIT:-100}', CHAT_DAILY_TOKEN_LIMIT: '${CHAT_DAILY_TOKEN_LIMIT:-100000}', AI_CHAT_MEDIA_ENABLED: '${AI_CHAT_MEDIA_ENABLED:-0}', AI_CHAT_MEDIA_STORAGE_DIR: /var/lib/pbl6/ai-chat-media}
+    volumes: [tryondata:/var/lib/pbl6/try-on, aichatmedia:/var/lib/pbl6/ai-chat-media]
     depends_on: {postgres: {condition: service_healthy}}
     restart: unless-stopped
   worker-m1:
@@ -205,6 +205,7 @@ services:
     restart: 'no'
     command: [node, dist/shared/src/migrate.js]
 volumes:
+  aichatmedia:
   chatmedia:
   tryondata:
   deliverydata:

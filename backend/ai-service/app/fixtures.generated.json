@@ -2222,7 +2222,9 @@
       "mode": "mock",
       "id": "11111111-1111-4111-8111-111111111111",
       "role": "ASSISTANT",
-      "fallback_reason": "PROVIDER_NOT_CONFIGURED"
+      "fallback_reason": "PROVIDER_NOT_CONFIGURED",
+      "attachments": [],
+      "media_analysis": "IMAGES"
     },
     "status": 200
   },
@@ -5867,6 +5869,234 @@
       "duration_ms": 1,
       "content_type": "image/webp",
       "expires_at": "2026-10-02T00:00:00Z",
+      "error_code": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 200
+  },
+  "getAiChatMediaCapabilities": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "enabled": false,
+      "images_per_message": 3,
+      "image_max_bytes": 5242880,
+      "video_max_bytes": 20971520,
+      "video_max_duration_seconds": 30,
+      "demo_password_required": false,
+      "remaining": 0,
+      "limit": 3,
+      "provider_label": "OpenAI",
+      "retention_days": 30,
+      "video_max_frames": 8,
+      "audio_supported": false,
+      "consent_version": "chat-media-openai-v1",
+      "message": "fixture-value",
+      "pending_turn": {
+        "session_id": "11111111-1111-4111-8111-111111111111",
+        "client_message_id": "11111111-1111-4111-8111-111111111111"
+      }
+    },
+    "status": 200
+  },
+  "createAiChatAttachment": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "client_upload_id": "11111111-1111-4111-8111-111111111111",
+        "kind": "IMAGE",
+        "size_bytes": 1,
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "kind": "IMAGE",
+      "status": "UPLOADING",
+      "expected_bytes": 1,
+      "stored_bytes": 0,
+      "width": 1,
+      "height": 1,
+      "duration_ms": 1,
+      "content_type": "image/webp",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "error_code": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 201
+  },
+  "uploadAiChatAttachment": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "attachment_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "kind": "IMAGE",
+      "status": "UPLOADING",
+      "expected_bytes": 1,
+      "stored_bytes": 0,
+      "width": 1,
+      "height": 1,
+      "duration_ms": 1,
+      "content_type": "image/webp",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "error_code": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 200
+  },
+  "readAiChatAttachment": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "attachment_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {
+        "preview": false
+      },
+      "headers": {}
+    },
+    "response": {},
+    "status": 200
+  },
+  "getAiChatAttachment": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "attachment_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "kind": "IMAGE",
+      "status": "UPLOADING",
+      "expected_bytes": 1,
+      "stored_bytes": 0,
+      "width": 1,
+      "height": 1,
+      "duration_ms": 1,
+      "content_type": "image/webp",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "error_code": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 200
+  },
+  "deleteAiChatAttachment": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "attachment_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "kind": "IMAGE",
+      "status": "UPLOADING",
+      "expected_bytes": 1,
+      "stored_bytes": 0,
+      "width": 1,
+      "height": 1,
+      "duration_ms": 1,
+      "content_type": "image/webp",
+      "expires_at": "2026-10-02T00:00:00Z",
+      "error_code": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 200
+  },
+  "createAiChatMediaTurn": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "client_message_id": "11111111-1111-4111-8111-111111111111",
+        "content": "fixture-value",
+        "attachment_ids": [
+          "11111111-1111-4111-8111-111111111111"
+        ],
+        "consent_version": "chat-media-openai-v1"
+      },
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "client_message_id": "11111111-1111-4111-8111-111111111111",
+      "status": "QUEUED",
+      "assistant": {
+        "session_id": "11111111-1111-4111-8111-111111111111",
+        "content": "fixture-value",
+        "product_cards": [],
+        "fallback": false,
+        "mode": "mock",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "role": "ASSISTANT",
+        "fallback_reason": "PROVIDER_NOT_CONFIGURED",
+        "attachments": [],
+        "media_analysis": "IMAGES"
+      },
+      "error_code": "fixture-value",
+      "message": "fixture-value"
+    },
+    "status": 202
+  },
+  "getAiChatMediaTurn": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "client_message_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "client_message_id": "11111111-1111-4111-8111-111111111111",
+      "status": "QUEUED",
+      "assistant": {
+        "session_id": "11111111-1111-4111-8111-111111111111",
+        "content": "fixture-value",
+        "product_cards": [],
+        "fallback": false,
+        "mode": "mock",
+        "id": "11111111-1111-4111-8111-111111111111",
+        "role": "ASSISTANT",
+        "fallback_reason": "PROVIDER_NOT_CONFIGURED",
+        "attachments": [],
+        "media_analysis": "IMAGES"
+      },
       "error_code": "fixture-value",
       "message": "fixture-value"
     },

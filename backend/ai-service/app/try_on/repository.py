@@ -6,6 +6,7 @@ from datetime import timedelta
 from sqlalchemy import text
 
 from .config import CONSENT_VERSION, MODEL, PROMPT_VERSION, TryOnError, now, periods
+from ..paid_budget import shared_spend
 
 
 def row(result):
@@ -30,13 +31,10 @@ class Repository:
             count(*) FILTER(WHERE ip_hash=:ip AND created_at>now()-interval '1 minute' AND quota_charged) AS ip_minute,
             max(created_at) FILTER(WHERE owner_id=CAST(:owner AS uuid) AND quota_charged) AS last_created,
             count(*) FILTER(WHERE owner_id=CAST(:owner AS uuid) AND status IN ('QUEUED','PROCESSING','UNKNOWN')) AS pending,
-            coalesce(sum(CASE WHEN cost_state='RELEASED' THEN 0 WHEN cost_state='SETTLED' THEN charged_micro_usd ELSE reserved_micro_usd END)
-              FILTER(WHERE budget_day=:day OR cost_state IN ('RESERVED','UNKNOWN')),0) AS day_spend,
-            coalesce(sum(CASE WHEN cost_state='RELEASED' THEN 0 WHEN cost_state='SETTLED' THEN charged_micro_usd ELSE reserved_micro_usd END)
-              FILTER(WHERE budget_month=:month OR cost_state IN ('RESERVED','UNKNOWN')),0) AS month_spend,
             count(*) FILTER(WHERE status='UNKNOWN') AS unknown_jobs
           FROM try_on_job
         """), {'owner': owner, 'ip': ip_hash, 'day': day, 'month': month}))
+        value.update(shared_spend(db, day, month))
         value['reset_at'] = reset.isoformat()
         return value
 
@@ -150,7 +148,7 @@ class Repository:
         with self.engine.begin() as db:
             if self.guard(db) or not cfg.ready:
                 return None
-            active = db.execute(text("SELECT count(*) FROM try_on_job WHERE status='PROCESSING' AND lease_until>now()")).scalar_one()
+            active = db.execute(text("SELECT (SELECT count(*) FROM try_on_job WHERE status='PROCESSING' AND lease_until>now())+(SELECT count(*) FROM paid_ai_call WHERE status='PROCESSING' AND lease_until>now())")).scalar_one()
             if active >= cfg.concurrency:
                 return None
             value = row(db.execute(text("SELECT j.*,p.file_key AS photo_key FROM try_on_job j JOIN try_on_photo p ON p.id=j.photo_id WHERE j.status='QUEUED' AND j.deleted_at IS NULL ORDER BY j.created_at FOR UPDATE OF j SKIP LOCKED LIMIT 1")))

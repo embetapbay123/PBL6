@@ -51,7 +51,9 @@ class ChatRuntime:
             row=db.execute(text("SELECT * FROM chat_session WHERE id=:s AND status='ACTIVE' AND created_at>now()-interval '30 days'"),{'s':id}).mappings().first()
             owned=row and (str(row['user_id'])==user if user else row['user_id'] is None and key and hmac.compare_digest(row['anonymous_key'],digest(key)))
             if not owned:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
-            history=db.execute(text('SELECT role,content FROM chat_message WHERE session_id=:s ORDER BY created_at DESC,id DESC LIMIT 40'),{'s':id}).mappings().all()
+            if db.execute(text("SELECT 1 FROM paid_ai_call WHERE session_id=:s AND status IN ('QUEUED','PROCESSING') AND content_deleted_at IS NULL LIMIT 1"),{'s':id}).first():
+                raise InternalError(409,'CHAT_MEDIA_PENDING','Có câu hỏi đang chờ kết quả. Hãy đọc lại kết quả trước khi gửi tiếp.')
+            history=db.execute(text('SELECT role,content FROM chat_message WHERE session_id=:s ORDER BY message_sequence DESC LIMIT 40'),{'s':id}).mappings().all()
             return row['version'],list(reversed([dict(r) for r in history]))
 
     def list(self,user,query):
@@ -64,31 +66,45 @@ class ChatRuntime:
         with self.engine.connect() as db:
             total=db.execute(text('SELECT count(*) FROM chat_session s WHERE '+condition),params).scalar_one()
             if id and not total:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
-            rows=db.execute(text("SELECT s.id,s.user_id,s.created_at,(SELECT left(content,200) FROM chat_message WHERE session_id=s.id AND role='USER' ORDER BY created_at,id LIMIT 1) AS title FROM chat_session s WHERE "+condition+' ORDER BY s.created_at DESC,s.id DESC LIMIT :size OFFSET :offset'),params).mappings().all()
+            rows=db.execute(text("SELECT s.id,s.user_id,s.created_at,(SELECT left(coalesce(nullif(content,''),'Đã gửi ảnh/video'),200) FROM chat_message WHERE session_id=s.id AND role='USER' ORDER BY message_sequence LIMIT 1) AS title FROM chat_session s WHERE "+condition+' ORDER BY s.created_at DESC,s.id DESC LIMIT :size OFFSET :offset'),params).mappings().all()
             items=[{'id':str(r['id']),'user_id':str(r['user_id']),'created_at':r['created_at'].isoformat(),**({'title':redact(r['title'],120)[:140]} if r['title'] else {})} for r in rows]
             if id and items:
                 mp,ms=query.get('message_page',1),query.get('message_size',20)
                 count=db.execute(text('SELECT count(*) FROM chat_message WHERE session_id=:s'),params).scalar_one()
-                messages=db.execute(text('SELECT id,session_id,role,content,response_meta FROM chat_message WHERE session_id=:s ORDER BY created_at,id LIMIT :limit OFFSET :skip'),dict(params,limit=ms,skip=(mp-1)*ms)).mappings().all()
+                messages=db.execute(text('SELECT id,session_id,role,content,response_meta,attachment_ids FROM chat_message WHERE session_id=:s ORDER BY message_sequence LIMIT :limit OFFSET :skip'),dict(params,limit=ms,skip=(mp-1)*ms)).mappings().all()
+                asset_ids=[str(asset) for message in messages for asset in message['attachment_ids']]
+                assets={}
+                if asset_ids:
+                    from .media_repository import attachment
+                    from ..try_on.config import now
+                    for asset in db.execute(text('SELECT * FROM ai_chat_attachment WHERE session_id=:s AND owner_id=:u AND id=ANY(CAST(:ids AS uuid[]))'),dict(params,ids=asset_ids)).mappings():
+                        value=dict(asset)
+                        if value['status']=='READY' and value['expires_at']<=now():value['status']='EXPIRED'
+                        assets[str(asset['id'])]=(asset['message_id'],attachment(value))
                 # History is text only: historical cards/prices must never masquerade as current quotes.
-                items[0]['messages']={'items':[{'id':str(m['id']),'session_id':str(m['session_id']),'role':m['role'],'content':m['content']} for m in messages],'total':count,'page':mp,'size':ms}
+                items[0]['messages']={'items':[{'id':str(m['id']),'session_id':str(m['session_id']),'role':m['role'],'content':m['content'],
+                    **({'attachments':[assets[str(a)][1] for a in m['attachment_ids'] if str(a) in assets and assets[str(a)][0]==m['id']]} if m['attachment_ids'] else {}),
+                    **({'media_analysis':'VIDEO_FRAMES'} if m['response_meta'].get('video_frames_only') else {})} for m in messages],'total':count,'page':mp,'size':ms}
         return {'items':items,'total':total,'page':page,'size':size}
 
     def delete(self,user,id=None):
         if not user:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
         with self.engine.begin() as db:
+            db.execute(text('SELECT paused FROM try_on_guard WHERE id=1 FOR UPDATE'))
             # Lock the same parent rows used by save(), then remove children first (the FK is restrictive).
             rows=db.execute(text('SELECT id FROM chat_session WHERE user_id=:user'+(' AND id=:id' if id else '')+' ORDER BY id FOR UPDATE'),{'user':user,'id':id}).all()
             if id and not rows:raise InternalError(404,'NOT_FOUND','Không tìm thấy phiên chat của bạn.')
             ids=[str(row[0]) for row in rows]
             if ids:
+                from .media_repository import MediaRepository
+                MediaRepository.retire_sessions(db,ids)
                 db.execute(text('DELETE FROM chat_message WHERE session_id=ANY(CAST(:ids AS uuid[]))'),{'ids':ids})
                 db.execute(text('DELETE FROM chat_session WHERE user_id=:user AND id=ANY(CAST(:ids AS uuid[]))'),{'user':user,'ids':ids})
             return {'deleted_count':len(ids)}
 
     def save(self,id,version,question,response,selection,elapsed,stores,estimated=0):
         with self.engine.begin() as db:
-            changed=db.execute(text("UPDATE chat_session SET version=version+1 WHERE id=:s AND version=:v AND status='ACTIVE' AND created_at>now()-interval '30 days' RETURNING id"),{'s':id,'v':version}).first()
+            changed=db.execute(text("UPDATE chat_session SET version=version+1 WHERE id=:s AND version=:v AND status='ACTIVE' AND created_at>now()-interval '30 days' AND NOT EXISTS(SELECT 1 FROM paid_ai_call WHERE session_id=:s AND status IN ('QUEUED','PROCESSING') AND content_deleted_at IS NULL) RETURNING id"),{'s':id,'v':version}).first()
             if not changed:raise InternalError(409,'VERSION_CONFLICT','Phiên chat đã thay đổi; tải lại rồi gửi lại.')
             db.execute(text("INSERT INTO chat_message(session_id,role,content) VALUES(:s,'USER',:c)"),{'s':id,'c':redact(question)})
             db.execute(text("INSERT INTO chat_message(id,session_id,role,content,product_refs,response_meta) VALUES(:id,:s,'ASSISTANT',:c,CAST(:refs AS jsonb),CAST(:meta AS jsonb))"),{'id':response['id'],'s':id,'c':response['content'],'refs':json.dumps(response['product_cards']),'meta':json.dumps({'fallback':selection.fallback,'reason':selection.reason})})

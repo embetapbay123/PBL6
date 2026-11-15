@@ -1,9 +1,10 @@
 FROM python:3.12.10-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg util-linux && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY backend/ai-service/requirements.lock.txt ./
 RUN pip install --no-cache-dir -r requirements.lock.txt
 COPY backend/ai-service/ ./
 COPY docs/contracts/endpoint-status.json /app/contracts/endpoint-status.json
-RUN useradd -m app && mkdir -p /var/lib/pbl6/try-on && chown -R app:app /var/lib/pbl6
+RUN useradd -m app && mkdir -p /var/lib/pbl6/try-on /var/lib/pbl6/ai-chat-media && chown -R app:app /var/lib/pbl6
 USER app
 CMD ["uvicorn","app.main:app","--host","0.0.0.0","--port","3104","--proxy-headers","--forwarded-allow-ips","*"]

@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import {useQuery} from '@tanstack/react-query';
 import {
   ArrowDown,
   ArrowUpRight,
@@ -21,6 +22,11 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../api/auth-context";
 import { ApiError } from "../../api/client";
+import {callOperation} from '../../api/operations';
+import {ChatAttachmentView,ChatUploadTray} from '../../chat/ChatMedia';
+import {checkChatFiles} from '../../chat/chat-media';
+import {useChatUploads} from '../../chat/useChatUploads';
+import {useAiMediaTurn,type PendingAiMedia} from '../../chat/useAiMediaTurn';
 import type { OperationOutputs } from "../../api/operations.generated";
 import {
   createChatSession,
@@ -73,6 +79,13 @@ export function AiChatPanel({ active }: { active: boolean }) {
     [reload, setReload] = useState(0),
     [historyError, setHistoryError] = useState<unknown>();
   const [historyMutationError,setHistoryMutationError]=useState<unknown>();
+  const uploads=useChatUploads();
+  const capability=useQuery({queryKey:['ai-chat-media-capabilities',session?.context?.user_id],enabled:customer&&active,retry:false,staleTime:30000,queryFn:({signal})=>callOperation('getAiChatMediaCapabilities',{}, {signal})});
+  const [consent,setConsent]=useState(false),[demoPassword,setDemoPassword]=useState(''),[preparingMedia,setPreparingMedia]=useState(false);
+  const consentId=useId(),passwordId=useId();
+  const paid=useAiMediaTurn(session?.context?.user_id,mediaSuccess,cause=>{setError(cause);setConsent(false);setDemoPassword('');void capability.refetch();});
+  const files=uploads.entries['AI:'+current?.id]??[];
+  useEffect(()=>{const found=capability.data?.pending_turn;if(found)paid.adopt(found.session_id,found.client_message_id);},[capability.data?.pending_turn?.session_id,capability.data?.pending_turn?.client_message_id]);
   const [titles, setTitles] = useState<Record<string, string>>({}),
     [showLatest, setShowLatest] = useState(false);
   const [historyOpen,setHistoryOpen]=useState(false);
@@ -135,6 +148,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
   }
   async function choose(id: string, p?: number) {
     if (flight.current) return;
+    if(current?.id!==id&&files.length){setError(new ApiError(409,'CHAT_MEDIA_DRAFT_PENDING','Phiên hiện tại còn tệp đính kèm. Gửi hoặc bỏ tệp trước khi chuyển phiên.'));return;}
     flight.current = true;
     setBusy(true);
     setError(undefined);
@@ -194,8 +208,13 @@ export function AiChatPanel({ active }: { active: boolean }) {
   }
   async function send(event: FormEvent) {
     event.preventDefault();
+    if(paid.pending){void paid.read();return;}
     const content = draft.trim();
-    if (!content || flight.current) return;
+    if ((!content&&!files.length) || flight.current) return;
+    if(files.length){
+      if(!current||files.some(file=>file.stage!=='READY')||!consent||capability.data?.demo_password_required&&!demoPassword.trim())return;
+      await paid.start(current.id,content,files.map(file=>file.asset!),demoPassword);setDemoPassword('');return;
+    }
     flight.current = true;
     setBusy(true);
     setError(undefined);
@@ -263,7 +282,9 @@ export function AiChatPanel({ active }: { active: boolean }) {
       if (alive.current) setBusy(false);
     }
   }
-  function newSession() {
+  function newSession(force=false) {
+    if(paid.pending&&!force)return;
+    if(current)void uploads.discard('AI',current.id);
     setCurrent(undefined);
     setMessages([]);
     setMessageTotal(0);
@@ -287,7 +308,8 @@ export function AiChatPanel({ active }: { active: boolean }) {
         if (!(sessionId && cause instanceof ApiError && cause.status === 404)) throw cause;
       }
       if (!alive.current) return;
-      if (!sessionId || current?.id === sessionId) newSession();
+      paid.forgetDeleted(sessionId);
+      if (!sessionId || current?.id === sessionId) newSession(true);
       setTitles(previous => {
         if (!sessionId) return {};
         const next = { ...previous }; delete next[sessionId]; return next;
@@ -305,6 +327,42 @@ export function AiChatPanel({ active }: { active: boolean }) {
   const deleteSession = (sessionId: string) => { void removeHistory(sessionId); };
   const clearAllSessions = () => { void removeHistory(); };
   const visibleSessions = history?.items ?? [];
+  async function selectMedia(selected:File[]){
+    if(!customer||flight.current||paid.pending)return;
+    try{
+      checkChatFiles(selected,files);flight.current=true;setBusy(true);setPreparingMedia(true);setError(undefined);
+      let target=current;
+      if(!target){target=await createChatSession();if(!alive.current)return;setCurrent(target);}
+      uploads.select('AI',target.id,selected);setConsent(false);
+    }catch(cause){if(alive.current)setError(cause);}
+    finally{flight.current=false;if(alive.current){setBusy(false);setPreparingMedia(false);}}
+  }
+  function mediaSuccess(record:PendingAiMedia,answer:Message){
+    setDemoPassword('');setConsent(false);uploads.accepted('AI',record.sessionId);setDraft('');setError(undefined);
+    setTitles(value=>({...value,[record.sessionId]:value[record.sessionId]??(record.content||'Đã gửi ảnh/video')}));
+    if(record.canReplay&&current?.id===record.sessionId)setMessages(value=>value.some(item=>item.id===answer.id)?value:[...value,{role:'USER',content:record.content,attachments:record.assets},answer]);
+    following.current=true;setReload(value=>value+1);void capability.refetch();
+    // The paid response is already acknowledged. A failed history refresh may
+    // ask for another read, never another model call.
+    void choose(record.sessionId);
+  }
+  useEffect(()=>{if(paid.pending&&paid.pending.sessionId!==current?.id&&!flight.current)void choose(paid.pending.sessionId);},[paid.pending?.sessionId]);
+  const pendingFiles=paid.pending?(uploads.entries['AI:'+paid.pending.sessionId]??[]):[];
+  const hasMedia=!!files.length||!!paid.pending;
+  const mediaSlot=customer&&(capability.data?.enabled||hasMedia)?<>
+    <ChatUploadTray items={paid.pending?pendingFiles:files} locked={busy||!!paid.pending} onSelect={selected=>void selectMedia(selected)} onRemove={item=>{if(current)void uploads.remove('AI',current.id,item).catch(setError);}} onRetry={item=>{if(current)void uploads.retry('AI',current.id,item);}}/>
+    {paid.pending&&!pendingFiles.length&&!!paid.pending.assets.length&&<div className="chat-private-media-list">{paid.pending.assets.map(asset=><ChatAttachmentView key={asset.id} scope="AI" id={paid.pending!.sessionId} asset={asset}/>)}</div>}
+    {hasMedia&&!paid.pending&&<div className="ai-media-consent">
+      <p>Còn {capability.data?.remaining??0}/3 lượt phân tích hôm nay. Ảnh được gửi tới OpenAI; lịch sử và tệp lưu tối đa 30 ngày.</p>
+      {files.some(file=>file.kind==='VIDEO')&&<p>Video được đọc qua tối đa 8 khung hình, không phân tích âm thanh.</p>}
+      <label htmlFor={consentId}><input id={consentId} type="checkbox" checked={consent} disabled={busy} onChange={event=>setConsent(event.target.checked)}/>Tôi đồng ý gửi ảnh để phân tích.</label>
+    </div>}
+    {hasMedia&&capability.data?.demo_password_required&&(!paid.pending||paid.pending.status==='NOT_FOUND')&&<div className="ai-media-password"><label htmlFor={passwordId}>Mật khẩu demo</label><input id={passwordId} type="password" maxLength={128} autoComplete="off" value={demoPassword} disabled={paid.busy} onChange={event=>setDemoPassword(event.target.value)}/></div>}
+    {paid.pending&&<p role="status" className="chat-send-note">{paid.pending.status==='UNKNOWN'?'Chưa xác định kết quả. Chỉ đọc lại câu hỏi này.':paid.pending.status==='NOT_FOUND'?'Chưa tìm thấy câu hỏi đã gửi. Có thể thử gửi lại cùng câu hỏi.':'Câu hỏi đang được xử lý. Bạn có thể thu nhỏ chat và đọc lại kết quả.'}</p>}
+    {paid.pending?.status==='NOT_FOUND'&&paid.pending.canReplay&&<button type="button" disabled={paid.busy||!!capability.data?.demo_password_required&&!demoPassword.trim()} onClick={()=>{void paid.retryAdmission(demoPassword);setDemoPassword('');}}>Thử gửi lại cùng câu hỏi</button>}
+    {paid.error!=null&&<ErrorView error={paid.error}/>}
+    {hasMedia&&capability.error!=null&&<ErrorView error={capability.error} onRetry={()=>void capability.refetch()}/>}
+  </>:undefined;
 
   return (
     <div
@@ -323,7 +381,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
           <button
             type="button"
             className="chat-new-session"
-            disabled={busy}
+            disabled={busy||!!paid.pending}
             onClick={()=>{newSession();closeHistory();}}
           >
             <Plus size={16} />
@@ -356,7 +414,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
                   <button
                     type="button"
                     className="chat-session-row"
-                    disabled={busy}
+                    disabled={busy||!!paid.pending}
                     aria-current={s.id === current?.id ? "true" : undefined}
                     onClick={() => void choose(s.id)}
                   >
@@ -446,7 +504,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
               title="Phiên mới"
               aria-label="Phiên mới"
               disabled={busy}
-              onClick={newSession}
+              onClick={()=>newSession()}
             >
               <Plus size={18} />
             </button>
@@ -466,7 +524,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
             if (following.current) setShowLatest(false);
           }}
         >
-          {!messages.length && !busy && (
+          {!messages.length && !busy && !hasMedia && (
             <div className="chat-welcome">
               <span className="chat-welcome-icon">
                 <ShoppingBag size={28} />
@@ -524,6 +582,8 @@ export function AiChatPanel({ active }: { active: boolean }) {
               </span>
               <div className="chat-bubble">
                 <ChatMessageContent content={m.content} />
+                {!!m.attachments?.length&&current&&<div className="chat-private-media-list">{m.attachments.map(asset=><ChatAttachmentView key={asset.id} scope="AI" id={current.id} asset={asset}/>)}</div>}
+                {m.media_analysis==='VIDEO_FRAMES'&&<small>Phân tích khung hình lấy mẫu, không có âm thanh.</small>}
               </div>
               {!!m.product_cards?.length && (
                 <div className="chat-product-cards">
@@ -563,7 +623,7 @@ export function AiChatPanel({ active }: { active: boolean }) {
           {busy && (
             <p className="chat-thinking" role="status">
               <LoaderCircle size={16} className="chat-spinner" />
-              Đang tải phản hồi…
+              {preparingMedia?'Đang chuẩn bị…':'Đang tải phản hồi…'}
             </p>
           )}
         </div>
@@ -588,12 +648,16 @@ export function AiChatPanel({ active }: { active: boolean }) {
         )}
         <ChatComposer
           label="Câu hỏi"
-          draft={draft}
+          draft={paid.pending?.content??draft}
           onChange={setDraft}
           onSubmit={send}
-          busy={busy}
-          disabled={!draft.trim()}
-          buttonText={busy ? "Đang trả lời…" : "Gửi câu hỏi"}
+          busy={busy||paid.busy}
+          locked={!!paid.pending}
+          retry={!!paid.pending}
+          hasAttachments={hasMedia}
+          mediaSlot={mediaSlot}
+          disabled={!paid.pending&&(!draft.trim()&&!files.length||files.some(file=>file.stage!=='READY')||files.length>0&&(!consent||!capability.data?.enabled||!!capability.data?.demo_password_required&&!demoPassword.trim()))}
+          buttonText={paid.pending?'Đọc kết quả':busy ? "Đang trả lời…" : "Gửi câu hỏi"}
           placeholder="Bạn muốn tìm món gì?"
         />
 

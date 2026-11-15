@@ -2275,5 +2275,101 @@
       "STORE_OWNER",
       "SELLER"
     ]
+  },
+  {
+    "method": "GET",
+    "path": "/chat/media-capabilities",
+    "operation_id": "getAiChatMediaCapabilities",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/chat/sessions/{id}/attachments",
+    "operation_id": "createAiChatAttachment",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}/content",
+    "operation_id": "uploadAiChatAttachment",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}",
+    "operation_id": "getAiChatAttachment",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}/content",
+    "operation_id": "readAiChatAttachment",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "DELETE",
+    "path": "/chat/sessions/{id}/attachments/{attachment_id}",
+    "operation_id": "deleteAiChatAttachment",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/chat/sessions/{id}/media-messages",
+    "operation_id": "createAiChatMediaTurn",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/chat/sessions/{id}/media-messages/{client_message_id}",
+    "operation_id": "getAiChatMediaTurn",
+    "service": "M4",
+    "module": "chat_media",
+    "owner": "Công",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "CUSTOMER"
+    ]
   }
 ]
