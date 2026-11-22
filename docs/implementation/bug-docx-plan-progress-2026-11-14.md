@@ -2,17 +2,17 @@
 
 Cập nhật ngày 22/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-docx-plan`, nhánh `codex/bug-docx-follow-through`. Tách từ `6c364af` để giữ nguyên WIP ví của workspace chính.
 
-**Đổi máy chủ:** các đợt 1–4 bên dưới được nghiệm thu trên máy cũ ngày 14–15/11. Máy mới `debian2` hiện có source nền khác (wallet và nhãn bên hủy đơn) nhưng chưa có migration media M3 015/M4 010–012. Không coi kết quả cũ là đã nghiệm thu lại máy mới. Đợt 5 đã triển khai và nghiệm thu riêng trên nền hiện hành; cần chuyển lại các thay đổi trước và chạy đợt 6. [Chi tiết nền máy mới](bug-docx-storefront-2026-11-21.md).
+**Debian2:** đã chuyển và nghiệm thu các đợt 1–5 trên nền wallet/nhãn hủy đơn hiện hành. M3 có migration 015, M4 có 010–012; chat Store/AI media đã bật và qua public thật. Đợt 6 đã qua hồi quy UI, sort 25 sản phẩm và tranh tồn cuối; B33 đã qua public cuối sau CSS, web `DEPLOY_OK`. [Báo cáo chuyển máy](bug-debian2-reconciliation-2026-11-22.md). [Bảng 33 nhóm](bug-docx-final-acceptance-2026-11-22.md).
 
 | Đợt | Trạng thái | Kết quả |
 |---|---|---|
-| 0. Baseline và đối chiếu | Đã khởi tạo | Dùng bảng B01–B33 của plan; chụp bản public trước sửa. Chưa tuyên bố nghiệm thu lại mọi nhóm trong tài liệu gốc. |
+| 0. Baseline và đối chiếu | Hoàn tất | Đã đối chiếu B01–B33 và ghi bằng chứng mới trên Debian2; xem báo cáo nghiệm thu cuối để phân biệt UI fixture, public và giới hạn CI. |
 | 1. Hoàn thiện UI/copy | Đã triển khai, có bằng chứng UI | Chi tiết bên dưới. |
 | 2. Voucher tốt nhất | Đã triển khai và nghiệm thu | B01: 447 unit, 28 PostgreSQL integration, 22 UI và public quote/đơn COD qua. [Chi tiết](bug-docx-vouchers-2026-11-15.md). |
 | 3. Tìm hội thoại | Đã triển khai và nghiệm thu | M3/M4 + FE, public 25 hội thoại/25 phiên và xóa theo sở hữu qua. [Chi tiết](bug-docx-chat-search-2026-11-15.md). |
 | 4. Media chat | Đã triển khai và nghiệm thu Store + AI | [Chat gian hàng](bug-docx-store-chat-media-2026-11-15.md); [AI đọc ảnh/frame thật, budget chung và public playback](bug-docx-ai-chat-media-2026-11-15.md). |
 | 5. Nội dung gian hàng | Đã triển khai và nghiệm thu trên máy mới | B28: 455 unit, 11 PostgreSQL/FFmpeg, 9 UI, 4 nhóm public và 8 ca layout/link trên hai shop demo qua. [Chi tiết CMS](bug-docx-storefront-2026-11-21.md). |
-| 6. Nghiệm thu toàn bộ | Chưa hoàn tất | Có kiểm tra và triển khai riêng từng đợt; không tính là đã đóng cả 33 nhóm. |
+| 6. Nghiệm thu toàn bộ | Hoàn tất trong phạm vi B01–B33 | 42 UI + 12 UI sau sửa tab + tám nhóm biên qua. Public cuối bốn nhóm: sort 25 sản phẩm, đổi tồn, race COD và tab/điều hướng 320/390/1366 px; cleanup qua. Bảng đủ B01–B33 ghi rõ mức bằng chứng và giới hạn. |
 
 ## Đợt 1
 
@@ -41,4 +41,4 @@ Chứng cứ đặt tại `C:/PBL6/outputs/bug-ui-phase1-2026-11-14/`: `before/r
 
 ## Bước đang làm
 
-Đợt 2, 3 và 4 đã triển khai, có báo cáo riêng. AI media đã bật cho Customer đủ hạn mức/cổng demo, gọi OpenAI trực tiếp; chat chữ giữ provider OpenAI-compatible hiện có, model deepseek-v4.1-flash. Giữ 1 USD/ngày, 10 USD/tháng dùng chung với thử đồ. Đợt 5 CMS đã qua trên máy mới. Bước tiếp theo: ghép lại các đợt 1–4 lên nền Debian2 mà vẫn giữ wallet/nhãn hủy đơn hiện hành, rồi nghiệm thu toàn bộ B01–B33. Mô tả AI/provider ở đoạn này là trạng thái máy cũ; AI media trên Debian2 vẫn tắt cho đến khi chuyển và kiểm tra lại.
+Các đợt 1–5 hiện đã triển khai và nghiệm thu lại trên Debian2. Giữ cấu hình model gen ảnh và hạn mức chung 1 USD/ngày, 10 USD/tháng; không gọi gen ảnh trong nghiệm thu này. Hai call OpenAI phân tích ảnh/frame có tổng debit bảo thủ 0,000838 USD. Web cuối sau sửa tab đã DEPLOY_OK; public đo tab/điều hướng và cleanup đều qua, đợt 6 đã hoàn tất trong phạm vi 33 nhóm. Xem bảng 33 nhóm để phân biệt UI fixture với giao dịch BE thật; không coi đây là nghiệm thu lại WIP ví/QR.

@@ -240,3 +240,15 @@ python scripts/scan_git_candidate.py --staged --report artifacts/secret-scan-sta
 ```
 
 `git ls-files -ci --exclude-standard` phải rỗng. Bỏ `--staged` khi rà checkout trước khi đóng gói. Bản quét toàn checkout báo `private_key_material` cho fixture `backend/tests/unit/fixtures/smtp-test-key.pem`; đối chiếu đúng file với bản đã review. Xử lý mọi phát hiện khác trước khi upload hoặc push. Nếu secret đã từng vào Git, thu hồi hoặc xoay secret tương ứng và xử lý lịch sử repo riêng.
+
+Nếu chạy trong worktree không có `.env`, truyền `--secret-env C:/PBL6/infrastructure/.env` để scanner đối chiếu giá trị local trong bộ nhớ; báo cáo không chứa giá trị secret.
+
+## 6. Trạng thái sau rollout bug.docx ngày 22/11/2026
+
+UI/voucher/chat/CMS đã chuyển sang Debian2. M3 có migration 015 media và 016 storefront; M4 có 010–012 cho budget dùng chung, media và thứ tự tin. Chat Store/AI media đã nghiệm thu public. Giữ ngân sách 1 USD/ngày, 10 USD/tháng; hai call nghiệm thu chỉ phân tích pixels/frame, không gen ảnh.
+
+Release riêng `C:/PBL6/artifacts/debian2-chat-release-20261122` giữ nền wallet/nhãn hủy đơn hiện hành. Script web vẫn build trước rồi chỉ thay `web`, chờ `DEPLOY_OK`. Backend dùng `deploy-demo-storefront.ps1 -Scope vouchers|chat|storefront` hoặc `deploy-demo-ai-chat-media.ps1` với ReleaseRoot đã review; không dùng quy trình web cho DB/BE.
+
+Các helper chuyển máy kiểm source hash so với đúng baseline đã giữ trong artifacts, kiểm normalized Compose/env/mounts và chỉ rollout nhóm service được chọn. Đây là quy trình cho các baseline cụ thể của đợt chuyển máy; lần thay đổi BE tiếp theo phải review lại baseline/manifest và chạy preflight, không bỏ kiểm tra hash để ép triển khai. `prepare-debian2-vouchers.py` chuẩn bị bản ghép riêng, dừng khi còn conflict; vẫn phải sinh lại contract, build và chạy kiểm thử trước rollout. Không đóng gói `.env`, private key hoặc snapshot runtime.
+
+[Báo cáo rollout](bug-debian2-reconciliation-2026-11-22.md) và [nghiệm thu B01–B33](bug-docx-final-acceptance-2026-11-22.md) ghi kết quả public, cleanup và giới hạn kiểm thử.

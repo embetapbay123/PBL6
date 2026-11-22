@@ -32,8 +32,34 @@ async function upload(bytes,kind){
 }
 async function binary(id,token=tokens[0],method='GET',headers={}){const r=await fetch(evidence.base+'/api/v1'+assetPath(id)+'/content',{method,headers:{Authorization:'Bearer '+token,...headers},signal:AbortSignal.timeout(30000)});return {status:r.status,headers:r.headers,bytes:Buffer.from(await r.arrayBuffer())};}
 async function waitTurn(key){let t;for(let i=0;i<55;i++){t=await api(`/chat/sessions/${session}/media-messages/${key}`,tokens[0]);if(!['QUEUED','PROCESSING'].includes(t.status))break;await new Promise(r=>setTimeout(r,2000));}return t;}
+async function videoOnly(samples){
+ evidence.mode='VIDEO_ONLY';
+ session=(await api('/chat/sessions',tokens[0],'POST',{})).id;
+ // A failed image-run is already recorded. This path admits only the missing video call.
+ const video=await upload(samples.mp4,'VIDEO');record('VIDEO_UPLOAD_AND_NATIVE_PROCESSING',{status:video.status,duration_ms:video.duration_ms});
+ const key=randomUUID(),body={content:'Nhìn các khung hình lấy mẫu: nền chuyển từ màu gì sang màu gì? Chỉ nêu màu và nói không có âm thanh, không gợi ý sản phẩm.',client_message_id:key,attachment_ids:[video.id],consent_version:'chat-media-openai-v1'},headers={'X-Try-On-Demo-Password':demoPassword};
+ await api(`/chat/sessions/${session}/media-messages`,tokens[0],'POST',body,headers);
+ const result=await waitTurn(key);expect(result.status).toBe('SUCCEEDED');expect(result.assistant.media_analysis).toBe('VIDEO_FRAMES');
+ const answer=result.assistant.content.toLocaleLowerCase('vi');expect(answer).toMatch(/xanh|blue/);expect(answer).toContain('đỏ');expect(answer.indexOf('xanh')).toBeLessThan(answer.lastIndexOf('đỏ'));expect(answer).toContain('âm thanh');
+ const replay=await api(`/chat/sessions/${session}/media-messages`,tokens[0],'POST',body,headers);expect(replay.id).toBe(result.id);
+ const costs=ledger();expect(costs).toHaveLength(1);expect(costs[0].status).toBe('SUCCEEDED');expect(costs[0].cost_state).toBe('SETTLED');expect(costs[0].has_provider_request_id).toBe(true);expect(costs[0].model).toBe('gpt-6-luna');
+ evidence.conservative_cost_micro_usd=Number(costs[0].charged_micro_usd);expect(evidence.conservative_cost_micro_usd).toBeGreaterThan(0);expect(evidence.conservative_cost_micro_usd).toBeLessThan(200000);
+ record('REAL_OPENAI_VIDEO_FRAMES_AND_IDEMPOTENT_READBACK',{answer:result.assistant.content,ledger:costs[0],paid_calls:1,frames:8,audio:false});
+ const range=await binary(video.id,tokens[0],'GET',{Range:'bytes=0-15'});expect(range.status).toBe(206);expect(range.bytes.toString('ascii',4,8)).toBe('ftyp');expect((await binary(video.id,tokens[1])).status).toBe(404);
+ await new Promise(r=>setTimeout(r,12000));browser=await chromium.launch({headless:true});page=await browser.newPage({viewport:{width:390,height:844}});page.setDefaultTimeout(25000);
+ page.on('pageerror',e=>evidence.page_errors.push(e.message));page.on('response',r=>{const p=new URL(r.url()).pathname;if(p.includes('/api/v1/')&&r.status()>=400&&!p.startsWith('/api/v1/auth/'))evidence.unexpected_http.push({path:p,status:r.status()});});
+ await page.goto(evidence.base+'/login');await page.getByLabel('Email',{exact:true}).fill(emails[0]);await page.getByLabel('Mật khẩu',{exact:true}).fill(password);await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập',exact:true})).toBeVisible();
+ await new Promise(r=>setTimeout(r,12000));await page.goto(evidence.base+'/profile');await page.getByRole('button',{name:'Mở chat',exact:true}).first().click();
+ const panel=page.getByRole('dialog',{name:'Trung tâm chat',exact:true}).getByRole('tabpanel',{name:'Trợ lý AI',exact:true});
+ await panel.getByRole('button',{name:'Lịch sử chat AI',exact:true}).click();await panel.getByRole('button',{name:/Nhìn các khung hình/}).first().click();await expect(panel.getByRole('log')).toContainText(result.assistant.content);
+ await panel.getByRole('button',{name:/Tải video/}).click();const player=panel.getByLabel('Video đính kèm',{exact:true});await expect.poll(()=>player.evaluate(v=>v.readyState)).toBeGreaterThanOrEqual(2);await player.evaluate(async v=>{v.muted=true;await v.play();});await expect.poll(()=>player.evaluate(v=>v.currentTime)).toBeGreaterThan(0);await player.evaluate(v=>v.pause());await page.screenshot({path:path.join(folder,'mobile-ai-video-playback.png'),fullPage:true});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ const history=await api('/me/chat/sessions?session_id='+session+'&message_size=20',tokens[0]);expect(history.items[0].messages.items.map(m=>m.role)).toEqual(['USER','ASSISTANT']);
+ record('PUBLIC_AI_HISTORY_AND_MOBILE_VIDEO_PLAYBACK',{viewport:390,range:206,foreign_read:404,actual_playback:true});
+ await api('/me/chat/sessions/'+session,tokens[0],'DELETE');expect((await binary(video.id)).status).toBe(404);expect(ledger().every(r=>r.content_deleted&&r.cost_state==='SETTLED')).toBe(true);record('DELETE_REVOKES_FILES_AND_PRESERVES_FINANCIAL_LEDGER');expect(evidence.page_errors).toEqual([]);expect(evidence.unexpected_http).toEqual([]);
+}
 async function run(){
  demoPassword=await privateInput();const samples=await setup();
+ if(process.env.PBL6_AI_ACCEPTANCE_MODE==='VIDEO_ONLY')return videoOnly(samples);
  browser=await chromium.launch({headless:true});page=await browser.newPage({viewport:{width:1366,height:900}});page.setDefaultTimeout(25000);
  page.on('pageerror',e=>evidence.page_errors.push(e.message));page.on('response',r=>{const p=new URL(r.url()).pathname;if(p.includes('/api/v1/')&&r.status()>=400&&!p.startsWith('/api/v1/auth/'))evidence.unexpected_http.push({path:p,status:r.status()});});
  await page.goto(evidence.base+'/login');await page.getByLabel('Email',{exact:true}).fill(emails[0]);await page.getByLabel('Mật khẩu',{exact:true}).fill(password);await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();await expect(page.getByRole('heading',{name:'Đã đăng nhập',exact:true})).toBeVisible();

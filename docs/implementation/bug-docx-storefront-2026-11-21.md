@@ -39,3 +39,10 @@
 - Web build lại trên Windows trước script bắt buộc. Lượt upload đầu chưa tới server do Tailscale `NoState`; sau khi người dùng khởi động lại Tailscale, lượt chạy lại kết thúc `DEPLOY_OK`. Không ghi nhận lỗi kết nối này thành deploy thành công.
 
 Evidence local: `C:/PBL6/outputs/bug-storefront-phase5-2026-11-21/`. Không đưa evidence riêng, token, env, DB dump hoặc dữ liệu tệp upload vào Git.
+
+## Bổ sung sau chuyển đủ đợt 1–4 ngày 22/11
+
+- Release hiện hành đã có 227 public + 18 internal operations, các đợt voucher/chat và migrations media trên Debian2; trạng thái “chưa chuyển” ở phần bằng chứng ban đầu là lịch sử rollout CMS riêng.
+- Owner-only menu và campaign cap đã sửa tại `375c1fa`, 12 CMS UI qua. Guest không gọi API voucher tài khoản (`41c421f`), không đổi dữ liệu campaign public.
+- Sort public toàn bộ 25 sản phẩm qua hai trang, reload và 390 px đã qua; fixture catalog riêng được dừng, shop/danh tính khóa sau kiểm thử. Không thêm hàng nghiệm thu vào hai shop demo thật.
+- [Báo cáo chuyển máy](bug-debian2-reconciliation-2026-11-22.md) và [bảng nghiệm thu 33 nhóm](bug-docx-final-acceptance-2026-11-22.md) chứa kết quả cuối, kể cả giới hạn bộ E2E cũ của nền wallet/QR.

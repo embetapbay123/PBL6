@@ -7,7 +7,7 @@ stage=$(mktemp -d)
 archive="$HOME/.pbl6-ai-media-deploy-$id.tgz"
 manifest="$HOME/.pbl6-ai-media-deploy-$id-manifest.tgz"
 trap 'rm -rf -- "$stage"; rm -f -- "$archive" "$manifest" "$HOME/.pbl6-ai-media-deploy-$id.sh"' EXIT
-exec 9>"$HOME/.pbl6-demo-ai-deploy.lock"
+exec 9>"$HOME/.pbl6-demo-backend-deploy.lock"
 flock -w 60 9
 tar -xzf "$archive" -C "$stage"
 tar -xzf "$manifest" -C "$stage"
@@ -17,7 +17,8 @@ python3 - <<'PY'
 from pathlib import Path
 import hashlib,json,os,subprocess
 p=Path(os.environ['AI_MEDIA_DEPLOY_STAGE']);manifest=json.loads((p/'manifest.json').read_text());snapshots={}
-base=['docker','compose','-p','pbl6-demo','--env-file','infrastructure/.env','-f','infrastructure/compose.yaml']
+base=['docker','compose','-p','pbl6-demo','--env-file','infrastructure/.env','-f','infrastructure/compose.yaml','-f','infrastructure/secrets/tunnel.compose.yaml']
+configured=json.loads(subprocess.check_output(base+['config','--format','json']))
 for service in ('m4','worker-try-on'):
  running=subprocess.check_output(base+['ps','-q','m4']).decode().strip() if service=='m4' else 'pbl6-demo-worker-try-on-1'
  data=json.loads(subprocess.check_output(['docker','inspect',running]))[0]
@@ -28,6 +29,8 @@ for service in ('m4','worker-try-on'):
   actual=subprocess.check_output(['docker','exec',running,'cat',source.removeprefix('backend/ai-service/')]).replace(b'\r\n',b'\n')
   if hashlib.sha256(actual).hexdigest() not in hashes.values():raise SystemExit('Active source differs from reviewed baseline: '+service+':'+source)
  env=dict(v.split('=',1) for v in data['Config']['Env'])
+ # Compose escapes literal dollar signs in reusable config output (bcrypt hashes).
+ if any(str(value).replace('$$','$')!=env.get(key) for key,value in configured['services'][service].get('environment',{}).items()):raise SystemExit('Compose environment differs from active '+service)
  if env.get('TRY_ON_DAILY_BUDGET_MICRO_USD')!='1000000' or env.get('TRY_ON_MONTHLY_BUDGET_MICRO_USD')!='10000000':raise SystemExit('Review existing AI budgets; rollout does not change them')
  if any(m['Destination'] not in ('/var/lib/pbl6/try-on','/var/lib/pbl6/ai-chat-media') or m['Type']!='volume' for m in data['Mounts']):raise SystemExit('Review unexpected AI storage mount')
  shared=subprocess.check_output(['docker','exec',running,'python','-c',"from app.try_on.repository import Repository;print(int('shared_spend' in Repository.stats.__code__.co_names))"]).decode().strip()=='1'
@@ -37,9 +40,11 @@ for service in ('m4','worker-try-on'):
  print(service+' private try-on storage totals='+counts)
 if snapshots['m4']['env'].get('OPENAI_API_KEY')!=snapshots['worker-try-on']['env'].get('OPENAI_API_KEY'):raise SystemExit('Review differing AI provider credentials')
 if snapshots['m4']['env'].get('M4_DATABASE_URL')!=snapshots['worker-try-on']['env'].get('M4_DATABASE_URL'):raise SystemExit('Review differing active AI databases')
+if snapshots['m4']['env'].get('TRY_ON_SIGNING_KEY')!=snapshots['worker-try-on']['env'].get('TRY_ON_SIGNING_KEY'):raise SystemExit('Review differing AI signing keys')
 (p/'runtime.json').write_text(json.dumps(snapshots));(p/'runtime.json').chmod(0o600)
 print('AI_MEDIA_PREFLIGHT_OK: runtime and source baseline verified without provider calls.')
 PY
+python3 "$stage/scripts/ai-chat-media-deploy.py" review
 if [[ $mode == inspect ]]; then exit 0; fi
 # Deployment continues only after the read-only runtime preflight.
 original=$(python3 -c 'import json,os;print(json.load(open(os.environ["AI_MEDIA_DEPLOY_STAGE"]+"/runtime.json"))["m4"]["image"])')
@@ -49,10 +54,11 @@ if ! docker image inspect "$codecs" >/dev/null 2>&1; then
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg util-linux && rm -rf /var/lib/apt/lists/*
+RUN test -s /etc/ssl/certs/ca-certificates.crt && sed -i s,http://deb.debian.org,https://deb.debian.org,g /etc/apt/sources.list.d/debian.sources && apt-get update && apt-get install -y --no-install-recommends ffmpeg util-linux && rm -rf /var/lib/apt/lists/*
 USER app
 DOCKER
- docker build --build-arg "BASE_IMAGE=$original" --tag "$codecs" --file "$stage/Dockerfile.codecs" "$stage"
+ docker tag "$original" "pbl6-ai-media-base:${original#sha256:}"
+ docker build --network host --build-arg "BASE_IMAGE=pbl6-ai-media-base:${original#sha256:}" --tag "$codecs" --file "$stage/Dockerfile.codecs" "$stage"
 fi
 cat > "$stage/Dockerfile.rollout" <<'DOCKER'
 ARG BASE_IMAGE
@@ -68,16 +74,9 @@ DOCKER
 candidate="pbl6-demo-try-on:deploy-$id"
 docker build --build-arg "BASE_IMAGE=$codecs" --tag "$candidate" --file "$stage/Dockerfile.rollout" "$stage"
 docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912 --memory 512m --cpus 1 --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges -e AI_CHAT_MEDIA_NATIVE_TEST=1 -e PYTHONDONTWRITEBYTECODE=1 "$candidate" python -m pytest -p no:cacheprovider tests/test_chat_media_native.py -q
-python3 - <<'PY'
-from pathlib import Path
-import json,os
-p=Path(os.environ['AI_MEDIA_DEPLOY_STAGE']);r=json.loads((p/'runtime.json').read_text())
-(p/'test.env').write_text('M4_DATABASE_URL='+r['m4']['env']['M4_DATABASE_URL']+'\nAI_CHAT_MEDIA_NATIVE_TEST=1\nPYTHONDONTWRITEBYTECODE=1\n');(p/'test.env').chmod(0o600)
-PY
+python3 "$stage/scripts/test-ai-chat-media-isolated.py" "$stage" "$candidate" --image-source
 network=$(python3 -c 'import json,os;print(json.load(open(os.environ["AI_MEDIA_DEPLOY_STAGE"]+"/runtime.json"))["m4"]["network"])')
-# Candidate tests use isolated schemas and fake model transports only. No Redis,
-# provider credentials, user storage volumes, or production worker starts.
-docker run --rm --network "$network" --env-file "$stage/test.env" --read-only --tmpfs /tmp:rw,nosuid,nodev,size=536870912 --memory 512m --cpus 1 --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges "$candidate" python -m pytest -p no:cacheprovider -q
+
 helper="$stage/scripts/ai-chat-media-deploy.py"
 python3 "$helper" backup
 rollback(){
@@ -94,7 +93,7 @@ python3 "$helper" quiet
 docker run --rm --network "$network" --env-file "$stage/database.env" "$candidate" python -c 'import os;from sqlalchemy import create_engine,text;from pathlib import Path;e=create_engine(os.environ["M4_DATABASE_URL"].replace("postgresql://","postgresql+psycopg://",1),hide_parameters=True);c=e.connect();applied=set(c.execute(text("SELECT version FROM schema_migration")).scalars());c.close();e.dispose();missing={p.name for p in Path("migrations").glob("*.sql")}-applied;assert missing<={"010_shared_paid_ai_budget.sql","011_ai_chat_attachments.sql","012_chat_message_sequence.sql"},"Review unplanned M4 migrations"'
 docker run --rm --network "$network" --env-file "$stage/database.env" "$candidate" python -m app.migrate
 python3 "$helper" stop-and-sync
-compose=(docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/compose.try-on.yaml -f "$stage/override.json")
+compose=(docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/secrets/tunnel.compose.yaml -f "$stage/override.json")
 "${compose[@]}" up -d --no-deps --no-build --pull never m4 worker-try-on
 ready=0
 for attempt in 1 2 3 4 5 6 7 8 9 10; do

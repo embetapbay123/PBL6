@@ -47,9 +47,12 @@ def text_parts(name, raw):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--staged', action='store_true')
+    parser.add_argument('--secret-env', type=Path, help='Read exact secret values from this local file without recording them')
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
-    env_file = ROOT / 'infrastructure/.env'
+    env_file = args.secret_env or ROOT / 'infrastructure/.env'
+    if args.secret_env and not env_file.is_file():
+        parser.error('Requested secret environment file is unavailable')
     values = []
     if env_file.exists():
         for line in env_file.read_text(encoding='utf-8').splitlines():

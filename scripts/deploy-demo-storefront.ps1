@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ReleaseRoot,[switch]$InspectOnly,[switch]$PackageOnly,[string]$SshTarget='pbl6-demo')
+param([Parameter(Mandatory=$true)][string]$ReleaseRoot,[switch]$InspectOnly,[switch]$PackageOnly,[string]$SshTarget='pbl6-demo',[ValidateSet('storefront','vouchers','chat')][string]$Scope='storefront')
 $ErrorActionPreference='Stop'
 $repo=Split-Path -Parent $PSScriptRoot
 $release=[IO.Path]::GetFullPath($ReleaseRoot)
@@ -10,9 +10,15 @@ try {
  $prepare=@'
 import hashlib,json,shutil,sys
 from pathlib import Path
-plan,release,target=map(Path,sys.argv[1:]);runtime=Path('C:/PBL6')
+plan,release,target=map(Path,sys.argv[1:4]);scope=sys.argv[4];runtime=Path('C:/PBL6')
 sources=['catalog-service/src/main.ts','catalog-service/src/catalog/catalog.repository.ts','catalog-service/src/catalog/catalog.mapper.ts','catalog-service/src/catalog/storefront-catalog.ts','commerce-service/src/main.ts','commerce-service/src/report/storefront-commerce.ts','identity-store-service/src/main.ts','identity-store-service/src/store/storefront.service.ts','identity-store-service/src/store/storefront.controller.ts','identity-store-service/src/messaging/media-files.ts','identity-store-service/src/messaging/media-process.ts','shared/src/internal-clients.ts','shared/src/request-contract.ts','shared/src/dtos.generated.ts','shared/src/operations.generated.ts','shared/src/contracts.runtime.generated.json','shared/src/fixtures.generated.json']
-manifest={'sources':{},'release':str(release),'files':[]}
+if scope=='vouchers':
+ runtime=Path('C:/PBL6/artifacts/storefront-debian2-release-20261121')
+ sources=['commerce-service/src/order/order.controller.ts','commerce-service/src/order/order.repository.ts','commerce-service/src/order/order.service.ts','commerce-service/src/voucher/voucher-pricing.ts','shared/src/dtos.generated.ts','shared/src/operations.generated.ts','shared/src/contracts.runtime.generated.json','shared/src/fixtures.generated.json']
+if scope=='chat':
+ runtime=Path('C:/PBL6/artifacts/debian2-vouchers-release-20261122-reviewed')
+ sources=['identity-store-service/src/main.ts','identity-store-service/src/messaging/messaging.controller.ts','identity-store-service/src/messaging/messaging.service.ts','identity-store-service/src/messaging/media-files.ts','identity-store-service/src/messaging/media-process.ts','identity-store-service/src/messaging/media-scope.ts','identity-store-service/src/messaging/media.controller.ts','identity-store-service/src/messaging/media.service.ts','shared/src/dtos.generated.ts','shared/src/operations.generated.ts','shared/src/contracts.runtime.generated.json','shared/src/fixtures.generated.json','shared/src/request-contract.ts']
+manifest={'scope':scope,'sources':{},'release':str(release),'files':[]}
 for name in sources:
  source=release/'backend'/name
  if not source.is_file():raise SystemExit('Missing reviewed release source: '+name)
@@ -25,12 +31,15 @@ for name in sources:
  for relative,path in paths:
   if not path.is_file():raise SystemExit('Build the release backend before packaging: '+relative)
   out=target/'overlay'/relative;out.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(path,out);manifest['files'].append(relative)
-for name in ['catalog-service/migrations/017_product_publication.sql','commerce-service/migrations/028_storefront_sales_lookup.sql','identity-store-service/migrations/016_storefront.sql']:
+for name in ([] if scope=='vouchers' else ['identity-store-service/migrations/015_chat_attachments.sql'] if scope=='chat' else ['catalog-service/migrations/017_product_publication.sql','commerce-service/migrations/028_storefront_sales_lookup.sql','identity-store-service/migrations/016_storefront.sql']):
  path=release/'backend'/name;out=target/'overlay/backend'/name;out.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(path,out);manifest['files'].append('backend/'+name)
+if scope=='chat':
+ name='backend/Dockerfile';source=release/name;previous=runtime/name;out=target/'overlay'/name;shutil.copyfile(source,out);manifest['files'].append(name)
+ manifest['host_sources']={name:{'before':hashlib.sha256(previous.read_bytes().replace(b'\r\n',b'\n')).hexdigest(),'after':hashlib.sha256(source.read_bytes().replace(b'\r\n',b'\n')).hexdigest()}}
 (target/'manifest.json').write_text(json.dumps(manifest))
 shutil.copyfile(plan/'scripts/storefront-deploy.py',target/'storefront-deploy.py')
 '@
- $prepare | python - $repo $release $temp.FullName
+ $prepare | python - $repo $release $temp.FullName $Scope
  if($LASTEXITCODE -ne 0){throw 'Storefront release packaging failed.'}
  $archive=Join-Path $temp 'storefront.tgz'
  & tar.exe -C $temp.FullName -czf $archive overlay manifest.json storefront-deploy.py

@@ -1,5 +1,6 @@
 """Remote targeted rollout helpers. Secrets stay in private files and subprocess input."""
 import json
+import copy
 import os
 import re
 import shutil
@@ -15,7 +16,7 @@ if not re.fullmatch('[a-f0-9]{32}', ident):
     raise SystemExit('Invalid deployment identifier')
 runtime = json.loads((stage / 'runtime.json').read_text())
 candidate = 'pbl6-demo-try-on:deploy-' + ident
-base = ['docker', 'compose', '-p', 'pbl6-demo', '--env-file', 'infrastructure/.env', '-f', 'infrastructure/compose.yaml']
+base = ['docker', 'compose', '-p', 'pbl6-demo', '--env-file', 'infrastructure/.env', '-f', 'infrastructure/compose.yaml', '-f', 'infrastructure/secrets/tunnel.compose.yaml']
 backup = Path.home() / 'pbl6-demo' / 'backups' / ('ai-chat-media-' + ident)
 private_env = stage / 'database.env'
 
@@ -56,6 +57,59 @@ def volumes():
     return try_on, 'pbl6_demo_ai_chat_media'
 
 
+def proposed_compose():
+    """Resolve YAML anchors through the existing Node parser; verify every other service."""
+    try_on, ai_chat = volumes()
+    path = Path('infrastructure/compose.yaml')
+    before = json.loads(subprocess.check_output(base + ['config', '--format', 'json']))
+    parser = subprocess.check_output(base + ['ps', '-q', 'm1']).decode().strip()
+    code = r"""const yaml=require('js-yaml'),fs=require('fs');try{
+const x=JSON.parse(fs.readFileSync(0,'utf8')),doc=yaml.safeLoad(x.source);
+for(const name of ['m4','worker-try-on']){
+ const service=JSON.parse(JSON.stringify(doc.services[name]));
+ service.image='pbl6-demo-try-on:latest';
+ service.volumes=['tryondata:/var/lib/pbl6/try-on'];
+ if(name==='m4'){
+  if(!service.environment||Array.isArray(service.environment))throw Error('environment');
+  service.environment.AI_CHAT_MEDIA_ENABLED='1';
+  service.environment.AI_CHAT_MEDIA_STORAGE_DIR='/var/lib/pbl6/ai-chat-media';
+  service.volumes.push('aichatmedia:/var/lib/pbl6/ai-chat-media');
+ }
+ doc.services[name]=service;
+}
+doc.volumes=doc.volumes||{};
+doc.volumes.tryondata={external:true,name:x.try_on};
+doc.volumes.aichatmedia={external:true,name:x.ai_chat};
+process.stdout.write(JSON.stringify(yaml.safeDump(doc,{lineWidth:-1,noRefs:false})));
+}catch{console.error('Review AI Compose YAML before rollout');process.exitCode=1;}"""
+    text = json.loads(subprocess.check_output(['docker', 'exec', '-i', parser, 'node', '-e', code], input=json.dumps({'source': path.read_text(), 'try_on': try_on, 'ai_chat': ai_chat}).encode()))
+    proposal = stage / 'compose.reviewed.yaml'
+    proposal.write_text(text);proposal.chmod(0o600)
+    after = json.loads(subprocess.check_output(base + ['-f', str(proposal), 'config', '--format', 'json']))
+    def service(config, name):
+        value = copy.deepcopy(config['services'][name])
+        for mount in value.get('volumes', []):
+            if mount['type'] == 'volume':mount['source'] = config['volumes'][mount['source']]['name']
+        if 'volumes' in value:value['volumes'].sort(key=lambda v:v['target'])
+        return value
+    if set(before['services']) != set(after['services']):raise SystemExit('Unexpected service declaration change')
+    for name in before['services']:
+        expected = service(before, name);actual = service(after, name)
+        if name in ('m4', 'worker-try-on'):
+            expected['image'] = 'pbl6-demo-try-on:latest'
+            mounts = expected.get('volumes', [])
+            if len(mounts) != 1 or mounts[0]['source'] != try_on or mounts[0]['target'] != '/var/lib/pbl6/try-on':raise SystemExit('Review existing try-on configuration mount')
+            if name == 'm4':
+                expected['environment'].update(AI_CHAT_MEDIA_ENABLED='1',AI_CHAT_MEDIA_STORAGE_DIR='/var/lib/pbl6/ai-chat-media')
+                extra = copy.deepcopy(mounts[0]);extra.update(source=ai_chat,target='/var/lib/pbl6/ai-chat-media');mounts.append(extra);mounts.sort(key=lambda v:v['target'])
+        if expected != actual:raise SystemExit('Unexpected Compose change in '+name)
+    for key in set(before) | set(after):
+        if key not in ('services','volumes') and before.get(key) != after.get(key):raise SystemExit('Unexpected Compose root change in '+key)
+    for key in set(before.get('volumes',{})) | set(after.get('volumes',{})):
+        if key not in ('tryondata','aichatmedia') and before.get('volumes',{}).get(key) != after.get('volumes',{}).get(key):raise SystemExit('Unrelated volume declaration changed')
+    return text
+
+
 def write_override(path, *, rollback=False):
     try_on, ai_chat = volumes()
     services = {}
@@ -88,7 +142,11 @@ def restore_guard():
 
 
 action = sys.argv[1]
-if action == 'backup':
+if action == 'review':
+    proposed_compose()
+    print('AI_MEDIA_COMPOSE_PREFLIGHT_OK: unrelated services and volumes unchanged.')
+
+elif action == 'backup':
     url = urlparse(runtime['m4']['env']['M4_DATABASE_URL'])
     if url.hostname != 'postgres' or not re.fullmatch('[a-zA-Z0-9_]+', url.path.strip('/')):
         raise SystemExit('Review active AI database location')
@@ -103,6 +161,7 @@ if action == 'backup':
     with (backup / 'm4.dump').open('rb') as data:
         run(base + ['exec', '-T', 'postgres', 'pg_restore', '--list'], stdin=data, stdout=subprocess.DEVNULL)
     for file in ('compose.yaml', 'compose.try-on.yaml'):
+        if not Path('infrastructure', file).exists():continue
         target = backup / (file + '.before')
         target.write_bytes(Path('infrastructure', file).read_bytes());target.chmod(0o600)
     private_json(backup / 'runtime.before.json', runtime)
@@ -189,6 +248,13 @@ elif action == 'stop-and-sync':
     exists = subprocess.check_output(['docker', 'exec', row['container'], 'python', '-c', "from pathlib import Path;print(int(Path('/var/lib/pbl6/try-on').is_dir()))"]).decode().strip() == '1'
     run(['docker', 'stop', '-t', '20', row['container']], stdout=subprocess.DEVNULL)
     (stage / 'm4.stopped').write_text('1')
+    try_on, _ = volumes()
+    shared = any(m.get('Name') == try_on and m['Destination'] == '/var/lib/pbl6/try-on' for m in row['mounts'])
+    if shared:
+        write_override(stage / 'override.json')
+        run(['docker', 'tag', candidate, 'pbl6-demo-try-on:latest'])
+        print('Existing shared try-on volume retained in place; no private object copy required.')
+        raise SystemExit(0)
     source = backup / 'm4-try-on-ephemeral'
     source.mkdir(mode=0o700)
     if exists:
@@ -215,8 +281,10 @@ print(json.dumps({'private_objects_preserved':count}))"""
 elif action == 'verify':
     try_on, ai_chat = volumes()
     for service, before in runtime.items():
-        running = subprocess.check_output(base + ['-f', 'infrastructure/compose.try-on.yaml', '-f', str(stage / 'override.json'), 'ps', '-q', service]).decode().strip()
+        running = subprocess.check_output(base + ['-f', str(stage / 'override.json'), 'ps', '-q', service]).decode().strip()
         data = json.loads(subprocess.check_output(['docker', 'inspect', running]))[0]
+        candidate_id = subprocess.check_output(['docker','image','inspect','--format','{{.Id}}',candidate]).decode().strip()
+        if data['Image'] != candidate_id:raise SystemExit('Candidate image verification failed in '+service)
         env = dict(v.split('=', 1) for v in data['Config']['Env'])
         expected = dict(before['env'])
         if service == 'm4':
@@ -233,39 +301,8 @@ elif action == 'verify':
     print('M4 and try-on worker verified: shared monetary guard, original credentials/model/limits, correct persistent storage.')
 
 elif action == 'persist':
-    try_on, ai_chat = volumes()
+    source = proposed_compose()
     path = Path('infrastructure/compose.yaml')
-    source = path.read_text()
-    match = re.search(r'^  m4:\n.*?(?=^  [a-zA-Z0-9_-]+:\n)', source, re.M | re.S)
-    if not match:
-        raise SystemExit('Cannot locate M4 compose block')
-    block = match.group(0)
-    if 'AI_CHAT_MEDIA_ENABLED:' not in block:
-        if '    environment:\n' in block:
-            block = block.replace('    environment:\n', "    environment:\n      AI_CHAT_MEDIA_ENABLED: '${AI_CHAT_MEDIA_ENABLED:-1}'\n      AI_CHAT_MEDIA_STORAGE_DIR: /var/lib/pbl6/ai-chat-media\n", 1)
-        else:
-            lines = block.splitlines()
-            index = next(i for i, line in enumerate(lines) if line.startswith('    environment: {'))
-            if not lines[index].endswith('}'):
-                raise SystemExit('Review M4 environment syntax')
-            lines[index] = lines[index][:-1] + ", AI_CHAT_MEDIA_ENABLED: '${AI_CHAT_MEDIA_ENABLED:-1}', AI_CHAT_MEDIA_STORAGE_DIR: /var/lib/pbl6/ai-chat-media}"
-            block = '\n'.join(lines) + '\n'
-    if '    volumes:' in block:
-        if not re.search(r'^    volumes: \[.*\]$', block, re.M):
-            raise SystemExit('Review M4 volume syntax before persisting')
-        block = re.sub(r'^    volumes: \[.*\]\n', '', block, flags=re.M)
-    block = re.sub(r'^    image:.*\n', '', block, flags=re.M)
-    block = block.replace('  m4:\n', '  m4:\n    image: pbl6-demo-try-on:latest\n    volumes: [tryondata:/var/lib/pbl6/try-on, aichatmedia:/var/lib/pbl6/ai-chat-media]\n', 1)
-    source = source[:match.start()] + block + source[match.end():]
-    if '\nvolumes:\n' not in source:
-        raise SystemExit('Review compose root volume declaration')
-    for key, name in (('tryondata', try_on), ('aichatmedia', ai_chat)):
-        line = '  ' + key + ': {external: true, name: ' + name + '}\n'
-        pattern = r'^  ' + key + r':[^\n]*\n(?:^    [^\n]*\n)*'
-        if re.search(pattern, source, re.M):
-            source = re.sub(pattern, line, source, count=1, flags=re.M)
-        else:
-            source = source.replace('\nvolumes:\n', '\nvolumes:\n' + line, 1)
     path.write_text(source);path.chmod(0o600)
     for name in ('app', 'tests', 'migrations'):
         shutil.copytree(stage / 'backend/ai-service' / name, Path('backend/ai-service') / name, dirs_exist_ok=True)
@@ -296,7 +333,7 @@ elif action == 'rollback':
         Path('infrastructure/compose.yaml').chmod(0o600)
     if (stage / 'm4.stopped').exists():
         write_override(stage / 'rollback.json', rollback=True)
-        run(base + ['-f', 'infrastructure/compose.try-on.yaml', '-f', str(stage / 'rollback.json'), 'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'm4', 'worker-try-on'])
+        run(base + ['-f', str(stage / 'rollback.json'), 'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'm4', 'worker-try-on'])
     restore_guard()
     print('Previous application runtime restored; additive schema, backups and private data retained.')
 else:
