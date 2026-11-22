@@ -89,3 +89,15 @@ test('order quantity remains next to price, total counts units and routine guida
  const state=await model(page);await page.goto('/customer/orders');await expect(page.locator('.order-card-item-price')).toContainText('x2');await expect(page.locator('.order-history-total-row')).toContainText('2 sản phẩm');await expect(page.locator('.order-delivery-milestone')).toHaveCount(0);
  await page.goto('/customer/orders/'+orderId);await expect(page.getByRole('heading',{name:'Địa chỉ nhận hàng',exact:true})).toHaveCount(1);await expect(page.getByRole('region',{name:'Bước tiếp theo'})).toHaveCount(0);await expect(page.locator('main')).toContainText('220.000');expect(state.errors).toEqual([]);
 });
+
+for(const width of [320,1366])test(`returns and order status tabs share geometry at ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:900});await model(page);await page.goto('/customer/orders');
+ const tabs=page.getByRole('navigation',{name:'Lọc nhanh trạng thái đơn',exact:true}),returns=tabs.getByRole('link',{name:'Đổi trả',exact:true}),cancelled=tabs.getByRole('button',{name:'Đã hủy',exact:true});
+ for(const property of ['fontSize','fontWeight','lineHeight','paddingTop','paddingBottom','borderBottomWidth','borderRadius']){
+  expect(await returns.evaluate((el,key)=>getComputedStyle(el)[key as any],property)).toBe(await cancelled.evaluate((el,key)=>getComputedStyle(el)[key as any],property));
+ }
+ await returns.scrollIntoViewIfNeeded();await expect(returns).toBeInViewport();
+ expect(await returns.evaluate(el=>el.getBoundingClientRect().height)).toBe(await cancelled.evaluate(el=>el.getBoundingClientRect().height));
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+ await expect(returns).toHaveAttribute('href','/customer/returns');
+});

@@ -8,6 +8,8 @@ async function setup(page:Page,{failure=false}={}){
   if(failure)return route.fulfill({status:503,json:{code:'EMAIL_DELIVERY_UNAVAILABLE',message:'Email delivery unavailable',details:[]}});
   if(path.endsWith('/auth/login')||path.endsWith('/auth/refresh'))return route.fulfill({json:{...f.login.response,context:{user_id:'44000000-0000-4000-8000-000000000001',roles:['CUSTOMER'],role_permissions:[],token_version:0}},headers:{'set-cookie':'pbl6_csrf=fixture; Path=/; SameSite=Strict'}});
   if(path.endsWith('/auth/register'))return route.fulfill({status:201,json:{user_id:'44000000-0000-4000-8000-000000000001',email_verified:false,message:'Check your actual email to verify'}});
+  if(path==='/api/v1/me')return route.fulfill({json:f.getProfile.response});
+  if(req.method()==='GET')return route.fulfill({json:{items:[],total:0,page:1,size:100}});
   return route.fulfill({json:{status:'SUCCESS'}});
  });return calls;
 }
