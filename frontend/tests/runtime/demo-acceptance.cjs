@@ -16,7 +16,7 @@ function remote(service,code,input={}){
  const prefix=service==='m4'?'python -':'node';
  const payload=Buffer.from(JSON.stringify(input)).toString('base64');
  const src=service==='m4'?`import json,base64\nx=json.loads(base64.b64decode('${payload}'))\n${code}`:`const x=JSON.parse(Buffer.from('${payload}','base64').toString());\n${code}`;
- const args=['-p','2122','-o','StrictHostKeyChecking=accept-new','-o','ConnectTimeout=15','realkhoa@alpine.khoav4.com',`cd ~/pbl6-demo && docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml exec -T ${service} ${prefix}`];
+ const args=[...(process.env.DEMO_SSH_PORT?['-p',process.env.DEMO_SSH_PORT]:[]),'-o','StrictHostKeyChecking=accept-new','-o','ConnectTimeout=15',process.env.DEMO_SSH_TARGET||'pbl6-demo',`cd ~/pbl6-demo && docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml -f infrastructure/secrets/tunnel.compose.yaml exec -T ${service} ${prefix}`];
  const out=execFileSync('ssh.exe',args,{input:src,env:sshEnv,encoding:'utf8',timeout:45000,stdio:['pipe','pipe','pipe']});
  return JSON.parse(out.trim());
 }

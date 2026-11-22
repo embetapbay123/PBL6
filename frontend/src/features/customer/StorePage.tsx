@@ -11,6 +11,7 @@ import {
 } from "../../bootstrap/components";
 import { CatalogCard } from "../../live/CatalogCard";
 import { ContactStoreButton } from "./ContactStoreButton";
+import {StorefrontSections} from './StorefrontSections';
 
 export function StorePage() {
   const { id } = useParams<{ id: string }>();
@@ -67,6 +68,7 @@ export function StorePage() {
     enabled: !!id,
     queryFn: () => callOperation("listAvailableVouchers", { query: { store_ids: id! } }),
   });
+  const storefront=useQuery({queryKey:['public-storefront',id],enabled:!!id,queryFn:({signal})=>callOperation('getPublicStorefront',{path:{id:id!}},{signal})});
 
   const setSortBy = (sort: "default" | "price_asc" | "price_desc" | "rating") => {
     setParams(current => {
@@ -149,6 +151,8 @@ export function StorePage() {
         />
       )}
       {profile.data && id && <ContactStoreButton storeId={id} />}
+      {profile.data&&storefront.data&&<StorefrontSections data={storefront.data}/>}
+      {profile.data&&storefront.error&&<ErrorView error={storefront.error} onRetry={()=>void storefront.refetch()}/>}
 
       {vouchers.data?.items && vouchers.data.items.length > 0 && (
         <section className="store-vouchers-section bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-4 my-6 shadow-xs">
@@ -204,7 +208,7 @@ export function StorePage() {
       )}
       {products.data && (
         <>
-          <div
+          <div id="store-products"
             className="new-section-heading"
             style={{
               display: "flex",

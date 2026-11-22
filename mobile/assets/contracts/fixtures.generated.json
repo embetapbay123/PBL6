@@ -6101,5 +6101,312 @@
       "message": "fixture-value"
     },
     "status": 200
+  },
+  "getPublicStorefront": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "version": 0,
+      "content": {
+        "enabled": false,
+        "banner": {
+          "asset_id": "11111111-1111-4111-8111-111111111111",
+          "title": "fixture-value",
+          "subtitle": "fixture-value",
+          "link_type": "ALL_PRODUCTS",
+          "product_id": "11111111-1111-4111-8111-111111111111"
+        },
+        "campaign": {
+          "title": "fixture-value",
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "starts_at": "2026-10-02T00:00:00Z",
+          "ends_at": "2026-10-02T00:00:00Z"
+        },
+        "groups": []
+      },
+      "products": {
+        "curated": [],
+        "newest": [],
+        "bestsellers": [],
+        "bestsellers_complete": false
+      },
+      "campaign_voucher": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "code": "fixture-value",
+        "scope": "STORE",
+        "store_id": "11111111-1111-4111-8111-111111111111",
+        "discount_type": "FIXED",
+        "discount_value": 0,
+        "min_goods_vnd": 0,
+        "max_discount_vnd": 0,
+        "starts_at": "2026-10-02T00:00:00Z",
+        "ends_at": "2026-10-02T00:00:00Z",
+        "usage_limit": 0,
+        "per_customer_limit": 0,
+        "status": "ACTIVE",
+        "version": 0,
+        "usage_summary": {
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "reserved_count": 0,
+          "redeemed_count": 0,
+          "remaining_count": 0
+        }
+      },
+      "published_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "getOwnStorefront": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "version": 0,
+      "content": {
+        "enabled": false,
+        "banner": {
+          "asset_id": "11111111-1111-4111-8111-111111111111",
+          "title": "fixture-value",
+          "subtitle": "fixture-value",
+          "link_type": "ALL_PRODUCTS",
+          "product_id": "11111111-1111-4111-8111-111111111111"
+        },
+        "campaign": {
+          "title": "fixture-value",
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "starts_at": "2026-10-02T00:00:00Z",
+          "ends_at": "2026-10-02T00:00:00Z"
+        },
+        "groups": []
+      },
+      "published_version": 0,
+      "published_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "updateOwnStorefront": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "expected_version": 0,
+        "content": {
+          "enabled": false,
+          "banner": {
+            "asset_id": "11111111-1111-4111-8111-111111111111",
+            "title": "fixture-value",
+            "subtitle": "fixture-value",
+            "link_type": "ALL_PRODUCTS",
+            "product_id": "11111111-1111-4111-8111-111111111111"
+          },
+          "campaign": {
+            "title": "fixture-value",
+            "voucher_id": "11111111-1111-4111-8111-111111111111",
+            "starts_at": "2026-10-02T00:00:00Z",
+            "ends_at": "2026-10-02T00:00:00Z"
+          },
+          "groups": []
+        }
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "version": 0,
+      "content": {
+        "enabled": false,
+        "banner": {
+          "asset_id": "11111111-1111-4111-8111-111111111111",
+          "title": "fixture-value",
+          "subtitle": "fixture-value",
+          "link_type": "ALL_PRODUCTS",
+          "product_id": "11111111-1111-4111-8111-111111111111"
+        },
+        "campaign": {
+          "title": "fixture-value",
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "starts_at": "2026-10-02T00:00:00Z",
+          "ends_at": "2026-10-02T00:00:00Z"
+        },
+        "groups": []
+      },
+      "published_version": 0,
+      "published_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "previewOwnStorefront": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "version": 0,
+      "content": {
+        "enabled": false,
+        "banner": {
+          "asset_id": "11111111-1111-4111-8111-111111111111",
+          "title": "fixture-value",
+          "subtitle": "fixture-value",
+          "link_type": "ALL_PRODUCTS",
+          "product_id": "11111111-1111-4111-8111-111111111111"
+        },
+        "campaign": {
+          "title": "fixture-value",
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "starts_at": "2026-10-02T00:00:00Z",
+          "ends_at": "2026-10-02T00:00:00Z"
+        },
+        "groups": []
+      },
+      "products": {
+        "curated": [],
+        "newest": [],
+        "bestsellers": [],
+        "bestsellers_complete": false
+      },
+      "campaign_voucher": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "code": "fixture-value",
+        "scope": "STORE",
+        "store_id": "11111111-1111-4111-8111-111111111111",
+        "discount_type": "FIXED",
+        "discount_value": 0,
+        "min_goods_vnd": 0,
+        "max_discount_vnd": 0,
+        "starts_at": "2026-10-02T00:00:00Z",
+        "ends_at": "2026-10-02T00:00:00Z",
+        "usage_limit": 0,
+        "per_customer_limit": 0,
+        "status": "ACTIVE",
+        "version": 0,
+        "usage_summary": {
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "reserved_count": 0,
+          "redeemed_count": 0,
+          "remaining_count": 0
+        }
+      },
+      "published_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "publishOwnStorefront": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "expected_version": 0
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "store_id": "11111111-1111-4111-8111-111111111111",
+      "version": 0,
+      "content": {
+        "enabled": false,
+        "banner": {
+          "asset_id": "11111111-1111-4111-8111-111111111111",
+          "title": "fixture-value",
+          "subtitle": "fixture-value",
+          "link_type": "ALL_PRODUCTS",
+          "product_id": "11111111-1111-4111-8111-111111111111"
+        },
+        "campaign": {
+          "title": "fixture-value",
+          "voucher_id": "11111111-1111-4111-8111-111111111111",
+          "starts_at": "2026-10-02T00:00:00Z",
+          "ends_at": "2026-10-02T00:00:00Z"
+        },
+        "groups": []
+      },
+      "published_version": 0,
+      "published_at": "2026-10-02T00:00:00Z"
+    },
+    "status": 200
+  },
+  "createStorefrontBanner": {
+    "mode": "fixture",
+    "request": {
+      "body": {
+        "client_upload_id": "11111111-1111-4111-8111-111111111111",
+        "size_bytes": 1,
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "path": {},
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "status": "UPLOADING",
+      "width": 1,
+      "height": 1
+    },
+    "status": 201
+  },
+  "uploadStorefrontBanner": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "banner_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "status": "UPLOADING",
+      "width": 1,
+      "height": 1
+    },
+    "status": 200
+  },
+  "readOwnStorefrontBanner": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "banner_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {},
+    "status": 200
+  },
+  "readPublicStorefrontBanner": {
+    "mode": "fixture",
+    "request": {
+      "body": null,
+      "path": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "banner_id": "11111111-1111-4111-8111-111111111111"
+      },
+      "query": {},
+      "headers": {}
+    },
+    "response": {},
+    "status": 200
   }
 }

@@ -1,6 +1,8 @@
 # Tiến độ thực hiện plan bug.docx
 
-Cập nhật ngày 15/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-docx-plan`, nhánh `codex/bug-docx-follow-through`. Tách từ `6c364af` để giữ nguyên WIP ví của workspace chính.
+Cập nhật ngày 22/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-docx-plan`, nhánh `codex/bug-docx-follow-through`. Tách từ `6c364af` để giữ nguyên WIP ví của workspace chính.
+
+**Đổi máy chủ:** các đợt 1–4 bên dưới được nghiệm thu trên máy cũ ngày 14–15/11. Máy mới `debian2` hiện có source nền khác (wallet và nhãn bên hủy đơn) nhưng chưa có migration media M3 015/M4 010–012. Không coi kết quả cũ là đã nghiệm thu lại máy mới. Đợt 5 đã triển khai và nghiệm thu riêng trên nền hiện hành; cần chuyển lại các thay đổi trước và chạy đợt 6. [Chi tiết nền máy mới](bug-docx-storefront-2026-11-21.md).
 
 | Đợt | Trạng thái | Kết quả |
 |---|---|---|
@@ -9,7 +11,7 @@ Cập nhật ngày 15/11/2026. Worktree thực hiện: `C:/PBL6/artifacts/bug-do
 | 2. Voucher tốt nhất | Đã triển khai và nghiệm thu | B01: 447 unit, 28 PostgreSQL integration, 22 UI và public quote/đơn COD qua. [Chi tiết](bug-docx-vouchers-2026-11-15.md). |
 | 3. Tìm hội thoại | Đã triển khai và nghiệm thu | M3/M4 + FE, public 25 hội thoại/25 phiên và xóa theo sở hữu qua. [Chi tiết](bug-docx-chat-search-2026-11-15.md). |
 | 4. Media chat | Đã triển khai và nghiệm thu Store + AI | [Chat gian hàng](bug-docx-store-chat-media-2026-11-15.md); [AI đọc ảnh/frame thật, budget chung và public playback](bug-docx-ai-chat-media-2026-11-15.md). |
-| 5. Nội dung gian hàng | Chưa thực hiện | CMS banner/campaign và nguồn nhóm sản phẩm. |
+| 5. Nội dung gian hàng | Đã triển khai và nghiệm thu trên máy mới | B28: 455 unit, 11 PostgreSQL/FFmpeg, 9 UI, 4 nhóm public và 8 ca layout/link trên hai shop demo qua. [Chi tiết CMS](bug-docx-storefront-2026-11-21.md). |
 | 6. Nghiệm thu toàn bộ | Chưa hoàn tất | Có kiểm tra và triển khai riêng từng đợt; không tính là đã đóng cả 33 nhóm. |
 
 ## Đợt 1
@@ -39,4 +41,4 @@ Chứng cứ đặt tại `C:/PBL6/outputs/bug-ui-phase1-2026-11-14/`: `before/r
 
 ## Bước đang làm
 
-Đợt 2, 3 và 4 đã triển khai, có báo cáo riêng. AI media đã bật cho Customer đủ hạn mức/cổng demo, gọi OpenAI trực tiếp; chat chữ giữ provider OpenAI-compatible hiện có, model deepseek-v4.1-flash. Giữ 1 USD/ngày, 10 USD/tháng dùng chung với thử đồ. Tiếp tục đợt 5 CMS gian hàng, sau đó đối chiếu nghiệm thu toàn bộ B01–B33.
+Đợt 2, 3 và 4 đã triển khai, có báo cáo riêng. AI media đã bật cho Customer đủ hạn mức/cổng demo, gọi OpenAI trực tiếp; chat chữ giữ provider OpenAI-compatible hiện có, model deepseek-v4.1-flash. Giữ 1 USD/ngày, 10 USD/tháng dùng chung với thử đồ. Đợt 5 CMS đã qua trên máy mới. Bước tiếp theo: ghép lại các đợt 1–4 lên nền Debian2 mà vẫn giữ wallet/nhãn hủy đơn hiện hành, rồi nghiệm thu toàn bộ B01–B33. Mô tả AI/provider ở đoạn này là trạng thái máy cũ; AI media trên Debian2 vẫn tắt cho đến khi chuyển và kiểm tra lại.

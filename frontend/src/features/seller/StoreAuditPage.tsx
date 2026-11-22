@@ -38,6 +38,8 @@ const shiftDay = (value: string, delta: number) => {
   return date.toISOString().slice(0, 10);
 };
 const actions: Record<string, string> = {
+  STOREFRONT_DRAFT_SAVED: "Lưu nháp trang gian hàng",
+  STOREFRONT_PUBLISHED: "Xuất bản trang gian hàng",
   UPDATE: "Cập nhật",
   CREATE: "Tạo mới",
   ADJUST: "Điều chỉnh kho",

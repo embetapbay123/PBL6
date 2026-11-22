@@ -4,6 +4,10 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // Use fresh CDN keys after older asset URLs were cached with the SPA fallback.
+    assetsDir: 'assets/web'
+  },
   server: {
     port: 3000,
     open: false,

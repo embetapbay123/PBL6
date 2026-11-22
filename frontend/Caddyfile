@@ -1,5 +1,18 @@
 :3000 {
   root * /srv
-  try_files {path} /index.html
-  file_server
+
+  handle /assets/* {
+    @missing not file
+    header @missing Cache-Control "no-store"
+    respond @missing "Not found" 404
+    file_server
+  }
+
+  handle {
+    route {
+      try_files {path} /index.html
+      header /index.html Cache-Control "no-store"
+      file_server
+    }
+  }
 }

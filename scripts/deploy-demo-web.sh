@@ -9,14 +9,19 @@ trap 'rm -rf -- "$stage"; rm -f -- "$archive"' EXIT
 
 exec 9>"$HOME/.pbl6-demo-web-deploy.lock"
 flock -w 60 9
+umask 022
 tar -xzf "$archive" -C "$stage"
 cd "$HOME/pbl6-demo"
 compose=(docker compose -p pbl6-demo --env-file infrastructure/.env -f infrastructure/compose.yaml)
 
 running=$("${compose[@]}" ps -q web)
 previous=$(docker inspect --format '{{.Image}}' "$running")
+demo_login=0
+if [[ $("${compose[@]}" exec -T m3 printenv DEMO_LOGIN_ENABLED </dev/null) == 1 ]]; then
+  demo_login=1
+fi
 candidate_tag="pbl6-demo-web:deploy-$deploy_id"
-docker build --build-arg VITE_DEMO_LOGIN_ENABLED=1 --tag "$candidate_tag" \
+docker build --build-arg VITE_DEMO_LOGIN_ENABLED="$demo_login" --tag "$candidate_tag" \
   --file "$stage/frontend/Dockerfile" "$stage"
 candidate=$(docker image inspect --format '{{.Id}}' "$candidate_tag")
 docker tag "$previous" pbl6-demo-web:rollback

@@ -10,10 +10,12 @@ export function CatalogCard({
   product,
   category,
   edit = false,
+  preview = false,
 }: {
   product: OperationOutputs["getProduct"];
   category?: string;
   edit?: boolean;
+  preview?: boolean;
 }) {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -107,7 +109,7 @@ export function CatalogCard({
           </div>
         </div>
       </Link>
-      {!edit && <ProductCardActions product={product} />}
+      {!edit && (preview?<div className="product-card-actions"><button type="button" className="ui-button ui-button-secondary product-add-button" disabled>{variants.length>1?'Chọn phân loại':'Thêm vào giỏ'}</button></div>:<ProductCardActions product={product} />)}
       {product.store_id && (
         <StoreLabel id={product.store_id} className="product-store-link" />
       )}

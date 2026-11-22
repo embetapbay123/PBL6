@@ -3633,6 +3633,114 @@ export class GetAiChatMediaTurnQueryDto {
 }
 export class GetAiChatMediaTurnHeadersDto {
 }
+export class GetPublicStorefrontPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+}
+export class GetPublicStorefrontQueryDto {
+}
+export class GetPublicStorefrontHeadersDto {
+}
+export class GetOwnStorefrontPathDto {
+}
+export class GetOwnStorefrontQueryDto {
+}
+export class GetOwnStorefrontHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class UpdateOwnStorefrontBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "object", "additionalProperties": false, "properties": {"enabled": {"type": "boolean"}, "banner": {"type": "object", "additionalProperties": false, "properties": {"asset_id": {"type": "string", "format": "uuid"}, "title": {"type": "string", "minLength": 1, "maxLength": 90}, "subtitle": {"type": "string", "minLength": 0, "maxLength": 160}, "link_type": {"type": "string", "enum": ["ALL_PRODUCTS", "PRODUCT"]}, "product_id": {"type": "string", "format": "uuid"}}, "required": ["asset_id", "title", "link_type"]}, "campaign": {"type": "object", "additionalProperties": false, "properties": {"title": {"type": "string", "minLength": 1, "maxLength": 90}, "voucher_id": {"type": "string", "format": "uuid"}, "starts_at": {"type": "string", "format": "date-time"}, "ends_at": {"type": "string", "format": "date-time"}}, "required": ["title", "voucher_id", "starts_at", "ends_at"]}, "groups": {"type": "array", "maxItems": 4, "items": {"type": "object", "additionalProperties": false, "properties": {"id": {"type": "string", "format": "uuid"}, "title": {"type": "string", "minLength": 1, "maxLength": 60}, "kind": {"type": "string", "enum": ["CURATED", "NEW", "BEST_SELLING"]}, "product_ids": {"type": "array", "maxItems": 12, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}}}, "required": ["id", "title", "kind", "product_ids"]}}}, "required": ["enabled", "groups"]},true),defaultMessage:()=> 'Invalid contract field'}})
+  "content"!: {"enabled": boolean; "banner"?: {"asset_id": string; "title": string; "subtitle"?: string; "link_type": "ALL_PRODUCTS" | "PRODUCT"; "product_id"?: string}; "campaign"?: {"title": string; "voucher_id": string; "starts_at": string; "ends_at": string}; "groups": Array<{"id": string; "title": string; "kind": "CURATED" | "NEW" | "BEST_SELLING"; "product_ids": Array<string>}>};
+}
+export class UpdateOwnStorefrontPathDto {
+}
+export class UpdateOwnStorefrontQueryDto {
+}
+export class UpdateOwnStorefrontHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class PreviewOwnStorefrontPathDto {
+}
+export class PreviewOwnStorefrontQueryDto {
+}
+export class PreviewOwnStorefrontHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class PublishOwnStorefrontBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 0},true),defaultMessage:()=> 'Invalid contract field'}})
+  "expected_version"!: number;
+}
+export class PublishOwnStorefrontPathDto {
+}
+export class PublishOwnStorefrontQueryDto {
+}
+export class PublishOwnStorefrontHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class CreateStorefrontBannerBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "client_upload_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1, "maximum": 2097152},true),defaultMessage:()=> 'Invalid contract field'}})
+  "size_bytes"!: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "pattern": "^[a-f0-9]{64}$", "example": "0000000000000000000000000000000000000000000000000000000000000000"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "sha256"!: string;
+}
+export class CreateStorefrontBannerPathDto {
+}
+export class CreateStorefrontBannerQueryDto {
+}
+export class CreateStorefrontBannerHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class UploadStorefrontBannerPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "banner_id"!: string;
+}
+export class UploadStorefrontBannerQueryDto {
+}
+export class UploadStorefrontBannerHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class ReadOwnStorefrontBannerPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "banner_id"!: string;
+}
+export class ReadOwnStorefrontBannerQueryDto {
+}
+export class ReadOwnStorefrontBannerHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-store-context"?: string;
+}
+export class ReadPublicStorefrontBannerPathDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "id"!: string;
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "format": "uuid"}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "banner_id"!: string;
+}
+export class ReadPublicStorefrontBannerQueryDto {
+}
+export class ReadPublicStorefrontBannerHeadersDto {
+}
 export class ResolveContextBodyDto {
   @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "minLength": 1, "maxLength": 4096},true),defaultMessage:()=> 'Invalid contract field'}})
   "token"!: string;
@@ -3897,6 +4005,57 @@ export class RestockExchangeItemsQueryDto {
 }
 export class RestockExchangeItemsHeadersDto {
 }
+export class ResolveStorefrontCatalogBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "store_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "array", "maxItems": 49, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},true),defaultMessage:()=> 'Invalid contract field'}})
+  "product_ids"!: Array<string>;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "include_new"!: boolean;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "boolean"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "include_bestsellers"!: boolean;
+}
+export class ResolveStorefrontCatalogPathDto {
+}
+export class ResolveStorefrontCatalogQueryDto {
+}
+export class ResolveStorefrontCatalogHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 64}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 64},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-correlation-id"?: string;
+}
+export class RankStorefrontSalesBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "store_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "integer", "minimum": 1},false),defaultMessage:()=> 'Invalid contract field'}})
+  "after_sold"?: number;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},false),defaultMessage:()=> 'Invalid contract field'}})
+  "after_id"?: string;
+}
+export class RankStorefrontSalesPathDto {
+}
+export class RankStorefrontSalesQueryDto {
+}
+export class RankStorefrontSalesHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 64}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 64},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-correlation-id"?: string;
+}
+export class ResolveStorefrontVoucherBodyDto {
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "store_id"!: string;
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "format": "uuid"},true),defaultMessage:()=> 'Invalid contract field'}})
+  "voucher_id"!: string;
+}
+export class ResolveStorefrontVoucherPathDto {
+}
+export class ResolveStorefrontVoucherQueryDto {
+}
+export class ResolveStorefrontVoucherHeadersDto {
+  @Transform(({value})=>normalizeParameters({value},{properties:{value:{"type": "string", "maxLength": 64}}}).value)
+  @ValidateBy({name:'contract', validator:{validate:v=>valueMatches(v,{"type": "string", "maxLength": 64},false),defaultMessage:()=> 'Invalid contract field'}})
+  "x-correlation-id"?: string;
+}
 export const runtimeDtos = {
   register: {body: RegisterBodyDto, path: RegisterPathDto, query: RegisterQueryDto, headers: RegisterHeadersDto},
   verifyEmail: {body: VerifyEmailBodyDto, path: VerifyEmailPathDto, query: VerifyEmailQueryDto, headers: VerifyEmailHeadersDto},
@@ -4116,6 +4275,15 @@ export const runtimeDtos = {
   deleteAiChatAttachment: {body: undefined, path: DeleteAiChatAttachmentPathDto, query: DeleteAiChatAttachmentQueryDto, headers: DeleteAiChatAttachmentHeadersDto},
   createAiChatMediaTurn: {body: CreateAiChatMediaTurnBodyDto, path: CreateAiChatMediaTurnPathDto, query: CreateAiChatMediaTurnQueryDto, headers: CreateAiChatMediaTurnHeadersDto},
   getAiChatMediaTurn: {body: undefined, path: GetAiChatMediaTurnPathDto, query: GetAiChatMediaTurnQueryDto, headers: GetAiChatMediaTurnHeadersDto},
+  getPublicStorefront: {body: undefined, path: GetPublicStorefrontPathDto, query: GetPublicStorefrontQueryDto, headers: GetPublicStorefrontHeadersDto},
+  getOwnStorefront: {body: undefined, path: GetOwnStorefrontPathDto, query: GetOwnStorefrontQueryDto, headers: GetOwnStorefrontHeadersDto},
+  updateOwnStorefront: {body: UpdateOwnStorefrontBodyDto, path: UpdateOwnStorefrontPathDto, query: UpdateOwnStorefrontQueryDto, headers: UpdateOwnStorefrontHeadersDto},
+  previewOwnStorefront: {body: undefined, path: PreviewOwnStorefrontPathDto, query: PreviewOwnStorefrontQueryDto, headers: PreviewOwnStorefrontHeadersDto},
+  publishOwnStorefront: {body: PublishOwnStorefrontBodyDto, path: PublishOwnStorefrontPathDto, query: PublishOwnStorefrontQueryDto, headers: PublishOwnStorefrontHeadersDto},
+  createStorefrontBanner: {body: CreateStorefrontBannerBodyDto, path: CreateStorefrontBannerPathDto, query: CreateStorefrontBannerQueryDto, headers: CreateStorefrontBannerHeadersDto},
+  uploadStorefrontBanner: {body: undefined, path: UploadStorefrontBannerPathDto, query: UploadStorefrontBannerQueryDto, headers: UploadStorefrontBannerHeadersDto},
+  readOwnStorefrontBanner: {body: undefined, path: ReadOwnStorefrontBannerPathDto, query: ReadOwnStorefrontBannerQueryDto, headers: ReadOwnStorefrontBannerHeadersDto},
+  readPublicStorefrontBanner: {body: undefined, path: ReadPublicStorefrontBannerPathDto, query: ReadPublicStorefrontBannerQueryDto, headers: ReadPublicStorefrontBannerHeadersDto},
   ResolveContext: {body: ResolveContextBodyDto, path: ResolveContextPathDto, query: ResolveContextQueryDto, headers: ResolveContextHeadersDto},
   ActiveStores: {body: undefined, path: ActiveStoresPathDto, query: ActiveStoresQueryDto, headers: ActiveStoresHeadersDto},
   QuoteVariants: {body: QuoteVariantsBodyDto, path: QuoteVariantsPathDto, query: QuoteVariantsQueryDto, headers: QuoteVariantsHeadersDto},
@@ -4131,4 +4299,7 @@ export const runtimeDtos = {
   DispatchExchangeItems: {body: DispatchExchangeItemsBodyDto, path: DispatchExchangeItemsPathDto, query: DispatchExchangeItemsQueryDto, headers: DispatchExchangeItemsHeadersDto},
   ResolveConversationOrder: {body: ResolveConversationOrderBodyDto, path: ResolveConversationOrderPathDto, query: ResolveConversationOrderQueryDto, headers: ResolveConversationOrderHeadersDto},
   RestockExchangeItems: {body: RestockExchangeItemsBodyDto, path: RestockExchangeItemsPathDto, query: RestockExchangeItemsQueryDto, headers: RestockExchangeItemsHeadersDto},
+  ResolveStorefrontCatalog: {body: ResolveStorefrontCatalogBodyDto, path: ResolveStorefrontCatalogPathDto, query: ResolveStorefrontCatalogQueryDto, headers: ResolveStorefrontCatalogHeadersDto},
+  RankStorefrontSales: {body: RankStorefrontSalesBodyDto, path: RankStorefrontSalesPathDto, query: RankStorefrontSalesQueryDto, headers: RankStorefrontSalesHeadersDto},
+  ResolveStorefrontVoucher: {body: ResolveStorefrontVoucherBodyDto, path: ResolveStorefrontVoucherPathDto, query: ResolveStorefrontVoucherQueryDto, headers: ResolveStorefrontVoucherHeadersDto},
 };

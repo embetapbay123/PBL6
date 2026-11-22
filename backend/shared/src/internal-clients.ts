@@ -5,7 +5,7 @@ import { validateOperation } from './request-contract';
 import { schemaErrors } from './contract-validation';
 import { ApiError } from './errors';
 
-export type InternalOperation = 'ResolveContext' | 'ResolveConversationOrder' | 'ActiveStores' | 'QuoteVariants' | 'ReserveInventory' |
+export type InternalOperation = 'ResolveStorefrontCatalog' | 'RankStorefrontSales' | 'ResolveStorefrontVoucher' | 'ResolveContext' | 'ResolveConversationOrder' | 'ActiveStores' | 'QuoteVariants' | 'ReserveInventory' |
   'ConsumeReservation' | 'ReleaseReservation' | 'RestockOrder' | 'RestockReceivedItems' | 'DispatchExchangeItems' | 'RestockExchangeItems' | 'VerifyReviewEligibility' |
   'ResolveCheckoutContext' | 'ListLowStockVariants' | 'ResolveAiMetricsScope';
 export interface InternalTransport {
@@ -21,7 +21,7 @@ export class InternalClients {
       validateOperation(operation,{body:input,headers:{'x-correlation-id':correlation},path:{},query} as any);
       const params=new URLSearchParams(Object.entries(query).map(([key,value])=>[key,String(value)]));
       const url=this.urls[record.service as 'M1'|'M2'|'M3']+record.route+(params.size?'?'+params:'');
-      const result=await this.transport.request<OperationOutputs[K]>(url,this.caller,this.key,correlation,input,1000);
+      const result=await this.transport.request<OperationOutputs[K]>(url,this.caller,this.key,correlation,input,operation==='ResolveStorefrontCatalog'?6500:1000);
       if(schemaErrors(result,Object.values(record.responses)[0]).length) throw new ApiError(503,'DEPENDENCY_CONTRACT_INVALID','Response nội bộ không khớp contract.');
       return result;
     };

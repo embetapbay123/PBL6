@@ -7,6 +7,7 @@ const StaffPage=lazy(()=>import('./StaffPage').then(module=>({default:module.Sta
 const SellerProductList=lazy(()=>import('./ProductList').then(module=>({default:module.SellerProductList})));
 const SellerOverview=lazy(()=>import('../../live/SellerWorkspace').then(module=>({default:module.SellerOverview})));
 const StoreSettings=lazy(()=>import('../../live/SellerWorkspace').then(module=>({default:module.StoreSettings})));
+const StorefrontPage=lazy(()=>import('./StorefrontPage').then(module=>({default:module.StorefrontPage})));
 const StoreInventory=lazy(()=>import('../../live/SellerWorkspace').then(module=>({default:module.StoreInventory})));
 const StoreOrders=lazy(()=>import('../../live/SellerWorkspace').then(module=>({default:module.StoreOrders})));
 const ShippingQueue=lazy(()=>import('../shipping/ShippingAdmin').then(module=>({default:module.ShippingQueue})));
@@ -19,6 +20,7 @@ const StoreAuditPage=lazy(()=>import('./StoreAuditPage').then(module=>({default:
 export const sellerRoutes:RouteObject[]=[
   {path:'/seller',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><SellerOverview/></ProtectedRoute>},
   {path:'/seller/settings',element:<ProtectedRoute roles={['STORE_OWNER']}><StoreSettings/></ProtectedRoute>},
+  {path:'/seller/storefront',element:<ProtectedRoute roles={['STORE_OWNER']}><StorefrontPage/></ProtectedRoute>},
   {path:'/seller/inventory',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><StoreInventory/></ProtectedRoute>},
   {path:'/seller/orders',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><StoreOrders/></ProtectedRoute>},
   {path:'/seller/shipping',element:<ProtectedRoute roles={['SELLER','STORE_OWNER']}><ShippingQueue/></ProtectedRoute>},

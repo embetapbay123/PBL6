@@ -623,6 +623,7 @@ export function StoreSettings() {
     <section>
       <SellerSubNav />
       <h1>Thông tin gian hàng</h1>
+      <p><Link to="/seller/storefront">Quản lý banner và nhóm sản phẩm →</Link></p>
       {state.error ? (
         <ErrorView
           error={state.error}

@@ -2371,5 +2371,109 @@
     "roles": [
       "CUSTOMER"
     ]
+  },
+  {
+    "method": "GET",
+    "path": "/stores/{id}/storefront",
+    "operation_id": "getPublicStorefront",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": []
+  },
+  {
+    "method": "GET",
+    "path": "/store/storefront",
+    "operation_id": "getOwnStorefront",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/store/storefront",
+    "operation_id": "updateOwnStorefront",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/storefront/preview",
+    "operation_id": "previewOwnStorefront",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/storefront/publish",
+    "operation_id": "publishOwnStorefront",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/store/storefront/banners",
+    "operation_id": "createStorefrontBanner",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "PUT",
+    "path": "/store/storefront/banners/{banner_id}/content",
+    "operation_id": "uploadStorefrontBanner",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/store/storefront/banners/{banner_id}/content",
+    "operation_id": "readOwnStorefrontBanner",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": [
+      "STORE_OWNER"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/stores/{id}/storefront/banners/{banner_id}/content",
+    "operation_id": "readPublicStorefrontBanner",
+    "service": "M3",
+    "module": "storefront",
+    "owner": "Trí",
+    "status": "IMPLEMENTED",
+    "roles": []
   }
 ]

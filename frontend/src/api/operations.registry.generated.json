@@ -1089,6 +1089,51 @@
     "path": "/chat/sessions/{id}/media-messages/{client_message_id}",
     "internal": false
   },
+  "getPublicStorefront": {
+    "method": "GET",
+    "path": "/stores/{id}/storefront",
+    "internal": false
+  },
+  "getOwnStorefront": {
+    "method": "GET",
+    "path": "/store/storefront",
+    "internal": false
+  },
+  "updateOwnStorefront": {
+    "method": "PUT",
+    "path": "/store/storefront",
+    "internal": false
+  },
+  "previewOwnStorefront": {
+    "method": "GET",
+    "path": "/store/storefront/preview",
+    "internal": false
+  },
+  "publishOwnStorefront": {
+    "method": "POST",
+    "path": "/store/storefront/publish",
+    "internal": false
+  },
+  "createStorefrontBanner": {
+    "method": "POST",
+    "path": "/store/storefront/banners",
+    "internal": false
+  },
+  "uploadStorefrontBanner": {
+    "method": "PUT",
+    "path": "/store/storefront/banners/{banner_id}/content",
+    "internal": false
+  },
+  "readOwnStorefrontBanner": {
+    "method": "GET",
+    "path": "/store/storefront/banners/{banner_id}/content",
+    "internal": false
+  },
+  "readPublicStorefrontBanner": {
+    "method": "GET",
+    "path": "/stores/{id}/storefront/banners/{banner_id}/content",
+    "internal": false
+  },
   "ResolveContext": {
     "method": "POST",
     "path": "/internal/context",
@@ -1162,6 +1207,21 @@
   "RestockExchangeItems": {
     "method": "POST",
     "path": "/internal/inventory/exchange-restock",
+    "internal": true
+  },
+  "ResolveStorefrontCatalog": {
+    "method": "POST",
+    "path": "/internal/storefront/catalog",
+    "internal": true
+  },
+  "RankStorefrontSales": {
+    "method": "POST",
+    "path": "/internal/storefront/sales",
+    "internal": true
+  },
+  "ResolveStorefrontVoucher": {
+    "method": "POST",
+    "path": "/internal/storefront/voucher",
     "internal": true
   }
 }

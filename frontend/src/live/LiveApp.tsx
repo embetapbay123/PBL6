@@ -310,6 +310,7 @@ const merchantSectionGroups = [
     items: [
       ["/seller/staff", "Nhân viên & lời mời", Users],
       ["/seller/settings", "Thông tin gian hàng", Settings],
+      ["/seller/storefront", "Trang gian hàng", Store],
       ["/seller/reports", "Báo cáo", BarChart3],
       ["/seller/audit", "Nhật ký Store", ShieldCheck],
     ],

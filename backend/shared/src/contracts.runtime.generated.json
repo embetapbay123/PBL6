@@ -39092,6 +39092,2862 @@
         }
       }
     },
+    "getPublicStorefront": {
+      "method": "GET",
+      "route": "/stores/{id}/storefront",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "content": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "banner": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "subtitle": {
+                      "type": "string",
+                      "minLength": 0,
+                      "maxLength": 160
+                    },
+                    "link_type": {
+                      "type": "string",
+                      "enum": [
+                        "ALL_PRODUCTS",
+                        "PRODUCT"
+                      ]
+                    },
+                    "product_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "title",
+                    "link_type"
+                  ]
+                },
+                "campaign": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "starts_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "ends_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "voucher_id",
+                    "starts_at",
+                    "ends_at"
+                  ]
+                },
+                "groups": {
+                  "type": "array",
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "CURATED",
+                          "NEW",
+                          "BEST_SELLING"
+                        ]
+                      },
+                      "product_ids": {
+                        "type": "array",
+                        "maxItems": 12,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "kind",
+                      "product_ids"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "enabled",
+                "groups"
+              ]
+            },
+            "products": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "curated": {
+                  "type": "array",
+                  "maxItems": 49,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "product_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 10000
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "variants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "available_quantity": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2147483647,
+                              "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                            }
+                          },
+                          "required": [
+                            "sku",
+                            "price_vnd",
+                            "variant_values"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "image_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "maxLength": 2048
+                            },
+                            "position": {
+                              "type": "integer",
+                              "maximum": 9007199254740991
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Optional variant identity for accurate color/variant imagery."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "product_id",
+                            "image_url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "DRAFT",
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "moderation_status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "variant_axes": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Public display names of configured variant axes; optional for older readers."
+                      },
+                      "moderation_decision": {
+                        "type": "object",
+                        "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                        "required": [
+                          "status",
+                          "reason",
+                          "decided_at"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "VISIBLE",
+                              "HIDDEN"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "decided_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "review_summary": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "average"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "average": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          }
+                        }
+                      },
+                      "sold_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Tổng số lượng đã bán của sản phẩm."
+                      }
+                    },
+                    "required": [
+                      "product_type_id",
+                      "title",
+                      "attributes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "newest": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "product_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 10000
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "variants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "available_quantity": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2147483647,
+                              "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                            }
+                          },
+                          "required": [
+                            "sku",
+                            "price_vnd",
+                            "variant_values"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "image_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "maxLength": 2048
+                            },
+                            "position": {
+                              "type": "integer",
+                              "maximum": 9007199254740991
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Optional variant identity for accurate color/variant imagery."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "product_id",
+                            "image_url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "DRAFT",
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "moderation_status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "variant_axes": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Public display names of configured variant axes; optional for older readers."
+                      },
+                      "moderation_decision": {
+                        "type": "object",
+                        "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                        "required": [
+                          "status",
+                          "reason",
+                          "decided_at"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "VISIBLE",
+                              "HIDDEN"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "decided_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "review_summary": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "average"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "average": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          }
+                        }
+                      },
+                      "sold_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Tổng số lượng đã bán của sản phẩm."
+                      }
+                    },
+                    "required": [
+                      "product_type_id",
+                      "title",
+                      "attributes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "bestsellers": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "product_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 10000
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "variants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "available_quantity": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2147483647,
+                              "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                            }
+                          },
+                          "required": [
+                            "sku",
+                            "price_vnd",
+                            "variant_values"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "image_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "maxLength": 2048
+                            },
+                            "position": {
+                              "type": "integer",
+                              "maximum": 9007199254740991
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Optional variant identity for accurate color/variant imagery."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "product_id",
+                            "image_url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "DRAFT",
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "moderation_status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "variant_axes": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Public display names of configured variant axes; optional for older readers."
+                      },
+                      "moderation_decision": {
+                        "type": "object",
+                        "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                        "required": [
+                          "status",
+                          "reason",
+                          "decided_at"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "VISIBLE",
+                              "HIDDEN"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "decided_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "review_summary": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "average"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "average": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          }
+                        }
+                      },
+                      "sold_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Tổng số lượng đã bán của sản phẩm."
+                      }
+                    },
+                    "required": [
+                      "product_type_id",
+                      "title",
+                      "attributes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "bestsellers_complete": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "curated",
+                "newest",
+                "bestsellers",
+                "bestsellers_complete"
+              ]
+            },
+            "campaign_voucher": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "STORE",
+                    "PLATFORM"
+                  ]
+                },
+                "store_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "discount_type": {
+                  "type": "string",
+                  "enum": [
+                    "FIXED",
+                    "PERCENT"
+                  ]
+                },
+                "discount_value": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "min_goods_vnd": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "max_discount_vnd": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "starts_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ends_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "usage_limit": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "per_customer_limit": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ACTIVE",
+                    "STOPPED"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Phiên bản hiện tại mà client đã đọc.",
+                  "maximum": 9007199254740991
+                },
+                "usage_summary": {
+                  "type": "object",
+                  "properties": {
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "reserved_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    },
+                    "redeemed_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    },
+                    "remaining_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "voucher_id",
+                    "redeemed_count"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "code",
+                "scope",
+                "discount_type",
+                "discount_value",
+                "starts_at",
+                "ends_at",
+                "usage_limit",
+                "per_customer_limit"
+              ],
+              "additionalProperties": false
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "store_id",
+            "version",
+            "content",
+            "products"
+          ]
+        }
+      }
+    },
+    "getOwnStorefront": {
+      "method": "GET",
+      "route": "/store/storefront",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "content": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "banner": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "subtitle": {
+                      "type": "string",
+                      "minLength": 0,
+                      "maxLength": 160
+                    },
+                    "link_type": {
+                      "type": "string",
+                      "enum": [
+                        "ALL_PRODUCTS",
+                        "PRODUCT"
+                      ]
+                    },
+                    "product_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "title",
+                    "link_type"
+                  ]
+                },
+                "campaign": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "starts_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "ends_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "voucher_id",
+                    "starts_at",
+                    "ends_at"
+                  ]
+                },
+                "groups": {
+                  "type": "array",
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "CURATED",
+                          "NEW",
+                          "BEST_SELLING"
+                        ]
+                      },
+                      "product_ids": {
+                        "type": "array",
+                        "maxItems": 12,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "kind",
+                      "product_ids"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "enabled",
+                "groups"
+              ]
+            },
+            "published_version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "store_id",
+            "version",
+            "content"
+          ]
+        }
+      }
+    },
+    "updateOwnStorefront": {
+      "method": "PUT",
+      "route": "/store/storefront",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "content": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "banner": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "asset_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 90
+                  },
+                  "subtitle": {
+                    "type": "string",
+                    "minLength": 0,
+                    "maxLength": 160
+                  },
+                  "link_type": {
+                    "type": "string",
+                    "enum": [
+                      "ALL_PRODUCTS",
+                      "PRODUCT"
+                    ]
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "asset_id",
+                  "title",
+                  "link_type"
+                ]
+              },
+              "campaign": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 90
+                  },
+                  "voucher_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "starts_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "ends_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "title",
+                  "voucher_id",
+                  "starts_at",
+                  "ends_at"
+                ]
+              },
+              "groups": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "CURATED",
+                        "NEW",
+                        "BEST_SELLING"
+                      ]
+                    },
+                    "product_ids": {
+                      "type": "array",
+                      "maxItems": 12,
+                      "uniqueItems": true,
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "kind",
+                    "product_ids"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "enabled",
+              "groups"
+            ]
+          }
+        },
+        "required": [
+          "expected_version",
+          "content"
+        ]
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "content": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "banner": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "subtitle": {
+                      "type": "string",
+                      "minLength": 0,
+                      "maxLength": 160
+                    },
+                    "link_type": {
+                      "type": "string",
+                      "enum": [
+                        "ALL_PRODUCTS",
+                        "PRODUCT"
+                      ]
+                    },
+                    "product_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "title",
+                    "link_type"
+                  ]
+                },
+                "campaign": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "starts_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "ends_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "voucher_id",
+                    "starts_at",
+                    "ends_at"
+                  ]
+                },
+                "groups": {
+                  "type": "array",
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "CURATED",
+                          "NEW",
+                          "BEST_SELLING"
+                        ]
+                      },
+                      "product_ids": {
+                        "type": "array",
+                        "maxItems": 12,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "kind",
+                      "product_ids"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "enabled",
+                "groups"
+              ]
+            },
+            "published_version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "store_id",
+            "version",
+            "content"
+          ]
+        }
+      }
+    },
+    "previewOwnStorefront": {
+      "method": "GET",
+      "route": "/store/storefront/preview",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "content": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "banner": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "subtitle": {
+                      "type": "string",
+                      "minLength": 0,
+                      "maxLength": 160
+                    },
+                    "link_type": {
+                      "type": "string",
+                      "enum": [
+                        "ALL_PRODUCTS",
+                        "PRODUCT"
+                      ]
+                    },
+                    "product_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "title",
+                    "link_type"
+                  ]
+                },
+                "campaign": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "starts_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "ends_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "voucher_id",
+                    "starts_at",
+                    "ends_at"
+                  ]
+                },
+                "groups": {
+                  "type": "array",
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "CURATED",
+                          "NEW",
+                          "BEST_SELLING"
+                        ]
+                      },
+                      "product_ids": {
+                        "type": "array",
+                        "maxItems": 12,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "kind",
+                      "product_ids"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "enabled",
+                "groups"
+              ]
+            },
+            "products": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "curated": {
+                  "type": "array",
+                  "maxItems": 49,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "product_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 10000
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "variants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "available_quantity": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2147483647,
+                              "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                            }
+                          },
+                          "required": [
+                            "sku",
+                            "price_vnd",
+                            "variant_values"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "image_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "maxLength": 2048
+                            },
+                            "position": {
+                              "type": "integer",
+                              "maximum": 9007199254740991
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Optional variant identity for accurate color/variant imagery."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "product_id",
+                            "image_url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "DRAFT",
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "moderation_status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "variant_axes": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Public display names of configured variant axes; optional for older readers."
+                      },
+                      "moderation_decision": {
+                        "type": "object",
+                        "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                        "required": [
+                          "status",
+                          "reason",
+                          "decided_at"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "VISIBLE",
+                              "HIDDEN"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "decided_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "review_summary": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "average"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "average": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          }
+                        }
+                      },
+                      "sold_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Tổng số lượng đã bán của sản phẩm."
+                      }
+                    },
+                    "required": [
+                      "product_type_id",
+                      "title",
+                      "attributes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "newest": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "product_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 10000
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "variants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "available_quantity": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2147483647,
+                              "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                            }
+                          },
+                          "required": [
+                            "sku",
+                            "price_vnd",
+                            "variant_values"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "image_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "maxLength": 2048
+                            },
+                            "position": {
+                              "type": "integer",
+                              "maximum": 9007199254740991
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Optional variant identity for accurate color/variant imagery."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "product_id",
+                            "image_url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "DRAFT",
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "moderation_status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "variant_axes": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Public display names of configured variant axes; optional for older readers."
+                      },
+                      "moderation_decision": {
+                        "type": "object",
+                        "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                        "required": [
+                          "status",
+                          "reason",
+                          "decided_at"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "VISIBLE",
+                              "HIDDEN"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "decided_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "review_summary": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "average"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "average": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          }
+                        }
+                      },
+                      "sold_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Tổng số lượng đã bán của sản phẩm."
+                      }
+                    },
+                    "required": [
+                      "product_type_id",
+                      "title",
+                      "attributes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "bestsellers": {
+                  "type": "array",
+                  "maxItems": 12,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "store_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "product_type_id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 1
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true,
+                        "maxLength": 10000
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": true
+                      },
+                      "variants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "sku": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "price_vnd": {
+                              "type": "integer",
+                              "format": "int64",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "variant_values": {
+                              "type": "object",
+                              "additionalProperties": true
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "status": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "available_quantity": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 2147483647,
+                              "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                            }
+                          },
+                          "required": [
+                            "sku",
+                            "price_vnd",
+                            "variant_values"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "product_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "image_url": {
+                              "type": "string",
+                              "format": "uri",
+                              "maxLength": 2048
+                            },
+                            "position": {
+                              "type": "integer",
+                              "maximum": 9007199254740991
+                            },
+                            "variant_id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Optional variant identity for accurate color/variant imagery."
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "product_id",
+                            "image_url"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 20
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "DRAFT",
+                          "ACTIVE",
+                          "STOPPED"
+                        ]
+                      },
+                      "moderation_status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "version": {
+                        "type": "integer",
+                        "maximum": 9007199254740991
+                      },
+                      "variant_axes": {
+                        "type": "array",
+                        "maxItems": 100,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "name": {
+                              "type": "string",
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "description": "Public display names of configured variant axes; optional for older readers."
+                      },
+                      "moderation_decision": {
+                        "type": "object",
+                        "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                        "required": [
+                          "status",
+                          "reason",
+                          "decided_at"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "VISIBLE",
+                              "HIDDEN"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "decided_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      },
+                      "review_summary": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "average"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "average": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          }
+                        }
+                      },
+                      "sold_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Tổng số lượng đã bán của sản phẩm."
+                      }
+                    },
+                    "required": [
+                      "product_type_id",
+                      "title",
+                      "attributes"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "bestsellers_complete": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "curated",
+                "newest",
+                "bestsellers",
+                "bestsellers_complete"
+              ]
+            },
+            "campaign_voucher": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "STORE",
+                    "PLATFORM"
+                  ]
+                },
+                "store_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "discount_type": {
+                  "type": "string",
+                  "enum": [
+                    "FIXED",
+                    "PERCENT"
+                  ]
+                },
+                "discount_value": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "min_goods_vnd": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "max_discount_vnd": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "starts_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ends_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "usage_limit": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "per_customer_limit": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ACTIVE",
+                    "STOPPED"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Phiên bản hiện tại mà client đã đọc.",
+                  "maximum": 9007199254740991
+                },
+                "usage_summary": {
+                  "type": "object",
+                  "properties": {
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "reserved_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    },
+                    "redeemed_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    },
+                    "remaining_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "voucher_id",
+                    "redeemed_count"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "code",
+                "scope",
+                "discount_type",
+                "discount_value",
+                "starts_at",
+                "ends_at",
+                "usage_limit",
+                "per_customer_limit"
+              ],
+              "additionalProperties": false
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "store_id",
+            "version",
+            "content",
+            "products"
+          ]
+        }
+      }
+    },
+    "publishOwnStorefront": {
+      "method": "POST",
+      "route": "/store/storefront/publish",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "expected_version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "expected_version"
+        ]
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "store_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "content": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "banner": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "asset_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "subtitle": {
+                      "type": "string",
+                      "minLength": 0,
+                      "maxLength": 160
+                    },
+                    "link_type": {
+                      "type": "string",
+                      "enum": [
+                        "ALL_PRODUCTS",
+                        "PRODUCT"
+                      ]
+                    },
+                    "product_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "required": [
+                    "asset_id",
+                    "title",
+                    "link_type"
+                  ]
+                },
+                "campaign": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 90
+                    },
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "starts_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "ends_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "voucher_id",
+                    "starts_at",
+                    "ends_at"
+                  ]
+                },
+                "groups": {
+                  "type": "array",
+                  "maxItems": 4,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "CURATED",
+                          "NEW",
+                          "BEST_SELLING"
+                        ]
+                      },
+                      "product_ids": {
+                        "type": "array",
+                        "maxItems": 12,
+                        "uniqueItems": true,
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title",
+                      "kind",
+                      "product_ids"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "enabled",
+                "groups"
+              ]
+            },
+            "published_version": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "store_id",
+            "version",
+            "content"
+          ]
+        }
+      }
+    },
+    "createStorefrontBanner": {
+      "method": "POST",
+      "route": "/store/storefront/banners",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "client_upload_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2097152
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "example": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        },
+        "required": [
+          "client_upload_id",
+          "size_bytes",
+          "sha256"
+        ]
+      },
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "201": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "FAILED"
+              ]
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "id",
+            "status"
+          ]
+        }
+      }
+    },
+    "uploadStorefrontBanner": {
+      "method": "PUT",
+      "route": "/store/storefront/banners/{banner_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "banner_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "banner_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "UPLOADING",
+                "PROCESSING",
+                "READY",
+                "FAILED"
+              ]
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "id",
+            "status"
+          ]
+        }
+      }
+    },
+    "readOwnStorefrontBanner": {
+      "method": "GET",
+      "route": "/store/storefront/banners/{banner_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "banner_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "banner_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-store-context": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {}
+      }
+    },
+    "readPublicStorefrontBanner": {
+      "method": "GET",
+      "route": "/stores/{id}/storefront/banners/{banner_id}/content",
+      "internal": false,
+      "service": "M3",
+      "status": "IMPLEMENTED",
+      "body_required": false,
+      "body": null,
+      "callers": [],
+      "path": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "banner_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "id",
+          "banner_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {}
+      }
+    },
     "ResolveContext": {
       "method": "POST",
       "route": "/internal/context",
@@ -40898,6 +43754,1003 @@
             "status"
           ],
           "additionalProperties": false
+        }
+      }
+    },
+    "ResolveStorefrontCatalog": {
+      "method": "POST",
+      "route": "/internal/storefront/catalog",
+      "internal": true,
+      "service": "M1",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "product_ids": {
+            "type": "array",
+            "maxItems": 49,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "include_new": {
+            "type": "boolean"
+          },
+          "include_bestsellers": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "store_id",
+          "product_ids",
+          "include_new",
+          "include_bestsellers"
+        ]
+      },
+      "callers": [
+        "M3"
+      ],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-correlation-id": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "curated": {
+              "type": "array",
+              "maxItems": 49,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "store_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_type_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 10000
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "variants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "sku": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "price_vnd": {
+                          "type": "integer",
+                          "format": "int64",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "variant_values": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "is_default": {
+                          "type": "boolean"
+                        },
+                        "status": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "available_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 2147483647,
+                          "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                        }
+                      },
+                      "required": [
+                        "sku",
+                        "price_vnd",
+                        "variant_values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 100
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        },
+                        "variant_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Optional variant identity for accurate color/variant imagery."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "ACTIVE",
+                      "STOPPED"
+                    ]
+                  },
+                  "moderation_status": {
+                    "type": "string",
+                    "enum": [
+                      "VISIBLE",
+                      "HIDDEN"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  },
+                  "variant_axes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "name"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Public display names of configured variant axes; optional for older readers."
+                  },
+                  "moderation_decision": {
+                    "type": "object",
+                    "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                    "required": [
+                      "status",
+                      "reason",
+                      "decided_at"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  },
+                  "review_summary": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "count",
+                      "average"
+                    ],
+                    "properties": {
+                      "count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "average": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 5
+                      }
+                    }
+                  },
+                  "sold_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Tổng số lượng đã bán của sản phẩm."
+                  }
+                },
+                "required": [
+                  "product_type_id",
+                  "title",
+                  "attributes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "newest": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "store_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_type_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 10000
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "variants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "sku": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "price_vnd": {
+                          "type": "integer",
+                          "format": "int64",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "variant_values": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "is_default": {
+                          "type": "boolean"
+                        },
+                        "status": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "available_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 2147483647,
+                          "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                        }
+                      },
+                      "required": [
+                        "sku",
+                        "price_vnd",
+                        "variant_values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 100
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        },
+                        "variant_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Optional variant identity for accurate color/variant imagery."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "ACTIVE",
+                      "STOPPED"
+                    ]
+                  },
+                  "moderation_status": {
+                    "type": "string",
+                    "enum": [
+                      "VISIBLE",
+                      "HIDDEN"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  },
+                  "variant_axes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "name"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Public display names of configured variant axes; optional for older readers."
+                  },
+                  "moderation_decision": {
+                    "type": "object",
+                    "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                    "required": [
+                      "status",
+                      "reason",
+                      "decided_at"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  },
+                  "review_summary": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "count",
+                      "average"
+                    ],
+                    "properties": {
+                      "count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "average": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 5
+                      }
+                    }
+                  },
+                  "sold_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Tổng số lượng đã bán của sản phẩm."
+                  }
+                },
+                "required": [
+                  "product_type_id",
+                  "title",
+                  "attributes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "bestsellers": {
+              "type": "array",
+              "maxItems": 12,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "store_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "product_type_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "title": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": "string",
+                    "nullable": true,
+                    "maxLength": 10000
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "variants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "sku": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "price_vnd": {
+                          "type": "integer",
+                          "format": "int64",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "variant_values": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "is_default": {
+                          "type": "boolean"
+                        },
+                        "status": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "available_quantity": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 2147483647,
+                          "description": "Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers."
+                        }
+                      },
+                      "required": [
+                        "sku",
+                        "price_vnd",
+                        "variant_values"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 100
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "product_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "maxLength": 2048
+                        },
+                        "position": {
+                          "type": "integer",
+                          "maximum": 9007199254740991
+                        },
+                        "variant_id": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "Optional variant identity for accurate color/variant imagery."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "product_id",
+                        "image_url"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 20
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "DRAFT",
+                      "ACTIVE",
+                      "STOPPED"
+                    ]
+                  },
+                  "moderation_status": {
+                    "type": "string",
+                    "enum": [
+                      "VISIBLE",
+                      "HIDDEN"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer",
+                    "maximum": 9007199254740991
+                  },
+                  "variant_axes": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "name"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "description": "Public display names of configured variant axes; optional for older readers."
+                  },
+                  "moderation_decision": {
+                    "type": "object",
+                    "description": "Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence.",
+                    "required": [
+                      "status",
+                      "reason",
+                      "decided_at"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "VISIBLE",
+                          "HIDDEN"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                      },
+                      "decided_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  },
+                  "review_summary": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "count",
+                      "average"
+                    ],
+                    "properties": {
+                      "count": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "average": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 5
+                      }
+                    }
+                  },
+                  "sold_count": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Tổng số lượng đã bán của sản phẩm."
+                  }
+                },
+                "required": [
+                  "product_type_id",
+                  "title",
+                  "attributes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "bestsellers_complete": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "curated",
+            "newest",
+            "bestsellers",
+            "bestsellers_complete"
+          ]
+        }
+      }
+    },
+    "RankStorefrontSales": {
+      "method": "POST",
+      "route": "/internal/storefront/sales",
+      "internal": true,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "after_sold": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "after_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "store_id"
+        ]
+      },
+      "callers": [
+        "M1"
+      ],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-correlation-id": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "product_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "product_id",
+                  "quantity"
+                ]
+              }
+            },
+            "has_more": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "items",
+            "has_more"
+          ]
+        }
+      }
+    },
+    "ResolveStorefrontVoucher": {
+      "method": "POST",
+      "route": "/internal/storefront/voucher",
+      "internal": true,
+      "service": "M2",
+      "status": "IMPLEMENTED",
+      "body_required": true,
+      "body": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "store_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "voucher_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "store_id",
+          "voucher_id"
+        ]
+      },
+      "callers": [
+        "M3"
+      ],
+      "path": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "headers": {
+        "type": "object",
+        "properties": {
+          "x-correlation-id": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [],
+        "additionalProperties": true
+      },
+      "responses": {
+        "200": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "voucher": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "code": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "STORE",
+                    "PLATFORM"
+                  ]
+                },
+                "store_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "discount_type": {
+                  "type": "string",
+                  "enum": [
+                    "FIXED",
+                    "PERCENT"
+                  ]
+                },
+                "discount_value": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "min_goods_vnd": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "max_discount_vnd": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "starts_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ends_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "usage_limit": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "per_customer_limit": {
+                  "type": "integer",
+                  "maximum": 9007199254740991
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "ACTIVE",
+                    "STOPPED"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Phiên bản hiện tại mà client đã đọc.",
+                  "maximum": 9007199254740991
+                },
+                "usage_summary": {
+                  "type": "object",
+                  "properties": {
+                    "voucher_id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "reserved_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    },
+                    "redeemed_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    },
+                    "remaining_count": {
+                      "type": "integer",
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "voucher_id",
+                    "redeemed_count"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "code",
+                "scope",
+                "discount_type",
+                "discount_value",
+                "starts_at",
+                "ends_at",
+                "usage_limit",
+                "per_customer_limit"
+              ],
+              "additionalProperties": false
+            }
+          }
         }
       }
     }

@@ -3,7 +3,7 @@ import {searchPattern, searchRegexPattern} from '../../../shared/src/search';
 import { categoryResponse, productResponse, productTypeResponse } from './catalog.mapper';
 
 const PRODUCT_COLUMNS = `p.id, p.store_id, p.product_type_id, p.title, p.description,
-  p.attributes_json AS attributes, p.status, p.moderation_status, p.version, p.sold_count`;
+  p.attributes_json AS attributes, p.status, p.moderation_status, p.version, p.sold_count, p.first_published_at`;
 
 export interface ProductQuery {
   page: number;
@@ -217,8 +217,8 @@ export class CatalogRepository extends OwnedRepository {
   async insertProduct(input:{storeId:string;productTypeId:string;title:string;description:string|null;
     attributes:Record<string,unknown>;status:string}) {
     const [row]=await this.manager.query(
-      `INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version)
-       VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6,'VISIBLE',0)
+      `INSERT INTO product(id,store_id,product_type_id,title,description,attributes_json,status,moderation_status,version,publication_tracked,first_published_at)
+       VALUES(gen_random_uuid(),$1,$2,$3,$4,$5,$6::varchar,'VISIBLE',0,true,CASE WHEN $6::varchar='ACTIVE' THEN now() END)
        RETURNING id,store_id,product_type_id,title,description,attributes_json AS attributes,status,moderation_status,version,sold_count`,
       [input.storeId,input.productTypeId,input.title,input.description,JSON.stringify(input.attributes),input.status]);
     return row;
@@ -229,7 +229,8 @@ export class CatalogRepository extends OwnedRepository {
     await this.manager.query(
       `UPDATE product SET product_type_id=coalesce($2,product_type_id), title=coalesce($3,title),
               description=coalesce($4,description), attributes_json=coalesce($5::jsonb,attributes_json),
-              status=coalesce($6,status), version=version+1 WHERE id=$1`,
+              first_published_at=CASE WHEN publication_tracked AND first_published_at IS NULL AND $6::varchar='ACTIVE' THEN now() ELSE first_published_at END,
+              status=coalesce($6::varchar,status), version=version+1 WHERE id=$1`,
       [id,fields.productTypeId ?? null,fields.title ?? null,fields.description ?? null,
         fields.attributes===undefined ? null : JSON.stringify(fields.attributes),fields.status ?? null]);
     const [row]=await this.manager.query(

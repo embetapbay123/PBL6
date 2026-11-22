@@ -268,6 +268,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/internal/storefront/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ResolveStorefrontCatalog */
+        post: operations["ResolveStorefrontCatalog"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/storefront/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** RankStorefrontSales */
+        post: operations["RankStorefrontSales"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/storefront/voucher": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ResolveStorefrontVoucher */
+        post: operations["ResolveStorefrontVoucher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -559,6 +610,111 @@ export interface components {
             /** Format: date-time */
             dispatched_at: string;
             items: components["schemas"]["ExchangeDispatchItem"][];
+        };
+        ProductVariant: {
+            /** Format: uuid */
+            id?: string;
+            sku: string;
+            /** Format: int64 */
+            price_vnd: number;
+            variant_values: {
+                [key: string]: unknown;
+            };
+            is_default?: boolean;
+            status?: string;
+            /** @description Current sellable quantity (commercial quantity minus reservations); advisory read, checkout revalidates stock. Omitted by legacy or management-only readers. */
+            available_quantity?: number;
+        };
+        ProductImage: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uri */
+            image_url: string;
+            position?: number;
+            /**
+             * Format: uuid
+             * @description Optional variant identity for accurate color/variant imagery.
+             */
+            variant_id?: string;
+        };
+        Product: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            store_id?: string;
+            /** Format: uuid */
+            product_type_id: string;
+            title: string;
+            description?: string | null;
+            attributes: {
+                [key: string]: unknown;
+            };
+            variants?: components["schemas"]["ProductVariant"][];
+            images?: components["schemas"]["ProductImage"][];
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE" | "STOPPED";
+            /** @enum {string} */
+            moderation_status?: "VISIBLE" | "HIDDEN";
+            version?: number;
+            /** @description Public display names of configured variant axes; optional for older readers. */
+            variant_axes?: {
+                code: string;
+                name: string;
+            }[];
+            /** @description Latest trustworthy moderation decision, only on authorized Store management and Admin reads. Public product readers omit this field; no actor or raw audit is exposed. Omitted for legacy/mismatched evidence. */
+            moderation_decision?: {
+                /** @enum {string} */
+                status: "VISIBLE" | "HIDDEN";
+                reason: string;
+                /** Format: date-time */
+                decided_at: string;
+            };
+            review_summary?: {
+                count: number;
+                average: number;
+            };
+            /** @description Tổng số lượng đã bán của sản phẩm. */
+            sold_count?: number;
+        };
+        StorefrontProducts: {
+            curated: components["schemas"]["Product"][];
+            newest: components["schemas"]["Product"][];
+            bestsellers: components["schemas"]["Product"][];
+            bestsellers_complete: boolean;
+        };
+        VoucherUsage: {
+            /** Format: uuid */
+            voucher_id: string;
+            reserved_count?: number;
+            redeemed_count: number;
+            remaining_count?: number;
+        };
+        Voucher: {
+            /** Format: uuid */
+            id?: string;
+            code: string;
+            /** @enum {string} */
+            scope: "STORE" | "PLATFORM";
+            /** Format: uuid */
+            store_id?: string;
+            /** @enum {string} */
+            discount_type: "FIXED" | "PERCENT";
+            discount_value: number;
+            min_goods_vnd?: number;
+            max_discount_vnd?: number;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            usage_limit: number;
+            per_customer_limit: number;
+            /** @enum {string} */
+            status?: "ACTIVE" | "STOPPED";
+            /** @description Phiên bản hiện tại mà client đã đọc. */
+            version?: number;
+            usage_summary?: components["schemas"]["VoucherUsage"];
         };
     };
     responses: never;
@@ -1731,6 +1887,272 @@ export interface operations {
                         /** @enum {string} */
                         status: "APPLIED" | "ALREADY_APPLIED";
                     };
+                };
+            };
+        };
+    };
+    ResolveStorefrontCatalog: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    store_id: string;
+                    product_ids: string[];
+                    include_new: boolean;
+                    include_bestsellers: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Bounded current storefront data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorefrontProducts"];
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    RankStorefrontSales: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    store_id: string;
+                    after_sold?: number;
+                    /** Format: uuid */
+                    after_id?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Bounded current storefront data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: {
+                            /** Format: uuid */
+                            product_id: string;
+                            quantity: number;
+                        }[];
+                        has_more: boolean;
+                    };
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    ResolveStorefrontVoucher: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: uuid */
+                    store_id: string;
+                    /** Format: uuid */
+                    voucher_id: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Bounded current storefront data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        voucher?: components["schemas"]["Voucher"];
+                    };
+                };
+            };
+            /** @description Service error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Resource not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service error */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
