@@ -3,15 +3,16 @@ import {readFileSync} from 'node:fs';
 const fixtures=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.json',import.meta.url),'utf8'));
 const id=(n:number)=>'fc100000-0000-4000-8000-'+String(n).padStart(12,'0');
 const store=id(100),user=id(101);
-async function model(page:Page,{batchFailure=false}={}){
+async function model(page:Page,{batchFailure=false,guest=false}={}){
  const products=Array.from({length:40},(_,i)=>({...fixtures.getProduct.response,id:id(i+1),store_id:store,title:'Áo '+String(i+1).padStart(2,'0'),status:'ACTIVE',images:[],review_summary:{average:i===20?5:3,count:1},
   variants:[{id:id(i+200),sku:'INTERNAL-'+i,price_vnd:i===20?1000:100000+i*1000,variant_values:{},is_default:true,status:'ACTIVE',available_quantity:5}]}));
- const calls={personal:0,batches:[] as string[][],details:[] as string[],store:[] as URL[],errors:[] as string[]};
+ const calls={personal:0,voucherReads:0,batches:[] as string[][],details:[] as string[],store:[] as URL[],errors:[] as string[]};
  const paged=(items:unknown[],size=20,total=items.length,page=1)=>({items,total,page,size});let failed=false;
  await page.context().addCookies([{name:'pbl6_csrf',value:'fixture',url:process.env.WEB_TEST_URL||'http://127.0.0.1:3000'}]);
  await page.context().route('**/api/v1/**',async route=>{
   const url=new URL(route.request().url()),p=url.pathname.replace('/api/v1','');
-  if(p.startsWith('/auth/'))return route.fulfill({json:{...fixtures.login.response,context:{user_id:user,roles:['CUSTOMER'],role_permissions:[],token_version:0}}});
+  if(p.startsWith('/auth/'))return route.fulfill(guest?{status:401,json:{code:'UNAUTHORIZED',message:'Cần đăng nhập'}}:{json:{...fixtures.login.response,context:{user_id:user,roles:['CUSTOMER'],role_permissions:[],token_version:0}}});
+  if(p==='/me/vouchers'){calls.voucherReads++;return route.fulfill({json:paged([])});}
   if(p==='/me')return route.fulfill({json:{...fixtures.getProfile.response,user_id:user}});
   if(p==='/products'){
    const ids=url.searchParams.get('ids');
@@ -21,6 +22,7 @@ async function model(page:Page,{batchFailure=false}={}){
   if(p==='/recommendations/for-you'){calls.personal++;return route.fulfill({json:{source:'BASELINE',product_ids:(batchFailure?products.slice(20,22):products).map(p=>p.id),recently_viewed_product_ids:[]}});}
   if(p.startsWith('/products/')){calls.details.push(p);return route.fulfill({json:products.find(x=>p.endsWith(x.id))});}
   if(p==='/stores/'+store)return route.fulfill({json:{id:store,name:'Gian hàng thử sort',shipping_fee_vnd:15000}});
+  if(p==='/stores/'+store+'/storefront')return route.fulfill({json:{store_id:store,version:0,content:{enabled:false,groups:[]},products:{curated:[],newest:[],bestsellers:[],bestsellers_complete:true}}});
   if(p==='/stores/'+store+'/products'){
    calls.store.push(url);let items=products.slice(0,21);const sort=url.searchParams.get('sort');
    if(sort==='price_asc')items.sort((a,b)=>a.variants[0].price_vnd-b.variants[0].price_vnd);
@@ -58,4 +60,12 @@ test('Home batches recommendations, avoids per-product fanout and does not reloa
 test('failed recommendation batch stays an error and explicit retry recovers without refetching personal IDs',async({page})=>{
  const calls=await model(page,{batchFailure:true});await page.goto('/');const feed=page.getByRole('region',{name:'Dành cho bạn',exact:true});await expect(feed.getByRole('alert')).toContainText('Gợi ý đang tạm lỗi.');
  await feed.getByRole('button',{name:'Thử lại',exact:true}).click();await expect(feed).toContainText('Áo 21');expect(calls.personal).toBe(1);expect(calls.details).toHaveLength(0);expect(calls.errors).toEqual([]);
+});
+
+for(const guest of [true,false])test(`Store voucher reads follow the ${guest?'guest':'Customer'} session`,async({page})=>{
+ const calls=await model(page,{guest});await page.goto('/stores/'+store);
+ await expect(page.locator('.market-product-grid .product-card')).toHaveCount(20);
+ if(guest){await page.reload();await expect(page.locator('.market-product-grid .product-card')).toHaveCount(20);expect(calls.voucherReads).toBe(0);}
+ else await expect.poll(()=>calls.voucherReads).toBe(1);
+ expect(calls.errors).toEqual([]);
 });

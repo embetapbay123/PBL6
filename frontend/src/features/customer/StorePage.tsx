@@ -3,6 +3,7 @@ import { Link, useLocation, useParams, useSearchParams } from "react-router-dom"
 import { Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { callOperation } from "../../api/operations";
+import { useAuth } from "../../api/auth-context";
 import {
   Empty,
   ErrorView,
@@ -14,6 +15,7 @@ import { ContactStoreButton } from "./ContactStoreButton";
 import {StorefrontSections} from './StorefrontSections';
 
 export function StorePage() {
+  const { session } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [params, setParams] = useSearchParams();
   const location = useLocation();
@@ -64,8 +66,8 @@ export function StorePage() {
   });
 
   const vouchers = useQuery({
-    queryKey: ["public-store-vouchers", id],
-    enabled: !!id,
+    queryKey: ["public-store-vouchers", id, session?.context?.user_id],
+    enabled: !!id && !!session?.context?.roles.includes("CUSTOMER"),
     queryFn: () => callOperation("listAvailableVouchers", { query: { store_ids: id! } }),
   });
   const storefront=useQuery({queryKey:['public-storefront',id],enabled:!!id,queryFn:({signal})=>callOperation('getPublicStorefront',{path:{id:id!}},{signal})});
