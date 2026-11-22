@@ -442,6 +442,7 @@ function Market() {
                 path.includes("audit") ||
                 path.includes("staff") ||
                 path.includes("settings") ||
+                path.includes("storefront") ||
                 path.includes("reports") ||
                 path.includes("vouchers")
                   ? owner

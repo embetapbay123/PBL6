@@ -4,19 +4,19 @@ const fixtures=JSON.parse(readFileSync(new URL('../src/api/fixtures.generated.js
 const id=(n:number)=>'c1055000-0000-4000-8000-'+String(n).padStart(12,'0'),store=id(1),user=id(2),banner=id(3),group=id(4);
 const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aV1sAAAAASUVORK5CYII=','base64');
 const products=Array.from({length:25},(_,n)=>({...fixtures.getProduct.response,id:id(100+n),store_id:store,title:n===0?'Áo khoác cotton sáng màu':n===1?'Quần ống rộng màu be':'Trang phục '+n,status:n===2?'STOPPED':'ACTIVE',moderation_status:'VISIBLE',images:[],variants:[{id:id(200+n),sku:'fixture-'+n,variant_values:{},price_vnd:199000,is_default:true,status:'ACTIVE',available_quantity:10}]}));
-async function setup(page:Page,{editor=true,populated=false}={}){
+async function setup(page:Page,{editor=true,populated=false,staff=false}={}){
  const content=populated?{enabled:true,banner:{asset_id:banner,title:'Mặc thoải mái, chọn theo cách của bạn',subtitle:'Những món đồ dễ phối cho một ngày trọn vẹn.',link_type:'ALL_PRODUCTS'},groups:[{id:group,title:'Những lựa chọn mỗi ngày',kind:'CURATED',product_ids:[products[0].id,products[1].id]}]}:{enabled:false,groups:[]};
- const state={saved:{store_id:store,version:populated?2:0,content,...(populated?{published_at:'2026-11-21T08:00:00Z',published_version:2}:{})} as any,live:populated?structuredClone(content):{enabled:false,groups:[]},saves:[] as any[],publishes:[] as any[],lost:false,skipSave:false,holdUpload:false,held:undefined as Route|undefined,uploadCreates:0,uploads:0,queries:[] as string[],errors:[] as string[]};
+ const state={saved:{store_id:store,version:populated?2:0,content,...(populated?{published_at:'2026-11-21T08:00:00Z',published_version:2}:{})} as any,live:populated?structuredClone(content):{enabled:false,groups:[]},saves:[] as any[],publishes:[] as any[],lost:false,skipSave:false,holdUpload:false,held:undefined as Route|undefined,uploadCreates:0,uploads:0,editorReads:0,queries:[] as string[],errors:[] as string[]};
  const publicData=()=>({store_id:store,version:state.saved.published_version??0,content:state.live,products:{curated:products.slice(0,2),newest:[],bestsellers:[],bestsellers_complete:true}});
  await page.context().addCookies([{name:'pbl6_csrf',value:'fixture',url:process.env.WEB_TEST_URL!}]);
  await page.route('**/api/v1/**',async route=>{
   const req=route.request(),u=new URL(req.url()),p=u.pathname.replace('/api/v1',''),method=req.method();
-  const context={user_id:user,roles:editor?['CUSTOMER','STORE_OWNER']:['CUSTOMER'],role_permissions:[],token_version:0,...(editor?{store_membership:{store_id:store,role:'OWNER',status:'ACTIVE',permissions:[]}}:{})};
+  const context={user_id:user,roles:staff?['CUSTOMER','SELLER']:editor?['CUSTOMER','STORE_OWNER']:['CUSTOMER'],role_permissions:[],token_version:0,...((editor||staff)?{store_membership:{store_id:store,role:staff?'SELLER':'OWNER',status:'ACTIVE',permissions:staff?['inventory.store.read_adjust']:[]}}:{})};
   if(p.startsWith('/auth/'))return route.fulfill({json:{...fixtures.login.response,context}});
   if(p==='/me/context')return route.fulfill({json:context});
   if(p==='/me')return route.fulfill({json:fixtures.getProfile.response});
   if(p==='/store')return route.fulfill({json:{...fixtures.getOwnStore.response,id:store,name:'Mộc Studio'}});
-  if(p==='/store/storefront'&&method==='GET')return route.fulfill({json:state.saved});
+  if(p==='/store/storefront'&&method==='GET'){state.editorReads++;return route.fulfill({json:state.saved});}
   if(p==='/store/storefront'&&method==='PUT'){
    const body=req.postDataJSON();state.saves.push(body);if(!state.skipSave)state.saved={...state.saved,content:body.content,version:body.expected_version+1};
    if(state.lost){state.lost=false;return route.abort('failed');}return route.fulfill({json:state.saved});
@@ -35,7 +35,7 @@ async function setup(page:Page,{editor=true,populated=false}={}){
   if(p==='/vouchers/available')return route.fulfill({json:{items:[],page:1,size:20,total:0}});
   return route.fulfill({json:{items:[],page:1,size:20,total:0}});
  });
- page.on('pageerror',e=>state.errors.push(e.message));await page.goto(editor?'/seller/storefront':'/stores/'+store);return state;
+ page.on('pageerror',e=>state.errors.push(e.message));await page.goto(staff?'/seller/inventory':editor?'/seller/storefront':'/stores/'+store);return state;
 }
 async function fillGroup(page:Page){await page.getByLabel('Hiển thị nội dung trên trang gian hàng',{exact:true}).check();await page.getByRole('button',{name:'Thêm nhóm',exact:true}).click();await page.getByLabel('Tên nhóm',{exact:true}).fill('Những lựa chọn mỗi ngày');await page.getByRole('button',{name:/Chọn sản phẩm \(0\/12\)/}).click();await page.getByRole('button',{name:/Áo khoác cotton sáng màu Chọn/}).click();await page.getByRole('button',{name:/Quần ống rộng màu be Chọn/}).click();await page.getByRole('button',{name:'Xong',exact:true}).click();}
 for(const width of [390,1366])test(`owner saves a draft, previews and publishes at ${width}px`,async({page},info)=>{
@@ -57,4 +57,22 @@ test('product selection searches server pages, disables stopped products and pre
 });
 for(const width of [320,390,1366])test(`published storefront has banner, ordered groups and a working product anchor at ${width}px`,async({page},info)=>{
  await page.setViewportSize({width,height:900});const state=await setup(page,{editor:false,populated:true});await expect(page.getByRole('heading',{name:'Mặc thoải mái, chọn theo cách của bạn',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:'Những lựa chọn mỗi ngày',exact:true})).toBeVisible();await page.screenshot({path:info.outputPath('storefront-public.png'),fullPage:true});await page.getByRole('link',{name:'Xem tất cả →',exact:true}).click();await expect(page).toHaveURL(/#store-products$/);await expect(page.locator('#store-products')).toBeInViewport();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(state.errors).toEqual([]);
+});
+
+test('staff cannot see owner storefront navigation or fetch a draft through a direct URL',async({page})=>{
+ const state=await setup(page,{editor:false,staff:true});
+ const menu=page.getByRole('complementary',{name:'Menu Store',exact:true});
+ await expect(menu.getByRole('link',{name:'Tồn kho',exact:true})).toBeVisible();
+ await expect(menu.getByRole('link',{name:'Trang gian hàng',exact:true})).toHaveCount(0);
+ await page.goto('/seller/storefront');await expect(page.getByText('Bạn không có quyền mở trang này.',{exact:true})).toBeVisible();
+ expect(state.editorReads).toBe(0);expect(state.saves).toHaveLength(0);expect(state.publishes).toHaveLength(0);expect(state.errors).toEqual([]);
+});
+
+for(const type of ['PERCENT','FIXED'] as const)test(`campaign maximum matches pricing for ${type}`,async({page})=>{
+ await setup(page,{editor:false,populated:true});
+ const voucher={id:id(40),code:'MOCTODAY',scope:'STORE',store_id:store,discount_type:type,discount_value:type==='PERCENT'?10:10000,max_discount_vnd:type==='PERCENT'?0:5000,min_goods_vnd:0,starts_at:'2026-01-01T00:00:00Z',ends_at:'2027-01-01T00:00:00Z',usage_limit:100,per_customer_limit:1,status:'ACTIVE'};
+ await page.route(`**/api/v1/stores/${store}/storefront`,route=>route.fulfill({json:{store_id:store,version:2,content:{enabled:true,groups:[],campaign:{title:'Ưu đãi hôm nay',voucher_id:voucher.id,starts_at:voucher.starts_at,ends_at:voucher.ends_at}},products:{curated:[],newest:[],bestsellers:[],bestsellers_complete:true},campaign_voucher:voucher}}));
+ await page.reload();const campaign=page.getByRole('region',{name:'Ưu đãi đang diễn ra',exact:true});await expect(campaign).toBeVisible();
+ if(type==='PERCENT')await expect(campaign).toContainText(/tối đa 0\s*₫/);
+ else{await expect(campaign).toContainText(/Giảm 10\.000\s*₫/);await expect(campaign).not.toContainText('tối đa');}
 });

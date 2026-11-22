@@ -15,7 +15,7 @@ export function StorefrontSections({data,bannerUrl,preview=false}:{data:Operatio
   </Link>}
   {content.campaign&&voucher&&<section className="storefront-campaign" aria-label="Ưu đãi đang diễn ra">
    <div><span className="new-kicker">ƯU ĐÃI ĐANG DIỄN RA</span><h2>{content.campaign.title}</h2>
-    <p>{voucher.discount_type==='PERCENT'?`Giảm ${voucher.discount_value}%`:`Giảm ${voucher.discount_value.toLocaleString('vi-VN')} ₫`}{voucher.max_discount_vnd?` · tối đa ${voucher.max_discount_vnd.toLocaleString('vi-VN')} ₫`:''}</p>
+    <p>{voucher.discount_type==='PERCENT'?`Giảm ${voucher.discount_value}%`:`Giảm ${voucher.discount_value.toLocaleString('vi-VN')} ₫`}{voucher.discount_type==='PERCENT'&&voucher.max_discount_vnd!=null?` · tối đa ${voucher.max_discount_vnd.toLocaleString('vi-VN')} ₫`:''}</p>
     <p>Đơn tối thiểu {(voucher.min_goods_vnd??0).toLocaleString('vi-VN')} ₫ · đến {new Date(content.campaign.ends_at).toLocaleString('vi-VN')}</p>
    </div><div className="storefront-voucher-code"><span>Mã tại bước thanh toán</span><strong>{voucher.code}</strong><Link to="#store-products">Chọn sản phẩm →</Link></div>
   </section>}
